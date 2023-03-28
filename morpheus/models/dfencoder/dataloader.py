@@ -31,9 +31,11 @@ class DFEncoderDataLoader(DataLoader):
     def __iter__(self):
         """Iterate over the input data and unbatch it if batch_size is set to 1.
 
-        Yields:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the unbatched input data of the 
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Yields
+        ------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the unbatched input data of the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         for data_d in super().__iter__():
             if self.batch_size == 1:
@@ -49,15 +51,23 @@ class DFEncoderDataLoader(DataLoader):
     def get_distributed_training_dataloader_from_dataset(dataset, rank, world_size, pin_memory=False, num_workers=0):
         """Returns a distributed training DataLoader given a dataset and other arguments.
 
-        Args:
-            dataset (Dataset): The dataset to load the data from.
-            rank (int): The rank of the current process.
-            world_size (int): The number of processes to distribute the data across.
-            pin_memory (bool, optional): Whether to pin memory when loading data. Defaults to False.
-            num_workers (int, optional): The number of worker processes to use for loading data. Defaults to 0.
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to load the data from.
+        rank : int
+            The rank of the current process.
+        world_size : int
+            The number of processes to distribute the data across.
+        pin_memory : bool, optional
+            Whether to pin memory when loading data, by default False.
+        num_workers : int, optional
+            The number of worker processes to use for loading data, by default 0.
 
-        Returns:
-            DataLoader: The training DataLoader with DistributedSampler for distributed training.
+        Returns
+        -------
+        DataLoader
+            The training DataLoader with DistributedSampler for distributed training.
         """
         sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False)
         dataloader = DFEncoderDataLoader(
@@ -80,19 +90,28 @@ class DFEncoderDataLoader(DataLoader):
                                                       pin_memory=False,
                                                       num_workers=0):
         """A helper funtion to get a distributed training DataLoader given a path to a folder containing data.
-        
-        Args:
-            model (AutoEncoder): The autoencoder model used to get relevant params and the preprocessing func.
-            data_folder (str): The path to the folder containing the data.
-            rank (int): The rank of the current process.
-            world_size (int): The number of processes to distribute the data across.
-            load_data_fn (function, optional): A function for loading data from a provided file path into a 
-                pandas.DataFrame. Defaults to pd.read_csv.
-            pin_memory (bool, optional): Whether to pin memory when loading data. Defaults to False.
-            num_workers (int, optional): The number of worker processes to use for loading data. Defaults to 0.
 
-        Returns:
-            DFEncoderDataLoader: The training DataLoader with DistributedSampler for distributed training.
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        data_folder : str
+            The path to the folder containing the data.
+        rank : int
+            The rank of the current process.
+        world_size : int
+            The number of processes to distribute the data across.
+        load_data_fn : function, optional
+            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
+        pin_memory : bool, optional
+            Whether to pin memory when loading data, by default False.
+        num_workers : int, optional
+            The number of worker processes to use for loading data, by default 0.
+
+        Returns
+        -------
+        DFEncoderDataLoader
+            The training DataLoader with DistributedSampler for distributed training.
         """
         dataset = DatasetFromPath(
             data_folder,
@@ -113,16 +132,25 @@ class DFEncoderDataLoader(DataLoader):
     def get_distributed_training_dataloader_from_df(model, df, rank, world_size, pin_memory=False, num_workers=0):
         """A helper funtion to get a distributed training DataLoader given a pandas dataframe.
         
-        Args:
-            model (AutoEncoder): The autoencoder model used to get relevant params and the preprocessing func.
-            df (pandas.DataFrame): The pandas dataframe containing the data.
-            rank (int): The rank of the current process.
-            world_size (int): The number of processes to distribute the data across.
-            pin_memory (bool, optional): Whether to pin memory when loading data. Defaults to False.
-            num_workers (int, optional): The number of worker processes to use for loading data. Defaults to 0.
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        df : pandas.DataFrame
+            The pandas dataframe containing the data.
+        rank : int
+            The rank of the current process.
+        world_size : int
+            The number of processes to distribute the data across.
+        pin_memory : bool, optional
+            Whether to pin memory when loading data, by default False.
+        num_workers : int, optional
+            The number of worker processes to use for loading data, by default 0.
 
-        Returns:
-            DFEncoderDataLoader: The training DataLoader with DistributedSampler for distributed training.
+        Returns
+        -------
+        DFEncoderDataLoader
+            The training DataLoader with DistributedSampler for distributed training.
         """
         dataset = DatasetFromDataframe(
             df=df,
@@ -156,17 +184,22 @@ class DatasetFromPath(Dataset):
     ):
         """Initialize a `DatasetFromPath` object.
 
-        Args:
-            data_folder (str): The path to the folder containing the data files
-            batch_size (int): The size of the batches to read the data in
-            preprocess_fn (function): A function to preprocess the data, which should take a pandas.DataFrame and
-                a boolean indicating whether to shuffle rows in batch or not, and return a dictionary containing
-                the preprocessed data
-            load_data_fn (function, optional): A function for loading data from a provided file path into a 
-                pandas.DataFrame. Defaults to pd.read_csv.
-            shuffle_rows_in_batch (bool, optional): Whether to shuffle the rows within each batch. Defaults to True.
-            preload_data_into_memory (bool, optional): Whether to preload all the data into memory. Defaults to False.
-                (can speed up data loading if the data can fit into memory)
+        Parameters
+        ----------
+        data_folder : str
+            The path to the folder containing the data files.
+        batch_size : int
+            The size of the batches to read the data in.
+        preprocess_fn : function
+            A function to preprocess the data, which should take a pandas.DataFrame and a boolean indicating 
+            whether to shuffle rows in batch or not, and return a dictionary containing the preprocessed data
+        load_data_fn : function, optional
+            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
+        shuffle_rows_in_batch : bool, optional
+            Whether to shuffle the rows within each batch, by default True.
+        preload_data_into_memory : bool, optional
+            Whether to preload all the data into memory, by default False.
+            (Can speed up data loading if the data can fit into memory)
         """
         self._data_folder = data_folder
         self._filenames = sorted(os.listdir(data_folder))
@@ -188,12 +221,17 @@ class DatasetFromPath(Dataset):
     def _get_file_len(self, fn, file_include_header_line=True):
         """Private method for getting the number of lines in a file.
 
-        Args:
-            fn (str): The name of the file to get the length of.
-            file_include_header_line (bool, optional): Whether the file includes a header line. Defaults to True.
+        Parameters
+        ----------
+        fn : str
+            The name of the file to get the length of.
+        file_include_header_line : bool, optional
+            Whether the file includes a header line, by default True.
 
-        Returns:
-            int: The number of lines in the file.
+        Returns
+        -------
+        int
+            The number of lines in the file.
         """
         with open(f"{self._data_folder}/{fn}") as f:
             count = sum(1 for _ in f)
@@ -201,11 +239,7 @@ class DatasetFromPath(Dataset):
 
     @property
     def num_samples(self):
-        """Returns the number of samples in the dataset.
-
-        Returns:
-            int: number of samples in the dataset
-        """
+        """Returns the number of samples in the dataset. """
         return sum(self._file_sizes.values())
 
     def __len__(self):
@@ -214,17 +248,21 @@ class DatasetFromPath(Dataset):
         high-volume csv files, this class loads a batch of csv rows at a time. So this built-in len function needs to 
         return the batch count instead of sample count.
 
-        Returns:
-            int: Number of batches in the dataset.
+        Returns
+        -------            
+        int
+            Number of batches in the dataset.
         """
         return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
         """Iterates through the whole dataset by batch in order, without any shuffling.
 
-        Yields:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Yields
+        ------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         for i in range(len(self)):
             yield self[i]
@@ -232,12 +270,16 @@ class DatasetFromPath(Dataset):
     def __getitem__(self, idx):
         """Gets the item at the given index in the dataset.
 
-        Args:
-            idx (int): the index of the item to get
+        Parameters
+        ----------
+        idx : int
+            The index of the item to get.
 
-        Returns:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Returns
+        -------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         start = idx * self._batch_size
         end = (idx + 1) * self._batch_size
@@ -263,11 +305,15 @@ class DatasetFromPath(Dataset):
     def _get_data_from_filename(self, filename):
         """Returns the data from the given file as a pandas.DataFrame.
 
-        Args:
-            filename (str): The filename of the file to load
+        Parameters
+        ----------
+        filename : str
+            The filename of the file to load.
 
-        Returns:
-            pandas.DataFrame
+        Returns
+        -------
+        pandas.DataFrame
+            Loaded data.
         """
         if self._preloaded_data:
             return self._preloaded_data[filename]
@@ -276,13 +322,18 @@ class DatasetFromPath(Dataset):
     def _preprocess(self, df, batch_index):
         """Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
 
-        Args:
-            df (pandas.DataFrame): the dataframe to preprocess.
-            batch_index (int): the index of the current batch.
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe to preprocess.
+        batch_index : int
+            The index of the current batch.
 
-        Returns:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Returns
+        -------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         data = self._preprocess_fn(
             df,
@@ -291,11 +342,7 @@ class DatasetFromPath(Dataset):
         return {"batch_index": batch_index, "data": data}
 
     def get_preloaded_data(self):
-        """Loads all data from the files into memory and returns it as a pandas.DataFrame.
-
-        Returns:
-            pandas.DataFrame
-        """
+        """Loads all data from the files into memory and returns it as a pandas.DataFrame. """
         if self._preloaded_data is None:
             self._preloaded_data = {fn: self._load_data_fn(f"{self._data_folder}/{fn}") for fn in self._filenames}
         return pd.concat(pdf for pdf in self._preloaded_data.values())
@@ -304,16 +351,22 @@ class DatasetFromPath(Dataset):
     def get_validation_dataset(model, data_folder, load_data_fn=pd.read_csv, preload_data_into_memory=True):
         """A helper function to get a validation dataset with the provided parameters.
 
-        Args:
-            model (AutoEncoder): The autoencoder model used to get relevant params and the preprocessing func.
-            data_folder (str): The path to the folder containing the data.
-            load_data_fn (function, optional): A function for loading data from a provided file path into a 
-                pandas.DataFrame. Defaults to pd.read_csv.
-            preload_data_into_memory (bool, optional): Whether to preload all the data into memory. Defaults to True.
-                (can speed up data loading if the data can fit into memory)
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        data_folder : str
+            The path to the folder containing the data.
+        load_data_fn : function, optional
+            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
+        preload_data_into_memory : bool, optional
+            Whether to preload all the data into memory, by default True.
+            (can speed up data loading if the data can fit into memory)
 
-        Returns:
-            DatasetFromPath: Validation Dataset set up to load from the path.
+        Returns
+        -------
+        DatasetFromPath
+            Validation Dataset set up to load from the path.
         """
         dataset = DatasetFromPath(
             data_folder,
@@ -335,20 +388,23 @@ class DatasetFromDataframe(Dataset):
         preprocess_fn,
         shuffle_rows_in_batch=True,
     ):
-        """
-        A dataset class that slice a given dataframe into batches and applies preprocessing to each batch.
+        """A dataset class that slice a given dataframe into batches and applies preprocessing to each batch.
         * This class is developed to match the interface of the DatasetFromPath class. 
           As a result, unlike other common implementations of PyTorch datasets that return one row at a time and
           let the higher level DataLoader batch the data, this class returns one batch at a time when `__getitem__`
           is called. (Even if this limits the ability to fully shuffle the whole dataset.)
 
-        Args:
-            df (pandas.DataFrame): input dataframe used for the dataset
-            batch_size (int): the size of the batches to read the data in
-            preprocess_fn (function): a function to preprocess the data, which should take a pandas.DataFrame and
-                a boolean indicating whether to shuffle rows in batch or not, and return a dictionary containing
-                the preprocessed data
-            shuffle_rows_in_batch (bool, optional): whether to shuffle the rows within each batch. Defaults to True.
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Input dataframe used for the dataset.
+        batch_size : int
+            The size of the batches to read the data in.
+        preprocess_fn : function
+            A function to preprocess the data, which should take a pandas.DataFrame and a boolean indicating whether 
+            to shuffle rows in batch or not, and return a dictionary containing the preprocessed data.
+        shuffle_rows_in_batch : bool, optional
+            Whether to shuffle the rows within each batch, by default True.
         """
         self._df = df
         self._preprocess_fn = preprocess_fn
@@ -359,11 +415,7 @@ class DatasetFromDataframe(Dataset):
 
     @property
     def num_samples(self):
-        """Returns the number of samples in the dataset.
-
-        Returns:
-            int: number of samples in the dataset
-        """
+        """Returns the number of samples in the dataset. """
         return len(self._df)
 
     def __len__(self):
@@ -372,17 +424,21 @@ class DatasetFromDataframe(Dataset):
         DatasetFromPath class, this class returns a batch of data when queried. So this built-in len function needs to 
         return the batch count instead of sample count.
 
-        Returns:
-            int: Number of batches in the dataset.
+        Returns
+        -------
+        int
+            Number of batches in the dataset.
         """
         return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
         """Iterates through the whole dataset by batch in order, without any shuffling.
 
-        Yields:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Yields
+        ------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         for i in range(len(self)):
             yield self[i]
@@ -390,12 +446,16 @@ class DatasetFromDataframe(Dataset):
     def __getitem__(self, idx):
         """Gets the item (batch) at the given index in the dataset.
 
-        Args:
-            idx (int): the index of the item to get
+        Parameters
+        ----------
+        idx : int
+            The index of the item to get.
 
-        Returns:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Returns
+        -------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         start = idx * self._batch_size
         end = (idx + 1) * self._batch_size
@@ -404,16 +464,20 @@ class DatasetFromDataframe(Dataset):
         return self._preprocess(data, batch_index=idx)
 
     def _preprocess(self, df, batch_index):
-        """
-        Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
+        """Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
 
-        Args:
-            df (pandas.DataFrame): the dataframe to preprocess.
-            batch_index (int): the index of the current batch.
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The dataframe to preprocess.
+        batch_index : int
+            The index of the current batch.
 
-        Returns:
-            Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
-                current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
+        Returns
+        -------
+        Dict[str, Union[int, Dict[str, torch.Tensor]]]
+            A dictionary containing the preprocessed data for the current batch. 
+            Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
         data = self._preprocess_fn(
             df,
@@ -425,12 +489,17 @@ class DatasetFromDataframe(Dataset):
     def get_validation_dataset(model, df):
         """A helper function to get a validation dataset with the provided parameters.
 
-        Args:
-            model (AutoEncoder): The autoencoder model used to get relevant params and the preprocessing func.
-            df (pandas.DataFrame): input dataframe used for the dataset
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        df : pandas.DataFrame
+            Input dataframe used for the dataset.
 
-        Returns:
-            DatasetFromDataframe: Validation Dataset set up to load from the path.
+        Returns
+        -------
+        DatasetFromDataframe
+            Validation Dataset set up to load from the path.
         """
         dataset = DatasetFromDataframe(
             df=df,

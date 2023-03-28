@@ -49,6 +49,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import gc
+import logging
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -56,7 +57,6 @@ import numpy as np
 import pandas as pd
 import torch
 import tqdm
-import logging
 
 from .ae_module import AEModule
 from .dataframe import EncoderDataFrame
@@ -72,7 +72,7 @@ from .scalers import StandardScaler
 LOG = logging.getLogger('autoencoder')
 
 
-def _ohe(input_vector, dim, device="cpu"):    
+def _ohe(input_vector, dim, device="cpu"):
     """Does one-hot encoding of input vector.
 
     Args:
@@ -417,7 +417,7 @@ class AutoEncoder(torch.nn.Module):
 
         Raises:
             ValueError: If rank is nor provided in distributed training mode.
-        """        
+        """
         LOG.debug('Building model...')
 
         # get metadata from features
@@ -826,7 +826,7 @@ class AutoEncoder(torch.nn.Module):
 
                         if count_es >= self.patience:
                             LOG.debug('Early stopping: early stop count({}) >= patience({})'.format(
-                                    count_es, self.patience))
+                                count_es, self.patience))
                             break
 
                     else:

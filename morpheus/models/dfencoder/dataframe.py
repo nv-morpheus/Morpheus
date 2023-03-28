@@ -60,12 +60,15 @@ class EncoderDataFrame(pd.DataFrame):
     def swap(self, likelihood=.15):
         """Performs random swapping of data.
 
-        Args:
-            likelihood (float, optional): The probability of a value being randomly replaced
-                with a value from a different row. Defaults to .15.
+        Parameters
+        ----------
+        likelihood : float, optional
+            The probability of a value being randomly replaced with a value from a different row. By default .15
 
-        Returns:
-            pandas.DataFrame: A copy of the dataframe with equal size.
+        Returns
+        -------
+        pandas.DataFrame
+            A copy of the dataframe with equal size.
         """
         #select values to swap
         tot_rows = self.__len__()
