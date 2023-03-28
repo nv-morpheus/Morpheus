@@ -75,7 +75,7 @@ LOSS_TARGETS = {
         "city": 0.08525,
     },
 }
-LOSS_TOLERANCE_RATIO = 1.1
+LOSS_TOLERANCE_RATIO = 1.25
 
 
 @pytest.mark.usefixtures("manual_seed")

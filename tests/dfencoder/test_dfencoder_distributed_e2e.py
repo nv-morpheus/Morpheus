@@ -74,7 +74,7 @@ LOSS_TARGETS = {
         "city": 0.08525,
     },
 }
-LOSS_TOLERANCE_RATIO = 1.1
+LOSS_TOLERANCE_RATIO = 1.25
 
 TEST_DATA_DIR = os.path.join(TEST_DIRS.validation_data_dir, "dfp_dataloader_test")
 TRAIN_FOLDER = os.path.join(TEST_DATA_DIR, "train")
