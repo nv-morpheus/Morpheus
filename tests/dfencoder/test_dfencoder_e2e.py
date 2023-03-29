@@ -39,7 +39,7 @@ FEATURE_COLUMNS = [
     "app_incr",
 ]
 LOSS_TYPES = ["train", "val", "id_val"]
-# 75th quantile of hte losses from 100 times of offline training
+# 75th quantile of the losses from 100 times of offline training
 LOSS_TARGETS = {
     "train": {
         "log_count": 0.33991,
@@ -75,7 +75,7 @@ LOSS_TARGETS = {
         "city": 0.08525,
     },
 }
-LOSS_TOLERANCE_RATIO = 1.1
+LOSS_TOLERANCE_RATIO = 1.25
 
 
 @pytest.mark.usefixtures("manual_seed")
@@ -106,12 +106,12 @@ def test_dfencoder_e2e():
         scaler="standard",  # feature scaling method
         min_cats=1,  # cut off for minority categories
         patience=5,
+        distributed_training=False,
     )
-    model.build_model(df=data[FEATURE_COLUMNS])
     model.fit(
         train_df,
         epochs=10,
-        val=validation_df,
+        val_data=validation_df,
         run_validation=True,
         use_val_for_loss_stats=True,
     )

@@ -17,15 +17,20 @@
 import inspect
 import logging
 import os
+import threading
+import typing
 from unittest import mock
 
+import mrc
 import pytest
 
 import cudf
 
+from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import set_log_level
@@ -94,41 +99,6 @@ def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.refresh.assert_called_once()
 
 
-@mock.patch('morpheus.stages.general.monitor_stage.ops')
-@mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
-def test_build_single(mock_morph_tqdm, mock_operators, config):
-    MonitorStage.stage_count = 0
-    mock_morph_tqdm.return_value = mock_morph_tqdm
-    mock_morph_tqdm.monitor = mock.MagicMock()
-
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_stream
-    mock_input = mock.MagicMock()
-
-    m = MonitorStage(config, log_level=logging.WARNING)
-    m._build_single(mock_segment, mock_input)
-    m.on_start()
-
-    assert MonitorStage.stage_count == 1
-
-    mock_segment.make_node_full.assert_called_once()
-    mock_segment.make_edge.assert_called_once()
-
-    node_fn = mock_segment.make_node_full.call_args.args[1]
-
-    mock_observable = mock.MagicMock()
-    mock_subscriber = mock.MagicMock()
-
-    node_fn(mock_observable, mock_subscriber)
-    mock_operators.on_completed.assert_called_once()
-    sink_on_completed = mock_operators.on_completed.call_args.args[0]
-
-    # Verify we close tqdm properly on complete
-    sink_on_completed()
-    mock_morph_tqdm.stop.assert_called_once()
-
-
 def test_auto_count_fn(config):
     m = MonitorStage(config, log_level=logging.WARNING)
 
@@ -171,9 +141,9 @@ def test_progress_sink(mock_morph_tqdm, config):
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('morpheus_log_level',
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
-@mock.patch('mrc.Builder.make_node_full')
+@mock.patch('mrc.Builder.make_node_component')
 @mock.patch('mrc.Builder.make_edge')
-def test_log_level(mock_make_edge, mock_make_node_full, config, morpheus_log_level):
+def test_log_level(mock_make_edge, mock_make_node_component, config, morpheus_log_level):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
@@ -193,4 +163,63 @@ def test_log_level(mock_make_edge, mock_make_node_full, config, morpheus_log_lev
     pipe.run()
 
     expected_call_count = 1 if should_be_included else 0
-    assert mock_make_node_full.call_count == expected_call_count
+    assert mock_make_node_component.call_count == expected_call_count
+
+
+@pytest.mark.usefixtures("reset_loglevel")
+@pytest.mark.use_python
+def test_thread(config):
+    """
+    Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
+    """
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+
+    set_log_level(log_level=logging.INFO)
+
+    # Create a dummy forwarding stage that allows us to save the thread id from this progress engine
+    class DummyStage(SinglePortStage):
+
+        def __init__(self, c: Config):
+            super().__init__(c)
+
+            self.thread_id = None
+
+        @property
+        def name(self):
+            return "dummy"
+
+        def accepted_types(self):
+            return (typing.Any, )
+
+        def supports_cpp_node(self):
+            return False
+
+        def _save_thread(self, x):
+            self.thread_id = threading.current_thread().ident
+            return x
+
+        def _build_single(self, builder: mrc.Builder, input_stream):
+            stream = builder.make_node(self.unique_name, mrc.core.operators.map(self._save_thread))
+
+            builder.make_edge(input_stream[0], stream)
+
+            return stream, input_stream[1]
+
+    monitor_thread_id = None
+
+    # Create a dummy count function where we can save the thread id from the monitor stage
+    def fake_determine_count_fn(x):
+        nonlocal monitor_thread_id
+
+        monitor_thread_id = threading.current_thread().ident
+
+        return x.count
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=input_file))
+    dummy_stage = pipe.add_stage(DummyStage(config))
+    pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn))
+    pipe.run()
+
+    # Check that the thread ids are the same
+    assert dummy_stage.thread_id == monitor_thread_id

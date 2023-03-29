@@ -34,7 +34,10 @@ export MORPHEUS_ROOT=$(pwd)
 Use Morpheus to run the GNN fraud detection Pipeline with the transaction data. A pipeline has been configured in `run.py` with several command line options:
 
 ```bash
+cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
 python run.py --help
+```
+```
 Usage: run.py [OPTIONS]
 
 Options:
@@ -61,8 +64,10 @@ Options:
 To launch the configured Morpheus pipeline with the sample data that is provided at `$MORPHEUS_ROOT/models/dataset`, run the following:
 
 ```bash
-
+cd ${MORPHEUS_ROOT}/examples/gnn_fraud_detection_pipeline
 python run.py
+```
+```
 ====Building Pipeline====
 Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=None, file_type=auto, repeat=1, filter_null=False)>
   └─> morpheus.MessageMeta

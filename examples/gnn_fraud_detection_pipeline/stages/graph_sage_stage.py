@@ -17,6 +17,7 @@ import dataclasses
 import typing
 
 import mrc
+import numpy as np
 
 import cudf
 
@@ -95,7 +96,7 @@ class GraphSAGEStage(SinglePortStage):
         generator = HinSAGENodeGenerator(graph, self._batch_size, self._sample_size, head_node_type=self._target_node)
         test_gen_not_shuffled = generator.flow(node_identifiers, shuffle=False)
 
-        inductive_emb = trained_model.predict(test_gen_not_shuffled)
+        inductive_emb = np.concatenate([trained_model.predict(row[0]) for row in test_gen_not_shuffled])
         inductive_emb = cudf.DataFrame(inductive_emb, index=node_identifiers)
 
         return inductive_emb

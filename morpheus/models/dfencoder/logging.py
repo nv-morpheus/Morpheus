@@ -48,8 +48,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from collections import OrderedDict
 import math
+from collections import OrderedDict
 from time import time
 
 import numpy as np
@@ -86,7 +86,7 @@ class BasicLogger(object):
     def end_epoch(self):
         self.n_epochs += 1
         for i, ft in enumerate(self.fts):
-            mean = np.array(self.train_fts[ft][0]).mean()
+            mean = np.array(self.train_fts[ft][0]).mean() if self.train_fts[ft][0] else np.nan
             self.train_fts[ft][1].append(mean)
             #reset train_fts log
             self.train_fts[ft][0] = []
@@ -146,8 +146,9 @@ class TensorboardXLogger(BasicLogger):
 
     def __init__(self, logdir='logdir/', run=None, *args, **kwargs):
         super(TensorboardXLogger, self).__init__(*args, **kwargs)
-        from tensorboardX import SummaryWriter
         import os
+
+        from tensorboardX import SummaryWriter
 
         if run is None:
             try:
