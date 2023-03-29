@@ -28,9 +28,8 @@ import pytest
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
+from morpheus.models.dfencoder.multiprocessing import start_processes
 from utils import TEST_DIRS
-
-from .multiprocessing import start_processes
 
 # import torch
 
@@ -189,9 +188,11 @@ def _run_test(rank, world_size):
 
         # Assert the consistency of output rows and columns
         assert len(inf_res) == len(inf_pdf)
-        assert sorted(inf_res.columns) == sorted(
+
+        expected_cols = sorted(
             [ft + col_suffix for ft in FEATURE_COLUMNS
              for col_suffix in ["", "_pred", "_loss", "_z_loss"]] + ["max_abs_z", "mean_abs_z", "z_loss_scaler_type"])
+        assert sorted(inf_res.columns) == expected_cols, f"{sorted(inf_res.columns)} != {expected_cols}"
         # make sure the user baseline is modeled well enough so the minimum and median z scores
         # from inference are in range
         assert min(inf_res.mean_abs_z) < 1
