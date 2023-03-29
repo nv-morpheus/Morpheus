@@ -273,11 +273,11 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            obs.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        # Use a component so we track progress using the upstream progress engine. This will provide more accurate
+        # results
+        stream = builder.make_node_component(self.unique_name,
+                                             ops.map(self._progress_sink),
+                                             ops.on_completed(sink_on_completed))
 
         builder.make_edge(input_stream[0], stream)
 

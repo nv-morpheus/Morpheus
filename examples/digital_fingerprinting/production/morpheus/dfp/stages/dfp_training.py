@@ -93,7 +93,7 @@ class DFPTraining(SinglePortStage):
             run_validation = True
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(train_df, epochs=self._epochs, val=validation_df, run_validation=run_validation)
+        model.fit(train_df, epochs=self._epochs, val_data=validation_df, run_validation=run_validation)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
         output_message = MultiAEMessage(meta=message.meta,
