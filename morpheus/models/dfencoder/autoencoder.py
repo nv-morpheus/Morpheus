@@ -385,6 +385,29 @@ class AutoEncoder(torch.nn.Module):
             self.binary_fts[ft] = feature
 
     def _init_features(self, df=None):
+        """Initializea the features of different types.
+        `df` is required if any of `preset_cats`, `preset_numerical_scaler_params`, and `binary_feature_list` are not provided 
+        at model initialization.
+        
+        Parameters
+        ----------
+        df : pandas.DataFrame, optional
+            dataframe used to compute and extract feature information, by default None
+            
+        Raises
+        ------
+        ValueError
+            if any of `preset_cats`, `preset_numerical_scaler_params`, and `binary_feature_list` are not provided at model initialization
+        """
+        if df is None:
+            # all feature information needs to be fed into the model at initialization in order to build the
+            # model without `df` as an input
+            if self.preset_cats is None or self.bin_names is None or self.preset_numerical_scaler_params is None:
+                raise ValueError(
+                    'Fail to intitialize the features without an input dataframe. '
+                    'All of `preset_cats`, `preset_numerical_scaler_params`, and `binary_feature_list` need to be provided during model '
+                    'initialization for this function to work without an input `df`.')
+
         if self.preset_cats is not None:
             LOG.debug('Using the preset categories `self.preset_cats` to initialize the categories features...')
             self.categorical_fts = self.preset_cats
@@ -774,18 +797,10 @@ class AutoEncoder(torch.nn.Module):
                     "`train_data` needs to be a pandas DataFrame, a DataLoader, or a Dataset in distributed training mode."
                     f" `train_data` is currently of type: {type(train_data)}")
 
-            if isinstance(train_data, pd.DataFrame):
-                train_data = DatasetFromDataframe(
-                    df=train_data,
-                    batch_size=self.batch_size,
-                    preprocess_fn=self.preprocess_train_data,
-                    shuffle_rows_in_batch=True,
-                )
-
             self._fit_distributed(
-                train_dataloader=train_data,
+                train_data=train_data,
                 epochs=epochs,
-                val_dataset=val_data,
+                val_data=val_data,
                 run_validation=run_validation,
                 use_val_for_loss_stats=use_val_for_loss_stats,
                 rank=rank,
@@ -937,13 +952,13 @@ class AutoEncoder(torch.nn.Module):
 
     def _fit_distributed(
         self,
-        train_dataloader,
+        train_data,
         rank,
         world_size,
         epochs=1,
-        val_dataset=None,
+        val_data=None,
         run_validation=False,
-        use_val_for_loss_stats=True,
+        use_val_for_loss_stats=False,
     ):
         """Fit the model in the distributed fashion with early stopping based on validation loss.
         If run_validation is True, the val_dataset will be used for validation during training and early stopping 
@@ -951,22 +966,22 @@ class AutoEncoder(torch.nn.Module):
 
         Parameters
         ----------
-        train_dataloader : torch.utils.data.DataLoader
-            dataloader object of training data
+        train_data : pandas.DataFrame or torch.utils.data.Dataset or torch.utils.data.DataLoader 
+            data object of training data
         rank : int
             the rank of the current process
         world_size : int
             the total number of processes
         epochs : int, optional
             the number of epochs to train for, by default 1
-        val_dataset : torch.utils.data.Dataset or torch.utils.data.DataLoader, optional
-            the validation dataset (with __iter__() that yields a batch at a time), by default None
+        val_data : torch.utils.data.Dataset or torch.utils.data.DataLoader, optional
+            the validation data object (with __iter__() that yields a batch at a time), by default None
         run_validation : bool, optional
             whether to perform validation during training, by default False
         use_val_for_loss_stats : bool, optional
             whether to populate loss stats in the main process (rank 0) for z-score calculation using the validation set.
             If set to False, loss stats would be populated using the train_dataloader, which can be slow due to data size.
-            By default True as using the validation set to populate loss stats is strongly recommended (for both efficiency 
+            By default False, but using the validation set to populate loss stats is strongly recommended (for both efficiency 
             and model efficacy).
 
         Raises
@@ -974,18 +989,29 @@ class AutoEncoder(torch.nn.Module):
         ValueError
             If run_validation or use_val_for_loss_stats is True but val is not provided.
         """
-        if run_validation and val_dataset is None:
+        if run_validation and val_data is None:
             raise ValueError("`run_validation` is set to True but the validation set (val_dataset) is not provided.")
 
-        if use_val_for_loss_stats and val_dataset is None:
+        if use_val_for_loss_stats and val_data is None:
             raise ValueError("Validation set is required if either run_validation or \
                 use_val_for_loss_stats is set to True.")
 
+        # If train_data is in the format of a pandas df, wrap it by a dataset
+        train_df = None
+        if isinstance(train_data, pd.DataFrame):
+            train_df = train_data  # keep the dataframe for model-building
+            train_data = DatasetFromDataframe(
+                df=train_data,
+                batch_size=self.batch_size,
+                preprocess_fn=self.preprocess_train_data,
+                shuffle_rows_in_batch=True,
+            )
+
         if self.optim is None:
-            self._build_model(rank=rank)
+            self._build_model(df=train_df, rank=rank)
 
         is_main_process = rank == 0
-        should_run_validation = (run_validation and val_dataset is not None)
+        should_run_validation = (run_validation and val_data is not None)
         if self.patience and not should_run_validation:
             LOG.warning(
                 f"Not going to perform early-stopping. self.patience(={self.patience}) is provided for early-stopping"
@@ -994,7 +1020,7 @@ class AutoEncoder(torch.nn.Module):
 
         if is_main_process and should_run_validation:
             LOG.debug('Validating during training. Computing baseline performance...')
-            baseline = self._compute_baseline_performance_from_dataset(val_dataset)
+            baseline = self._compute_baseline_performance_from_dataset(val_data)
 
             if isinstance(self.logger, BasicLogger):
                 self.logger.baseline_loss = baseline
@@ -1009,11 +1035,11 @@ class AutoEncoder(torch.nn.Module):
             LOG.debug(f'Rank{rank} training epoch {epoch + 1}...')
 
             # if we are using DistributedSampler, we have to tell it which epoch this is
-            train_dataloader.sampler.set_epoch(epoch)
+            train_data.sampler.set_epoch(epoch)
 
             train_loss_sum = 0
             train_loss_count = 0
-            for data_d in train_dataloader:
+            for data_d in train_data:
                 loss = self._fit_batch(**data_d['data'])
 
                 train_loss_count += 1
@@ -1024,7 +1050,7 @@ class AutoEncoder(torch.nn.Module):
 
             if is_main_process and should_run_validation:
                 # run validation
-                curr_val_loss = self._validate_dataset(val_dataset, rank)
+                curr_val_loss = self._validate_dataset(val_data, rank)
                 LOG.debug(f'Rank{rank} Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
 
                 if self.patience:  # early stopping
@@ -1041,7 +1067,7 @@ class AutoEncoder(torch.nn.Module):
 
                     last_val_loss = curr_val_loss
 
-                self.logger.end_epoch()
+            self.logger.end_epoch()
 
             # sync early stopping info so the early stopping decision can be passed from the main process to other processes
             early_stpping_state = [None for _ in range(world_size)
@@ -1053,7 +1079,21 @@ class AutoEncoder(torch.nn.Module):
                 break
 
         if is_main_process:
-            dataset_for_loss_stats = val_dataset if use_val_for_loss_stats else train_dataloader
+            # Run loss collection only on the main process (currently do not support distributed loss collection)
+            if use_val_for_loss_stats:
+                dataset_for_loss_stats = val_data
+
+            else:
+                # use training set for loss stats collection
+                if isinstance(train_data, torch.utils.data.DataLoader):
+                    # grab only the dataset to avoid distriburted sampling
+                    dataset_for_loss_stats = train_data.dataset
+                else:
+                    # train_data is a Dataset
+                    dataset_for_loss_stats = train_data
+
+                # converts to validation mode to get the extra target tensors from the preprocessing function
+                dataset_for_loss_stats.convert_to_validation(self)
             self._populate_loss_stats_from_dataset(dataset_for_loss_stats)
 
     def _fit_batch(self, input_swapped, num_target, bin_target, cat_target, **kwargs):

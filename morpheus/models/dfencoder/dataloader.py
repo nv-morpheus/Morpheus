@@ -152,12 +152,7 @@ class DFEncoderDataLoader(DataLoader):
         DFEncoderDataLoader
             The training DataLoader with DistributedSampler for distributed training.
         """
-        dataset = DatasetFromDataframe(
-            df=df,
-            batch_size=model.batch_size,
-            preprocess_fn=model.preprocess_train_data,
-            shuffle_rows_in_batch=True,
-        )
+        dataset = DatasetFromDataframe.get_train_dataset(model, df)
         dataloader = DFEncoderDataLoader.get_distributed_training_dataloader_from_dataset(
             dataset=dataset,
             rank=rank,
@@ -180,6 +175,7 @@ class DatasetFromPath(Dataset):
         preprocess_fn,
         load_data_fn=pd.read_csv,
         shuffle_rows_in_batch=True,
+        shuffle_batch_indices=False,
         preload_data_into_memory=False,
     ):
         """Initialize a `DatasetFromPath` object.
@@ -197,6 +193,9 @@ class DatasetFromPath(Dataset):
             A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
         shuffle_rows_in_batch : bool, optional
             Whether to shuffle the rows within each batch, by default True.
+        shuffle_batch_indices : bool, optional
+            Whether to shuffle the order when iterating through the dataset (affects the __iter__ functionality)
+            Should not matter when the dataset is fed into a dataloader and not used directly in the training loop.
         preload_data_into_memory : bool, optional
             Whether to preload all the data into memory, by default False.
             (Can speed up data loading if the data can fit into memory)
@@ -217,6 +216,7 @@ class DatasetFromPath(Dataset):
         self._count = sum(v for v in self._file_sizes.values())
         self._batch_size = batch_size
         self._shuffle_rows_in_batch = shuffle_rows_in_batch
+        self._shuffle_batch_indices = shuffle_batch_indices
 
     def _get_file_len(self, fn, file_include_header_line=True):
         """Private method for getting the number of lines in a file.
@@ -256,7 +256,8 @@ class DatasetFromPath(Dataset):
         return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
-        """Iterates through the whole dataset by batch in order, without any shuffling.
+        """Iterates through the whole dataset and yeild one batch at a time. The iteration order depends on 
+        self.shuffle_batch_indices. Iterate in order if False, random order otherwise.
 
         Yields
         ------
@@ -264,7 +265,11 @@ class DatasetFromPath(Dataset):
             A dictionary containing the preprocessed data for the current batch. 
             Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
-        for i in range(len(self)):
+        indices = range(len(self))
+        if self._shuffle_batch_indices:
+            indices = np.arange(len(self))
+            np.random.shuffle(indices)
+        for i in indices:
             yield self[i]
 
     def __getitem__(self, idx):
@@ -348,6 +353,37 @@ class DatasetFromPath(Dataset):
         return pd.concat(pdf for pdf in self._preloaded_data.values())
 
     @staticmethod
+    def get_train_dataset(model, data_folder, load_data_fn=pd.read_csv, preload_data_into_memory=False):
+        """A helper function to get a train dataset with the provided parameters.
+
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        data_folder : str
+            The path to the folder containing the data.
+        load_data_fn : function, optional
+            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
+        preload_data_into_memory : bool, optional
+            Whether to preload all the data into memory, by default False.
+
+        Returns
+        -------
+        DatasetFromPath
+            Validation Dataset set up to load from the path.
+        """
+        dataset = DatasetFromPath(
+            data_folder,
+            model.batch_size,
+            model.preprocess_train_data,
+            load_data_fn=load_data_fn,
+            shuffle_rows_in_batch=True,
+            shuffle_batch_indices=True,
+            preload_data_into_memory=preload_data_into_memory,
+        )
+        return dataset
+
+    @staticmethod
     def get_validation_dataset(model, data_folder, load_data_fn=pd.read_csv, preload_data_into_memory=True):
         """A helper function to get a validation dataset with the provided parameters.
 
@@ -378,6 +414,19 @@ class DatasetFromPath(Dataset):
         )
         return dataset
 
+    def convert_to_validation(self, model):
+        """Converts the dataset to validation mode by resetting instance variables.
+
+        Parameters
+        ----------
+         model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        """
+        self._preprocess_fn = model.preprocess_validation_data
+        self._batch_size = model.eval_batch_size
+        self._shuffle_rows_in_batch = False
+        self._shuffle_batch_indices = False
+
 
 class DatasetFromDataframe(Dataset):
 
@@ -387,6 +436,7 @@ class DatasetFromDataframe(Dataset):
         batch_size,
         preprocess_fn,
         shuffle_rows_in_batch=True,
+        shuffle_batch_indices=False,
     ):
         """A dataset class that slice a given dataframe into batches and applies preprocessing to each batch.
         * This class is developed to match the interface of the DatasetFromPath class. 
@@ -405,6 +455,9 @@ class DatasetFromDataframe(Dataset):
             to shuffle rows in batch or not, and return a dictionary containing the preprocessed data.
         shuffle_rows_in_batch : bool, optional
             Whether to shuffle the rows within each batch, by default True.
+        shuffle_batch_indices : bool, optional
+            Whether to shuffle the order when iterating through the dataset (affects the __iter__ functionality)
+            Should not matter when the dataset is fed into a dataloader and not used directly in the training loop.
         """
         self._df = df
         self._preprocess_fn = preprocess_fn
@@ -412,6 +465,7 @@ class DatasetFromDataframe(Dataset):
         self._count = len(self._df)
         self._batch_size = batch_size
         self._shuffle_rows_in_batch = shuffle_rows_in_batch
+        self._shuffle_batch_indices = shuffle_batch_indices
 
     @property
     def num_samples(self):
@@ -432,7 +486,8 @@ class DatasetFromDataframe(Dataset):
         return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
-        """Iterates through the whole dataset by batch in order, without any shuffling.
+        """Iterates through the whole dataset and yeild one batch at a time. The iteration order depends on 
+        self.shuffle_batch_indices. Iterate in order if False, random order otherwise.
 
         Yields
         ------
@@ -440,7 +495,12 @@ class DatasetFromDataframe(Dataset):
             A dictionary containing the preprocessed data for the current batch. 
             Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
         """
-        for i in range(len(self)):
+        indices = range(len(self))
+        if self._shuffle_batch_indices:
+            indices = np.arange(len(self))
+            np.random.shuffle(indices)
+
+        for i in indices:
             yield self[i]
 
     def __getitem__(self, idx):
@@ -486,6 +546,31 @@ class DatasetFromDataframe(Dataset):
         return {"batch_index": batch_index, "data": data}
 
     @staticmethod
+    def get_train_dataset(model, df):
+        """A helper function to get a train dataset with the provided parameters.
+
+        Parameters
+        ----------
+        model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        df : pandas.DataFrame
+            Input dataframe used for the dataset.
+
+        Returns
+        -------
+        DatasetFromDataframe
+            Training Dataset set up to load from the dataframe.
+        """
+        dataset = DatasetFromDataframe(
+            df=df,
+            batch_size=model.batch_size,
+            preprocess_fn=model.preprocess_train_data,
+            shuffle_rows_in_batch=True,
+            shuffle_batch_indices=True,
+        )
+        return dataset
+
+    @staticmethod
     def get_validation_dataset(model, df):
         """A helper function to get a validation dataset with the provided parameters.
 
@@ -499,12 +584,26 @@ class DatasetFromDataframe(Dataset):
         Returns
         -------
         DatasetFromDataframe
-            Validation Dataset set up to load from the path.
+            Validation Dataset set up to load from the dataframe.
         """
         dataset = DatasetFromDataframe(
             df=df,
             batch_size=model.eval_batch_size,
             preprocess_fn=model.preprocess_validation_data,
             shuffle_rows_in_batch=False,
+            shuffle_batch_indices=False,
         )
         return dataset
+
+    def convert_to_validation(self, model):
+        """Converts the dataset to validation mode by resetting instance variables.
+
+        Parameters
+        ----------
+         model : AutoEncoder
+            The autoencoder model used to get relevant params and the preprocessing func.
+        """
+        self._preprocess_fn = model.preprocess_validation_data
+        self._batch_size = model.eval_batch_size
+        self._shuffle_rows_in_batch = False
+        self._shuffle_batch_indices = False
