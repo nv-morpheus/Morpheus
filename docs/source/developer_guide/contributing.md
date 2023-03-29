@@ -232,6 +232,11 @@ git submodule update --init --recursive
    ```bash
    pytest --run_slow
    ```
+1. Optional: Install cuML
+   - Many users may wish to install cuML. Due to the complex dependency structure and versioning requirements, we need to specify exact versions of each package. The command to accomplish this is:
+      ```bash
+      mamba install -c rapidsai -c nvidia -c conda-forge "cuda-python<=11.7.0" "libcusolver<=11.4.1.48" "libcusparse<12" cuml=22.10
+      ```
 1. Run Morpheus
    ```bash
    morpheus run pipeline-nlp ...
