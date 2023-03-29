@@ -99,7 +99,7 @@ def test_abp_pcap_preprocessing(config):
     stage = AbpPcapPreprocessingStage(config)
     assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
 
-    inf1 = stage.pre_process_batch(mm1, config.feature_length, stage.features)
+    inf1 = stage.pre_process_batch(mm1, config.feature_length, stage.features, stage.req_cols)
     check_inf_message(inf1,
                       expected_meta=meta,
                       expected_mess_offset=0,
@@ -111,7 +111,7 @@ def test_abp_pcap_preprocessing(config):
                       expected_rollup_time='2021-04-07 15:55',
                       expected_input__0=expected_input__0[0:10])
 
-    inf2 = stage.pre_process_batch(mm2, config.feature_length, stage.features)
+    inf2 = stage.pre_process_batch(mm2, config.feature_length, stage.features, stage.req_cols)
     check_inf_message(inf2,
                       expected_meta=meta,
                       expected_mess_offset=10,

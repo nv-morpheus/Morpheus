@@ -23,6 +23,7 @@ import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
@@ -67,6 +68,12 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             self.features
         ), f"Number of features in preprocessing {len(self.features)}, does not match configuration {self._fea_length}"
 
+        # columns required to be added to input message meta
+        self.req_cols = ["flow_id", "rollup_time"]
+
+        for req_col in self.req_cols:
+            self._needed_columns[req_col] = TypeId.STRING
+
     @property
     def name(self) -> str:
         return "preprocess-anomaly"
@@ -75,7 +82,8 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         return False
 
     @staticmethod
-    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
+    def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str],
+                          req_cols: typing.List[str]) -> MultiInferenceFILMessage:
         # Converts the int flags field into a binary string
         flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
 
@@ -166,9 +174,6 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         data = cp.asarray(merged_df[fea_cols].to_cupy())
         count = data.shape[0]
 
-        # columns required to be added to input message meta
-        req_cols = ["flow_id", "rollup_time"]
-
         for col in req_cols:
             x.set_meta(col, merged_df[col])
 
@@ -186,11 +191,10 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         return infer_message
 
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-        return partial(
-            AbpPcapPreprocessingStage.pre_process_batch,
-            fea_len=self._fea_length,
-            fea_cols=self.features,
-        )
+        return partial(AbpPcapPreprocessingStage.pre_process_batch,
+                       fea_len=self._fea_length,
+                       fea_cols=self.features,
+                       req_cols=self.req_cols)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
         return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)
