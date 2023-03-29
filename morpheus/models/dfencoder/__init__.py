@@ -48,7 +48,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# This package uses torch. We need to guarantee that cudf is loaded first so do that here
+# isort: off
+import cudf  # noqa: F401
+# isort: on
+
+from .ae_module import *
 from .autoencoder import *
 from .dataframe import *
+from .dataloader import *
+from .distributed_ae import *
 from .logging import *
 from .scalers import *
