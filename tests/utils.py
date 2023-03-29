@@ -26,6 +26,8 @@ import pandas as pd
 import cudf
 
 import morpheus
+from morpheus.cli.plugin_manager import PluginManager
+from morpheus.cli.utils import PluginSpec
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.inference import inference_stage
 
@@ -36,6 +38,7 @@ class TestDirectories(object):
         self.tests_dir = os.path.dirname(cur_file)
         self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
         self.data_dir = morpheus.DATA_DIR
+        self.examples_dir = os.path.join(self.morpheus_root, 'examples')
         self.models_dir = os.path.join(self.morpheus_root, 'models')
         self.datasets_dir = os.path.join(self.models_dir, 'datasets')
         self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')
@@ -218,3 +221,16 @@ def assert_results(results: dict) -> dict:
     assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
     assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
     return results
+
+
+def get_plugin_stage_class(spec: PluginSpec,
+                           command_name: str,
+                           mode: morpheus.config.PipelineModes = None) -> morpheus.pipeline.StreamWrapper:
+    """
+    Fetch a stage class via the CLI's plugin manager. Useful for testing stages included as part of the examples.
+    """
+    pm = PluginManager.get()
+    pm.add_plugin_option(spec)
+    reg = pm.get_registered_stages()
+    si = reg.get_stage_info(command_name, mode=mode)
+    return si.get_stage_class()
