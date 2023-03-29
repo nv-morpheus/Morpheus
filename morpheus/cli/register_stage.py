@@ -351,11 +351,15 @@ def register_stage(command_name: str = None,
 
                 return command
 
+            def get_stage_class():
+                return stage_class
+
             # Create the StageInfo
             stage_info = StageInfo(name=command_name,
                                    modes=modes,
                                    qualified_name=get_full_qualname(stage_class),
-                                   build_command=build_command)
+                                   build_command=build_command,
+                                   get_stage_class=get_stage_class)
 
             # Save the stage information to be retrieved later
             stage_class._morpheus_registered_stage = stage_info

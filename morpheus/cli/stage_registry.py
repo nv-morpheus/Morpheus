@@ -19,6 +19,7 @@ import typing
 
 import click
 
+import morpheus.pipeline as _pipeline
 from morpheus.config import PipelineModes
 
 logger = logging.getLogger(__file__)
@@ -30,6 +31,8 @@ class StageInfo:
     modes: typing.List[PipelineModes]
     qualified_name: str  # The fully qualified name of the stage. Only used for comparison
     build_command: typing.Callable[[], click.Command] = dataclasses.field(compare=False, repr=False)
+    get_stage_class: typing.Callable[[], typing.Type[_pipeline.StreamWrapper]] = dataclasses.field(compare=False,
+                                                                                                   repr=False)
 
     def __post_init__(self):
         # If modes is None or empty, then convert it to all modes
