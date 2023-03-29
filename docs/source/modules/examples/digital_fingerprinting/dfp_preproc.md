@@ -58,8 +58,9 @@ process into a single module.
 | `fallback_username`  | string  | Fallback user to use if no model is found for a user. | "generic"              | `-`           |
 | `include_generic`    | boolean | Include generic models in the results.                | "true"                 | `-`           |
 | `include_individual` | boolean | Include individual models in the results.             | "true"                 | `-`           |
-| `only_users`         | list    | List of users to include in the results.
-
+| `only_users`         | list    | List of users to include in the results.              | ["user_a", "user_b"]   | `-`           |
+| `skip_users`         | list    | List of users to exclude from the results.            | ["user_c"]             | `-`           |
+| `userid_column_name` | string  | Column name for the user ID.                          | "user_id"              | `-`           |
 
 ### Example JSON Configuration
 
