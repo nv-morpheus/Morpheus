@@ -15,16 +15,21 @@
  * limitations under the License.
  */
 
+#include "../test_morpheus.hpp"  // IWYU pragma: associated
+#include "mrc/channel/status.hpp"
+#include "mrc/modules/properties/persistent.hpp"
+#include "mrc/options/engine_groups.hpp"
+#include "mrc/runnable/types.hpp"
+#include "mrc/segment/object.hpp"
 #include "test_modules.hpp"
 
 #include "morpheus/messages/control.hpp"
-#include "morpheus/messages/meta.hpp"
 #include "morpheus/modules/data_loader_module.hpp"
 
+#include <glog/logging.h>
+#include <gtest/gtest.h>
 #include <mrc/core/executor.hpp>
 #include <mrc/engine/pipeline/ipipeline.hpp>
-#include <mrc/modules/sample_modules.hpp>
-#include <mrc/modules/segment_modules.hpp>
 #include <mrc/node/rx_sink.hpp>
 #include <mrc/node/rx_source.hpp>
 #include <mrc/options/options.hpp>
@@ -32,8 +37,14 @@
 #include <mrc/pipeline/pipeline.hpp>
 #include <mrc/segment/builder.hpp>
 #include <nlohmann/json.hpp>
+#include <rxcpp/rx.hpp>
 
+#include <cstddef>
 #include <fstream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 using namespace morpheus;
 using namespace morpheus::test;

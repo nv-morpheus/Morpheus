@@ -17,14 +17,28 @@
 
 #include "morpheus/modules/data_loader_module.hpp"
 
-#include "morpheus/io/data_loader_registry.hpp"
+#include "mrc/modules/properties/persistent.hpp"
+#include "mrc/node/rx_node.hpp"
+#include "rxcpp/operators/rx-map.hpp"
+#include "rxcpp/sources/rx-iterate.hpp"
 
+#include "morpheus/io/data_loader_registry.hpp"
+#include "morpheus/messages/control.hpp"
+
+#include <glog/logging.h>
 #include <mrc/modules/segment_modules.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/utils/type_utils.hpp>
 #include <nlohmann/json.hpp>
+#include <rxcpp/rx.hpp>
 
+#include <map>
+#include <memory>
+#include <ostream>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 using namespace mrc::modules;
 using nlohmann::json;

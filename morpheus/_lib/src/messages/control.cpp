@@ -18,8 +18,10 @@
 #include "morpheus/messages/control.hpp"
 
 #include <glog/logging.h>
-#include <pybind11/pybind11.h>
 #include <pymrc/utils.hpp>
+
+#include <ostream>
+#include <stdexcept>
 
 namespace py = pybind11;
 

@@ -17,6 +17,11 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"

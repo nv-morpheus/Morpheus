@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
-#include "nlohmann/json.hpp"
+#include "../test_morpheus.hpp"  // IWYU pragma: associated
 #include "test_messages.hpp"
 
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
+#include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
+
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 using namespace morpheus;
 using namespace morpheus::test;

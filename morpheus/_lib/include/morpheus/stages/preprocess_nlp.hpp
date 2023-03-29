@@ -30,6 +30,7 @@
 #include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <cstdint>  // for uint32_t
 #include <map>

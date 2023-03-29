@@ -21,6 +21,8 @@
 #include <nlohmann/json.hpp>
 
 #include <memory>
+#include <ostream>
+#include <stdexcept>
 
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}

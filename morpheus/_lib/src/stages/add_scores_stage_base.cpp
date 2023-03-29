@@ -17,7 +17,15 @@
 
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include "morpheus/objects/dtype.hpp"  // for DType
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
+#include "rxcpp/operators/rx-map.hpp"
+
+#include "morpheus/objects/dtype.hpp"          // for DType
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex

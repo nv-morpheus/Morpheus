@@ -15,17 +15,25 @@
  * limitations under the License.
  */
 
+#include "../test_morpheus.hpp"  // IWYU pragma: associated
 #include "test_io.hpp"
 
 #include "morpheus/io/data_loader.hpp"
-#include "morpheus/io/loaders/all.hpp"
+#include "morpheus/io/loaders/file.hpp"
+#include "morpheus/io/loaders/payload.hpp"
 #include "morpheus/messages/control.hpp"
 
+#include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
+#include <pybind11/cast.h>
+#include <unistd.h>
 
+#include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace py = pybind11;
 using namespace morpheus;

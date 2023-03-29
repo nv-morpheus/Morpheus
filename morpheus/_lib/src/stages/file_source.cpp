@@ -17,6 +17,13 @@
 
 #include "morpheus/stages/file_source.hpp"
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
+
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"

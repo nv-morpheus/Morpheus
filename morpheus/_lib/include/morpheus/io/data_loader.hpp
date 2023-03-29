@@ -20,10 +20,11 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
-#include <glog/logging.h>
+#include <nlohmann/json.hpp>
 
 #include <map>
 #include <memory>
+#include <string>
 
 namespace morpheus {
 

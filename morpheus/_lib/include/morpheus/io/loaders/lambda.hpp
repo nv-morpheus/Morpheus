@@ -18,8 +18,12 @@
 #pragma once
 
 #include "morpheus/io/data_loader.hpp"
+#include "morpheus/messages/control.hpp"
 
 #include <nlohmann/json.hpp>
+
+#include <functional>
+#include <memory>
 
 namespace morpheus {
 #pragma GCC visibility push(default)

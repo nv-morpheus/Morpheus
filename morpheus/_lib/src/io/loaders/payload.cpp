@@ -21,6 +21,8 @@
 #include <nlohmann/json.hpp>
 
 #include <memory>
+#include <ostream>
+#include <utility>
 
 namespace morpheus {
 PayloadDataLoader::PayloadDataLoader(nlohmann::json config) : Loader(config) {}

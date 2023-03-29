@@ -21,5 +21,5 @@
 
 namespace morpheus::test {
 
-using TestDataLoaderModule = TestWithPythonInterpreter;
+using TestDataLoaderModule = TestWithPythonInterpreter;  // NOLINT
 }  // namespace morpheus::test

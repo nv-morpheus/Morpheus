@@ -21,7 +21,11 @@
 
 #include <mrc/modules/module_registry_util.hpp>
 #include <mrc/version.hpp>
+#include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+
+#include <sstream>
+#include <vector>
 
 namespace morpheus {
 namespace py = pybind11;

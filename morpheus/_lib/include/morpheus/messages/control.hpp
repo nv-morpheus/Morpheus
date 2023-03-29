@@ -18,12 +18,15 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 
+#include <map>
 #include <memory>
+#include <string>
 
 namespace morpheus {
 class MessageMeta;
+
 #pragma GCC visibility push(default)
 enum class ControlMessageType
 {

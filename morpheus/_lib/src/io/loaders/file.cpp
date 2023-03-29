@@ -22,11 +22,20 @@
 
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
+#include <pybind11/cast.h>
+#include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pymrc/utilities/object_cache.hpp>
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace py = pybind11;
 

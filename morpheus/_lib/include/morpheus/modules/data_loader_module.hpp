@@ -23,6 +23,8 @@
 #include <mrc/modules/segment_modules.hpp>
 #include <nlohmann/json.hpp>
 
+#include <string>
+
 namespace morpheus {
 #pragma GCC visibility push(default)
 class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule

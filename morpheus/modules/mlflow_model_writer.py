@@ -141,7 +141,7 @@ def mlflow_model_writer(builder: mrc.Builder):
                 "access_control_list": [{
                     "group_name": group, "permission_level": permission
                 } for group,
-                    permission in databricks_permissions.items()]
+                                        permission in databricks_permissions.items()]
             }
 
             requests.patch(url=patch_registered_model_permissions_url,

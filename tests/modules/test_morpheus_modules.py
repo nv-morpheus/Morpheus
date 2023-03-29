@@ -68,6 +68,7 @@ def test_get_module():
 
 
 def test_get_module_with_bad_config_no_loaders():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -107,6 +108,7 @@ def test_get_module_with_bad_config_no_loaders():
 
 
 def test_get_module_with_bad_loader_type():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -141,6 +143,7 @@ def test_get_module_with_bad_loader_type():
 
 
 def test_get_module_with_bad_control_message():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():

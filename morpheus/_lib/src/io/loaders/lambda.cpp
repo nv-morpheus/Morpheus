@@ -21,13 +21,15 @@
 #include <nlohmann/json.hpp>
 
 #include <memory>
+#include <ostream>
+#include <utility>
 
 namespace morpheus {
 LambdaLoader::LambdaLoader(
     std::function<std::shared_ptr<ControlMessage>(std::shared_ptr<ControlMessage>, nlohmann::json)> lambda_load,
     nlohmann::json config) :
   Loader(config),
-  m_lambda_load(lambda_load)
+  m_lambda_load(std::move(lambda_load))
 {}
 
 std::shared_ptr<ControlMessage> LambdaLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)

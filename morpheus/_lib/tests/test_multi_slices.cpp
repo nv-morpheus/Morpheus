@@ -28,7 +28,6 @@
 #include <gtest/gtest.h>
 #include <pybind11/embed.h>
 
-#include <cstdlib>
 #include <filesystem>
 #include <memory>  // for unique_ptr
 #include <random>
