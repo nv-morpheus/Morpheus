@@ -37,7 +37,6 @@ FEATURE_COLUMNS = [
     "app_name",
     "browser_type",
     "os",
-    "has_error",
     "country",
     "city",
     "log_count",
