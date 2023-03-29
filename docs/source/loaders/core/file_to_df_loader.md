@@ -39,11 +39,11 @@ Using below configuration while loading DataLoader module, specifies that the Da
 
 The parameters that can be configured for this specific loader at load task level:
 
-| Parameter          | Type       | Description                      | Example Value     | Default Value  |
+| Parameter          | Type       | Description                      | Example Value            | Default Value  |
 | ------------------ | ---------- | -------------------------------- | ------------------------ | -------------- |
-| `batcher_config  ` | dictionary | Options for batching             | See below         		| `[Required]`   |
+| `batcher_config  ` | dictionary | Options for batching             | See below                | `[Required]`   |
 | `files`            | array      | List of files to load            | ["/path/to/input/files"] | `[]`           |
-| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"      		| `[Required]`   |
+| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"             | `[Required]`   |
 
 
 ### `batcher_config`

@@ -39,7 +39,7 @@ The parameters that can be configured for this specific loader at load task leve
 | Parameter          | Type       | Description                      | Example Value                     | Default Value  |
 | ------------------ | ---------- | -------------------------------- | --------------------------------- | -------------- |
 | `files`            | array      | List of files to load            | ["/your/input/filepath"]      	 | `[]`           |
-| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"                      | `[Required]`            |
+| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"                      | `[Required]`   |
 
 
 
