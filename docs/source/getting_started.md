@@ -133,10 +133,10 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v23.03.00a` use the following:
+The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v23.03.00` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v23.03.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v23.03.00-runtime" ./docker/run_container_release.sh
 ```
 
 ## Launching Triton Server
