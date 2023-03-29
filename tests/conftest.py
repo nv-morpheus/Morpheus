@@ -374,6 +374,29 @@ def reload_modules(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
+def reset_plugin_manger():
+    from morpheus.cli.plugin_manager import PluginManager
+    PluginManager._singleton = None
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_global_stage_registry():
+    from morpheus.cli.stage_registry import GlobalStageRegistry
+    from morpheus.cli.stage_registry import StageRegistry
+    GlobalStageRegistry._global_registry = StageRegistry()
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
+    """
+    Reset both the plugin manager and the global stage gregistry
+    """
+    yield
+
+
+@pytest.fixture(scope="function")
 def manual_seed():
     """
     Seeds the random number generators for the stdlib, PyTorch and NumPy.
