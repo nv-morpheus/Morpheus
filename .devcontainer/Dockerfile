@@ -16,5 +16,3 @@
 FROM rapidsai/devcontainers:23.04-cuda11.8-mambaforge-ubuntu22.04 AS base
 
 ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"
-
-RUN rm -rf /home/coder/.gnupg

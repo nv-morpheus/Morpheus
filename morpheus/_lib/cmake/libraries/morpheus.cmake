@@ -122,7 +122,7 @@ target_include_directories(morpheus
 # binary. This is necessary to allow ld to find the real libcuda.so instead of the stub. Eventually, this can be removed
 # once upgraded to cuda-python 12.1. Ideally, cuda-python would just load libcuda.so.1 which would take precedence over
 # libcuda.so. Relavant issue: https://github.com/NVIDIA/cuda-python/issues/17
-# target_link_options(morpheus PUBLIC "-Wl,--enable-new-dtags")
+target_link_options(morpheus PUBLIC "-Wl,--enable-new-dtags")
 
 set_target_properties(morpheus
   PROPERTIES
