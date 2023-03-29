@@ -21,13 +21,13 @@ This module writes messages to a file.
 
 ### Configurable Parameters
 
-| Parameter           | Type      | Description                              | Example Value   | Default Value    |
-|---------------------|-----------|------------------------------------------|-----------------|------------------|
-| `filename`          | string    | Path to the output file                  | `output.csv`    | None             |
-| `file_type`         | FileTypes | Type of file to write                    | `FileTypes.CSV` | `FileTypes.Auto` |
-| `flush`             | bool      | If true, flush the file after each write | `false`         | false            |
-| `include_index_col` | bool      | If true, include the index column        | `false`         | true             |
-| `overwrite`         | bool      | If true, overwrite the file if it exists | `true`          | false            |
+| Parameter           | Type      | Description                              | Example Value | Default Value    |
+|---------------------|-----------|------------------------------------------|---------------|------------------|
+| `filename`          | string    | Path to the output file                  | "output.csv"  | `None`           |
+| `file_type`         | string    | Type of file to write                    | "CSV"         | `AUTO`           |
+| `flush`             | bool      | If true, flush the file after each write | false         | `false `         |
+| `include_index_col` | bool      | If true, include the index column        | false         | `true`           |
+| `overwrite`         | bool      | If true, overwrite the file if it exists | true          | `false`          |
 
 ### Example JSON Configuration
 
@@ -39,3 +39,4 @@ This module writes messages to a file.
   "file_type": "CSV",
   "include_index_col": false
 }
+```

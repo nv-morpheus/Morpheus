@@ -24,12 +24,12 @@ addition to loading data from the disk, it has the ability to load the file cont
 
 | Parameter               | Type       | Description                                | Example Value        | Default Value |
 |-------------------------|------------|--------------------------------------------|----------------------|---------------|
-| `cache_dir`             | string     | Directory to cache the rolling window data | `/path/to/cache`     | -             |
-| `file_type`             | string     | Type of the input file                     | `csv`                | JSON          |
-| `filter_null`           | boolean    | Whether to filter out null values          | true                 | false         |
-| `parser_kwargs`         | dictionary | Keyword arguments to pass to the parser    | `{"delimiter": ","}` | -             |
-| `schema`                | dictionary | Schema of the input data                   | See Below            | -             |
-| `timestamp_column_name` | string     | Name of the timestamp column               | `timestamp`          | -             |
+| `cache_dir`             | string     | Directory to cache the rolling window data | "/path/to/cache"     | `-`           |
+| `file_type`             | string     | Type of the input file                     | "csv"                | `"JSON"`      |
+| `filter_null`           | boolean    | Whether to filter out null values          | true                 | `false`       |
+| `parser_kwargs`         | dictionary | Keyword arguments to pass to the parser    | {"delimiter": ","}   | `-`           |
+| `schema`                | dictionary | Schema of the input data                   | See Below            | `-`           |
+| `timestamp_column_name` | string     | Name of the timestamp column               | "timestamp"          | `-`           |
 
 ### Example JSON Configuration
 
@@ -47,3 +47,4 @@ addition to loading data from the disk, it has the ability to load the file cont
   },
   "timestamp_column_name": "timestamp"
 }
+```

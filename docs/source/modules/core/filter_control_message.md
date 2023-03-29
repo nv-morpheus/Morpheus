@@ -23,10 +23,10 @@ When the requirements are met, this module gently discards the control messages.
 
 | Parameter                    | Type    | Description                          | Example Value       | Default Value |
 |------------------------------|---------|--------------------------------------|---------------------|---------------|
-| `enable_data_type_filtering` | boolean | Enables filtering based on data type | true                | false         |
-| `enable_task_filtering`      | boolean | Enables filtering based on task type | true                | false         |
-| `filter_data_type`           | string  | The data type to be used as a filter | `desired_data_type` | None          |
-| `filter_task_type`           | string  | The task type to be used as a filter | `specific_task`     | None          |
+| `enable_data_type_filtering` | boolean | Enables filtering based on data type | true                | `false`       |
+| `enable_task_filtering`      | boolean | Enables filtering based on task type | true                | `false`       |
+| `filter_data_type`           | string  | The data type to be used as a filter | "desired_data_type" | `None`        |
+| `filter_task_type`           | string  | The task type to be used as a filter | "specific_task"     | `None`        |
 
 ### Example JSON Configuration
 
@@ -37,3 +37,4 @@ When the requirements are met, this module gently discards the control messages.
   "filter_task_type": "specific_task",
   "filter_data_type": "desired_data_type"
 }
+```

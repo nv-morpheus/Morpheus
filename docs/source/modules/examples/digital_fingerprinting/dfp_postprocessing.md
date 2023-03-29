@@ -23,7 +23,7 @@ This module function performs postprocessing tasks after the inference process.
 
 | Parameter               | Type   | Description                                     | Example Value | Default Value |
 |-------------------------|--------|-------------------------------------------------|---------------|---------------|
-| `timestamp_column_name` | string | Name of the timestamp column in the input data. | `timestamp`   | -             |
+| `timestamp_column_name` | string | Name of the timestamp column in the input data. | "timestamp"   | `-`           |
 
 ### Example JSON Configuration
 
@@ -32,3 +32,9 @@ This module function performs postprocessing tasks after the inference process.
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| timestamp_column_name   | timestamp  |
