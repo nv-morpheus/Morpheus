@@ -22,6 +22,7 @@ import pytest
 
 import cudf
 
+from morpheus.common import TypeId
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -96,6 +97,8 @@ def test_abp_pcap_preprocessing(config):
     mm2 = MultiMessage(meta=meta, mess_offset=10, mess_count=10)
 
     stage = AbpPcapPreprocessingStage(config)
+    assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
+
     inf1 = stage.pre_process_batch(mm1, config.feature_length, stage.features)
     check_inf_message(inf1,
                       expected_meta=meta,
