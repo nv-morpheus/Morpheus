@@ -39,7 +39,7 @@ class StageInfo:
         if (self.modes is None or len(self.modes) == 0):
             self.modes = [x for x in PipelineModes]
 
-    def supports_mode(self, mode: PipelineModes):
+    def supports_mode(self, mode: PipelineModes) -> bool:
         if (mode is None):
             return True
 
@@ -57,7 +57,11 @@ class LazyStageInfo(StageInfo):
 
     def __init__(self, name: str, stage_qualified_name: str, modes: typing.List[PipelineModes]):
 
-        super().__init__(name=name, modes=modes, qualified_name=stage_qualified_name, build_command=self._lazy_build)
+        super().__init__(name=name,
+                         modes=modes,
+                         qualified_name=stage_qualified_name,
+                         build_command=self._lazy_build,
+                         get_stage_class=self._lazy_get_stage_class)
 
         # Break the module name up into the class and the package
         qual_name_split = stage_qualified_name.split(".")
@@ -66,8 +70,7 @@ class LazyStageInfo(StageInfo):
 
         self.class_name = qual_name_split[-1]
 
-    def _lazy_build(self):
-
+    def _lazy_get_stage_info(self) -> StageInfo:
         import importlib
 
         mod = importlib.import_module(self.package_name)
@@ -86,7 +89,13 @@ class LazyStageInfo(StageInfo):
                 "Class {} did not have attribute '_morpheus_registered_stage'. Did you use register_stage?".format(
                     self.qualified_name))
 
-        return stage_class_info.build_command()
+        return stage_class_info
+
+    def _lazy_build(self) -> click.Command:
+        return self._lazy_get_stage_info().build_command()
+
+    def _lazy_get_stage_class(self) -> _pipeline.StreamWrapper:
+        return self._lazy_get_stage_info().get_stage_class()
 
 
 class StageRegistry:
