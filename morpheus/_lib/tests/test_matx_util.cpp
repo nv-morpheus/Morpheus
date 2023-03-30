@@ -28,7 +28,7 @@
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>
-#include <cudf/types.hpp>            // for data_type, size_type
+#include <cudf/types.hpp>  // for data_type, size_type
 #include <gtest/gtest.h>
 #include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread

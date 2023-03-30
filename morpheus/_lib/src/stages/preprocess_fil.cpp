@@ -28,7 +28,7 @@
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/table_info.hpp"    // for TableInfo
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
@@ -41,7 +41,7 @@
 #include <cudf/unary.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>      // for object_api::operator(), operator""_a
+#include <pybind11/cast.h>  // for object_api::operator(), operator""_a
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
@@ -121,8 +121,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                                        input__0.get_memory(),
                                                                        x->mess_offset),
                                               seq_id_dtype,
-                                              {x->mess_count, 3},
-                                              {},
+                                                   {x->mess_count, 3},
+                                                   {},
                                               0);
 
                 // Build the results

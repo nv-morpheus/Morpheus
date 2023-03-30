@@ -20,7 +20,6 @@
 #include "mrc/modules/properties/persistent.hpp"
 #include "mrc/node/rx_node.hpp"
 #include "rxcpp/operators/rx-map.hpp"
-#include "rxcpp/sources/rx-iterate.hpp"
 
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/messages/control.hpp"
@@ -31,6 +30,7 @@
 #include <mrc/utils/type_utils.hpp>
 #include <nlohmann/json.hpp>
 #include <rxcpp/rx.hpp>
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <map>
 #include <memory>

@@ -36,7 +36,7 @@
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>                      // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
 #include <cudf/column/column_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>         // for CHECK, CHECK_NE

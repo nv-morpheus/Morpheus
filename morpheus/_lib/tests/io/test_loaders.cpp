@@ -51,7 +51,7 @@ TEST_F(TestLoader, LoaderFileTest)
 {
     auto string_df = create_mock_csv_file({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
 
-    char temp_file[] = "/tmp/morpheus_test_XXXXXXXX";
+    char temp_file[] = "/tmp/morpheus_test_XXXXXXXX";  // NOLINT
     int fd           = mkstemp(temp_file);
     if (fd == -1)
     {
