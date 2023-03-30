@@ -31,6 +31,7 @@ limitations under the License.
 ## 🐛 Bug Fixes
 
 - Add Node.js install instructions to DFP Viz readme ([#828](https://github.com/nv-morpheus/Morpheus/pull/828)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix handling of message offsets in ae pre-processing and timeseries stage ([#821](https://github.com/nv-morpheus/Morpheus/pull/821)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Set default DFP container version to 23.03 ([#813](https://github.com/nv-morpheus/Morpheus/pull/813)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Fix debug log message caused by breaking the long string ([#812](https://github.com/nv-morpheus/Morpheus/pull/812)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Fix for log_parsing and ransomware_detection examples ([#802](https://github.com/nv-morpheus/Morpheus/pull/802)) [@dagardner-nv](https://github.com/dagardner-nv)
@@ -67,6 +68,7 @@ limitations under the License.
 
 ## 🚀 New Features
 
+- Integrated training: Framework updates and Modular DFP pipeline implementation ([#760](https://github.com/nv-morpheus/Morpheus/pull/760)) [@drobison00](https://github.com/drobison00)
 - Add support for Parquet file input ([#770](https://github.com/nv-morpheus/Morpheus/pull/770)) [@efajardo-nv](https://github.com/efajardo-nv)
 - Add InMemorySinkStage ([#752](https://github.com/nv-morpheus/Morpheus/pull/752)) [@dagardner-nv](https://github.com/dagardner-nv)
 - Create a PR template ([#751](https://github.com/nv-morpheus/Morpheus/pull/751)) [@jarmak-nv](https://github.com/jarmak-nv)
