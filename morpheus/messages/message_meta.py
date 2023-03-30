@@ -15,9 +15,12 @@
 import dataclasses
 import logging
 import threading
+import typing
 import warnings
 
 import pandas as pd
+
+import cudf
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
@@ -154,6 +157,42 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
                     return old_index_name
 
         return None
+
+    def get_meta_range(self,
+                       mess_offset: int,
+                       message_count: int,
+                       columns: typing.Union[None, str, typing.List[str]] = None):
+        """
+        Return column values from `morpheus.pipeline.messages.MessageMeta.df` from the specified start offset
+        until the message count.
+
+        Parameters
+        ----------
+        mess_offset : int
+            Offset into the metadata batch.
+        mess_count : int
+            Messages count.
+        columns : typing.Union[None, str, typing.List[str]]
+            Input column names. Returns all columns if `None` is specified. When a string is passed, a `Series` is
+            returned. Otherwise a `Dataframe` is returned.
+
+        Returns
+        -------
+        Series or Dataframe
+            Column values from the dataframe.
+
+        """
+
+        idx = self._df.index[mess_offset:mess_offset + message_count]
+
+        if (isinstance(idx, cudf.RangeIndex)):
+            idx = slice(idx.start, idx.stop - 1, idx.step)
+
+        if (columns is None):
+            return self._df.loc[idx, :]
+        else:
+            # If its a str or list, this is the same
+            return self._df.loc[idx, columns]
 
 
 @dataclasses.dataclass(init=False)

@@ -33,42 +33,65 @@ Benchmarks are run using `pytest-benchmark`. By default, there are five rounds o
 
 To provide your own calibration or use other `pytest-benchmark` features with these workflows, please refer to their [documentation](https://pytest-benchmark.readthedocs.io/en/latest/).
 
-Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `duo_training_modules`:
+Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `dfp_modules_duo_payload_inference`:
 ```
-"test_dfp_training_duo_modules_e2e": {
-    "file_path": "../../../../data/dfp/duo-training-data/*.json",
-    "num_threads": 8,
-    "pipeline_batch_size": 1024,
-    "edge_buffer_size": 4,
-    "start_time": "2022-08-01",
-    "duration": "60d"
+"test_dfp_modules_duo_payload_inference_e2e": {
+		"message_path": "./resource/control_messages/duo_payload_inference.json",
+		"num_threads": 12,
+		"pipeline_batch_size": 256,
+		"edge_buffer_size": 128,
+		"start_time": "2022-08-01",
+		"duration": "60d",
+		"userid_column_name": "username",
+		"timestamp_column_name": "timestamp",
+		"source": "duo",
+		"use_cpp": true
 },
 ...
 ```
 
 In addition to the Morpheus pipeline settings, we also have a configuration file called [modules_conf.json](./resource/modules_conf.json) that is specific to modules. When using MRC SegmentModule, pipelines need this configuration file. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
 
+To ensure that the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS FILE DOWNLOAD TYPE` environment variable with any one of given choices (`multiprocess`, `dask`, `dask thread`, `single thread`).
+
+```
+export MORPHEUS_FILE_DOWNLOAD_TYPE=multiprocess
+```
+
 Benchmarks for an individual workflow can be run using the following:
 
 ```
 
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::<test-workflow>
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::<test-workflow>
 ```
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
 The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
 
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
-- `test_dfp_inference_azure_stages_e2e`
-- `test_dfp_inference_duo_stages_e2e`
-- `test_dfp_training_azure_modules_e2e`
-- `test_dfp_training_azure_stages_e2e`
-- `test_dfp_training_duo_modules_e2e`
-- `test_dfp_training_duo_stages_e2e`
+- `test_dfp_modules_azure_payload_inference_e2e`
+- `test_dfp_modules_azure_payload_lti_e2e`
+- `test_dfp_modules_azure_payload_training_e2e`
+- `test_dfp_modules_azure_streaming_inference_e2e`
+- `test_dfp_modules_azure_streaming_lti_e2e`
+- `test_dfp_modules_azure_streaming_training_e2e`
+- `test_dfp_modules_duo_payload_inference_e2e`
+- `test_dfp_modules_duo_payload_lti_e2e`
+- `test_dfp_modules_duo_payload_only_load_e2e`
+- `test_dfp_modules_duo_payload_training_e2e`
+- `test_dfp_modules_duo_streaming_inference_e2e`
+- `test_dfp_modules_duo_streaming_lti_e2e`
+- `test_dfp_modules_duo_streaming_only_load_e2e`
+- `test_dfp_modules_duo_streaming_payload_e2e`
+- `test_dfp_modules_duo_streaming_training_e2e`
+- `test_dfp_stages_azure_training_e2e`
+- `test_dfp_stages_azure_inference_e2e`
+- `test_dfp_stages_duo_training_e2e`
+- `test_dfp_stages_duo_inference_e2e`
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the duo logs:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_training_duo_modules_e2e
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
 ```
 
 To run E2E benchmarks on all workflows:
@@ -78,16 +101,11 @@ pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations
 
 The console output should look like this:
 ```
------------------------------------------------------------------------------------------------------ benchmark: 6 tests -----------------------------------------------------------------------------------------------------
-Name (time in ms)                               Min                    Max                   Mean                StdDev                 Median                   IQR            Outliers     OPS            Rounds  Iterations
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_dfp_inference_duo_stages_e2e          308.4402 (1.0)         441.9953 (1.0)         385.4835 (1.0)         52.7466 (1.0)         374.8979 (1.0)         73.1232 (1.0)           2;0  2.5941 (1.0)           5           1
-test_dfp_inference_azure_stages_e2e        454.2198 (1.47)        625.3723 (1.41)        539.4551 (1.40)        77.5497 (1.47)        556.1858 (1.48)       143.2852 (1.96)          2;0  1.8537 (0.71)          5           1
-test_dfp_training_duo_modules_e2e       13,701.4709 (44.42)    15,542.6684 (35.16)    14,604.7726 (37.89)      806.8470 (15.30)    14,486.1345 (38.64)    1,461.3735 (19.99)         2;0  0.0685 (0.03)          5           1
-test_dfp_training_duo_stages_e2e        14,617.3350 (47.39)    15,589.4445 (35.27)    14,941.8147 (38.76)      403.5400 (7.65)     14,717.5218 (39.26)      526.5890 (7.20)          1;0  0.0669 (0.03)          5           1
-test_dfp_training_azure_stages_e2e      26,091.4968 (84.59)    27,554.4906 (62.34)    27,014.1010 (70.08)      558.1178 (10.58)    27,148.0393 (72.41)      612.2293 (8.37)          1;0  0.0370 (0.01)          5           1
-test_dfp_training_azure_modules_e2e     26,228.4464 (85.04)    29,457.1970 (66.65)    28,156.9607 (73.04)    1,252.0302 (23.74)    28,241.6172 (75.33)    1,698.1469 (23.22)         2;0  0.0355 (0.01)          5           1
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------- benchmark: 19 tests --------------------------------------------------------------------------------------------------------
+Name (time in ms)                                          Min                    Max                   Mean              StdDev                 Median                 IQR            Outliers     OPS            Rounds  Iterations
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TODO: Add benchmark results here -- need to do different runs for training vs inference vs everything else
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 ### Benchmarks Report
@@ -119,6 +137,10 @@ Morpheus config for each workflow:
 - edge_buffer_size
 - start_time
 - duration
+- userid_column_name
+- timestamp_column_name
+- source
+- use_cpp
 
 Additional benchmark stats for each workflow:
 - input_lines

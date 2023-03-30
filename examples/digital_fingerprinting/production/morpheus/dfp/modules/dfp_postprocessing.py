@@ -17,20 +17,18 @@ import time
 from datetime import datetime
 
 import mrc
-import numpy as np
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_POST_PROCESSING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_POST_PROCESSING, MODULE_NAMESPACE)
+@register_module(DFP_POST_PROCESSING, MORPHEUS_MODULE_NAMESPACE)
 def dfp_postprocessing(builder: mrc.Builder):
     """
     Postprocessing module function.
@@ -38,19 +36,26 @@ def dfp_postprocessing(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - timestamp_column_name (str): Name of the timestamp column in the input data.
     """
 
-    config = get_module_config(DFP_POST_PROCESSING, builder)
+    config = builder.get_current_module_config()
 
-    timestamp_column_name = config.get("timestamp_column_name", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
     def process_events(message: MultiAEMessage):
         # Assume that a filter stage preceedes this stage
-        df = message.get_meta()
-        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        df.replace(np.nan, 'NaN', regex=True, inplace=True)
-        message.set_meta(None, df)
+        # df = message.get_meta()
+        # df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        # df.replace(np.nan, 'NaN', regex=True, inplace=True)
+        # TODO figure out why we are not able to set meta for a whole dataframe, but works for single column.
+        # message.set_meta(None, df)
+        message.set_meta("event_time", datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     def on_data(message: MultiAEMessage):
         if (not message or message.mess_count == 0):
@@ -75,7 +80,7 @@ def dfp_postprocessing(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(DFP_POST_PROCESSING, node_fn)
+    node = builder.make_node(DFP_POST_PROCESSING, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

@@ -21,7 +21,6 @@ import dfp.modules.dfp_training_pipeline  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.derive_args import DeriveArgs
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
@@ -107,30 +106,29 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  **kwargs):
+    dfp_arg_parser = DeriveArgs(skip_user,
+                                only_user,
+                                start_time,
+                                log_level,
+                                cache_dir,
+                                sample_rate_s,
+                                duration,
+                                log_type="azure",
+                                tracking_uri=kwargs["tracking_uri"],
+                                train_users=train_users)
 
-    derive_args = DeriveArgs(skip_user,
-                             only_user,
-                             start_time,
-                             duration,
-                             log_level,
-                             cache_dir,
-                             sample_rate_s,
-                             tracking_uri=kwargs["tracking_uri"],
-                             source="azure",
-                             train_users=train_users)
+    dfp_arg_parser.init()
 
-    derive_args.init()
-
-    config: Config = generate_ae_config(labels_file="data/columns_ae_azure.txt",
+    config: Config = generate_ae_config(dfp_arg_parser.log_type,
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config)
-    schema: Schema = schema_builder.build_azure_schema()
+    schema_builder = SchemaBuilder(config, dfp_arg_parser.log_type)
+    schema: Schema = schema_builder.build_schema()
 
-    config_generator = ConfigGenerator(config, derive_args, schema)
+    config_generator = ConfigGenerator(config, dfp_arg_parser, schema)
 
-    module_conf = config_generator.tra_pipe_module_conf()
+    module_config = config_generator.tra_pipe_module_config()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -138,7 +136,7 @@ def run_pipeline(train_users,
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
 

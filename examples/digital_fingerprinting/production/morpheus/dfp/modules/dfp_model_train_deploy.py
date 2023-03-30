@@ -19,7 +19,7 @@ import mrc
 
 import morpheus.modules.mlflow_model_writer  # noqa: F401
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
@@ -27,10 +27,10 @@ from morpheus.utils.module_utils import register_module
 from ..utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_MODEL_TRAIN_DEPLOY, MODULE_NAMESPACE)
+@register_module(DFP_MODEL_TRAIN_DEPLOY, MORPHEUS_MODULE_NAMESPACE)
 def dfp_model_train_deploy(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp training and mlflow model deployment modules into
