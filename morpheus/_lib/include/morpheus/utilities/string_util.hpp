@@ -36,14 +36,25 @@ namespace morpheus {
 #define MORPHEUS_CONCAT_STR(strs) ((std::ostringstream&)(std::ostringstream() << strs)).str()
 
 /****** Component public implementations *******************/
-/****** StringUtil****************************************/
+/****** StringUtil ****************************************/
+
 /**
- * @brief Structure that encapsulates string utilities.
+ * @brief A struct that encapsulates string utilities.
  */
 struct StringUtil
 {
     /**
-     * TODO(Documentation)
+     * @brief Concatenate a sequence of values with a separator string.
+     *
+     * This method takes a pair of iterators `begin` and `end` that define a sequence of values, and
+     * a separator string. It returns a string that concatenates all the values in the sequence with
+     * the separator string between each pair of values.
+     *
+     * @tparam IterT A template parameter representing the iterator type.
+     * @param begin An iterator pointing to the beginning of the sequence.
+     * @param end An iterator pointing to the end of the sequence.
+     * @param separator A string to insert between each pair of values.
+     * @return A string containing the concatenated values.
      */
     template <typename IterT>
     static std::string join(IterT begin, IterT end, std::string const& separator)
@@ -57,7 +68,16 @@ struct StringUtil
     }
 
     /**
-     * TODO(Documentation)
+     * @brief Convert a sequence of values to a string representation.
+     *
+     * This method takes a pair of iterators `begin` and `end` that define a sequence of values. It
+     * returns a string that represents the sequence as a comma-separated list enclosed in square
+     * brackets.
+     *
+     * @tparam IterT A template parameter representing the iterator type.
+     * @param begin An iterator pointing to the beginning of the sequence.
+     * @param end An iterator pointing to the end of the sequence.
+     * @return A string containing the string representation of the sequence.
      */
     template <typename IterT>
     static std::string array_to_str(IterT begin, IterT end)
@@ -97,7 +117,14 @@ struct StringUtil
     }
 
     /**
-     * TODO(Documentation)
+     * @brief Check if a string contains a substring.
+     *
+     * This method takes two string arguments, `str` and `search_str`. It returns true if `str`
+     * contains `search_str`, and false otherwise.
+     *
+     * @param str The string to search in.
+     * @param search_str The string to search for.
+     * @return True if `str` contains `search_str`, false otherwise.
      */
     static bool str_contains(const std::string& str, const std::string& search_str);
 };

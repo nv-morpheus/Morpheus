@@ -15,14 +15,14 @@ Module for common utilities and classes in the Morpheus library.
 """
 
 # Export symbols from the morpheus._lib.common module. Users should never be directly importing morpheus._lib
-from morpheus._lib.common import determine_file_type
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
-from morpheus._lib.common import read_file_to_df
 from morpheus._lib.common import Tensor
-from morpheus._lib.common import tyepid_to_numpy_str
 from morpheus._lib.common import TypeId
+from morpheus._lib.common import determine_file_type
+from morpheus._lib.common import read_file_to_df
+from morpheus._lib.common import typeid_to_numpy_str
 from morpheus._lib.common import write_df_to_file
 
 __all__ = [
@@ -32,7 +32,7 @@ __all__ = [
     "FilterSource",
     "read_file_to_df",
     "Tensor",
-    "tyepid_to_numpy_str",
+    "typeid_to_numpy_str",
     "TypeId",
     "write_df_to_file",
 ]

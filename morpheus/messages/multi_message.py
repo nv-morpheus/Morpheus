@@ -124,16 +124,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return self.get_meta_list("timestamp")
 
-    def _get_indexers(self, columns: typing.Union[None, str, typing.List[str]] = None):
+    def _get_indexers(self, df, columns: typing.Union[None, str, typing.List[str]] = None):
         row_indexer = slice(self.mess_offset, self.mess_offset + self.mess_count, 1)
 
         if (columns is None):
-            columns = self.meta._df.columns.to_list()
+            columns = df.columns.to_list()
         elif (isinstance(columns, str)):
             # Convert a single string into a list so all versions return tables, not series
             columns = [columns]
 
-        column_indexer = self.meta._df.columns.get_indexer_for(columns)
+        column_indexer = df.columns.get_indexer_for(columns)
 
         return row_indexer, column_indexer
 
@@ -182,16 +182,17 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        row_indexer, column_indexer = self._get_indexers(columns=columns)
+        with self.meta.mutable_dataframe() as df:
+            row_indexer, column_indexer = self._get_indexers(df, columns=columns)
 
-        if (-1 in column_indexer):
-            missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
-            raise KeyError("Requested columns {} does not exist in the dataframe".format(missing_columns))
-        elif (isinstance(columns, str) and len(column_indexer) == 1):
-            # Make sure to return a series for a single column
-            column_indexer = column_indexer[0]
+            if (-1 in column_indexer):
+                missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
+                raise KeyError("Requested columns {} does not exist in the dataframe".format(missing_columns))
+            elif (isinstance(columns, str) and len(column_indexer) == 1):
+                # Make sure to return a series for a single column
+                column_indexer = column_indexer[0]
 
-        return self.meta._df.iloc[row_indexer, column_indexer]
+            return df.iloc[row_indexer, column_indexer]
 
     def get_meta_list(self, col_name: str = None):
         """
@@ -225,11 +226,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        # First try to set the values on just our slice if the columns exist
-        row_indexer, column_indexer = self._get_indexers(columns=columns)
-
         # Get exclusive access to the dataframe
         with self.meta.mutable_dataframe() as df:
+            # First try to set the values on just our slice if the columns exist
+            row_indexer, column_indexer = self._get_indexers(df, columns=columns)
 
             # Check if the value is a cupy array and we have a pandas dataframe, convert to numpy
             if (isinstance(value, cp.ndarray) and isinstance(df, pd.DataFrame)):
@@ -275,8 +275,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
                 else:
                     # Need to determine the boolean mask to use indexes with df.loc
-                    row_mask = self._ranges_to_mask(self.meta._df,
-                                                    [(self.mess_offset, self.mess_offset + self.mess_count)])
+                    row_mask = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
 
                     # Now set the slice
                     df.loc[row_mask, columns] = value
@@ -440,7 +439,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         for p_name, param in signature.parameters.items():
 
             if (p_name == "self"):
-                # Skip self until this this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+                # Skip self until this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
                 # After that, switch to using inspect.signature(cls)
                 continue
 

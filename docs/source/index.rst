@@ -105,6 +105,20 @@ Deploying Morpheus
    _lib/index
 
 .. toctree::
+   :caption: Morpheus Modules
+   :maxdepth: 20
+   :hidden:
+
+   modules/morpheus_modules
+
+.. toctree::
+   :caption: Morpheus Loaders
+   :maxdepth: 20
+   :hidden:
+
+   loaders/morpheus_loaders
+
+.. toctree::
    :maxdepth: 20
    :caption: Extra Information
    :hidden:

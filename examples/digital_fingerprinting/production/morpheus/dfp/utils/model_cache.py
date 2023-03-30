@@ -217,7 +217,7 @@ class ModelManager:
                     self._existing_models.clear()
 
                     # Loop over the registered models with the pagination
-                    while ((results := client.list_registered_models(max_results=1000, page_token=results.token))
+                    while ((results := client.search_registered_models(max_results=1000, page_token=results.token))
                            is not None):
 
                         self._existing_models.update(model.name for model in results)
