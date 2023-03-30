@@ -53,7 +53,6 @@ class FactoryRegistry
         return names;
     }
 
-    // TODO(Devin): Rename -- this isn't a constructor, its creating an instance
     static std::shared_ptr<ObjectReturnTypeT> create_object_from_factory(const std::string& name,
                                                                          nlohmann::json config = {})
     {

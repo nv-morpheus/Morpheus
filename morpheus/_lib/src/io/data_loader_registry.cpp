@@ -42,7 +42,7 @@ void LoaderRegistryProxy::register_proxy_factory_fn(
         proxy_constructor,
     bool throw_if_exists)
 {
-    FactoryRegistry<Loader>::register_factory_fn(
+    LoaderRegistry::register_factory_fn(
         name,
         [proxy_constructor](nlohmann::json config) {
             return std::make_shared<LambdaLoader>(
