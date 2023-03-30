@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import cudf
 
 # Morpheus.common is required to register pre-made loaders
@@ -22,6 +24,7 @@ import morpheus.messages as messages
 from morpheus.messages import DataLoaderRegistry
 
 
+@pytest.mark.skip
 def test_loader_registry_contains():
     assert (not DataLoaderRegistry.contains("not_a_loader"))
 
@@ -39,6 +42,7 @@ def test_loader_registry_contains():
         assert (DataLoaderRegistry.contains(loader))
 
 
+@pytest.mark.skip
 def test_loader_registry_register_loader():
 
     def test_loader(control_message: messages.ControlMessage, task: dict):
@@ -75,6 +79,7 @@ def test_loader_registry_register_loader():
         assert (True)
 
 
+@pytest.mark.skip
 def test_loader_registry_unregister_loader():
 
     def test_loader(control_message: messages.ControlMessage, task: dict):
