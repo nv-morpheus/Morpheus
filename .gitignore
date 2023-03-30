@@ -205,3 +205,14 @@ morpheus/_lib/**/*.pyi
 # Explicitly ignore .vscode/. Shared settings should go in morpheus.code-workspace
 # and user settings will go in .vscode/
 .vscode/
+
+# Ignore user-defined clangd settings
+.clangd
+
+# Ignore DFP Visualization output dirs
+examples/digital_fingerprinting/visualization/azure-dfp-output/
+examples/digital_fingerprinting/visualization/duo-dfp-output/
+
+# Ignore saved benchmark data
+tests/benchmarks/.benchmarks/
+
