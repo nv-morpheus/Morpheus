@@ -22,7 +22,7 @@ import pytest
 import cudf
 
 from morpheus.common import TypeId
-from morpheus.common import tyepid_to_numpy_str
+from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -46,7 +46,7 @@ class CheckPreAlloc(SinglePortStage):
 
     def __init__(self, c, probs_type):
         super().__init__(c)
-        self._expected_type = cudf.dtype(tyepid_to_numpy_str(probs_type))
+        self._expected_type = cudf.dtype(typeid_to_numpy_str(probs_type))
         self._class_labels = c.class_labels
         self._needed_columns.update({label: probs_type for label in c.class_labels})
 
@@ -79,7 +79,7 @@ class CheckPreAlloc(SinglePortStage):
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
 def test_preallocation(config, filter_probs_df, probs_type):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    probs_np_type = tyepid_to_numpy_str(probs_type)
+    probs_np_type = typeid_to_numpy_str(probs_type)
     expected_df = pd.DataFrame(
         data={c: np.zeros(len(filter_probs_df), dtype=probs_np_type)
               for c in config.class_labels})
@@ -112,7 +112,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     requesting stage is not in the first segment, then the preallocation will be performed on the segment ingress
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    probs_np_type = tyepid_to_numpy_str(probs_type)
+    probs_np_type = typeid_to_numpy_str(probs_type)
     expected_df = pd.DataFrame(
         data={c: np.zeros(len(filter_probs_df), dtype=probs_np_type)
               for c in config.class_labels})
@@ -122,7 +122,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=tyepid_to_numpy_str(probs_type)))
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=typeid_to_numpy_str(probs_type)))
     (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_segment_boundary(MultiResponseMessage)

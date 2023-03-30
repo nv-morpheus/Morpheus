@@ -11,3 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Morpheus module definitions, each module is automatically registered when imported
+"""
+
+from morpheus.modules import file_batcher
+from morpheus.modules import file_to_df
+from morpheus.modules import filter_control_message
+from morpheus.modules import filter_detections
+from morpheus.modules import mlflow_model_writer
+from morpheus.modules import serialize
+from morpheus.modules import write_to_file
+
+__all__ = []

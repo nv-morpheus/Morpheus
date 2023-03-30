@@ -31,6 +31,7 @@
 #include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <map>
 #include <memory>

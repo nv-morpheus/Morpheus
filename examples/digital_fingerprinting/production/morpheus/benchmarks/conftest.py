@@ -61,6 +61,39 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
             for fn in glob.glob(source_files_glob):
                 line_count += get_json_lines_count(fn)
                 byte_count += path.getsize(fn)
+        elif "message_path" in PIPELINES_CONF[bench["name"]]:
+            source_message_glob = path.join(curr_dir, PIPELINES_CONF[bench["name"]]["message_path"])
+            for message_fn in glob.glob(source_message_glob):
+                message_file = open(message_fn)
+                control_message = json.load(message_file)
+                inputs = control_message.get("inputs")
+                # Iterating over inputs
+                for input in inputs:
+                    line_count_per_task = 0
+                    byte_count_per_task = 0
+                    tasks = input.get("tasks")
+                    # Iterating over tasks
+                    for task in tasks:
+                        if task.get("type") == "load":
+                            files = task.get("properties").get("files")
+                            # Iterating over files in a task
+                            for file_glob in files:
+                                # Iterating over a file glob
+                                for fn in glob.glob(file_glob):
+                                    count = get_json_lines_count(fn)
+                                    size = path.getsize(fn)
+                                    line_count += count
+                                    byte_count += size
+                                    line_count_per_task += count
+                                    byte_count_per_task += size
+                        else:
+                            non_load_task = task.get("type")
+                    # Adding non-load task status here.
+                    if non_load_task is not None:
+                        bench['stats'][non_load_task] = {}
+                        bench['stats'][non_load_task]["input_lines"] = line_count_per_task
+                        bench['stats'][non_load_task]["input_bytes"] = byte_count_per_task
+
         else:
             raise KeyError("Configuration requires either 'glob_path' or 'file_path' attribute.")
 

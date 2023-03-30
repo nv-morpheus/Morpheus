@@ -17,6 +17,13 @@
 
 #include "morpheus/stages/preprocess_nlp.hpp"
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
