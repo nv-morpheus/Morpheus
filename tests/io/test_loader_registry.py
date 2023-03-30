@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import pytest
+
+import cudf
 
 # Morpheus.common is required to register pre-made loaders
 import morpheus.common  # noqa: F401
@@ -23,7 +24,6 @@ import morpheus.messages as messages
 from morpheus.messages import DataLoaderRegistry
 
 
-@pytest.xfail(reason="Currently failing in CI, but nowhere else")
 def test_loader_registry_contains():
     assert (not DataLoaderRegistry.contains("not_a_loader"))
 
@@ -41,8 +41,8 @@ def test_loader_registry_contains():
         assert (DataLoaderRegistry.contains(loader))
 
 
-@pytest.xfail(reason="Currently failing in CI, but nowhere else")
 def test_loader_registry_register_loader():
+
     def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
@@ -77,8 +77,8 @@ def test_loader_registry_register_loader():
         assert (True)
 
 
-@pytest.xfail(reason="Currently failing in CI, but nowhere else")
 def test_loader_registry_unregister_loader():
+
     def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
