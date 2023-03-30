@@ -20,6 +20,9 @@ from morpheus.config import Config
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
 from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 
+SinglePortStageT = typing.TypeVar("SinglePortStageT", bound=_pipeline.SinglePortStage)
+SourceT = typing.TypeVar("SourceT", bound=_pipeline.SourceStage)
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +51,7 @@ class LinearPipeline(_pipeline.Pipeline):
         self._current_segment_id = f"linear_segment_{self._next_segment_index}"
         self._next_segment_index += 1
 
-    def set_source(self, source: _pipeline.SourceStage):
+    def set_source(self, source: SourceT) -> SourceT:
         """
         Set a pipeline's source stage to consume messages before it begins executing stages. This must be
         called once before calling `run` or `run_async`.
@@ -78,7 +81,9 @@ class LinearPipeline(_pipeline.Pipeline):
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
 
-    def add_stage(self, stage: _pipeline.SinglePortStage):
+        return source
+
+    def add_stage(self, stage: SinglePortStageT) -> SinglePortStageT:
         """
         Add a stage to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
@@ -101,6 +106,8 @@ class LinearPipeline(_pipeline.Pipeline):
         super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
 
         self._linear_stages.append(stage)
+
+        return stage
 
     def add_segment_boundary(self, data_type=None, as_shared_pointer=False):
         """
@@ -160,3 +167,5 @@ class LinearPipeline(_pipeline.Pipeline):
                                  boundary_ingress,
                                  ingress_segment_id,
                                  port_id_tuple)
+
+        return (boundary_egress, boundary_ingress)

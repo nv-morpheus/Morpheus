@@ -22,6 +22,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
+#include <map>
+#include <string>
+
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** CupyUtil****************************************/
@@ -37,22 +40,58 @@ namespace morpheus {
  */
 struct CupyUtil
 {
+    using tensor_map_t    = std::map<std::string, TensorObject>;
+    using py_tensor_map_t = std::map<std::string, pybind11::object>;
+
     static pybind11::object cp_module;  // handle to cupy module
 
     /**
-     * TODO(Documentation)
+     * @brief Import and return the cupy module. Requires GIL to have already been aqcuired.
+     *
+     * @return pybind11::module_
      */
     static pybind11::module_ get_cp();
 
     /**
-     * TODO(Documentation)
+     * @brief Tests whether or not an object is an instance of `cupy.ndarray`
+     *
+     * @param test_obj Python object to test
+     * @return true The object is a cupy array
+     * @return false The object is not a cupy array
      */
-    static pybind11::object tensor_to_cupy(const TensorObject &tensor);
+    static bool is_cupy_array(pybind11::object test_obj);
 
     /**
-     * TODO(Documentation)
+     * @brief Convert a TensorObject to a CuPy array. Requires GIL to have already been aqcuired.
+     *
+     * @param tensor
+     * @return pybind11::object
+     */
+    static pybind11::object tensor_to_cupy(const TensorObject& tensor);
+
+    /**
+     * @brief Convert a CuPy array into a TensorObject. Requires GIL to have already been aqcuired.
+     *
+     * @param cupy_array
+     * @return TensorObject
      */
     static TensorObject cupy_to_tensor(pybind11::object cupy_array);
+
+    /**
+     * @brief Convert a map of CuPy arrays into a map of TensorObjects. Requires GIL to have already been aqcuired.
+     *
+     * @param cupy_tensors
+     * @return tensor_map_t
+     */
+    static tensor_map_t cupy_to_tensors(const py_tensor_map_t& cupy_tensors);
+
+    /**
+     * @brief Convert a map of TensorObjects into a map of CuPy arrays. Requires GIL to have already been aqcuired.
+     *
+     * @param tensors
+     * @return py_tensor_map_t
+     */
+    static py_tensor_map_t tensors_to_cupy(const tensor_map_t& tensors);
 };
 /** @} */  // end of group
 }  // namespace morpheus

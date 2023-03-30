@@ -18,6 +18,7 @@ import typing
 import mrc
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -48,6 +49,17 @@ class RecipientFeaturesStage(SinglePortStage):
         else:
             raise ValueError("sep_token cannot be an empty string")
 
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
+
     @property
     def name(self) -> str:
         return "recipient-features"
@@ -59,18 +71,17 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get the DataFrame from the incoming message
-        df = message.df
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
-
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
+            # Attach features to string data
+            df['data'] = (df['to_count'].astype(str) + self._sep_token + df['bcc_count'].astype(str) + self._sep_token +
+                          df['cc_count'].astype(str) + self._sep_token + df['total_recipients'].astype(str) +
+                          self._sep_token + df['Message'])
 
         # Return the message for the next stage
         return message

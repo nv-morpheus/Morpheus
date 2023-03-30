@@ -16,9 +16,7 @@
  */
 
 #include <gflags/gflags.h>  // for ParseCommandLineFlags
-
 #include <glog/logging.h>
-
 #include <gtest/gtest.h>  // IWYU pragma: keep
 
 int main(int argc, char** argv)

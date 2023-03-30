@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import subprocess
+import typing
 
 
 def isFileEmpty(f):
@@ -37,6 +38,13 @@ def __git(*opts):
 def __gitdiff(*opts):
     """Runs a git diff command with no pager set"""
     return __git("--no-pager", "diff", *opts)
+
+
+def top_level_dir():
+    """
+    Returns the top level directory for this git repo
+    """
+    return __git("rev-parse", "--show-toplevel")
 
 
 def branch():
@@ -196,13 +204,33 @@ def changedFilesBetween(baseName, branchName, commitHash):
     return files.splitlines()
 
 
-def _filterOutputFiles(output, pathFilter=None):
-    lines = []
-    for line in output.splitlines():
-        if pathFilter is None or pathFilter(line):
-            lines.append(line)
+def is_repo_relative(f: str, git_root: str = None):
+    if (git_root is None):
+        git_root = top_level_dir()
 
-    return lines
+    abs_f = os.path.abspath(f)
+
+    rel_path = os.path.relpath(abs_f, git_root)
+
+    return not rel_path.startswith("../")
+
+
+def filter_files(files: typing.Union[str, typing.List[str]], path_filter=None):
+    # Convert all to array of strings
+    if (isinstance(files, str)):
+        files = files.splitlines()
+
+    git_root = top_level_dir()
+
+    ret_files = []
+    for fn in files:
+        # Check that we are relative to the git repo
+        assert is_repo_relative(fn, git_root=git_root), f"Path {fn} must be relative to git root: {git_root}"
+
+        if (path_filter is None or path_filter(fn)):
+            ret_files.append(fn)
+
+    return ret_files
 
 
 def changesInFileBetween(file, b1, b2, pathFilter=None):
@@ -212,7 +240,7 @@ def changesInFileBetween(file, b1, b2, pathFilter=None):
     __git("checkout", "--quiet", b2)
     diffs = __gitdiff("--ignore-submodules", "-w", "--minimal", "-U0", "%s...%s" % (b1, b2), "--", file)
     __git("checkout", "--quiet", current)
-    return _filterOutputFiles(diffs, pathFilter)
+    return filter_files(diffs, pathFilter)
 
 
 def modifiedFiles(pathFilter=None):
@@ -266,12 +294,23 @@ def modifiedFiles(pathFilter=None):
 
 def changedFilesBetweenCommits(base_commit, commit, pathFilter=None):
     diffs = __gitdiff("--name-only", f"{base_commit}...{commit}")
-    return _filterOutputFiles(diffs, pathFilter)
+    return filter_files(diffs, pathFilter)
 
 
 def stagedFiles(base='HEAD', pathFilter=None):
     diffs = __gitdiff("--cached", "--name-only", base)
-    return _filterOutputFiles(diffs, pathFilter)
+    return filter_files(diffs, pathFilter)
+
+
+def list_files_under_source_control(*paths: str, ref: str = None):
+
+    # Use HEAD if no ref is supplied
+    if (ref is None):
+        ref = "HEAD"
+
+    git_args = ["ls-tree", "-r", "--name-only", ref] + list(paths)
+
+    return __git(*git_args).split("\n")
 
 
 def listAllFilesInDir(folder):

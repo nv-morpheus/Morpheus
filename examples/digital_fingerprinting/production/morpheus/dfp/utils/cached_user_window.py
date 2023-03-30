@@ -77,6 +77,22 @@ class CachedUserWindow:
 
         return True
 
+    def flush(self):
+        self.batch_count = 0
+        self.count = 0
+        self._df = pd.DataFrame()
+        self._trained_rows = pd.Series()
+        self.last_train_batch = 0
+        self.last_train_count = 0
+        self.last_train_epoch = None
+        self.max_epoch = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
+        self.min_epoch = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
+        self.pending_batch_count = 0
+        self.total_count = 0
+
+    def get_spanning_df(self, max_history) -> pd.DataFrame:
+        return self.get_train_df(max_history)
+
     def get_train_df(self, max_history) -> pd.DataFrame:
 
         new_df = self.trim_dataframe(self._df,
@@ -98,6 +114,8 @@ class CachedUserWindow:
         return new_df
 
     def save(self):
+        if (not self.cache_location):
+            raise RuntimeError("No cache location set")
 
         # Make sure the directories exist
         os.makedirs(os.path.dirname(self.cache_location), exist_ok=True)
@@ -136,6 +154,8 @@ class CachedUserWindow:
 
     @staticmethod
     def load(cache_location: str) -> "CachedUserWindow":
+        if (cache_location is None):
+            raise RuntimeError("No cache location set")
 
         with open(cache_location, "rb") as f:
             return pickle.load(f)

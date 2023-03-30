@@ -17,47 +17,59 @@
 
 #include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
+
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
-#include <glog/logging.h>
-
 #include <exception>
 #include <memory>
+#include <sstream>
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
-#include <type_traits>  // for declval (indirectly via templates)
-#include <utility>      // for forward, move, addressof
+#include <utility>  // for forward, move, addressof
 
 namespace morpheus {
 
 // Component public implementations
 // ************ WriteToFileStage **************************** //
-WriteToFileStage::WriteToFileStage(const std::string &filename,
-                                   std::ios::openmode mode,
-                                   FileTypes file_type,
-                                   bool include_index_col) :
+WriteToFileStage::WriteToFileStage(
+    const std::string& filename, std::ios::openmode mode, FileTypes file_type, bool include_index_col, bool flush) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_is_first(true),
-  m_include_index_col(include_index_col)
+  m_include_index_col(include_index_col),
+  m_flush(flush)
 {
     if (file_type == FileTypes::Auto)
     {
         file_type = determine_file_type(filename);
     }
 
-    if (file_type == FileTypes::CSV)
+    switch (file_type)
     {
-        m_write_func = [this](auto &&PH1) { write_csv(std::forward<decltype(PH1)>(PH1)); };
+    case FileTypes::JSON: {
+        m_write_func = [this](auto&& PH1) { write_json(std::forward<decltype(PH1)>(PH1)); };
+        break;
     }
-    else if (file_type == FileTypes::JSON)
-    {
-        m_write_func = [this](auto &&PH1) { write_json(std::forward<decltype(PH1)>(PH1)); };
+    case FileTypes::CSV: {
+        m_write_func = [this](auto&& PH1) { write_csv(std::forward<decltype(PH1)>(PH1)); };
+        break;
     }
-    else  // FileTypes::AUTO
-    {
-        LOG(FATAL) << "Unknown extension for file: " << filename;
-        throw std::runtime_error("Unknown extension");
+    case FileTypes::PARQUET: {
+        m_write_func = [this](auto&& PH1) { write_parquet(std::forward<decltype(PH1)>(PH1)); };
+        break;
+    }
+    case FileTypes::Auto:
+    default:
+        throw std::runtime_error(
+            MORPHEUS_CONCAT_STR("Unknown extension for file: '" << filename << "'. File type: " << file_type));
     }
 
     // Enable throwing exceptions in case something fails.
@@ -66,16 +78,23 @@ WriteToFileStage::WriteToFileStage(const std::string &filename,
     m_fstream.open(filename, mode);
 }
 
-void WriteToFileStage::write_json(WriteToFileStage::sink_type_t &msg)
+void WriteToFileStage::write_json(WriteToFileStage::sink_type_t& msg)
 {
+    auto mutable_info = msg->get_mutable_info();
     // Call df_to_json passing our fstream
-    df_to_json(msg->get_info(), m_fstream, m_include_index_col);
+    df_to_json(mutable_info, m_fstream, m_include_index_col, m_flush);
 }
 
-void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t &msg)
+void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t& msg)
 {
     // Call df_to_csv passing our fstream
-    df_to_csv(msg->get_info(), m_fstream, m_is_first, m_include_index_col);
+    df_to_csv(msg->get_info(), m_fstream, m_is_first, m_include_index_col, m_flush);
+}
+
+void WriteToFileStage::write_parquet(WriteToFileStage::sink_type_t& msg)
+{
+    // Call df_to_csv passing our fstream
+    df_to_parquet(msg->get_info(), m_fstream, m_is_first, m_include_index_col, m_flush);
 }
 
 void WriteToFileStage::close()
@@ -113,7 +132,8 @@ std::shared_ptr<mrc::segment::Object<WriteToFileStage>> WriteToFileStageInterfac
     const std::string& filename,
     const std::string& mode,
     FileTypes file_type,
-    bool include_index_col)
+    bool include_index_col,
+    bool flush)
 {
     std::ios::openmode fsmode = std::ios::out;
 
@@ -149,7 +169,8 @@ std::shared_ptr<mrc::segment::Object<WriteToFileStage>> WriteToFileStageInterfac
         throw std::runtime_error(std::string("Unsupported file mode. Must choose either 'w' or 'a'. Mode: ") + mode);
     }
 
-    auto stage = builder.construct_object<WriteToFileStage>(name, filename, fsmode, file_type, include_index_col);
+    auto stage =
+        builder.construct_object<WriteToFileStage>(name, filename, fsmode, file_type, include_index_col, flush);
 
     return stage;
 }

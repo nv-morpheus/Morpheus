@@ -30,6 +30,7 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.logger import LogLevels
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,8 @@ class MonitorStage(SinglePortStage):
     determine_count_fn : typing.Callable[[typing.Any], int]
         Custom function for determining the count in a message. Gets called for each message. Allows for
         correct counting of batched and sliced messages.
-
+    log_level : `morpheus.utils.logger.LogLevels`, default = 'INFO'
+        Enable this stage when the configured log level is at `log_level` or lower.
     """
     stage_count: int = 0
 
@@ -175,7 +177,8 @@ class MonitorStage(SinglePortStage):
                  smoothing: float = 0.05,
                  unit: str = "messages",
                  delayed_start: bool = False,
-                 determine_count_fn: typing.Callable[[typing.Any], int] = None):
+                 determine_count_fn: typing.Callable[[typing.Any], int] = None,
+                 log_level: LogLevels = LogLevels.INFO):
         super().__init__(c)
 
         self._progress: MorpheusTqdm = None
@@ -189,6 +192,12 @@ class MonitorStage(SinglePortStage):
         self._delayed_start = delayed_start
 
         self._determine_count_fn = determine_count_fn
+
+        if isinstance(log_level, LogLevels):
+            log_level = log_level.value
+
+        self._log_level = log_level
+        self._enabled = None  # defined on first call to _is_enabled
 
     @property
     def name(self) -> str:
@@ -209,16 +218,23 @@ class MonitorStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
+    def _is_enabled(self) -> bool:
+        if self._enabled is None:
+            self._enabled = logger.isEnabledFor(self._log_level)
+
+        return self._enabled
+
     def on_start(self):
         """
         Starts the pipeline stage's progress bar.
         """
-        # Set the monitor interval to 0 to use prevent using tqdms monitor
-        tqdm.monitor_interval = 0
+        if self._is_enabled():
+            # Set the monitor interval to 0 to use prevent using tqdms monitor
+            tqdm.monitor_interval = 0
 
-        # Start the progress bar if we dont have a delayed start
-        if (not self._delayed_start):
-            self._ensure_progress_bar()
+            # Start the progress bar if we dont have a delayed start
+            if (not self._delayed_start):
+                self._ensure_progress_bar()
 
     def stop(self):
         """
@@ -241,6 +257,8 @@ class MonitorStage(SinglePortStage):
             self._progress.reset()
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        if not self._is_enabled():
+            return input_stream
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
@@ -255,11 +273,11 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            obs.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        # Use a component so we track progress using the upstream progress engine. This will provide more accurate
+        # results
+        stream = builder.make_node_component(self.unique_name,
+                                             ops.map(self._progress_sink),
+                                             ops.on_completed(sink_on_completed))
 
         builder.make_edge(input_stream[0], stream)
 

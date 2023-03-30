@@ -17,30 +17,27 @@
 
 #include "morpheus/stages/file_source.hpp"
 
-#include "morpheus/io/deserializers.hpp"
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
 
-#include <cudf/column/column.hpp>  // for column
-#include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
-#include <cudf/scalar/scalar.hpp>  // for string_scalar
-#include <cudf/strings/replace.hpp>
-#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
-#include <cudf/table/table.hpp>                  // for table
+#include "morpheus/io/deserializers.hpp"
+#include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
+
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
-#include <algorithm>  // for find
-#include <cstddef>    // for size_t
-#include <filesystem>
+#include <functional>
 #include <memory>
-#include <regex>
 #include <sstream>
-#include <stdexcept>  // for runtime_error
 #include <utility>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
@@ -58,7 +55,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
         auto data_table     = load_table_from_file(m_filename);
-        int index_col_count = get_index_col_count(data_table);
+        int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
         // When index_col_count is 0 this will cause a new range index to be created
@@ -83,11 +80,11 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             // Clone the meta object before pushing while we still have access to it
             if (repeat_idx + 1 < m_repeat)
             {
+                // Use the copy function, copy_to_py_object will acquire it's own gil
+                auto df = CudfHelper::table_from_table_info(meta->get_info());
+
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;
-
-                // Use the copy function
-                auto df = meta->get_py_table().attr("copy")();
 
                 pybind11::int_ df_len = pybind11::len(df);
 

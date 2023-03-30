@@ -20,11 +20,12 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import mlflow
-from dfencoder import AutoEncoder
 from mlflow.entities.model_registry import RegisteredModel
 from mlflow.exceptions import MlflowException
 from mlflow.store.entities.paged_list import PagedList
 from mlflow.tracking.client import MlflowClient
+
+from morpheus.models.dfencoder import AutoEncoder
 
 from .logging_timer import log_time
 
@@ -216,7 +217,7 @@ class ModelManager:
                     self._existing_models.clear()
 
                     # Loop over the registered models with the pagination
-                    while ((results := client.list_registered_models(max_results=1000, page_token=results.token))
+                    while ((results := client.search_registered_models(max_results=1000, page_token=results.token))
                            is not None):
 
                         self._existing_models.update(model.name for model in results)

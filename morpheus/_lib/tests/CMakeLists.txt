@@ -15,24 +15,32 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 
+find_package(pybind11 REQUIRED)
+
 # Keep all source files sorted
 add_executable(test_libmorpheus
   # test_cuda.cu
+  io/test_data_loader.cpp
+  io/test_data_loader_registry.cpp
+  io/test_loaders.cpp
+  messages/test_control_message.cpp
+  modules/test_data_loader_module.cpp
+  test_deserializers.cpp
+  test_dev_mem_info.cpp
+  test_file_in_out.cpp
   test_main.cpp
   test_matx_util.cpp
   test_morpheus.cpp
   test_multi_slices.cpp
   test_tensor.cpp
-  test_type_util_detail.cpp
+  test_type_util.cpp
 )
 
 target_link_libraries(test_libmorpheus
   PRIVATE
-    cuda_utils
-    morpheus
-    mrc::pymrc
     GTest::gtest
     matx::matx
+    morpheus
     pybind11::embed
 )
 

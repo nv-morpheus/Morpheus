@@ -93,7 +93,7 @@ class LinearModulesStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        # Laod module from registry.
+        # Load module from the registry.
         module = load_module(self._module_config, builder=builder)
 
         mod_in_stream = module.input_port(self._input_port_name)

@@ -22,9 +22,9 @@ python abp-nvsmi-xgb-20210310.py \
 import argparse
 
 import xgboost as xgb
+from sklearn.model_selection import train_test_split
 
 import cudf
-from sklearn.model_selection import train_test_split
 
 
 def preprocess(trainingdata):

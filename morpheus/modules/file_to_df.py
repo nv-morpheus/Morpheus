@@ -30,42 +30,62 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import FILE_TO_DF
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILE_TO_DF, MODULE_NAMESPACE)
+@register_module(FILE_TO_DF, MORPHEUS_MODULE_NAMESPACE)
 def file_to_df(builder: mrc.Builder):
     """
-    This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
-    In addition to loading data from the disk, it has ability to load the file content from S3 buckets.
+    This module reads data from batched files into a DataFrame after receiving input from the "FileBatcher" module.
+    It can load file content from both local disk and S3 buckets.
 
     Parameters
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    -----
+    Configurable parameters:
+        - cache_dir (str): Directory to cache the rolling window data.
+        - file_type (str): Type of the input file.
+        - filter_null (bool): Whether to filter out null values.
+        - parser_kwargs (dict): Keyword arguments to pass to the parser.
+        - schema (dict): Schema of the input data.
+        - timestamp_column_name (str): Name of the timestamp column.
     """
 
-    config = get_module_config(FILE_TO_DF, builder)
+    config = builder.get_current_module_config()
 
-    schema_config = config.get("schema", None)
-    schema_str = schema_config.get("schema_str", None)
-    encoding = schema_config.get("encoding", None)
-    file_type = config.get("file_type", None)
-    filter_null = config.get("filter_null", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("schema" not in config) or (config["schema"] is None):
+        raise ValueError("Input schema is required.")
+
+    schema_config = config["schema"]
+    schema_str = schema_config["schema_str"]
+    encoding = schema_config["encoding"]
+
+    file_type = config.get("file_type", "JSON")
+    filter_null = config.get("filter_null", False)
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
                                     "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+
+    if (cache_dir is None):
+        cache_dir = "./.cache"
+        logger.warning("Cache directory not set. Defaulting to ./.cache")
+
     cache_dir = os.path.join(cache_dir, "file_cache")
 
     # Load input schema
@@ -211,7 +231,7 @@ def file_to_df(builder: mrc.Builder):
         output_df: pd.DataFrame = pd.concat(dfs)
 
         # Finally sort by timestamp and then reset the index
-        output_df.sort_values(by=["timestamp"], inplace=True)
+        output_df.sort_values(by=[timestamp_column_name], inplace=True)
 
         output_df.reset_index(drop=True, inplace=True)
 
@@ -228,14 +248,14 @@ def file_to_df(builder: mrc.Builder):
 
         return (output_df, False)
 
-    def convert_to_dataframe(s3_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
-        if (not s3_object_batch):
+    def convert_to_dataframe(file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
+        if (not file_object_batch):
             return None
 
         start_time = time.time()
 
         try:
-            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(s3_object_batch)
+            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(file_object_batch)
 
             duration = (time.time() - start_time) * 1000.0
 
@@ -254,7 +274,7 @@ def file_to_df(builder: mrc.Builder):
     if (download_method.startswith("dask")):
         dask_cluster = get_dask_cluster()
 
-    node = builder.make_node_full(FILE_TO_DF, node_fn)
+    node = builder.make_node(FILE_TO_DF, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

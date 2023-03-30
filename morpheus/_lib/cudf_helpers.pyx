@@ -37,23 +37,17 @@ from cudf._lib.utils cimport table_view_from_table
 
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
-    cdef cppclass IDataTable:
-        IDataTable()
 
-    cdef cppclass TableInfo:
-        TableInfo()
-        TableInfo(shared_ptr[const IDataTable] parent,
-                  table_view view,
-                  vector[string] index_names,
-                  vector[string] column_names)
+    cdef cppclass TableInfoData:
+        TableInfoData()
+        TableInfoData(table_view view,
+                      vector[string] indices,
+                      vector[string] columns)
 
-        table_view get_view() const
-        vector[string] get_index_names()
-        vector[string] get_column_names() const
+        table_view table_view
+        vector[string] index_names
+        vector[string] column_names
 
-        int num_indices() const
-        int num_columns() const
-        int num_rows() const
 
 cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
@@ -83,19 +77,29 @@ cdef public api:
 
         return cudf.DataFrame._from_data(data, index)
 
-    object make_table_from_table_info(TableInfo info, object owner):
+    object make_table_from_table_info_data(TableInfoData table_info, object owner):
 
-        i_names = info.get_index_names()
-        c_names = info.get_column_names()
+        index_names = None
 
-        index_names = [x.decode() for x in i_names]
-        column_names = [x.decode() for x in c_names]
+        if (table_info.index_names.size() > 0):
+            index_names = []
 
-        data, index = data_from_table_view(info.get_view(), owner, column_names=column_names, index_names=index_names)
+            for c_name in table_info.index_names:
+                name = c_name.decode()
+                index_names.append(name if name != "" else None)
+
+        column_names = []
+
+        for c_name in table_info.column_names:
+                name = c_name.decode()
+                column_names.append(name if name != "" else None)
+
+        data, index = data_from_table_view(table_info.table_view, owner=owner, column_names=column_names, index_names=index_names)
 
         return cudf.DataFrame._from_data(data, index)
 
-    TableInfo make_table_info_from_table(object table, shared_ptr[const IDataTable] parent):
+
+    TableInfoData make_table_info_data_from_table(object table):
 
         cdef vector[string] temp_col_names = get_column_names(table, True)
 
@@ -123,4 +127,4 @@ cdef public api:
 
             column_names.push_back(str.encode(name))
 
-        return TableInfo(parent, input_table_view, index_names, column_names)
+        return TableInfoData(input_table_view, index_names, column_names)

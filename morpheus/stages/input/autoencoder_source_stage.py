@@ -22,9 +22,10 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.messages import UserMessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.directory_watcher import DirectoryWatcher
@@ -32,7 +33,7 @@ from morpheus.utils.directory_watcher import DirectoryWatcher
 logger = logging.getLogger(__name__)
 
 
-class AutoencoderSourceStage(SingleOutputSource):
+class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     All AutoEncoder source stages must extend this class and implement the `files_to_dfs_per_user` abstract method.
     Feature columns can be managed by overriding the `derive_features` method. Otherwise, all columns from input
@@ -54,7 +55,7 @@ class AutoencoderSourceStage(SingleOutputSource):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus._lib.common.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus.common.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1

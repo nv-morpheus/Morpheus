@@ -24,7 +24,7 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
-from morpheus.cli.utils import get_enum_values
+from morpheus.cli.utils import get_enum_keys
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import load_labels_file
@@ -48,7 +48,7 @@ from morpheus.utils.logger import configure_logging
 
 DEFAULT_CONFIG = Config()
 
-# List all of the options in from morpheus._lib.common.FileTypes without importing the object. This slows down
+# List all of the options in from morpheus.common.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
@@ -450,8 +450,8 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               help=("Specifying this value will filter all incoming data to only use rows with matching User IDs. "
                     "Which column is used for the User ID is specified by `userid_column_name`"))
 @click.option('--feature_scaler',
-              type=click.Choice(get_enum_values(AEFeatureScalar), case_sensitive=False),
-              default=AEFeatureScalar.STANDARD.value,
+              type=click.Choice(get_enum_keys(AEFeatureScalar), case_sensitive=False),
+              default=AEFeatureScalar.STANDARD.name,
               callback=functools.partial(parse_enum, enum_class=AEFeatureScalar, case_sensitive=False),
               help=("Autoencoder feature scaler"))
 @click.option('--use_generic_model',

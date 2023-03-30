@@ -236,7 +236,9 @@ class _UserTimeSeries(object):
             anomalies = action.window["event_bin"].isin(is_anomaly.get())
 
             # Set the anomalies by matching indexes
-            action.message.set_meta("ts_anomaly", anomalies)
+            action.message.set_meta(
+                "ts_anomaly",
+                anomalies[action.message.mess_offset:action.message.mess_offset + action.message.mess_count])
 
             idx = action.message.get_meta().index
 

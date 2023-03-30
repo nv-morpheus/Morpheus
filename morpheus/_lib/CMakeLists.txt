@@ -13,18 +13,11 @@
 # =============================================================================
 list(APPEND CMAKE_MESSAGE_CONTEXT "_lib")
 
-find_package(pybind11 REQUIRED)
-
-if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  message(STATUS "Performing inplace build for Python modules and library dependencies. Use `pip install -e .`\
-   from the root folder to install Morpheus.")
-endif()
-
 ########### morpheus ###########
 set(MORPHEUS_LIB_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-#----------cuda_utils---------
-include(cmake/libraries/cuda_utils.cmake)
+#----------morpheus_utils---------
+include(cmake/libraries/morpheus_utils.cmake)
 
 #----------cudf_helpers---------
 include(cmake/libraries/cudf_helpers.cmake)
@@ -33,11 +26,17 @@ include(cmake/libraries/cudf_helpers.cmake)
 include(cmake/libraries/morpheus.cmake)
 
 ########### py_morpheus ########
+# Set the default link targets to avoid repeating this
+morpheus_utils_python_package_set_default_link_targets(morpheus mrc::pymrc)
+
 #----------morpheus._lib.stages---------
 include(cmake/python_modules/stages.cmake)
 
 #----------morpheus._lib.messages---------
 include(cmake/python_modules/messages.cmake)
+
+#----------morpheus._lib.modules---------
+include(cmake/python_modules/modules.cmake)
 
 #----------morpheus._lib.common---------
 include(cmake/python_modules/common.cmake)

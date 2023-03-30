@@ -94,7 +94,6 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-   getting_started
    cloud_deployment_guide
 
 .. toctree::
@@ -104,6 +103,20 @@ Deploying Morpheus
 
    py_api
    _lib/index
+
+.. toctree::
+   :caption: Morpheus Modules
+   :maxdepth: 20
+   :hidden:
+
+   modules/morpheus_modules
+
+.. toctree::
+   :caption: Morpheus Loaders
+   :maxdepth: 20
+   :hidden:
+
+   loaders/morpheus_loaders
 
 .. toctree::
    :maxdepth: 20

@@ -17,12 +17,16 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus_export.h"
 
-#include <algorithm>  // IWYU pragma: keep
-#include <iosfwd>     // for ostream
-#include <string>     // for string
-#include <vector>     // for vector
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
+
+#include <algorithm>   // IWYU pragma: keep
+#include <functional>  // for multiplies
+#include <iosfwd>      // for ostream
+#include <numeric>     // for accumulate
+#include <string>      // for string
+#include <vector>      // for vector
 // <algorithm> is needed for copy, min_element & transform
 
 namespace morpheus {
@@ -39,17 +43,15 @@ namespace morpheus {
  * @note A tensor whose values are laid out in the storage starting from the rightmost
  * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
  */
-struct TensorUtils
+struct MORPHEUS_EXPORT TensorUtils
 {
-    using shape_type_t = std::vector<TensorIndex>;
-
     /**
      * @brief Write a formatted shape to a stream
      *
      * @param shape
      * @param os
      */
-    static void write_shape_to_stream(const shape_type_t& shape, std::ostream& os);
+    static void write_shape_to_stream(const ShapeType& shape, std::ostream& os);
 
     /**
      * @brief Convenience method to get a string from write_shape_to_stream
@@ -57,7 +59,7 @@ struct TensorUtils
      * @param shape
      * @return std::string
      */
-    static std::string shape_to_string(const shape_type_t& shape);
+    static std::string shape_to_string(const ShapeType& shape);
 
     /**
      * @brief Set stride to be contiguous with respect to row-major layouts
@@ -65,7 +67,7 @@ struct TensorUtils
      * @param shape
      * @param stride
      */
-    static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride);
+    static void set_contiguous_stride(const ShapeType& shape, ShapeType& stride);
 
     /**
      * @brief Determines if the tensor layout is both contiguous and ordered.
@@ -73,7 +75,7 @@ struct TensorUtils
      * @note A tensor whose values are laid out in the storage starting from the rightmost
      * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
      */
-    static bool has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride);
+    static bool has_contiguous_stride(const ShapeType& shape, const ShapeType& stride);
 
     /**
      * @brief Validate the shape and stride are compatible
@@ -83,17 +85,16 @@ struct TensorUtils
      * @return true
      * @return false
      */
-    static bool validate_shape_and_stride(const std::vector<TensorIndex>& shape,
-                                          const std::vector<TensorIndex>& stride);
+    static bool validate_shape_and_stride(const ShapeType& shape, const ShapeType& stride);
 
     /**
      * @brief Returns a stride expressed in terms of elements given a stride expressed either in terms of bytes or
      * elements.
      *
      * @param stride
-     * @return shape_type_t
+     * @return ShapeType
      */
-    template <typename IndexT, typename SrcIndexT = IndexT>
+    template <typename IndexT = TensorIndex, typename SrcIndexT = IndexT>
     static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
     {
         std::vector<IndexT> tensor_stride(stride.size());
@@ -105,6 +106,19 @@ struct TensorUtils
         });
 
         return tensor_stride;
+    }
+
+    /**
+     * @brief Compute the number of elements in a tensor based on the shape
+     *
+     * @tparam IndexT
+     * @param shape
+     * @return IndexT
+     */
+    template <typename IndexT>
+    static inline IndexT get_elem_count(const std::vector<IndexT>& shape)
+    {
+        return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
     }
 };
 

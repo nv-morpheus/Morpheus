@@ -103,20 +103,17 @@ class PreprocessAEStage(PreprocessBaseStage):
             mess_count = x.mess_count
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         memory = InferenceMemoryAE(count=count, input=input, seq_ids=seg_ids)
 
-        infer_message = MultiInferenceAEMessage(meta=x.meta,
-                                                mess_offset=x.mess_offset,
-                                                mess_count=mess_count,
-                                                memory=memory,
-                                                offset=0,
-                                                count=count,
-                                                model=autoencoder,
-                                                train_scores_mean=scores_mean,
-                                                train_scores_std=scores_std)
+        infer_message = MultiInferenceAEMessage.from_message(x,
+                                                             mess_count=mess_count,
+                                                             memory=memory,
+                                                             model=autoencoder,
+                                                             train_scores_mean=scores_mean,
+                                                             train_scores_std=scores_std)
 
         return infer_message
 

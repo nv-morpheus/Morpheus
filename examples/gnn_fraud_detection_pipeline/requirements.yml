@@ -14,14 +14,20 @@
 # limitations under the License.
 
 channels:
+    - anaconda # Needed for libprotobuf=3.20.3 conda-forge only has 3.20.2
     - rapidsai
     - nvidia
-    - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
-    - stellargraph
     - conda-forge
 dependencies:
     - chardet=5.0.0
-    - cuml=22.08
-    - stellargraph=1.2.1
-    - tensorflow=2.9.1
+    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
+    - cuml=22.10
+    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+    - libcusolver<=11.4.1.48
+    - libcusparse<12
+    - libprotobuf=3.20.3 # tensorflow 2.12 requires protobuf>=3.20.2
+    - pip:
+        # tensorflow exists in conda-forge but is tied to CUDA-11.3
+        - stellargraph==1.2.1
+        - tensorflow==2.12.0
+        - protobuf==3.20.3

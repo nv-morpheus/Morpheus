@@ -138,6 +138,16 @@ python dfp_viz_duo_pipeline.py \
 While still in the `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
 
 ### Install dependencies
+
+```
+# Install Node.js
+apt update
+curl -sL https://deb.nodesource.com/setup_16.x | bash
+apt install nodejs
+```
+```
+export LD_LIBRARY_PATH=/opt/conda/envs/morpheus/lib:${LD_LIBRARY_PATH}
+```
 ```
 cd viz
 ```

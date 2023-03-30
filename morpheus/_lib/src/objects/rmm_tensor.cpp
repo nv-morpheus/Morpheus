@@ -18,10 +18,10 @@
 #include "morpheus/objects/rmm_tensor.hpp"
 
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for get_element_stride
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count & get_element_stride
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal
@@ -30,22 +30,23 @@
 #include <rmm/device_buffer.hpp>
 
 #include <algorithm>  // for copy, transform
-#include <cstdint>
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
-#include <numeric>  // for accumulate, transform_reduce
+#include <numeric>  // for transform_reduce
 #include <ostream>  // needed for logging
+#include <utility>  // for move, pair
 #include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** RMMTensor****************************************/
 RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
-                     size_t offset,
+                     TensorIndex offset,
                      DType dtype,
-                     std::vector<TensorIndex> shape,
-                     std::vector<TensorIndex> stride) :
+                     ShapeType shape,
+                     ShapeType stride) :
+  m_mem_descriptor(std::make_shared<MemoryDescriptor>(device_buffer->stream(), device_buffer->memory_resource())),
   m_md(std::move(device_buffer)),
   m_offset(offset),
   m_dtype(std::move(dtype)),
@@ -63,7 +64,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
 
 std::shared_ptr<MemoryDescriptor> RMMTensor::get_memory() const
 {
-    return nullptr;
+    return m_mem_descriptor;
 }
 
 void* RMMTensor::data() const
@@ -76,43 +77,48 @@ RankType RMMTensor::rank() const
     return m_shape.size();
 }
 
-DataType RMMTensor::dtype() const
+DType RMMTensor::dtype() const
 {
     return m_dtype;
 }
 
-std::size_t RMMTensor::count() const
+TensorIndex RMMTensor::count() const
 {
-    return std::accumulate(m_shape.begin(), m_shape.end(), 1, std::multiplies<>());
+    return TensorUtils::get_elem_count(m_shape);
 }
 
-std::size_t RMMTensor::bytes() const
+TensorIndex RMMTensor::bytes() const
 {
     return count() * m_dtype.item_size();
 }
 
-std::size_t RMMTensor::shape(std::size_t idx) const
+TensorIndex RMMTensor::shape(TensorIndex idx) const
 {
     DCHECK_LT(idx, m_shape.size());
     return m_shape.at(idx);
 }
 
-std::size_t RMMTensor::stride(std::size_t idx) const
+TensorIndex RMMTensor::stride(TensorIndex idx) const
 {
     DCHECK_LT(idx, m_stride.size());
     return m_stride.at(idx);
 }
 
-void RMMTensor::get_shape(std::vector<TensorIndex>& s) const
+void RMMTensor::get_shape(ShapeType& s) const
 {
     s.resize(rank());
     std::copy(m_shape.begin(), m_shape.end(), s.begin());
 }
 
-void RMMTensor::get_stride(std::vector<TensorIndex>& s) const
+void RMMTensor::get_stride(ShapeType& s) const
 {
     s.resize(rank());
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
+}
+
+intptr_t RMMTensor::stream() const
+{
+    return (intptr_t)m_md->stream().value();
 }
 
 bool RMMTensor::is_compact() const
@@ -130,15 +136,14 @@ bool RMMTensor::is_compact() const
     return true;
 }
 
-std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex>& min_dims,
-                                          const std::vector<TensorIndex>& max_dims) const
+std::shared_ptr<ITensor> RMMTensor::slice(const ShapeType& min_dims, const ShapeType& max_dims) const
 {
     // Calc new offset
-    size_t offset = std::transform_reduce(
+    auto offset = std::transform_reduce(
         m_stride.begin(), m_stride.end(), min_dims.begin(), m_offset, std::plus<>(), std::multiplies<>());
 
     // Calc new shape
-    std::vector<TensorIndex> shape;
+    ShapeType shape;
     std::transform(max_dims.begin(), max_dims.end(), min_dims.begin(), std::back_inserter(shape), std::minus<>());
 
     // Stride remains the same
@@ -146,7 +151,7 @@ std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex>& min_di
     return std::make_shared<RMMTensor>(m_md, offset, m_dtype, shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::reshape(const std::vector<TensorIndex>& dims) const
+std::shared_ptr<ITensor> RMMTensor::reshape(const ShapeType& dims) const
 {
     return std::make_shared<RMMTensor>(m_md, 0, m_dtype, dims, m_stride);
 }
@@ -160,39 +165,27 @@ std::shared_ptr<ITensor> RMMTensor::deep_copy() const
     return std::make_shared<RMMTensor>(copied_buffer, m_offset, m_dtype, m_shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::as_type(DataType dtype) const
+std::shared_ptr<ITensor> RMMTensor::as_type(DType new_dtype) const
 {
-    DType new_dtype(dtype.type_id());
-
-    auto input_type = m_dtype.type_id();
-    std::vector<std::size_t> input_shape(rank());
-    std::copy(m_shape.cbegin(), m_shape.cend(), input_shape.begin());
-
-    std::vector<std::size_t> input_stride(rank());
-    std::copy(m_stride.cbegin(), m_stride.cend(), input_stride.begin());
-
-    auto output_type = new_dtype.type_id();
-
     // Now do the conversion
-    auto new_data_buffer = MatxUtil::cast(
-        DevMemInfo{m_md, m_dtype, std::move(input_shape), std::move(input_stride), this->offset_bytes()}, output_type);
+    auto new_data_buffer =
+        MatxUtil::cast(DevMemInfo{m_md, m_dtype, m_shape, m_stride, this->offset_bytes()}, new_dtype.type_id());
 
     // Return the new type
     return std::make_shared<RMMTensor>(new_data_buffer, 0, new_dtype, m_shape, m_stride);
 }
 
-size_t RMMTensor::offset_bytes() const
+TensorIndex RMMTensor::offset_bytes() const
 {
     return m_offset * m_dtype.item_size();
 }
 
-std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                                              TensorIndex num_rows) const
+std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<RangeType>& selected_rows, TensorIndex num_rows) const
 {
     const auto tensor_type = dtype();
     const auto item_size   = tensor_type.item_size();
-    const auto num_columns = static_cast<TensorIndex>(shape(1));
-    const auto stride      = TensorUtils::get_element_stride<TensorIndex>(m_stride);
+    const auto num_columns = shape(1);
+    const auto stride      = TensorUtils::get_element_stride(m_stride);
     const auto row_stride  = stride[0];
 
     auto output_buffer =
@@ -203,7 +196,7 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<Tensor
     for (const auto& rows : selected_rows)
     {
         const auto& sliced_input_tensor  = slice({rows.first, 0}, {rows.second, num_columns});
-        const std::size_t num_input_rows = rows.second - rows.first;
+        const TensorIndex num_input_rows = rows.second - rows.first;
         DCHECK_EQ(num_input_rows, sliced_input_tensor->shape(0));
 
         const auto slice_size = sliced_input_tensor->bytes();
@@ -228,7 +221,7 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<Tensor
         output_offset += slice_size;
     }
 
-    std::vector<TensorIndex> output_shape{num_rows, num_columns};
+    ShapeType output_shape{num_rows, num_columns};
     return std::make_shared<RMMTensor>(output_buffer, 0, tensor_type, output_shape);
 }
 }  // namespace morpheus

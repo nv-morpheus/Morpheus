@@ -20,8 +20,14 @@
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <memory>
+#include <shared_mutex>
+
 namespace morpheus {
-class TableInfo;
+
+struct TableInfoData;
+struct TableInfo;
+struct MutableTableInfo;
 
 /****** Component public implementations *******************/
 /****** IDataTable******************************************/
@@ -42,7 +48,8 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      * @brief Construct a new IDataTable object
      *
      */
-    IDataTable() = default;
+    IDataTable()          = default;
+    virtual ~IDataTable() = default;
 
     /**
      * @brief cuDF dataframe rows count.
@@ -51,19 +58,56 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      */
     virtual cudf::size_type count() const = 0;
 
+    ///@{
     /**
-     * @brief cuDF dataframe as a table info.
+     * @brief Gets a read-only instance of `TableInfo` which can be used to query and update the table from both C++ and
+     * Python. This will block calls to `get_mutable_info` until all `TableInfo` object have been destroyed.
      *
      * @return TableInfo
+     *
+     * @note Read-only refers to changes made to the structure of a DataFrame. i.e. Adding/Removing columns, changing
+     * column, types, adding/removing rows, etc. It's possible to update an existing range of data in a column with
+     * `TableInfo`.
      */
-    virtual TableInfo get_info() const = 0;
+    TableInfo get_info() const;
+    ///@}
+
+    ///@{
+    /**
+     * @brief Gets a writable instance of `MutableTableInfo` which can be used to modify the structure of the table from
+     * both C++ and Python. This requires exclusive access to the underlying `IDataTable` and will block until all
+     * `TableInfo` and `MutableTableInfo` objects have been destroyed. This class also provides direct access to the
+     * underlying python object.
+     *
+     * @return MutableTableInfo
+     *
+     * @note Read-only refers to changes made to the structure of a DataFrame. i.e. Adding/Removing columns, changing
+     * column, types, adding/removing rows, etc. It's possible to update an existing range of data in a column with
+     * `TableInfo`.
+     */
+    MutableTableInfo get_mutable_info() const;
+    ///@}
 
     /**
-     * @brief underlying cuDF DataFrame as a python object.
+     * @brief Direct access to the underlying python object. Use only when absolutely necessary. `get_mutable_info()`
+     * provides better checking when using the python object directly.
      *
-     * @return pybind11::object
+     * @return const pybind11::object&
      */
-    virtual const pybind11::object &get_py_object() const = 0;
+    virtual const pybind11::object& get_py_object() const = 0;
+
+  private:
+    /**
+     * @brief Gets the necessary information to build a `TableInfo` object from this interface. Must be implemented by
+     * derived classes.
+     *
+     * @return TableInfoData
+     */
+    virtual TableInfoData get_table_data() const = 0;
+
+    // Used to prevent locking to shared resources. Will need to be a boost fibers
+    // supported mutex if we support C++ nodes with Fiber runables in the future
+    mutable std::shared_mutex m_mutex{};
 };
 /** @} */  // end of group
 }  // namespace morpheus

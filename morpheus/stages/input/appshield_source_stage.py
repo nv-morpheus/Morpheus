@@ -30,13 +30,14 @@ from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline import StreamPair
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-appshield", modes=[PipelineModes.FIL])
-class AppShieldSourceStage(SingleOutputSource):
+class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
     It normalizes nested json messages and arranges them into a dataframe by snapshot
@@ -165,14 +166,12 @@ class AppShieldSourceStage(SingleOutputSource):
         try:
             plugin_df = pd.DataFrame(columns=features_plugin, data=data["data"])
         except ValueError:
-            logger.exception("Error while loading file content to datframe with 'cols_exclude' filter")
-            logger.info("Attempting to populate the dataframe with all columns.")
+            logger.info(
+                "Failed to load partial set of columns from input data. Loading entire DataFrame and filtering.")
 
             plugin_df = pd.DataFrame(columns=titles, data=data["data"])
 
-            logger.info("Applying 'cols_exclude' filter on dataframe")
-
-            plugin_df = plugin_df[features_plugin]
+            plugin_df.drop(columns=plugin_df.columns.difference(features_plugin), inplace=True)
 
         return plugin_df
 

@@ -16,7 +16,7 @@
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
-{% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
+{% set cuda_version='.'.join(environ.get('CUDA', '11.8').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
 {% set rapids_version = "22.10" %}
 
@@ -37,7 +37,7 @@ outputs:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
         - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_BUILD_PYTHON_STUBS
+        - MORPHEUS_PYTHON_BUILD_STUBS
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
       run_exports:
@@ -69,7 +69,7 @@ outputs:
         - scikit-build >=0.12
         - versioneer-518
       run:
-        # Runtime only requirements. This + setup.y is the definitive runtime requirement list
+        # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - click >=8
         - configargparse 1.5.*
         - cuda-python <=11.7.0 # Needed to ensure cudatoolkit and not cuda-toolkit is installed
@@ -77,6 +77,7 @@ outputs:
         - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
         - datacompy 0.8.*
+        - dill
         - distributed
         - docker-py 5.0.*
         - grpcio # Version determined from cudf
@@ -88,10 +89,15 @@ outputs:
         - pandas 1.3.*
         - pluggy 1.0.*
         - python
+        - scikit-learn=0.23.1
         - tqdm 4.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
-
+      run_constrained:
+        # If cuml is installed, we need to constrain these two libraries. See:
+        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+        - libcusolver<=11.4.1.48
+        - libcusparse<12
     test:
       requires:
         - cudatoolkit {{ cuda_version }}.*
@@ -99,22 +105,17 @@ outputs:
         - pytest
         - pytest-cov
         - pytest-benchmark
+        # test that cuml can be installed in the env
+        - cuml {{ rapids_version }}
       source_files:
-        # - .git/*
         - docker/conda/environments/*
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
       imports:
         - morpheus
-        - morpheus._lib
       commands:
-        # Install dependencies that are pip-only
-        - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
-        # Ensure the test data is downloaded
-        - ./scripts/fetch_data.py fetch tests
-        # Run pytest
-        - pytest
+          - echo # make sure test requirements get installed
 
 about:
   home: https://github.com/nv-morpheus/Morpheus
