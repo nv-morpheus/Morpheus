@@ -20,7 +20,6 @@
 #include "morpheus/version.hpp"
 
 #include <mrc/modules/module_registry_util.hpp>
-#include <mrc/version.hpp>
 #include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 
@@ -40,10 +39,11 @@ PYBIND11_MODULE(modules, _module)
 
         )pbdoc";
 
-    const std::vector<unsigned int> MRCModuleVersion{mrc_VERSION_MAJOR, mrc_VERSION_MINOR, mrc_VERSION_PATCH};
+    const std::vector<unsigned int> MorpheusModuleVersion{
+        morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morpheus_VERSION_PATCH};
 
     mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>(
-        "DataLoader", "morpheus", MRCModuleVersion);
+        "DataLoader", "morpheus", MorpheusModuleVersion);
 
     _module.attr("__version__") =
         MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
