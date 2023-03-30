@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import pytest  # noqa: F401
+
+import cudf
 
 # Morpheus.common is required to register pre-made loaders
 import morpheus.common  # noqa: F401
