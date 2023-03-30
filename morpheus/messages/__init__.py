@@ -19,6 +19,7 @@ Message classes, which contain data being transfered between pipeline stages
 # isort: off
 
 from morpheus._lib.messages import ControlMessage
+from morpheus._lib.messages import DataLoaderRegistry
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
@@ -42,6 +43,7 @@ from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 __all__ = [
     "ControlMessage",
+    "DataLoaderRegistry",
     "InferenceMemory",
     "InferenceMemoryAE",
     "InferenceMemoryFIL",

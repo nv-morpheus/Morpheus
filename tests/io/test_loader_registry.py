@@ -16,8 +16,10 @@
 
 import cudf
 
+# Morpheus.common is required to register pre-made loaders
+import morpheus.common  # noqa: F401
 import morpheus.messages as messages
-from morpheus._lib.messages import DataLoaderRegistry
+from morpheus.messages import DataLoaderRegistry
 
 
 def test_loader_registry_contains():
@@ -38,7 +40,6 @@ def test_loader_registry_contains():
 
 
 def test_loader_registry_register_loader():
-
     def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
@@ -74,7 +75,6 @@ def test_loader_registry_register_loader():
 
 
 def test_loader_registry_unregister_loader():
-
     def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
