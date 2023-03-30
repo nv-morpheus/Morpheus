@@ -103,7 +103,7 @@ class PreprocessAEStage(PreprocessBaseStage):
             mess_count = x.mess_count
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         memory = InferenceMemoryAE(count=count, input=input, seq_ids=seg_ids)
