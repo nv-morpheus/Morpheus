@@ -88,14 +88,14 @@ def test_constructor(config):
 def test_build_single(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_called_once()
+    mock_segment.make_node.assert_called_once()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
@@ -104,7 +104,7 @@ def test_build_single(config):
 def test_py_inf_fn(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     mock_init = mock.MagicMock()
@@ -114,7 +114,7 @@ def test_py_inf_fn(config):
     inf_stage = InferenceStage(config)
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    py_inference_fn = mock_segment.make_node_full.call_args[0][1]
+    py_inference_fn = mock_segment.make_node.call_args[0][1]
 
     mock_pipe = mock.MagicMock()
     mock_observable = mock.MagicMock()
@@ -130,7 +130,7 @@ def test_py_inf_fn(config):
 def test_build_single_cpp(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
@@ -140,7 +140,7 @@ def test_build_single_cpp(config):
 
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_not_called()
+    mock_segment.make_node.assert_not_called()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
@@ -149,7 +149,7 @@ def test_build_single_cpp(config):
 def test_build_single_cpp_not_impl(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     inf_stage = InferenceStage(config)

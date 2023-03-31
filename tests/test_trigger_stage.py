@@ -41,5 +41,5 @@ def test_build_single(config):
     ts = TriggerStage(config)
     ts._build_single(mock_segment, mock_input)
 
-    mock_segment.make_node_full.assert_called_once()
+    mock_segment.make_node.assert_called_once()
     mock_segment.make_edge.assert_called_once()

@@ -376,7 +376,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
                 # Finally flatten to single meta
                 ops.flatten()).subscribe(sub)
 
-        post_node = builder.make_node_full(self.unique_name + "-post", node_fn)
+        post_node = builder.make_node(self.unique_name + "-post", ops.build(node_fn))
         builder.make_edge(out_stream, post_node)
 
         out_stream = post_node
