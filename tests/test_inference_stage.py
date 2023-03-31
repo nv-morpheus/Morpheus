@@ -101,10 +101,12 @@ def test_build_single(config):
 
 
 @pytest.mark.use_python
-def test_py_inf_fn(config):
+@mock.patch('mrc.core.operators.build')
+def test_py_inf_fn(mock_ops_build, config):
+    mock_ops_build.return_value = mock.MagicMock()
     mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_node
+    mock_builder = mock.MagicMock()
+    mock_builder.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     mock_init = mock.MagicMock()
@@ -112,9 +114,10 @@ def test_py_inf_fn(config):
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
-    inf_stage._build_single(mock_segment, mock_input_stream)
+    inf_stage._build_single(mock_builder, mock_input_stream)
 
-    py_inference_fn = mock_segment.make_node.call_args[0][1]
+    mock_ops_build.assert_called_once()
+    py_inference_fn = mock_ops_build.call_args[0][0]
 
     mock_pipe = mock.MagicMock()
     mock_observable = mock.MagicMock()
