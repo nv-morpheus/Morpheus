@@ -70,7 +70,7 @@ class TriggerStage(SinglePortStage):
 
             obs.pipe(ops.to_list(), ops.flatten()).subscribe(sub)
 
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

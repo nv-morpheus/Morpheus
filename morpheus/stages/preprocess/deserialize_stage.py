@@ -135,7 +135,7 @@ class DeserializeStage(MultiMessageStage):
         if self._build_cpp_node():
             stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
-            stream = builder.make_node_full(self.unique_name, node_fn)
+            stream = builder.make_node(self.unique_name, ops.build(node_fn))
 
         builder.make_edge(input_stream[0], stream)
 

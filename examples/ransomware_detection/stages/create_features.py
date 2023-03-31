@@ -164,7 +164,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
             input.pipe(ops.map(on_next), ops.map(create_multi_messages), ops.on_completed(on_completed),
                        ops.flatten()).subscribe(output)
 
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(stream, node)
         stream = node
 

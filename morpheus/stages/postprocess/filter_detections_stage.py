@@ -219,7 +219,7 @@ class FilterDetectionsStage(SinglePortStage):
                 def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
                     obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
 
-                node = builder.make_node_full(self.unique_name, flatten_fn)
+                node = builder.make_node(self.unique_name, ops.build(flatten_fn))
 
         builder.make_edge(parent_node, node)
 

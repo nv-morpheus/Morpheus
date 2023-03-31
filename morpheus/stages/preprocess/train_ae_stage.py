@@ -333,7 +333,7 @@ class TrainAEStage(MultiMessageStage):
 
             obs.pipe(ops.map(on_next), ops.flatten()).subscribe(sub)
 
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(stream, node)
         stream = node
 

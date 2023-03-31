@@ -247,7 +247,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data)).subscribe(sub)
 
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

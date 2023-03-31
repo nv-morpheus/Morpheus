@@ -513,7 +513,7 @@ class TimeSeriesStage(SinglePortStage):
             obs.pipe(ops.map(on_next), ops.filter(lambda x: len(x) > 0), ops.on_completed(on_completed),
                      ops.flatten()).subscribe(sub)
 
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.build(node_fn))
 
         builder.make_edge(input_stream[0], stream)
 
