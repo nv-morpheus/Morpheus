@@ -58,6 +58,16 @@
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Checks the status object returned by a Triton client call logging any potential errors.
+ *
+ */
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
 
 namespace {

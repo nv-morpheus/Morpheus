@@ -57,6 +57,17 @@
 // IWYU pragma: no_include <atomic>
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Checks the error code returned by an RDKafka expression (`command`) against an `expected` code
+ * (usually `RdKafka::ERR_NO_ERROR`), and logs an error otherwise.
+ *
+ */
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
         RdKafka::ErrorCode __code = command;                                                                   \
