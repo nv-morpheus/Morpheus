@@ -1,0 +1,49 @@
+<!--
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+-->
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Review DFP Inference Results</title>
+        <link rel="stylesheet" type="text/css" href="/static/submit_messages.css">
+        <link rel="stylesheet" type="text/css" href="/static/review/results.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="{{url_for('static', filename='/review/results.js')}}"></script>
+     </head>
+   <body>
+      <div class="banner">
+         <div class="banner-image"></div>
+         <h3>Review DFP Inference Results</h3>
+       </div>
+      <form>
+         <input type="file" id="csv-file" accept=".csv">
+      </form>
+      <div>
+         <label for="columns">Choose columns to display:</label>
+      </div>
+         <select id="columns" multiple onchange="toggleColumn()">
+         </select>
+      </div>
+      </br>
+      </br>
+      <button onclick="handleFileSelect()">View File or Reset</button>
+      <button onclick="saveMarked()">Save Selected Rows</button>
+      <button id="submit-button" onclick="submitTrainingMessage()" disabled>Submit Training Message</button>
+      <div id="csv-content"></div>
+   </body>
+</html>

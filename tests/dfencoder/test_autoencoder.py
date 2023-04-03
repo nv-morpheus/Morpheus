@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import typing
 
 import pandas as pd
 import pytest
@@ -22,6 +23,7 @@ import torch
 
 from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
@@ -72,13 +74,13 @@ def train_ae():
 
 
 @pytest.fixture(scope="module")
-def _train_df():
+def _train_df() -> pd.DataFrame:
     input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
     yield read_file_to_df(input_file, df_type='pandas')
 
 
 @pytest.fixture(scope="function")
-def train_df(_train_df):
+def train_df(_train_df) -> typing.Generator[pd.DataFrame, None, None]:
     yield _train_df.copy(deep=True)
 
 
@@ -97,38 +99,38 @@ def compare_numeric_features(features, expected_features):
 
 def test_ohe():
     tensor = torch.tensor(range(4), dtype=torch.int64)
-    results = autoencoder.ohe(tensor, 4, device="cpu")
+    results = autoencoder._ohe(tensor, 4, device="cpu")
     expected = torch.tensor([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
     assert results.device.type == "cpu"
     assert torch.equal(results, expected), f"{results} != {expected}"
 
-    results = autoencoder.ohe(tensor.to("cuda", copy=True), 4, device="cuda")
+    results = autoencoder._ohe(tensor.to("cuda", copy=True), 4, device="cuda")
     assert results.device.type == "cuda"
     assert torch.equal(results, expected.to("cuda", copy=True)), f"{results} != {expected}"
 
 
 def test_compute_embedding_size():
     for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert autoencoder.compute_embedding_size(input) == expected
+        assert ae_module._compute_embedding_size(input) == expected
 
 
 def test_complete_layer_constructor():
-    cc = autoencoder.CompleteLayer(4, 5)
+    cc = ae_module.CompleteLayer(4, 5)
     assert len(cc.layers) == 1
     assert isinstance(cc.layers[0], torch.nn.Linear)
     assert cc.layers[0].in_features == 4
     assert cc.layers[0].out_features == 5
 
-    cc = autoencoder.CompleteLayer(4, 5, activation='tanh')
+    cc = ae_module.CompleteLayer(4, 5, activation='tanh')
     assert len(cc.layers) == 2
     assert cc.layers[1] is torch.tanh
 
-    cc = autoencoder.CompleteLayer(4, 5, dropout=0.2)
+    cc = ae_module.CompleteLayer(4, 5, dropout=0.2)
     assert len(cc.layers) == 2
     assert isinstance(cc.layers[1], torch.nn.Dropout)
     assert cc.layers[1].p == 0.2
 
-    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
     assert len(cc.layers) == 3
     assert isinstance(cc.layers[0], torch.nn.Linear)
     assert cc.layers[0].in_features == 6
@@ -139,7 +141,7 @@ def test_complete_layer_constructor():
 
 
 def test_complete_layer_interpret_activation():
-    cc = autoencoder.CompleteLayer(4, 5)
+    cc = ae_module.CompleteLayer(4, 5)
     assert cc.interpret_activation('elu') is torch.nn.functional.elu
 
     # Test for bad activation, this really does raise the base Exception class.
@@ -149,7 +151,7 @@ def test_complete_layer_interpret_activation():
     with pytest.raises(Exception):
         cc.interpret_activation("does_not_exist")
 
-    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid')
+    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid')
     cc.interpret_activation() is torch.sigmoid
 
 
@@ -157,7 +159,7 @@ def test_complete_layer_interpret_activation():
 def test_complete_layer_forward():
     # Setting dropout probability to 0. The results of dropout our deterministic, but are only
     # consistent when run on the same GPU.
-    cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0)
+    cc = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
     t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
     results = cc.forward(t)
     expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
@@ -169,14 +171,14 @@ def test_complete_layer_forward():
 
 def test_auto_encoder_constructor_default_vals():
     ae = autoencoder.AutoEncoder()
-    assert isinstance(ae, torch.nn.Module)
-    assert ae.encoder_layers is None
-    assert ae.decoder_layers is None
+    assert isinstance(ae.model, torch.nn.Module)
+    assert ae.model.encoder_layers is None
+    assert ae.model.decoder_layers is None
     assert ae.min_cats == 10
     assert ae.swap_p == 0.15
     assert ae.batch_size == 256
     assert ae.eval_batch_size == 1024
-    assert ae.activation == 'relu'
+    assert ae.model.activation == 'relu'
     assert ae.optimizer == 'adam'
     assert ae.lr == 0.01
     assert ae.lr_decay is None
@@ -186,18 +188,18 @@ def test_auto_encoder_constructor_default_vals():
     assert ae.n_megabatches == 1
 
 
-def test_auto_encoder_constructor(train_ae):
+def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
     """
     Test copnstructor invokation using the values used by `train_ae_stage`
     """
-    assert isinstance(train_ae, torch.nn.Module)
-    assert train_ae.encoder_layers == [512, 500]
-    assert train_ae.decoder_layers == [512]
+    assert isinstance(train_ae.model, torch.nn.Module)
+    assert train_ae.model.encoder_layers == [512, 500]
+    assert train_ae.model.decoder_layers == [512]
     assert train_ae.min_cats == 1
     assert train_ae.swap_p == 0.2
     assert train_ae.batch_size == 512
     assert train_ae.eval_batch_size == 1024
-    assert train_ae.activation == 'relu'
+    assert train_ae.model.activation == 'relu'
     assert train_ae.optimizer == 'sgd'
     assert train_ae.lr == 0.01
     assert train_ae.lr_decay == 0.99
@@ -224,7 +226,7 @@ def test_auto_encoder_get_scaler():
 
 def test_auto_encoder_init_numeric(filter_probs_df):
     ae = autoencoder.AutoEncoder()
-    ae.init_numeric(filter_probs_df)
+    ae._init_numeric(filter_probs_df)
 
     expected_features = {
         'v1': {
@@ -247,7 +249,7 @@ def test_auto_encoder_init_numeric(filter_probs_df):
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-def test_auto_encoder_fit(train_ae, train_df):
+def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
 
     expected_numeric_features = {
@@ -285,7 +287,7 @@ def test_auto_encoder_fit(train_ae, train_df):
 
 
 @pytest.mark.usefixtures("manual_seed")
-def test_auto_encoder_get_anomaly_score(train_ae, train_df):
+def test_auto_encoder_get_anomaly_score(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     anomaly_score = train_ae.get_anomaly_score(train_df)
     assert len(anomaly_score) == len(train_df)
@@ -293,7 +295,7 @@ def test_auto_encoder_get_anomaly_score(train_ae, train_df):
     assert round(anomaly_score.std().item(), 2) == 0.11
 
 
-def test_auto_encoder_prepare_df(train_ae, train_df):
+def test_auto_encoder_prepare_df(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
 
     dfc = train_df.copy(deep=True)
@@ -323,7 +325,7 @@ def test_auto_encoder_prepare_df(train_ae, train_df):
             assert '_other' not in prepared_df[cat].values
 
 
-def test_build_input_tensor(train_ae, train_df):
+def test_build_input_tensor(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     prepared_df = train_ae.prepare_df(train_df)
     tensor = train_ae.build_input_tensor(prepared_df)
@@ -334,7 +336,7 @@ def test_build_input_tensor(train_ae, train_df):
 
 
 @pytest.mark.usefixtures("manual_seed")
-def test_auto_encoder_get_results(train_ae, train_df):
+def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     results = train_ae.get_results(train_df)
 

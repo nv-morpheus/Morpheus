@@ -17,6 +17,9 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+
 #include <cstddef>
 #include <memory>
 #include <optional>

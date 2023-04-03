@@ -22,7 +22,7 @@ from morpheus.models.dfencoder import AutoEncoder
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class MultiAEMessage(MultiMessage):
     """
     Subclass of `MultiMessage` specific to the AutoEncoder pipeline, which contains the model.

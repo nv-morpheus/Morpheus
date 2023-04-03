@@ -48,24 +48,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class EncoderDataFrame(pd.DataFrame):
 
     def __init__(self, *args, **kwargs):
-        super(EncoderDataFrame, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def swap(self, likelihood=.15):
-        """
-        Performs random swapping of data.
-        Each value has a likelihood of *argument likelihood*
-            of being randomly replaced with a value from a different
-            row.
-        Returns a copy of the dataframe with equal size.
-        """
+        """Performs random swapping of data.
 
+        Parameters
+        ----------
+        likelihood : float, optional
+            The probability of a value being randomly replaced with a value from a different row. By default .15
+
+        Returns
+        -------
+        pandas.DataFrame
+            A copy of the dataframe with equal size.
+        """
         #select values to swap
         tot_rows = self.__len__()
         n_rows = int(round(tot_rows * likelihood))

@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
+#include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/io/deserializers.hpp"  // for read_file_to_df
+#include "morpheus/io/loaders/file.hpp"
+#include "morpheus/io/loaders/grpc.hpp"
+#include "morpheus/io/loaders/payload.hpp"
+#include "morpheus/io/loaders/rest.hpp"
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
@@ -24,19 +29,23 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/version.hpp"
 
+#include <mrc/utils/string_utils.hpp>
+#include <nlohmann/json.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
+#include <sstream>
 #include <string>
 
 namespace morpheus {
 namespace py = pybind11;
 
-PYBIND11_MODULE(common, m)
+PYBIND11_MODULE(common, _module)
 {
-    m.doc() = R"pbdoc(
+    _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.common
         .. autosummary::
@@ -46,20 +55,29 @@ PYBIND11_MODULE(common, m)
     // Load the cudf helpers
     CudfHelper::load();
 
-    py::class_<TensorObject>(m, "Tensor")
+    LoaderRegistry::register_factory_fn(
+        "file", [](nlohmann::json config) { return std::make_unique<FileDataLoader>(config); }, false);
+    LoaderRegistry::register_factory_fn(
+        "grpc", [](nlohmann::json config) { return std::make_unique<GRPCDataLoader>(config); }, false);
+    LoaderRegistry::register_factory_fn(
+        "payload", [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); }, false);
+    LoaderRegistry::register_factory_fn(
+        "rest", [](nlohmann::json config) { return std::make_unique<RESTDataLoader>(config); }, false);
+
+    py::class_<TensorObject>(_module, "Tensor")
         .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface)
         // No need to keep_alive here since cupy arrays have an owner object
         .def("to_cupy", &TensorObjectInterfaceProxy::to_cupy)
         // Need to set keep_alive here to keep the cupy array alive as long as the Tensor is
         .def_static("from_cupy", &TensorObjectInterfaceProxy::from_cupy, py::keep_alive<0, 1>());
 
-    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
+    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(_module, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
 
-    py::enum_<TypeId>(m, "TypeId", "Supported Morpheus types")
+    py::enum_<TypeId>(_module, "TypeId", "Supported Morpheus types")
         .value("EMPTY", TypeId::EMPTY)
         .value("INT8", TypeId::INT8)
         .value("INT16", TypeId::INT16)
@@ -74,9 +92,7 @@ PYBIND11_MODULE(common, m)
         .value("BOOL8", TypeId::BOOL8)
         .value("STRING", TypeId::STRING);
 
-    m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
-
-    py::enum_<FileTypes>(m,
+    py::enum_<FileTypes>(_module,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
                          "'auto' to determine from the file extension.")
@@ -85,24 +101,23 @@ PYBIND11_MODULE(common, m)
         .value("CSV", FileTypes::CSV)
         .value("PARQUET", FileTypes::PARQUET);
 
-    m.def("determine_file_type", &determine_file_type, py::arg("filename"));
-    m.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
-    m.def("write_df_to_file",
-          &SerializersProxy::write_df_to_file,
-          py::arg("df"),
-          py::arg("filename"),
-          py::arg("file_type") = FileTypes::Auto);
+    _module.def("typeid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+
+    _module.def("determine_file_type", &determine_file_type, py::arg("filename"));
+    _module.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
+    _module.def("write_df_to_file",
+                &SerializersProxy::write_df_to_file,
+                py::arg("df"),
+                py::arg("filename"),
+                py::arg("file_type") = FileTypes::Auto);
 
     py::enum_<FilterSource>(
-        m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
+        _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
         .value("Auto", FilterSource::Auto)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    _module.attr("__version__") =
+        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

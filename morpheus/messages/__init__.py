@@ -18,6 +18,8 @@ Message classes, which contain data being transfered between pipeline stages
 # Import order is very important here. Import base classes before child ones
 # isort: off
 
+from morpheus._lib.messages import ControlMessage
+from morpheus._lib.messages import DataLoaderRegistry
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
@@ -29,17 +31,19 @@ from morpheus.messages.memory.response_memory import ResponseMemoryProbs
 from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
-from morpheus.messages.multi_message import MultiMessage
-from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_inference_message import MultiInferenceNLPMessage
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseAEMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
+from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 __all__ = [
+    "ControlMessage",
+    "DataLoaderRegistry",
     "InferenceMemory",
     "InferenceMemoryAE",
     "InferenceMemoryFIL",

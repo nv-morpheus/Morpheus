@@ -35,6 +35,9 @@ include(cmake/python_modules/stages.cmake)
 #----------morpheus._lib.messages---------
 include(cmake/python_modules/messages.cmake)
 
+#----------morpheus._lib.modules---------
+include(cmake/python_modules/modules.cmake)
+
 #----------morpheus._lib.common---------
 include(cmake/python_modules/common.cmake)
 

@@ -35,7 +35,6 @@
 #include <rmm/device_buffer.hpp>
 
 #include <cstdint>  // for int64_t, uint8_t
-#include <cstdlib>  // for std::getenv
 #include <memory>   // for shared_ptr, make_shared, unique_ptr
 #include <vector>
 
