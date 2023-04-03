@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,7 +29,7 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
 
-#include <algorithm>  // for copy, transform
+#include <algorithm>   // for copy, transform
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
