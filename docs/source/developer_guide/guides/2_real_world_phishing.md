@@ -549,7 +549,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
   inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
-  filter --threshold=0.9 \
+  filter --threshold=0.9 --filter_source=TENSOR \
   serialize \
   to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
