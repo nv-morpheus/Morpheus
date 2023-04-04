@@ -29,6 +29,9 @@ morpheus_add_cython_library(
 # The `morpheus_style_checks` target allows these to be generated without a full build of Morpheus.
 add_dependencies(${PROJECT_NAME}_style_checks ${cudf_helpers_target})
 
+# We don't have control over the C++ code that cython generates, suppress the volitile warning raised by the compiler
+target_compile_options(${cudf_helpers_target} PRIVATE -Wno-volatile)
+
 # Disable clang-tidy and IWYU for cython generated code
 set_target_properties(
   ${cudf_helpers_target}
