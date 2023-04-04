@@ -404,21 +404,44 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
 
 
 @pytest.fixture(scope="session")
-def _filter_probs_df():
-    from morpheus.io.deserializers import read_file_to_df
-    from utils import TEST_DIRS
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    yield read_file_to_df(input_file, df_type='cudf')
+def _dataset():
+    """
+    Session scoped cudf DatasetLoader
+    """
+    import dataset_loader
+    yield dataset_loader.DatasetLoader(df_type='cudf')
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-    if df_type == 'cudf':
-        yield _filter_probs_df.copy(deep=True)
-    elif df_type == 'pandas':
-        yield _filter_probs_df.to_pandas()
-    else:
-        assert False, "Unknown df_type type"
+def dataset(_dataset, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+    """
+    Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
+    """
+    yield _dataset.get_loader(df_type=df_type)
+
+
+@pytest.fixture(scope="function")
+def dataset_pandas(_dataset):
+    """
+    Yields a DatasetLoader instance with pandas as the default DataFrame type.
+    """
+    yield _dataset.get_loader(df_type='pandas')
+
+
+@pytest.fixture(scope="function")
+def dataset_cudf(_dataset):
+    """
+    Yields a DatasetLoader instance with cudf as the default DataFrame type.
+    """
+    yield _dataset.get_loader(df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(dataset):
+    """
+    Shortcut fixture for loading the filter_probs.csv dataset
+    """
+    yield dataset["filter_probs.csv"]
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):

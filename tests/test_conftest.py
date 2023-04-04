@@ -13,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
 
+import cudf
+
+from dataset_loader import DatasetLoader
 from morpheus.config import Config
 from morpheus.config import CppConfig
 
@@ -39,6 +43,32 @@ def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
     assert use_cudf != use_pandas
 
     return "cudf" if use_cudf else "pandas"
+
+
+@pytest.mark.use_cudf
+@pytest.mark.use_pandas
+def test_works_with_marks(dataset: DatasetLoader):
+    # Test is parameterized so df runs twice, once as pandas and another time as cudf
+    df = dataset["filter_probs.csv"]
+    assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
+
+
+def test_only_pandas(dataset_pandas: DatasetLoader):
+    # Test only runs with pandas
+    df = dataset_pandas["filter_probs.csv"]
+    assert isinstance(df, pd.DataFrame)
+
+
+def test_only_cudf(dataset_cudf: DatasetLoader):
+    # Test only runs with cudf
+    df = dataset_cudf["filter_probs.csv"]
+    assert isinstance(df, cudf.DataFrame)
+
+
+def test_both(dataset: DatasetLoader):
+    # By default, requesting dataset will parameterize both
+    df = dataset["filter_probs.csv"]
+    assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
 
 
 # === No Marks ===

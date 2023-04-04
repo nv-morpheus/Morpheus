@@ -87,7 +87,11 @@ class DatasetLoader:
 
         return self.get_df(*item)
 
-    def _get_loader(self, df_type: typing.Literal['cudf', 'pandas']):
+    def get_loader(self, df_type: typing.Literal['cudf', 'pandas']):
+        """
+        Factory method to return an instance of `DatasetLoader` for the given df_type, returns `self` if the df_type
+        matches. Used by cudf and pandas propery methods.
+        """
         if self._default_df_type == df_type:
             return self
         else:
@@ -95,8 +99,8 @@ class DatasetLoader:
 
     @property
     def cudf(self):
-        return self._get_loader(df_type='cudf')
+        return self.get_loader(df_type='cudf')
 
     @property
     def pandas(self):
-        return self._get_loader(df_type='pandas')
+        return self.get_loader(df_type='pandas')
