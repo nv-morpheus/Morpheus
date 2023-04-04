@@ -32,9 +32,8 @@ dependencies:
     - cmake=3.24
     - configargparse=1.5
     - cuda-nvml-dev=11.8
-    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.8
-    - cudf 22.10
+    - cudf 23.02
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
@@ -63,7 +62,10 @@ dependencies:
     - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
-    - mrc=23.03
+    # - mrc=23.07
+    - libhwloc=2.5.0
+    - nlohmann_json=3.9.1
+    - ucx=1.13.1
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
@@ -75,7 +77,7 @@ dependencies:
     - pip
     - pkg-config # for mrc cmake
     - pluggy=1.0
-    - protobuf=3.20.2
+    - protobuf=4.21.*
     - pybind11-stubgen=0.10.5
     - pydot
     - pytest
