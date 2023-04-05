@@ -19,6 +19,7 @@ import logging
 import os
 import signal
 import subprocess
+import sys
 import time
 import typing
 import warnings
@@ -357,6 +358,13 @@ def restore_environ():
             os.environ[key] = orig_val
         else:
             del (os.environ[key])
+
+
+@pytest.fixture(scope="function")
+def restore_sys_path():
+    orig_vars = sys.path.copy()
+    yield sys.path
+    sys.path = orig_vars
 
 
 def _reload_modules(modules: typing.List[typing.Any]):
