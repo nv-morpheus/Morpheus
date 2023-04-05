@@ -66,25 +66,23 @@ class DataManager():
             raise ValueError("Invalid data source. Must be a cuDF or Pandas DataFrame.")
 
         if (self._storage_type == 'filesystem'):
-            temp_path = os.path.join(self._storage_dir, f"{source_id}.{self._file_format}")
-            if (self._file_format == 'parquet'):
-                df.to_parquet(temp_path)
-            elif (self._file_format == 'csv'):
-                df.to_csv(temp_path)
+            buf_or_path = os.path.join(self._storage_dir, f"{source_id}.{self._file_format}")
+        elif (self._storage_type == 'in_memory'):
+            buf_or_path = io.BytesIO()
         else:
-            buf = io.BytesIO()
-            if (self._file_format == 'parquet'):
-                df.to_parquet(buf)
-            elif (self._file_format == 'csv'):
-                df.to_csv(buf)
-            buf.seek(0)
+            raise ValueError(f"Invalid storage_type '{self._storage_type}'")
 
-            return buf
+        if (self._file_format == 'parquet'):
+            df.to_parquet(buf_or_path)
+        elif (self._file_format == 'csv'):
+            df.to_csv(buf_or_path, index=False, header=True)
+
+        return buf_or_path
 
     @property
     def source(self) -> Union[List[io.BytesIO], List[str]]:
         if (self._storage_type == 'filesystem'):
-            return [os.path.join(self._storage_dir, f"{source_id}.parquet") for source_id in self._sources]
+            return [os.path.join(self._storage_dir, f"{source_id}.{self._file_format}") for source_id in self._sources]
         else:
             return list(self._sources.values())
 
@@ -107,18 +105,18 @@ class DataManager():
         _, num_rows = self._sources[source_id]
         return num_rows
 
-    def load(self, id: uuid.UUID) -> cudf.DataFrame:
+    def load(self, source_id: uuid.UUID) -> cudf.DataFrame:
         """
         Load a cuDF DataFrame given a source ID.
 
-        :param id: UUID of the source to be loaded.
+        :param source_id: UUID of the source to be loaded.
         :return: Loaded cuDF DataFrame.
         """
 
-        if (id not in self._sources):
-            raise KeyError(f"Source ID '{id}' not found.")
+        if (source_id not in self._sources):
+            raise KeyError(f"Source ID '{source_id}' not found.")
 
-        source, _ = self._sources[id]
+        source, _ = self._sources[source_id]
 
         if (self._storage_type == 'in_memory'):
             buf = source
@@ -132,6 +130,8 @@ class DataManager():
             cudf_df = cudf.read_parquet(buf)
         elif (self._file_format == 'csv'):
             cudf_df = cudf.read_csv(buf)
+        else:
+            raise ValueError(f"Invalid file_format '{self._file_format}'")
 
         return cudf_df
 
@@ -147,24 +147,27 @@ class DataManager():
         if (isinstance(source, (cudf.DataFrame, pd.DataFrame))):
             source_df = source
         else:
-            source_df = cudf.read_parquet(source)
+            if (self._file_format == 'csv'):
+                source_df = cudf.read_csv(source)
+            elif (self._file_format == 'parquet'):
+                source_df = cudf.read_parquet(source)
 
         num_rows = len(source_df)
-        source = self._write_to_file(source_df, source_id)
+        source_val = self._write_to_file(source_df, source_id)
 
-        self._sources[source_id] = (source, num_rows)
+        self._sources[source_id] = (source_val, num_rows)
 
         return source_id
 
-    def remove(self, id: uuid.UUID) -> None:
+    def remove(self, source_id: uuid.UUID) -> None:
         """
         Remove a source using its source ID.
 
-        :param id: UUID of the source to be removed.
+        :param source_id: UUID of the source to be removed.
         """
 
-        if (id in self._sources):
-            del self._sources[id]
+        if (source_id in self._sources):
+            del self._sources[source_id]
 
 
 class DatasetFromDataManager(Dataset):
@@ -202,3 +205,4 @@ class DatasetFromDataManager(Dataset):
         labels = torch.tensor(cudf_df['labels'].to_array()[index], dtype=torch.long)
 
         return features, labels
+
