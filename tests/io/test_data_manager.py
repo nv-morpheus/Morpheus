@@ -20,12 +20,8 @@ test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
 test_parquet_filepath = 'test_file.parquet'
 test_csv_filepath = 'test_file.csv'
 
-
-def setUpModule():
-    global sources, test_cudf_dataframe, test_pd_dataframe, test_parquet_filepath, test_csv_filepath
-
-    test_cudf_dataframe.to_parquet(test_parquet_filepath)
-    test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
+test_cudf_dataframe.to_parquet(test_parquet_filepath)
+test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
 
 
 def tearDownModule():
@@ -35,31 +31,35 @@ def tearDownModule():
         os.remove(test_csv_filepath)
 
 
-@pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
+@pytest.mark.parametrize("storage_type", ['in_memory'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_memory_storage(storage_type, file_format):
-    dm = DataManager(storage_type='in_memory')
+    dm = DataManager(storage_type=storage_type, file_format=file_format)
     assert (len(dm) == 0)
 
     sid = dm.store(test_cudf_dataframe)
-
     assert (len(dm) == 1)
     assert (sid in dm)
 
 
-def test_filesystem_storage_type():
-    dm = DataManager(storage_type='filesystem')
+@pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
+def test_filesystem_storage_type(storage_type):
+    dm = DataManager(storage_type=storage_type)
     assert (len(dm) == 0)
+    assert (dm.storage_type == storage_type)
 
 
-def test_invalid_storage_type():
-    dm = DataManager(storage_type='invalid')
+@pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
+def test_invalid_storage_type(storage_type):
+    dm = DataManager(storage_type=storage_type)
 
     assert (dm.storage_type == 'in_memory')
 
 
-def test_add_remove_source():
-    dm = DataManager(storage_type='in_memory')
+@pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
+@pytest.mark.parametrize("file_format", ['parquet', 'csv'])
+def test_add_remove_source(storage_type, file_format):
+    dm = DataManager(storage_type=storage_type, file_format=file_format)
     new_source = pd.DataFrame({'a': [9, 10], 'b': [11, 12]})
 
     sid = dm.store(new_source)
@@ -68,8 +68,10 @@ def test_add_remove_source():
     assert (len(dm) == 0)
 
 
-def test_filesystem_storage_files_exist():
-    dm = DataManager(storage_type='filesystem')
+@pytest.mark.parametrize("storage_type", ['filesystem'])
+@pytest.mark.parametrize("file_format", ['parquet', 'csv'])
+def test_filesystem_storage_files_exist(storage_type, file_format):
+    dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid1 = dm.store(test_cudf_dataframe)
     sid2 = dm.store(test_pd_dataframe)
 
@@ -85,10 +87,12 @@ def test_filesystem_storage_files_exist():
         assert (not os.path.exists(file_path))
 
 
-def test_large_fileset_filesystem_storage():
+@pytest.mark.parametrize("storage_type", ['filesystem'])
+@pytest.mark.parametrize("file_format", ['parquet', 'csv'])
+def test_large_fileset_filesystem_storage(storage_type, file_format):
     num_dataframes = 100
     dataframes = [cudf.DataFrame({'a': [i, i + 1], 'b': [i + 2, i + 3]}) for i in range(num_dataframes)]
-    dm = DataManager(storage_type='filesystem')
+    dm = DataManager(storage_type=storage_type, file_format=file_format)
 
     source_ids = [dm.store(df) for df in dataframes]
     assert (len(dm) == num_dataframes)
