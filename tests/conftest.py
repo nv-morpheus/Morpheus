@@ -359,18 +359,23 @@ def restore_environ():
             del (os.environ[key])
 
 
+def _reload_modules(modules: typing.List[typing.Any]):
+    for mod in modules:
+        importlib.reload(mod)
+
+
 @pytest.fixture(scope="function")
 def reload_modules(request: pytest.FixtureRequest):
     marker = request.node.get_closest_marker("reload_modules")
-    yield
-
+    modules = []
     if marker is not None:
         modules = marker.args[0]
         if not isinstance(modules, list):
             modules = [modules]
 
-        for mod in modules:
-            importlib.reload(mod)
+    _reload_modules(modules)
+    yield
+    _reload_modules(modules)
 
 
 @pytest.fixture(scope="function")
