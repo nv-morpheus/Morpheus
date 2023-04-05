@@ -112,28 +112,26 @@ def test_constructor_invalid(filter_probs_df: cudf.DataFrame):
         MultiMessage(meta=meta, mess_offset=5, mess_count=(meta.count - 5) + 1)
 
 
-def test_get_meta(dataset: DatasetLoader):
-    filter_probs_df = dataset["filter_probs.csv"]
-
-    meta = MessageMeta(filter_probs_df)
+def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+    meta = MessageMeta(df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
     # Manually slice the dataframe according to the multi settings
-    df_sliced: cudf.DataFrame = filter_probs_df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
+    df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
-    assert dataset.assert_df_equal(multi.get_meta(), df_sliced)
+    assert DatasetLoader.assert_df_equal(multi.get_meta(), df_sliced)
 
     # Make sure we return a table here, not a series
     col_name = df_sliced.columns[0]
-    assert dataset.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     col_name = [df_sliced.columns[0], df_sliced.columns[2]]
-    assert dataset.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Out of order columns
     col_name = [df_sliced.columns[3], df_sliced.columns[0]]
-    assert dataset.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Should fail with missing column
     with pytest.raises(KeyError):
@@ -141,7 +139,11 @@ def test_get_meta(dataset: DatasetLoader):
 
     # Finally, check that we dont overwrite the original dataframe
     multi.get_meta(col_name).iloc[:] = 5
-    assert dataset.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+
+
+def test_get_meta(dataset: DatasetLoader):
+    _test_get_meta(dataset["filter_probs.csv"])
 
 
 def test_get_meta_dup_index(dataset: DatasetLoader):
@@ -150,7 +152,7 @@ def test_get_meta_dup_index(dataset: DatasetLoader):
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 1, 5: 4})
 
     # Now just run the other test to reuse code
-    test_get_meta(df)
+    _test_get_meta(df)
 
 
 def test_set_meta(dataset: DatasetLoader):
