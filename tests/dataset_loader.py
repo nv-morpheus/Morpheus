@@ -102,3 +102,20 @@ class DatasetLoader:
     @property
     def pandas(self):
         return self.get_loader(df_type='pandas')
+
+    @staticmethod
+    def repeat(df, repeat_count=2, reset_index=True) -> pd.DataFrame:
+        """
+        Returns a DF consisting of `repeat_count` copies of the original
+        """
+        if isinstance(df, pd.DataFrame):
+            concat_fn = pd.concat
+        else:
+            concat_fn = cudf.concat
+
+        repeated_df = concat_fn([df for _ in range(repeat_count)])
+
+        if reset_index:
+            repeated_df = repeated_df.reset_index(inplace=False, drop=True)
+
+        return repeated_df

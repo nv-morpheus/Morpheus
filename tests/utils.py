@@ -129,11 +129,6 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
 
 
-def extend_df(df, repeat_count) -> pd.DataFrame:
-    extended_df = pd.concat([df for _ in range(repeat_count)])
-    return extended_df.reset_index(inplace=False, drop=True)
-
-
 def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
     """
     This should be used in place of `assert os.path.exists(filename)` inside of tests. This will automatically retry

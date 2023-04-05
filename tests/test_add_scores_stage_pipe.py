@@ -14,10 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import pytest
 
 import cudf
 
+from dataset_loader import DatasetLoader
+from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -29,23 +33,26 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import assert_results
-from utils import extend_df
 
 
 @pytest.mark.slow
-@pytest.mark.use_pandas
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
-def test_add_scores_stage_pipe(config, filter_probs_df, order, pipeline_batch_size, repeat):
+def test_add_scores_stage_pipe(config: Config,
+                               dataset_pandas: DatasetLoader,
+                               order: typing.Literal['F', 'C'],
+                               pipeline_batch_size: int,
+                               repeat: int):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
-    input_df = filter_probs_df.copy(deep=True)
+    input_df = dataset_pandas["filter_probs.csv"]
     if repeat > 1:
-        input_df = extend_df(input_df, repeat)
+        input_df = dataset_pandas.repeat(input_df, repeat_count=repeat)
 
-    expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
+    expected_df = dataset_pandas["filter_probs.csv"]
+    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
@@ -62,14 +69,15 @@ def test_add_scores_stage_pipe(config, filter_probs_df, order, pipeline_batch_si
 @pytest.mark.slow
 @pytest.mark.use_pandas
 @pytest.mark.parametrize('repeat', [1, 2, 5])
-def test_add_scores_stage_multi_segment_pipe(config, filter_probs_df, repeat):
+def test_add_scores_stage_multi_segment_pipe(config: Config, dataset: DatasetLoader, repeat: int):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
+    filter_probs_df = dataset.pandas["filter_probs.csv"]
     expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(filter_probs_df)], repeat=repeat))
+    pipe.set_source(InMemorySourceStage(config, [dataset.cudf["filter_probs.csv"]], repeat=repeat))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)

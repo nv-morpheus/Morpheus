@@ -14,11 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import pandas as pd
 import pytest
 
 import cudf
 
+from dataset_loader import DatasetLoader
+from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -30,22 +34,26 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import assert_results
-from utils import extend_df
 
 
 def build_expected(df: pd.DataFrame, threshold: float):
     """
     Takes a copy of `df` and apply the threshold
     """
-    expected_df = df.copy(deep=True)
-    return expected_df[expected_df.max(axis=1) >= threshold]
+    return df[df.max(axis=1) >= threshold]
 
 
-def _test_filter_detections_stage_pipe(config, input_df, copy=True, order='K', pipeline_batch_size=256, repeat=1):
+def _test_filter_detections_stage_pipe(config: Config,
+                                       dataset_pandas: DatasetLoader,
+                                       copy: bool = True,
+                                       order: typing.Literal['F', 'C'] = 'K',
+                                       pipeline_batch_size: int = 256,
+                                       repeat: int = 1):
     config.pipeline_batch_size = pipeline_batch_size
 
+    input_df = dataset_pandas["filter_probs.csv"]
     if repeat > 1:
-        input_df = extend_df(input_df, repeat)
+        input_df = dataset_pandas.repeat(input_df, repeat_count=repeat)
 
     threshold = 0.75
 
@@ -55,15 +63,17 @@ def _test_filter_detections_stage_pipe(config, input_df, copy=True, order='K', p
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(dataset_pandas["filter_probs.csv"], threshold)))
     pipe.run()
 
     assert_results(comp_stage.get_results())
 
 
-def _test_filter_detections_stage_multi_segment_pipe(config, input_df, copy=True):
+def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetLoader, copy: bool = True):
     threshold = 0.75
 
+    input_df = dataset_pandas["filter_probs.csv"]
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_segment_boundary(MessageMeta)
@@ -75,23 +85,27 @@ def _test_filter_detections_stage_multi_segment_pipe(config, input_df, copy=True
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(dataset_pandas["filter_probs.csv"], threshold)))
     pipe.run()
 
     assert_results(comp_stage.get_results())
 
 
 @pytest.mark.slow
-@pytest.mark.use_pandas
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_pipe(config, filter_probs_df, order, pipeline_batch_size, repeat, do_copy):
-    return _test_filter_detections_stage_pipe(config, filter_probs_df, do_copy, order, pipeline_batch_size, repeat)
+def test_filter_detections_stage_pipe(config: Config,
+                                      dataset_pandas: DatasetLoader,
+                                      order: typing.Literal['F', 'C'],
+                                      pipeline_batch_size: int,
+                                      repeat: int,
+                                      do_copy: bool):
+    return _test_filter_detections_stage_pipe(config, dataset_pandas, do_copy, order, pipeline_batch_size, repeat)
 
 
-@pytest.mark.use_pandas
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_multi_segment_pipe(config, filter_probs_df, do_copy):
-    return _test_filter_detections_stage_multi_segment_pipe(config, filter_probs_df, do_copy)
+def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetLoader, do_copy: bool):
+    return _test_filter_detections_stage_multi_segment_pipe(config, dataset_pandas, do_copy)
