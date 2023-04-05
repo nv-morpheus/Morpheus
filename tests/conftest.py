@@ -409,7 +409,7 @@ def _dataset():
     Session scoped cudf DatasetLoader
     """
     import dataset_loader
-    yield dataset_loader.DatasetLoader(df_type='cudf')
+    yield dataset_loader.DatasetLoader.get_loader(df_type='cudf')
 
 
 @pytest.fixture(scope="function")
