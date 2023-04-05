@@ -23,6 +23,7 @@ import pytest
 import cudf
 
 from morpheus.common import TypeId
+from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -73,7 +74,7 @@ def check_inf_message(msg: MultiInferenceFILMessage,
 
 
 @pytest.mark.usefixtures("reset_plugins")
-def test_abp_pcap_preprocessing(config):
+def test_abp_pcap_preprocessing(config: Config):
     # Setup the config
     config.mode = PipelineModes.FIL
     config.feature_length = 13
