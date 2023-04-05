@@ -10,23 +10,6 @@ from morpheus.io import data_manager
 
 DataManager = data_manager.DataManager
 
-
-# Work around because classes that inherit unittest.TestCase don't work with parametrize
-def parameterized_expand(arg_name, arg_values):
-    def decorator(test_method):
-        def wrapper(self, *args, **kwargs):
-            for arg_value in arg_values:
-                kwargs_copy = kwargs.copy()
-                kwargs_copy[arg_name] = arg_value
-                print(f"Running test with {args}={kwargs_copy}")
-                result = test_method(self, *args, **kwargs_copy)
-            return result
-
-        return wrapper
-
-    return decorator
-
-
 sources = [
     cudf.DataFrame({'a': [1, 2], 'b': [3, 4]}),
     'buffer2.parquet',  # Local or remote file path
@@ -50,24 +33,6 @@ def tearDownModule():
         os.remove(test_parquet_filepath)
     if os.path.exists(test_csv_filepath):
         os.remove(test_csv_filepath)
-
-    # def setUp(self):
-    #    self.sources = [
-    #        cudf.DataFrame({'a': [1, 2], 'b': [3, 4]}),
-    #        'buffer2.parquet',  # Local or remote file path
-    #        pd.DataFrame({'a': [5, 6], 'b': [7, 8]}),
-    #    ]
-    #    self.test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
-    #    self.test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
-    #    self.test_parquet_filepath = 'test_file.parquet'
-    #    self.test_csv_filepath = 'test_file.csv'
-
-    #    self.test_cudf_dataframe.to_parquet(self.test_parquet_filepath)
-    #    self.test_cudf_dataframe.to_csv(self.test_csv_filepath, index=False, header=True)
-
-    # def tearDown(self):
-    #    if os.path.exists(self.test_parquet_filepath):
-    #        os.remove(self.test_parquet_filepath)
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
