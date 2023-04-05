@@ -16,8 +16,8 @@
 name: morpheus
 channels:
     - rapidsai
-    - nvidia
     - nvidia/label/cuda-11.8.0
+    - nvidia
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
     - conda-forge
 dependencies:
@@ -62,7 +62,7 @@ dependencies:
     - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
-    # - mrc=23.07
+    - mrc=23.07
     - libhwloc=2.5.0
     - nlohmann_json=3.9.1
     - ucx=1.13.1

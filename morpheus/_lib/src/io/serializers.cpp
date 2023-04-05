@@ -116,9 +116,6 @@ void table_to_csv(
 
     if (include_header)
     {
-        metadata.column_names = column_names;
-
-        // After cuDF PR #11364, use schema_info instead of column_names (actually just set both)
         metadata.schema_info = std::vector<cudf::io::column_name_info>();
 
         for (auto& name : column_names)
@@ -126,7 +123,7 @@ void table_to_csv(
             metadata.schema_info.emplace_back(cudf::io::column_name_info{name});
         }
 
-        options_builder = options_builder.metadata(&metadata);
+        options_builder = options_builder.names(column_names);
     }
 
     cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());

@@ -54,23 +54,7 @@ namespace morpheus {
 
 std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_metadata& table)
 {
-    DCHECK(!(!table.metadata.column_names.empty() && !table.metadata.schema_info.empty()))
-        << "Both column_names and schema_info were set on the table_with_metadata object. Defaulting to column_names";
-
-    // If column_names is populated, use that
-    if (!table.metadata.column_names.empty())
-    {
-        return table.metadata.column_names;
-    }
-
-    // Otherwise, use schema_info
-    if (!table.metadata.schema_info.empty())
-    {
-        return foreach_map(table.metadata.schema_info, [](auto schema) { return schema.name; });
-    }
-
-    // Return empty
-    return {};
+    return foreach_map(table.metadata.schema_info, [](auto schema) { return schema.name; });
 }
 
 cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& json_options)
@@ -155,13 +139,19 @@ pybind11::object read_file_to_df(const std::string& filename, FileTypes file_typ
 int get_index_col_count(const cudf::io::table_with_metadata& data_table)
 {
     int index_col_count   = 0;
-    const auto& col_names = data_table.metadata.column_names;
+    auto const& schema = data_table.metadata.schema_info;
+
+    std::vector<std::string> names;
+    names.reserve(schema.size());
+    std::transform(schema.cbegin(), schema.cend(), std::back_inserter(names), [](auto const& c) {
+        return c.name;
+    });
 
     // Check if we have a first column with INT64 data type
-    if (col_names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
+    if (names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
     {
         // Get the column name
-        const auto& col_name = col_names[0];
+        const auto& col_name = names[0];
 
         // Check it against some common terms
         if (std::regex_search(col_name, IndexRegex))
@@ -179,8 +169,7 @@ int prepare_df_index(cudf::io::table_with_metadata& data_table)
 
     if (index_col_count > 0)
     {
-        auto& col_names = data_table.metadata.column_names;
-        auto& col_name  = col_names[0];
+        auto& col_name = data_table.metadata.schema_info[0].name;
 
         // Also, if its the hideous 'Unnamed: 0', then just use an empty string
         if (std::regex_search(col_name, UnnamedRegex))

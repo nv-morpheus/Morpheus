@@ -58,8 +58,8 @@ cdef public api:
             index_names = []
 
             # Need to support both column_names and schema_info
-            if (table.metadata.column_names.size() > 0):
-                index_names = [x.decode() for x in table.metadata.column_names[0:index_col_count]]
+            if (table.metadata.schema_info.size() > 0):
+                index_names = [x.name.decode() for x in table.metadata.schema_info][0:index_col_count]
             elif (table.metadata.schema_info.size() > 0):
                 for i in range(min(index_col_count, table.metadata.schema_info.size())):
                     index_names.append(table.metadata.schema_info[i].name.decode())
@@ -67,8 +67,8 @@ cdef public api:
         column_names = []
 
         # Need to support both column_names and schema_info
-        if (table.metadata.column_names.size() > 0):
-            column_names = [x.decode() for x in table.metadata.column_names[index_col_count:]]
+        if (table.metadata.schema_info.size() > 0):
+            column_names = [x.name.decode() for x in table.metadata.schema_info][index_col_count:]
         elif (table.metadata.schema_info.size() > 0):
             for i in range(index_col_count, table.metadata.schema_info.size()):
                 column_names.append(table.metadata.schema_info[i].name.decode())
