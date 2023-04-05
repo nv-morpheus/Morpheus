@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,6 +16,14 @@
  */
 
 #include "morpheus/stages/triton_inference.hpp"
+
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
 
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
@@ -50,6 +58,16 @@
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Checks the status object returned by a Triton client call logging any potential errors.
+ *
+ */
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
 
 namespace {

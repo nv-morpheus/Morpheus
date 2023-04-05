@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,6 +16,15 @@
  */
 
 #include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
+
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
 
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/utilities/string_util.hpp"

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,6 +16,13 @@
  */
 
 #include "morpheus/stages/preprocess_fil.hpp"
+
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
