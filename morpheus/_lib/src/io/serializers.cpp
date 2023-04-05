@@ -112,17 +112,8 @@ void table_to_csv(
                                .true_value("True"s)
                                .false_value("False"s);
 
-    cudf::io::table_metadata metadata{};
-
     if (include_header)
     {
-        metadata.schema_info = std::vector<cudf::io::column_name_info>();
-
-        for (auto& name : column_names)
-        {
-            metadata.schema_info.emplace_back(cudf::io::column_name_info{name});
-        }
-
         options_builder = options_builder.names(column_names);
     }
 
