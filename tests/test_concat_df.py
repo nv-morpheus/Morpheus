@@ -15,8 +15,6 @@
 
 import pandas as pd
 
-import cudf
-
 from dataset_loader import DatasetLoader
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
