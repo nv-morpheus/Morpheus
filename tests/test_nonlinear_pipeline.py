@@ -18,11 +18,9 @@ import typing
 
 import mrc
 import mrc.core.operators as ops
-import pytest
 from mrc.core.node import Broadcast
 
-import cudf
-
+from dataset_loader import DatasetLoader
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
@@ -72,15 +70,15 @@ class SplitStage(Stage):
         return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
 
 
-@pytest.mark.use_pandas
-def test_forking_pipeline(config, filter_probs_df):
+def test_forking_pipeline(config, dataset_cudf: DatasetLoader):
+    filter_probs_df = dataset_cudf["filter_probs.csv"]
     compare_higher_df = filter_probs_df[filter_probs_df["v2"] >= 0.5]
     compare_lower_df = filter_probs_df[filter_probs_df["v2"] < 0.5]
 
     pipe = Pipeline(config)
 
     # Create the stages
-    source = pipe.add_stage(InMemorySourceStage(config, [cudf.DataFrame(filter_probs_df)]))
+    source = pipe.add_stage(InMemorySourceStage(config, [filter_probs_df]))
 
     split_stage = pipe.add_stage(SplitStage(config))
 
