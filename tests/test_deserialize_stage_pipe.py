@@ -16,22 +16,21 @@
 
 import pytest
 
+from dataset_loader import DatasetLoader
+from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_df_equal
 from utils import assert_results
-from utils import duplicate_df_index
-from utils import duplicate_df_index_rand
 
 
 @pytest.mark.use_cudf
-def test_fixing_non_unique_indexes(use_cpp, filter_probs_df):
+def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetLoader):
     # Set 2 ids equal to others
-    df = duplicate_df_index_rand(filter_probs_df, count=2)
+    df = dataset.dup_index(dataset["filter_probs.csv"], count=2)
 
     meta = MessageMeta(df.copy())
 
@@ -45,7 +44,7 @@ def test_fixing_non_unique_indexes(use_cpp, filter_probs_df):
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
-    assert assert_df_equal(meta.df, df)
+    assert dataset.assert_df_equal(meta.df, df)
 
     DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=True)
 
@@ -55,20 +54,20 @@ def test_fixing_non_unique_indexes(use_cpp, filter_probs_df):
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_pipe(config, filter_probs_df, dup_index: bool):
+def test_deserialize_pipe(config: Config, dataset: DatasetLoader, dup_index: bool):
     """
     End to end test for DeserializeStage
     """
-    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
+    filter_probs_df = dataset["filter_probs.csv"]
     if dup_index:
-        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
+        filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -76,21 +75,21 @@ def test_deserialize_pipe(config, filter_probs_df, dup_index: bool):
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_multi_segment_pipe(config, filter_probs_df, dup_index: bool):
+def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetLoader, dup_index: bool):
     """
     End to end test across mulitiple segments
     """
-    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
+    filter_probs_df = dataset["filter_probs.csv"]
     if dup_index:
-        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
+        filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
     pipe.run()
 
     assert_results(comp_stage.get_results())

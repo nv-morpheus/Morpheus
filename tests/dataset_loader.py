@@ -14,11 +14,13 @@
 # limitations under the License.
 
 import os
+import random
 import typing
 
+import cupy as cp
 import pandas as pd
 
-import cudf
+import cudf as cdf  # rename to avoid clash with property method
 
 from morpheus.io.deserializers import read_file_to_df
 from utils import TEST_DIRS
@@ -26,7 +28,7 @@ from utils import TEST_DIRS
 
 class DatasetLoader:
     """
-    Helper class for loading and caching test datasets as DataFrames.
+    Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
 
     Parameters
     ----------
@@ -48,7 +50,7 @@ class DatasetLoader:
 
     def get_df(self,
                file_path: str,
-               df_type: typing.Literal['cudf', 'pandas'] = None) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+               df_type: typing.Literal['cudf', 'pandas'] = None) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
         """
         Fetch a DataFrame specified from `file_path`. If `file_path` is not an absolute path, it is assumed to be
         relative to the `test/tests_data` dir. If a DataFrame matching both the path and `df_type` has already been fetched, then a cached copy will be
@@ -71,7 +73,7 @@ class DatasetLoader:
                 if alt_df_type == 'cudf':
                     df = alt_df.to_pandas()
                 else:
-                    df = cudf.DataFrame.from_pandas(alt_df)
+                    df = cdf.DataFrame.from_pandas(alt_df)
             else:
                 df = read_file_to_df(full_path, df_type=df_type)
 
@@ -79,7 +81,7 @@ class DatasetLoader:
 
         return df.copy(deep=True)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
         if not isinstance(item, tuple):
             item = (item, )
 
@@ -104,14 +106,16 @@ class DatasetLoader:
         return self.get_loader(df_type='pandas')
 
     @staticmethod
-    def repeat(df, repeat_count=2, reset_index=True) -> pd.DataFrame:
+    def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
+               repeat_count: int = 2,
+               reset_index: bool = True) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
         """
         Returns a DF consisting of `repeat_count` copies of the original
         """
         if isinstance(df, pd.DataFrame):
             concat_fn = pd.concat
         else:
-            concat_fn = cudf.concat
+            concat_fn = cdf.concat
 
         repeated_df = concat_fn([df for _ in range(repeat_count)])
 
@@ -119,3 +123,43 @@ class DatasetLoader:
             repeated_df = repeated_df.reset_index(inplace=False, drop=True)
 
         return repeated_df
+
+    @staticmethod
+    def replace_index(df: typing.Union[cdf.DataFrame, pd.DataFrame],
+                      replace_ids: typing.Dict[int, int]) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+        """Return a new DataFrame's where we replace some index values with others."""
+        return df.rename(index=replace_ids)
+
+    @classmethod
+    def dup_index(cls,
+                  df: typing.Union[cdf.DataFrame, pd.DataFrame],
+                  count: int = 1) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+        """Randomly duplicate `count` entries in a DataFrame's index"""
+        assert count * 2 <= len(df), "Count must be less than half the number of rows."
+
+        # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
+        # (otherwise you could get less duplicates than requested if two IDs just swap)
+        dup_ids = random.sample(df.index.values.tolist(), 2 * count)
+
+        # Create a dictionary of old ID to new ID
+        replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+
+        # Return a new dataframe where we replace some index values with others
+        return cls.replace_index(df, replace_dict)
+
+    @staticmethod
+    def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any) -> bool:
+        """Compare a DataFrame against a validation dataset which can either be a DataFrame or CuPy array."""
+
+        # Comparisons work better in cudf so convert everything to that
+        if (isinstance(df_to_check, cdf.DataFrame) or isinstance(df_to_check, cdf.Series)):
+            df_to_check = df_to_check.to_pandas()
+
+        if (isinstance(val_to_check, cdf.DataFrame) or isinstance(val_to_check, cdf.Series)):
+            val_to_check = val_to_check.to_pandas()
+        elif (isinstance(val_to_check, cp.ndarray)):
+            val_to_check = val_to_check.get()
+
+        bool_df = df_to_check == val_to_check
+
+        return bool(bool_df.all(axis=None))

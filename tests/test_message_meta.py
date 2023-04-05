@@ -17,13 +17,13 @@
 import operator
 import typing
 
+import pandas as pd
 import pytest
 
 import cudf
 
+from dataset_loader import DatasetLoader
 from morpheus.messages.message_meta import MessageMeta
-from utils import assert_df_equal
-from utils import duplicate_df_index_rand
 
 
 @pytest.fixture(scope="function", params=["normal", "skip", "dup", "down", "updown"])
@@ -32,7 +32,10 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 
 @pytest.fixture(scope="function")
-def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
+def df(
+    dataset: DatasetLoader, index_type: typing.Literal['normal', 'skip', 'dup', 'down',
+                                                       'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+    filter_probs_df = dataset["filter_probs.csv"]
     if (index_type == "normal"):
         return filter_probs_df
     elif (index_type == "skip"):
@@ -40,7 +43,7 @@ def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'sk
         return filter_probs_df.iloc[::3, :].copy()
     elif (index_type == "dup"):
         # Duplicate
-        return duplicate_df_index_rand(filter_probs_df, count=2)
+        return dataset.dup_index(filter_probs_df, count=2)
     elif (index_type == "down"):
         # Reverse
         return filter_probs_df.iloc[::-1, :].copy()
@@ -121,10 +124,10 @@ def test_copy_dataframe(df: cudf.DataFrame):
 
     copied_df = meta.copy_dataframe()
 
-    assert assert_df_equal(copied_df, df), "Should be identical"
+    assert DatasetLoader.assert_df_equal(copied_df, df), "Should be identical"
     assert copied_df is not df, "But should be different instances"
 
     # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
     cdf['v2'].iloc[3] = 47
-    assert assert_df_equal(meta.copy_dataframe(), df), "Should be identical"
+    assert DatasetLoader.assert_df_equal(meta.copy_dataframe(), df), "Should be identical"

@@ -168,43 +168,6 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
     assert os.path.exists(filename)
 
 
-def duplicate_df_index(df: pd.DataFrame, replace_ids: typing.Dict[int, int]):
-
-    # Return a new dataframe where we replace some index values with others
-    return df.rename(index=replace_ids)
-
-
-def duplicate_df_index_rand(df: pd.DataFrame, count=1):
-
-    assert count * 2 <= len(df), "Count must be less than half the number of rows"
-
-    # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
-    # (otherwise you could get less duplicates than requested if two IDs just swap)
-    dup_ids = random.sample(df.index.values.tolist(), 2 * count)
-
-    # Create a dictionary of old ID to new ID
-    replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
-
-    # Return a new dataframe where we replace some index values with others
-    return duplicate_df_index(df, replace_dict)
-
-
-def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
-
-    # Comparisons work better in cudf so convert everything to that
-    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
-        df_to_check = df_to_check.to_pandas()
-
-    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
-        val_to_check = val_to_check.to_pandas()
-    elif (isinstance(val_to_check, cp.ndarray)):
-        val_to_check = val_to_check.get()
-
-    bool_df = df_to_check == val_to_check
-
-    return bool(bool_df.all(axis=None))
-
-
 def assert_results(results: dict) -> dict:
     """
     Receives the results dict from the `CompareDataframeStage.get_results` method,
