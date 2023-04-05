@@ -81,7 +81,9 @@ class DatasetLoader:
 
         return df.copy(deep=True)
 
-    def __getitem__(self, item) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+    def __getitem__(
+        self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf', 'pandas']]]
+    ) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
         if not isinstance(item, tuple):
             item = (item, )
 
@@ -149,7 +151,7 @@ class DatasetLoader:
 
     @staticmethod
     def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any) -> bool:
-        """Compare a DataFrame against a validation dataset which can either be a DataFrame or CuPy array."""
+        """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
 
         # Comparisons work better in cudf so convert everything to that
         if (isinstance(df_to_check, cdf.DataFrame) or isinstance(df_to_check, cdf.Series)):
