@@ -29,7 +29,7 @@ from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
 
-# Only pandas and C++ is supported
+# Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
 
 BIN_COLS = ['ts_anomaly']
