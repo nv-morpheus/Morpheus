@@ -16,14 +16,8 @@
 import collections
 import json
 import os
-import random
 import time
 import typing
-
-import cupy as cp
-import pandas as pd
-
-import cudf
 
 import morpheus
 from morpheus.io.deserializers import read_file_to_df
@@ -121,10 +115,6 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         class_field = f"{class_prefix}{field_name}"
         score_field = f"{score_prefix}{field_name}"
         above_thresh = df[score_field] > threshold
-
-        df[class_field].to_csv(f"/tmp/class_field_{field_name}.csv")
-        df[score_field].to_csv(f"/tmp/score_field_vals_{field_name}.csv")
-        above_thresh.to_csv(f"/tmp/score_field_{field_name}.csv")
 
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
 
