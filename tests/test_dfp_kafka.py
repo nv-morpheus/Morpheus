@@ -27,6 +27,7 @@ import pytest
 
 from dataset_loader import DatasetLoader
 from morpheus.cli import commands
+from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.io.utils import filter_null_data
@@ -59,9 +60,9 @@ configure_logging(log_level=logging.DEBUG)
 @pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_roleg(mock_ae,
+def test_dfp_roleg(mock_ae: mock.MagicMock,
                    dataset_pandas: DatasetLoader,
-                   config,
+                   config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
                    kafka_consumer: "KafkaConsumer"):
@@ -163,9 +164,9 @@ def test_dfp_roleg(mock_ae,
 @pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_user123(mock_ae,
+def test_dfp_user123(mock_ae: mock.MagicMock,
                      dataset_pandas: DatasetLoader,
-                     config,
+                     config: Config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: typing.Tuple[str, str],
                      kafka_consumer: "KafkaConsumer"):

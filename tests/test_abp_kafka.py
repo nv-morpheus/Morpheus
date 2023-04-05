@@ -150,7 +150,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_abp_cpp(config,
+def test_abp_cpp(config: Config,
                  dataset_pandas: DatasetLoader,
                  kafka_bootstrap_servers: str,
                  kafka_topics: typing.Tuple[str, str],
