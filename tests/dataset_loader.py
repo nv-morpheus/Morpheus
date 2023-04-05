@@ -36,10 +36,15 @@ class DatasetLoader:
         Type of DataFrame to return unless otherwise explicitly specified.
     """
 
-    __df_cache = {}  # {(df_type, path): DF}
+    __df_cache: typing.Dict[typing.Tuple[typing.Literal['cudf', 'pandas'], str],
+                            typing.Union[cdf.DataFrame, pd.DataFrame]] = {}
+
+    # Values in `__instances` are instances of `DatasetLoader`
+    __instances: typing.Dict[typing.Literal['cudf', 'pandas'], typing.Any] = {}
 
     def __init__(self, df_type: typing.Literal['cudf', 'pandas']) -> None:
         self._default_df_type = df_type
+        self.__instances[df_type] = self
 
     def get_alt_df_type(self, df_type: typing.Literal['cudf', 'pandas']) -> typing.Literal['cudf', 'pandas']:
         """Returns the other possible df type."""
@@ -91,15 +96,18 @@ class DatasetLoader:
 
         return self.get_df(*item)
 
-    def get_loader(self, df_type: typing.Literal['cudf', 'pandas']):
+    @classmethod
+    def get_loader(cls, df_type: typing.Literal['cudf', 'pandas']):
         """
         Factory method to return an instance of `DatasetLoader` for the given df_type, returns `self` if the df_type
         matches. Used by cudf and pandas propery methods.
         """
-        if self._default_df_type == df_type:
-            return self
-        else:
-            return DatasetLoader(df_type=df_type)
+        try:
+            loader = cls.__instances[df_type]
+        except KeyError:
+            loader = cls(df_type=df_type)
+
+        return loader
 
     @property
     def cudf(self):
