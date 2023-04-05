@@ -53,7 +53,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_abp_no_cpp(mock_triton_client,
+def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
                     dataset_pandas: DatasetLoader,
                     config: Config,
                     kafka_bootstrap_servers: str,
