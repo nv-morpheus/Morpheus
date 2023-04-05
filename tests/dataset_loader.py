@@ -48,16 +48,14 @@ class DatasetLoader:
 
     def get_df(self,
                file_path: str,
-               df_type: typing.Literal['cudf', 'pandas'] = None,
-               relative_path: str = TEST_DIRS.tests_data_dir) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+               df_type: typing.Literal['cudf', 'pandas'] = None) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
         """
-        Fetch a DataFrame specified from `file_path` which is a file path relative to `relative_path` or is absolute if
-        None. If a DataFrame matching both the path and `df_type` has already been fetched, then a cached copy will be
+        Fetch a DataFrame specified from `file_path`. If `file_path` is not an absolute path, it is assumed to be
+        relative to the `test/tests_data` dir. If a DataFrame matching both the path and `df_type` has already been fetched, then a cached copy will be
         returned.
         """
-
-        if relative_path is not None:
-            full_path = os.path.join(relative_path, file_path)
+        if os.path.abspath(file_path) != os.path.normpath(file_path):
+            full_path = os.path.join(TEST_DIRS.tests_data_dir, file_path)
         else:
             full_path = file_path
 

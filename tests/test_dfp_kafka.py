@@ -25,11 +25,10 @@ import pandas
 import pandas as pd
 import pytest
 
+from dataset_loader import DatasetLoader
 from morpheus.cli import commands
-from morpheus.common import FileTypes
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -61,6 +60,7 @@ configure_logging(log_level=logging.DEBUG)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_roleg(mock_ae,
+                   dataset_pandas: DatasetLoader,
                    config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
@@ -129,7 +129,7 @@ def test_dfp_roleg(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
@@ -164,6 +164,7 @@ def test_dfp_roleg(mock_ae,
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123(mock_ae,
+                     dataset_pandas: DatasetLoader,
                      config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: typing.Tuple[str, str],
@@ -231,7 +232,7 @@ def test_dfp_user123(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
