@@ -55,7 +55,7 @@ outputs:
         - ccache
         - ninja
       host:
-        - cuda-python <=11.7.0
+        - cuda-python 11.8
         - cudatoolkit {{ cuda_version }}.*
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
@@ -72,8 +72,8 @@ outputs:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - click >=8
         - configargparse 1.5.*
-        - cuda-python <=11.7.0 # Needed to ensure cudatoolkit and not cuda-toolkit is installed
-        - cudf
+        - cuda-python 11.8
+        - cudf {{ rapids_version }}.*
         - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
         - datacompy 0.8.*
