@@ -21,7 +21,7 @@ python log-parsing-inference.py \
     --modelfile ../../log-parsing-models/log-parsing-20220418.bin \
     --configfile ../../log-parsing-models/log-parsing-config-20220418.json \
     --vocabfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-vocab.txt \
-    --hashfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-hash.txt \
+    --hashfile ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt \
     --outputfile parsed-output.jsonlines
 """
 

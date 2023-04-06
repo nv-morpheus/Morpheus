@@ -18,7 +18,7 @@ python \
 root-cause-inference.py \
     --validationdata ../../datasets/validation-data/root-cause-validation-data-input.jsonlines \
     --model ../../root-cause-models/root-cause-binary-bert-20221118.onnx \
-    --vocab ../../training-tuning-scripts/root-cause-models/resources/bert-base-uncased-hash.txt \
+    --vocab ${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt \
     --output root-cause-validation-output.jsonlines
 """
 

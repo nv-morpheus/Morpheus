@@ -42,6 +42,7 @@ class SequenceClassifier(ABC):
         self._device = None
         self._model = None
         self._optimizer = None
+        self._morpheus_root = os.environ['MORPHEUS_ROOT']
         self._hashpath = self._get_hash_table_path()
 
     @abstractmethod
@@ -217,7 +218,7 @@ class SequenceClassifier(ABC):
         self._model.module.load_state_dict(model_dict["state_dict"])
 
     def _get_hash_table_path(self):
-        hash_table_path = "%s/resources/bert-base-uncased-hash.txt" % os.path.dirname(os.path.realpath(__file__))
+        hash_table_path = "%s/morpheus/data/bert-base-uncased-hash.txt" % self._morpheus_root
         return hash_table_path
 
     def _config_optimizer(self, learning_rate):
