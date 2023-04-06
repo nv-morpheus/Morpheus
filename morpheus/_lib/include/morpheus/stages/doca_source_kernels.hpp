@@ -21,7 +21,9 @@ void packet_receive_kernel(
   int32_t                sem_count,
   int32_t*               sem_idx,
   int32_t*               packet_count,
-  int32_t*               packet_data_size,
+  int32_t*               packet_size_total,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer,
   cudaStream_t           stream
 );
 
@@ -30,6 +32,8 @@ void packet_gather_kernel(
   doca_gpu_semaphore_in* sem_in,
   int32_t                sem_count,
   int32_t*               sem_idx,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer,
   uint32_t*              timestamp_out,
   int64_t*               src_mac_out,
   int64_t*               dst_mac_out,
@@ -43,6 +47,7 @@ void packet_gather_kernel(
   int32_t*               ether_type_out,
   int32_t*               next_proto_id_out,
   char*                  data_out,
+  int32_t                data_out_size,
   cudaStream_t           stream
 );
 

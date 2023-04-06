@@ -99,9 +99,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStream_t processing_stream;
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    auto semaphore_idx_d    = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_count_d     = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_data_size_d = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto semaphore_idx_d     = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_count_d      = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_sizes_d      = rmm::device_uvector<int32_t>(2048, processing_stream);
+    auto packet_buffer_d     = rmm::device_uvector<uint8_t>(2048 * 65536, processing_stream);
 
     while (output.is_subscribed())
     {
@@ -111,9 +113,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         _semaphore->size(),
         semaphore_idx_d.data(),
         packet_count_d.data(),
-        packet_data_size_d.data(),
+        packet_size_total_d.data(),
+        packet_sizes_d.data(),
+        packet_buffer_d.data(),
         processing_stream
       );
+
+      cudaStreamSynchronize(processing_stream);
 
       auto packet_count = packet_count_d.value(processing_stream);
 
@@ -122,7 +128,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         continue;
       }
 
-      auto packet_data_size = packet_data_size_d.value(processing_stream);
+      auto packet_size_total = packet_size_total_d.value(processing_stream);
 
       auto timestamp_out_d     = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
       auto src_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
@@ -136,15 +142,17 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto tcp_flags_out_d     = rmm::device_uvector<int32_t>(packet_count, processing_stream);
       auto ether_type_out_d    = rmm::device_uvector<int32_t>(packet_count, processing_stream);
       auto next_proto_id_out_d = rmm::device_uvector<int32_t>(packet_count, processing_stream);
-      auto data_out_d          = rmm::device_uvector<char>(packet_data_size, processing_stream);
+      auto data_out_d          = rmm::device_uvector<char>(packet_size_total, processing_stream);
 
-      data_offsets_out_d.set_element_async(packet_count, packet_data_size, processing_stream);
+      data_offsets_out_d.set_element_async(packet_count, packet_size_total, processing_stream);
 
       morpheus::doca::packet_gather_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
         semaphore_idx_d.data(),
+        packet_sizes_d.data(),
+        packet_buffer_d.data(),
         timestamp_out_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),
@@ -158,6 +166,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         ether_type_out_d.data(),
         next_proto_id_out_d.data(),
         data_out_d.data(),
+        packet_size_total,
         processing_stream
       );
 
@@ -169,7 +178,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       // std::cout << "sem_idx:     "      << sem_idx_old      << std::endl
       //           << "packet_count:     " << packet_count     << std::endl
-      //           << "packet_data_size: " << packet_data_size << std::endl
+      //           << "packet_size_total: " << packet_size_total << std::endl
       //           << "last_offset:      " << last_offset      << std::endl
       //           << std::flush;
 

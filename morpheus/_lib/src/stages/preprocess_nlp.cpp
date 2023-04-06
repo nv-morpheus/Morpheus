@@ -76,7 +76,9 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
                 // Convert to string view
-                auto string_col = cudf::strings_column_view{x->get_meta(this->m_column).get_column(0)};
+                auto meta = x->get_meta(this->m_column);
+                auto col = meta.get_column(0);
+                auto string_col = cudf::strings_column_view{col};
 
                 // Create the hashed vocab
                 thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab =

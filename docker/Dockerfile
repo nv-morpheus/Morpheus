@@ -160,17 +160,21 @@ ARG DOCA_REPO_HOST=""
 # Copy the source
 COPY ./thirdparty thirdparty
 
-# stable: 6590105
-ARG DOCA_BUILD_ID=6627568
-# stable: 1.6.0024-1
-ARG DOCA_VERSION=1.6.0024-1
+# stable: 7837648
+ARG DOCA_BUILD_ID=7837648
+# stable: 2.2.0002-1
+ARG DOCA_VERSION=2.2.0002-1
 # stable: 20.11.0-7.1.2
-ARG DPDK_VERSION=20.11.0-7.1.2
+ARG DPDK_VERSION=22.11.0-1.4.1
+
+# https://urm.nvidia.com/ui/native/sw-nbu-int-generic/doca-gpunet/7837648/doca-gpu-mlnx-dpdk/
+# doca-apps-dev_2.2.0002-1_amd64.deb
+# 22.11.0-1.4.1_amd64.deb
 
 RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         mkdir -p ./docker/deb && \
         wget -O ./docker/deb/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
-            https://${DOCA_REPO_HOST}/doca-repo-1.6.0/doca-repo-1.6.0-0.0.9-221109-160039-daily/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb && \
+            https://${DOCA_REPO_HOST}/doca-repo-2.2.0/doca-repo-2.2.0-0.0.1-230405-143032-daily/doca-host-repo-ubuntu2004_2.2.0-0.0.1-230405-143032-daily.2.0.2004.2devflexio.23.04.0.2.3.0_amd64.deb && \
         wget -O ./docker/deb/doca-apps-dev_${DOCA_VERSION}_amd64.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_${DOCA_VERSION}_amd64.deb && \
         wget -O ./docker/deb/doca-apps_${DOCA_VERSION}_amd64.deb \
@@ -190,6 +194,8 @@ RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         wget -O ./docker/deb/doca-samples_${DOCA_VERSION}_amd64.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-samples_${DOCA_VERSION}_amd64.deb && \
         wget -O ./docker/deb/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb \
+            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-services_${DOCA_VERSION}_amd64.deb && \
+        wget -O ./docker/deb/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb && \
         wget -O ./docker/deb/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb && \
@@ -200,14 +206,15 @@ RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
     fi
 
 RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        dpkg -i ./docker/deb/*.deb; exit 0 ;\
+        dpkg -i ./docker/deb/doca-host-repo*.deb;  \
     fi
 
 RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        rm ./docker/deb/*.deb &&  \
-        apt-get update -o APT::Update::Error-Mode=any && \
-        apt-get install -y -f &&\
-        rm -rf /var/lib/apt/lists/* ;\
+        apt-get update && \
+        apt-get install -y libjson-c-dev meson cmake pkg-config && \
+        apt-get install -y ./docker/deb/mlnx-dpdk*.deb && \
+        apt-get install -y ./docker/deb/*doca*.deb && \
+        echo hey; \
     fi
 
 # Build and install md, bsd, and gdrcopy libs

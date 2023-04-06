@@ -65,8 +65,8 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
 uint32_t const PACKETS_PER_THREAD = 4;
 uint32_t const THREADS_PER_BLOCK = 512;
 uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
-// uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
-uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
+uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
+// uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
 
 __device__ __forceinline__ uint8_t
 gpu_ipv4_hdr_len(const struct rte_ipv4_hdr *ipv4_hdr)
@@ -74,7 +74,7 @@ gpu_ipv4_hdr_len(const struct rte_ipv4_hdr *ipv4_hdr)
 	return (uint8_t)((ipv4_hdr->version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
 };
 
-__device__ __forceinline__ uint8_t
+__device__ __forceinline__ int32_t
 get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4)
 {
   auto total_length      = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
@@ -123,19 +123,54 @@ is_tcp_packet(rte_ipv4_hdr* packet_l3)
   return packet_l3->next_proto_id == IPPROTO_TCP;
 }
 
+// what if I had receive, gather, and release kernels?
+// what if I abstracted away the GPUNetIO aspects by making these calls templated?
+
+__device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
+{
+	const uint8_t *tcp_opt = (typeof(tcp_opt))tcp + RTE_TCP_MIN_HDR_LEN;
+	const uint8_t *tcp_data = (typeof(tcp_data))tcp + static_cast<int32_t>(tcp->dt_off * sizeof(int32_t));
+
+  while (tcp_opt < tcp_data) {
+    switch(tcp_opt[0]) {
+      case RTE_TCP_OPT_END:
+        return 0;
+      case RTE_TCP_OPT_NOP:
+        tcp_opt++;
+        continue;
+      case RTE_TCP_OPT_TIMESTAMP:
+        return (static_cast<uint32_t>(tcp_opt[2]) << 24)
+            | (static_cast<uint32_t>(tcp_opt[3]) << 16)
+            | (static_cast<uint32_t>(tcp_opt[4]) << 8)
+            | (static_cast<uint32_t>(tcp_opt[5]) << 0);
+      default:
+        if (tcp_opt[1] == 0) {
+          return 0;
+        } else {
+          tcp_opt += tcp_opt[1];
+        }
+        continue;
+    }
+  }
+
+	return 0;
+}
+
 __global__ void _packet_receive_kernel(
   doca_gpu_rxq_info*     rxq_info,
   doca_gpu_semaphore_in* sem_in,
   int32_t                sem_count,
   int32_t*               sem_idx,
   int32_t*               packet_count_out,
-  int32_t*               packet_data_size_out
+  int32_t*               packet_size_total_out,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer
 )
 {
   if (threadIdx.x == 0)
   {
     *packet_count_out = 0;
-    *packet_data_size_out = 0;
+    *packet_size_total_out = 0;
   }
 
   __shared__ uint32_t packet_count;
@@ -219,12 +254,29 @@ __global__ void _packet_receive_kernel(
       &packet_data
     );
 
+    auto packet_size = get_packet_size(packet_l3);
+
+    for (auto i = 0; i < packet_size; i++) {
+      packet_buffer[(packet_idx * 65536) + i] = packet[i];
+    }
+
+    get_packet_tcp_headers(
+      packet_buffer + (packet_idx * 65536),
+      &packet_l2,
+      &packet_l3,
+      &packet_l4,
+      &packet_data
+    );
+
     auto data_size = get_payload_size(packet_l3, packet_l4);
 
+    packet_sizes[packet_idx] = data_size;
 
     if (is_tcp_packet(packet_l3))
     {
-      atomicAdd(packet_data_size_out, data_size);
+      // printf("tid(%03i) pid(%04i) RK1 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
+
+      atomicAdd(packet_size_total_out, data_size);
       atomicAdd(packet_count_out, 1);
     }
 
@@ -254,41 +306,13 @@ __global__ void _packet_receive_kernel(
   __syncthreads();
 }
 
-__device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
-{
-	const uint8_t *tcp_opt = (typeof(tcp_opt))tcp + RTE_TCP_MIN_HDR_LEN;
-	const uint8_t *tcp_data = (typeof(tcp_data))tcp + static_cast<int32_t>(tcp->dt_off * sizeof(int32_t));
-
-  while (tcp_opt < tcp_data) {
-    switch(tcp_opt[0]) {
-      case RTE_TCP_OPT_END:
-        return 0;
-      case RTE_TCP_OPT_NOP:
-        tcp_opt++;
-        continue;
-      case RTE_TCP_OPT_TIMESTAMP:
-        return (static_cast<uint32_t>(tcp_opt[2]) << 24)
-            | (static_cast<uint32_t>(tcp_opt[3]) << 16)
-            | (static_cast<uint32_t>(tcp_opt[4]) << 8)
-            | (static_cast<uint32_t>(tcp_opt[5]) << 0);
-      default:
-        if (tcp_opt[1] == 0) {
-          return 0;
-        } else {
-          tcp_opt += tcp_opt[1];
-        }
-        continue;
-    }
-  }
-
-	return 0;
-}
-
 __global__ void _packet_gather_kernel(
   doca_gpu_rxq_info*     rxq_info,
   doca_gpu_semaphore_in* sem_in,
   int32_t                sem_count,
   int32_t*               sem_idx,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer,
   uint32_t*              timestamp_out,
   int64_t*               src_mac_out,
   int64_t*               dst_mac_out,
@@ -301,7 +325,8 @@ __global__ void _packet_gather_kernel(
   int32_t*               tcp_flags_out,
   int32_t*               ether_type_out,
   int32_t*               next_proto_id_out,
-  char*                  data_out
+  char*                  data_out,
+  int32_t                data_out_size
 )
 {
   // Specialize BlockScan for a 1D block of 128 threads of type int
@@ -316,6 +341,8 @@ __global__ void _packet_gather_kernel(
 
   if (threadIdx.x == 0) {
 
+    // printf("===== begin gk =====\n");
+
     doca_error_t ret;
     do
     {
@@ -327,6 +354,7 @@ __global__ void _packet_gather_kernel(
         &packet_address);
 
     } while(ret == DOCA_ERROR_NOT_FOUND and sem_status != DOCA_GPU_SEM_STATUS_HOLD);
+
   }
 
   __syncthreads();
@@ -350,6 +378,8 @@ __global__ void _packet_gather_kernel(
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
     if (packet_idx >= packet_count) {
+      data_capture[i] = 0;
+      data_offsets[i] = 0;
       continue;
     }
 
@@ -364,19 +394,23 @@ __global__ void _packet_gather_kernel(
     uint8_t*       packet_data;
 
     get_packet_tcp_headers(
-      packet,
+      packet_buffer + (packet_idx * 65536),
       &packet_l2,
       &packet_l3,
       &packet_l4,
       &packet_data
     );
 
-    auto data_size = get_payload_size(packet_l3, packet_l4);
+    // auto data_size = get_payload_size(packet_l3, packet_l4);
+
+    auto data_size = packet_sizes[packet_idx];
 
     if (is_tcp_packet(packet_l3))
     {
       data_capture[i] = 1;
       data_offsets[i] = data_size;
+
+      // printf("tid(%03i) pid(%04i) GK1 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
     }
     else
     {
@@ -414,19 +448,23 @@ __global__ void _packet_gather_kernel(
     uint8_t*       packet_data;
 
     get_packet_tcp_headers(
-      packet,
+      packet_buffer + (packet_idx * 65536),
       &packet_l2,
       &packet_l3,
       &packet_l4,
       &packet_data
     );
 
-    auto data_size = get_payload_size(packet_l3, packet_l4);
+    // auto data_size = get_payload_size(packet_l3, packet_l4);
+
+    auto data_size = packet_sizes[packet_idx];
 
     if (not is_tcp_packet(packet_l3))
     {
       continue;
     }
+
+    // printf("tid(%03i) pid(%04i) GK2 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
 
     auto packet_idx_out = data_capture[i];
 
@@ -436,8 +474,17 @@ __global__ void _packet_gather_kernel(
     {
       auto value = packet_data[data_idx];
 
-      // this is where the error occurs. this could happen if data_out is not big enough, or data_offsets gets corrupted somehow
-      data_out[data_offsets[i] + data_idx] = value;
+      auto data_out_idx = data_offsets[i] + data_idx;
+
+      if (data_out_idx < data_out_size) {
+        if((value >= 'a' and value <= 'z') or (value >= 'A' and value <= 'Z')) {
+          data_out[data_out_idx] = value;
+        } else {
+          data_out[data_out_idx] = '_';
+        }
+      } else {
+        // printf("tid(%03i) pid(%04i) OOB write(%i/%i): %c.\n", threadIdx.x, packet_idx, data_out_idx, data_out_size, value);
+      }
     }
 
     // TCP timestamp option
@@ -494,7 +541,6 @@ __global__ void _packet_gather_kernel(
     // protocol id
     auto next_proto_id = packet_l3->next_proto_id;
     next_proto_id_out[packet_idx_out] = static_cast<int32_t> (next_proto_id);
-
   }
 
   __syncthreads();
@@ -505,6 +551,8 @@ __global__ void _packet_gather_kernel(
       sem_in + *sem_idx,
       DOCA_GPU_SEM_STATUS_FREE
     );
+
+    // printf("===== end gk =====\n");
   }
 }
 
@@ -597,7 +645,9 @@ void packet_receive_kernel(
   int32_t                sem_count,
   int32_t*               sem_idx,
   int32_t*               packet_count,
-  int32_t*               packet_data_size,
+  int32_t*               packet_size_total,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer,
   cudaStream_t           stream
 )
 {
@@ -607,7 +657,9 @@ void packet_receive_kernel(
     sem_count,
     sem_idx,
     packet_count,
-    packet_data_size
+    packet_size_total,
+    packet_sizes,
+    packet_buffer
   );
 
   CHECK_CUDA(stream);
@@ -618,6 +670,8 @@ void packet_gather_kernel(
   doca_gpu_semaphore_in* sem_in,
   int32_t                sem_count,
   int32_t*               sem_idx,
+  int32_t*               packet_sizes,
+  uint8_t*               packet_buffer,
   uint32_t*              timestamp_out,
   int64_t*               src_mac_out,
   int64_t*               dst_mac_out,
@@ -631,6 +685,7 @@ void packet_gather_kernel(
   int32_t*               ether_type_out,
   int32_t*               next_proto_id_out,
   char*                  data_out,
+  int32_t                data_out_size,
   cudaStream_t           stream
 )
 {
@@ -639,6 +694,8 @@ void packet_gather_kernel(
     sem_in,
     sem_count,
     sem_idx,
+    packet_sizes,
+    packet_buffer,
     timestamp_out,
     src_mac_out,
     dst_mac_out,
@@ -651,7 +708,8 @@ void packet_gather_kernel(
     tcp_flags_out,
     ether_type_out,
     next_proto_id_out,
-    data_out
+    data_out,
+    data_out_size
   );
 
   CHECK_CUDA(stream);
