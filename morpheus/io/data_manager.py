@@ -85,7 +85,7 @@ class DataManager():
         data_record = self._records[source_id]
 
         if action == 'store':
-            self._manifest[source_id] = data_record._data_label
+            self._manifest[source_id] = data_record.data
             self._total_rows += data_record.num_rows
         elif action == 'remove':
             self._total_rows -= data_record.num_rows
@@ -193,39 +193,3 @@ class DataManager():
         self._update_manifest(source_id, 'remove')
         del self._records[source_id]
 
-
-class DatasetFromDataManager(Dataset):
-    """
-    PyTorch Dataset class to load data from a DataManager instance.
-    """
-
-    def __init__(self, data_manager: DataManager):
-        """
-        Initialize the DatasetFromDataManager instance.
-        :param data_manager:
-        """
-
-        self.data_manager = data_manager
-        self.uuids = sorted(self.data_manager._records.keys())
-        self.num_rows_per_dataframe = [self.data_manager.num_rows(uuid) for uuid in self.uuids]
-        self.total_rows = sum(self.num_rows_per_dataframe)
-
-    def __len__(self) -> int:
-        return self.total_rows
-
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # Find the corresponding dataframe based on the index
-        for i, num_rows in enumerate(self.num_rows_per_dataframe):
-            if index < num_rows:
-                break
-            index -= num_rows
-
-        # Load the dataframe
-        source_id = self.uuids[i]
-        cudf_df = self.data_manager.load(source_id)
-
-        # Assuming 'features' column contains input features and 'labels' column contains target labels
-        features = torch.tensor(cudf_df['features'].to_array()[index], dtype=torch.float32)
-        labels = torch.tensor(cudf_df['labels'].to_array()[index], dtype=torch.long)
-
-        return features, labels
