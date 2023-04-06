@@ -43,7 +43,7 @@ ARG CUDA_MAJOR_VER=11
 ARG CUDA_MINOR_VER=8
 ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
-ARG LINUX_VER=20.04
+ARG LINUX_VER=22.04
 ARG PYTHON_VER=3.8
 
 # ============ Stage: base ============
@@ -167,14 +167,10 @@ ARG DOCA_VERSION=2.2.0002-1
 # stable: 20.11.0-7.1.2
 ARG DPDK_VERSION=22.11.0-1.4.1
 
-# https://urm.nvidia.com/ui/native/sw-nbu-int-generic/doca-gpunet/7837648/doca-gpu-mlnx-dpdk/
-# doca-apps-dev_2.2.0002-1_amd64.deb
-# 22.11.0-1.4.1_amd64.deb
-
 RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         mkdir -p ./docker/deb && \
-        wget -O ./docker/deb/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
-            https://${DOCA_REPO_HOST}/doca-repo-2.2.0/doca-repo-2.2.0-0.0.1-230405-143032-daily/doca-host-repo-ubuntu2004_2.2.0-0.0.1-230405-143032-daily.2.0.2004.2devflexio.23.04.0.2.3.0_amd64.deb && \
+        wget -O ./docker/deb/doca-host-repo-ubuntu2204_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
+            https://${DOCA_REPO_HOST}/doca-repo-2.2.0/doca-repo-2.2.0-0.0.1-230405-143032-daily/doca-host-repo-ubuntu2204_2.2.0-0.0.1-230405-143032-daily.2.0.2004.2devflexio.23.04.0.2.3.0_amd64.deb && \
         wget -O ./docker/deb/doca-apps-dev_${DOCA_VERSION}_amd64.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_${DOCA_VERSION}_amd64.deb && \
         wget -O ./docker/deb/doca-apps_${DOCA_VERSION}_amd64.deb \
