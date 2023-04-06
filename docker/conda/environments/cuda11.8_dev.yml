@@ -63,9 +63,6 @@ dependencies:
     - librdkafka=1.7.0
     - mlflow>1.29,<2
     - mrc=23.07
-    - libhwloc=2.5.0
-    - nlohmann_json=3.9.1
-    - ucx=1.13.1
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
