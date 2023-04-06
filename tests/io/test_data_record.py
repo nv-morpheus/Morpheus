@@ -1,10 +1,27 @@
-import cudf
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import io
 import os
-import pandas as pd
-import pytest
 import shutil
 import tempfile
+
+import pandas as pd
+import pytest
+
+import cudf
 
 from morpheus.io.data_record import DataRecord
 
@@ -27,8 +44,10 @@ def tearDownModule():
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_data_record_load(storage_type, file_format):
-    data_record = DataRecord(data_source=test_cudf_dataframe, data_label='test_data',
-                             storage_type=storage_type, file_format=file_format)
+    data_record = DataRecord(data_source=test_cudf_dataframe,
+                             data_label='test_data',
+                             storage_type=storage_type,
+                             file_format=file_format)
     loaded_df = data_record.load()
     pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
 
@@ -36,8 +55,10 @@ def test_data_record_load(storage_type, file_format):
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_data_record_num_rows(storage_type, file_format):
-    data_record = DataRecord(data_source=test_cudf_dataframe, data_label='test_data',
-                             storage_type=storage_type, file_format=file_format)
+    data_record = DataRecord(data_source=test_cudf_dataframe,
+                             data_label='test_data',
+                             storage_type=storage_type,
+                             file_format=file_format)
     num_rows = data_record.num_rows
     assert num_rows == len(test_cudf_dataframe)
 
@@ -45,15 +66,19 @@ def test_data_record_num_rows(storage_type, file_format):
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
 def test_invalid_storage_type(storage_type):
     with pytest.raises(ValueError):
-        DataRecord(data_source=test_cudf_dataframe, data_label='test_data',
-                   storage_type=storage_type, file_format='parquet')
+        DataRecord(data_source=test_cudf_dataframe,
+                   data_label='test_data',
+                   storage_type=storage_type,
+                   file_format='parquet')
 
 
 @pytest.mark.parametrize("file_format", ['invalid', "something else invalid"])
 def test_invalid_data_format(file_format):
     with pytest.raises(ValueError):
-        DataRecord(data_source=test_cudf_dataframe, data_label='test_data',
-                   storage_type='in_memory', file_format=file_format)
+        DataRecord(data_source=test_cudf_dataframe,
+                   data_label='test_data',
+                   storage_type='in_memory',
+                   file_format=file_format)
 
 
 def test_data_record_deletion_filesystem_csv():

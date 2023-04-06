@@ -1,19 +1,40 @@
-import cudf
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import io
 import os
-import pandas as pd
-import pytest
 import unittest
 import uuid
+
+import pandas as pd
+import pytest
+
+import cudf
 
 from morpheus.io import data_manager
 
 DataManager = data_manager.DataManager
 
 sources = [
-    cudf.DataFrame({'a': [1, 2], 'b': [3, 4]}),
+    cudf.DataFrame({
+        'a': [1, 2], 'b': [3, 4]
+    }),
     'buffer2.parquet',  # Local or remote file path
-    pd.DataFrame({'a': [5, 6], 'b': [7, 8]}),
+    pd.DataFrame({
+        'a': [5, 6], 'b': [7, 8]
+    }),
 ]
 test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
 test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
@@ -120,8 +141,7 @@ def test_load_cudf_dataframe(storage_type, file_format):
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
 
-    pd.testing.assert_frame_equal(
-        loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
+    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -141,8 +161,7 @@ def test_load(storage_type, file_format):
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
 
-    pd.testing.assert_frame_equal(
-        loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
+    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])

@@ -1,9 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import io
-import cudf
-import pandas as pd
+from typing import Any
+from typing import Union
+
 import fsspec
-from typing import Union, Any
+import pandas as pd
 import pyarrow.parquet as pq
+
+import cudf
 
 
 class DataRecord:
@@ -17,7 +35,8 @@ class DataRecord:
     VALID_STORAGE_TYPES = ('in_memory', 'filesystem')
     VALID_FILE_FORMATS = ('parquet', 'csv')
 
-    def __init__(self, data_source: Union[io.BytesIO, str],
+    def __init__(self,
+                 data_source: Union[io.BytesIO, str],
                  data_label: str,
                  storage_type: str,
                  file_format: str,
@@ -125,7 +144,7 @@ class DataRecord:
             row_count = par_file.metadata.num_rows
         elif _file_format == 'csv':
             # For CSV files, use pandas to read the file and count the rows.
-            with pd.read_csv(file_path, chunksize=10 ** 6) as reader:
+            with pd.read_csv(file_path, chunksize=10**6) as reader:
                 row_count = sum(chunk.shape[0] for chunk in reader)
 
         else:

@@ -1,15 +1,35 @@
-import uuid
-import cudf
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
-import pandas as pd
-import fsspec
-import tempfile
 import os
 import shutil
-from typing import Union, Optional, List, Tuple, Any
+import tempfile
+import uuid
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
+import fsspec
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
+
+import cudf
 
 from morpheus.io.data_record import DataRecord
 
@@ -33,15 +53,13 @@ class DataManager():
 
         if (storage_type not in self.VALID_STORAGE_TYPES):
             storage_type = 'in_memory'
-            logging.warning(
-                f"Invalid storage_type '{storage_type}' defaulting to 'in_memory', valid options are "
-                f"{self.VALID_STORAGE_TYPES}")
+            logging.warning(f"Invalid storage_type '{storage_type}' defaulting to 'in_memory', valid options are "
+                            f"{self.VALID_STORAGE_TYPES}")
 
         if (file_format not in self.VALID_FILE_FORMATS):
             file_format = 'parquet'
-            logging.warning(
-                f"Invalid file_format '{file_format}' defaulting to 'parquet', valid options are "
-                f"{self.VALID_FILE_FORMATS}")
+            logging.warning(f"Invalid file_format '{file_format}' defaulting to 'parquet', valid options are "
+                            f"{self.VALID_FILE_FORMATS}")
 
         self._file_format = file_format
         self._fs = fsspec.filesystem('file')
@@ -153,7 +171,9 @@ class DataManager():
 
         return data_record.load()
 
-    def store(self, data_source: Union[cudf.DataFrame, pd.DataFrame, str], copy_from_source: bool = False,
+    def store(self,
+              data_source: Union[cudf.DataFrame, pd.DataFrame, str],
+              copy_from_source: bool = False,
               data_label: Optional[str] = None) -> uuid.UUID:
         """
         Store a DataFrame or file path as a source and return the source ID.
@@ -172,8 +192,11 @@ class DataManager():
         else:
             data_label = data_label or f'dataframe_{tracking_id}'
 
-        data_record = DataRecord(data_source=data_source, data_label=data_label, storage_type=self.storage_type,
-                                 file_format=self._file_format, copy_from_source=copy_from_source)
+        data_record = DataRecord(data_source=data_source,
+                                 data_label=data_label,
+                                 storage_type=self.storage_type,
+                                 file_format=self._file_format,
+                                 copy_from_source=copy_from_source)
 
         self._records[tracking_id] = data_record
         self._update_manifest(tracking_id, action='store')
@@ -192,4 +215,3 @@ class DataManager():
 
         self._update_manifest(source_id, 'remove')
         del self._records[source_id]
-
