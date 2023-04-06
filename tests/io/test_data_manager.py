@@ -75,14 +75,14 @@ def test_filesystem_storage_files_exist(storage_type, file_format):
     sid1 = dm.store(test_cudf_dataframe)
     sid2 = dm.store(test_pd_dataframe)
 
-    files = dm.source
-    for file_path in files:
+    files = dm.manifest
+    for file_path in files.values():
         assert (os.path.exists(file_path))
 
     dm.remove(sid1)
     dm.remove(sid2)
 
-    files = dm.source
+    files = dm.manifest
     for file_path in files:
         assert (not os.path.exists(file_path))
 
@@ -100,7 +100,7 @@ def test_large_fileset_filesystem_storage(storage_type, file_format):
     for source_id in source_ids:
         assert (source_id in dm)
 
-    files = dm.source
+    files = dm.manifest.values()
     for file_path in files:
         assert (os.path.exists(file_path))
 
@@ -109,7 +109,6 @@ def test_large_fileset_filesystem_storage(storage_type, file_format):
 
     assert (len(dm) == 0)
 
-    files = dm.source
     for file_path in files:
         assert (not os.path.exists(file_path))
 
@@ -163,7 +162,7 @@ def test_load_non_existent_source_id(storage_type, file_format):
 def test_get_num_rows(storage_type, file_format):
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_pd_dataframe)
-    num_rows = dm.get_num_rows(sid)
+    num_rows = dm.get_record(sid).num_rows
     assert (num_rows == len(test_pd_dataframe))
 
 
@@ -172,13 +171,16 @@ def test_get_num_rows(storage_type, file_format):
 def test_source_property(storage_type, file_format):
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_cudf_dataframe)
-    sources = dm.source
-    assert (len(sources) == 1)
+    data_records = dm.records
 
-    if (storage_type == 'in_memory'):
-        assert (isinstance(sources[0][0], io.BytesIO))
-    elif (storage_type == 'filesystem'):
-        assert (isinstance(sources[0][0], str))
+    assert (len(data_records) == 1)
+
+    for k, v in data_records.items():
+        assert (v._storage_type == storage_type)
+        if (storage_type == 'in_memory'):
+            assert (isinstance(v.data, io.BytesIO))
+        elif (storage_type == 'filesystem'):
+            assert (isinstance(v.data, str))
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])

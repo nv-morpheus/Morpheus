@@ -1,4 +1,3 @@
-import io
 import uuid
 import cudf
 import logging
@@ -7,13 +6,13 @@ import fsspec
 import tempfile
 import os
 import shutil
-from typing import Union, List, Tuple, Any
+from typing import Union, Optional, List, Tuple, Any
 
 import torch
 from torch.utils.data import Dataset
 
+from morpheus.io.data_record import DataRecord
 
-# TODO(Devin): Double check if we can use anything from deserializers or serializers code
 
 class DataManager():
     """
@@ -35,56 +34,86 @@ class DataManager():
         if (storage_type not in self.VALID_STORAGE_TYPES):
             storage_type = 'in_memory'
             logging.warning(
-                f"Invalid storage_type '{storage_type}' defaulting to 'in_memory', valid options are {self.VALID_STORAGE_TYPES}")
+                f"Invalid storage_type '{storage_type}' defaulting to 'in_memory', valid options are "
+                f"{self.VALID_STORAGE_TYPES}")
 
         if (file_format not in self.VALID_FILE_FORMATS):
             file_format = 'parquet'
             logging.warning(
-                f"Invalid file_format '{file_format}' defaulting to 'parquet', valid options are {self.VALID_FILE_FORMATS}")
+                f"Invalid file_format '{file_format}' defaulting to 'parquet', valid options are "
+                f"{self.VALID_FILE_FORMATS}")
 
         self._file_format = file_format
         self._fs = fsspec.filesystem('file')
-        self._sources = {}
+        self._manifest = {}
+        self._records = {}
         self._storage_dir = None
         self._storage_type = storage_type
+        self._total_rows = 0
 
         if (storage_type == 'filesystem'):
             self._storage_dir = tempfile.mkdtemp()
 
+        if (file_format == 'parquet'):
+            self._data_reader = cudf.read_parquet
+        elif (file_format == 'csv'):
+            self._data_reader = cudf.read_csv
+        else:
+            raise ValueError(f"Invalid file_format '{self._file_format}'")
+
     def __contains__(self, item: Any) -> bool:
-        return item in self._sources
+        return item in self._records
 
     def __del__(self):
         if (self._storage_type == 'filesystem'):
             shutil.rmtree(self._storage_dir)
 
     def __len__(self) -> int:
-        return len(self._sources)
+        return len(self._records)
 
-    def _write_to_file(self, df: Union[cudf.DataFrame, pd.DataFrame], source_id: uuid.UUID) -> Any:
-        if not isinstance(df, (cudf.DataFrame, pd.DataFrame)):
-            raise ValueError("Invalid data source. Must be a cuDF or Pandas DataFrame.")
+    def __repr__(self):
+        return (f"DataManager(records={self.num_rows}, "
+                f"storage_type={self._storage_type!r}, "
+                f"storage directory={self._storage_dir!r})")
 
-        if (self._storage_type == 'filesystem'):
-            buf_or_path = os.path.join(self._storage_dir, f"{source_id}.{self._file_format}")
-        elif (self._storage_type == 'in_memory'):
-            buf_or_path = io.BytesIO()
-        else:
-            raise ValueError(f"Invalid storage_type '{self._storage_type}'")
+    def __str__(self):
+        return (f"DataManager with {self.num_rows} records, "
+                f"storage type: {self._storage_type}, "
+                f"storage directory: {self._storage_dir}")
 
-        if (self._file_format == 'parquet'):
-            df.to_parquet(buf_or_path)
-        elif (self._file_format == 'csv'):
-            df.to_csv(buf_or_path, index=False, header=True)
+    def _update_manifest(self, source_id: uuid.UUID, action: str) -> None:
+        data_record = self._records[source_id]
 
-        return buf_or_path
+        if action == 'store':
+            self._manifest[source_id] = data_record._data_label
+            self._total_rows += data_record.num_rows
+        elif action == 'remove':
+            self._total_rows -= data_record.num_rows
+            del self._manifest[source_id]
 
     @property
-    def source(self) -> Union[List[io.BytesIO], List[str]]:
-        if (self._storage_type == 'filesystem'):
-            return [os.path.join(self._storage_dir, f"{source_id}.{self._file_format}") for source_id in self._sources]
-        else:
-            return list(self._sources.values())
+    def manifest(self) -> dict:
+        """
+        Retrieve a mapping of UUIDs to their filenames or labels.
+
+        :return: A dictionary containing UUID to filename/label mappings.
+        """
+
+        return self._manifest
+
+    @property
+    def num_rows(self) -> int:
+        """
+        Get the number of rows in a source given its source ID.
+        :param source_id:
+        :return:
+        """
+
+        return self._total_rows
+
+    @property
+    def records(self):
+        return self._records
 
     @property
     def storage_type(self) -> str:
@@ -96,14 +125,18 @@ class DataManager():
 
         return self._storage_type
 
-    def get_num_rows(self, source_id: uuid.UUID) -> int:
+    def get_record(self, source_id: uuid.UUID) -> DataRecord:
         """
-        Get the number of rows in a source given its source ID.
-        :param source_id:
-        :return:
+        Get a DataRecord instance given a source ID.
+
+        :param source_id: UUID of the source to be retrieved.
+        :return: DataRecord instance.
         """
-        _, num_rows = self._sources[source_id]
-        return num_rows
+
+        if source_id not in self._records:
+            raise KeyError(f"Source ID '{source_id}' not found.")
+
+        return self._records[source_id]
 
     def load(self, source_id: uuid.UUID) -> cudf.DataFrame:
         """
@@ -113,51 +146,39 @@ class DataManager():
         :return: Loaded cuDF DataFrame.
         """
 
-        if (source_id not in self._sources):
+        if source_id not in self._records:
             raise KeyError(f"Source ID '{source_id}' not found.")
 
-        source, _ = self._sources[source_id]
+        data_record = self._records[source_id]
 
-        if (self._storage_type == 'in_memory'):
-            buf = source
-            buf.seek(0)
-        elif (self._storage_type == 'filesystem'):
-            buf = self._fs.open(source, 'rb')
-        else:
-            raise ValueError(f"Invalid storage_type '{self._storage_type}'")
+        return data_record.load()
 
-        if (self._file_format == 'parquet'):
-            cudf_df = cudf.read_parquet(buf)
-        elif (self._file_format == 'csv'):
-            cudf_df = cudf.read_csv(buf)
-        else:
-            raise ValueError(f"Invalid file_format '{self._file_format}'")
-
-        return cudf_df
-
-    def store(self, source: Union[cudf.DataFrame, pd.DataFrame, str]) -> uuid.UUID:
+    def store(self, data_source: Union[cudf.DataFrame, pd.DataFrame, str], copy_from_source: bool = False,
+              data_label: Optional[str] = None) -> uuid.UUID:
         """
         Store a DataFrame or file path as a source and return the source ID.
 
-        :param df: DataFrame or file path to store as a source.
+        :param data_source: DataFrame or file path to store as a source.
+        :param copy_from_source: Whether to copy the data on disk when the input is a file path and the storage type is
+        'filesystem'.
+        :param data_label: Optional label for the stored data.
         :return: UUID of the stored source.
         """
 
-        source_id = uuid.uuid4()
-        if (isinstance(source, (cudf.DataFrame, pd.DataFrame))):
-            source_df = source
+        tracking_id = uuid.uuid4()
+
+        if (self._storage_type == 'filesystem'):
+            data_label = os.path.join(self._storage_dir, f"{tracking_id}.{self._file_format}")
         else:
-            if (self._file_format == 'csv'):
-                source_df = cudf.read_csv(source)
-            elif (self._file_format == 'parquet'):
-                source_df = cudf.read_parquet(source)
+            data_label = data_label or f'dataframe_{tracking_id}'
 
-        num_rows = len(source_df)
-        source_val = self._write_to_file(source_df, source_id)
+        data_record = DataRecord(data_source=data_source, data_label=data_label, storage_type=self.storage_type,
+                                 file_format=self._file_format, copy_from_source=copy_from_source)
 
-        self._sources[source_id] = (source_val, num_rows)
+        self._records[tracking_id] = data_record
+        self._update_manifest(tracking_id, action='store')
 
-        return source_id
+        return tracking_id
 
     def remove(self, source_id: uuid.UUID) -> None:
         """
@@ -166,8 +187,11 @@ class DataManager():
         :param source_id: UUID of the source to be removed.
         """
 
-        if (source_id in self._sources):
-            del self._sources[source_id]
+        if (source_id not in self._records):
+            raise KeyError(f"Source ID '{source_id}' does not exist.")
+
+        self._update_manifest(source_id, 'remove')
+        del self._records[source_id]
 
 
 class DatasetFromDataManager(Dataset):
@@ -182,8 +206,8 @@ class DatasetFromDataManager(Dataset):
         """
 
         self.data_manager = data_manager
-        self.uuids = sorted(self.data_manager._sources.keys())
-        self.num_rows_per_dataframe = [self.data_manager.get_num_rows(uuid) for uuid in self.uuids]
+        self.uuids = sorted(self.data_manager._records.keys())
+        self.num_rows_per_dataframe = [self.data_manager.num_rows(uuid) for uuid in self.uuids]
         self.total_rows = sum(self.num_rows_per_dataframe)
 
     def __len__(self) -> int:
@@ -205,4 +229,3 @@ class DatasetFromDataManager(Dataset):
         labels = torch.tensor(cudf_df['labels'].to_array()[index], dtype=torch.long)
 
         return features, labels
-
