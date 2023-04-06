@@ -38,7 +38,7 @@ CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
 rapids-logger "Pulling LFS assets"
 
 git lfs install
-${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch bert-based-vocab tests validation
 
 # List missing files
 rapids-logger "Listing missing files"
