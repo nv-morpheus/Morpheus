@@ -37,7 +37,7 @@ def build_post_proc_message(log_example_dir: str, log_test_data_dir: str):
 
     # Import messages from the example dir
     import messages
-    assert messages.__file__.startswith(os.path.join(log_example_dir, 'messages.py')), "Imported wrong messages module"
+    assert messages.__file__ == os.path.join(log_example_dir, 'messages.py'), "Imported wrong messages module"
 
     # we have tensor data for the first five rows
     count = 5
@@ -77,7 +77,6 @@ def test_log_parsing_post_processing_stage(config: Config):
     post_proc_message = build_post_proc_message(log_example_dir, log_test_data_dir)
     expected_df = read_file_to_df(os.path.join(log_test_data_dir, 'expected_out.csv'), df_type='pandas')
 
-    print(post_proc_message)
     out_meta = stage._postprocess(post_proc_message)
 
     assert isinstance(out_meta, MessageMeta)
