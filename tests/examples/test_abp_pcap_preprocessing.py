@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import locale
 import os
 
 import cupy as cp
@@ -97,6 +98,9 @@ def test_abp_pcap_preprocessing(config: Config):
     mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=10)
     mm2 = MultiMessage(meta=meta, mess_offset=10, mess_count=10)
 
+    # Test for https://github.com/rapidsai/cudf/issues/13085
+    encoding = locale.getpreferredencoding()
+
     stage = AbpPcapPreprocessingStage(config)
     assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
 
@@ -123,3 +127,5 @@ def test_abp_pcap_preprocessing(config: Config):
                       expected_flow_ids=expected_flow_ids[10:],
                       expected_rollup_time='2021-04-07 15:55',
                       expected_input__0=expected_input__0[10:])
+
+    assert locale.getpreferredencoding() == encoding
