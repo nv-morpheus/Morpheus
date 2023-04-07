@@ -1,7 +1,8 @@
 #pragma once
 
-#include <doca_gpu.h>
+#include <doca_gpunetio.h>
 #include <doca_flow.h>
+#include <doca_eth_rxq.h>
 
 #include <string>
 #include <memory>
@@ -35,15 +36,15 @@ struct doca_rx_queue
 {
   private:
     std::shared_ptr<doca_context> _context;
-    doca_gpu_rxq_info* _rxq_info_gpu;
-    doca_gpu_rxq_info* _rxq_info_cpu;
+    doca_gpu_eth_rxq* _rxq_info_gpu;
+    doca_gpu_eth_rxq* _rxq_info_cpu;
 
   public:
     doca_rx_queue(std::shared_ptr<doca_context> context);
     ~doca_rx_queue();
 
-    doca_gpu_rxq_info* rxq_info_cpu();
-    doca_gpu_rxq_info* rxq_info_gpu();
+    doca_gpu_eth_rxq* rxq_info_cpu();
+    doca_gpu_eth_rxq* rxq_info_gpu();
 };
 
 struct doca_rx_pipe
@@ -68,16 +69,16 @@ struct doca_semaphore
     std::shared_ptr<doca_context> _context;
     uint16_t _size;
     doca_gpu_semaphore* _semaphore;
-    doca_gpu_semaphore_in* _semaphore_in_gpu;
-    doca_gpu_semaphore_in* _semaphore_in_cpu;
-    doca_gpu_semaphore_in* _semaphore_info_gpu;
-    doca_gpu_semaphore_in* _semaphore_info_cpu;
+    doca_gpu_semaphore_gpu* _semaphore_in_gpu;
+    doca_gpu_semaphore* _semaphore_in_cpu;
+    doca_gpu_semaphore_gpu* _semaphore_info_gpu;
+    doca_gpu_semaphore* _semaphore_info_cpu;
 
   public:
     doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
     ~doca_semaphore();
 
-    doca_gpu_semaphore_in* in_gpu();
+    doca_gpu_semaphore_gpu* in_gpu();
     uint16_t size();
 };
 

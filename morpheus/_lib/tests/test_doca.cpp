@@ -27,7 +27,7 @@
 #include <rte_eal.h>
 #include <doca_version.h>
 #include <doca_argp.h>
-#include <doca_gpu.h>
+#include <doca_gpunetio.h>
 #include <doca_flow.h>
 
 std::shared_ptr<morpheus::doca::doca_context> _context;

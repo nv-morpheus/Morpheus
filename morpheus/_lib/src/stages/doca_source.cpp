@@ -17,7 +17,7 @@
 
 #include "morpheus/stages/doca_source.hpp"
 #include "morpheus/stages/doca_source_kernels.hpp"
-#include "morpheus/doca/common.h"
+// #include "morpheus/doca/common.h"
 
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/column/column_factories.hpp>
@@ -31,6 +31,7 @@
 #include <cudf/strings/convert/convert_ipv4.hpp>
 #include <glog/logging.h>
 #include <cuda/std/chrono>
+#include <rte_byteorder.h>
 
 #include <rmm/device_uvector.hpp>
 
@@ -43,6 +44,8 @@
 #include <stdexcept>  // for runtime_error
 #include <utility>
 #include <iostream>
+
+#define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d))	/* Big endian conversion */
 
 std::optional<uint32_t> ip_to_int(std::string const& ip_address)
 {

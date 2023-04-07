@@ -17,13 +17,13 @@ message(STATUS "Adding library: morpheus")
 set(DOCA_BUILD_FILES "")
 if(MORPHEUS_SUPPORT_DOCA)
   set(DOCA_BUILD_FILES
-    ${MORPHEUS_LIB_ROOT}/src/doca/samples/common.c
-    ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
-    ${MORPHEUS_LIB_ROOT}/src/doca/dpdk_utils.c
-    ${MORPHEUS_LIB_ROOT}/src/doca/flows.c
-    ${MORPHEUS_LIB_ROOT}/src/doca/gpu_init.c
-    ${MORPHEUS_LIB_ROOT}/src/doca/offload_rules.c
-    ${MORPHEUS_LIB_ROOT}/src/doca/utils.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/samples/common.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
+    # ${MORPHEUS_LIB_ROOT}/src/doca/dpdk_utils.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/flows.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/gpu_init.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/offload_rules.c
+    # ${MORPHEUS_LIB_ROOT}/src/doca/utils.c
     ${MORPHEUS_LIB_ROOT}/src/stages/doca_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/doca_source_kernels.cu
   )
