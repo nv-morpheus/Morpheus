@@ -367,6 +367,32 @@ def restore_sys_path():
     sys.path = orig_vars
 
 
+@pytest.fixture(scope="function")
+def import_mod(request: pytest.FixtureRequest, restore_sys_path):
+    marker = request.node.get_closest_marker("import_mod")
+    if marker is not None:
+        mod_paths = marker.args[0]
+        if not isinstance(mod_paths, list):
+            mod_paths = [mod_paths]
+
+        modules = []
+        for mod_path in mod_paths:
+            mod_dir, mod_fname = os.path.split(mod_path)
+            mod_name, _ = os.path.splitext(mod_fname)
+
+            sys.path.append(mod_dir)
+            mod = importlib.import_module(mod_name)
+            assert mod.__file__ == mod_path
+
+            modules.append(mod)
+
+        yield modules
+
+    else:
+        raise ValueError("import_mod fixture requires setting paths in markers: "
+                         "`@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing/messages.py')])`")
+
+
 def _reload_modules(modules: typing.List[typing.Any]):
     for mod in modules:
         importlib.reload(mod)
