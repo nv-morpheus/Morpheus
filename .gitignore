@@ -210,8 +210,7 @@ morpheus/_lib/**/*.pyi
 .clangd
 
 # Ignore DFP Visualization output dirs
-examples/digital_fingerprinting/visualization/azure-dfp-output/
-examples/digital_fingerprinting/visualization/duo-dfp-output/
+examples/digital_fingerprinting/visualization/*-dfp-output/
 
 # Ignore saved benchmark data
 tests/benchmarks/.benchmarks/
