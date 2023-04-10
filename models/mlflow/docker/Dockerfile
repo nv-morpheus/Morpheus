@@ -14,8 +14,7 @@
 # limitations under the License.
 
 ARG FROM_IMAGE="condaforge/miniforge-pypy3"
-ARG PYTHON_VER=3.11
-ARG TAG=22.11.1-4
+ARG TAG=23.1.0-1
 FROM ${FROM_IMAGE}:${TAG} AS base
 
 WORKDIR /mlflow
@@ -35,16 +34,15 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN source /opt/conda/etc/profile.d/conda.sh && conda deactivate \
-    && conda update conda python=${PYTHON_VER} && conda install "tini=0.19" \
-    && conda clean --all
+RUN source /opt/conda/etc/profile.d/conda.sh && conda deactivate && \
+    conda install "python>=3.10,<3.11" "tini=0.19" && conda clean --all
 RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r23.03
+ARG TRITON_VER=main
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \

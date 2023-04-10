@@ -55,7 +55,6 @@ RUN apt-get update &&\
         cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
-        git-lfs \
         jq \
         libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -81,10 +80,8 @@ WORKDIR ${MORPHEUS_ROOT}
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base &&\
-    git lfs install
-    # conda clean -afy
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
+    source activate base
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -195,6 +192,9 @@ COPY ["*.md", "LICENSE", "./"]
 
 # remedy for CVE-2015-20107
 RUN find / -name '*mailcap*.*py*' -delete
+
+# remedy for CVE-2022-42919
+RUN find / -path '*multiprocessing/util.py' -exec sed -i 's/=\s*_platform_supports_abstract_sockets()/= False/g' {} +
 
 # Use morpheus by default
 CMD [ "morpheus" ]

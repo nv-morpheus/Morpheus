@@ -18,12 +18,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
-  - pip
+  - boto3
   - onnx
-  - openssl>=1.1.1s,<3
   - psycopg2<3
-  - pip:
-    - boto3
-    - mlflow>1.29.0,<2
-    - pymysql
+  - pymysql
+  - python<3.11
