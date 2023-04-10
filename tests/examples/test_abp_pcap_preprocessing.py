@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import typing
 
 import cupy as cp
 import numpy as np
@@ -29,7 +30,6 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiMessage
 from utils import TEST_DIRS
-from utils import get_plugin_stage_class
 
 
 def check_inf_message(msg: MultiInferenceFILMessage,
@@ -72,15 +72,13 @@ def check_inf_message(msg: MultiInferenceFILMessage,
     assert (seq_ids[:, 2] == expected_feature_length - 1).all()
 
 
-@pytest.mark.usefixtures("reset_plugins")
-def test_abp_pcap_preprocessing(config):
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'abp_pcap_detection/abp_pcap_preprocessing.py')])
+def test_abp_pcap_preprocessing(config, import_mod: typing.List[typing.Any]):
     # Setup the config
     config.mode = PipelineModes.FIL
     config.feature_length = 13
 
-    # Load the stage via the plugin manager as it isn't part of Morpheus propper
-    mod_path = os.path.join(TEST_DIRS.examples_dir, 'abp_pcap_detection/abp_pcap_preprocessing.py')
-    AbpPcapPreprocessingStage = get_plugin_stage_class(mod_path, "pcap-preprocess", mode=PipelineModes.FIL)
+    abp_pcap_preprocessing = import_mod[0]
 
     # Get our input data, should contain the first 20 lines of the production data
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'abp_pcap.jsonlines')
@@ -96,7 +94,7 @@ def test_abp_pcap_preprocessing(config):
     mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=10)
     mm2 = MultiMessage(meta=meta, mess_offset=10, mess_count=10)
 
-    stage = AbpPcapPreprocessingStage(config)
+    stage = abp_pcap_preprocessing.AbpPcapPreprocessingStage(config)
     assert stage.get_needed_columns() == {'flow_id': TypeId.STRING, 'rollup_time': TypeId.STRING}
 
     inf1 = stage.pre_process_batch(mm1, config.feature_length, stage.features, stage.req_cols)
