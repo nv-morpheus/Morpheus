@@ -73,7 +73,7 @@ outputs:
         - click >=8
         - configargparse 1.5.*
         - cuda-python 11.8
-        - cudf {{ rapids_version }}.*
+        - cudf
         - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
         - datacompy 0.8.*
