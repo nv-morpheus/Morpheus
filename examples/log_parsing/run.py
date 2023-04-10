@@ -17,7 +17,6 @@ import os
 import click
 from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
-from preprocessing import PreprocessLogParsingStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -27,6 +26,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 
 @click.command()
@@ -115,12 +115,13 @@ def run_pipeline(
     # Add a preprocessing stage.
     # This stage preprocess the rows in the Dataframe.
     pipeline.add_stage(
-        PreprocessLogParsingStage(config,
-                                  vocab_hash_file=model_vocab_hash_file,
-                                  truncation=False,
-                                  do_lower_case=False,
-                                  stride=64,
-                                  add_special_tokens=False))
+        PreprocessNLPStage(config,
+                           vocab_hash_file=model_vocab_hash_file,
+                           truncation=False,
+                           do_lower_case=False,
+                           stride=64,
+                           add_special_tokens=False,
+                           column="raw"))
 
     # Add a monitor stage.
     # This stage logs the metrics (msg/sec) from the above stage.

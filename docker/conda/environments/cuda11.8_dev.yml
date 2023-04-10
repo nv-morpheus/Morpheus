@@ -63,7 +63,7 @@ dependencies:
     - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
-    - mrc=23.03
+    - mrc=23.07
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
