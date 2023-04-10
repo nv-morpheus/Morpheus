@@ -111,7 +111,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                                                         mess_offset=x.mess_offset,
                                                         mess_count=x.mess_count,
                                                         memory=memory,
-                                                        offset=x.offset,
+                                                        offset=0,
                                                         count=x.count)
         return output_message
 
