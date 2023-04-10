@@ -397,11 +397,8 @@ def module_init(builder: mrc.Builder):
 
         # Your implementation goes here...
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
     # Here we are creating a node.
-    node = builder.make_node(module_id, ops.build(node_fn))
+    node = builder.make_node(module_id, ops.map(on_data), ops.filter(lambda x: x is not None))
 
     # Register input and output port name for a module.
     builder.register_module_input("<input port name>", node)

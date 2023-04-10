@@ -70,18 +70,13 @@ class DropNullStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        # Finally, flatten to a single stream
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
+        def on_next(x: MessageMeta):
 
-            def on_next(x: MessageMeta):
+            y = MessageMeta(x.df[~x.df[self._column].isna()])
 
-                y = MessageMeta(x.df[~x.df[self._column].isna()])
+            return y
 
-                return y
-
-            obs.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(sub)
-
-        node = builder.make_node(self.unique_name, ops.build(node_fn))
+        node = builder.make_node(self.unique_name, ops.map(on_next), ops.filter(lambda x: not x.df.empty))
         builder.make_edge(stream, node)
         stream = node
 

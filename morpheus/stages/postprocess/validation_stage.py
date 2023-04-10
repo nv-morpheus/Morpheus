@@ -121,11 +121,7 @@ class ValidationStage(CompareDataFrameStage):
                 json.dump(results, f, indent=2, sort_keys=True)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self._append_message), ops.on_completed(self._do_comparison)).subscribe(sub)
-
-        node = builder.make_node(self.unique_name, ops.build(node_fn))
+        node = builder.make_node(self.unique_name, ops.map(self._append_message), ops.on_completed(self._do_comparison))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

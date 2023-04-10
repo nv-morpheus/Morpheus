@@ -215,11 +215,8 @@ class FilterDetectionsStage(SinglePortStage):
                                          ops.map(self.filter_copy),
                                          ops.filter(lambda x: x is not None))
             else:
-                # Convert list back to individual messages
-                def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-                    obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
-
-                node = builder.make_node(self.unique_name, ops.build(flatten_fn))
+                # Use `ops.flatten` to convert the list returned by `filter_slice` back to individual messages
+                node = builder.make_node(self.unique_name, ops.map(self.filter_slice), ops.flatten())
 
         builder.make_edge(parent_node, node)
 

@@ -123,19 +123,16 @@ class DeserializeStage(MultiMessageStage):
         stream = input_stream[0]
         out_type = MultiMessage
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            obs.pipe(
+        if self._build_cpp_node():
+            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+        else:
+            stream = builder.make_node(
+                self.unique_name,
                 ops.map(
                     partial(DeserializeStage.process_dataframe,
                             batch_size=self._batch_size,
                             ensure_sliceable_index=self._ensure_sliceable_index)),
-                ops.flatten()).subscribe(sub)
-
-        if self._build_cpp_node():
-            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
-        else:
-            stream = builder.make_node(self.unique_name, ops.build(node_fn))
+                ops.flatten())
 
         builder.make_edge(input_stream[0], stream)
 

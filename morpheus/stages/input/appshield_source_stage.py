@@ -362,21 +362,19 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         out_stream = out_pair[0]
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(
-                # At this point, we have batches of filenames to process. Make a node for processing batches of
-                # filenames into batches of dataframes
-                ops.map(
-                    partial(self.files_to_dfs,
-                            cols_include=self._cols_include,
-                            cols_exclude=self._cols_exclude,
-                            plugins_include=self._plugins_include,
-                            encoding=self._encoding)),
-                ops.map(self._build_metadata),
-                # Finally flatten to single meta
-                ops.flatten()).subscribe(sub)
-
-        post_node = builder.make_node(self.unique_name + "-post", ops.build(node_fn))
+        # At this point, we have batches of filenames to process. Make a node for processing batches of
+        # filenames into batches of dataframes
+        post_node = builder.make_node(
+            self.unique_name + "-post",
+            ops.map(
+                partial(self.files_to_dfs,
+                        cols_include=self._cols_include,
+                        cols_exclude=self._cols_exclude,
+                        plugins_include=self._plugins_include,
+                        encoding=self._encoding)),
+            ops.map(self._build_metadata),
+            # Finally flatten to single meta
+            ops.flatten())
         builder.make_edge(out_stream, post_node)
 
         out_stream = post_node
