@@ -1617,15 +1617,15 @@ class AutoEncoder(torch.nn.Module):
         """
         self.eval()
 
-        n_batches = len(df) // self.batch_size
-        if len(df) % self.batch_size > 0:
+        n_batches = len(df) // self.eval_batch_size
+        if len(df) % self.eval_batch_size > 0:
             n_batches += 1
 
         mse_loss_slices, bce_loss_slices, cce_loss_slices = [], [], []
         with torch.no_grad():
             for i in range(n_batches):
-                start = i * self.batch_size
-                stop = (i + 1) * self.batch_size
+                start = i * self.eval_batch_size
+                stop = (i + 1) * self.eval_batch_size
 
                 df_slice = df.iloc[start:stop]
                 data_slice = self.prepare_df(df_slice)
