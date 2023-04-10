@@ -26,8 +26,6 @@ import pandas as pd
 import cudf
 
 import morpheus
-from morpheus.cli.plugin_manager import PluginManager
-from morpheus.cli.utils import PluginSpec
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.inference import inference_stage
 
