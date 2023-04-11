@@ -30,11 +30,11 @@
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
-#include <glog/logging.h>
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -139,13 +139,11 @@ pybind11::object read_file_to_df(const std::string& filename, FileTypes file_typ
 int get_index_col_count(const cudf::io::table_with_metadata& data_table)
 {
     int index_col_count   = 0;
-    auto const& schema = data_table.metadata.schema_info;
+    auto const& schema    = data_table.metadata.schema_info;
 
     std::vector<std::string> names;
     names.reserve(schema.size());
-    std::transform(schema.cbegin(), schema.cend(), std::back_inserter(names), [](auto const& c) {
-        return c.name;
-    });
+    std::transform(schema.cbegin(), schema.cend(), std::back_inserter(names), [](auto const& c) { return c.name; });
 
     // Check if we have a first column with INT64 data type
     if (names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)

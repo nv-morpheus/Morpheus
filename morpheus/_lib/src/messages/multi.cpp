@@ -147,14 +147,14 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<Ra
         cudf_ranges.push_back(p.second + this->mess_offset);
     }
 
-    auto table_info                  = this->meta->get_info();
+    auto table_info   = this->meta->get_info();
     auto column_names = table_info.get_column_names();
-    auto metadata     = cudf::io::table_metadata {};
+    auto metadata     = cudf::io::table_metadata{};
 
     metadata.schema_info.reserve(column_names.size() + 1);
     metadata.schema_info.emplace_back("");
 
-    for(auto column_name : column_names)
+    for (auto column_name : column_names)
     {
         metadata.schema_info.emplace_back(column_name);
     }
