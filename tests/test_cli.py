@@ -54,7 +54,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
-from stages import conv_msg
+from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
@@ -123,8 +123,8 @@ def mlflow_uri(tmp_path):
         mlflow.end_run()
 
 
-@pytest.mark.reload_modules([commands, conv_msg])
-@pytest.mark.usefixtures("reset_plugins", "reload_modules")
+@pytest.mark.reload_modules(commands)
+@pytest.mark.usefixtures("reload_modules")
 @pytest.mark.use_python
 class TestCLI:
 
@@ -285,7 +285,7 @@ class TestCLI:
         [
             cloud_trail,
             add_class,
-            conv_msg_stg,
+            conv_msg,
             filter_stage,
             train_ae,
             process_ae,
@@ -304,7 +304,7 @@ class TestCLI:
         assert cloud_trail._watcher._input_glob == "input_glob*.csv"
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert isinstance(conv_msg_stg, conv_msg.ConvMsg)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(filter_stage, FilterDetectionsStage)
 
         assert isinstance(train_ae, TrainAEStage)
@@ -468,7 +468,7 @@ class TestCLI:
             dropna,
             process_fil,
             add_scores,
-            conv_msg_stg,
+            conv_msg,
             inf_ident,
             inf_pytorch,
             mlflow_drift,
@@ -498,7 +498,7 @@ class TestCLI:
         assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(add_scores, AddScoresStage)
-        assert isinstance(conv_msg_stg, conv_msg.ConvMsg)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(inf_ident, IdentityInferenceStage)
 
         assert isinstance(inf_pytorch, PyTorchInferenceStage)
@@ -601,7 +601,7 @@ class TestCLI:
             filter_stage,
             dropna,
             add_scores,
-            conv_msg_stg,
+            conv_msg,
             inf_ident,
             inf_pytorch,
             mlflow_drift,
@@ -632,7 +632,7 @@ class TestCLI:
         assert dropna._column == 'xyz'
 
         assert isinstance(add_scores, AddScoresStage)
-        assert isinstance(conv_msg_stg, conv_msg.ConvMsg)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(inf_ident, IdentityInferenceStage)
 
         assert isinstance(inf_pytorch, PyTorchInferenceStage)
@@ -812,7 +812,7 @@ class TestCLI:
             dropna,
             process_nlp,
             add_scores,
-            conv_msg_stg,
+            conv_msg,
             inf_ident,
             inf_pytorch,
             mlflow_drift,
@@ -846,7 +846,7 @@ class TestCLI:
         assert not process_nlp._add_special_tokens
 
         assert isinstance(add_scores, AddScoresStage)
-        assert isinstance(conv_msg_stg, conv_msg.ConvMsg)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(inf_ident, IdentityInferenceStage)
 
         assert isinstance(inf_pytorch, PyTorchInferenceStage)

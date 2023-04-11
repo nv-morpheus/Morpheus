@@ -19,7 +19,6 @@ import typing
 
 import click
 
-import morpheus.pipeline as _pipeline
 from morpheus.config import PipelineModes
 
 logger = logging.getLogger(__file__)
@@ -31,15 +30,13 @@ class StageInfo:
     modes: typing.List[PipelineModes]
     qualified_name: str  # The fully qualified name of the stage. Only used for comparison
     build_command: typing.Callable[[], click.Command] = dataclasses.field(compare=False, repr=False)
-    get_stage_class: typing.Callable[[], typing.Type[_pipeline.StreamWrapper]] = dataclasses.field(compare=False,
-                                                                                                   repr=False)
 
     def __post_init__(self):
         # If modes is None or empty, then convert it to all modes
         if (self.modes is None or len(self.modes) == 0):
             self.modes = [x for x in PipelineModes]
 
-    def supports_mode(self, mode: PipelineModes) -> bool:
+    def supports_mode(self, mode: PipelineModes):
         if (mode is None):
             return True
 
@@ -57,11 +54,7 @@ class LazyStageInfo(StageInfo):
 
     def __init__(self, name: str, stage_qualified_name: str, modes: typing.List[PipelineModes]):
 
-        super().__init__(name=name,
-                         modes=modes,
-                         qualified_name=stage_qualified_name,
-                         build_command=self._lazy_build,
-                         get_stage_class=self._lazy_get_stage_class)
+        super().__init__(name=name, modes=modes, qualified_name=stage_qualified_name, build_command=self._lazy_build)
 
         # Break the module name up into the class and the package
         qual_name_split = stage_qualified_name.split(".")
@@ -70,7 +63,8 @@ class LazyStageInfo(StageInfo):
 
         self.class_name = qual_name_split[-1]
 
-    def _lazy_get_stage_info(self) -> StageInfo:
+    def _lazy_build(self):
+
         import importlib
 
         mod = importlib.import_module(self.package_name)
@@ -89,13 +83,7 @@ class LazyStageInfo(StageInfo):
                 "Class {} did not have attribute '_morpheus_registered_stage'. Did you use register_stage?".format(
                     self.qualified_name))
 
-        return stage_class_info
-
-    def _lazy_build(self) -> click.Command:
-        return self._lazy_get_stage_info().build_command()
-
-    def _lazy_get_stage_class(self) -> _pipeline.StreamWrapper:
-        return self._lazy_get_stage_info().get_stage_class()
+        return stage_class_info.build_command()
 
 
 class StageRegistry:
