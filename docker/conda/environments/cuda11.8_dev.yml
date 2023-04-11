@@ -36,6 +36,7 @@ dependencies:
     - cudatoolkit=11.8
     - cudf 23.02
     - cupy=9.5.0
+    - cxx-compiler
     - cython=0.29.24
     - datacompy=0.8
     - dill
