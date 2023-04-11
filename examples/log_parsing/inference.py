@@ -138,6 +138,8 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                         result: tritonclient.InferResult,
                         error: tritonclient.InferenceServerException):
 
+        #TODO: Remove this method once we have tests in place, this is an exact copy of the parent class' method
+
         # If its an error, return that here
         if (error is not None):
             raise error

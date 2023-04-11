@@ -26,27 +26,29 @@ import pytest
 import cudf
 
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
+from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 from utils import TEST_DIRS
 
 
-@pytest.mark.use_python
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, import_mod: typing.List[typing.Any]):
-    inference_mod = import_mod[0]
-    pq = ProducerConsumerQueue()
-    worker = inference_mod.TritonInferenceLogParsing(inf_queue=pq,
-                                                     c=config,
-                                                     model_name='test_model',
-                                                     server_url='test_server',
-                                                     force_convert_inputs=False,
-                                                     use_shared_memory=False,
-                                                     inout_mapping={'test': 'this'})
+def build_response_mem(messages_mod, log_test_data_dir: str):
+    # we have tensor data for the first five rows
+    count = 5
+    tensors = {}
+    for tensor_name in ['confidences', 'labels']:
+        tensor_file = os.path.join(log_test_data_dir, f'{tensor_name}.csv')
+        host_data = np.loadtxt(tensor_file, delimiter=',')
+        tensors[tensor_name] = cp.asarray(host_data)
 
+    return messages_mod.ResponseMemoryLogParsing(count=count, **tensors)
+
+
+def _check_worker(inference_mod: typing.Any, worker: _TritonInferenceWorker):
+    assert isinstance(worker, _TritonInferenceWorker)
+    assert isinstance(worker, inference_mod.TritonInferenceLogParsing)
     assert worker._model_name == 'test_model'
     assert worker._server_url == 'test_server'
     assert not worker._force_convert_inputs
@@ -55,6 +57,21 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, im
     expected_mapping = inference_mod.TritonInferenceLogParsing.default_inout_mapping()
     expected_mapping.update({'test': 'this'})
     assert worker._inout_mapping == expected_mapping
+
+
+@pytest.mark.use_python
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
+def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, import_mod: typing.List[typing.Any]):
+    inference_mod = import_mod[0]
+    worker = inference_mod.TritonInferenceLogParsing(inf_queue=ProducerConsumerQueue(),
+                                                     c=config,
+                                                     model_name='test_model',
+                                                     server_url='test_server',
+                                                     force_convert_inputs=False,
+                                                     use_shared_memory=False,
+                                                     inout_mapping={'test': 'this'})
+
+    _check_worker(inference_mod, worker)
 
 
 @pytest.mark.use_python
@@ -114,28 +131,71 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 
 @pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_inference_stage(config: Config, import_mod: typing.List[typing.Any]):
+def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[typing.Any]):
     inference_mod = import_mod[0]
-    config.mode = PipelineModes.NLP
-    """
-    log_example_dir = os.path.join(TEST_DIRS.examples_dir, 'log_parsing')
-    log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
+    stage = inference_mod.LogParsingInferenceStage(
+        config,
+        model_name='test_model',
+        server_url='test_server',
+        force_convert_inputs=False,
+        use_shared_memory=False,
+    )
 
-    sys.path.append(log_example_dir)
-    mod_path = os.path.join(log_example_dir, 'postprocessing.py')
-    LogParsingPostProcessingStage = get_plugin_stage_class(mod_path, "log-postprocess", mode=config.mode)
+    assert stage._config is config
+    assert stage._kwargs == {
+        "model_name": 'test_model',
+        "server_url": 'test_server',
+        "force_convert_inputs": False,
+        "use_shared_memory": False
+    }
 
-    model_vocab_file = os.path.join(TEST_DIRS.models_dir,
-                                    'training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt')
-    model_config_file = os.path.join(TEST_DIRS.tests_data_dir, 'log-parsing-config.json')
+    # Intentionally not checking the `_requires_seg_ids` value at it appears to not be used
 
-    stage = LogParsingPostProcessingStage(config, vocab_path=model_vocab_file, model_config_path=model_config_file)
 
-    post_proc_message = build_post_proc_message(log_example_dir, log_test_data_dir)
-    expected_df = read_file_to_df(os.path.join(log_test_data_dir, 'expected_out.csv'), df_type='pandas')
+@pytest.mark.use_python
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
+def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[typing.Any]):
+    inference_mod = import_mod[0]
 
-    out_meta = stage._postprocess(post_proc_message)
+    stage = inference_mod.LogParsingInferenceStage(
+        config,
+        model_name='test_model',
+        server_url='test_server',
+        force_convert_inputs=False,
+        use_shared_memory=False,
+    )
 
-    assert isinstance(out_meta, MessageMeta)
-    assert_df_equal(out_meta._df, expected_df)
-    """
+    stage._kwargs.update({'inout_mapping': {'test': 'this'}})
+
+    worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())
+    _check_worker(inference_mod, worker)
+
+
+@pytest.mark.use_python
+@pytest.mark.usefixtures("manual_seed")
+@pytest.mark.import_mod([
+    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
+    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py')
+])
+@pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 20, 0, 20), (5, 10, 5, 10)])
+def test_log_parsing_inference_stage_convert_one_response(config: Config,
+                                                          import_mod: typing.List[typing.Any],
+                                                          mess_offset,
+                                                          mess_count,
+                                                          offset,
+                                                          count):
+    inference_mod, messages_mod = import_mod
+    stage = inference_mod.LogParsingInferenceStage(
+        config,
+        model_name='test_model',
+        server_url='test_server',
+        force_convert_inputs=False,
+        use_shared_memory=False,
+    )
+
+    input_mem = InferenceMemoryNLP(count=count,
+                                   input_ids=cp.zeros((count, 2), dtype=cp.float32),
+                                   input_mask=cp.zeros((count, 2), dtype=cp.float32),
+                                   seq_ids=cp.zeros((count, 3), dtype=cp.uint32))
+
+    input_res = build_response_mem(messages_mod, os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing'))

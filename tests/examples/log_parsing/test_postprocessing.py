@@ -22,7 +22,6 @@ import numpy as np
 import pytest
 
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from utils import TEST_DIRS
@@ -58,7 +57,6 @@ def build_post_proc_message(messages_mod, log_test_data_dir: str):
 ])
 def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.List[typing.Any]):
     messages_mod, postprocessing_mod = import_mod
-    config.mode = PipelineModes.NLP
 
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
     model_vocab_file = os.path.join(TEST_DIRS.models_dir,
