@@ -32,7 +32,7 @@ services:
     volumes:
       - db_data:/opt/mlflow/dbdata
       - mlflow_data:/opt/mlflow/artifacts
-  
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     hostname: zookeeper
@@ -77,7 +77,7 @@ services:
       target: jupyter
       args:
         - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.03.00-runtime}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.07.00-runtime}
     deploy:
       resources:
         reservations:
@@ -109,7 +109,7 @@ services:
       target: runtime
       args:
         - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.03.00-runtime}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.07.00-runtime}
     image: dfp_morpheus
     container_name: morpheus_pipeline
     deploy:

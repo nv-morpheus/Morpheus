@@ -108,14 +108,13 @@ From the root of the Morpheus repo run:
 ```bash
 PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
-	--plugin "preprocessing" \
 	--plugin "inference" \
 	--plugin "postprocessing" \
 	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
-	log-preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 \
+	preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \
