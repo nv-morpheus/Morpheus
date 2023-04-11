@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import typing
 from unittest import mock
 
@@ -30,11 +31,13 @@ from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("reset_plugins")
-def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, inference_mod):
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
+def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, import_mod: typing.List[typing.Any]):
+    inference_mod = import_mod[0]
     pq = ProducerConsumerQueue()
     worker = inference_mod.TritonInferenceLogParsing(inf_queue=pq,
                                                      c=config,
@@ -55,17 +58,17 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, in
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("reset_plugins")
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 20, 0, 20), (5, 10, 5, 10)])
 def test_log_parsing_triton_inference_log_parsing_build_output_message(config: Config,
                                                                        filter_probs_df: typing.Union[pd.DataFrame,
                                                                                                      cudf.DataFrame],
-                                                                       inference_mod,
-                                                                       messages_mod,
+                                                                       import_mod: typing.List[typing.Any],
                                                                        mess_offset,
                                                                        mess_count,
                                                                        offset,
                                                                        count):
+    inference_mod = import_mod[0]
     tensor_length = offset + count
     seq_ids = cp.zeros((tensor_length, 3), dtype=cp.uint32)
     seq_ids[offset:offset + count, 0] = cp.arange(mess_offset, mess_offset + count, dtype=cp.uint32)
@@ -110,8 +113,9 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("reset_plugins")
-def test_log_parsing_inference_stage(config: Config, inference_mod):
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
+def test_log_parsing_inference_stage(config: Config, import_mod: typing.List[typing.Any]):
+    inference_mod = import_mod[0]
     config.mode = PipelineModes.NLP
     """
     log_example_dir = os.path.join(TEST_DIRS.examples_dir, 'log_parsing')

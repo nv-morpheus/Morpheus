@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import typing
 
 import cupy as cp
 import numpy as np
@@ -51,8 +52,12 @@ def build_post_proc_message(messages_mod, log_test_data_dir: str):
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("reset_plugins")
-def test_log_parsing_post_processing_stage(config: Config, postprocessing_mod, messages_mod):
+@pytest.mark.import_mod([
+    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py'),
+    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
+])
+def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.List[typing.Any]):
+    messages_mod, postprocessing_mod = import_mod
     config.mode = PipelineModes.NLP
 
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
