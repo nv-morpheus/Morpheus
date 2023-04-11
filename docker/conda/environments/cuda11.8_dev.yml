@@ -33,6 +33,7 @@ dependencies:
     - configargparse=1.5
     - cuda-nvml-dev=11.8
     - cudatoolkit=11.8
+    - cuda-toolkit=11.8
     - cudf 23.02
     - cupy=9.5.0
     - cython=0.29.24
