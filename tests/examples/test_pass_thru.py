@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import os
-import sys
 import typing
 
 import pandas as pd
@@ -24,29 +23,34 @@ import pytest
 import cudf
 
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from utils import TEST_DIRS
-from utils import get_plugin_stage_class
 
 
-@pytest.mark.parametrize(
-    'mod_path,set_python_path',
-    [(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py'), False),
-     (os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py'), True)])
-@pytest.mark.usefixtures("reset_plugins", "restore_sys_path")
-def test_pass_thru(config: Config,
-                   filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                   mod_path: str,
-                   set_python_path: bool):
-    if set_python_path:
-        sys.path.append(os.path.dirname(mod_path))
-
-    PassThruStage = get_plugin_stage_class(mod_path, "pass-thru", mode=PipelineModes.OTHER)
-    stage = PassThruStage(config)
+def _check_pass_thru(config: Config,
+                     filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                     PassThruStageCls: SinglePortStage):
+    stage = PassThruStageCls(config)
 
     meta = MessageMeta(filter_probs_df)
     mm = MultiMessage(meta=meta)
 
     assert stage.on_data(mm) is mm
+
+
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])
+def test_pass_thru_ex1(config: Config,
+                       filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                       import_mod: typing.List[typing.Any]):
+    pass_thru = import_mod[0]
+    _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
+
+
+@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py')])
+def test_pass_thru_ex3(config: Config,
+                       filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                       import_mod: typing.List[typing.Any]):
+    pass_thru = import_mod[0]
+    _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
