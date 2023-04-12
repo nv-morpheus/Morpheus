@@ -114,28 +114,28 @@ if(MORPHEUS_SUPPORT_DOCA)
             libdoca_regex.so
             libdoca_sha.so
             libdoca_telemetry.so
-            # libdoca_apsh.a
-            # libdoca_comm_channel.a
-            # libdoca_compress.a
-            # libdoca_dpa_dev.a
-            # libdoca_dpdk_bridge.a
-            # libdoca_erasure_coding.a
-            # libdoca_flow_grpc.a
+            libdoca_apsh.a
+            libdoca_comm_channel.a
+            libdoca_compress.a
+            libdoca_dpa_dev.a
+            libdoca_dpdk_bridge.a
+            libdoca_erasure_coding.a
+            libdoca_flow_grpc.a
             libdoca_gpunetio.a
-            # libdoca_argp.a
+            libdoca_argp.a
             libdoca_common.a
-            # libdoca_ct.a
-            # libdoca_dma.a
-            # libdoca_dpa.a
-            # libdoca_dpi.a
-            # libdoca_eth.a
-            # libdoca_flow.a
-            # libdoca_rdma.a
-            # libdoca_regex.a
-            # libdoca_sha.a
-            # libdoca_telemetry.a
+            libdoca_ct.a
+            libdoca_dma.a
+            libdoca_dpa.a
+            libdoca_dpi.a
+            libdoca_eth.a
+            libdoca_flow.a
+            libdoca_rdma.a
+            libdoca_regex.a
+            libdoca_sha.a
+            libdoca_telemetry.a
             libdoca_gpunetio_device.a
-            # libdoca_ipsec.a
+            libdoca_ipsec.a
             librte_bus_auxiliary.so
             librte_bus_pci.so
             librte_bus_vdev.so
