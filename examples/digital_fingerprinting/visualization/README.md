@@ -140,15 +140,6 @@ While still in the `morpheus_pipeline` container, perform the following steps to
 ### Install dependencies
 
 ```
-# Install Node.js
-apt update
-curl -sL https://deb.nodesource.com/setup_16.x | bash
-apt install nodejs
-```
-```
-export LD_LIBRARY_PATH=/opt/conda/envs/morpheus/lib:${LD_LIBRARY_PATH}
-```
-```
 cd viz
 ```
 ```
