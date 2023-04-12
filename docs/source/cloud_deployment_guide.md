@@ -105,7 +105,7 @@ The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components requi
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-23.07.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-23.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
