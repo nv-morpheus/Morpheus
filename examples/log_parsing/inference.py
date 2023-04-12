@@ -97,7 +97,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         # Some models use different names for the same thing. Set that here but allow user customization
         return {"attention_mask": "input_mask"}
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseLogParsingMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
 
         memory = PostprocMemoryLogParsing(
             count=x.count,
@@ -263,7 +263,7 @@ class LogParsingInferenceStage(InferenceStage):
         return stream, out_type
 
     @staticmethod
-    def _convert_one_response(memory: InferenceMemory, inf: MultiInferenceMessage, res: ResponseMemoryLogParsing):
+    def _convert_one_response(memory: PostprocMemoryLogParsing, inf: MultiInferenceMessage, res: ResponseMemoryLogParsing):
 
         memory.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         memory.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
