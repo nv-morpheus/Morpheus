@@ -52,9 +52,15 @@ def build_inf_message(df: typing.Union[pd.DataFrame, cudf.DataFrame],
                       offset: int,
                       count: int,
                       num_cols: int = 2) -> MultiInferenceMessage:
+    assert count >= mess_count
     tensor_length = offset + count
     seq_ids = cp.zeros((tensor_length, 3), dtype=cp.uint32)
-    seq_ids[offset:offset + count, 0] = cp.arange(mess_offset, mess_offset + count, dtype=cp.uint32)
+
+    id_range = cp.arange(mess_offset, mess_offset + mess_count, dtype=cp.uint32)
+    seq_ids[offset:offset + mess_count, 0] = id_range
+    if (count != mess_count):  # Repeat the last id
+        seq_ids[offset + mess_count:offset + count, 0] = id_range[-1]
+
     seq_ids[:, 2] = 42
 
     meta = MessageMeta(df)
@@ -190,7 +196,7 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py')
 ])
-@pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 5, 5)])
+@pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
 def test_log_parsing_inference_stage_convert_one_response(config: Config,
                                                           import_mod: typing.List[typing.Any],
                                                           filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
@@ -232,6 +238,7 @@ def test_log_parsing_inference_stage_convert_one_response(config: Config,
     assert output_msg.count == count
 
     assert (output_msg.seq_ids == input_inf.seq_ids).all()
+    assert (output_msg.input_ids == input_inf.input_ids).all()
     assert (output_msg.confidences == input_res.confidences).all()
     assert (output_msg.labels == input_res.labels).all()
 
