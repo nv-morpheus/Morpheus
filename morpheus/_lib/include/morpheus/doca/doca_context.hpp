@@ -37,14 +37,16 @@ struct doca_rx_queue
   private:
     std::shared_ptr<doca_context> _context;
     doca_gpu_eth_rxq* _rxq_info_gpu;
-    doca_gpu_eth_rxq* _rxq_info_cpu;
+    doca_eth_rxq* _rxq_info_cpu;
+    doca_mmap* _packet_buffer;
+    doca_ctx* _doca_ctx;
 
   public:
     doca_rx_queue(std::shared_ptr<doca_context> context);
     ~doca_rx_queue();
 
-    doca_gpu_eth_rxq* rxq_info_cpu();
     doca_gpu_eth_rxq* rxq_info_gpu();
+    doca_eth_rxq* rxq_info_cpu();
 };
 
 struct doca_rx_pipe
@@ -69,10 +71,7 @@ struct doca_semaphore
     std::shared_ptr<doca_context> _context;
     uint16_t _size;
     doca_gpu_semaphore* _semaphore;
-    doca_gpu_semaphore_gpu* _semaphore_in_gpu;
-    doca_gpu_semaphore* _semaphore_in_cpu;
-    doca_gpu_semaphore_gpu* _semaphore_info_gpu;
-    doca_gpu_semaphore* _semaphore_info_cpu;
+    doca_gpu_semaphore_gpu* _semaphore_gpu;
 
   public:
     doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
