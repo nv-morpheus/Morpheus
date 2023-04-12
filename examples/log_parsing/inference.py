@@ -242,7 +242,9 @@ class LogParsingInferenceStage(InferenceStage):
         return stream, out_type
 
     @staticmethod
-    def _convert_one_response(memory: PostprocMemoryLogParsing, inf: MultiInferenceMessage, res: ResponseMemoryLogParsing):
+    def _convert_one_response(memory: PostprocMemoryLogParsing,
+                              inf: MultiInferenceMessage,
+                              res: ResponseMemoryLogParsing):
 
         memory.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         memory.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
@@ -261,12 +263,7 @@ class LogParsingInferenceStage(InferenceStage):
                 memory.confidences[idx, :] = cp.maximum(memory.confidences[idx, :], res.confidences[i, :])
                 memory.labels[idx, :] = cp.maximum(memory.labels[idx, :], res.labels[i, :])
 
-        return MultiPostprocLogParsingMessage(meta=inf.meta,
-                                              mess_offset=inf.mess_offset,
-                                              mess_count=inf.mess_count,
-                                              memory=memory,
-                                              offset=inf.offset,
-                                              count=inf.count)
+        return MultiPostprocLogParsingMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
