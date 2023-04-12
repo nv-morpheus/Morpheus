@@ -131,27 +131,6 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
 
         return mem
 
-    def _infer_callback(self,
-                        cb: typing.Callable[[ResponseMemoryLogParsing], None],
-                        m: InputWrapper,
-                        b: MultiInferenceMessage,
-                        result: tritonclient.InferResult,
-                        error: tritonclient.InferenceServerException):
-
-        #TODO: Remove this method once we have tests in place, this is an exact copy of the parent class' method
-
-        # If its an error, return that here
-        if (error is not None):
-            raise error
-
-        # Build response
-        response_mem = self._build_response(b, result)
-
-        # Call the callback with the memory
-        cb(response_mem)
-
-        self._mem_pool.return_obj(m)
-
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
 class LogParsingInferenceStage(InferenceStage):
