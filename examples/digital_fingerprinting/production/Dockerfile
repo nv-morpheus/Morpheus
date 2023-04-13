@@ -26,13 +26,6 @@ SHELL ["/bin/bash", "-c"]
 # Set the workdir to the DFP base folder
 WORKDIR /workspace/examples/digital_fingerprinting/
 
-# Install Node.js for DFP Viz
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && curl -sL https://deb.nodesource.com/setup_16.x | bash - \
-    && apt-get install --no-install-recommends -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
 # Add library path where DFP Viz can find libnvrtc
 ENV LD_LIBRARY_PATH=/opt/conda/envs/morpheus/lib:$LD_LIBRARY_PATH
 
