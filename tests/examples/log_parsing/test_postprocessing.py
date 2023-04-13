@@ -61,7 +61,7 @@ def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.Li
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
     model_vocab_file = os.path.join(TEST_DIRS.models_dir,
                                     'training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt')
-    model_config_file = os.path.join(TEST_DIRS.tests_data_dir, 'log-parsing-config.json')
+    model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
 
     stage = postprocessing_mod.LogParsingPostProcessingStage(config,
                                                              vocab_path=model_vocab_file,
