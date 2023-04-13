@@ -87,84 +87,83 @@ class CreateFeaturesRWStage(MultiMessageStage):
 
         stream = input_stream[0]
 
-        def node_fn(input: mrc.Observable, output: mrc.Subscriber):
+        def on_next(x: AppShieldMessageMeta):
 
-            def on_next(x: AppShieldMessageMeta):
+            snapshot_fea_dfs = []
 
-                snapshot_fea_dfs = []
+            df = x.df
 
-                df = x.df
+            # Type cast CommitCharge.
+            df["CommitCharge"] = df["CommitCharge"].astype("float").astype("Int32")
+            df["Name"] = df["Name"].str.lower()
 
-                # Type cast CommitCharge.
-                df["CommitCharge"] = df["CommitCharge"].astype("float").astype("Int32")
-                df["Name"] = df["Name"].str.lower()
+            # Create PID_Process feature.
+            df['PID_Process'] = df.PID + '_' + df.Process
 
-                # Create PID_Process feature.
-                df['PID_Process'] = df.PID + '_' + df.Process
+            snapshot_ids = df.snapshot_id.unique()
 
-                snapshot_ids = df.snapshot_id.unique()
+            if len(snapshot_ids) > 1:
+                # Group snapshot rows using snapshot id.
+                all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
+            else:
+                all_dfs = [df]
 
-                if len(snapshot_ids) > 1:
-                    # Group snapshot rows using snapshot id.
-                    all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
-                else:
-                    all_dfs = [df]
+            extract_func = self._fe.extract_features
+            combine_func = FeatureExtractor.combine_features
 
-                extract_func = self._fe.extract_features
-                combine_func = FeatureExtractor.combine_features
+            # Schedule dask task `extract_features` per snapshot.
+            snapshot_fea_dfs = self._client.map(extract_func, all_dfs, feas_all_zeros=self._feas_all_zeros)
 
-                # Schedule dask task `extract_features` per snapshot.
-                snapshot_fea_dfs = self._client.map(extract_func, all_dfs, feas_all_zeros=self._feas_all_zeros)
+            # Combined `extract_features` results.
+            features_df = self._client.submit(combine_func, snapshot_fea_dfs)
 
-                # Combined `extract_features` results.
-                features_df = self._client.submit(combine_func, snapshot_fea_dfs)
+            # Gather features from all the snapshots.
+            features_df = features_df.result()
 
-                # Gather features from all the snapshots.
-                features_df = features_df.result()
+            # Snapshot sequence will be generated using `source_pid_process`.
+            # Determines which source generated the snapshot messages.
+            # There's a chance of receiving the same snapshots names from multiple sources(hosts)
+            features_df['source_pid_process'] = x.source + '_' + features_df.pid_process
 
-                # Snapshot sequence will be generated using `source_pid_process`.
-                # Determines which source generated the snapshot messages.
-                # There's a chance of receiving the same snapshots names from multiple sources(hosts)
-                features_df['source_pid_process'] = x.source + '_' + features_df.pid_process
+            # Sort entries by pid_process and snapshot_id
+            features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
 
-                # Sort entries by pid_process and snapshot_id
-                features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
+            # Create AppShieldMessageMeta with extracted features information.
+            meta = AppShieldMessageMeta(features_df, x.source)
 
-                # Create AppShieldMessageMeta with extracted features information.
-                meta = AppShieldMessageMeta(features_df, x.source)
+            return meta
 
-                return meta
+        def create_multi_messages(x: MessageMeta) -> typing.List[MultiMessage]:
 
-            def create_multi_messages(x: MessageMeta) -> typing.List[MultiMessage]:
+            multi_messages = []
 
-                multi_messages = []
+            df = x.df
 
-                df = x.df
+            pid_processes = df.pid_process.unique()
 
-                pid_processes = df.pid_process.unique()
+            # Create multi messaage per pid_process
+            for pid_process in pid_processes:
 
-                # Create multi messaage per pid_process
-                for pid_process in pid_processes:
+                pid_process_index = df[df.pid_process == pid_process].index
 
-                    pid_process_index = df[df.pid_process == pid_process].index
+                start = pid_process_index.min()
+                stop = pid_process_index.max() + 1
+                mess_count = stop - start
 
-                    start = pid_process_index.min()
-                    stop = pid_process_index.max() + 1
-                    mess_count = stop - start
+                multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
+                multi_messages.append(multi_message)
 
-                    multi_message = MultiMessage(meta=x, mess_offset=start, mess_count=mess_count)
-                    multi_messages.append(multi_message)
+            return multi_messages
 
-                return multi_messages
+        def on_completed():
+            # Close dask client when pipeline initiates shutdown
+            self._client.close()
 
-            def on_completed():
-                # Close dask client when pipeline initiates shutdown
-                self._client.close()
-
-            input.pipe(ops.map(on_next), ops.map(create_multi_messages), ops.on_completed(on_completed),
-                       ops.flatten()).subscribe(output)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name,
+                                 ops.map(on_next),
+                                 ops.map(create_multi_messages),
+                                 ops.on_completed(on_completed),
+                                 ops.flatten())
         builder.make_edge(stream, node)
         stream = node
 

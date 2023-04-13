@@ -18,6 +18,7 @@ import typing
 
 import mrc
 import numpy as np
+from mrc.core import operators as ops
 
 import cudf
 
@@ -121,6 +122,6 @@ class GraphSAGEStage(SinglePortStage):
                                      mess_count=message.mess_count)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._process_message)
+        node = builder.make_node(self.unique_name, ops.map(self._process_message))
         builder.make_edge(input_stream[0], node)
         return node, GraphSAGEMultiMessage
