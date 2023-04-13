@@ -141,7 +141,7 @@ def test_email_no_cpp(mock_triton_client,
 
     results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
 
-    assert results['diff_rows'] == 198
+    assert results['diff_rows'] == 153
 
 
 @pytest.mark.kafka
@@ -207,4 +207,4 @@ def test_email_cpp(config,
 
     results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
 
-    assert results['diff_rows'] == 757
+    assert results['diff_rows'] == 682

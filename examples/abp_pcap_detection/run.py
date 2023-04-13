@@ -43,14 +43,14 @@ from morpheus.utils.logger import configure_logging
 )
 @click.option(
     "--pipeline_batch_size",
-    default=50000,
+    default=100000,
     type=click.IntRange(min=1),
     help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
           "Also used for Kafka consumers."),
 )
 @click.option(
     "--model_max_batch_size",
-    default=40000,
+    default=100000,
     type=click.IntRange(min=1),
     help="Max batch size to use for the model.",
 )

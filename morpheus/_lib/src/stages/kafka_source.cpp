@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,7 +22,6 @@
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
 
-#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -57,6 +56,17 @@
 // IWYU pragma: no_include <atomic>
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Checks the error code returned by an RDKafka expression (`command`) against an `expected` code
+ * (usually `RdKafka::ERR_NO_ERROR`), and logs an error otherwise.
+ *
+ */
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
         RdKafka::ErrorCode __code = command;                                                                   \
@@ -529,7 +539,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string& bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    return load_json_table(options.build());
+    return cudf::io::read_json(options.build());
 }
 
 template <bool EnableFilter>

@@ -24,10 +24,24 @@ morpheus_add_cython_library(
       cudf_helpers_target
 )
 
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -c "import pyarrow; print(pyarrow.get_include())"
+  OUTPUT_VARIABLE PYARROW_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+set(targets_using_arrow_headers ${cudf_helpers_target})
+foreach(target IN LISTS targets_using_arrow_headers)
+  target_include_directories(${target} PRIVATE "${PYARROW_INCLUDE_DIR}")
+endforeach()
+
 # This target generates headers used by other parts of the code base.
 # The C++ checks used in CI need these headers but don't require an actual build.
 # The `morpheus_style_checks` target allows these to be generated without a full build of Morpheus.
 add_dependencies(${PROJECT_NAME}_style_checks ${cudf_helpers_target})
+
+# We don't have control over the C++ code that cython generates, suppress the volatile warning raised by the compiler
+target_compile_options(${cudf_helpers_target} PRIVATE -Wno-volatile)
 
 # Disable clang-tidy and IWYU for cython generated code
 set_target_properties(
