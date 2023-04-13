@@ -19,7 +19,6 @@
 
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
 
-#include <cudf/io/json.hpp>
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>  // for pybind11::object
 
@@ -50,15 +49,6 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
  * @return cudf::io::table_with_metadata
  */
 cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type = FileTypes::Auto);
-
-/**
- * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
- * handle
- *
- * @param json_options : JSON file reader options
- * @return cudf::io::table_with_metadata
- */
-cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& json_options);
 
 /**
  * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
