@@ -18,7 +18,7 @@ set(DOCA_BUILD_FILES "")
 if(MORPHEUS_SUPPORT_DOCA)
   set(DOCA_BUILD_FILES
     # ${MORPHEUS_LIB_ROOT}/src/doca/samples/common.c
-    # ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
     # ${MORPHEUS_LIB_ROOT}/src/doca/dpdk_utils.c
     # ${MORPHEUS_LIB_ROOT}/src/doca/flows.c
     # ${MORPHEUS_LIB_ROOT}/src/doca/gpu_init.c
@@ -94,13 +94,48 @@ if(MORPHEUS_SUPPORT_DOCA)
         PUBLIC
             -L/opt/mellanox/dpdk/lib/x86_64-linux-gnu/
             -L/opt/mellanox/doca/lib/x86_64-linux-gnu/
-        #   -L/home/charris/dev/doca-testing/doca/install/lib/x86_64-linux-gnu
-        #   -L/home/charris/dev/doca-testing/dpdk-doca-gpu/install/lib/x86_64-linux-gnu
+            libdoca_apsh.so
             libdoca_argp.so
+            libdoca_comm_channel.so
             libdoca_common.so
-            libdoca_gpu.so
-            libdoca_gpu_device.so
+            libdoca_compress.so
+            libdoca_ct.so
+            libdoca_dma.so
+            libdoca_dpa.so
+            libdoca_dpdk_bridge.so
+            libdoca_dpi.so
+            libdoca_erasure_coding.so
+            libdoca_eth.so
+            libdoca_flow_grpc.so
             libdoca_flow.so
+            libdoca_gpunetio.so
+            libdoca_ipsec.so
+            libdoca_rdma.so
+            libdoca_regex.so
+            libdoca_sha.so
+            libdoca_telemetry.so
+            libdoca_apsh.a
+            libdoca_comm_channel.a
+            libdoca_compress.a
+            libdoca_dpa_dev.a
+            libdoca_dpdk_bridge.a
+            libdoca_erasure_coding.a
+            libdoca_flow_grpc.a
+            libdoca_gpunetio.a
+            libdoca_argp.a
+            libdoca_common.a
+            libdoca_ct.a
+            libdoca_dma.a
+            libdoca_dpa.a
+            libdoca_dpi.a
+            libdoca_eth.a
+            libdoca_flow.a
+            libdoca_rdma.a
+            libdoca_regex.a
+            libdoca_sha.a
+            libdoca_telemetry.a
+            libdoca_gpunetio_device.a
+            libdoca_ipsec.a
             librte_bus_auxiliary.so
             librte_bus_pci.so
             librte_bus_vdev.so

@@ -1,0 +1,132 @@
+// !/bin/bash
+//  SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+//  SPDX-License-Identifier: Apache-2.0
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+{
+    "name": "Morpheus",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+
+    "hostRequirements": {
+        "gpu": true
+    },
+
+    "capAdd":[
+        "SYS_NICE",
+        "SYS_PTRACE"
+    ],
+
+    "securityOpt": [
+        "seccomp=unconfined"
+    ],
+
+    "runArgs": [
+        "--network=morpheus"
+    ],
+
+    "containerEnv": {
+        "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
+        "MORPHEUS_ROOT": "${containerWorkspaceFolder}",
+        "DEFAULT_CONDA_ENV": "morpheus",
+        "MAMBA_NO_BANNER": "1",
+        "CONDA_ALWAYS_YES": "true",
+        "VAULT_HOST": "https://vault.ops.k8s.rapids.ai",
+        "DISPLAY": "${localEnv:DISPLAY:-}",
+        "XAUTHORITY": "${localEnv:XAUTHORITY:-}",
+        "XDG_SESSION_TYPE": "${localEnv:XDG_SESSION_TYPE:-}",
+        "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR:-}",
+        "DBUS_SESSION_BUS_ADDRESS": "${localEnv:DBUS_SESSION_BUS_ADDRESS:-}"
+    },
+
+    "initializeCommand": [ "${localWorkspaceFolder}/.devcontainer/initialize-command.sh" ],
+
+    "remoteUser": "coder",
+    "mounts": [
+        {
+            "type": "bind",
+            "source": "/tmp/.X11-unix",
+            "target": "/tmp/.X11-unix"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:XDG_RUNTIME_DIR}",
+            "target": "${localEnv:XDG_RUNTIME_DIR}"
+        },
+        {
+            "type": "bind",
+            "source": "/run/dbus/system_bus_socket",
+            "target": "/run/dbus/system_bus_socket"
+        },
+        {
+            "type":"bind",
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker.sock"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/.cache/conda/envs",
+            "target": "/home/coder/.conda/envs"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/../.conda/pkgs",
+            "target": "/home/coder/.conda/pkgs"
+        },
+        {
+            "type":"bind",
+            "source": "${localWorkspaceFolder}/../.config", // parent folder because sister repos are sibling dirs
+            "target": "/home/coder/.config"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
+            "target": "/opt/morpheus"
+        },
+
+    ],
+
+    "features": {
+        "ghcr.io/devcontainers/features/docker-from-docker": {},
+        "ghcr.io/devcontainers/features/dotnet:1": {},
+        "./features/doca": {
+            "DOCA_BUILD_ID": "7837648",
+            "DOCA_VERSION": "2.2.0002-1",
+            "DPDK_VERSION": "22.11.0-1.4.1",
+            "DOCA_REPO_HOST": "",
+            "DOCA_ARTIFACTS_HOST": ""
+        }
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+				"eamodio.gitlens",
+				"llvm-vs-code-extensions.vscode-clangd",
+				"ms-python.python",
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"nvidia.nsight-vscode-edition",
+				"twxs.cmake",
+				"xaver.clang-format"
+			],
+            "settings": {
+                "cmake.cmakePath": "/tmp/.current-conda-env/bin/cmake",
+                "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet",
+                "C_Cpp.intelliSenseEngine": "disabled",
+                "python.terminal.activateEnvironment": false
+            }
+        }
+    },
+}

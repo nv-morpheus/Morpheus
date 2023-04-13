@@ -1,0 +1,23 @@
+{
+    "name": "doca",
+    "id": "doca",
+    "version": "0.0.0.0",
+    "description": "A feature to remind you of your favorite color",
+    "options": {
+        "DOCA_BUILD_ID": {
+            "type": "string"
+        },
+        "DOCA_VERSION": {
+            "type": "string"
+        },
+        "DPDK_VERSION": {
+            "type": "string"
+        },
+        "DOCA_REPO_HOST": {
+            "type": "string"
+        },
+        "DOCA_ARTIFACTS_HOST": {
+            "type": "string"
+        }
+    }
+}
