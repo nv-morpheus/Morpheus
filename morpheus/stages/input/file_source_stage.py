@@ -115,12 +115,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
-
-            def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-                obs.pipe(ops.flatten()).subscribe(sub)
-
-            flattened = builder.make_node_full(self.unique_name + "-post", node_fn)
+            flattened = builder.make_node(self.unique_name + "-post", ops.flatten())
             builder.make_edge(out_stream, flattened)
             out_stream = flattened
             out_type = typing.get_args(out_type)[0]

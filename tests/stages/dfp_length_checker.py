@@ -16,6 +16,7 @@
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -73,7 +74,7 @@ class DFPLengthChecker(SinglePortStage):
         return x
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._length_checker)
+        node = builder.make_node(self.unique_name, ops.map(self._length_checker))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
