@@ -21,7 +21,6 @@ import urllib.parse
 import mlflow
 import mrc
 import requests
-from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
 from mlflow.protos.databricks_pb2 import RESOURCE_ALREADY_EXISTS
@@ -35,15 +34,15 @@ from mlflow.types.utils import _infer_schema
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(MLFLOW_MODEL_WRITER, MODULE_NAMESPACE)
+@register_module(MLFLOW_MODEL_WRITER, MORPHEUS_MODULE_NAMESPACE)
 def mlflow_model_writer(builder: mrc.Builder):
     """
     This module uploads trained models to the mlflow server.
@@ -52,14 +51,40 @@ def mlflow_model_writer(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    -----
+        Configurable Parameters:
+            - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
+            - databricks_permissions (dict): Permissions for the model; See Below; Default: None
+            - experiment_name_formatter (str): Formatter for the experiment name;
+            Example: `experiment_name_{timestamp}`; Default: `[Required]`
+            - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
+            Default: `[Required]`
+            - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+
+        databricks_permissions:
+            - read (array): List of users with read permissions; Example: `["read_user1", "read_user2"]`; Default: -
+            - write (array): List of users with write permissions; Example: `["write_user1", "write_user2"]`; Default: -
     """
 
-    config = get_module_config(MLFLOW_MODEL_WRITER, builder)
+    config = builder.get_current_module_config()
 
-    model_name_formatter = config.get("model_name_formatter", None)
-    experiment_name_formatter = config.get("experiment_name_formatter", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("model_name_formatter" not in config):
+        raise ValueError("Model name formatter is required")
+
+    if ("experiment_name_formatter" not in config):
+        raise ValueError("Experiment name formatter is required")
+
+    if ("conda_env" not in config):
+        raise ValueError("Conda environment is required")
+
+    model_name_formatter = config["model_name_formatter"]
+    experiment_name_formatter = config["experiment_name_formatter"]
     conda_env = config.get("conda_env", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
+
     databricks_permissions = config.get("databricks_permissions", None)
 
     def user_id_to_model(user_id: str):
@@ -178,7 +203,7 @@ def mlflow_model_writer(builder: mrc.Builder):
 
                 # Use the prepare_df function to setup the direct inputs to the model. Only include features
                 # returned by prepare_df to show the actual inputs to the model (any extra are discarded)
-                input_df = message.get_meta().iloc[0:1]
+                input_df = message.get_meta().iloc[0:1].to_pandas()
                 prepared_df = model.prepare_df(input_df)
                 output_values = model.get_anomaly_score(input_df)
 
@@ -238,7 +263,7 @@ def mlflow_model_writer(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(MLFLOW_MODEL_WRITER, node_fn)
+    node = builder.make_node(MLFLOW_MODEL_WRITER, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

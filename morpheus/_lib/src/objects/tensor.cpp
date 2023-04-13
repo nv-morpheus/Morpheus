@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,6 +18,7 @@
 #include "morpheus/objects/tensor.hpp"
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/error.hpp"
@@ -75,7 +76,7 @@ auto Tensor::get_stream() const
 TensorObject Tensor::create(
     std::shared_ptr<rmm::device_buffer> buffer, DType dtype, ShapeType shape, ShapeType strides, TensorIndex offset)
 {
-    auto md = nullptr;
+    auto md = std::make_shared<MemoryDescriptor>(buffer->stream(), buffer->memory_resource());
 
     if (!strides.empty())
     {

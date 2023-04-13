@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,19 +17,26 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
-#include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory
-#include "morpheus/messages/multi_response_probs.hpp"          // for MultiResponseProbsMessage
-#include "morpheus/objects/dev_mem_info.hpp"                   // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                          // for DType
-#include "morpheus/objects/tensor.hpp"                         // for Tensor::create
-#include "morpheus/objects/tensor_object.hpp"                  // for TensorObject
-#include "morpheus/objects/triton_in_out.hpp"                  // for TritonInOut
-#include "morpheus/types.hpp"                                  // for TensorIndex, TensorMap
-#include "morpheus/utilities/matx_util.hpp"                    // for MatxUtil::logits, MatxUtil::reduce_max
-#include "morpheus/utilities/stage_util.hpp"                   // for foreach_map
-#include "morpheus/utilities/string_util.hpp"                  // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/tensor_util.hpp"                  // for get_elem_count
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+
+#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory
+#include "morpheus/objects/dev_mem_info.hpp"           // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                  // for DType
+#include "morpheus/objects/tensor.hpp"                 // for Tensor::create
+#include "morpheus/objects/tensor_object.hpp"          // for TensorObject
+#include "morpheus/objects/triton_in_out.hpp"          // for TritonInOut
+#include "morpheus/types.hpp"                          // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"            // for MatxUtil::logits, MatxUtil::reduce_max
+#include "morpheus/utilities/stage_util.hpp"           // for foreach_map
+#include "morpheus/utilities/string_util.hpp"          // for MORPHEUS_CONCAT_STR
+#include "morpheus/utilities/tensor_util.hpp"          // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
@@ -51,6 +58,16 @@
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Checks the status object returned by a Triton client call logging any potential errors.
+ *
+ */
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
 
 namespace {
@@ -97,8 +114,8 @@ void build_output_tensors(TensorIndex count,
         // Triton results are always in row-major as required by the KServe protocol
         // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
         ShapeType stride{total_shape[1], 1};
-        output_tensors[model_output.mapped_name] =
-            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
+        output_tensors[model_output.mapped_name].swap(
+            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0));
     }
 }
 
@@ -184,8 +201,8 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
 
         output_buffers[output.first] = reduced_buffer;
 
-        reduced_outputs[output.first] =
-            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0);
+        reduced_outputs[output.first].swap(
+            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0));
     }
 
     output_tensors = std::move(reduced_outputs);
@@ -209,7 +226,8 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
         output_buffers[output.first] = output_buffer;
 
         // For logits the input and output shapes will be the same
-        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0);
+        logit_outputs[output.first].swap(
+            Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0));
     }
 
     output_tensors = std::move(logit_outputs);
@@ -283,7 +301,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     std::vector<const triton::client::InferRequestedOutput*> outputs =
                         foreach_map(saved_outputs, [](auto x) { return x.get(); });
 
-                    auto results = std::unique_ptr<triton::client::InferResult>([&](){
+                    auto results = std::unique_ptr<triton::client::InferResult>([&]() {
                         triton::client::InferResult* results;
                         CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
                         return results;
@@ -327,14 +345,9 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 }
 
                 // Final output of all mini-batches
-                auto response_mem_probs =
-                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(output_tensors));
-                auto response = std::make_shared<MultiResponseProbsMessage>(x->meta,
-                                                                            x->mess_offset,
-                                                                            x->mess_count,
-                                                                            std::move(response_mem_probs),
-                                                                            0,
-                                                                            response_mem_probs->count);
+                auto response_mem = std::make_shared<ResponseMemory>(x->mess_count, std::move(output_tensors));
+                auto response     = std::make_shared<MultiResponseMessage>(
+                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem), 0, response_mem->count);
 
                 output.on_next(std::move(response));
             },

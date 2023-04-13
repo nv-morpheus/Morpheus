@@ -22,8 +22,8 @@ import typing_utils
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.common import FilterSource
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -69,7 +69,7 @@ class FilterDetectionsStage(SinglePortStage):
         Threshold to classify, default is 0.5.
     copy : bool
         Whether or not to perform a copy.
-    filter_source : `from morpheus._lib.common.FilterSource`, case_sensitive = False
+    filter_source : `morpheus.common.FilterSource`, case_sensitive = False
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
         Choosing `Auto` will default to `TENSOR` when the incoming message contains output tensorts and `DATAFRAME`
         otherwise.
@@ -157,6 +157,11 @@ class FilterDetectionsStage(SinglePortStage):
             return None
 
         true_pairs = self._find_detections(x)
+
+        # If we didnt have any detections, return None
+        if (true_pairs.shape[0] == 0):
+            return None
+
         return x.copy_ranges(true_pairs)
 
     def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
@@ -194,8 +199,8 @@ class FilterDetectionsStage(SinglePortStage):
                 self._filter_source = FilterSource.DATAFRAME
 
             logger.debug(
-                f"filter_source was set to Auto, infering a filter source of {self._filter_source} based on an input "
-                "message type of {message_type}")
+                f"filter_source was set to Auto, inferring a filter source of {self._filter_source} based on an input "
+                f"message type of {message_type}")
 
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,
@@ -206,13 +211,12 @@ class FilterDetectionsStage(SinglePortStage):
                                                  self._field_name)
         else:
             if self._copy:
-                node = builder.make_node(self.unique_name, self.filter_copy)
+                node = builder.make_node(self.unique_name,
+                                         ops.map(self.filter_copy),
+                                         ops.filter(lambda x: x is not None))
             else:
-                # Convert list back to individual messages
-                def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-                    obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
-
-                node = builder.make_node_full(self.unique_name, flatten_fn)
+                # Use `ops.flatten` to convert the list returned by `filter_slice` back to individual messages
+                node = builder.make_node(self.unique_name, ops.map(self.filter_slice), ops.flatten())
 
         builder.make_edge(parent_node, node)
 

@@ -48,7 +48,7 @@ from morpheus.utils.logger import configure_logging
 
 DEFAULT_CONFIG = Config()
 
-# List all of the options in from morpheus._lib.common.FileTypes without importing the object. This slows down
+# List all of the options in from morpheus.common.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/response_memory_probs.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
@@ -27,6 +27,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -62,13 +63,17 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      */
-    MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                              TensorIndex mess_offset,
-                              TensorIndex mess_count,
-                              std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
-                              TensorIndex offset,
-                              TensorIndex count);
+    MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
+                              TensorIndex mess_offset              = 0,
+                              TensorIndex mess_count               = -1,
+                              std::shared_ptr<TensorMemory> memory = nullptr,
+                              TensorIndex offset                   = 0,
+                              TensorIndex count                    = -1,
+                              std::string id_tensor_name           = "seq_ids",
+                              std::string probs_tensor_name        = "probs");
 
     /**
      * @brief Returns the `probs` (probabilities) output tensor
@@ -101,14 +106,18 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      * @return std::shared_ptr<MultiResponseProbsMessage>
      */
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,
                                                            TensorIndex mess_offset,
                                                            TensorIndex mess_count,
-                                                           std::shared_ptr<ResponseMemoryProbs> memory,
+                                                           std::shared_ptr<TensorMemory> memory,
                                                            TensorIndex offset,
-                                                           TensorIndex count);
+                                                           TensorIndex count,
+                                                           std::string id_tensor_name,
+                                                           std::string probs_tensor_name);
 
     /**
      * @brief Return the `probs` (probabilities) output tensor

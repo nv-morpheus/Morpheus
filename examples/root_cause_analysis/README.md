@@ -167,13 +167,13 @@ Added stage: <deserialize-1; DeserializeStage()>
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
 Added stage: <monitor-4; MonitorStage(description=Inference rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]

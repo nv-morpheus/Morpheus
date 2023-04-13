@@ -20,7 +20,7 @@ We show here how to set up and run the DFP pipeline for three log types: CloudTr
 
 ## Environment Setup
 
-Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
+Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
 
 ## Morpheus CLI
 
@@ -135,7 +135,7 @@ The `PreprocessAEStage` is responsible for creating a Morpheus message that cont
 
 **Postprocessing stage** - The DFP pipeline uses the `AddScoresStage` for postprocessing to add anomaly scores and zscores from previous inference stage with matching labels.
 
-**Serialize stage** - `SerializeStage` is used to convert `MultiResponseProbsMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
+**Serialize stage** - `SerializeStage` is used to convert `MultiResponseMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
 
 **Write stage** - `WriteToFileStage` writes input data with inference results to an output file path.
 

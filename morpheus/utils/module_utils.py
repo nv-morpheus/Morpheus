@@ -14,9 +14,12 @@
 
 import functools
 import logging
+import re
 import typing
 
 import mrc
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +135,110 @@ def verify_module_meta_fields(config: typing.Dict):
         raise KeyError("Required attribute 'namespace' is missing in the module configuration.")
     if "module_name" not in config:
         raise KeyError("Required attribute 'module_name' is missing in the module configuration.")
+
+
+def merge_dictionaries(primary_dict, secondary_dict):
+    """Recursively merge two dictionaries, using primary_dict as a tie-breaker.
+
+    Lists are treated as a special case, and all unique elements from both dictionaries are included in the final list.
+
+    Args:
+        primary_dict (dict): The primary dictionary.
+        secondary_dict (dict): The secondary dictionary.
+
+    Returns:
+        dict: The merged dictionary.
+    """
+    result_dict = primary_dict.copy()
+
+    for key, value in secondary_dict.items():
+        if key in result_dict:
+            if isinstance(value, list) and isinstance(result_dict[key], list):
+                # Combine the two lists and remove duplicates while preserving order
+                # This isn't perfect, its possible we could still end up with duplicates in some scenarios
+                combined_list = result_dict[key] + value
+                unique_list = []
+                for item in combined_list:
+                    if item not in unique_list:
+                        unique_list.append(item)
+                result_dict[key] = unique_list
+            elif isinstance(value, dict) and isinstance(result_dict[key], dict):
+                # Recursively merge the two dictionaries
+                result_dict[key] = merge_dictionaries(result_dict[key], value)
+        else:
+            result_dict[key] = value
+
+    return result_dict
+
+
+period_to_strptime = {
+    "s": "%Y-%m-%d %H:%M:%S",
+    "T": "%Y-%m-%d %H:%M",
+    "min": "%Y-%m-%d %H:%M",
+    "H": "%Y-%m-%d %H",
+    "D": "%Y-%m-%d",
+    "W": "%Y-%U",
+    "M": "%Y-%m",
+    "Y": "%Y",
+    "Q": "%Y-%q",
+    "A": "%Y"
+}
+
+
+def to_period_cudf_approximation(df, period):
+    """
+    This function converts a cudf dataframe to a period approximation.
+
+    Parameters
+    ----------
+    df : cudf.DataFrame
+        Input cudf dataframe.
+    period : int
+        Period.
+
+    Returns
+    -------
+    cudf.DataFrame
+        Period approximation of the input cudf dataframe.
+    """
+
+    match = re.match(r"(\d*)(\w)", period)
+    if not match:
+        raise ValueError(f"Invalid period format: {period}")
+
+    count_str, period = match.groups()
+    count = int(count_str) if count_str else 1
+
+    if period not in period_to_strptime:
+        raise ValueError(f"Unknown period: {period}")
+
+    strptime_format = period_to_strptime[period]
+
+    if "cudf" in str(type(df)):
+        df["period"] = df["ts"].dt.strftime(strptime_format).astype("datetime64[s]").astype("int")
+        if count > 1:
+            df["period"] = df["period"] // (count * np.timedelta64(1, period).astype("int"))
+    else:
+        df["period"] = pd.to_datetime(df["ts"].dt.strftime(strptime_format))
+        df["period"] = df["period"].dt.to_period(f"{count}{period}")
+
+    return df
+
+
+def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):
+    sub_config = config.get(module_id, None)
+
+    try:
+        if module_name is None:
+            module_name = sub_config.get("module_name")
+    except Exception:
+        raise KeyError(f"'module_name' is not set in the '{module_id}' module configuration")
+
+    sub_config.setdefault("module_id", module_id)
+    sub_config.setdefault("module_name", module_name)
+    sub_config.setdefault("namespace", module_namespace)
+
+    return sub_config
 
 
 def get_module_config(module_id: str, builder: mrc.Builder):

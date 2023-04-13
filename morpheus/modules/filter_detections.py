@@ -22,18 +22,17 @@ import numpy as np
 import typing_utils
 from mrc.core import operators as ops
 
-from morpheus._lib.common import FilterSource
+from morpheus.common import FilterSource
 from morpheus.messages import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.utils.module_ids import FILTER_DETECTIONS
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILTER_DETECTIONS, MODULE_NAMESPACE)
+@register_module(FILTER_DETECTIONS, MORPHEUS_MODULE_NAMESPACE)
 def filter_detections(builder: mrc.Builder):
     """
     Filter message by a classification threshold.
@@ -64,37 +63,54 @@ def filter_detections(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        mrc Builder object.
+        An mrc Builder object.
+
+    Notes
+    -----
+        Configurable Parameters:
+            - copy (bool): Whether to copy the rows or slice them; Example: true; Default: true
+            - field_name (str): Name of the field to filter on; Example: `probs`; Default: probs
+            - filter_source (str): Source of the filter field; Example: `AUTO`; Default: AUTO
+            - schema (dict): Schema configuration; See Below; Default: -
+            - threshold (float): Threshold value to filter on; Example: 0.5; Default: 0.5
+
+        schema:
+            - encoding (str): Encoding; Example: "latin1"; Default: "latin1"
+            - input_message_type (str): Pickled message type; Example: `pickle_message_type`; Default: `[Required]`
+            - schema_str (str): Schema string; Example: "string"; Default: `[Required]`
     """
 
-    config = get_module_config(FILTER_DETECTIONS, builder)
+    config = builder.get_current_module_config()
 
     field_name = config.get("field_name", "probs")
     threshold = config.get("threshold", 0.5)
     filter_source = config.get("filter_source", "AUTO")
     copy = config.get("copy", True)
 
-    schema_config = config.get("schema", None)
-    input_message_type = schema_config.get("input_message_type", None)
-    encoding = schema_config.get("encoding", None)
+    if ("schema" not in config):
+        raise ValueError("Schema configuration not found.")
+
+    schema_config = config["schema"]
+    input_message_type = schema_config["input_message_type"]
+    encoding = schema_config["encoding"]
 
     message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    def find_detections(x: MultiMessage, filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
+    def find_detections(multi_message: MultiMessage, _filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
 
         # Determind the filter source
-        if filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(field_name)
+        if _filter_source == FilterSource.TENSOR:
+            _filter_source = multi_message.get_output(field_name)
         else:
-            filter_source = x.get_meta(field_name).values
+            _filter_source = multi_message.get_meta(field_name).values
 
-        if (isinstance(filter_source, np.ndarray)):
+        if (isinstance(_filter_source, np.ndarray)):
             array_mod = np
         else:
             array_mod = cp
 
         # Get per row detections
-        detections = (filter_source > threshold)
+        detections = (_filter_source > threshold)
 
         if (len(detections.shape) > 1):
             detections = detections.any(axis=1)
@@ -104,13 +120,13 @@ def filter_detections(builder: mrc.Builder):
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(x: MultiMessage) -> MultiMessage:
+    def filter_copy(multi_message: MultiMessage) -> typing.Union[MultiMessage, None]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        multi_message : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
@@ -119,20 +135,23 @@ def filter_detections(builder: mrc.Builder):
             A new message containing a copy of the rows above the threshold.
 
         """
-        if x is None:
+        if multi_message is None:
             return None
 
-        true_pairs = find_detections(x, filter_source)
+        true_pairs = find_detections(multi_message, filter_source)
 
-        return x.copy_ranges(true_pairs)
+        if (true_pairs.shape[0] == 0):
+            return None
 
-    def filter_slice(x: MultiMessage) -> typing.List[MultiMessage]:
+        return multi_message.copy_ranges(true_pairs)
+
+    def filter_slice(multi_message: MultiMessage) -> typing.List[MultiMessage]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        multi_message : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
@@ -141,14 +160,15 @@ def filter_detections(builder: mrc.Builder):
             List of filtered messages.
 
         """
+
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
-        if x is not None:
-            true_pairs = find_detections(x, filter_source)
+        if multi_message is not None:
+            true_pairs = find_detections(multi_message, filter_source)
             for pair in true_pairs:
                 pair = tuple(pair.tolist())
                 if ((pair[1] - pair[0]) > 0):
-                    output_list.append(x.get_slice(*pair))
+                    output_list.append(multi_message.get_slice(*pair))
 
         return output_list
 
@@ -158,21 +178,18 @@ def filter_detections(builder: mrc.Builder):
         else:
             filter_source = FilterSource.DATAFRAME
 
-        logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
-                     "message type of {message_type}")
+        # logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
+        #             "message type of {message_type}")
     elif filter_source == "DATAFRAME":
         filter_source = FilterSource.DATAFRAME
     else:
         raise Exception("Unknown filter source: {}".format(filter_source))
 
     if copy:
-        node = builder.make_node(FILTER_DETECTIONS, filter_copy)
+        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_copy))
     else:
-        # Convert list back to individual messages
-        def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(filter_slice), ops.flatten()).subscribe(sub)
-
-        node = builder.make_node_full(FILTER_DETECTIONS, flatten_fn)
+        # Convert list returned by `filter_slice` back to individual messages
+        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_slice), ops.flatten())
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

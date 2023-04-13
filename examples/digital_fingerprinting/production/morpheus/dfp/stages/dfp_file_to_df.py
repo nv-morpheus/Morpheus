@@ -32,7 +32,7 @@ from dask.distributed import LocalCluster
 
 import cudf
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -245,11 +245,9 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             raise
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.convert_to_dataframe), ops.on_completed(self._close_dask_cluster)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name,
+                                   ops.map(self.convert_to_dataframe),
+                                   ops.on_completed(self._close_dask_cluster))
         builder.make_edge(input_stream[0], stream)
 
         return stream, cudf.DataFrame

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -75,6 +75,7 @@ struct MatxUtil__MatxCast
  */
 struct MatxUtil__MatxCreateSegIds
 {
+    TensorIndex start_idx;
     TensorIndex element_count;
     TensorIndex fea_len;
     rmm::cuda_stream_view stream;
@@ -100,10 +101,46 @@ struct MatxUtil__MatxCreateSegIds
 
         auto col0      = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
         auto col2      = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
-        auto range_col = matx::range<0, tensorShape_1d, OutputT>({element_count}, 0, 1);
+        auto range_col = matx::range<0, tensorShape_1d, OutputT>({element_count}, start_idx, 1);
 
         (col0 = range_col).run(stream.value());
         (col2 = fea_len - 1).run(stream.value());
+    }
+};
+
+// ************ MatxUtil__MatxOffsetSegIds**************//
+/**
+ * TODO(Documentation)
+ */
+struct MatxUtil__MatxOffsetSegIds
+{
+    TensorIndex offset;
+    TensorIndex element_count;
+    rmm::cuda_stream_view stream;
+
+    /**
+     * TODO(Documentation)
+     */
+    template <typename InputT, std::enable_if_t<!std::is_integral_v<InputT>>* = nullptr>
+    void operator()(void* output_data)
+    {
+        throw std::invalid_argument("Unsupported conversion");
+    }
+
+    /**
+     * TODO(Documentation)
+     */
+    template <typename InputT, std::enable_if_t<std::is_integral_v<InputT>>* = nullptr>
+    void operator()(void* input_data)
+    {
+        tensorShape_2d shape({element_count, 3});
+
+        auto input_tensor  = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), shape);
+
+        auto col0      = input_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
+
+        // Simply add the offset to the column
+        (col0 = col0 + offset).run(stream.value());
     }
 };
 
@@ -362,19 +399,28 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
     return output;
 }
 
-std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type)
+std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type, std::shared_ptr<MemoryDescriptor> md, TensorIndex start_idx)
 {
     auto output_dtype = DType(output_type);
 
     // Now create the output
     auto output =
-        std::make_shared<rmm::device_buffer>(output_dtype.item_size() * row_count * 3, rmm::cuda_stream_per_thread);
+        std::make_shared<rmm::device_buffer>(output_dtype.item_size() * row_count * 3, md->cuda_stream, md->memory_resource);
 
     cudf::type_dispatcher(cudf::data_type{output_dtype.cudf_type_id()},
-                          MatxUtil__MatxCreateSegIds{row_count, fea_len, output->stream()},
+                          MatxUtil__MatxCreateSegIds{start_idx, row_count, fea_len, output->stream()},
                           output->data());
 
     return output;
+}
+
+void MatxUtil::offset_seq_ids(const DevMemInfo& input, TensorIndex offset){
+
+    cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
+                          MatxUtil__MatxOffsetSegIds{offset, input.shape(0), rmm::cuda_stream_per_thread},
+                          input.data());
+
+    mrc::enqueue_stream_sync_event(rmm::cuda_stream_per_thread).get();
 }
 
 std::shared_ptr<rmm::device_buffer> MatxUtil::logits(const DevMemInfo& input)

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,25 +22,42 @@
 #include <glog/logging.h>  // for DCHECK
 
 #include <cstdint>  // for uint8_t
+#include <memory>
 #include <ostream>
 #include <utility>  // for move
 
 namespace morpheus {
 // Component public implementations
 // ************ DevMemInfo************************* //
+DevMemInfo::DevMemInfo(void* data,
+                       DType dtype,
+                       std::shared_ptr<MemoryDescriptor> md,
+                       ShapeType shape,
+                       ShapeType stride,
+                       TensorIndex offset_bytes) :
+  m_data(data),
+  m_dtype(std::move(dtype)),
+  m_md(std::move(md)),
+  m_shape(std::move(shape)),
+  m_stride(std::move(stride)),
+  m_offset_bytes(offset_bytes)
+{
+    DCHECK(m_md != nullptr);
+}
 
 DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,
                        ShapeType shape,
                        ShapeType stride,
                        TensorIndex offset_bytes) :
-  m_buffer(std::move(buffer)),
+  m_data(buffer->data()),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
   m_stride(std::move(stride)),
-  m_offset_bytes(offset_bytes)
+  m_offset_bytes(offset_bytes),
+  m_md(std::make_shared<MemoryDescriptor>(buffer->stream(), buffer->memory_resource()))
 {
-    DCHECK(m_offset_bytes + this->bytes() <= m_buffer->size())
+    DCHECK(m_offset_bytes + this->bytes() <= buffer->size())
         << "Inconsistent dimensions, values would extend past the end of the device_buffer";
 }
 
@@ -89,13 +106,18 @@ TensorIndex DevMemInfo::stride(TensorIndex idx) const
     return m_stride.at(idx);
 }
 
+std::shared_ptr<MemoryDescriptor> DevMemInfo::memory() const
+{
+    return m_md;
+}
+
 std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(TensorIndex bytes) const
 {
-    return std::make_unique<rmm::device_buffer>(bytes, m_buffer->stream(), m_buffer->memory_resource());
+    return std::make_unique<rmm::device_buffer>(bytes, m_md->cuda_stream, m_md->memory_resource);
 }
 
 void* DevMemInfo::data() const
 {
-    return static_cast<uint8_t*>(m_buffer->data()) + m_offset_bytes;
+    return static_cast<uint8_t*>(m_data) + m_offset_bytes;
 }
 }  // namespace morpheus

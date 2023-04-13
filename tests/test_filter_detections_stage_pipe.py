@@ -14,107 +14,84 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
-import numpy as np
+import pandas as pd
 import pytest
+
+import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import ConvMsg
-from utils import assert_path_exists
-from utils import extend_data
-from utils import get_column_names_from_file
+from stages.conv_msg import ConvMsg
+from utils import assert_results
+from utils import extend_df
 
 
-def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', pipeline_batch_size=256, repeat=1):
+def build_expected(df: pd.DataFrame, threshold: float):
+    """
+    Takes a copy of `df` and apply the threshold
+    """
+    expected_df = df.copy(deep=True)
+    return expected_df[expected_df.max(axis=1) >= threshold]
+
+
+def _test_filter_detections_stage_pipe(config, input_df, copy=True, order='K', pipeline_batch_size=256, repeat=1):
     config.pipeline_batch_size = pipeline_batch_size
 
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
-    input_cols = get_column_names_from_file(src_file)
     if repeat > 1:
-        input_file = os.path.join(tmp_path, 'input.csv')
-        extend_data(src_file, input_file, repeat)
-    else:
-        input_file = src_file
+        input_df = extend_df(input_df, repeat)
 
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, order=order, columns=input_cols))
+    pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-    output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-
-    # The output data will contain an additional id column that we will need to slice off
-    # also somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data[:, 1:], 2)
-
-    expected = input_data[np.any(input_data >= threshold, axis=1), :]
-    assert output_data.tolist() == expected.tolist()
+    assert_results(comp_stage.get_results())
 
 
-def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
+def _test_filter_detections_stage_multi_segment_pipe(config, input_df, copy=True):
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(ConvMsg(config))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-    output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-
-    # The output data will contain an additional id column that we will need to slice off
-    # also somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data[:, 1:], 2)
-
-    expected = input_data[np.any(input_data >= threshold, axis=1), :]
-    assert output_data.tolist() == expected.tolist()
+    assert_results(comp_stage.get_results())
 
 
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat, do_copy):
-    return _test_filter_detections_stage_pipe(config, tmp_path, do_copy, order, pipeline_batch_size, repeat)
+def test_filter_detections_stage_pipe(config, filter_probs_df, order, pipeline_batch_size, repeat, do_copy):
+    return _test_filter_detections_stage_pipe(config, filter_probs_df, do_copy, order, pipeline_batch_size, repeat)
 
 
-@pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy):
-    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy)
+def test_filter_detections_stage_multi_segment_pipe(config, filter_probs_df, do_copy):
+    return _test_filter_detections_stage_multi_segment_pipe(config, filter_probs_df, do_copy)

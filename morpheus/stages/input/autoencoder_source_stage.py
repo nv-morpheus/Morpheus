@@ -22,7 +22,7 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -55,7 +55,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus._lib.common.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus.common.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -320,26 +320,23 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
-        def node_fn(input: mrc.Observable, output: mrc.Subscriber):
-
-            input.pipe(
-                # At this point, we have batches of filenames to process. Make a node for processing batches of
-                # filenames into batches of dataframes
-                ops.map(
-                    partial(
-                        self.files_to_dfs_per_user,
-                        userid_column_name=self._user_column_name,
-                        feature_columns=None,  # Use None here to leave all columns in
-                        userid_filter=self._userid_filter,
-                        repeat_count=self._repeat_count)),
-                ops.map(self._add_derived_features),
-                # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
-                # per user
-                ops.map(self._build_user_metadata),
-                # Finally flatten to single meta
-                ops.flatten()).subscribe(output)
-
-        post_node = seg.make_node_full(self.unique_name + "-post", node_fn)
+        # At this point, we have batches of filenames to process. Make a node for processing batches of
+        # filenames into batches of dataframes
+        post_node = seg.make_node(
+            self.unique_name + "-post",
+            ops.map(
+                partial(
+                    self.files_to_dfs_per_user,
+                    userid_column_name=self._user_column_name,
+                    feature_columns=None,  # Use None here to leave all columns in
+                    userid_filter=self._userid_filter,
+                    repeat_count=self._repeat_count)),
+            ops.map(self._add_derived_features),
+            # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
+            # per user
+            ops.map(self._build_user_metadata),
+            # Finally flatten to single meta
+            ops.flatten())
         seg.make_edge(out_stream, post_node)
 
         out_stream = post_node

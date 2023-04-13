@@ -16,12 +16,12 @@ import logging
 import typing
 
 import mrc
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 from sklearn.model_selection import train_test_split
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -93,10 +93,10 @@ class DFPTraining(SinglePortStage):
             run_validation = True
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(train_df, epochs=self._epochs, val=validation_df, run_validation=run_validation)
+        model.fit(train_df, epochs=self._epochs, val_data=validation_df, run_validation=run_validation)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        output_message = MultiAEMessage(message.meta,
+        output_message = MultiAEMessage(meta=message.meta,
                                         mess_offset=message.mess_offset,
                                         mess_count=message.mess_count,
                                         model=model)
@@ -104,11 +104,7 @@ class DFPTraining(SinglePortStage):
         return output_message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

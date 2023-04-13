@@ -16,26 +16,18 @@
 import collections
 import json
 import os
+import random
 import time
 import typing
 
 import cupy as cp
-import mrc
 import pandas as pd
 
+import cudf
+
 import morpheus
-from morpheus._lib.common import FileTypes
-from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.io.serializers import df_to_csv
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
-from morpheus.utils.atomic_integer import AtomicInteger
 
 
 class TestDirectories(object):
@@ -44,6 +36,7 @@ class TestDirectories(object):
         self.tests_dir = os.path.dirname(cur_file)
         self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
         self.data_dir = morpheus.DATA_DIR
+        self.examples_dir = os.path.join(self.morpheus_root, 'examples')
         self.models_dir = os.path.join(self.morpheus_root, 'models')
         self.datasets_dir = os.path.join(self.models_dir, 'datasets')
         self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')
@@ -53,121 +46,6 @@ class TestDirectories(object):
 
 
 TEST_DIRS = TestDirectories()
-
-
-@register_stage("unittest-conv-msg")
-class ConvMsg(SinglePortStage):
-    """
-    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage
-    Basically a cheap replacement for running an inference stage.
-
-    Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
-    Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
-    Setting `columns` restricts the columns copied into probs to just the ones specified.
-    Setting `order` specifies probs to be in either column or row major
-    Setting `empty_probs` will create an empty probs array with 3 columns, and the same number of rows as the dataframe
-    """
-
-    def __init__(self,
-                 c: Config,
-                 expected_data_file: str = None,
-                 columns: typing.List[str] = None,
-                 order: str = 'K',
-                 probs_type: str = 'f4',
-                 empty_probs: bool = False):
-        super().__init__(c)
-        self._expected_data_file = expected_data_file
-        self._columns = columns
-        self._order = order
-        self._probs_type = probs_type
-        self._empty_probs = empty_probs
-
-    @property
-    def name(self):
-        return "test"
-
-    def accepted_types(self):
-        return (MultiMessage, )
-
-    def supports_cpp_node(self):
-        return False
-
-    def _conv_message(self, m):
-        if self._expected_data_file is not None:
-            df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
-        else:
-            if self._columns is not None:
-                df = m.get_meta(self._columns)
-            else:
-                df = m.get_meta()
-
-        if self._empty_probs:
-            probs = cp.zeros([len(df), 3], 'float')
-        else:
-            probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
-
-        memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
-
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        stream = builder.make_node(self.unique_name, self._conv_message)
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, MultiResponseProbsMessage
-
-
-@register_stage("unittest-dfp-length-check")
-class DFPLengthChecker(SinglePortStage):
-    """
-    Verifies that the incoming MessageMeta classes are of a specific length
-
-    Parameters
-    ----------
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-
-    expected_length : int
-        Expected length of incoming messages
-
-    num_exact: int
-        Number of messages to check. For a datasource with 2000 records if we expect the first message to be of lenth
-        1024, the next message will contain only 976. The first `num_exact` messages will be checked with `==` and `<=`
-        after that.
-    """
-
-    def __init__(self, c: Config, expected_length: int, num_exact: int = 1):
-        super().__init__(c)
-
-        self._expected_length = expected_length
-        self._num_exact = num_exact
-        self._num_received = AtomicInteger(0)
-
-    @property
-    def name(self) -> str:
-        return "dfp-length-check"
-
-    def accepted_types(self) -> typing.Tuple:
-        return (MessageMeta)
-
-    def supports_cpp_node(self):
-        return False
-
-    def _length_checker(self, x: MessageMeta):
-        msg_num = self._num_received.get_and_inc()
-        if msg_num < self._num_exact:
-            assert x.count == self._expected_length, \
-                f"Unexpected number of rows in message number {msg_num}: {x.count} != {self._num_exact}"
-        else:
-            assert x.count <= self._expected_length, \
-                f"Unexpected number of rows in message number {msg_num}: {x.count} > {self._num_exact}"
-
-        return x
-
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, self._length_checker)
-        builder.make_edge(input_stream[0], node)
-
-        return node, input_stream[1]
 
 
 class IW(inference_stage.InferenceWorker):
@@ -196,21 +74,22 @@ def calc_error_val(results_file):
     return Results(total_rows=total_rows, diff_rows=diff_rows, error_pct=(diff_rows / total_rows) * 100)
 
 
-def write_file_to_kafka(bootstrap_servers: str,
+def write_data_to_kafka(bootstrap_servers: str,
                         kafka_topic: str,
-                        input_file: str,
+                        data: typing.List[typing.Union[str, dict]],
                         client_id: str = 'morpheus_unittest_writer') -> int:
     """
-    Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
-    Returning the number of messages written
+    Writes `data` into a given Kafka topic, emitting one message for each line int he file. Returning the number of
+    messages written
     """
     from kafka import KafkaProducer
     num_records = 0
     producer = KafkaProducer(bootstrap_servers=bootstrap_servers, client_id=client_id)
-    with open(input_file) as fh:
-        for line in fh:
-            producer.send(kafka_topic, line.strip().encode('utf-8'))
-            num_records += 1
+    for row in data:
+        if isinstance(row, dict):
+            row = json.dumps(row)
+        producer.send(kafka_topic, row.encode('utf-8'))
+        num_records += 1
 
     producer.flush()
 
@@ -220,8 +99,25 @@ def write_file_to_kafka(bootstrap_servers: str,
     return num_records
 
 
+def write_file_to_kafka(bootstrap_servers: str,
+                        kafka_topic: str,
+                        input_file: str,
+                        client_id: str = 'morpheus_unittest_writer') -> int:
+    """
+    Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
+    Returning the number of messages written
+    """
+    with open(input_file) as fh:
+        data = [line.strip() for line in fh]
+
+    return write_data_to_kafka(bootstrap_servers=bootstrap_servers,
+                               kafka_topic=kafka_topic,
+                               data=data,
+                               client_id=client_id)
+
+
 def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
-    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    df = read_file_to_df(file_name, df_type='pandas')
     for field_name in field_names:
         class_field = f"{class_prefix}{field_name}"
         score_field = f"{score_prefix}{field_name}"
@@ -234,20 +130,9 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
 
 
-def get_column_names_from_file(file_name):
-    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
-    return list(df.columns)
-
-
-def extend_data(input_file, output_file, repeat_count):
-    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
-    data = pd.concat([df for _ in range(repeat_count)])
-    with open(output_file, 'w') as fh:
-        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
-        # Remove any trailing whitespace
-        if (len(output_strs[-1].strip()) == 0):
-            output_strs = output_strs[:-1]
-        fh.writelines(output_strs)
+def extend_df(df, repeat_count) -> pd.DataFrame:
+    extended_df = pd.concat([df for _ in range(repeat_count)])
+    return extended_df.reset_index(inplace=False, drop=True)
 
 
 def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
@@ -287,3 +172,50 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
 
     # Finally, actually assert on the final try
     assert os.path.exists(filename)
+
+
+def duplicate_df_index(df: pd.DataFrame, replace_ids: typing.Dict[int, int]):
+
+    # Return a new dataframe where we replace some index values with others
+    return df.rename(index=replace_ids)
+
+
+def duplicate_df_index_rand(df: pd.DataFrame, count=1):
+
+    assert count * 2 <= len(df), "Count must be less than half the number of rows"
+
+    # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
+    # (otherwise you could get less duplicates than requested if two IDs just swap)
+    dup_ids = random.sample(df.index.values.tolist(), 2 * count)
+
+    # Create a dictionary of old ID to new ID
+    replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+
+    # Return a new dataframe where we replace some index values with others
+    return duplicate_df_index(df, replace_dict)
+
+
+def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
+
+    # Comparisons work better in cudf so convert everything to that
+    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
+        df_to_check = df_to_check.to_pandas()
+
+    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
+        val_to_check = val_to_check.to_pandas()
+    elif (isinstance(val_to_check, cp.ndarray)):
+        val_to_check = val_to_check.get()
+
+    bool_df = df_to_check == val_to_check
+
+    return bool(bool_df.all(axis=None))
+
+
+def assert_results(results: dict) -> dict:
+    """
+    Receives the results dict from the `CompareDataframeStage.get_results` method,
+    and asserts that all columns and rows match
+    """
+    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
+    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    return results

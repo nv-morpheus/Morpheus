@@ -23,7 +23,6 @@ import numpy as np
 import pandas
 import pytest
 
-from morpheus._lib.common import FileTypes
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
@@ -128,7 +127,7 @@ def test_email_no_cpp(mock_triton_client,
 
     pipe.run()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = read_file_to_df(val_file_name, df_type='pandas')
 
     output_buf = StringIO()
     for rec in kafka_consumer:
@@ -194,7 +193,7 @@ def test_email_cpp(config,
 
     pipe.run()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = read_file_to_df(val_file_name, df_type='pandas')
 
     output_buf = StringIO()
     for rec in kafka_consumer:

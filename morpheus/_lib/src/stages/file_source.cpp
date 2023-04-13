@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,8 +17,16 @@
 
 #include "morpheus/stages/file_source.hpp"
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
+
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
@@ -47,7 +55,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
         auto data_table     = load_table_from_file(m_filename);
-        int index_col_count = get_index_col_count(data_table);
+        int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
         // When index_col_count is 0 this will cause a new range index to be created
@@ -73,7 +81,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             if (repeat_idx + 1 < m_repeat)
             {
                 // Use the copy function, copy_to_py_object will acquire it's own gil
-                auto df = meta->get_info().copy_to_py_object();
+                auto df = CudfHelper::table_from_table_info(meta->get_info());
 
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;

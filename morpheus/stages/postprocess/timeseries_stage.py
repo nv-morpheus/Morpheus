@@ -236,7 +236,9 @@ class _UserTimeSeries(object):
             anomalies = action.window["event_bin"].isin(is_anomaly.get())
 
             # Set the anomalies by matching indexes
-            action.message.set_meta("ts_anomaly", anomalies)
+            action.message.set_meta(
+                "ts_anomaly",
+                anomalies[action.message.mess_offset:action.message.mess_offset + action.message.mess_count])
 
             idx = action.message.get_meta().index
 
@@ -489,29 +491,28 @@ class TimeSeriesStage(SinglePortStage):
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
+        def on_next(x: MultiResponseAEMessage):
 
-            def on_next(x: MultiResponseAEMessage):
+            message_list: typing.List[MultiResponseMessage] = self._call_timeseries_user(x)
 
-                message_list: typing.List[MultiResponseMessage] = self._call_timeseries_user(x)
+            return message_list
 
-                return message_list
+        def on_completed():
 
-            def on_completed():
+            to_send = []
 
-                to_send = []
+            for ts in self._timeseries_per_user.values():
+                message_list: typing.List[MultiResponseMessage] = ts._calc_timeseries(None, True)
 
-                for ts in self._timeseries_per_user.values():
-                    message_list: typing.List[MultiResponseMessage] = ts._calc_timeseries(None, True)
+                to_send = to_send + message_list
 
-                    to_send = to_send + message_list
+            return to_send if len(to_send) > 0 else None
 
-                return to_send if len(to_send) > 0 else None
-
-            obs.pipe(ops.map(on_next), ops.filter(lambda x: len(x) > 0), ops.on_completed(on_completed),
-                     ops.flatten()).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name,
+                                   ops.map(on_next),
+                                   ops.filter(lambda x: len(x) > 0),
+                                   ops.on_completed(on_completed),
+                                   ops.flatten())
 
         builder.make_edge(input_stream[0], stream)
 

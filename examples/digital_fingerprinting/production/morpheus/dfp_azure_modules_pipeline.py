@@ -36,9 +36,9 @@ from dfp.utils.regex_utils import iso_date_regex_pattern
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
-from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage

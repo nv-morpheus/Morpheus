@@ -15,72 +15,99 @@
 import logging
 
 import mrc
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
+import cudf
+
+from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.models.dfencoder import AutoEncoder
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
+from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_TRAINING, MODULE_NAMESPACE)
+@register_module(DFP_TRAINING, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training(builder: mrc.Builder):
     """
-    Model training is done using this module function.
+    This module function is used for model training.
 
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
+
+    Notes
+    -----
+        Configurable Parameters:
+            - feature_columns (list): List of feature columns to train on; Example: ["column1", "column2", "column3"]
+            - epochs (int): Number of epochs to train for; Example: 50
+            - model_kwargs (dict): Keyword arguments to pass to the model; Example: {"encoder_layers": [64, 32],
+            "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
+            "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
+            "progress_bar": false, "device": "cpu"}
+            - validation_size (float): Size of the validation set; Example: 0.1
     """
 
-    config = get_module_config(DFP_TRAINING, builder)
+    config = builder.get_current_module_config()
 
-    feature_columns = config.get("feature_columns", None)
+    if ("feature_columns" not in config):
+        raise ValueError("Training module requires feature_columns to be configured")
+
+    epochs = config.get("epochs", 1)
+    feature_columns = config["feature_columns"]
+    model_kwargs = config.get("model_kwargs", {})
     validation_size = config.get("validation_size", 0.0)
-    epochs = config.get("epochs", None)
-    model_kwargs = config.get("model_kwargs", None)
 
-    if (validation_size > 0.0 and validation_size < 1.0):
-        validation_size = validation_size
-    else:
+    if (validation_size < 0.0 or validation_size > 1.0):
         raise ValueError("validation_size={0} should be a positive float in the "
                          "(0, 1) range".format(validation_size))
 
-    def on_data(message: MultiDFPMessage):
-        if (message is None or message.mess_count == 0):
+    def on_data(control_message: ControlMessage):
+        if (control_message is None):
             return None
 
-        user_id = message.user_id
+        output_messages = []
+        while (control_message.has_task("training")):
+            control_message.remove_task("training")
 
-        model = AutoEncoder(**model_kwargs)
+            user_id = control_message.get_metadata("user_id")
+            message_meta = control_message.payload()
 
-        final_df = message.get_meta_dataframe()
+            with message_meta.mutable_dataframe() as dfm:
+                final_df = dfm.to_pandas()
 
-        # Only train on the feature columns
-        final_df = final_df[final_df.columns.intersection(feature_columns)]
+            model = AutoEncoder(**model_kwargs)
 
-        logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(final_df, epochs=epochs)
-        logger.debug("Training AE model for user: '%s'... Complete.", user_id)
+            # Only train on the feature columns
+            train_df = final_df[final_df.columns.intersection(feature_columns)]
 
-        output_message = MultiAEMessage(message.meta,
-                                        mess_offset=message.mess_offset,
-                                        mess_count=message.mess_count,
-                                        model=model)
+            logger.debug("Training AE model for user: '%s'...", user_id)
+            model.fit(train_df, epochs=epochs)
+            logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        return output_message
+            dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
+            multi_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(final_df))
+            output_message = MultiAEMessage(meta=multi_message.meta,
+                                            mess_offset=multi_message.mess_offset,
+                                            mess_count=multi_message.mess_count,
+                                            model=model,
+                                            train_scores_mean=0.0,
+                                            train_scores_std=1.0)
+
+            output_messages.append(output_message)
+
+        return output_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
+        obs.pipe(ops.map(on_data), ops.flatten(), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(DFP_TRAINING, node_fn)
+    node = builder.make_node(DFP_TRAINING, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
