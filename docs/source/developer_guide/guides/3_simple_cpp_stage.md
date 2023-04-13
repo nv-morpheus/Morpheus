@@ -333,7 +333,7 @@ def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> Strea
     if self._build_cpp_node():
         node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
     else:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
     builder.make_edge(input_stream[0], node)
     return node, input_stream[1]

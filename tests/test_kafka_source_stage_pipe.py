@@ -20,6 +20,7 @@ import typing
 import mrc
 import pandas as pd
 import pytest
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -116,7 +117,7 @@ class OffsetChecker(SinglePortStage):
         return x
 
     def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, self._offset_checker)
+        node = builder.make_node(self.unique_name, ops.map(self._offset_checker))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

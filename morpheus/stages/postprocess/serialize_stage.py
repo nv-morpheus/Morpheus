@@ -18,6 +18,7 @@ import typing
 from functools import partial
 
 import mrc
+from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -141,7 +142,7 @@ class SerializeStage(SinglePortStage):
 
             stream = builder.make_node(
                 self.unique_name,
-                partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))
+                ops.map(partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns)))
 
         builder.make_edge(input_stream[0], stream)
 
