@@ -21,7 +21,6 @@ python sid-minibert-20210614-script.py \
 """
 
 import argparse
-import os
 
 import torch
 from sklearn.metrics import accuracy_score

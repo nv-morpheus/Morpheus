@@ -30,12 +30,10 @@ from messages import ResponseMemoryLogParsing
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.stages.inference.triton_inference_stage import InputWrapper
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 

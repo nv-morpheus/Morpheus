@@ -16,17 +16,12 @@
 import os
 import typing
 
-import pandas as pd
 import pytest
-
-import cudf
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from utils import TEST_DIRS
 
 EXPECTED_NEW_COLS = ['to_count', 'bcc_count', 'cc_count', 'total_recipients', 'data']
