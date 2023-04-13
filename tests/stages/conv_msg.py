@@ -18,6 +18,7 @@ import typing
 import cupy as cp
 import mrc
 import pandas as pd
+from mrc.core import operators as ops
 
 import cudf
 
@@ -93,7 +94,7 @@ class ConvMsg(SinglePortStage):
         return MultiResponseMessage.from_message(m, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, self._conv_message)
+        stream = builder.make_node(self.unique_name, ops.map(self._conv_message))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiResponseMessage

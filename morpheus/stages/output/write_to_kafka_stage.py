@@ -137,7 +137,7 @@ class WriteToKafkaStage(SinglePortStage):
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         # Write to kafka
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(stream, node)
         # node.launch_options.pe_count = self._max_concurrent
 
