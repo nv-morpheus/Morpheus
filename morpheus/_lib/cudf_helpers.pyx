@@ -52,26 +52,9 @@ cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
 
-        index_names = None
-
-        if (index_col_count > 0):
-            index_names = []
-
-            # Need to support both column_names and schema_info
-            if (table.metadata.column_names.size() > 0):
-                index_names = [x.decode() for x in table.metadata.column_names[0:index_col_count]]
-            elif (table.metadata.schema_info.size() > 0):
-                for i in range(min(index_col_count, table.metadata.schema_info.size())):
-                    index_names.append(table.metadata.schema_info[i].name.decode())
-
-        column_names = []
-
-        # Need to support both column_names and schema_info
-        if (table.metadata.column_names.size() > 0):
-            column_names = [x.decode() for x in table.metadata.column_names[index_col_count:]]
-        elif (table.metadata.schema_info.size() > 0):
-            for i in range(index_col_count, table.metadata.schema_info.size()):
-                column_names.append(table.metadata.schema_info[i].name.decode())
+        schema_infos = [x.name.decode() for x in table.metadata.schema_info]
+        index_names = schema_infos[0:index_col_count] if index_col_count > 0 else None
+        column_names = schema_infos[index_col_count:]
 
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
