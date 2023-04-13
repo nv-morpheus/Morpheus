@@ -22,7 +22,6 @@
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
 
-#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"

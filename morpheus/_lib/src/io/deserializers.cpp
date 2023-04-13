@@ -23,17 +23,13 @@
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
+#include <cudf/io/json.hpp>
 #include <cudf/io/parquet.hpp>
-#include <cudf/scalar/scalar.hpp>  // for string_scalar
-#include <cudf/strings/replace.hpp>
-#include <cudf/strings/strings_column_view.hpp>
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <cudf/types.hpp>        // for cudf::type_id
-#include <ext/alloc_traits.h>
-#include <pybind11/pybind11.h>  // IWYU pragma: keep
+#include <pybind11/pybind11.h>   // IWYU pragma: keep
 
 #include <algorithm>
-#include <cstddef>
 #include <iterator>
 #include <memory>
 #include <regex>

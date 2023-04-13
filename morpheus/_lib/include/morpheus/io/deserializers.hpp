@@ -19,7 +19,6 @@
 
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
 
-#include <cudf/io/json.hpp>
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>  // for pybind11::object
 
