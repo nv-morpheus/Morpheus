@@ -15,6 +15,7 @@
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -61,7 +62,7 @@ class WriteToS3Stage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        node = builder.make_node(self.unique_name, self._s3_writer)
+        node = builder.make_node(self.unique_name, ops.map(self._s3_writer))
         builder.make_edge(stream, node)
 
         stream = node

@@ -20,6 +20,7 @@ import cupy as cp
 import mrc
 import numpy as np
 import pandas as pd
+from mrc.core import operators as ops
 
 import cudf
 
@@ -100,11 +101,11 @@ class PreallocatorMixin(ABC):
                         stream = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
                 else:
                     if issubclass(out_type, MessageMeta):
-                        stream = builder.make_node(node_name, self._preallocate_meta)
+                        stream = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
-                        stream = builder.make_node(node_name, self._preallocate_multi)
+                        stream = builder.make_node(node_name, ops.map(self._preallocate_multi))
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
-                stream = builder.make_node(node_name, self._preallocate_df)
+                stream = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
                        " isn't a supported type".format(pretty_type))
