@@ -71,6 +71,7 @@ dependencies:
     - numba>=0.56.2
     - numpydoc=1.4
     - nvcc_linux-64=11.8
+    - nvtabular>=23.02
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake

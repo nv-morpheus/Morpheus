@@ -18,6 +18,7 @@ import re
 import typing
 from datetime import datetime
 
+import nvtabular as nvt
 import pandas as pd
 
 import cudf
