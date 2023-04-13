@@ -14,6 +14,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+# Morpheus 23.03.01 (04 Apr 2023)
+
+## 📖 Documentation
+
+- Misc Documentation fixes for 23.03 ([#840](https://github.com/nv-morpheus/Morpheus/pull/840)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 23.03.00 (30 Mar 2023)
 
 ## 🚨 Breaking Changes
