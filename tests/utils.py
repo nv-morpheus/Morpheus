@@ -30,6 +30,7 @@ class TestDirectories(object):
         self.tests_dir = os.path.dirname(cur_file)
         self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
         self.data_dir = morpheus.DATA_DIR
+        self.examples_dir = os.path.join(self.morpheus_root, 'examples')
         self.models_dir = os.path.join(self.morpheus_root, 'models')
         self.datasets_dir = os.path.join(self.models_dir, 'datasets')
         self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')

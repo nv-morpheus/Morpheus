@@ -54,7 +54,12 @@ def df(
         # Increase the index to keep them unique
         down.index += len(down)
 
-        out_df = filter_probs_df.append(down)
+        if isinstance(filter_probs_df, pd.DataFrame):
+            concat_fn = pd.concat
+        else:
+            concat_fn = cudf.concat
+
+        out_df = concat_fn([filter_probs_df, down])
 
         assert out_df.index.is_unique
 

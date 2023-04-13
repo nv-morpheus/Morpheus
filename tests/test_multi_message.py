@@ -285,7 +285,15 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     assert mm3.meta.df is not mm2.meta.df
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
-    assert DatasetLoader.assert_df_equal(mm3.get_meta(), df.iloc[2:6].append(df.iloc[12:15]))
+
+    if isinstance(df, pd.DataFrame):
+        concat_fn = pd.concat
+    else:
+        concat_fn = cudf.concat
+
+    expected_df = concat_fn([df.iloc[2:6], df.iloc[12:15]])
+
+    assert DatasetLoader.assert_df_equal(mm3.get_meta(), expected_df)
 
 
 def test_copy_ranges(dataset: DatasetLoader):
