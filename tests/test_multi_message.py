@@ -22,7 +22,7 @@ import typing
 
 import cupy as cp
 import numpy as np
-import pandas
+import pandas as pd
 import pytest
 
 import cudf
@@ -218,7 +218,7 @@ def test_set_meta_new_column(filter_probs_df: cudf.DataFrame, df_type: typing.Li
     assert assert_df_equal(multi.get_meta("string_column"), val_to_set)
 
     # Set a date
-    val_to_set = pandas.date_range("2018-01-01", periods=multi.mess_count, freq="H")
+    val_to_set = pd.date_range("2018-01-01", periods=multi.mess_count, freq="H")
     multi.set_meta("date_column", val_to_set)
     assert assert_df_equal(multi.get_meta("date_column"), val_to_set)
 
@@ -286,7 +286,14 @@ def test_copy_ranges(filter_probs_df: cudf.DataFrame):
     assert mm3.meta.df is not mm2.meta.df
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
-    assert assert_df_equal(mm3.get_meta(), filter_probs_df.iloc[2:6].append(filter_probs_df.iloc[12:15]))
+
+    if isinstance(filter_probs_df, pd.DataFrame):
+        concat_fn = pd.concat
+    else:
+        concat_fn = cudf.concat
+
+    expected_df = concat_fn([filter_probs_df.iloc[2:6], filter_probs_df.iloc[12:15]])
+    assert assert_df_equal(mm3.get_meta(), expected_df)
 
 
 def test_copy_ranges_dup_index(filter_probs_df: cudf.DataFrame):

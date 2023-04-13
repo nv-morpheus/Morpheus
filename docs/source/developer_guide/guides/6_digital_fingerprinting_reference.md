@@ -376,8 +376,10 @@ Let's first look at the module implementation structure before diving deeper int
 > Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
 
 ```py
-import mrc
 import typing
+
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -395,11 +397,8 @@ def module_init(builder: mrc.Builder):
 
         # Your implementation goes here...
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
     # Here we are creating a node.
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node(module_id, ops.map(on_data), ops.filter(lambda x: x is not None))
 
     # Register input and output port name for a module.
     builder.register_module_input("<input port name>", node)
