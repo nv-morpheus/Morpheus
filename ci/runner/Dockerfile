@@ -50,8 +50,10 @@ RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --f
     rm -rf /tmp/conda
 
 
-# ============ driver ==================
-FROM base as driver
+# ============ build ==================
+FROM base as build
+
+# Add any build only dependencies here.
 
 ARG CUDA_PKG_VER
 
@@ -63,13 +65,14 @@ RUN apt update && \
     libcufft-dev-${CUDA_PKG_VER} \
     libcurand-dev-${CUDA_PKG_VER} \
     libcusolver-dev-${CUDA_PKG_VER} \
-    libnvidia-compute-525 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 
 # ============ test ==================
 FROM base as test
+
+# Add any test only dependencies here.
 
 ARG PROJ_NAME
 
