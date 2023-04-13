@@ -38,6 +38,7 @@ dependencies:
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
+    - dill
     - docker-compose=1.29.2
     - docker-py=5.0
     - faker=12.3.0
@@ -56,9 +57,13 @@ dependencies:
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
+    # If cuml is installed, we need to constrain these two libraries. See:
+    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+    - libcusolver<=11.4.1.48
+    - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
-    - mrc=23.03
+    - mrc=23.07
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
@@ -81,6 +86,7 @@ dependencies:
     - python=3.8
     - rapidjson=1.1.0
     - scikit-build=0.13
+    - scikit-learn=0.23.1
     - sphinx
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17

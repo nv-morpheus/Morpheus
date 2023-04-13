@@ -15,31 +15,99 @@
 # limitations under the License.
 
 import operator
-import os
+import typing
 
+import pandas as pd
 import pytest
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
+import cudf
+
 from morpheus.messages.message_meta import MessageMeta
-from utils import TEST_DIRS
+from utils import assert_df_equal
+from utils import duplicate_df_index_rand
 
 
-def test_mutable_dataframe(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+@pytest.fixture(scope="function", params=["normal", "skip", "dup", "down", "updown"])
+def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip", "dup", "down", "updown"]:
+    return request.param
 
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+
+@pytest.fixture(scope="function")
+def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
+    if (index_type == "normal"):
+        return filter_probs_df
+    elif (index_type == "skip"):
+        # Skip some rows
+        return filter_probs_df.iloc[::3, :].copy()
+    elif (index_type == "dup"):
+        # Duplicate
+        return duplicate_df_index_rand(filter_probs_df, count=2)
+    elif (index_type == "down"):
+        # Reverse
+        return filter_probs_df.iloc[::-1, :].copy()
+    elif (index_type == "updown"):
+        # Go up then down
+        down = filter_probs_df.iloc[::-1, :].copy()
+
+        # Increase the index to keep them unique
+        down.index += len(down)
+
+        if isinstance(filter_probs_df, pd.DataFrame):
+            concat_fn = pd.concat
+        else:
+            concat_fn = cudf.concat
+
+        out_df = concat_fn([filter_probs_df, down])
+
+        assert out_df.index.is_unique
+
+        return out_df
+
+    assert False, "Unknown index type"
+
+
+@pytest.fixture(scope="function")
+def is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
+
+    return not (index_type == "dup" or index_type == "updown")
+
+
+def test_count(df: cudf.DataFrame):
+
+    meta = MessageMeta(df)
+
+    assert meta.count == len(df)
+
+
+def test_has_sliceable_index(df: cudf.DataFrame, is_sliceable: bool):
+
+    meta = MessageMeta(df)
+    assert meta.has_sliceable_index() == is_sliceable
+
+
+def test_ensure_sliceable_index(df: cudf.DataFrame, is_sliceable: bool):
+
+    meta = MessageMeta(df)
+
+    old_index_name = meta.ensure_sliceable_index()
+
+    assert meta.has_sliceable_index()
+    assert old_index_name == (None if is_sliceable else "_index_")
+
+
+def test_mutable_dataframe(df: cudf.DataFrame):
+
+    meta = MessageMeta(df)
 
     with meta.mutable_dataframe() as df:
-        df['v2'][3] = 47
+        df['v2'].iloc[3] = 47
 
-    assert meta.copy_dataframe()['v2'][3] == 47
+    assert meta.copy_dataframe()['v2'].iloc[3] == 47
 
 
-def test_using_ctx_outside_with_block(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+def test_using_ctx_outside_with_block(df: cudf.DataFrame):
 
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+    meta = MessageMeta(df)
 
     ctx = meta.mutable_dataframe()
 
@@ -53,17 +121,16 @@ def test_using_ctx_outside_with_block(config):
     pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
-def test_copy_dataframe(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+def test_copy_dataframe(df: cudf.DataFrame):
 
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+    meta = MessageMeta(df)
 
-    meta.copy_dataframe()['v2'][3] = 47
+    copied_df = meta.copy_dataframe()
 
-    assert meta.copy_dataframe()['v2'][3] != 47
-    assert meta.df != 47
+    assert assert_df_equal(copied_df, df), "Should be identical"
+    assert copied_df is not df, "But should be different instances"
 
-    meta.df['v2'][3] = 47
-
-    assert meta.copy_dataframe()['v2'][3] != 47
-    assert meta.df != 47
+    # Try setting a single value on the copy
+    cdf = meta.copy_dataframe()
+    cdf['v2'].iloc[3] = 47
+    assert assert_df_equal(meta.copy_dataframe(), df), "Should be identical"

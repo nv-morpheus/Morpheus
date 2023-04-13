@@ -14,61 +14,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import pytest
 
-import numpy as np
-
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from utils import TEST_DIRS
-from utils import assert_path_exists
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from utils import assert_results
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
-def test_linear_boundary_stages(tmp_path, config, output_type='json'):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
-
+@pytest.mark.use_cudf
+def test_linear_boundary_stages(config, filter_probs_df):
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, filter_probs_df))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-
-    if output_type == "csv":
-        # The output data will contain an additional id column that we will need to slice off
-        output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-        output_data = output_data[:, 1:]
-    else:  # assume json
-        df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-        output_data = df.values
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data, 2)
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())
 
 
-def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
-
-    try:
+@pytest.mark.use_cudf
+def test_multi_segment_bad_data_type(config, filter_probs_df):
+    with pytest.raises(RuntimeError):
         pipe = LinearPipeline(config)
-        pipe.set_source(FileSourceStage(config, filename=input_file))
+        pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
         pipe.add_segment_boundary(int)
-        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        mem_sink = pipe.add_stage(InMemorySinkStage(config))
         pipe.run()
-        assert (False)
-    except Exception as e:
-        print(e)
-        pass
 
-    assert not os.path.exists(out_file)
+    assert len(mem_sink.get_messages()) == 0

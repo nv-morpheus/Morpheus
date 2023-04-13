@@ -225,8 +225,8 @@ The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morph
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `schema` | `DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
 | `filter_null` | `bool` | Optional: Whether to filter null rows after loading, by default True. |
-| `file_type` | `morpheus._lib.common.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, and `FileTypes.JSON`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
-| `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the `DataFrame` parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) or [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) |
+| `file_type` | `morpheus.common.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, `FileTypes.JSON` and `FileTypes.PARQUET`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
+| `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the `DataFrame` parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html), [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) or [`pandas.read_parquet`](https://pandas.pydata.org/docs/reference/api/pandas.read_parquet.html) |
 | `cache_dir` | `str` | Optional: path to cache location, defaults to `./.cache/dfp` |
 
 This stage is able to download and load data files concurrently by multiple methods.  Currently supported methods are: `single_thread`, `multiprocess`, `dask`, and `dask_thread`.  The method used is chosen by setting the `FILE_DOWNLOAD_TYPE` environment variable, and `dask_thread` is used by default, and `single_thread` effectively disables concurrent loading.
@@ -376,8 +376,10 @@ Let's first look at the module implementation structure before diving deeper int
 > Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
 
 ```py
-import mrc
 import typing
+
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -395,11 +397,8 @@ def module_init(builder: mrc.Builder):
 
         # Your implementation goes here...
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
     # Here we are creating a node.
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node(module_id, ops.map(on_data), ops.filter(lambda x: x is not None))
 
     # Register input and output port name for a module.
     builder.register_module_input("<input port name>", node)

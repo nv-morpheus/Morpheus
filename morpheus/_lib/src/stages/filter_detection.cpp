@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,9 +17,19 @@
 
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
+#include "mrc/node/rx_sink_base.hpp"
+#include "mrc/node/rx_source_base.hpp"
+#include "mrc/node/sink_properties.hpp"
+#include "mrc/node/source_properties.hpp"
+#include "mrc/segment/builder.hpp"
+#include "mrc/segment/object.hpp"
+#include "mrc/types.hpp"
+#include "pymrc/node.hpp"
+
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"         // for DataType
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/types.hpp"                  // for RangeType
@@ -29,10 +39,9 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
 #include <cudf/column/column_view.hpp>
 #include <cudf/types.hpp>
-#include <glog/logging.h>            // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <glog/logging.h>         // for CHECK, CHECK_NE
+#include <mrc/cuda/common.hpp>    // for MRC_CHECK_CUDA
+#include <rmm/device_buffer.hpp>  // for device_buffer
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t
@@ -70,14 +79,9 @@ DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr
         << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
            "arrays";
 
-    auto buffer = std::make_shared<rmm::device_buffer>(filter_source.bytes(), rmm::cuda_stream_per_thread);
-
-    MRC_CHECK_CUDA(cudaMemcpy(
-        buffer->data(), static_cast<const uint8_t*>(filter_source.data()), buffer->size(), cudaMemcpyDeviceToDevice));
-
     // Depending on the input the stride is given in bytes or elements, convert to elements
     auto stride = morpheus::TensorUtils::get_element_stride(filter_source.get_stride());
-    return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
+    return {filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
 }
 
 DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
@@ -88,17 +92,13 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     const auto& col = table_info.get_column(0);
     auto dtype      = morpheus::DType::from_cudf(col.type().id());
     auto num_rows   = col.size();
-
-    auto buffer = std::make_shared<rmm::device_buffer>(num_rows * dtype.item_size(), rmm::cuda_stream_per_thread);
-
-    MRC_CHECK_CUDA(cudaMemcpy(buffer->data(),
-                              static_cast<const uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size()),
-                              buffer->size(),
-                              cudaMemcpyDeviceToDevice));
+    auto data =
+        const_cast<uint8_t*>(static_cast<const uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size()));
 
     return {
-        buffer,
+        data,
         std::move(dtype),
+        std::make_shared<MemoryDescriptor>(),
         {num_rows, 1},
         {1, 0},
     };

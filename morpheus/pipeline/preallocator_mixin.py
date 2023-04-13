@@ -20,11 +20,12 @@ import cupy as cp
 import mrc
 import numpy as np
 import pandas as pd
+from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.common import TypeId
-from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.common import TypeId
+from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -66,7 +67,7 @@ class PreallocatorMixin(ABC):
                 column_type = self._needed_columns[column_name]
                 logger.debug("Preallocating column %s[%s]", column_name, column_type)
                 if column_type != TypeId.STRING:
-                    column_type_str = tyepid_to_numpy_str(column_type)
+                    column_type_str = typeid_to_numpy_str(column_type)
                     df[column_name] = alloc_func(num_rows, column_type_str)
                 else:
                     df[column_name] = ''
@@ -100,11 +101,11 @@ class PreallocatorMixin(ABC):
                         stream = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
                 else:
                     if issubclass(out_type, MessageMeta):
-                        stream = builder.make_node(node_name, self._preallocate_meta)
+                        stream = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
-                        stream = builder.make_node(node_name, self._preallocate_multi)
+                        stream = builder.make_node(node_name, ops.map(self._preallocate_multi))
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
-                stream = builder.make_node(node_name, self._preallocate_df)
+                stream = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
                        " isn't a supported type".format(pretty_type))

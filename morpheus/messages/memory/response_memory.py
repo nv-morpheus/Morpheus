@@ -14,17 +14,25 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 
 import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.utils import logger as morpheus_logger
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(init=False)
 class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
+
+    def __new__(cls, *args, **kwargs):
+        morpheus_logger.deprecated_message_warning(logger, cls, TensorMemory)
+        return super().__new__(cls, *args, **kwargs)
 
     def get_output(self, name: str):
         """
@@ -79,17 +87,20 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
 
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
+    def __init__(self, *, count: int, probs: cp.ndarray):
+        super().__init__(count=count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
+class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     """
-    Subclass of `ResponseMemoryProbs` specific to the AutoEncoder pipeline.
+    Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
 
     Parameters
     ----------
+    probs : cupy.ndarray
+        Probabilities tensor
+
     user_id : str
         User id the inference was performed against.
 
@@ -97,5 +108,9 @@ class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
         Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
     user_id = ""
     explain_df = None
+
+    def __init__(self, *, count: int, probs: cp.ndarray):
+        super().__init__(count=count, tensors={'probs': probs})

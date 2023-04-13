@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 #include "morpheus/utilities/string_util.hpp"
 
@@ -52,23 +53,6 @@ namespace morpheus {
  */
 
 namespace detail {
-
-template <typename IterT>
-std::string join(IterT begin, IterT end, std::string const& separator)
-{
-    std::ostringstream result;
-    if (begin != end)
-        result << *begin++;
-    while (begin != end)
-        result << separator << *begin++;
-    return result.str();
-}
-
-template <typename IterT>
-std::string array_to_str(IterT begin, IterT end)
-{
-    return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
-}
 
 template <RankType R>
 void set_contiguous_stride(const std::array<TensorIndex, R>& shape, std::array<TensorIndex, R>& stride)
@@ -117,9 +101,6 @@ enum class TensorStorageType
 template <typename T>
 using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
 
-struct MemoryDescriptor
-{};
-
 struct ITensorStorage
 {
     virtual ~ITensorStorage() = default;
@@ -162,6 +143,8 @@ struct ITensor : public ITensorStorage, public ITensorOperations
     virtual TensorIndex shape(TensorIndex) const = 0;
 
     virtual TensorIndex stride(TensorIndex) const = 0;
+
+    virtual intptr_t stream() const = 0;
 
     virtual bool is_compact() const = 0;
 
@@ -257,6 +240,11 @@ struct TensorObject final
         return m_tensor->stride(idx);
     }
 
+    intptr_t stream() const
+    {
+        return m_tensor->stream();
+    }
+
     bool is_compact() const
     {
         return m_tensor->is_compact();
@@ -312,8 +300,8 @@ struct TensorObject final
         CHECK(std::transform_reduce(
             shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::greater<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
         CHECK(DType::create<T>() == this->dtype())
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
@@ -342,8 +330,8 @@ struct TensorObject final
         CHECK(
             std::transform_reduce(shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::less<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
         CHECK(DType::create<T>() == this->dtype())
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
@@ -361,16 +349,37 @@ struct TensorObject final
         return output;
     }
 
-    // move assignment
-    TensorObject& operator=(TensorObject&& other) noexcept
+    /**
+     * @brief Explicitly swap the pointers to the underlying data with another tensor. Use inplace of the move operator
+     * since it's hard to determine when you want to perform a move vs copy the data.
+     *
+     * @return TensorObject&
+     */
+    TensorObject& swap(TensorObject&& other) noexcept
     {
         // Guard self assignment
         if (this == &other)
             return *this;
 
-        m_md     = std::exchange(other.m_md, nullptr);  // leave other in valid state
-        m_tensor = std::exchange(other.m_tensor, nullptr);
+        using std::swap;
+
+        swap(m_md, other.m_md);
+        swap(m_tensor, other.m_tensor);
+
         return *this;
+    }
+
+    /**
+     * @brief Swap this tensor with another. Only the pointers to the enderlying data are exchanged. No values are
+     * moved.
+     *
+     */
+    friend void swap(TensorObject& lhs, TensorObject& rhs) noexcept
+    {
+        using std::swap;
+
+        swap(lhs.m_md, rhs.m_md);
+        swap(lhs.m_tensor, rhs.m_tensor);
     }
 
     // copy assignment
@@ -379,6 +388,8 @@ struct TensorObject final
         // Guard self assignment
         if (this == &other)
             return *this;
+
+        CHECK(m_md && m_tensor) << "Cannot set an empty tensor. Use `std::swap(tensor1, tensor2)` instead.";
 
         // Check for valid assignment
         if (this->get_shape() != other.get_shape())
@@ -411,7 +422,7 @@ struct TensorObject final
         return m_tensor;
     }
 
-    [[maybe_unused]] std::shared_ptr<MemoryDescriptor> get_memory() const
+    std::shared_ptr<MemoryDescriptor> get_memory() const
     {
         return m_md;
     }

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -30,7 +30,6 @@
 #include <rmm/device_buffer.hpp>
 
 #include <algorithm>  // for copy, transform
-#include <cstdint>
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
@@ -47,6 +46,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
                      DType dtype,
                      ShapeType shape,
                      ShapeType stride) :
+  m_mem_descriptor(std::make_shared<MemoryDescriptor>(device_buffer->stream(), device_buffer->memory_resource())),
   m_md(std::move(device_buffer)),
   m_offset(offset),
   m_dtype(std::move(dtype)),
@@ -64,7 +64,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
 
 std::shared_ptr<MemoryDescriptor> RMMTensor::get_memory() const
 {
-    return nullptr;
+    return m_mem_descriptor;
 }
 
 void* RMMTensor::data() const
@@ -114,6 +114,11 @@ void RMMTensor::get_stride(ShapeType& s) const
 {
     s.resize(rank());
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
+}
+
+intptr_t RMMTensor::stream() const
+{
+    return (intptr_t)m_md->stream().value();
 }
 
 bool RMMTensor::is_compact() const

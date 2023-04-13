@@ -19,12 +19,12 @@ import typing
 import cupy as cp
 import mlflow
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -123,15 +123,15 @@ class MLFlowDriftStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiResponseProbsMessage, )
+        return (MultiResponseMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _calc_drift(self, x: MultiResponseProbsMessage):
+    def _calc_drift(self, x: MultiResponseMessage):
 
         # All probs in a batch will be calculated
-        shifted = cp.abs(x.probs - 0.5) + 0.5
+        shifted = cp.abs(x.get_probs_tensor() - 0.5) + 0.5
 
         # Make sure the labels list is long enough
         for x in range(len(self._labels), shifted.shape[1]):
@@ -156,7 +156,7 @@ class MLFlowDriftStage(SinglePortStage):
         stream = input_stream[0]
 
         # Convert the messages to rows of strings
-        node = builder.make_node(self.unique_name, self._calc_drift)
+        node = builder.make_node(self.unique_name, ops.map(self._calc_drift))
         builder.make_edge(input_stream[0], node)
         stream = node
 

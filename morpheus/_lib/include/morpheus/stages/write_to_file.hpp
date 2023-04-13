@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,7 +23,10 @@
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
@@ -92,6 +95,13 @@ class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      * @param msg
      */
     void write_csv(sink_type_t& msg);
+
+    /**
+     * @brief Write messages (rows in a DataFrame) to a Parquet format
+     *
+     * @param msg
+     */
+    void write_parquet(sink_type_t& msg);
 
     subscribe_fn_t build_operator();
 

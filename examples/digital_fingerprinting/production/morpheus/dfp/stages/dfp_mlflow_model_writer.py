@@ -21,7 +21,6 @@ import urllib.parse
 import mlflow
 import mrc
 import requests
-from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
 from mlflow.protos.databricks_pb2 import RESOURCE_ALREADY_EXISTS
@@ -36,6 +35,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -243,11 +243,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -27,13 +27,16 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseProbsMessage****************************************/
-MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
                                                      TensorIndex mess_offset,
                                                      TensorIndex mess_count,
-                                                     std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
+                                                     std::shared_ptr<TensorMemory> memory,
                                                      TensorIndex offset,
-                                                     TensorIndex count) :
-  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
+                                                     TensorIndex count,
+                                                     std::string id_tensor_name,
+                                                     std::string probs_tensor_name) :
+  DerivedMultiMessage(
+      meta, mess_offset, mess_count, memory, offset, count, std::move(id_tensor_name), std::move(probs_tensor_name))
 {}
 
 const TensorObject MultiResponseProbsMessage::get_probs() const
@@ -54,16 +57,25 @@ std::shared_ptr<MultiResponseProbsMessage> MultiResponseProbsMessageInterfacePro
     std::shared_ptr<MessageMeta> meta,
     TensorIndex mess_offset,
     TensorIndex mess_count,
-    std::shared_ptr<ResponseMemoryProbs> memory,
+    std::shared_ptr<TensorMemory> memory,
     TensorIndex offset,
-    TensorIndex count)
+    TensorIndex count,
+    std::string id_tensor_name,
+    std::string probs_tensor_name)
 {
-    return std::make_shared<MultiResponseProbsMessage>(
-        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+    return std::make_shared<MultiResponseProbsMessage>(std::move(meta),
+                                                       mess_offset,
+                                                       mess_count,
+                                                       std::move(memory),
+                                                       offset,
+                                                       count,
+                                                       std::move(id_tensor_name),
+                                                       std::move(probs_tensor_name));
 }
 
 pybind11::object MultiResponseProbsMessageInterfaceProxy::probs(MultiResponseProbsMessage& self)
 {
     return get_tensor_property(self, "probs");
 }
+
 }  // namespace morpheus

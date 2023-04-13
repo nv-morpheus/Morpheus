@@ -17,7 +17,9 @@ morpheus_add_cython_library(
     PYX_FILE
       "${MORPHEUS_LIB_ROOT}/cudf_helpers.pyx"
     LINK_TARGETS
-      cuda_utils
+      morpheus_utils
+      Python::Module
+      Python::NumPy
     OUTPUT_TARGET
       cudf_helpers_target
 )
@@ -26,6 +28,9 @@ morpheus_add_cython_library(
 # The C++ checks used in CI need these headers but don't require an actual build.
 # The `morpheus_style_checks` target allows these to be generated without a full build of Morpheus.
 add_dependencies(${PROJECT_NAME}_style_checks ${cudf_helpers_target})
+
+# We don't have control over the C++ code that cython generates, suppress the volatile warning raised by the compiler
+target_compile_options(${cudf_helpers_target} PRIVATE -Wno-volatile)
 
 # Disable clang-tidy and IWYU for cython generated code
 set_target_properties(

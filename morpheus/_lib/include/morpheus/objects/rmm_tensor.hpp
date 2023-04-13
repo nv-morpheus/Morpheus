@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,11 +18,13 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 
 #include <rmm/device_buffer.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -132,6 +134,8 @@ class RMMTensor : public ITensor
      */
     void get_stride(ShapeType& s) const;
 
+    intptr_t stream() const override;
+
     // Tensor reshape(ShapeType shape)
     // {
     //     CHECK(is_compact());
@@ -151,6 +155,7 @@ class RMMTensor : public ITensor
     TensorIndex offset_bytes() const;
 
     // Memory info
+    std::shared_ptr<MemoryDescriptor> m_mem_descriptor;
     std::shared_ptr<rmm::device_buffer> m_md;
     TensorIndex m_offset;
 

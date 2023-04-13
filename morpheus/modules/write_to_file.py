@@ -22,13 +22,12 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import determine_file_type
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
 from morpheus.io import serializers
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
@@ -36,20 +35,27 @@ logger = logging.getLogger(__name__)
 is_first = True
 
 
-@register_module(WRITE_TO_FILE, MODULE_NAMESPACE)
+@register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
 def write_to_file(builder: mrc.Builder):
     """
     Write all messages to a file.
-
-    This module writes messages to a file.
 
     Parameters
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    -----
+        Configurable Parameters:
+            - filename (string): Path to the output file; Example: `output.csv`; Default: None
+            - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
+            - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
+            - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
+            - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
     """
 
-    config = get_module_config(WRITE_TO_FILE, builder)
+    config = builder.get_current_module_config()
 
     output_file = config.get("filename", None)
     overwrite = config.get("overwrite", False)
@@ -97,7 +103,6 @@ def write_to_file(builder: mrc.Builder):
         with open(output_file, "a") as out_file:
 
             def write_to_file(x: MessageMeta):
-
                 lines = convert_to_strings(x.df)
 
                 out_file.writelines(lines)
@@ -111,7 +116,7 @@ def write_to_file(builder: mrc.Builder):
 
         # File should be closed by here
 
-    node = builder.make_node_full(WRITE_TO_FILE, node_fn)
+    node = builder.make_node(WRITE_TO_FILE, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

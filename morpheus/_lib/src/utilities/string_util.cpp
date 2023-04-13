@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,4 +22,5 @@ bool StringUtil::str_contains(const std::string& str, const std::string& search_
 {
     return str.find(search_str) != std::string::npos;
 }
+
 }  // namespace morpheus

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,8 +17,11 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
@@ -27,6 +30,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <shared_mutex>
 #include <string>
 #include <tuple>
@@ -34,30 +38,11 @@
 
 namespace morpheus {
 
-/**
- * @brief Simple structure which provides a general method for holding a cudf:table_view together with index and column
- * names. Also provides slicing mechanics.
- *
- */
-struct TableInfoData
-{
-    TableInfoData() = default;
-    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns);
-
-    TableInfoData get_slice(std::vector<std::string> column_names = {}) const;
-
-    TableInfoData get_slice(cudf::size_type start,
-                            cudf::size_type stop,
-                            std::vector<std::string> column_names = {}) const;
-
-    cudf::table_view table_view;
-    std::vector<std::string> index_names;
-    std::vector<std::string> column_names;
-};
+struct CudfHelper;
 
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
-struct __attribute__((visibility("default"))) TableInfoBase
+struct MORPHEUS_EXPORT TableInfoBase
 {
     /**
      * @brief Get reference of a cudf table view
@@ -102,13 +87,6 @@ struct __attribute__((visibility("default"))) TableInfoBase
     cudf::size_type num_rows() const;
 
     /**
-     * @brief Returns a copy of the underlying cuDF DataFrame as a python object
-     *
-     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default
-     */
-    pybind11::object copy_to_py_object() const;
-
-    /**
      * @brief Returns a reference to the view of the specified column
      *
      * @throws std::out_of_range
@@ -118,6 +96,13 @@ struct __attribute__((visibility("default"))) TableInfoBase
      * @return cudf::column_view : A reference to the desired column
      */
     const cudf::column_view& get_column(cudf::size_type idx) const;
+
+    /**
+     * @brief Returns true if the underlying dataframe as a unique index.
+     *
+     * @return bool
+     */
+    bool has_sliceable_index() const;
 
   protected:
     TableInfoBase() = default;
@@ -132,9 +117,12 @@ struct __attribute__((visibility("default"))) TableInfoBase
   private:
     std::shared_ptr<const IDataTable> m_parent;
     TableInfoData m_data;
+
+    // Give access to internal m_parent and m_data for converting to cudf dataframe
+    friend CudfHelper;
 };
 
-struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT TableInfo : public TableInfoBase
 {
   public:
     TableInfo() = default;
@@ -143,8 +131,8 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     /**
      * @brief Get slice of a data table info based on the start and stop offset address
      *
-     * @param start : Start offset address
-     * @param stop : Stop offset address
+     * @param start : Start offset address (inclusive)
+     * @param stop : Stop offset address (exclusive)
      * @param column_names : Columns of interest
      * @return TableInfo
      */
@@ -155,7 +143,7 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     std::shared_lock<std::shared_mutex> m_lock;
 };
 
-struct __attribute__((visibility("default"))) MutableTableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT MutableTableInfo : public TableInfoBase
 {
   public:
     MutableTableInfo(std::shared_ptr<const IDataTable> parent,
@@ -165,6 +153,18 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
     MutableTableInfo(MutableTableInfo&& other) = default;
 
     ~MutableTableInfo();
+
+    /**
+     * @brief Get slice of a data table info based on the start and stop offset address
+     *
+     * @param start : Start offset address (inclusive)
+     * @param stop : Stop offset address (exclusive)
+     * @param column_names : Columns of interest
+     * @return TableInfo
+     */
+    MutableTableInfo get_slice(cudf::size_type start,
+                               cudf::size_type stop,
+                               std::vector<std::string> column_names = {}) &&;
 
     /**
      * TODO(Documentation)
@@ -192,6 +192,14 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
      * @param obj
      */
     void return_obj(pybind11::object&& obj);
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     */
+    std::optional<std::string> ensure_sliceable_index();
 
   private:
     // We use a unique_lock here to enforce exclusive access

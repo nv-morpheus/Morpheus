@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -16,6 +16,8 @@
  */
 
 #pragma once
+
+#include "morpheus_export.h"
 
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
@@ -41,7 +43,7 @@ namespace morpheus {
  * @note A tensor whose values are laid out in the storage starting from the rightmost
  * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
  */
-struct TensorUtils
+struct MORPHEUS_EXPORT TensorUtils
 {
     /**
      * @brief Write a formatted shape to a stream

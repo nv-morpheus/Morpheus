@@ -20,12 +20,19 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.messages import ResponseMemoryProbs
-from morpheus.stages.inference import inference_stage
+import cudf
+
+from morpheus.messages import ResponseMemory
+from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_inference_message import MultiInferenceMessage
+from morpheus.messages.multi_response_message import MultiResponseMessage
+from morpheus.stages.inference.inference_stage import InferenceStage
 from utils import IW
 
 
-class InferenceStage(inference_stage.InferenceStage):
+class InferenceStage(InferenceStage):
     # Subclass InferenceStage to implement the abstract methods
     def _get_inference_worker(self, pq):
         # Intentionally calling the abc empty method for coverage
@@ -33,15 +40,28 @@ class InferenceStage(inference_stage.InferenceStage):
         return IW(pq)
 
 
-def _mk_message(count=1, mess_count=1, offset=0, mess_offset=0):
-    m = mock.MagicMock()
-    m.count = count
-    m.offset = offset
-    m.mess_offset = mess_offset
-    m.mess_count = mess_count
-    m.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
-    m.seq_ids = cp.array([list(range(count)), list(range(count)), list(range(count))])
-    m.get_input.return_value = cp.array([[0, 1, 2], [0, 1, 2], [0, 1, 2]])
+def _mk_message(mess_offset=0, mess_count=1, offset=0, count=1):
+    total_message_count = mess_offset + mess_count
+    total_tensor_count = offset + count
+
+    df = cudf.DataFrame(list(range(total_message_count)), columns=["col1"])
+
+    m = MultiInferenceMessage(meta=MessageMeta(df),
+                              mess_offset=mess_offset,
+                              mess_count=mess_count,
+                              memory=InferenceMemory(count=total_tensor_count,
+                                                     tensors={
+                                                         "probs":
+                                                             cp.random.rand(total_tensor_count, 2),
+                                                         "seq_ids":
+                                                             cp.tile(
+                                                                 cp.expand_dims(cp.arange(
+                                                                     mess_offset, mess_offset + total_tensor_count),
+                                                                                axis=1), (1, 3))
+                                                     }),
+                              offset=offset,
+                              count=count)
+
     return m
 
 
@@ -68,23 +88,25 @@ def test_constructor(config):
 def test_build_single(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_called_once()
+    mock_segment.make_node.assert_called_once()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_python
-def test_py_inf_fn(config):
+@mock.patch('mrc.core.operators.build')
+def test_py_inf_fn(mock_ops_build, config):
+    mock_ops_build.return_value = mock.MagicMock()
     mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_builder = mock.MagicMock()
+    mock_builder.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     mock_init = mock.MagicMock()
@@ -92,9 +114,10 @@ def test_py_inf_fn(config):
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
-    inf_stage._build_single(mock_segment, mock_input_stream)
+    inf_stage._build_single(mock_builder, mock_input_stream)
 
-    py_inference_fn = mock_segment.make_node_full.call_args[0][1]
+    mock_ops_build.assert_called_once()
+    py_inference_fn = mock_ops_build.call_args[0][0]
 
     mock_pipe = mock.MagicMock()
     mock_observable = mock.MagicMock()
@@ -106,62 +129,11 @@ def test_py_inf_fn(config):
     mock_pipe.subscribe.assert_called_once_with(mock_subscriber)
 
 
-@pytest.mark.use_python
-@mock.patch('mrc.Future')
-@mock.patch('morpheus.stages.inference.inference_stage.ops')
-def test_py_inf_fn_on_next(mock_ops, mock_future, config):
-    mock_future.return_value = mock_future
-    mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
-    mock_input_stream = mock.MagicMock()
-
-    mock_init = mock.MagicMock()
-    IW.init = mock_init
-    IW.process = mock.MagicMock()
-
-    inf_stage = InferenceStage(config)
-    inf_stage._build_single(mock_segment, mock_input_stream)
-
-    py_inference_fn = mock_segment.make_node_full.call_args[0][1]
-
-    mock_pipe = mock.MagicMock()
-    mock_observable = mock.MagicMock()
-    mock_observable.pipe.return_value = mock_pipe
-    mock_subscriber = mock.MagicMock()
-    py_inference_fn(mock_observable, mock_subscriber)
-
-    mock_ops.map.assert_called_once()
-    on_next = mock_ops.map.call_args[0][0]
-
-    mock_message = _mk_message()
-
-    mock_slice = mock.MagicMock()
-    mock_slice.mess_count = 1
-    mock_slice.count = 1
-    mock_slice.seq_ids = mock_message.seq_ids
-    mock_message.get_slice.return_value = mock_slice
-
-    output_message = on_next(mock_message)
-    assert output_message.count == 1
-    assert output_message.mess_offset == 0
-    assert output_message.mess_count == 1
-    assert output_message.offset == 0
-
-    mock_future.result.assert_called_once()
-    mock_future.set_result.assert_not_called()
-
-    IW.process.assert_called_once()
-    set_output_fut = IW.process.call_args[0][1]
-    set_output_fut(ResponseMemoryProbs(count=1, probs=cp.zeros((1, 2))))
-    mock_future.set_result.assert_called_once()
-
-
 @pytest.mark.use_cpp
 def test_build_single_cpp(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
@@ -171,7 +143,7 @@ def test_build_single_cpp(config):
 
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_not_called()
+    mock_segment.make_node.assert_not_called()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
@@ -180,7 +152,7 @@ def test_build_single_cpp(config):
 def test_build_single_cpp_not_impl(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     inf_stage = InferenceStage(config)
@@ -227,99 +199,92 @@ def test_split_batches():
 
 @pytest.mark.use_python
 def test_convert_response(config):
-    mm1 = _mk_message()
-    mm2 = _mk_message(mess_offset=1)
+    message_sizes = [3, 2, 1, 7, 4]
+    total_size = sum(message_sizes)
 
-    out_msg1 = _mk_message()
-    out_msg1.probs = cp.array([[0.1, 0.5, 0.8]])
+    full_input = _mk_message(mess_count=total_size, count=total_size)
 
-    out_msg2 = _mk_message(mess_offset=1)
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8]])
+    input_messages = [
+        full_input.get_slice(sum(message_sizes[:i]), sum(message_sizes[:i]) + size) for i,
+        size in enumerate(message_sizes)
+    ]
 
-    resp = inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
-    assert resp.meta == mm1.meta
+    full_output = cp.random.rand(total_size, 3)
+    output_memory = []
+
+    for i, s in enumerate(message_sizes):
+        output_memory.append(
+            ResponseMemory(count=s,
+                           tensors={"probs": full_output[sum(message_sizes[:i]):sum(message_sizes[:i]) + s, :]}))
+
+    resp = InferenceStage._convert_response((input_messages, output_memory))
+    assert resp.meta == full_input.meta
     assert resp.mess_offset == 0
-    assert resp.mess_count == 2
-    assert isinstance(resp.memory, ResponseMemoryProbs)
+    assert resp.mess_count == total_size
+    assert isinstance(resp.memory, TensorMemory)
     assert resp.offset == 0
-    assert resp.count == 2
-    assert resp.memory.probs.tolist() == [[0.1, 0.5, 0.8], [0, 0, 0]]
-
-    mm2.count = 2
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]])
-    mm2.seq_ids = cp.array([[0], [1]])
-    out_msg2.count = 2
-    resp = inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
-    assert resp.meta == mm1.meta
-    assert resp.mess_offset == 0
-    assert resp.mess_count == 2
-    assert isinstance(resp.memory, ResponseMemoryProbs)
-    assert resp.offset == 0
-    assert resp.count == 2
-    assert resp.memory.probs.tolist() == [[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]
+    assert resp.count == total_size
+    assert (resp.memory.get_tensor("probs") == full_output).all()
 
 
 def test_convert_response_errors():
     # Length of input messages doesn't match length of output messages
-    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_response, ([1, 2, 3], [1, 2]))
+    with pytest.raises(AssertionError):
+        InferenceStage._convert_response(([1, 2, 3], [1, 2]))
 
     # Message offst of the second message doesn't line up offset+count of the first
     mm1 = _mk_message()
     mm2 = _mk_message(mess_offset=12)
 
-    out_msg1 = _mk_message()
-    out_msg1.probs = cp.array([[0.1, 0.5, 0.8]])
+    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
+    out_msg2 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
 
-    out_msg2 = _mk_message(mess_offset=1)
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8]])
-
-    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
+    with pytest.raises(AssertionError):
+        InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
 
     # mess_coutn and count don't match for mm2, and mm2.count != out_msg2.count
-    mm2.mess_offset = 1
-    mm2.count = 2
+    mm = _mk_message(mess_count=2, count=2)
+    mm1 = mm.get_slice(0, 1)
+    mm2 = mm.get_slice(1, 2)
 
-    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
+    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
+    out_msg2 = ResponseMemory(count=2, tensors={"probs": cp.random.rand(2, 3)})
 
-    # saved_count != total_mess_count
-    # Unlike the other asserts that can be triggered due to bad input data
-    # This one can only be triggers by a bug inside the method
-    mm2 = _mk_message(count=mock.MagicMock(), mess_count=mock.MagicMock())
-    mm2.count.side_effect = [2, 1]
-    mm2.mess_count.side_effect = [2, 1, 1]
-
-    pytest.raises(ValueError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
+    with pytest.raises(AssertionError):
+        InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
 
 
 @pytest.mark.use_python
-def test_convert_one_response(config):
+def test_convert_one_response():
     # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
+    mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
 
-    inf = _mk_message()
-    res = ResponseMemoryProbs(count=1, probs=cp.array([[1, 2, 3]]))
+    inf = _mk_message(mess_count=4, count=4)
+    res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
 
-    mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
+    mpm = InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
-    assert mpm.mess_count == 1
+    assert mpm.mess_count == 4
     assert mpm.offset == 0
-    assert mpm.count == 1
-    assert mem.get_output('probs').tolist() == [[1.0, 2.0, 3.0]]
+    assert mpm.count == 4
+    assert cp.all(mem.get_output('probs') == res.get_output("probs"))
 
     # Test for the second branch
-    inf.count = 2
-    inf.seq_ids = cp.array([[0], [1]])
-    res = ResponseMemoryProbs(count=2, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]]))
+    inf = _mk_message(mess_count=3, count=3)
+    inf.memory.set_tensor("seq_ids", cp.array([[0], [1], [1]]))
+    inf.mess_count = 2  # Get around the consistency check
+    res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
-    mem = ResponseMemoryProbs(2, probs=cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]))
-    mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
-    assert mem.get_output('probs').tolist() == [[0.1, 0.6, 0.8], [5.6, 6.7, 9.2]]
+    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
+    mpm = InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
+    assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
-    inf = _mk_message(mess_count=2)
-    res = _mk_message(count=2)
+    mem = ResponseMemory(2, tensors={"probs": cp.zeros((2, 2))})
+    inf = _mk_message(mess_count=2, count=2)
+    res = _mk_message(mess_count=1, count=1)
 
-    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_one_response, mem, inf, res)
+    with pytest.raises(AssertionError):
+        InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res.memory)

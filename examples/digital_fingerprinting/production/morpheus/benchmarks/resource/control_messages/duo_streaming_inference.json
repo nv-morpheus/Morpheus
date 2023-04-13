@@ -1,0 +1,25 @@
+{
+	"inputs": [
+	  {
+		"tasks": [
+		  {
+			"type": "load",
+			"properties": {
+			  "loader_id": "fsspec",
+			  "files": [
+				"../../../../../examples/data/dfp/duo-inference-data/*.json"
+			  ]
+			}
+		  },
+		  {
+			"type": "inference",
+			"properties": {
+			}
+		  }
+		],
+		"metadata": {
+		  "data_type": "streaming"
+		}
+	  }
+	]
+  }

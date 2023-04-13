@@ -21,6 +21,9 @@ from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
+# Needed to provide the return type of `@classmethod`
+Self = typing.TypeVar("Self", bound="MultiTensorMessage")
+
 
 @dataclasses.dataclass
 class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
@@ -35,11 +38,60 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         Offset of each message into the `TensorMemory` block.
     count : int
         Number of rows in the `TensorMemory` block.
-
     """
+
     memory: TensorMemory = dataclasses.field(repr=False)
     offset: int
     count: int
+
+    required_tensors: typing.ClassVar[typing.List[str]] = []
+    """The tensor names that are required for instantiation"""
+    id_tensor_name: typing.ClassVar[str] = "seq_ids"
+    """Name of the tensor that correlates tensor rows to message IDs"""
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory,
+                 offset: int = 0,
+                 count: int = -1,
+                 id_tensor_name: str = "seq_ids"):
+
+        if memory is None:
+            raise ValueError("Must define `memory` when creating {}".format(self.__class__.__name__))
+
+        # Use the meta count if not supplied
+        if (count == -1):
+            count = memory.count - offset
+
+        # Check for valid offsets and counts
+        if offset < 0 or offset >= memory.count:
+            raise ValueError("Invalid offset value")
+        if count <= 0 or (offset + count > memory.count):
+            raise ValueError("Invalid count value")
+
+        self.memory = memory
+        self.offset = offset
+        self.count = count
+        self.id_tensor_name = id_tensor_name
+
+        # Call the base class last because the properties need to be initialized first
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+
+        if (self.count < self.mess_count):
+            raise ValueError("Invalid count value. Must have a count greater than or equal to mess_count")
+
+        # Check the ID tensor for consistency
+        self._check_id_tensor()
+
+        # Finally, check for the required tensors class attribute
+        if (hasattr(self.__class__, "required_tensors")):
+            for tensor_name in self.__class__.required_tensors:
+                if (not memory.has_tensor(tensor_name)):
+                    raise ValueError((f"`TensorMemory` object must have a '{tensor_name}' "
+                                      f"tensor to create `{self.__class__.__name__}`").format(self.__class__.__name__))
 
     @property
     def tensors(self):
@@ -56,7 +108,67 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         return {key: self.get_tensor(key) for key in tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
-        return self._get_tensor_prop(name)
+        if ("memory" in self.__dict__ and self.memory.has_tensor(name)):
+            return self._get_tensor_prop(name)
+
+        if hasattr(super(), "__getattr__"):
+            return super().__getattr__(name)
+        raise AttributeError
+
+    def _check_id_tensor(self):
+
+        if (self.memory.has_tensor(self.id_tensor_name)):
+            # Check the bounds against the elements in the array
+            id_tensor = self.memory.get_tensor(self.id_tensor_name)
+
+            first_element = id_tensor[self.offset, 0].item()
+            last_element = id_tensor[self.offset + self.count - 1, 0].item()
+
+            if (first_element != self.mess_offset):
+                raise RuntimeError(f"Inconsistent ID column. First element in '{self.id_tensor_name}' tensor, "
+                                   f"[{first_element}], must match mess_offset, [{self.mess_offset}]")
+
+            if (last_element != self.mess_offset + self.mess_count - 1):
+                raise RuntimeError(f"Inconsistent ID column. Last element in '{self.id_tensor_name}' tensor, "
+                                   f"[{last_element}], must not extend beyond last message, "
+                                   f"[{self.mess_offset + self.mess_count - 1}]")
+
+    def _calc_message_slice_bounds(self, start: int, stop: int):
+
+        mess_start = start
+        mess_stop = stop
+
+        if (self.count != self.mess_count):
+
+            if (not self.memory.has_tensor(self.id_tensor_name)):
+                raise RuntimeError(
+                    f"The tensor memory object is missing the required ID tensor '{self.id_tensor_name}' "
+                    f"this tensor is required to make slices of MultiTensorMessages")
+
+            id_tensor = self.get_tensor(self.id_tensor_name)
+
+            # Now determine the new mess_start and mess_stop
+            mess_start = id_tensor[start, 0].item() - self.mess_offset
+            mess_stop = id_tensor[stop - 1, 0].item() + 1 - self.mess_offset
+
+        # Return the base calculation now
+        return super()._calc_message_slice_bounds(start=mess_start, stop=mess_stop)
+
+    def _calc_memory_slice_bounds(self, start: int, stop: int):
+
+        # Start must be between [0, mess_count)
+        if (start < 0 or start >= self.count):
+            raise IndexError("Invalid memory `start` argument")
+
+        # Stop must be between (start, mess_count]
+        if (stop <= start or stop > self.count):
+            raise IndexError("Invalid memory `stop` argument")
+
+        # Calculate the new offset and count
+        offset = self.offset + start
+        count = stop - start
+
+        return offset, count
 
     def get_tensor(self, name: str):
         """
@@ -74,6 +186,27 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         """
         return self.memory.get_tensor(name)[self.offset:self.offset + self.count, :]
+
+    def get_id_tensor(self):
+        """
+        Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+
+        Returns
+        -------
+        cupy.ndarray
+            Array containing the ID information
+
+        Raises
+        ------
+        KeyError
+            If `self.id_tensor_name` is not found in the tensors
+        """
+
+        try:
+            return self.get_tensor(self.id_tensor_name)
+        except KeyError as exc:
+            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.id_tensor_name}' "
+                           "does not exist in the memory object") from exc
 
     def _get_tensor_prop(self, name: str):
         """
@@ -143,10 +276,15 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         sliced_count = len(sliced_rows)
         sliced_tensors = self.copy_tensor_ranges(ranges, mask=mask)
 
-        mem = TensorMemory(count=sliced_count)
-        mem.tensors = sliced_tensors
+        mem = TensorMemory(count=sliced_count, tensors=sliced_tensors)
 
-        return MultiTensorMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
+        return self.from_message(self,
+                                 meta=MessageMeta(sliced_rows),
+                                 mess_offset=0,
+                                 mess_count=sliced_count,
+                                 memory=mem,
+                                 offset=0,
+                                 count=sliced_count)
 
     def get_slice(self, start, stop):
         """
@@ -167,10 +305,103 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         -------
         `MultiTensorMessage`
         """
-        mess_count = stop - start
-        return MultiTensorMessage(meta=self.meta,
-                                  mess_offset=self.mess_offset + start,
-                                  mess_count=mess_count,
-                                  memory=self.memory,
-                                  offset=self.offset + start,
-                                  count=mess_count)
+
+        # Calc the offset and count. This checks the bounds for us
+        mess_offset, mess_count = self._calc_message_slice_bounds(start=start, stop=stop)
+        offset, count = self._calc_memory_slice_bounds(start=start, stop=stop)
+
+        kwargs = {
+            "meta": self.meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+            "memory": self.memory,
+            "offset": offset,
+            "count": count,
+        }
+
+        return self.from_message(self, **kwargs)
+
+    @classmethod
+    def from_message(cls: typing.Type[Self],
+                     message: "MultiTensorMessage",
+                     *,
+                     meta: MessageMeta = None,
+                     mess_offset: int = -1,
+                     mess_count: int = -1,
+                     memory: TensorMemory = None,
+                     offset: int = -1,
+                     count: int = -1,
+                     **kwargs) -> Self:
+        """
+        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
+
+        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
+
+
+        Parameters
+        ----------
+        cls : typing.Type[Self]
+            The class to create
+        message : MultiMessage
+            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+            be pulled from `message` or proveded in `kwargs`
+        meta : MessageMeta, optional
+            A new `MessageMeta` to use, by default None
+        mess_offset : int, optional
+            A new `mess_offset` to use, by default -1
+        mess_count : int, optional
+            A new `mess_count` to use, by default -1
+        memory : TensorMemory, optional
+            A new `TensorMemory` to use. If supplied, `offset` and `count` default to `0` and `memory.count`
+            respectively. By default None
+        offset : int, optional
+            A new `offset` to use, by default -1
+        count : int, optional
+            A new `count` to use, by default -1
+
+        Returns
+        -------
+        Self
+            A new instance of type `cls`
+
+        Raises
+        ------
+        ValueError
+            If the incoming `message` is None
+        """
+
+        if (message is None):
+            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+        if (offset == -1):
+            if (memory is not None):
+                offset = 0
+            else:
+                offset = message.offset
+
+        if (count == -1):
+            if (memory is not None):
+                # Subtract offset here so we dont go over the end
+                count = memory.count - offset
+            else:
+                count = message.count
+
+        # Do meta last
+        if memory is None:
+            memory = message.memory
+
+        # Update the kwargs
+        kwargs.update({
+            "meta": meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+            "memory": memory,
+            "offset": offset,
+            "count": count,
+        })
+
+        return super().from_message(message, **kwargs)

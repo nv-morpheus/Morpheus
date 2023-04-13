@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,13 +20,21 @@
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
 
+#include <cstddef>
 #include <filesystem>
+#include <memory>
+#include <string>
+#include <vector>
 
 #define TEST_CLASS(name)                                                             \
     class __attribute__((visibility("default"))) Test##name : public ::testing::Test \
     {                                                                                \
         void SetUp() override {}                                                     \
     }
+
+namespace morpheus {
+class MessageMeta;
+}
 
 namespace morpheus::test {
 
@@ -57,5 +65,11 @@ class TestWithPythonInterpreter : public ::testing::Test
  * @return std::filesystem::path
  */
 std::filesystem::path get_morpheus_root();
+
+std::string create_mock_csv_file(std::vector<std::string> cols, std::vector<std::string> dtypes, std::size_t rows);
+
+std::shared_ptr<MessageMeta> create_mock_msg_meta(std::vector<std::string> cols,
+                                                  std::vector<std::string> dtypes,
+                                                  std::size_t rows);
 
 }  // namespace morpheus::test

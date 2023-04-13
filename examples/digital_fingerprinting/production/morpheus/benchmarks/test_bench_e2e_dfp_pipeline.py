@@ -42,8 +42,8 @@ from benchmarks.dfp_config import get_duo_preprocess_schema
 from benchmarks.dfp_config import get_duo_source_schema
 from benchmarks.dfp_config import load_json
 from benchmarks.dfp_config import set_mlflow_tracking_uri
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import FilterSource
+from morpheus.common import FileTypes
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage

@@ -18,18 +18,20 @@ import typing
 from functools import partial
 
 import mrc
+import pandas as pd
+
+import cudf
 
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(SERIALIZE, MODULE_NAMESPACE)
+@register_module(SERIALIZE, MORPHEUS_MODULE_NAMESPACE)
 def serialize(builder: mrc.Builder):
     """
     Includes & excludes columns from messages.
@@ -40,13 +42,27 @@ def serialize(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    -----
+        Configurable Parameters:
+            - columns (list[string]): List of columns to include; Example: `["column1", "column2", "column3"]`;
+            Default: None
+            - exclude (list[string]): List of regex patterns to exclude columns; Example: `["column_to_exclude"]`;
+            Default: `[r'^ID$', r'^_ts_']`
+            - fixed_columns (bool): If true, the columns are fixed and not determined at runtime; Example: `true`;
+            Default: true
+            - include (string): Regex to include columns; Example: `^column`; Default: None
+            - use_cpp (bool): If true, use C++ to serialize; Example: `true`; Default: false
     """
 
-    config = get_module_config(SERIALIZE, builder)
+    config = builder.get_current_module_config()
+
     include_columns = config.get("include", None)
     exclude_columns = config.get("exclude", [r'^ID$', r'^_ts_'])
     fixed_columns = config.get("fixed_columns", True)
     columns = config.get("columns", None)
+    use_cpp = config.get("use_cpp", False)
 
     def convert_to_df(x: MultiMessage,
                       include_columns: typing.Pattern,
@@ -88,6 +104,9 @@ def serialize(builder: mrc.Builder):
 
         # Get metadata from columns
         df = x.get_meta(columns)
+
+        if (isinstance(df, pd.DataFrame) and use_cpp):
+            df = cudf.from_pandas(df)
 
         return MessageMeta(df=df)
 
