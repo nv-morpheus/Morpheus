@@ -19,7 +19,7 @@ import pytest
 
 import cudf
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
@@ -65,9 +65,9 @@ def test_add_labels():
 
     labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
 
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
 
     # Same thing but change the probs tensor name
     message = MultiResponseMessage(meta=MessageMeta(df),
@@ -76,9 +76,9 @@ def test_add_labels():
 
     labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
 
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
-    assert DatasetLoader.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
 
     # Fail in missing probs data
     message = MultiResponseMessage(meta=MessageMeta(df),

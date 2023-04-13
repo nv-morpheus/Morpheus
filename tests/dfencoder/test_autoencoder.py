@@ -21,7 +21,7 @@ import pandas as pd
 import pytest
 import torch
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import AEFeatureScalar
 from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
@@ -74,7 +74,7 @@ def train_ae():
 
 
 @pytest.fixture(scope="function")
-def train_df(dataset_pandas: DatasetLoader) -> typing.Iterator[pd.DataFrame]:
+def train_df(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
     yield dataset_pandas[os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")]
 
 

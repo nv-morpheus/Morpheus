@@ -26,7 +26,7 @@ from morpheus.io.deserializers import read_file_to_df
 from utils import TEST_DIRS
 
 
-class DatasetLoader:
+class DatasetManager:
     """
     Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
 

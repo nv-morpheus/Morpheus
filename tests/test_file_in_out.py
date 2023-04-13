@@ -20,7 +20,7 @@ import os
 import numpy as np
 import pytest
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
@@ -197,7 +197,7 @@ def test_read_cpp_compare(input_file: str):
     CppConfig.set_should_use_cpp(True)
     df_cpp = read_file_to_df(input_file, df_type='cudf')
 
-    assert DatasetLoader.assert_df_equal(df_python, df_cpp)
+    assert DatasetManager.assert_df_equal(df_python, df_cpp)
 
 
 @pytest.mark.slow

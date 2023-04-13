@@ -27,7 +27,7 @@ import pytest
 
 import cudf
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -120,18 +120,18 @@ def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     # Manually slice the dataframe according to the multi settings
     df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
-    assert DatasetLoader.assert_df_equal(multi.get_meta(), df_sliced)
+    assert DatasetManager.assert_df_equal(multi.get_meta(), df_sliced)
 
     # Make sure we return a table here, not a series
     col_name = df_sliced.columns[0]
-    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     col_name = [df_sliced.columns[0], df_sliced.columns[2]]
-    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Out of order columns
     col_name = [df_sliced.columns[3], df_sliced.columns[0]]
-    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Should fail with missing column
     with pytest.raises(KeyError):
@@ -139,14 +139,14 @@ def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
 
     # Finally, check that we dont overwrite the original dataframe
     multi.get_meta(col_name).iloc[:] = 5
-    assert DatasetLoader.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
 
-def test_get_meta(dataset: DatasetLoader):
+def test_get_meta(dataset: DatasetManager):
     _test_get_meta(dataset["filter_probs.csv"])
 
 
-def test_get_meta_dup_index(dataset: DatasetLoader):
+def test_get_meta_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 1, 5: 4})
@@ -155,7 +155,7 @@ def test_get_meta_dup_index(dataset: DatasetLoader):
     _test_get_meta(df)
 
 
-def test_set_meta(dataset: DatasetLoader):
+def test_set_meta(dataset: DatasetManager):
     df_saved = dataset.pandas["filter_probs.csv"]
 
     meta = MessageMeta(dataset["filter_probs.csv"])
@@ -207,17 +207,17 @@ def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df
     # Set a list
     val_to_set = list(range(multi.mess_count))
     multi.set_meta("list_column", val_to_set)
-    assert DatasetLoader.assert_df_equal(multi.get_meta("list_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("list_column"), val_to_set)
 
     # Set a string
     val_to_set = "string to set"
     multi.set_meta("string_column", val_to_set)
-    assert DatasetLoader.assert_df_equal(multi.get_meta("string_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("string_column"), val_to_set)
 
     # Set a date
     val_to_set = pd.date_range("2018-01-01", periods=multi.mess_count, freq="H")
     multi.set_meta("date_column", val_to_set)
-    assert DatasetLoader.assert_df_equal(multi.get_meta("date_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("date_column"), val_to_set)
 
     if (df_type == "cudf"):
         # cudf isnt capable of setting more than one new column at a time
@@ -226,14 +226,14 @@ def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df
     # Now set one with new and old columns
     val_to_set = np.random.randn(multi.mess_count, 2)
     multi.set_meta(["v2", "new_column2"], val_to_set)
-    assert DatasetLoader.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-def test_set_meta_new_column(dataset: DatasetLoader, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta_new_column(dataset: DatasetManager, df_type: typing.Literal['cudf', 'pandas']):
     _test_set_meta_new_column(dataset["filter_probs.csv"], df_type)
 
 
-def test_set_meta_new_column_dup_index(dataset: DatasetLoader, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta_new_column_dup_index(dataset: DatasetManager, df_type: typing.Literal['cudf', 'pandas']):
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 4, 5: 4})
 
@@ -272,7 +272,7 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     assert mm2.meta.df is not df
     assert mm2.mess_offset == 0
     assert mm2.mess_count == 6 - 2
-    assert DatasetLoader.assert_df_equal(mm2.get_meta(), df.iloc[2:6])
+    assert DatasetManager.assert_df_equal(mm2.get_meta(), df.iloc[2:6])
 
     # slice two different ranges of rows
     mm3 = mm.copy_ranges([(2, 6), (12, 15)])
@@ -293,14 +293,14 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
 
     expected_df = concat_fn([df.iloc[2:6], df.iloc[12:15]])
 
-    assert DatasetLoader.assert_df_equal(mm3.get_meta(), expected_df)
+    assert DatasetManager.assert_df_equal(mm3.get_meta(), expected_df)
 
 
-def test_copy_ranges(dataset: DatasetLoader):
+def test_copy_ranges(dataset: DatasetManager):
     _test_copy_ranges(dataset["filter_probs.csv"])
 
 
-def test_copy_ranges_dup_index(dataset: DatasetLoader):
+def test_copy_ranges_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
@@ -367,54 +367,54 @@ def _test_get_slice_values(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     multi_full = MultiMessage(meta=meta)
 
     # Single slice
-    assert DatasetLoader.assert_df_equal(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
 
     # Single slice with one columns
-    assert DatasetLoader.assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
 
     # Single slice with multiple columns
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), df.iloc[3:8][["v4", "v3", "v1"]])
 
     # Chained slice
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), df.iloc[2 + 5:(2 + 5) + (9 - 5)])
 
     # Chained slice one column
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
 
     # Chained slice multi column
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(["v4", "v3", "v1"]),
         df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
 
     # Set values
     multi_full.get_slice(4, 10).set_meta(None, 1.15)
-    assert DatasetLoader.assert_df_equal(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
 
     # Set values one column
     multi_full.get_slice(1, 6).set_meta("v3", 5.3)
-    assert DatasetLoader.assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
 
     # Set values multi column
     multi_full.get_slice(5, 8).set_meta(["v4", "v1", "v3"], 7)
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), df.iloc[5:8][["v4", "v1", "v3"]])
 
     # Chained Set values
     multi_full.get_slice(10, 20).get_slice(1, 4).set_meta(None, 8)
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), df.iloc[10 + 1:(10 + 1) + (4 - 1)])
 
     # Chained Set values one column
     multi_full.get_slice(10, 20).get_slice(3, 5).set_meta("v4", 112)
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"), df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
 
     # Chained Set values multi column
     multi_full.get_slice(10, 20).get_slice(5, 8).set_meta(["v4", "v1", "v2"], 22)
-    assert DatasetLoader.assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(5, 8).get_meta(["v4", "v1", "v2"]),
         df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
 
@@ -423,7 +423,7 @@ def test_get_slice_values(filter_probs_df: cudf.DataFrame):
     _test_get_slice_values(filter_probs_df)
 
 
-def test_get_slice_values_dup_index(dataset: DatasetLoader):
+def test_get_slice_values_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
@@ -700,7 +700,7 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-def test_tensor_slicing(dataset: DatasetLoader):
+def test_tensor_slicing(dataset: DatasetManager):
     filter_probs_df = dataset["filter_probs.csv"]
     mess_len = len(filter_probs_df)
 

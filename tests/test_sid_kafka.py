@@ -23,7 +23,7 @@ import numpy as np
 import pandas
 import pytest
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.utils import filter_null_data
@@ -52,7 +52,7 @@ MODEL_MAX_BATCH_SIZE = 32
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
-                         dataset_pandas: DatasetLoader,
+                         dataset_pandas: DatasetManager,
                          config: Config,
                          kafka_bootstrap_servers: str,
                          kafka_topics: typing.Tuple[str, str],
@@ -149,7 +149,7 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_cpp(dataset_pandas: DatasetLoader,
+def test_minibert_cpp(dataset_pandas: DatasetManager,
                       config: Config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],

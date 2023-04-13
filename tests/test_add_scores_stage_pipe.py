@@ -20,7 +20,7 @@ import pytest
 
 import cudf
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -40,7 +40,7 @@ from utils import assert_results
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 def test_add_scores_stage_pipe(config: Config,
-                               dataset_pandas: DatasetLoader,
+                               dataset_pandas: DatasetManager,
                                order: typing.Literal['F', 'C'],
                                pipeline_batch_size: int,
                                repeat: int):
@@ -68,7 +68,7 @@ def test_add_scores_stage_pipe(config: Config,
 
 @pytest.mark.slow
 @pytest.mark.parametrize('repeat', [1, 2, 5])
-def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: DatasetLoader, repeat: int):
+def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: DatasetManager, repeat: int):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 

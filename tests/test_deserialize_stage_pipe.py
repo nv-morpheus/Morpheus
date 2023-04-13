@@ -16,7 +16,7 @@
 
 import pytest
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -28,7 +28,7 @@ from utils import assert_results
 
 
 @pytest.mark.use_cudf
-def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetLoader):
+def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
     # Set 2 ids equal to others
     df = dataset.dup_index(dataset["filter_probs.csv"], count=2)
 
@@ -54,7 +54,7 @@ def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetLoader):
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_pipe(config: Config, dataset: DatasetLoader, dup_index: bool):
+def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
     """
     End to end test for DeserializeStage
     """
@@ -75,7 +75,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetLoader, dup_index: boo
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetLoader, dup_index: bool):
+def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
     """
     End to end test across mulitiple segments
     """

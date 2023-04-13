@@ -22,7 +22,7 @@ import pytest
 
 import cudf
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.messages.message_meta import MessageMeta
 
 
@@ -33,8 +33,8 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 @pytest.fixture(scope="function")
 def df(
-    dataset: DatasetLoader, index_type: typing.Literal['normal', 'skip', 'dup', 'down',
-                                                       'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+    dataset: DatasetManager, index_type: typing.Literal['normal', 'skip', 'dup', 'down',
+                                                        'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
     filter_probs_df = dataset["filter_probs.csv"]
     if (index_type == "normal"):
         return filter_probs_df
@@ -129,10 +129,10 @@ def test_copy_dataframe(df: cudf.DataFrame):
 
     copied_df = meta.copy_dataframe()
 
-    assert DatasetLoader.assert_df_equal(copied_df, df), "Should be identical"
+    assert DatasetManager.assert_df_equal(copied_df, df), "Should be identical"
     assert copied_df is not df, "But should be different instances"
 
     # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
     cdf['v2'].iloc[3] = 47
-    assert DatasetLoader.assert_df_equal(meta.copy_dataframe(), df), "Should be identical"
+    assert DatasetManager.assert_df_equal(meta.copy_dataframe(), df), "Should be identical"

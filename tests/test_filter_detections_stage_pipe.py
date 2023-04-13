@@ -21,7 +21,7 @@ import pytest
 
 import cudf
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -44,7 +44,7 @@ def build_expected(df: pd.DataFrame, threshold: float):
 
 
 def _test_filter_detections_stage_pipe(config: Config,
-                                       dataset_pandas: DatasetLoader,
+                                       dataset_pandas: DatasetManager,
                                        copy: bool = True,
                                        order: typing.Literal['F', 'C'] = 'K',
                                        pipeline_batch_size: int = 256,
@@ -70,7 +70,7 @@ def _test_filter_detections_stage_pipe(config: Config,
     assert_results(comp_stage.get_results())
 
 
-def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetLoader, copy: bool = True):
+def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, copy: bool = True):
     threshold = 0.75
 
     input_df = dataset_pandas["filter_probs.csv"]
@@ -98,7 +98,7 @@ def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pan
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_stage_pipe(config: Config,
-                                      dataset_pandas: DatasetLoader,
+                                      dataset_pandas: DatasetManager,
                                       order: typing.Literal['F', 'C'],
                                       pipeline_batch_size: int,
                                       repeat: int,
@@ -107,5 +107,5 @@ def test_filter_detections_stage_pipe(config: Config,
 
 
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetLoader, do_copy: bool):
+def test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pandas: DatasetManager, do_copy: bool):
     return _test_filter_detections_stage_multi_segment_pipe(config, dataset_pandas, do_copy)

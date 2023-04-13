@@ -15,14 +15,14 @@
 
 import pandas as pd
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
 
 
-def test_concat_df(config: Config, dataset: DatasetLoader):
+def test_concat_df(config: Config, dataset: DatasetManager):
     meta = MessageMeta(dataset["filter_probs.csv"])
     messages = [
         meta,

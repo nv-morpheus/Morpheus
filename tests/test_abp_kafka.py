@@ -23,7 +23,7 @@ import numpy as np
 import pandas
 import pytest
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -54,7 +54,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
-                    dataset_pandas: DatasetLoader,
+                    dataset_pandas: DatasetManager,
                     config: Config,
                     kafka_bootstrap_servers: str,
                     kafka_topics: typing.Tuple[str, str],
@@ -151,7 +151,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_abp_cpp(config: Config,
-                 dataset_pandas: DatasetLoader,
+                 dataset_pandas: DatasetManager,
                  kafka_bootstrap_servers: str,
                  kafka_topics: typing.Tuple[str, str],
                  kafka_consumer: "KafkaConsumer"):

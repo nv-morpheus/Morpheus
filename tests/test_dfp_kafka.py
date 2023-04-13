@@ -25,7 +25,7 @@ import pandas
 import pandas as pd
 import pytest
 
-from dataset_loader import DatasetLoader
+from dataset_manager import DatasetManager
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -61,7 +61,7 @@ configure_logging(log_level=logging.DEBUG)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_roleg(mock_ae: mock.MagicMock,
-                   dataset_pandas: DatasetLoader,
+                   dataset_pandas: DatasetManager,
                    config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
@@ -165,7 +165,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123(mock_ae: mock.MagicMock,
-                     dataset_pandas: DatasetLoader,
+                     dataset_pandas: DatasetManager,
                      config: Config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: typing.Tuple[str, str],
