@@ -57,37 +57,6 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
     return foreach_map(table.metadata.schema_info, [](auto schema) { return schema.name; });
 }
 
-cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& json_options)
-{
-    auto tbl = cudf::io::read_json(json_options);
-
-    auto column_names = get_column_names_from_table(tbl);
-
-    auto found = std::find(column_names.begin(), column_names.end(), "data");
-
-    if (found == column_names.end())
-        return tbl;
-
-    // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-    // \\n -> \n
-    // \\/ -> \/
-    auto columns = tbl.tbl->release();
-
-    size_t idx = found - column_names.begin();
-
-    auto updated_data = cudf::strings::replace(
-        cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-    updated_data = cudf::strings::replace(
-        cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-    columns[idx] = std::move(updated_data);
-
-    tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-    return tbl;
-}
-
 cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type)
 {
     if (file_type == FileTypes::Auto)
@@ -101,7 +70,7 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename, 
     {
     case FileTypes::JSON: {
         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
-        table        = load_json_table(options.build());
+        table        = cudf::io::read_json(options.build());
         break;
     }
     case FileTypes::CSV: {

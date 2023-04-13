@@ -540,7 +540,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string& bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    return load_json_table(options.build());
+    return cudf::io::read_json(options.build());
 }
 
 template <bool EnableFilter>
