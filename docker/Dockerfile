@@ -160,12 +160,14 @@ ARG DOCA_REPO_HOST=""
 # Copy the source
 COPY ./thirdparty thirdparty
 
-# stable: 7837648
 ARG DOCA_BUILD_ID=7930666
-# stable: 2.2.0002-1
 ARG DOCA_VERSION=2.2.0002-1
-# stable: 20.11.0-7.1.2
 ARG DPDK_VERSION=22.11.0-1.4.1
+
+# Latest attempted update that did not work (20.04-based)
+# ARG DOCA_BUILD_ID=7950353
+# ARG DOCA_VERSION=2.2.0002-1
+# ARG DPDK_VERSION=22.11.0-1.4.2
 
 RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         mkdir -p ./docker/deb && \

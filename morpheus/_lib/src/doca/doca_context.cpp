@@ -330,19 +330,15 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     // argv.push_back(l_flag);
     // argv.push_back(l_arg);
 
-    // argv.push_back("--log-level");
-    // argv.push_back("eal,8");
+    argv.push_back("--log-level");
+    argv.push_back("eal,8");
+
+    RTE_TRY(rte_eal_init(argv.size(), argv.data()));
 
     DOCA_TRY(parse_pci_addr(nic_addr_c, _pci_bdf));
 	  DOCA_TRY(open_doca_device_with_pci(&_pci_bdf, nullptr, &_dev));
     DOCA_TRY(doca_gpu_create(gpu_addr_c, &_gpu));
 
-    auto eal_ret = rte_eal_init(argv.size(), argv.data());
-    if (eal_ret < 0) {
-      throw std::runtime_error(
-        "DPDK initialization failed: " + std::to_string(eal_ret)
-      );
-    }
 
     // auto gpu_attack_dpdk_ret = doca_gpu_to_dpdk(_gpu);
     // if (gpu_attack_dpdk_ret != DOCA_SUCCESS) {
