@@ -912,8 +912,7 @@ class AutoEncoder(torch.nn.Module):
                         LOG.debug('Early stop count: %s', count_es)
 
                         if count_es >= self.patience:
-                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)',
-                                count_es, self.patience)
+                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)', count_es, self.patience)
                             break
 
                     else:
