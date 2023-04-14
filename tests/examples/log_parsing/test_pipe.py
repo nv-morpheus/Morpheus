@@ -45,10 +45,9 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.feature_length = FEATURE_LENGTH
 
+    model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
     vocab_hash_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
-    model_vocab_file = os.path.join(TEST_DIRS.models_dir,
-                                    'training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt')
 
     # Not actually the real model config, just the subset that LogParsingPostProcessingStage uses
     model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')

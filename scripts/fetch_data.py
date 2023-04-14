@@ -27,8 +27,7 @@ LFS_DATASETS = {
     'examples': 'examples/**',
     'models': 'models/**',
     'tests': 'tests/**',
-    'validation': 'models/datasets/validation-data/**',
-    'bert-based-vocab': 'models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt'
+    'validation': 'models/datasets/validation-data/**'
 }
 
 
