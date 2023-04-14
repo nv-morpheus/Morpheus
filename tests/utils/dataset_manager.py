@@ -64,14 +64,21 @@ class DatasetManager(object):
 
     def get_df(self,
                file_path: str,
-               df_type: typing.Literal['cudf', 'pandas'] = None) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+               df_type: typing.Literal['cudf', 'pandas'] = None,
+               no_cache: bool = False,
+               **reader_kwargs) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
         """
         Fetch a DataFrame specified from `file_path`. If `file_path` is not an absolute path, it is assumed to be
         relative to the `test/tests_data` dir. If a DataFrame matching both `file_path` and `df_type` has already been
         fetched, then a cached copy will be returned. In the event that a DataFrame matching `file_path` but not
         `df_type` exists in the cache, then the cached copy will be cast to the appropriate type, stored in the cache
         and then returned
+
+        Passing values to `reader_kwargs` will cause the cache to by bypassed
         """
+
+        if len(reader_kwargs) and not no_cache:
+            no_cache = True
 
         abs_path = os.path.abspath(file_path)
         if abs_path != os.path.normpath(file_path):
@@ -83,20 +90,27 @@ class DatasetManager(object):
         if df_type is None:
             df_type = self.default_df_type
 
-        df = self.__df_cache.get((df_type, full_path))
+        df = None
+        if not no_cache:
+            df = self.__df_cache.get((df_type, full_path))
+
         if df is None:
-            # If it isn't in the cache, but we have a cached copy in another DF format use it instead of going to disk
-            alt_df_type = self.get_alt_df_type(df_type=df_type)
-            alt_df = self.__df_cache.get((alt_df_type, full_path))
+            alt_df = None
+            if not no_cache:
+                # If it isn't in the cache, but we have a cached copy in another DF format use it instead of going to disk
+                alt_df_type = self.get_alt_df_type(df_type=df_type)
+                alt_df = self.__df_cache.get((alt_df_type, full_path))
+
             if alt_df is not None:
                 if alt_df_type == 'cudf':
                     df = alt_df.to_pandas()
                 else:
                     df = cdf.DataFrame.from_pandas(alt_df)
             else:
-                df = read_file_to_df(full_path, df_type=df_type)
+                df = read_file_to_df(full_path, df_type=df_type, **reader_kwargs)
 
-            self.__df_cache[(df_type, full_path)] = df
+            if not no_cache:
+                self.__df_cache[(df_type, full_path)] = df
 
         return df.copy(deep=True)
 
