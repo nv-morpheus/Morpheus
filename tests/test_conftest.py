@@ -49,25 +49,25 @@ def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
 
 @pytest.mark.use_cudf
 @pytest.mark.use_pandas
-def test_works_with_marks(dataset: DatasetManager):
+def test_dataset_works_with_marks(dataset: DatasetManager):
     # Test is parameterized so df runs twice, once as pandas and another time as cudf
     df = dataset["filter_probs.csv"]
     assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
 
 
-def test_only_pandas(dataset_pandas: DatasetManager):
+def test_dataset_only_pandas(dataset_pandas: DatasetManager):
     # Test only runs with pandas
     df = dataset_pandas["filter_probs.csv"]
     assert isinstance(df, pd.DataFrame)
 
 
-def test_only_cudf(dataset_cudf: DatasetManager):
+def test_dataset_only_cudf(dataset_cudf: DatasetManager):
     # Test only runs with cudf
     df = dataset_cudf["filter_probs.csv"]
     assert isinstance(df, cudf.DataFrame)
 
 
-def test_both(dataset: DatasetManager):
+def test_dataset_both(dataset: DatasetManager):
     # By default, requesting dataset will parameterize both
     df = dataset["filter_probs.csv"]
     assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
