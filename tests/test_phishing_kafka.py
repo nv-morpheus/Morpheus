@@ -23,8 +23,8 @@ import numpy as np
 import pandas
 import pytest
 
+from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -38,6 +38,7 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
 from utils import write_file_to_kafka
+from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -51,8 +52,9 @@ MODEL_MAX_BATCH_SIZE = 32
 @pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_email_no_cpp(mock_triton_client,
-                      config,
+def test_email_no_cpp(mock_triton_client: mock.MagicMock,
+                      dataset_pandas: DatasetManager,
+                      config: Config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],
                       kafka_consumer: "KafkaConsumer"):
@@ -127,7 +129,7 @@ def test_email_no_cpp(mock_triton_client,
 
     pipe.run()
 
-    val_df = read_file_to_df(val_file_name, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
@@ -148,7 +150,8 @@ def test_email_no_cpp(mock_triton_client,
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
-def test_email_cpp(config,
+def test_email_cpp(dataset_pandas: DatasetManager,
+                   config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
                    kafka_consumer: "KafkaConsumer"):
@@ -193,7 +196,7 @@ def test_email_cpp(config,
 
     pipe.run()
 
-    val_df = read_file_to_df(val_file_name, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:

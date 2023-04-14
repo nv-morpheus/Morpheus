@@ -13,10 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
+import pandas as pd
 import pytest
+
+import cudf
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(scope="function")
@@ -39,6 +45,61 @@ def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
     assert use_cudf != use_pandas
 
     return "cudf" if use_cudf else "pandas"
+
+
+@pytest.mark.use_cudf
+@pytest.mark.use_pandas
+def test_dataset_works_with_marks(dataset: DatasetManager):
+    # Test is parameterized so df runs twice, once as pandas and another time as cudf
+    df = dataset["filter_probs.csv"]
+    assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
+
+
+def test_dataset_only_pandas(dataset_pandas: DatasetManager):
+    # Test only runs with pandas
+    df = dataset_pandas["filter_probs.csv"]
+    assert isinstance(df, pd.DataFrame)
+
+
+def test_dataset_only_cudf(dataset_cudf: DatasetManager):
+    # Test only runs with cudf
+    df = dataset_cudf["filter_probs.csv"]
+    assert isinstance(df, cudf.DataFrame)
+
+
+def test_dataset_both(dataset: DatasetManager):
+    # By default, requesting dataset will parameterize both
+    df = dataset["filter_probs.csv"]
+    assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
+
+
+def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
+    dm = DatasetManager(df_type=df_type)
+    assert dm.default_df_type == df_type
+    assert getattr(dm, df_type) is dm
+    assert DatasetManager(df_type=df_type) is dm
+
+    alt_type = DatasetManager.get_alt_df_type(df_type=df_type)
+    assert df_type != alt_type
+    assert DatasetManager(alt_type) is not dm
+    assert getattr(dm, alt_type) is not dm
+
+
+def test_dataset_dftype(dataset: DatasetManager):
+    df = dataset["filter_probs.csv"]  # type will match the df_type parameter
+
+    if dataset.default_df_type == 'pandas':
+        assert isinstance(df, pd.DataFrame)
+    else:
+        assert isinstance(df, cudf.DataFrame)
+
+
+def test_dataset_properties(dataset: DatasetManager):
+    pdf = dataset.pandas["filter_probs.csv"]
+    assert isinstance(pdf, pd.DataFrame)
+
+    cdf = dataset.cudf["filter_probs.csv"]
+    assert isinstance(cdf, cudf.DataFrame)
 
 
 # === No Marks ===
