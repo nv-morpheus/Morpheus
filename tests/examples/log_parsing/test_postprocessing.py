@@ -21,7 +21,6 @@ import numpy as np
 import pytest
 
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
