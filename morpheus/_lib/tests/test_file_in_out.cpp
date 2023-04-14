@@ -101,6 +101,7 @@ TEST_F(TestFileInOut, RoundTripJSON)
 
     auto meta = MessageMeta::create_from_cpp(std::move(table), index_col_count);
 
+    pybind11::gil_scoped_release no_gil;
     auto output_str = df_to_json(meta->get_info());
     boost::trim(output_str);
     std::vector<std::string> output_lines;

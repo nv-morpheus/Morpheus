@@ -157,9 +157,12 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
     std::iota(col_idexes.begin(), col_idexes.end(), 1);
     auto tbl_view = tbl.table_view.select(col_idexes);
 
+    cudf::io::table_metadata tbl_meta{
+        std::vector<cudf::io::column_name_info>{column_names.cbegin(), column_names.cend()}};
+
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
-    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view).lines(true);
+    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view).metadata(tbl_meta).lines(true);
 
     cudf::io::write_json(options_builder.build(), rmm::mr::get_current_device_resource());
 
