@@ -442,37 +442,31 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(request.config.invocation_dir)
 
 
-@pytest.fixture(scope="session")
-def _dataset_mod():
-    """
-    Session scoped cudf DatasetLoader
-    """
-    import utils.dataset_manager
-    yield utils.dataset_manager
-
-
 @pytest.fixture(scope="function")
-def dataset(_dataset_mod, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+def dataset(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     """
     Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
     """
-    yield _dataset_mod.DatasetManager(df_type=df_type)
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type=df_type)
 
 
 @pytest.fixture(scope="function")
-def dataset_pandas(_dataset_mod):
+def dataset_pandas():
     """
     Yields a DatasetLoader instance with pandas as the default DataFrame type.
     """
-    yield _dataset_mod.DatasetManager(df_type='pandas')
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='pandas')
 
 
 @pytest.fixture(scope="function")
-def dataset_cudf(_dataset_mod):
+def dataset_cudf():
     """
     Yields a DatasetLoader instance with cudf as the default DataFrame type.
     """
-    yield _dataset_mod.DatasetManager(df_type='cudf')
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='cudf')
 
 
 @pytest.fixture(scope="function")
