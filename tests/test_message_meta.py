@@ -17,13 +17,13 @@
 import operator
 import typing
 
+import pandas as pd
 import pytest
 
 import cudf
 
 from morpheus.messages.message_meta import MessageMeta
-from utils import assert_df_equal
-from utils import duplicate_df_index_rand
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(scope="function", params=["normal", "skip", "dup", "down", "updown"])
@@ -32,7 +32,11 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 
 @pytest.fixture(scope="function")
-def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
+def df(
+    use_cpp: bool, dataset: DatasetManager,
+    index_type: typing.Literal['normal', 'skip', 'dup', 'down',
+                               'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+    filter_probs_df = dataset["filter_probs.csv"]
     if (index_type == "normal"):
         return filter_probs_df
     elif (index_type == "skip"):
@@ -40,7 +44,7 @@ def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'sk
         return filter_probs_df.iloc[::3, :].copy()
     elif (index_type == "dup"):
         # Duplicate
-        return duplicate_df_index_rand(filter_probs_df, count=2)
+        return dataset.dup_index(filter_probs_df, count=2)
     elif (index_type == "down"):
         # Reverse
         return filter_probs_df.iloc[::-1, :].copy()
@@ -51,7 +55,12 @@ def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'sk
         # Increase the index to keep them unique
         down.index += len(down)
 
-        out_df = filter_probs_df.append(down)
+        if isinstance(filter_probs_df, pd.DataFrame):
+            concat_fn = pd.concat
+        else:
+            concat_fn = cudf.concat
+
+        out_df = concat_fn([filter_probs_df, down])
 
         assert out_df.index.is_unique
 
@@ -121,10 +130,10 @@ def test_copy_dataframe(df: cudf.DataFrame):
 
     copied_df = meta.copy_dataframe()
 
-    assert assert_df_equal(copied_df, df), "Should be identical"
+    assert DatasetManager.assert_df_equal(copied_df, df), "Should be identical"
     assert copied_df is not df, "But should be different instances"
 
     # Try setting a single value on the copy
     cdf = meta.copy_dataframe()
     cdf['v2'].iloc[3] = 47
-    assert assert_df_equal(meta.copy_dataframe(), df), "Should be identical"
+    assert DatasetManager.assert_df_equal(meta.copy_dataframe(), df), "Should be identical"

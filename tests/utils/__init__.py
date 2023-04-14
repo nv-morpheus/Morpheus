@@ -16,47 +16,13 @@
 import collections
 import json
 import os
-import random
 import time
 import typing
 
-import cupy as cp
-import pandas as pd
-
-import cudf
-
-import morpheus
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.stages.inference import inference_stage
-
-
-class TestDirectories(object):
-
-    def __init__(self, cur_file=__file__) -> None:
-        self.tests_dir = os.path.dirname(cur_file)
-        self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
-        self.data_dir = morpheus.DATA_DIR
-        self.models_dir = os.path.join(self.morpheus_root, 'models')
-        self.datasets_dir = os.path.join(self.models_dir, 'datasets')
-        self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')
-        self.validation_data_dir = os.path.join(self.datasets_dir, 'validation-data')
-        self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
-        self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
-
+from .test_directories import TestDirectories
 
 TEST_DIRS = TestDirectories()
-
-
-class IW(inference_stage.InferenceWorker):
-    """
-    Concrete impl class of `InferenceWorker` for the purposes of testing
-    """
-
-    def calc_output_dims(self, _):
-        # Intentionally calling the abc empty method for coverage
-        super().calc_output_dims(_)
-        return (1, 2)
-
 
 Results = collections.namedtuple('Results', ['total_rows', 'diff_rows', 'error_pct'])
 
@@ -122,16 +88,7 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         score_field = f"{score_prefix}{field_name}"
         above_thresh = df[score_field] > threshold
 
-        df[class_field].to_csv(f"/tmp/class_field_{field_name}.csv")
-        df[score_field].to_csv(f"/tmp/score_field_vals_{field_name}.csv")
-        above_thresh.to_csv(f"/tmp/score_field_{field_name}.csv")
-
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
-
-
-def extend_df(df, repeat_count) -> pd.DataFrame:
-    extended_df = pd.concat([df for _ in range(repeat_count)])
-    return extended_df.reset_index(inplace=False, drop=True)
 
 
 def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
@@ -171,43 +128,6 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
 
     # Finally, actually assert on the final try
     assert os.path.exists(filename)
-
-
-def duplicate_df_index(df: pd.DataFrame, replace_ids: typing.Dict[int, int]):
-
-    # Return a new dataframe where we replace some index values with others
-    return df.rename(index=replace_ids)
-
-
-def duplicate_df_index_rand(df: pd.DataFrame, count=1):
-
-    assert count * 2 <= len(df), "Count must be less than half the number of rows"
-
-    # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
-    # (otherwise you could get less duplicates than requested if two IDs just swap)
-    dup_ids = random.sample(df.index.values.tolist(), 2 * count)
-
-    # Create a dictionary of old ID to new ID
-    replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
-
-    # Return a new dataframe where we replace some index values with others
-    return duplicate_df_index(df, replace_dict)
-
-
-def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
-
-    # Comparisons work better in cudf so convert everything to that
-    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
-        df_to_check = df_to_check.to_pandas()
-
-    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
-        val_to_check = val_to_check.to_pandas()
-    elif (isinstance(val_to_check, cp.ndarray)):
-        val_to_check = val_to_check.get()
-
-    bool_df = df_to_check == val_to_check
-
-    return bool(bool_df.all(axis=None))
 
 
 def assert_results(results: dict) -> dict:

@@ -26,10 +26,9 @@ import pandas as pd
 import pytest
 
 from morpheus.cli import commands
-from morpheus.common import FileTypes
+from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -44,6 +43,7 @@ from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -60,8 +60,9 @@ configure_logging(log_level=logging.DEBUG)
 @pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_roleg(mock_ae,
-                   config,
+def test_dfp_roleg(mock_ae: mock.MagicMock,
+                   dataset_pandas: DatasetManager,
+                   config: Config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
                    kafka_consumer: "KafkaConsumer"):
@@ -129,7 +130,7 @@ def test_dfp_roleg(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:
@@ -163,8 +164,9 @@ def test_dfp_roleg(mock_ae,
 @pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
-def test_dfp_user123(mock_ae,
-                     config,
+def test_dfp_user123(mock_ae: mock.MagicMock,
+                     dataset_pandas: DatasetManager,
+                     config: Config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: typing.Tuple[str, str],
                      kafka_consumer: "KafkaConsumer"):
@@ -231,7 +233,7 @@ def test_dfp_user123(mock_ae,
     mock_ae.get_anomaly_score.assert_called()
     mock_ae.get_results.assert_called_once()
 
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+    val_df = dataset_pandas[val_file_name]
 
     output_buf = StringIO()
     for rec in kafka_consumer:

@@ -66,11 +66,7 @@ class TriggerStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            obs.pipe(ops.to_list(), ops.flatten()).subscribe(sub)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.to_list(), ops.flatten())
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

@@ -13,22 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Submit Question
-description: Ask a general question about Morpheus
-title: "[QST]: "
-labels: ["question"]
+from morpheus.stages.inference import inference_stage
 
-body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for taking the time to ask us a question!
 
-  - type: textarea
-    id: question
-    attributes:
-      label: What is your question?
-      description: Please be specific and we will answer your question as soon as possible.
-      placeholder: Does Morpheus integrate with XYZ software?
-    validations:
-      required: true
+class IW(inference_stage.InferenceWorker):
+    """
+    Concrete impl class of `InferenceWorker` for the purposes of testing
+    """
+
+    def calc_output_dims(self, _):
+        # Intentionally calling the abc empty method for coverage
+        super().calc_output_dims(_)
+        return (1, 2)
