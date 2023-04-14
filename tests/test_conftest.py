@@ -75,7 +75,7 @@ def test_dataset_both(dataset: DatasetManager):
 
 def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
     dm = DatasetManager(df_type=df_type)
-    assert dm._default_df_type == df_type
+    assert dm.default_df_type == df_type
     assert getattr(dm, df_type) is dm
     assert DatasetManager(df_type=df_type) is dm
 

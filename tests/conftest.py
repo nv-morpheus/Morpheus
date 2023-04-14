@@ -470,7 +470,7 @@ def dataset_cudf():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(dataset):
+def filter_probs_df(dataset, use_cpp: bool):
     """
     Shortcut fixture for loading the filter_probs.csv dataset
     """

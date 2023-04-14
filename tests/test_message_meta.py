@@ -33,8 +33,9 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 @pytest.fixture(scope="function")
 def df(
-    dataset: DatasetManager, index_type: typing.Literal['normal', 'skip', 'dup', 'down',
-                                                        'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+    use_cpp: bool, dataset: DatasetManager,
+    index_type: typing.Literal['normal', 'skip', 'dup', 'down',
+                               'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
     filter_probs_df = dataset["filter_probs.csv"]
     if (index_type == "normal"):
         return filter_probs_df

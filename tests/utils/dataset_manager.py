@@ -80,7 +80,7 @@ class DatasetManager(object):
             full_path = abs_path
 
         if df_type is None:
-            df_type = self._default_df_type
+            df_type = self.default_df_type
 
         df = self.__df_cache.get((df_type, full_path))
         if df is None:
@@ -114,6 +114,10 @@ class DatasetManager(object):
     @property
     def pandas(self):
         return DatasetManager(df_type='pandas')
+
+    @property
+    def default_df_type(self):
+        return self._default_df_type
 
     @staticmethod
     def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
