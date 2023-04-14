@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import pandas as pd
 import pytest
 
@@ -69,6 +71,18 @@ def test_both(dataset: DatasetManager):
     # By default, requesting dataset will parameterize both
     df = dataset["filter_probs.csv"]
     assert isinstance(df, (pd.DataFrame, cudf.DataFrame))
+
+
+def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
+    dm = DatasetManager(df_type=df_type)
+    assert dm._default_df_type == df_type
+    assert getattr(dm, df_type) is dm
+    assert DatasetManager(df_type=df_type) is dm
+
+    alt_type = DatasetManager.get_alt_df_type(df_type=df_type)
+    assert df_type != alt_type
+    assert DatasetManager(alt_type) is not dm
+    assert getattr(dm, alt_type) is not dm
 
 
 # === No Marks ===

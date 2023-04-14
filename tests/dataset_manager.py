@@ -26,7 +26,7 @@ from morpheus.io.deserializers import read_file_to_df
 from utils import TEST_DIRS
 
 
-class DatasetManager:
+class DatasetManager(object):
     """
     Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
 
@@ -42,11 +42,19 @@ class DatasetManager:
     # Values in `__instances` are instances of `DatasetLoader`
     __instances: typing.Dict[typing.Literal['cudf', 'pandas'], typing.Any] = {}
 
+    def __new__(cls, df_type: typing.Literal['cudf', 'pandas']):
+        try:
+            return cls.__instances[df_type]
+        except KeyError:
+            instance = super().__new__(cls)
+            cls.__instances[df_type] = instance
+            return instance
+
     def __init__(self, df_type: typing.Literal['cudf', 'pandas']) -> None:
         self._default_df_type = df_type
-        self.__instances[df_type] = self
 
-    def get_alt_df_type(self, df_type: typing.Literal['cudf', 'pandas']) -> typing.Literal['cudf', 'pandas']:
+    @staticmethod
+    def get_alt_df_type(df_type: typing.Literal['cudf', 'pandas']) -> typing.Literal['cudf', 'pandas']:
         """Returns the other possible df type."""
         return 'cudf' if df_type == 'pandas' else 'pandas'
 
