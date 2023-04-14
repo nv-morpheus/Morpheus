@@ -105,6 +105,7 @@ def cleanup_dist():
     torch.distributed.destroy_process_group()
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
 

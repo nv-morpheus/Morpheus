@@ -78,6 +78,7 @@ LOSS_TARGETS = {
 LOSS_TOLERANCE_RATIO = 1.25
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_e2e():
     # Load data
