@@ -19,12 +19,12 @@ import pytest
 
 import cudf
 
-from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from utils.dataset_manager import DatasetManager
 
 
 def test_constructor(config: Config):

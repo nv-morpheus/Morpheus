@@ -447,8 +447,8 @@ def _dataset_mod():
     """
     Session scoped cudf DatasetLoader
     """
-    import dataset_manager
-    yield dataset_manager
+    import utils.dataset_manager
+    yield utils.dataset_manager
 
 
 @pytest.fixture(scope="function")

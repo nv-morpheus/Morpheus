@@ -25,7 +25,6 @@ import pandas
 import pandas as pd
 import pytest
 
-from dataset_manager import DatasetManager
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -44,6 +43,7 @@ from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer

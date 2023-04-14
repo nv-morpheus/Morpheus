@@ -27,7 +27,7 @@ from morpheus.stages.inference import inference_stage
 class TestDirectories(object):
 
     def __init__(self, cur_file=__file__) -> None:
-        self.tests_dir = os.path.dirname(cur_file)
+        self.tests_dir = os.path.dirname(os.path.dirname(cur_file))
         self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
         self.data_dir = morpheus.DATA_DIR
         self.examples_dir = os.path.join(self.morpheus_root, 'examples')

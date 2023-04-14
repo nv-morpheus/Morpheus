@@ -15,11 +15,11 @@
 
 import pandas as pd
 
-from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
+from utils.dataset_manager import DatasetManager
 
 
 def test_concat_df(config: Config, dataset: DatasetManager):

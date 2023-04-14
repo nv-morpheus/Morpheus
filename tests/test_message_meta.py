@@ -22,8 +22,8 @@ import pytest
 
 import cudf
 
-from dataset_manager import DatasetManager
 from morpheus.messages.message_meta import MessageMeta
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(scope="function", params=["normal", "skip", "dup", "down", "updown"])

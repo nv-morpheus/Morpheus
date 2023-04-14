@@ -20,7 +20,6 @@ import mrc
 import mrc.core.operators as ops
 from mrc.core.node import Broadcast
 
-from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
@@ -29,6 +28,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from utils import assert_results
+from utils.dataset_manager import DatasetManager
 
 
 class SplitStage(Stage):

@@ -30,11 +30,11 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.dfp_length_checker import DFPLengthChecker
 from utils import TEST_DIRS
 from utils import assert_results
 from utils import write_data_to_kafka
 from utils import write_file_to_kafka
+from utils.stages.dfp_length_checker import DFPLengthChecker
 
 
 @pytest.mark.kafka

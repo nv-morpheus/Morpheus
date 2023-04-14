@@ -20,9 +20,9 @@ import pytest
 
 import cudf
 
-from dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import CppConfig
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(scope="function")

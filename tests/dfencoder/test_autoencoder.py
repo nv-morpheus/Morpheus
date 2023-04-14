@@ -21,13 +21,13 @@ import pandas as pd
 import pytest
 import torch
 
-from dataset_manager import DatasetManager
 from morpheus.config import AEFeatureScalar
 from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 # Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
