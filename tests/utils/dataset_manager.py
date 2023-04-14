@@ -104,26 +104,13 @@ class DatasetManager(object):
 
         return self.get_df(*item)
 
-    @classmethod
-    def get_loader(cls, df_type: typing.Literal['cudf', 'pandas']):
-        """
-        Factory method to return an instance of `DatasetLoader` for the given df_type, returns `self` if the df_type
-        matches. Used by cudf and pandas propery methods.
-        """
-        try:
-            loader = cls.__instances[df_type]
-        except KeyError:
-            loader = cls(df_type=df_type)
-
-        return loader
-
     @property
     def cudf(self):
-        return self.get_loader(df_type='cudf')
+        return DatasetManager(df_type='cudf')
 
     @property
     def pandas(self):
-        return self.get_loader(df_type='pandas')
+        return DatasetManager(df_type='pandas')
 
     @staticmethod
     def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
