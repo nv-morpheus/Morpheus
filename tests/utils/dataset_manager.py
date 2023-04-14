@@ -97,7 +97,7 @@ class DatasetManager(object):
         if df is None:
             alt_df = None
             if not no_cache:
-                # If it isn't in the cache, but we have a cached copy in another DF format use it instead of going to disk
+                # If it isn't in the cache, but we have a cached copy in another DF format use it instead of re-reading
                 alt_df_type = self.get_alt_df_type(df_type=df_type)
                 alt_df = self.__df_cache.get((alt_df_type, full_path))
 
