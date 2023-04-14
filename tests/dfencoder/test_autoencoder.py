@@ -22,14 +22,14 @@ import pytest
 import torch
 
 from morpheus.config import AEFeatureScalar
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
-# Only pandas and C++ is supported
+# Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
 
 BIN_COLS = ['ts_anomaly']
@@ -73,15 +73,9 @@ def train_ae():
                                   progress_bar=False)
 
 
-@pytest.fixture(scope="module")
-def _train_df() -> pd.DataFrame:
-    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
-    yield read_file_to_df(input_file, df_type='pandas')
-
-
 @pytest.fixture(scope="function")
-def train_df(_train_df) -> typing.Generator[pd.DataFrame, None, None]:
-    yield _train_df.copy(deep=True)
+def train_df(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
+    yield dataset_pandas[os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")]
 
 
 def compare_numeric_features(features, expected_features):
