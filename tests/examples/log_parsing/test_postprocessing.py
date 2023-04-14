@@ -27,9 +27,9 @@ from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
 
 
-def build_post_proc_message(messages_mod, log_test_data_dir: str):
+def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test_data_dir: str):
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
-    input_df = read_file_to_df(input_file, df_type='cudf')
+    input_df = dataset_cudf[input_file]
     meta = MessageMeta(input_df)
 
     # we have tensor data for the first five rows
@@ -54,7 +54,9 @@ def build_post_proc_message(messages_mod, log_test_data_dir: str):
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
 ])
-def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.List[typing.Any]):
+def test_log_parsing_post_processing_stage(config: Config,
+                                           dataset_cudf: DatasetManager,
+                                           import_mod: typing.List[typing.Any]):
     messages_mod, postprocessing_mod = import_mod
 
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
@@ -66,8 +68,8 @@ def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.Li
                                                              vocab_path=model_vocab_file,
                                                              model_config_path=model_config_file)
 
-    post_proc_message = build_post_proc_message(messages_mod, log_test_data_dir)
-    expected_df = read_file_to_df(os.path.join(log_test_data_dir, 'expected_out.csv'), df_type='pandas')
+    post_proc_message = build_post_proc_message(messages_mod, dataset_cudf, log_test_data_dir)
+    expected_df = dataset_cudf.pandas[os.path.join(log_test_data_dir, 'expected_out.csv')]
 
     out_meta = stage._postprocess(post_proc_message)
 

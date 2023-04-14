@@ -21,7 +21,6 @@ import numpy as np
 import pytest
 
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -29,12 +28,13 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import assert_results
+from utils.dataset_manager import DatasetManager
 
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
 
 
-def _run_pipeline(config: Config, import_mod: typing.List[typing.Any]):
+def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
     """
     Runs just the Log Parsing Pipeline
     """
@@ -54,12 +54,12 @@ def _run_pipeline(config: Config, import_mod: typing.List[typing.Any]):
     model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
 
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
-    input_df = read_file_to_df(input_file, df_type='cudf')
+    input_df = dataset_cudf[input_file]
 
     # We only have expected results for the first 5 rows
     input_df = input_df[0:5]
 
-    expected_df = read_file_to_df(os.path.join(log_test_data_dir, 'expected_out.csv'), df_type='pandas')
+    expected_df = dataset_cudf.pandas[os.path.join(log_test_data_dir, 'expected_out.csv')]
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [input_df]))
@@ -89,7 +89,7 @@ def _run_pipeline(config: Config, import_mod: typing.List[typing.Any]):
     assert_results(comp_stage.get_results())
 
 
-def _run_mocked_pipeline(config: Config, import_mod: typing.List[typing.Any]):
+def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
     """
     Runs the minibert pipeline and mocks the Triton Python interface
     """
@@ -126,7 +126,7 @@ def _run_mocked_pipeline(config: Config, import_mod: typing.List[typing.Any]):
 
         mock_triton_client.async_infer.side_effect = async_infer
 
-        return _run_pipeline(config, import_mod)
+        return _run_pipeline(config, dataset_cudf, import_mod)
 
 
 @pytest.mark.slow
@@ -135,5 +135,5 @@ def _run_mocked_pipeline(config: Config, import_mod: typing.List[typing.Any]):
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
 ])
-def test_pipe(config: Config, import_mod: typing.List[typing.Any]):
-    _run_mocked_pipeline(config, import_mod)
+def test_pipe(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
+    _run_mocked_pipeline(config, dataset_cudf, import_mod)
