@@ -71,10 +71,13 @@ class DatasetManager(object):
         `df_type` exists in the cache, then the cached copy will be cast to the appropriate type, stored in the cache
         and then returned
         """
-        if os.path.abspath(file_path) != os.path.normpath(file_path):
-            full_path = os.path.join(TEST_DIRS.tests_data_dir, file_path)
+
+        abs_path = os.path.abspath(file_path)
+        if abs_path != os.path.normpath(file_path):
+            # Relative paths are assumed to be relative to the `tests/tests_data` dir
+            full_path = os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, file_path))
         else:
-            full_path = file_path
+            full_path = abs_path
 
         if df_type is None:
             df_type = self._default_df_type
