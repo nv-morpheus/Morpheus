@@ -35,8 +35,8 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.conv_msg import ConvMsg
 from utils import assert_results
+from utils.stages.conv_msg import ConvMsg
 
 
 class CheckPreAlloc(SinglePortStage):

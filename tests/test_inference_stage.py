@@ -29,7 +29,7 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
-from utils import IW
+from utils.inference_worker import IW
 
 
 class InferenceStage(InferenceStage):

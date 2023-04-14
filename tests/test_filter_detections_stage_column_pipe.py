@@ -23,8 +23,8 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.conv_msg import ConvMsg
 from utils import assert_results
+from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.slow
