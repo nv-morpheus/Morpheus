@@ -68,7 +68,7 @@ print_env_vars
 
 function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
-    rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+    rapids-mamba-retry env update -n morpheus --prune -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
     conda deactivate
     conda activate morpheus
 
