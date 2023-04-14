@@ -47,11 +47,9 @@ class DatasetManager(object):
             return cls.__instances[df_type]
         except KeyError:
             instance = super().__new__(cls)
+            instance._default_df_type = df_type
             cls.__instances[df_type] = instance
             return instance
-
-    def __init__(self, df_type: typing.Literal['cudf', 'pandas']) -> None:
-        self._default_df_type = df_type
 
     @staticmethod
     def get_alt_df_type(df_type: typing.Literal['cudf', 'pandas']) -> typing.Literal['cudf', 'pandas']:
