@@ -24,7 +24,7 @@ from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from utils import TEST_DIRS
-from utils import assert_df_equal
+from utils.dataset_manager import DatasetManager
 
 
 def build_post_proc_message(messages_mod, log_test_data_dir: str):
@@ -72,4 +72,4 @@ def test_log_parsing_post_processing_stage(config: Config, import_mod: typing.Li
     out_meta = stage._postprocess(post_proc_message)
 
     assert isinstance(out_meta, MessageMeta)
-    assert_df_equal(out_meta._df, expected_df)
+    DatasetManager.assert_df_equal(out_meta._df, expected_df)
