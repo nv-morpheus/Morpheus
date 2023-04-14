@@ -19,39 +19,10 @@ import os
 import time
 import typing
 
-import morpheus
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.stages.inference import inference_stage
-
-
-class TestDirectories(object):
-
-    def __init__(self, cur_file=__file__) -> None:
-        self.tests_dir = os.path.dirname(os.path.dirname(cur_file))
-        self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
-        self.data_dir = morpheus.DATA_DIR
-        self.examples_dir = os.path.join(self.morpheus_root, 'examples')
-        self.models_dir = os.path.join(self.morpheus_root, 'models')
-        self.datasets_dir = os.path.join(self.models_dir, 'datasets')
-        self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')
-        self.validation_data_dir = os.path.join(self.datasets_dir, 'validation-data')
-        self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
-        self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
-
+from .test_directories import TestDirectories
 
 TEST_DIRS = TestDirectories()
-
-
-class IW(inference_stage.InferenceWorker):
-    """
-    Concrete impl class of `InferenceWorker` for the purposes of testing
-    """
-
-    def calc_output_dims(self, _):
-        # Intentionally calling the abc empty method for coverage
-        super().calc_output_dims(_)
-        return (1, 2)
-
 
 Results = collections.namedtuple('Results', ['total_rows', 'diff_rows', 'error_pct'])
 
