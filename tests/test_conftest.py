@@ -85,6 +85,23 @@ def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
     assert getattr(dm, alt_type) is not dm
 
 
+def test_dataset_dftype(dataset: DatasetManager):
+    df = dataset["filter_probs.csv"]  # type will match the df_type parameter
+
+    if dataset.default_df_type == 'pandas':
+        assert isinstance(df, pd.DataFrame)
+    else:
+        assert isinstance(df, cudf.DataFrame)
+
+
+def test_dataset_properties(dataset: DatasetManager):
+    pdf = dataset.pandas["filter_probs.csv"]
+    assert isinstance(pdf, pd.DataFrame)
+
+    cdf = dataset.cudf["filter_probs.csv"]
+    assert isinstance(cdf, cudf.DataFrame)
+
+
 # === No Marks ===
 def test_no_mark():
     assert CppConfig.get_should_use_cpp()
