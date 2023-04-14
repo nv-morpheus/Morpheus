@@ -16,7 +16,7 @@ Example Usage:
 python sid-minibert-20210614-script.py \
        --training-data /datasets/training-data/sid-sample-training-data.csv \
        --model-dir google/bert_uncased_L-4_H-256_A-4 \
-       --tokenizer-hash-filepath ${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt
+       --tokenizer-hash-filepath /resources/bert-base-uncased-hash.txt
        --output-file /trained_models/model.pth
 """
 
@@ -39,7 +39,7 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 
-def data_preprocessing(training_data, tokenizer_hash_filepath):
+def data_preprocessing(training_data):
 
     # loading csv with header
     df = cudf.read_csv(training_data)
@@ -60,7 +60,7 @@ def data_preprocessing(training_data, tokenizer_hash_filepath):
     # convert labels to pytorch tensor
     labels = from_dlpack(df[label_names].to_dlpack()).type(torch.long)
 
-    cased_tokenizer = SubwordTokenizer(tokenizer_hash_filepath, do_lower_case=True)
+    cased_tokenizer = SubwordTokenizer("resources/bert-base-uncased-hash.txt", do_lower_case=True)
 
     tokenizer_output = cased_tokenizer(df.text,
                                        max_length=256,
@@ -205,7 +205,7 @@ def model_eval(model, val_dataloader, idx2label):
 
 def main():
     print("Data Preprocessing...")
-    train_dataloader, val_dataloader, idx2label = data_preprocessing(args.training_data, args.tokenizer_hash_filepath)
+    train_dataloader, val_dataloader, idx2label = data_preprocessing(args.training_data)
     print("Model Training...")
     model = train_model(args.model_dir, train_dataloader, idx2label)
     save_model(model, args.output_file)

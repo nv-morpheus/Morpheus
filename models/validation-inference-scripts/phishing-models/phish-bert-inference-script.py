@@ -17,7 +17,7 @@ Example Usage:
 python phish-bert-inference-script.py \
     --validationdata ../../datasets/validation-data/phishing-email-validation-data.jsonlines \
     --model ../../phishing-models/phishing-bert-20221115.onnx \
-    --vocab ${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt \
+    --vocab ../../training-tuning-scripts/phishing-models/resources/bert-base-uncased-hash.txt \
     --output phishing-email-validation-output.jsonlines
 """
 
