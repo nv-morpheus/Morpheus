@@ -29,15 +29,11 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/cast.h>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <array>      // for array
-#include <cstddef>    // for size_t
-#include <exception>  // for exception
+#include <cstddef>  // for size_t
 #include <fstream>
 #include <numeric>
 #include <sstream>  // IWYU pragma: keep
