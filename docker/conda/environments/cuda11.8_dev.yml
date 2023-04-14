@@ -15,7 +15,6 @@
 
 name: morpheus
 channels:
-    - /workspaces/morpheus/.tmp/mrc-channel/
     - rapidsai
     - nvidia/label/cuda-11.8.0
     - nvidia
