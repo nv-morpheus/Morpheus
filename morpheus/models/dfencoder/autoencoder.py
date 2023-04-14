@@ -905,15 +905,15 @@ class AutoEncoder(torch.nn.Module):
 
                     # Early stopping
                     current_net_loss = net_loss
-                    LOG.debug('The Current Net Loss: {}'.format(current_net_loss))
+                    LOG.debug('The Current Net Loss: %s', current_net_loss)
 
                     if current_net_loss > last_loss:
                         count_es += 1
-                        LOG.debug('Early stop count: {}'.format(count_es))
+                        LOG.debug('Early stop count: %s', count_es)
 
                         if count_es >= self.patience:
-                            LOG.debug('Early stopping: early stop count({}) >= patience({})'.format(
-                                count_es, self.patience))
+                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)',
+                                count_es, self.patience)
                             break
 
                     else:
