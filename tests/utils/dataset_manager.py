@@ -42,6 +42,9 @@ class DatasetManager(object):
     # Values in `__instances` are instances of `DatasetLoader`
     __instances: typing.Dict[typing.Literal['cudf', 'pandas'], typing.Any] = {}
 
+    # Explicitly using __new__ instead of of an __init__ to implement this as a singleton for each dataframe type.
+    # Initialization is also being performed here instead of an __init__ method as an __init__ method would be re-run
+    # the __init__ on the singleton instance for each cache hit.
     def __new__(cls, df_type: typing.Literal['cudf', 'pandas']):
         try:
             return cls.__instances[df_type]
