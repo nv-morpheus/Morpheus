@@ -443,7 +443,7 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
 
 
 @pytest.fixture(scope="function")
-def dataset(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+def dataset(df_type: typing.Literal['cudf', 'pandas']):
     """
     Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
     """
