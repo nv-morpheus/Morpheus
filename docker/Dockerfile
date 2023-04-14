@@ -23,7 +23,7 @@ ARG CUDA_MINOR_VER=8
 ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
-ARG PYTHON_VER=3.8
+ARG PYTHON_VER=3.10
 
 # ============ Stage: base ============
 # Configure the base conda environment

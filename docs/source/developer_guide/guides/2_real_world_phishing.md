@@ -821,7 +821,7 @@ Note the return tuple contains our newly constructed node, along with the unchan
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.8/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):

@@ -26,8 +26,7 @@ cuda_compiler_version:
   - 11.8
 
 python:
-  - 3.8
-  - 3.9
+  - 3.10
 
 boost:
   - 1.74
