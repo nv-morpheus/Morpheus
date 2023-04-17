@@ -81,12 +81,14 @@ def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager, im
     abp_pcap_preprocessing = import_mod[0]
 
     # Get our input data, should contain the first 20 lines of the production data
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'abp_pcap.jsonlines')
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap.jsonlines')
     input_df = dataset_cudf.get_df(input_file, no_cache=True, filter_nulls=False)
 
     expected_flow_ids = input_df.src_ip + ":" + input_df.src_port + "=" + input_df.dest_ip + ":" + input_df.dest_port
     expected_input__0 = cp.asarray(
-        np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'abp_pcap_expected_input_0.csv'), delimiter=",", skiprows=0))
+        np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap_expected_input_0.csv'),
+                   delimiter=",",
+                   skiprows=0))
 
     assert len(input_df) == 20
 

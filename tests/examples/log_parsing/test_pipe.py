@@ -47,7 +47,7 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
 
     model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
     vocab_hash_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
-    log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing')
+    log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
 
     # Not actually the real model config, just the subset that LogParsingPostProcessingStage uses
     model_config_file = os.path.join(log_test_data_dir, 'log-parsing-config.json')
@@ -114,7 +114,7 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
         mock_triton_client.get_model_metadata.return_value = mock_metadata
         mock_triton_client.get_model_config.return_value = mock_model_config
 
-        data = np.load(os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing/triton_results.npy'))
+        data = np.load(os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing/triton_results.npy'))
         inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
         mock_infer_result = mock.MagicMock()

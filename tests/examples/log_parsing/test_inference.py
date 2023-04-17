@@ -207,7 +207,7 @@ def test_log_parsing_inference_stage_convert_one_response(config: Config,
 
     ttl_count = len(filter_probs_df)
 
-    input_res = build_response_mem(messages_mod, os.path.join(TEST_DIRS.tests_data_dir, 'log_parsing'))
+    input_res = build_response_mem(messages_mod, os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing'))
 
     # confidences, labels & input_ids all have the same shape
     num_cols = input_res.confidences.shape[1]
