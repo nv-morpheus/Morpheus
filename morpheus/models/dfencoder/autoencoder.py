@@ -905,15 +905,14 @@ class AutoEncoder(torch.nn.Module):
 
                     # Early stopping
                     current_net_loss = net_loss
-                    LOG.debug('The Current Net Loss:', current_net_loss)
+                    LOG.debug('The Current Net Loss: %s', current_net_loss)
 
                     if current_net_loss > last_loss:
                         count_es += 1
-                        LOG.debug('Early stop count:', count_es)
+                        LOG.debug('Early stop count: %s', count_es)
 
                         if count_es >= self.patience:
-                            LOG.debug('Early stopping: early stop count({}) >= patience({})'.format(
-                                count_es, self.patience))
+                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)', count_es, self.patience)
                             break
 
                     else:
@@ -1617,15 +1616,15 @@ class AutoEncoder(torch.nn.Module):
         """
         self.eval()
 
-        n_batches = len(df) // self.batch_size
-        if len(df) % self.batch_size > 0:
+        n_batches = len(df) // self.eval_batch_size
+        if len(df) % self.eval_batch_size > 0:
             n_batches += 1
 
         mse_loss_slices, bce_loss_slices, cce_loss_slices = [], [], []
         with torch.no_grad():
             for i in range(n_batches):
-                start = i * self.batch_size
-                stop = (i + 1) * self.batch_size
+                start = i * self.eval_batch_size
+                stop = (i + 1) * self.eval_batch_size
 
                 df_slice = df.iloc[start:stop]
                 data_slice = self.prepare_df(df_slice)
