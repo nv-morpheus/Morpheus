@@ -46,7 +46,8 @@ sccache --show-stats
 rapids-logger "Archiving results"
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
 
-MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
+MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;) \
+                $(find ${MORPHEUS_ROOT}/build/examples -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
 tar cfj "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${MORPHEUS_LIBS[@]}"
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
