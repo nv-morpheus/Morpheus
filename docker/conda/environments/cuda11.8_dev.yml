@@ -15,89 +15,91 @@
 
 name: morpheus
 channels:
-    - rapidsai
-    - nvidia
-    - nvidia/label/cuda-11.8.0
-    - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - conda-forge
+  - rapidsai
+  - nvidia
+  - nvidia/label/cuda-11.8.0
+  - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
+  - conda-forge
 dependencies:
-    ####### Morpheus Dependencies (keep sorted!) #######
-    - automake=1.16.5
-    - benchmark=1.6.1
-    - boost-cpp=1.74
-    - cachetools=5.0.0
-    - ccache>=3.7
-    - clangdev=14
-    - click >=8
-    - cmake=3.24
-    - configargparse=1.5
-    - cuda-nvml-dev=11.8
-    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
-    - cudatoolkit=11.8
-    - cudf 22.10
-    - cupy=9.5.0
-    - cython=0.29.24
-    - datacompy=0.8
-    - dill
-    - docker-compose=1.29.2
-    - docker-py=5.0
-    - faker=12.3.0
-    - flake8
-    - flatbuffers=2.0
-    - gcc_linux-64=11.2
-    - gflags=2.2
-    - git-lfs=3.2
-    - git>=2.35.3 # Needed for wildcards on safe.directory
-    - glog=0.6
-    - gmock=1.10
-    - gputil
-    - grpc-cpp>=1.43
-    - grpcio
-    - gtest=1.10
-    - gxx_linux-64=11.2
-    - include-what-you-use=0.18
-    - isort
-    # If cuml is installed, we need to constrain these two libraries. See:
-    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-    - libcusolver<=11.4.1.48
-    - libcusparse<12
-    - librdkafka=1.7.0
-    - mlflow>1.29,<2
-    - mrc=23.03
-    - myst-parser==0.17
-    - networkx=2.8
-    - ninja=1.10
-    - nodejs=17.4.0
-    - numba>=0.56.2
-    - numpydoc=1.4
-    - nvcc_linux-64=11.8
-    - nvtabular>=23.02
-    - pandas=1.3
-    - pip
-    - pkg-config # for mrc cmake
-    - pluggy=1.0
-    - protobuf=3.20.2
-    - pybind11-stubgen=0.10.5
-    - pydot
-    - pytest
-    - pytest-benchmark>=4.0
-    - pytest-cov
-    - python-confluent-kafka=1.7.0
-    - python-graphviz
-    - python=3.8
-    - rapidjson=1.1.0
-    - scikit-build=0.13
-    - scikit-learn=0.23.1
-    - sphinx
-    - sphinx_rtd_theme
-    - sysroot_linux-64=2.17
-    - tqdm=4
-    - typing_utils=0.1
-    - watchdog=2.1
-    - yapf=0.32.0
-    ####### Morpheus Pip Dependencies (keep sorted!) #######
-    - pip:
-        # Add additional dev dependencies here
-        - docutils
-        # Ensure all runtime requirements are installed using the requirements file
-        - --requirement requirements.txt
+  ####### Morpheus Dependencies (keep sorted!) #######
+  - automake=1.16.5
+  - benchmark=1.6.1
+  - boost-cpp=1.74
+  - cachetools=5.0.0
+  - ccache>=3.7
+  - clangdev=14
+  - click >=8
+  - cmake=3.24
+  - configargparse=1.5
+  - cuda-nvml-dev=11.8
+  - cuda-python<=11.7.0 # Remove when Issue #251 is closed
+  - cudatoolkit=11.8
+  - cudf 22.10
+  - cupy=9.5.0
+  - cython=0.29.24
+  - datacompy=0.8
+  - dill
+  - docker-compose=1.29.2
+  - docker-py=5.0
+  - faker=12.3.0
+  - flake8
+  - flatbuffers=2.0
+  - gcc_linux-64=11.2
+  - gflags=2.2
+  - git-lfs=3.2
+  - git>=2.35.3 # Needed for wildcards on safe.directory
+  - glog=0.6
+  - gmock=1.10
+  - gputil
+  - grpc-cpp>=1.43
+  - grpcio
+  - gtest=1.10
+  - gxx_linux-64=11.2
+  - include-what-you-use=0.18
+  - isort
+  # If cuml is installed, we need to constrain these two libraries. See:
+  # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+  - libcusolver<=11.4.1.48
+  - libcusparse<12
+  - librdkafka=1.7.0
+  - merlin-core>=23.02.01  #  Necessary until https://github.com/NVIDIA-Merlin/NVTabular/issues/1793 is resolved
+  - merlin-dataloader=23.02.01  #  Necessary until https://github.com/NVIDIA-Merlin/NVTabular/issues/1793 is resolved
+  - mlflow>1.29,<2
+  - mrc=23.03
+  - myst-parser==0.17
+  - networkx=2.8
+  - ninja=1.10
+  - nodejs=17.4.0
+  - numba>=0.56.2
+  - numpydoc=1.4
+  - nvcc_linux-64=11.8
+  - nvtabular>=23.02
+  - pandas=1.3
+  - pip
+  - pkg-config # for mrc cmake
+  - pluggy=1.0
+  - protobuf=3.20.2
+  - pybind11-stubgen=0.10.5
+  - pydot
+  - pytest
+  - pytest-benchmark>=4.0
+  - pytest-cov
+  - python-confluent-kafka=1.7.0
+  - python-graphviz
+  - python=3.8
+  - rapidjson=1.1.0
+  - scikit-build=0.13
+  - scikit-learn=0.23.1
+  - sphinx
+  - sphinx_rtd_theme
+  - sysroot_linux-64=2.17
+  - tqdm=4
+  - typing_utils=0.1
+  - watchdog=2.1
+  - yapf=0.32.0
+  ####### Morpheus Pip Dependencies (keep sorted!) #######
+  - pip:
+      # Add additional dev dependencies here
+      - docutils
+      # Ensure all runtime requirements are installed using the requirements file
+      - --requirement requirements.txt

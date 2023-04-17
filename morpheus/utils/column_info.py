@@ -22,6 +22,8 @@ import nvtabular as nvt
 import pandas as pd
 
 import cudf
+from merlin.core.dispatch import DataFrameType, annotate
+from nvtabular.ops.operator import ColumnSelector, Operator
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -254,6 +256,7 @@ def _process_columns(df_in, input_schema: DataFrameInputSchema):
     if (convert_to_cudf):
         return cudf.from_pandas(output_df)
 
+    print(f"\n_process_columns: {output_df.columns}", flush=True)
     return output_df
 
 
@@ -307,10 +310,45 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     return input_schema.row_filter(df_in)
 
 
+# TODO(Devin): Remove from inline after testing
+class JSONNormalizeOp(Operator):
+    def __init__(self, input_schema):
+        super().__init__()
+        self.input_schema = input_schema
+
+    @annotate("JSONNormalizeOp", color="darkgreen", domain="nvt_python")
+    def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        # Convert to pandas if it's a cudf DataFrame
+        print(f"\n =============> APPLYING JSON NORMALIZE OP", flush=True)
+        convert_to_cudf = False
+        if isinstance(df, cudf.DataFrame):
+            df = df.to_pandas()
+            convert_to_cudf = True
+
+        # Normalize JSON columns
+        df_normalized = _normalize_dataframe(df, self.input_schema)
+
+        # Convert back to cudf if necessary
+        if convert_to_cudf:
+            df_normalized = cudf.from_pandas(df_normalized)
+
+        print(f"\n =================> Returning df_normalized: {df_normalized.columns}", flush=True)
+        return df_normalized
+
+
 def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema) -> pd.DataFrame:
     """
     Applies colmn transformations as defined by `input_schema`
     """
+
+    nvt_dataset = nvt.Dataset(df_in)
+    cols = [x for x in df_in.columns]
+    col_selector = ColumnSelector(cols)
+    json_normalize_op = col_selector >> JSONNormalizeOp(input_schema)
+
+    workflow = nvt.Workflow(json_normalize_op)
+    result = workflow.fit_transform(nvt_dataset).to_ddf().compute()
+
     # Step 1 is to normalize any columns
     df_processed = _normalize_dataframe(df_in, input_schema)
 
