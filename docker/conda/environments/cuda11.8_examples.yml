@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Additional dependencies needed by a some of the Morpheus examples.
+# The intended usage is to first create the conda environment from the `cuda11.8_dev.yml` file, and then update the
+# env with this file. ex:
+#   mamba env create -n  morpheus --file docker/conda/environments/cuda11.8_dev.yml
+#   conda activate morpheus
+#   mamba env update -n morpheus --file docker/conda/environments/cuda11.8_examples.yml
 channels:
     - rapidsai
     - nvidia
@@ -20,6 +26,8 @@ channels:
 dependencies:
     - chardet=5.0.0
     - cuml=23.02
+    - dask==2023.1.1
+    - distributed==2023.1.1
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - stellargraph==1.2.1
