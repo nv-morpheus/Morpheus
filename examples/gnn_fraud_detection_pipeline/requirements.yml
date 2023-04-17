@@ -21,9 +21,7 @@ channels:
 dependencies:
     - chardet=5.0.0
     - cuml=23.02
-    - libprotobuf=3.20.3 # tensorflow 2.12 requires protobuf>=3.20.2
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - stellargraph==1.2.1
         - tensorflow==2.12.0
-        - protobuf==3.20.3
