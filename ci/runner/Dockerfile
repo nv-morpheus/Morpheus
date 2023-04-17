@@ -45,9 +45,7 @@ RUN apt update && \
 COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
-    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
-    conda clean -afy && \
-    rm -rf /tmp/conda
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc
 
 
 # ============ build ==================
@@ -68,6 +66,8 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN conda clean -afy && \
+    rm -rf /tmp/conda
 
 # ============ test ==================
 FROM base as test
@@ -79,11 +79,14 @@ ARG PROJ_NAME
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        nodejs \
-        npm \
         openjdk-11-jdk && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install extra deps needed for gnn_fraud_detection_pipeline & ransomware_detection examples
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml && \
+    conda clean -afy && \
+    rm -rf /tmp/conda
 
 # Install camouflage needed for unittests to mock a triton server
 RUN npm install -g camouflage-server@0.9 && \
