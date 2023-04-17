@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -24,12 +23,13 @@ import pytest
 import cudf
 
 from morpheus.common import TypeId
+from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiMessage
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 
 def check_inf_message(msg: MultiInferenceFILMessage,
@@ -73,7 +73,7 @@ def check_inf_message(msg: MultiInferenceFILMessage,
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'abp_pcap_detection/abp_pcap_preprocessing.py')])
-def test_abp_pcap_preprocessing(config, import_mod: typing.List[typing.Any]):
+def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
     # Setup the config
     config.mode = PipelineModes.FIL
     config.feature_length = 13
@@ -81,12 +81,14 @@ def test_abp_pcap_preprocessing(config, import_mod: typing.List[typing.Any]):
     abp_pcap_preprocessing = import_mod[0]
 
     # Get our input data, should contain the first 20 lines of the production data
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'abp_pcap.jsonlines')
-    input_df = read_file_to_df(input_file, df_type='cudf', filter_nulls=False)
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap.jsonlines')
+    input_df = dataset_cudf.get_df(input_file, no_cache=True, filter_nulls=False)
 
     expected_flow_ids = input_df.src_ip + ":" + input_df.src_port + "=" + input_df.dest_ip + ":" + input_df.dest_port
     expected_input__0 = cp.asarray(
-        np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'abp_pcap_expected_input_0.csv'), delimiter=",", skiprows=0))
+        np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'examples/abp_pcap_expected_input_0.csv'),
+                   delimiter=",",
+                   skiprows=0))
 
     assert len(input_df) == 20
 

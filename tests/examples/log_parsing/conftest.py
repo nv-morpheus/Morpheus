@@ -5,7 +5,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http:#www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,24 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-
-import cupy as cp
-import numpy as np
-import torch
+import pytest
 
 
-def manual_seed(seed: int):
-    """
-    Manually see the random number generators for the stdlib, PyTorch, NumPy and CuPy
-    """
-    random.seed(seed)
-
-    np.random.seed(seed)
-    cp.random.seed(seed)
-
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # the "all" refers to all GPUs
-
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
+@pytest.fixture
+def config(config):
+    from morpheus.config import PipelineModes
+    config.mode = PipelineModes.NLP
+    yield config

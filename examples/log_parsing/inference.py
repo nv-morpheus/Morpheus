@@ -30,12 +30,10 @@ from messages import ResponseMemoryLogParsing
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.stages.inference.triton_inference_stage import InputWrapper
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -97,7 +95,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         # Some models use different names for the same thing. Set that here but allow user customization
         return {"attention_mask": "input_mask"}
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseLogParsingMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
 
         memory = PostprocMemoryLogParsing(
             count=x.count,
@@ -111,7 +109,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                                                         mess_offset=x.mess_offset,
                                                         mess_count=x.mess_count,
                                                         memory=memory,
-                                                        offset=x.offset,
+                                                        offset=0,
                                                         count=x.count)
         return output_message
 
@@ -130,25 +128,6 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         )
 
         return mem
-
-    def _infer_callback(self,
-                        cb: typing.Callable[[ResponseMemoryLogParsing], None],
-                        m: InputWrapper,
-                        b: MultiInferenceMessage,
-                        result: tritonclient.InferResult,
-                        error: tritonclient.InferenceServerException):
-
-        # If its an error, return that here
-        if (error is not None):
-            raise error
-
-        # Build response
-        response_mem = self._build_response(b, result)
-
-        # Call the callback with the memory
-        cb(response_mem)
-
-        self._mem_pool.return_obj(m)
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
@@ -261,7 +240,9 @@ class LogParsingInferenceStage(InferenceStage):
         return stream, out_type
 
     @staticmethod
-    def _convert_one_response(memory: InferenceMemory, inf: MultiInferenceMessage, res: ResponseMemoryLogParsing):
+    def _convert_one_response(memory: PostprocMemoryLogParsing,
+                              inf: MultiInferenceMessage,
+                              res: ResponseMemoryLogParsing):
 
         memory.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         memory.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
@@ -280,12 +261,7 @@ class LogParsingInferenceStage(InferenceStage):
                 memory.confidences[idx, :] = cp.maximum(memory.confidences[idx, :], res.confidences[i, :])
                 memory.labels[idx, :] = cp.maximum(memory.labels[idx, :], res.labels[i, :])
 
-        return MultiPostprocLogParsingMessage(meta=inf.meta,
-                                              mess_offset=inf.mess_offset,
-                                              mess_count=inf.mess_count,
-                                              memory=memory,
-                                              offset=inf.offset,
-                                              count=inf.count)
+        return MultiPostprocLogParsingMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
