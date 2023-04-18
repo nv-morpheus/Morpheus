@@ -19,16 +19,33 @@ import pytest
 
 from utils import TEST_DIRS
 
+SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
+               "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
+               "installing these additional dependencies")
+
 
 @pytest.fixture(autouse=True)
-def ensure_dep_pkgs():
+def stellargraph():
     """
-    All of the fixtures in this subdir require cuml, stellargraph & tensorflow
+    All of the fixtures in this subdir require stellargraph
     """
-    cuml = pytest.importorskip("cuml")
-    stellargraph = pytest.importorskip("stellargraph")
-    tensorflow = pytest.importorskip("tensorflow")
-    yield stellargraph
+    yield pytest.importorskip("stellargraph", reason=SKIP_REASON)
+
+
+@pytest.fixture(autouse=True)
+def cuml():
+    """
+    All of the fixtures in this subdir require cuml
+    """
+    yield pytest.importorskip("cuml", reason=SKIP_REASON)
+
+
+@pytest.fixture(autouse=True)
+def tensorflow():
+    """
+    All of the fixtures in this subdir require tensorflow
+    """
+    yield pytest.importorskip("tensorflow", reason=SKIP_REASON)
 
 
 @pytest.fixture
