@@ -75,6 +75,7 @@ FROM base as test
 # Add any test only dependencies here.
 
 ARG PROJ_NAME
+ARG CUDA_SHORT_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
@@ -89,7 +90,8 @@ RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --f
     rm -rf /tmp/conda
 
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server@0.9 && \
+RUN source activate ${PROJ_NAME} && \
+    npm install -g camouflage-server@0.9 && \
     npm cache clean --force
 
 # Install pytest-kafka
