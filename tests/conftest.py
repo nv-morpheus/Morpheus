@@ -555,6 +555,31 @@ def filter_probs_df(dataset, use_cpp: bool):
     yield dataset["filter_probs.csv"]
 
 
+@pytest.fixture(scope="function")
+def reset_plugin_manger():
+    from morpheus.cli.plugin_manager import PluginManager
+    PluginManager._singleton = None
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_global_stage_registry():
+    from morpheus.cli.stage_registry import GlobalStageRegistry
+    from morpheus.cli.stage_registry import StageRegistry
+    GlobalStageRegistry._global_registry = StageRegistry()
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
+    """
+    Reset both the plugin manager and the global stage gregistry.
+    Some of the tests for examples import modules dynamically, which in some cases can cause register_stage to be
+    called more than once for the same stage.
+    """
+    yield
+
+
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
 
     start_time = time.time()
