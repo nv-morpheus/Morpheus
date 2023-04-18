@@ -50,7 +50,7 @@ Morpheus pipeline configurations for each workflow are managed using [pipelines_
 ...
 ```
 
-In addition to the Morpheus pipeline settings, we also have a configuration file called [modules_conf.json](./resource/modules_conf.json) that is specific to modules. When using MRC SegmentModule, pipelines need this configuration file. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
+When using MRC SegmentModule, pipelines need requires module configuration which does gets generated within the test. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
 
 To ensure that the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS FILE DOWNLOAD TYPE` environment variable with any one of given choices (`multiprocess`, `dask`, `dask thread`, `single thread`).
 
@@ -71,6 +71,7 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
 - `test_dfp_modules_azure_payload_inference_e2e`
 - `test_dfp_modules_azure_payload_lti_e2e`
+- `test_dfp_modules_azure_payload_lti_s3_e2e`
 - `test_dfp_modules_azure_payload_training_e2e`
 - `test_dfp_modules_azure_streaming_inference_e2e`
 - `test_dfp_modules_azure_streaming_lti_e2e`
@@ -89,7 +90,7 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 - `test_dfp_stages_duo_training_e2e`
 - `test_dfp_stages_duo_inference_e2e`
 
-For example, to run E2E benchmarks on the DFP training (modules) workflow on the duo logs:
+For example, to run E2E benchmarks on the DFP training (modules) workflow on the azure logs:
 ```
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
 ```
@@ -99,13 +100,113 @@ To run E2E benchmarks on all workflows:
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py
 ```
 
-The console output should look like this:
+#### Training (Azure):
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_azure_payload_training_e2e or test_dfp_stages_azure_training_e2e or test_dfp_modules_azure_streaming_training_e2e'
 ```
--------------------------------------------------------------------------------------------------------- benchmark: 19 tests --------------------------------------------------------------------------------------------------------
-Name (time in ms)                                          Min                    Max                   Mean              StdDev                 Median                 IQR            Outliers     OPS            Rounds  Iterations
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-TODO: Add benchmark results here -- need to do different runs for training vs inference vs everything else
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Output:
+```
+---------------------------------------------------------------------------------------------- benchmark: 3 tests ----------------------------------------------------------------------------------------------
+Name (time in s)                                      Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_azure_payload_training_e2e        8.5839 (1.0)      10.0795 (1.0)       9.2604 (1.0)      0.6213 (1.0)       9.4125 (1.0)      1.0004 (1.0)           2;0  0.1080 (1.0)           5           1
+test_dfp_stages_azure_training_e2e                29.0398 (3.38)     31.3069 (3.11)     30.4112 (3.28)     0.9112 (1.47)     30.4538 (3.24)     1.3482 (1.35)          1;0  0.0329 (0.30)          5           1
+test_dfp_modules_azure_streaming_training_e2e     34.8974 (4.07)     38.3883 (3.81)     37.0896 (4.01)     1.7385 (2.80)     38.2802 (4.07)     3.0295 (3.03)          1;0  0.0270 (0.25)          5           1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+
+#### Inference (Azure):
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_azure_payload_inference_e2e or test_dfp_stages_azure_inference_e2e or test_dfp_modules_azure_streaming_inference_e2e'
+```
+
+Output:
+```
+--------------------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------------------
+Name (time in s)                                      Min               Max              Mean            StdDev            Median               IQR            Outliers     OPS            Rounds  Iterations
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_azure_streaming_inference_e2e     1.2708 (1.0)      1.4836 (1.0)      1.3580 (1.0)      0.0792 (1.0)      1.3398 (1.0)      0.0898 (1.0)           2;0  0.7364 (1.0)           5           1
+test_dfp_modules_azure_payload_inference_e2e       1.3115 (1.03)     1.5259 (1.03)     1.4215 (1.05)     0.0954 (1.20)     1.4078 (1.05)     0.1747 (1.95)          2;0  0.7035 (0.96)          5           1
+test_dfp_stages_azure_inference_e2e                1.5362 (1.21)     1.8836 (1.27)     1.6827 (1.24)     0.1455 (1.84)     1.6410 (1.22)     0.2406 (2.68)          2;0  0.5943 (0.81)          5           1
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+#### Training (Duo)
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_duo_payload_training_e2e or test_dfp_stages_duo_training_e2e or test_dfp_modules_duo_streaming_training_e2e'
+```
+
+Output:
+```
+--------------------------------------------------------------------------------------------- benchmark: 3 tests ---------------------------------------------------------------------------------------------
+Name (time in s)                                    Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_duo_payload_training_e2e        8.2557 (1.0)       8.8273 (1.0)       8.5059 (1.0)      0.2284 (1.0)       8.4911 (1.0)      0.3575 (1.0)           2;0  0.1176 (1.0)           5           1
+test_dfp_stages_duo_training_e2e                19.5853 (2.37)     22.5840 (2.56)     21.4216 (2.52)     1.2993 (5.69)     21.9340 (2.58)     2.1545 (6.03)          1;0  0.0467 (0.40)          5           1
+test_dfp_modules_duo_streaming_training_e2e     22.0140 (2.67)     24.0175 (2.72)     23.0668 (2.71)     0.8957 (3.92)     23.3231 (2.75)     1.6232 (4.54)          2;0  0.0434 (0.37)          5           1
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+#### Inference (Duo)
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_duo_payload_inference_e2e or test_dfp_stages_duo_inference_e2e or test_dfp_modules_duo_streaming_inference_e2e'
+```
+
+Output:
+```
+----------------------------------------------------------------------------------------------------- benchmark: 3 tests -----------------------------------------------------------------------------------------------------
+Name (time in ms)                                       Min                   Max                  Mean             StdDev                Median                 IQR            Outliers     OPS            Rounds  Iterations
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_duo_payload_inference_e2e         875.6646 (1.0)        929.5996 (1.0)        906.9823 (1.0)      22.7483 (1.0)        906.2029 (1.0)       37.9495 (1.0)           1;0  1.1026 (1.0)           5           1
+test_dfp_modules_duo_streaming_inference_e2e       967.9455 (1.11)     1,046.5953 (1.13)     1,006.8804 (1.11)     33.0146 (1.45)     1,016.7610 (1.12)      55.0353 (1.45)          2;0  0.9932 (0.90)          5           1
+test_dfp_stages_duo_inference_e2e                1,086.2484 (1.24)     1,222.0949 (1.31)     1,146.0136 (1.26)     59.7578 (2.63)     1,123.3352 (1.24)     104.2315 (2.75)          2;0  0.8726 (0.79)          5           1
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+#### Integrated Training and Inference (Azure)
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_azure_payload_lti_e2e or test_dfp_modules_azure_streaming_lti_e2e'
+```
+
+Output:
+```
+-------------------------------------------------------------------------------------------- benchmark: 2 tests -------------------------------------------------------------------------------------------
+Name (time in s)                                 Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_azure_payload_lti_e2e       10.1342 (1.0)      11.7124 (1.0)      10.9306 (1.0)      0.6102 (1.04)     10.8310 (1.0)      0.9002 (1.79)          2;0  0.0915 (1.0)           5           1
+test_dfp_modules_azure_streaming_lti_e2e     31.8959 (3.15)     33.2688 (2.84)     32.9316 (3.01)     0.5857 (1.0)      33.1723 (3.06)     0.5040 (1.0)           1;1  0.0304 (0.33)          5           1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+#### Integrated Training and Inference (Duo)
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py -k 'test_dfp_modules_duo_payload_lti_e2e or test_dfp_modules_duo_streaming_lti_e2e'
+```
+
+Output:
+```
+------------------------------------------------------------------------------------------- benchmark: 2 tests ------------------------------------------------------------------------------------------
+Name (time in s)                               Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_duo_payload_lti_e2e        7.8609 (1.0)       8.0143 (1.0)       7.9721 (1.0)      0.0632 (1.0)       8.0007 (1.0)      0.0533 (1.0)           1;1  0.1254 (1.0)           5           1
+test_dfp_modules_duo_streaming_lti_e2e     20.6080 (2.62)     22.0563 (2.75)     21.4089 (2.69)     0.5599 (8.86)     21.3826 (2.67)     0.8076 (15.15)         2;0  0.0467 (0.37)          5           1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+
+#### Integrated Training and Inference from s3 (Azure)
+```bash
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_s3_e2e
+```
+
+Output:
+```
+---------------------------------------------------------- benchmark: 1 tests ----------------------------------------------------------
+Name (time in s)                                  Min      Max     Mean   StdDev   Median      IQR  Outliers     OPS  Rounds  Iterations
+----------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_modules_azure_payload_lti_s3_e2e     44.9810  74.9993  59.6432  10.8338  58.9347  12.0293       2;0  0.0168       5           1
+----------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 ### Benchmarks Report

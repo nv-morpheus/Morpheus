@@ -29,7 +29,7 @@ from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import SchemaBuilder
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 THIS_DIR = path.dirname(path.abspath(__file__))
 

@@ -69,7 +69,7 @@ def dfp_postprocessing(builder: mrc.Builder):
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
-                         message.meta.user_id,
+                         message.meta.df.username.iloc[0],
                          duration,
                          message.mess_count,
                          message.get_meta(timestamp_column_name).min(),

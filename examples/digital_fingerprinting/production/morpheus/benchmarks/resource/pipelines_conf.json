@@ -1,5 +1,5 @@
 {
-	"tracking_uri": "http://localhost:5000",
+	"tracking_uri": "http://localhost:8000",
 	"test_dfp_modules_azure_payload_inference_e2e": {
 		"message_path": "./resource/control_messages/azure_payload_inference.json",
 		"num_threads": 12,
@@ -14,6 +14,18 @@
 	},
 	"test_dfp_modules_azure_payload_lti_e2e": {
 		"message_path": "./resource/control_messages/azure_payload_lti.json",
+		"num_threads": 12,
+		"pipeline_batch_size": 256,
+		"edge_buffer_size": 128,
+		"start_time": "2022-08-01",
+		"duration": "60d",
+		"userid_column_name": "username",
+		"timestamp_column_name": "timestamp",
+		"source": "azure",
+		"use_cpp": true
+	},
+	"test_dfp_modules_azure_payload_lti_s3_e2e": {
+		"message_path": "./resource/control_messages/azure_payload_lti_s3.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
