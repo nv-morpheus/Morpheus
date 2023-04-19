@@ -20,9 +20,11 @@ from datetime import datetime
 
 import nvtabular as nvt
 import pandas as pd
+import numpy as np
 
 import cudf
 from merlin.core.dispatch import DataFrameType, annotate
+from merlin.schema import Schema, ColumnSchema
 from nvtabular.ops.operator import ColumnSelector, Operator
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
@@ -336,18 +338,86 @@ class JSONNormalizeOp(Operator):
         return df_normalized
 
 
+class TestOperator(Operator):
+    def __init__(self):
+        super().__init__()
+
+    @annotate("TestOperator", color="darkgreen", domain="nvt_python")
+    def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        df["new_col1"] = 0
+        df["new_col2"] = 3.14
+        print(f"\n =============> APPLYING TEST OPERATOR", flush=True)
+        print(f"\n =============> df: {df.columns}", flush=True)
+
+        return df
+
+    # def compute_input_schema(
+    #        self,
+    #        root_schema: Schema,
+    #        parents_schema: Schema,
+    #        deps_schema: Schema,
+    #        selector: ColumnSelector,
+    # ) -> Schema:
+    #    return super().compute_input_schema(root_schema, parents_schema, deps_schema, selector)
+
+    def compute_output_schema(
+            self,
+            input_schema: Schema,
+            col_selector: ColumnSelector,
+            prev_output_schema: typing.Optional[Schema] = None,
+    ) -> Schema:
+        output_schema = super().compute_output_schema(input_schema, col_selector, prev_output_schema)
+
+        # Add new columns to the output schema
+        new_col1_schema = ColumnSchema("new_col1", dtype="int64", tags=["new"])
+        new_col2_schema = ColumnSchema("new_col2", dtype="float64", tags=["new"])
+        output_schema += Schema([new_col1_schema, new_col2_schema])
+
+        return output_schema
+
+    def compute_selector(
+            self,
+            input_schema: Schema,
+            selector: ColumnSelector,
+            parents_selector: typing.Optional[ColumnSelector] = None,
+            dependencies_selector: typing.Optional[ColumnSelector] = None,
+    ) -> ColumnSelector:
+        selector = super().compute_selector(input_schema, selector, parents_selector, dependencies_selector)
+
+        return selector
+
+    def output_column_names(self, columns):
+        columns_out = columns
+
+        return columns_out
+
+    # TODO(Devin): Write column mappings from schema json columns
+    def column_mapping(self, col_selector):
+        column_mapping = {}
+        for col in col_selector.names:
+            column_mapping[col] = [col]
+
+        column_mapping["new_col1"] = [col]
+        column_mapping["new_col2"] = [col]
+
+        return column_mapping
+
+
 def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema) -> pd.DataFrame:
     """
-    Applies colmn transformations as defined by `input_schema`
+    Applies column transformations as defined by `input_schema`
     """
 
     nvt_dataset = nvt.Dataset(df_in)
     cols = [x for x in df_in.columns]
-    col_selector = ColumnSelector(cols)
+    col_selector = ColumnSelector("*")
     json_normalize_op = col_selector >> JSONNormalizeOp(input_schema)
+    test_op = col_selector >> TestOperator()
 
-    workflow = nvt.Workflow(json_normalize_op)
+    workflow = nvt.Workflow(test_op + json_normalize_op)
     result = workflow.fit_transform(nvt_dataset).to_ddf().compute()
+
+    print(f"\n =================> Returning result: {result.columns}", flush=True)
 
     # Step 1 is to normalize any columns
     df_processed = _normalize_dataframe(df_in, input_schema)
