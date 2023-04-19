@@ -1642,7 +1642,7 @@ class AutoEncoder(torch.nn.Module):
                     loss = self.cce(cat[i], codes[i])
                     # Convert to 2 dimensions
                     cce_loss_slice_of_each_feat.append(loss.data.reshape(-1, 1))
-                
+
                 if cce_loss_slice_of_each_feat:
                     # merge the tensors into one (n_records * n_features) tensor
                     cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat, dim=1)

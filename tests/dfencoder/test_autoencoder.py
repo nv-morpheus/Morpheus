@@ -293,10 +293,35 @@ def test_auto_encoder_get_anomaly_score(train_ae: autoencoder.AutoEncoder, train
 def test_auto_encoder_get_anomaly_score_losses(train_ae: autoencoder.AutoEncoder):
     # create a dummy DataFrame with numerical and boolean features only
     row_cnt = 10
+    # create a dummy DataFrame with categorical features
     data = {
-        'num_1': [i for i in range(row_cnt)], 
-        'bool_1': [i%2 == 0 for i in range(row_cnt)], 
-        'bool_2': [i%3 == 0 for i in range(row_cnt)]
+        'num_1': [i for i in range(row_cnt)],
+        'num_2': [i / 2 for i in range(row_cnt)],
+        'num_3': [i / 2 for i in range(row_cnt)],
+        'bool_1': [i % 2 == 0 for i in range(row_cnt)],
+        'bool_2': [i % 3 == 0 for i in range(row_cnt)],
+        'cat_1': [f'str_{i}' for i in range(row_cnt)]
+    }
+    df = pd.DataFrame(data)
+
+    train_ae._build_model(df)
+
+    # call the function and check the output
+    mse_loss, bce_loss, cce_loss = train_ae.get_anomaly_score_losses(df)
+
+    # check that the output is of the correct shape
+    assert mse_loss.shape == torch.Size([row_cnt, 3]), "mse_loss has incorrect shape"
+    assert bce_loss.shape == torch.Size([row_cnt, 2]), "bce_loss has incorrect shape"
+    assert cce_loss.shape == torch.Size([row_cnt, 1]), "cce_loss has incorrect shape"
+
+
+def test_auto_encoder_get_anomaly_score_losses_no_cat_feats(train_ae: autoencoder.AutoEncoder):
+    # create a dummy DataFrame with numerical and boolean features only
+    row_cnt = 10
+    data = {
+        'num_1': [i for i in range(row_cnt)],
+        'bool_1': [i % 2 == 0 for i in range(row_cnt)],
+        'bool_2': [i % 3 == 0 for i in range(row_cnt)]
     }
     df = pd.DataFrame(data)
 
@@ -310,32 +335,6 @@ def test_auto_encoder_get_anomaly_score_losses(train_ae: autoencoder.AutoEncoder
     assert bce_loss.shape == torch.Size([row_cnt, 2]), "bce_loss has incorrect shape"
     assert cce_loss.shape == torch.Size([row_cnt, 0]), "cce_loss has incorrect shape"
 
-
-    # create a dummy DataFrame with categorical features
-    data = {
-        'num_1': [i for i in range(row_cnt)], 
-        'num_2': [i/2 for i in range(row_cnt)], 
-        'num_3': [i/2 for i in range(row_cnt)], 
-        'bool_1': [i%2 == 0 for i in range(row_cnt)], 
-        'bool_2': [i%3 == 0 for i in range(row_cnt)],
-        'cat_1': [f'str_{i}' for i in range(row_cnt)]
-    }
-    df = pd.DataFrame(data)
-    
-    # reset the model
-    train_ae.bin_names = []
-    train_ae.binary_fts = OrderedDict()
-    train_ae.num_names = []
-    train_ae.numeric_fts = OrderedDict()
-    train_ae._build_model(df)
-
-    # call the function and check the output
-    mse_loss, bce_loss, cce_loss = train_ae.get_anomaly_score_losses(df)
-
-    # check that the output is of the correct shape
-    assert mse_loss.shape == torch.Size([row_cnt, 3]), "mse_loss has incorrect shape"
-    assert bce_loss.shape == torch.Size([row_cnt, 2]), "bce_loss has incorrect shape"
-    assert cce_loss.shape == torch.Size([row_cnt, 1]), "cce_loss has incorrect shape"
 
 def test_auto_encoder_prepare_df(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
