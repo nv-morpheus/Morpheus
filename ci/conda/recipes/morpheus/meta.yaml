@@ -63,6 +63,7 @@ outputs:
         - librdkafka 1.7
         - mrc {{ minor_version }}
         - pip
+        - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
@@ -88,8 +89,9 @@ outputs:
         - numpydoc 1.4.*
         - pandas 1.3.*
         - pluggy 1.0.*
+        - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - python
-        - scikit-learn=0.23.1
+        - scikit-learn 0.23.1
         - tqdm 4.*
         - typing_utils 0.1.*
         - watchdog 2.1.*

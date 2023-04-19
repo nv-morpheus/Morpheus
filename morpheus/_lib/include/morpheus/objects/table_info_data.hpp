@@ -27,19 +27,20 @@ namespace morpheus {
 
 /**
  * @brief Simple structure which provides a general method for holding a cudf:table_view together with index and column
- * names. Also provides slicing mechanics.
+ * names.
+ *
+ * @note This struct should always be header only since its the only transfer mechanism between libmorpheus.so and
+ * cudf_helpers.
  *
  */
 struct TableInfoData
 {
     TableInfoData() = default;
-    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns);
-
-    TableInfoData get_slice(std::vector<std::string> column_names = {}) const;
-
-    TableInfoData get_slice(cudf::size_type start,
-                            cudf::size_type stop,
-                            std::vector<std::string> column_names = {}) const;
+    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns) :
+      table_view(std::move(view)),
+      index_names(std::move(indices)),
+      column_names(std::move(columns))
+    {}
 
     cudf::table_view table_view;
     std::vector<std::string> index_names;

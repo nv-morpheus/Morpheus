@@ -58,10 +58,6 @@ dependencies:
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
-    # If cuml is installed, we need to constrain these two libraries. See:
-    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-    - libcusolver<=11.4.1.48
-    - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
     - mrc=23.07
@@ -76,6 +72,7 @@ dependencies:
     - pkg-config # for mrc cmake
     - pluggy=1.0
     - protobuf=4.21.*
+    - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
     - pybind11-stubgen=0.10.5
     - pydot
     - pytest
@@ -94,6 +91,11 @@ dependencies:
     - typing_utils=0.1
     - watchdog=2.1
     - yapf=0.32.0
+
+    # If cuml is installed, we need to constrain these two libraries. See:
+    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+    - libcusolver<=11.4.1.48
+    - libcusparse<12
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
