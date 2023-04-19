@@ -69,6 +69,7 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
                 inputs = control_message.get("inputs")
                 # Iterating over inputs
                 for input in inputs:
+                    non_load_task = None
                     line_count_per_task = 0
                     byte_count_per_task = 0
                     tasks = input.get("tasks")

@@ -31,3 +31,4 @@ Developer Guides
    ./7_python_modules.md
    ./8_cpp_modules.md
    ./9_cpp_modules_reference.md
+   ./10_modular_pipeline_digital_fingerprinting.md
