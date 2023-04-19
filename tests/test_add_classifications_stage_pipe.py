@@ -28,8 +28,8 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.conv_msg import ConvMsg
 from utils import assert_results
+from utils.stages.conv_msg import ConvMsg
 
 
 def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List[str]):

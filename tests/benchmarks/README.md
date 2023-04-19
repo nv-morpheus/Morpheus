@@ -24,14 +24,14 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```
-docker pull nvcr.io/nvidia/tritonserver:22.08-py3
+docker pull nvcr.io/nvidia/tritonserver:23.03-py3
 ```
 
 ##### Start Triton Inference Server container
 ```
 cd ${MORPHEUS_ROOT}/models
 
-docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx
+docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:23.03-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx
 ```
 
 ##### Verify Model Deployments
@@ -119,12 +119,12 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 
 For example, to run E2E benchmarks on the SID NLP workflow:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::test_sid_nlp_e2e
+pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::test_sid_nlp_e2e
 ```
 
 To run E2E benchmarks on all workflows:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py
+pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py
 ```
 
 The console output should look like this:

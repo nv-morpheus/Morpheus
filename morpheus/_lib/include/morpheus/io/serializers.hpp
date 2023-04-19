@@ -68,10 +68,8 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
  * @param out_stream : Output stream to write the results to a destination
  * @param include_index_col : Determines whether or not to include the dataframe index
  * @param flush : When `true` flush `out_stream`.
- *
- * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
  */
-void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
+void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
 
 /**
  * @brief Serialize a dataframe into a JSON formatted string
@@ -81,12 +79,11 @@ void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_in
  *
  * Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
  * Pandas: https://github.com/pandas-dev/pandas/issues/37600
- * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
  */
-std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
+std::string df_to_json(const TableInfo& tbl, bool include_index_col = true);
 
 /**
- * @brief Serialize a dataframe to an output stream in CSV format
+ * @brief Serialize a dataframe to an output stream in Parquet format
  *
  * @param tbl : A wrapper around data in the dataframe
  * @param out_stream : Output stream to write the results to a destination
@@ -101,7 +98,7 @@ void df_to_parquet(const TableInfo& tbl,
                    bool flush             = false);
 
 /**
- * @brief Serialize a dataframe to an output stream in JSON format
+ * @brief Serialize a dataframe to an output stream in Parquet format
  *
  * @param tbl : A wrapper around data in the dataframe
  * @param include_header : Determines whether or not to include the header
@@ -111,7 +108,7 @@ void df_to_parquet(const TableInfo& tbl,
 std::string df_to_parquet(const TableInfo& tbl, bool include_header, bool include_index_col = true);
 
 /**
- * @brief Loads a cudf table from either CSV or JSON file returning the DataFrame as a Python object
+ * @brief Loads a cudf table from a CSV, JSON or Parquet file returning the DataFrame as a Python object
  *
  * @param filename : Name of the file that should be loaded into a table
  * @return pybind11::object

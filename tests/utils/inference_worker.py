@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-c_compiler_version:
-  - 11.2
+from morpheus.stages.inference import inference_stage
 
-cxx_compiler_version:
-  - 11.2
 
-cuda_compiler:
-  - nvcc
+class IW(inference_stage.InferenceWorker):
+    """
+    Concrete impl class of `InferenceWorker` for the purposes of testing
+    """
 
-cuda_compiler_version:
-  - 11.8
-
-python:
-  - 3.8
-  - 3.9
-
-boost:
-  - 1.74
-
-rapids_version:
-  - 23.02
+    def calc_output_dims(self, _):
+        # Intentionally calling the abc empty method for coverage
+        super().calc_output_dims(_)
+        return (1, 2)

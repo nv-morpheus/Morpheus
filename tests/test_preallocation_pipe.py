@@ -18,6 +18,7 @@ import mrc
 import numpy as np
 import pandas as pd
 import pytest
+from mrc.core import operators as ops
 
 import cudf
 
@@ -34,8 +35,8 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.conv_msg import ConvMsg
 from utils import assert_results
+from utils.stages.conv_msg import ConvMsg
 
 
 class CheckPreAlloc(SinglePortStage):
@@ -69,7 +70,7 @@ class CheckPreAlloc(SinglePortStage):
         return m
 
     def _build_single(self, builder: mrc.Builder, input_stream):
-        stream = builder.make_node(self.unique_name, self._check_prealloc)
+        stream = builder.make_node(self.unique_name, ops.map(self._check_prealloc))
         builder.make_edge(input_stream[0], stream)
 
         return stream, input_stream[1]

@@ -360,5 +360,5 @@ def test_post_build_single(config, input_glob, cols_include, cols_exclude, plugi
     source = AppShieldSourceStage(config, input_glob, plugins_include, cols_include, cols_exclude)
     source._post_build_single(mock_segment, mock_input)
 
-    mock_segment.make_node_full.assert_called_once()
+    mock_segment.make_node.assert_called_once()
     mock_segment.make_edge.assert_called_once()

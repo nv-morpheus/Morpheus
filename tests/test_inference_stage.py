@@ -29,7 +29,7 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
-from utils import IW
+from utils.inference_worker import IW
 
 
 class InferenceStage(InferenceStage):
@@ -88,23 +88,25 @@ def test_constructor(config):
 def test_build_single(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_called_once()
+    mock_segment.make_node.assert_called_once()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_python
-def test_py_inf_fn(config):
+@mock.patch('mrc.core.operators.build')
+def test_py_inf_fn(mock_ops_build, config):
+    mock_ops_build.return_value = mock.MagicMock()
     mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_builder = mock.MagicMock()
+    mock_builder.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     mock_init = mock.MagicMock()
@@ -112,9 +114,10 @@ def test_py_inf_fn(config):
 
     config.num_threads = 17
     inf_stage = InferenceStage(config)
-    inf_stage._build_single(mock_segment, mock_input_stream)
+    inf_stage._build_single(mock_builder, mock_input_stream)
 
-    py_inference_fn = mock_segment.make_node_full.call_args[0][1]
+    mock_ops_build.assert_called_once()
+    py_inference_fn = mock_ops_build.call_args[0][0]
 
     mock_pipe = mock.MagicMock()
     mock_observable = mock.MagicMock()
@@ -130,7 +133,7 @@ def test_py_inf_fn(config):
 def test_build_single_cpp(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     config.num_threads = 17
@@ -140,7 +143,7 @@ def test_build_single_cpp(config):
 
     inf_stage._build_single(mock_segment, mock_input_stream)
 
-    mock_segment.make_node_full.assert_not_called()
+    mock_segment.make_node.assert_not_called()
     mock_segment.make_edge.assert_called_once()
     assert mock_node.launch_options.pe_count == 17
 
@@ -149,7 +152,7 @@ def test_build_single_cpp(config):
 def test_build_single_cpp_not_impl(config):
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
     mock_input_stream = mock.MagicMock()
 
     inf_stage = InferenceStage(config)

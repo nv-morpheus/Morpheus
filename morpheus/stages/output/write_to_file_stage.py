@@ -159,7 +159,7 @@ class WriteToFileStage(SinglePortStage):
 
                 # File should be closed by here
 
-            to_file = builder.make_node_full(self.unique_name, node_fn)
+            to_file = builder.make_node(self.unique_name, ops.build(node_fn))
 
         builder.make_edge(stream, to_file)
         stream = to_file
