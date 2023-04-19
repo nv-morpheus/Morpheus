@@ -17,6 +17,7 @@ import os
 
 import cudf
 
+import morpheus
 from morpheus.parsers.event_parser import EventParser
 
 log = logging.getLogger(__name__)
@@ -26,11 +27,10 @@ class SplunkNotableParser(EventParser):
     """
     This is class parses splunk notable logs.
     """
-    REGEX_FILE = "resources/splunk_notable_regex.yaml"
-    EVENT_NAME = "notable"
+    EVENT_NAME = "splunk-notable"
 
     def __init__(self):
-        regex_filepath = os.path.join(os.path.dirname(__file__), self.REGEX_FILE)
+        regex_filepath = os.path.join(morpheus.DATA_DIR, "splunk_notable_regex.yaml")
         self._event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self._event_regex.keys(), self.EVENT_NAME)
 

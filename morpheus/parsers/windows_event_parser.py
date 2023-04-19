@@ -18,6 +18,7 @@ import typing
 
 import cudf
 
+import morpheus
 from morpheus.parsers.event_parser import EventParser
 
 log = logging.getLogger(__name__)
@@ -32,11 +33,10 @@ class WindowsEventParser(EventParser):
     interested_eventcodes: typing.Set[int]
         Set of interested codes to parse
     """
-    REGEX_FILE = "resources/windows_event_regex.yaml"
-    EVENT_NAME = "windows event"
+    EVENT_NAME = "windows-event"
 
     def __init__(self, interested_eventcodes=None):
-        regex_filepath = os.path.join(os.path.dirname(__file__), self.REGEX_FILE)
+        regex_filepath = os.path.join(morpheus.DATA_DIR, "windows_event_regex.yaml")
         self._interested_eventcodes = interested_eventcodes
         self._event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self.get_columns(), self.EVENT_NAME)
