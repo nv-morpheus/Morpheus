@@ -37,7 +37,7 @@ class WindowsEventParser(EventParser):
         self.event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self.get_columns(), self.EVENT_NAME)
 
-    def parse(self, dataframe, raw_column):
+    def parse(self, text):
         """Parses the Windows raw event.
 
         :param dataframe: Raw events to be parsed.
@@ -48,13 +48,14 @@ class WindowsEventParser(EventParser):
         :rtype: cudf.DataFrame
         """
         # Clean raw data to be consistent.
-        dataframe = self.clean_raw_data(dataframe, raw_column)
+        text = self.clean_raw_data(text)
         output_chunks = []
         for eventcode in self.event_regex.keys():
             pattern = "eventcode=%s" % (eventcode)
-            input_chunk = self.filter_by_pattern(dataframe, raw_column, pattern)
+            # input_chunk = self.filter_by_pattern(dataframe, raw_column, pattern)
+            input_chunk = text[text.str.contains(pattern)]
             if not input_chunk.empty:
-                temp = self.parse_raw_event(input_chunk, raw_column, self.event_regex[eventcode])
+                temp = self.parse_raw_event(input_chunk, self.event_regex[eventcode])
                 if not temp.empty:
                     output_chunks.append(temp)
         parsed_dataframe = cudf.concat(output_chunks)
@@ -62,7 +63,7 @@ class WindowsEventParser(EventParser):
         parsed_dataframe = parsed_dataframe.fillna("")
         return parsed_dataframe
 
-    def clean_raw_data(self, dataframe, raw_column):
+    def clean_raw_data(self, text):
         """Lower casing and replacing escape characters.
 
         :param dataframe: Raw events to be parsed.
@@ -72,11 +73,8 @@ class WindowsEventParser(EventParser):
         :return: Clean raw information.
         :rtype: cudf.DataFrame
         """
-        dataframe[raw_column] = (dataframe[raw_column].str.lower().str.replace("\\\\t", "").str.replace("\\\\r",
-                                                                                                        "").str.replace(
-                                                                                                            "\\\\n",
-                                                                                                            "|"))
-        return dataframe
+        text = (text.str.lower().str.replace("\\\\t", "").str.replace("\\\\r", "").str.replace("\\\\n", "|"))
+        return text
 
     def _load_regex_yaml(self, yaml_file):
         event_regex = EventParser._load_regex_yaml(self, yaml_file)

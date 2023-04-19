@@ -36,7 +36,7 @@ class SplunkNotableParser(EventParser):
         self.event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, event_regex.keys(), self.EVENT_NAME)
 
-    def parse(self, dataframe, raw_column):
+    def parse(self, text):
         """Parses the Splunk notable raw events.
 
         :param dataframe: Raw events to be parsed.
@@ -47,8 +47,8 @@ class SplunkNotableParser(EventParser):
         :rtype: cudf.DataFrame
         """
         # Cleaning raw data to be consistent.
-        dataframe[raw_column] = dataframe[raw_column].str.replace("\\\\", "")
-        parsed_dataframe = self.parse_raw_event(dataframe, raw_column, self.event_regex)
+        text = text.str.replace("\\\\", "")
+        parsed_dataframe = self.parse_raw_event(text, self.event_regex)
         # Replace null values of all columns with empty.
         parsed_dataframe = parsed_dataframe.fillna("")
         # Post-processing: for src_ip and dest_ip.

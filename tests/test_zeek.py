@@ -27,8 +27,10 @@ def test_parse_log_file(tmpdir):
         #unset_field\t-\n\
         #path\tconn\n\
         #open\t2015-01-24-16-49-04\n\
-        #fields\tts\tuid\tid.orig_h\tid.orig_p\tid.resp_h\tid.resp_p\tproto\tservice\tduration\torig_bytes\tresp_bytes\tconn_state\tlocal_orig\tmissed_bytes\thistory\torig_pkts\torig_ip_bytes\tresp_pkts\tresp_ip_bytes\ttunnel_parents\n\
-        #types\ttime\tstring\taddr\tport\taddr\tport\tenum\tstring\tinterval\tcount\tcount\tstring\tbool\tcount\tstring\tcount\tcount\tcount\tcount\tset[string]\n"
+        #fields\tts\tuid\tid.orig_h\tid.orig_p\tid.resp_h\tid.resp_p\tproto\tservice\tduration\torig_bytes\tresp_bytes\t\
+            conn_state\tlocal_orig\tmissed_bytes\thistory\torig_pkts\torig_ip_bytes\tresp_pkts\tresp_ip_bytes\ttunnel_parents\n\
+        #types\ttime\tstring\taddr\tport\taddr\tport\tenum\tstring\tinterval\tcount\tcount\tstring\tbool\tcount\tstring\tcount\t\
+            count\tcount\tcount\tset[string]\n"
 
     actual = cudf.DataFrame()
     actual["ts"] = [1421927450.370337, 1421927658.777193]
@@ -73,7 +75,7 @@ def test_parse_log_file(tmpdir):
         f.seek(0, 0)
         f.write(header + content + footer)
 
-    parsed = zeek.parse_log_file(fname)
+    parsed = zeek.parse(fname)
     assert np.allclose(parsed["ts"].values_host, actual["ts"].values_host)
     assert parsed["uid"].equals(actual["uid"])
     assert parsed["id.orig_h"].equals(actual["id.orig_h"])

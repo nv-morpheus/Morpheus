@@ -57,12 +57,15 @@ class EventParser(ABC):
         return self._event_name
 
     @abstractmethod
-    def parse(self, dataframe, raw_column):
-        """Abstract method 'parse' triggers the parsing functionality. Subclasses are required to implement and execute any parsing pre-processing steps."""
+    def parse(self, text):
+        """
+        Abstract method 'parse' triggers the parsing functionality. Subclasses are required to implement
+        and execute any parsing pre-processing steps.
+        """
         log.info("Begin parsing of dataframe")
         pass
 
-    def parse_raw_event(self, dataframe, raw_column, event_regex):
+    def parse_raw_event(self, text, event_regex):
         """Processes parsing of a specific type of raw event records received as a dataframe.
 
         :param dataframe: Raw events to be parsed.
@@ -74,7 +77,7 @@ class EventParser(ABC):
         :return: parsed information.
         :rtype: cudf.DataFrame
         """
-        log.debug("Parsing raw events. Event type: " + self.event_name + " DataFrame shape: " + str(dataframe.shape))
+        log.debug("Parsing raw events. Event type: " + self.event_name)
 
         parsed_gdf = cudf.DataFrame({col: [""] for col in self.columns})
         parsed_gdf = parsed_gdf[:0]
@@ -82,7 +85,7 @@ class EventParser(ABC):
         # Applies regex pattern for each expected output column to raw data
         for col in event_specific_columns:
             regex_pattern = event_regex.get(col)
-            extracted_gdf = dataframe[raw_column].str.extract(regex_pattern)
+            extracted_gdf = text.str.extract(regex_pattern)
             if not extracted_gdf.empty:
                 parsed_gdf[col] = extracted_gdf[0]
 
@@ -92,21 +95,6 @@ class EventParser(ABC):
             parsed_gdf[col] = ""
 
         return parsed_gdf
-
-    def filter_by_pattern(self, df, column, pattern):
-        """Retrieve events only which satisfies given regex pattern.
-
-        :param df: Raw events to be filtered.
-        :type df: cudf.DataFrame
-        :param column: Raw data contained column name.
-        :type column: string
-        :param pattern: Regex pattern to retrieve events that are required.
-        :type pattern: string
-        :return: filtered dataframe.
-        :rtype: cudf.DataFrame
-        """
-        df["present"] = df[column].str.contains(pattern)
-        return df[df.present]
 
     def _load_regex_yaml(self, yaml_file):
         """Returns a dictionary of the regex contained in the given yaml file"""

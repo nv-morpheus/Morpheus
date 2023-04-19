@@ -1,4 +1,4 @@
-# Copyright (c) 2019, NVIDIA CORPORATION.
+# Copyright (c) 2019-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,8 +36,10 @@ type_dict = {
 }
 
 
-def parse_log_file(filepath):
-    """Parse Zeek log file and return cuDF dataframe. Uses header comments to get column names/types and configure parser.
+def parse(filepath):
+    """
+    Parse Zeek log file and return cuDF dataframe. Uses header comments to get column names/types
+    and configure parser.
 
     :param filepath: filepath for Zeek log file
     :type filepath: string
@@ -47,8 +49,8 @@ def parse_log_file(filepath):
     header_gdf = cudf.read_csv(filepath, names=["line"], nrows=8)
     lines_gdf = header_gdf["line"].str.split()
 
-    column_names = lines_gdf.to_pandas().iloc[6][1:].tolist()
-    column_types = lines_gdf.to_pandas().iloc[7][1:].tolist()
+    column_names = lines_gdf.iloc[6][1:]
+    column_types = lines_gdf.iloc[7][1:]
     column_dtypes = list(map(lambda x: type_dict.get(x, "str"), column_types))
 
     log_gdf = cudf.read_csv(
