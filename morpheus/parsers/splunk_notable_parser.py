@@ -30,10 +30,9 @@ class SplunkNotableParser(EventParser):
     EVENT_NAME = "notable"
 
     def __init__(self):
-        event_regex = {}
-        regex_filepath = (os.path.dirname(os.path.abspath(__file__)) + "/" + self.REGEX_FILE)
-        self.event_regex = self._load_regex_yaml(regex_filepath)
-        EventParser.__init__(self, event_regex.keys(), self.EVENT_NAME)
+        regex_filepath = os.path.join(os.path.dirname(__file__), self.REGEX_FILE)
+        self._event_regex = self._load_regex_yaml(regex_filepath)
+        EventParser.__init__(self, self._event_regex.keys(), self.EVENT_NAME)
 
     def parse(self, text: cudf.Series) -> cudf.Series:
         """
@@ -43,8 +42,6 @@ class SplunkNotableParser(EventParser):
         ----------
         text : cudf.Series
             Raw event log text to be parsed.
-        event_regex: typing.Dict[str, any]
-            Required regular expressions for a given event type.
 
         Returns
         -------
@@ -53,7 +50,7 @@ class SplunkNotableParser(EventParser):
         """
         # Cleaning raw data to be consistent.
         text = text.str.replace("\\\\", "")
-        parsed_dataframe = self.parse_raw_event(text, self.event_regex)
+        parsed_dataframe = self.parse_raw_event(text, self._event_regex)
         # Replace null values of all columns with empty.
         parsed_dataframe = parsed_dataframe.fillna("")
         # Post-processing: for src_ip and dest_ip.

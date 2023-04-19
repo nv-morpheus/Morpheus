@@ -14,7 +14,7 @@
 
 import cudf
 
-type_dict = {
+TYPE_DICT = {
     "bool": "bool",
     "count": "int64",
     "int": "int64",
@@ -56,7 +56,7 @@ def parse(filepath: str) -> cudf.DataFrame:
 
     column_names = lines_gdf.iloc[6][1:]
     column_types = lines_gdf.iloc[7][1:]
-    column_dtypes = list(map(lambda x: type_dict.get(x, "str"), column_types))
+    column_dtypes = list(map(lambda x: TYPE_DICT.get(x, "str"), column_types))
 
     log_gdf = cudf.read_csv(
         filepath,

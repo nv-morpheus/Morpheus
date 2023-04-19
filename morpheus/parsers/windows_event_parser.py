@@ -36,9 +36,9 @@ class WindowsEventParser(EventParser):
     EVENT_NAME = "windows event"
 
     def __init__(self, interested_eventcodes=None):
-        regex_filepath = (os.path.dirname(os.path.abspath(__file__)) + "/" + self.REGEX_FILE)
-        self.interested_eventcodes = interested_eventcodes
-        self.event_regex = self._load_regex_yaml(regex_filepath)
+        regex_filepath = os.path.join(os.path.dirname(__file__), self.REGEX_FILE)
+        self._interested_eventcodes = interested_eventcodes
+        self._event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self.get_columns(), self.EVENT_NAME)
 
     def parse(self, text: cudf.Series) -> cudf.Series:
@@ -57,12 +57,12 @@ class WindowsEventParser(EventParser):
         # Clean raw data to be consistent.
         text = self.clean_raw_data(text)
         output_chunks = []
-        for eventcode in self.event_regex.keys():
+        for eventcode in self._event_regex.keys():
             pattern = "eventcode=%s" % (eventcode)
             # input_chunk = self.filter_by_pattern(dataframe, raw_column, pattern)
             input_chunk = text[text.str.contains(pattern)]
             if not input_chunk.empty:
-                temp = self.parse_raw_event(input_chunk, self.event_regex[eventcode])
+                temp = self.parse_raw_event(input_chunk, self._event_regex[eventcode])
                 if not temp.empty:
                     output_chunks.append(temp)
         parsed_dataframe = cudf.concat(output_chunks)
@@ -91,8 +91,8 @@ class WindowsEventParser(EventParser):
 
     def _load_regex_yaml(self, yaml_file):
         event_regex = EventParser._load_regex_yaml(self, yaml_file)
-        if self.interested_eventcodes is not None:
-            for eventcode in self.interested_eventcodes:
+        if self._interested_eventcodes is not None:
+            for eventcode in self._interested_eventcodes:
                 required_event_regex = {}
                 if eventcode not in event_regex:
                     raise KeyError("Regex for eventcode %s is not available in the config file. Please choose from %s" %
@@ -111,7 +111,7 @@ class WindowsEventParser(EventParser):
             Columns of all configured eventcodes, if no interested eventcodes specified.
         """
         columns = set()
-        for key in self.event_regex.keys():
-            for column in self.event_regex[key].keys():
+        for key in self._event_regex.keys():
+            for column in self._event_regex[key].keys():
                 columns.add(column)
         return columns
