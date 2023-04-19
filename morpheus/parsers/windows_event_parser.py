@@ -14,6 +14,7 @@
 
 import logging
 import os
+import typing
 
 import cudf
 
@@ -23,10 +24,13 @@ log = logging.getLogger(__name__)
 
 
 class WindowsEventParser(EventParser):
-    """This is class parses windows event logs.
+    """
+    This is class parses windows event logs.
 
-    :param interested_eventcodes: This parameter provides flexibility to parse only interested eventcodes.
-    :type interested_eventcodes: set(int)
+    Parameters
+    ----------
+    interested_eventcodes: typing.Set[int]
+        Set of interested codes to parse
     """
     REGEX_FILE = "resources/windows_event_regex.yaml"
     EVENT_NAME = "windows event"
@@ -37,15 +41,18 @@ class WindowsEventParser(EventParser):
         self.event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, self.get_columns(), self.EVENT_NAME)
 
-    def parse(self, text):
+    def parse(self, text: cudf.Series) -> cudf.Series:
         """Parses the Windows raw event.
 
-        :param dataframe: Raw events to be parsed.
-        :type dataframe: cudf.DataFrame
-        :param raw_column: Raw data contained column name.
-        :type raw_column: string
-        :return: Parsed information.
-        :rtype: cudf.DataFrame
+        Parameters
+        ----------
+        text : cudf.Series
+            Raw event log text to be parsed
+
+        Returns
+        -------
+        cudf.DataFrame
+            Parsed logs dataframe
         """
         # Clean raw data to be consistent.
         text = self.clean_raw_data(text)
@@ -63,15 +70,21 @@ class WindowsEventParser(EventParser):
         parsed_dataframe = parsed_dataframe.fillna("")
         return parsed_dataframe
 
-    def clean_raw_data(self, text):
-        """Lower casing and replacing escape characters.
+    def clean_raw_data(self, text: cudf.Series) -> cudf.Series:
+        """
+        Lower casing and replacing escape characters.
 
-        :param dataframe: Raw events to be parsed.
-        :type dataframe: cudf.DataFrame
-        :param raw_column: Raw data contained column name.
-        :type raw_column: string
-        :return: Clean raw information.
-        :rtype: cudf.DataFrame
+        Parameters
+        ----------
+        text : cudf.Series
+            Raw event log text to be clean
+        event_regex: typing.Dict[str, any]
+            Required regular expressions for a given event type
+
+        Returns
+        -------
+        cudf.Series
+            Clean raw event log text
         """
         text = (text.str.lower().str.replace("\\\\t", "").str.replace("\\\\r", "").str.replace("\\\\n", "|"))
         return text
@@ -88,11 +101,14 @@ class WindowsEventParser(EventParser):
             return required_event_regex
         return event_regex
 
-    def get_columns(self):
-        """ Get columns of windows event codes.
+    def get_columns(self) -> typing.Set[str]:
+        """
+        Get columns of windows event codes.
 
-        :return: Columns of all configured eventcodes, if no interested eventcodes specified.
-        :rtype: set(string)
+        Returns
+        -------
+        typing.Set[str]
+            Columns of all configured eventcodes, if no interested eventcodes specified.
         """
         columns = set()
         for key in self.event_regex.keys():

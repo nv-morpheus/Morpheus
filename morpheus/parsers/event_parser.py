@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import typing
 from abc import ABC
 from abc import abstractmethod
 
@@ -24,40 +25,47 @@ log = logging.getLogger(__name__)
 
 
 class EventParser(ABC):
-    """This is an abstract class for all event log parsers.
+    """
+    This is an abstract class for all event log parsers.
 
-    :param columns: Event column names.
-    :type columns: set(string)
-    :param event_name: Event name
-    :type event_name: string
+    Parameters
+    ----------
+    columns: typing.Set[str]
+        Event column names
+    event_name: str
+        Event name
     """
 
-    def __init__(self, columns, event_name):
-        """Constructor method
-        """
+    def __init__(self, columns: typing.Set[str], event_name: str):
         self._columns = columns
         self._event_name = event_name
 
     @property
     def columns(self):
-        """List of columns that are being processed.
+        """
+        List of columns that are being processed.
 
-        :return: Event column names.
-        :rtype: set(string)
+        Returns
+        -------
+        typing.Set[str]
+            Event column names
         """
         return self._columns
 
     @property
     def event_name(self):
-        """Event name define type of logs that are being processed.
+        """
+        Event name define type of logs that are being processed.
 
-        :return: Event name
-        :rtype: string
+        Returns
+        -------
+        str
+            Event name
         """
         return self._event_name
 
     @abstractmethod
-    def parse(self, text):
+    def parse(self, text: cudf.Series) -> cudf.Series:
         """
         Abstract method 'parse' triggers the parsing functionality. Subclasses are required to implement
         and execute any parsing pre-processing steps.
@@ -65,17 +73,22 @@ class EventParser(ABC):
         log.info("Begin parsing of dataframe")
         pass
 
-    def parse_raw_event(self, text, event_regex):
-        """Processes parsing of a specific type of raw event records received as a dataframe.
+    def parse_raw_event(self, text: cudf.Series, event_regex: typing.Dict[str, any]) -> cudf.DataFrame:
+        """
+        Processes parsing of a specific type of raw event records received as a dataframe.
 
-        :param dataframe: Raw events to be parsed.
-        :type dataframe: cudf.DataFrame
-        :param raw_column: Raw data contained column name.
-        :type raw_column: string
-        :param event_regex: Required regular expressions for a given event type.
-        :type event_regex: dict
-        :return: parsed information.
-        :rtype: cudf.DataFrame
+        Parameters
+        ----------
+
+        text : cudf.Series
+            Raw event log text to be parsed.
+        event_regex: typing.Dict[str, any]
+            Required regular expressions for a given event type.
+
+        Returns
+        -------
+        cudf.DataFrame
+            Parsed logs dataframe
         """
         log.debug("Parsing raw events. Event type: " + self.event_name)
 
@@ -96,8 +109,10 @@ class EventParser(ABC):
 
         return parsed_gdf
 
-    def _load_regex_yaml(self, yaml_file):
-        """Returns a dictionary of the regex contained in the given yaml file"""
+    def _load_regex_yaml(self, yaml_file) -> typing.Dict[str, any]:
+        """
+        Returns a dictionary of event regexes contained in the given yaml file.
+        """
         with open(yaml_file) as yaml_file:
             regex_dict = yaml.safe_load(yaml_file)
         return regex_dict

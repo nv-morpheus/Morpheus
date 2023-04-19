@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,15 +36,20 @@ type_dict = {
 }
 
 
-def parse(filepath):
+def parse(filepath: str) -> cudf.DataFrame:
     """
     Parse Zeek log file and return cuDF dataframe. Uses header comments to get column names/types
     and configure parser.
 
-    :param filepath: filepath for Zeek log file
-    :type filepath: string
-    :return: Zeek log dataframe
-    :rtype: cudf.DataFrame
+    Parameters
+    ----------
+    filepath : str
+        File path of Zeek log file
+
+    Returns
+    -------
+    cudf.DataFrame
+        Parsed Zeek log dataframe
     """
     header_gdf = cudf.read_csv(filepath, names=["line"], nrows=8)
     lines_gdf = header_gdf["line"].str.split()

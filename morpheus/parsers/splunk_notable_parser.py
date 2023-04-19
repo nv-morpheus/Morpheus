@@ -23,28 +23,33 @@ log = logging.getLogger(__name__)
 
 
 class SplunkNotableParser(EventParser):
-    """This is class parses splunk notable logs.
+    """
+    This is class parses splunk notable logs.
     """
     REGEX_FILE = "resources/splunk_notable_regex.yaml"
     EVENT_NAME = "notable"
 
     def __init__(self):
-        """Constructor method
-        """
         event_regex = {}
         regex_filepath = (os.path.dirname(os.path.abspath(__file__)) + "/" + self.REGEX_FILE)
         self.event_regex = self._load_regex_yaml(regex_filepath)
         EventParser.__init__(self, event_regex.keys(), self.EVENT_NAME)
 
-    def parse(self, text):
-        """Parses the Splunk notable raw events.
+    def parse(self, text: cudf.Series) -> cudf.Series:
+        """
+        Parses the Splunk notable raw events.
 
-        :param dataframe: Raw events to be parsed.
-        :type dataframe: cudf.DataFrame
-        :param raw_column: Raw data contained column name.
-        :type raw_column: string
-        :return: parsed information.
-        :rtype: cudf.DataFrame
+        Parameters
+        ----------
+        text : cudf.Series
+            Raw event log text to be parsed.
+        event_regex: typing.Dict[str, any]
+            Required regular expressions for a given event type.
+
+        Returns
+        -------
+        cudf.DataFrame
+            Parsed logs dataframe
         """
         # Cleaning raw data to be consistent.
         text = text.str.replace("\\\\", "")
@@ -55,7 +60,7 @@ class SplunkNotableParser(EventParser):
         parsed_dataframe = self._process_ip_fields(parsed_dataframe)
         return parsed_dataframe
 
-    def _process_ip_fields(self, parsed_dataframe):
+    def _process_ip_fields(self, parsed_dataframe: cudf.DataFrame) -> cudf.DataFrame:
         """
         This function replaces src_ip column with src_ip2, if scr_ip is empty and does the same way for dest_ip column.
         """
