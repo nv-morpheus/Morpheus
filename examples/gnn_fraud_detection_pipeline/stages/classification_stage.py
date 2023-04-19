@@ -62,8 +62,12 @@ class ClassificationStage(SinglePortStage):
     def _process_message(self, message: GraphSAGEMultiMessage):
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
 
+        # TODO: pre-allocate node_id & prediction columns
         message.set_meta("node_id", message.node_identifiers)
 
+        # The XGBoost model is returning two probabilities for the binary classification. The first (column 0) is 
+        # probability that the transaction is in the benign class, and the second (column 1) is the probability that 
+        # the transaction is in the fraudulent class. Added together the two values will always equal 1.
         prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
 
         message.set_meta("prediction", prediction)
