@@ -71,6 +71,11 @@ def hinsage_model(example_dir: str):
     yield os.path.join(example_dir, 'model/hinsage-model.pt')
 
 
+@pytest.fixture
+def xgb_model(example_dir: str):
+    yield os.path.join(example_dir, 'model/xgb-model.pt')
+
+
 # Some of the code inside gnn_fraud_detection_pipeline performs some relativ imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
