@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "morpheus_export.h"
-
+#include "morpheus/export.h"
 #include "morpheus/objects/dtype.hpp"              // for DType, TypeId
 #include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/types.hpp"                      // for ShapeType, TensorIndex

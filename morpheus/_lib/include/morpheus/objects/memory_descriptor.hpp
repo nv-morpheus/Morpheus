@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus_export.h"
+#include "morpheus/export.h"
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/device_memory_resource.hpp>

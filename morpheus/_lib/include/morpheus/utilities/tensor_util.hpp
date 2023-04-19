@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "morpheus_export.h"
-
+#include "morpheus/export.h"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
