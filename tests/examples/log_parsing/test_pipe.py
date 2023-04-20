@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 from unittest import mock
 
@@ -34,7 +35,7 @@ FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
 
 
-def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
+def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
     """
     Runs just the Log Parsing Pipeline
     """
@@ -88,7 +89,7 @@ def _run_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typi
     assert_results(comp_stage.get_results())
 
 
-def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
+def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
     """
     Runs the minibert pipeline and mocks the Triton Python interface
     """
@@ -134,5 +135,5 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
 ])
-def test_pipe(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
+def test_pipe(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[types.ModuleType]):
     _run_mocked_pipeline(config, dataset_cudf, import_mod)

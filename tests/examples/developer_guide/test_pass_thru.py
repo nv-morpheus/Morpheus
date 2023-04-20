@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 
 import pandas as pd
@@ -42,7 +43,7 @@ def _check_pass_thru(config: Config,
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])
 def test_pass_thru_ex1(config: Config,
                        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[typing.Any]):
+                       import_mod: typing.List[types.ModuleType]):
     pass_thru = import_mod[0]
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
 
@@ -50,6 +51,6 @@ def test_pass_thru_ex1(config: Config,
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py')])
 def test_pass_thru_ex3(config: Config,
                        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[typing.Any]):
+                       import_mod: typing.List[types.ModuleType]):
     pass_thru = import_mod[0]
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 
 import cupy as cp
@@ -55,7 +56,7 @@ def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test
 ])
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
-                                           import_mod: typing.List[typing.Any]):
+                                           import_mod: typing.List[types.ModuleType]):
     messages_mod, postprocessing_mod = import_mod
 
     model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
