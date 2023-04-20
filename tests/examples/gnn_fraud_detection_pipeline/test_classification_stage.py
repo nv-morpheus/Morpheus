@@ -40,7 +40,9 @@ class TestClassificationStage:
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
 
-        df = dataset_cudf['filter_probs.csv']
+        df = dataset_cudf['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
+        df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
+
         expected_df = dataset_cudf.pandas['examples/gnn_fraud_detection_pipeline/predictions.csv']
         assert len(df) == len(expected_df)
 
@@ -48,7 +50,7 @@ class TestClassificationStage:
         # inserted into a "node_id" column in the DF
         node_identifiers = expected_df['node_id'].tolist()
 
-        ind_emb_columns = ['v2', 'v3']
+        ind_emb_columns = list(df.columns)
 
         meta = MessageMeta(df)
         msg = GraphSAGEMultiMessage(meta=meta,
@@ -57,6 +59,7 @@ class TestClassificationStage:
 
         stage = ClassificationStage(config, xgb_model)
         results = stage._process_message(msg)
+        print(results.get_meta(['prediction', 'node_id']))
 
         # The stage actually edits the message in place, and returns it, but we don't need to assert that
         assert_results(compare_df.compare_df(results.get_meta(['prediction', 'node_id']).to_pandas(), expected_df))
