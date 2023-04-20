@@ -27,9 +27,6 @@ on:
 env:
   GITHUB_TOKEN: ${{ github.token }}
 
-permissions:
-  issues: write
-
 jobs:
   Label-Issue:
     runs-on: ubuntu-latest
@@ -41,5 +38,4 @@ jobs:
           issue_number=${{ github.event.issue.number }}
           label="Needs Triage"
 
-          gh auth login --with-token <<< "${GITHUB_TOKEN}"
           gh issue label add "${issue_number}" "${label}"
