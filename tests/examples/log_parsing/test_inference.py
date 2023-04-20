@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 from unittest import mock
 
@@ -76,7 +77,7 @@ def build_inf_message(df: typing.Union[pd.DataFrame, cudf.DataFrame],
                                  count=count)
 
 
-def _check_worker(inference_mod: typing.Any, worker: _TritonInferenceWorker):
+def _check_worker(inference_mod: types.ModuleType, worker: _TritonInferenceWorker):
     assert isinstance(worker, _TritonInferenceWorker)
     assert isinstance(worker, inference_mod.TritonInferenceLogParsing)
     assert worker._model_name == 'test_model'
@@ -91,7 +92,8 @@ def _check_worker(inference_mod: typing.Any, worker: _TritonInferenceWorker):
 
 @pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, import_mod: typing.List[typing.Any]):
+def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
+                                                              import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
     worker = inference_mod.TritonInferenceLogParsing(inf_queue=ProducerConsumerQueue(),
                                                      c=config,
@@ -110,7 +112,7 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config, im
 def test_log_parsing_triton_inference_log_parsing_build_output_message(config: Config,
                                                                        filter_probs_df: typing.Union[pd.DataFrame,
                                                                                                      cudf.DataFrame],
-                                                                       import_mod: typing.List[typing.Any],
+                                                                       import_mod: typing.List[types.ModuleType],
                                                                        mess_offset: int,
                                                                        mess_count: int,
                                                                        offset: int,
@@ -149,7 +151,7 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 
 @pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[typing.Any]):
+def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
     stage = inference_mod.LogParsingInferenceStage(
         config,
@@ -172,7 +174,7 @@ def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typ
 
 @pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
-def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[typing.Any]):
+def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
 
     stage = inference_mod.LogParsingInferenceStage(
@@ -197,7 +199,7 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
 ])
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
 def test_log_parsing_inference_stage_convert_one_response(config: Config,
-                                                          import_mod: typing.List[typing.Any],
+                                                          import_mod: typing.List[types.ModuleType],
                                                           filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
                                                           mess_offset,
                                                           mess_count,

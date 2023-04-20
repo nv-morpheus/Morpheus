@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 
 import pytest
@@ -29,7 +30,9 @@ EXPECTED_NEW_COLS = ['to_count', 'bcc_count', 'cc_count', 'total_recipients', 'd
 
 @pytest.mark.import_mod(
     [os.path.join(TEST_DIRS.examples_dir, 'developer_guide/2_1_real_world_phishing/recipient_features_stage.py')])
-def test_recipient_features_stage_on_data(config: Config, dataset: DatasetManager, import_mod: typing.List[typing.Any]):
+def test_recipient_features_stage_on_data(config: Config,
+                                          dataset: DatasetManager,
+                                          import_mod: typing.List[types.ModuleType]):
     recipient_features_stage = import_mod[0]
 
     input_df = dataset[os.path.join(TEST_DIRS.tests_data_dir,
@@ -54,7 +57,7 @@ def test_recipient_features_stage_on_data(config: Config, dataset: DatasetManage
 
 @pytest.mark.import_mod(
     [os.path.join(TEST_DIRS.examples_dir, 'developer_guide/2_1_real_world_phishing/recipient_features_stage.py')])
-def test_recipient_features_stage_needed_columns(config: Config, import_mod: typing.List[typing.Any]):
+def test_recipient_features_stage_needed_columns(config: Config, import_mod: typing.List[types.ModuleType]):
     recipient_features_stage = import_mod[0]
     config.mode = PipelineModes.NLP
 

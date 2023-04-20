@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 
 import cupy as cp
@@ -73,7 +74,8 @@ def check_inf_message(msg: MultiInferenceFILMessage,
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'abp_pcap_detection/abp_pcap_preprocessing.py')])
-def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager, import_mod: typing.List[typing.Any]):
+def test_abp_pcap_preprocessing(config: Config, dataset_cudf: DatasetManager,
+                                import_mod: typing.List[types.ModuleType]):
     # Setup the config
     config.mode = PipelineModes.FIL
     config.feature_length = 13
