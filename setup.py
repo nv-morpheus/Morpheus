@@ -43,7 +43,8 @@ setup(
     ],
     author="NVIDIA Corporation",
     include_package_data=True,
-    packages=find_packages(include=["morpheus", "morpheus.*"], exclude=['tests']),
+    packages=find_packages(include=["morpheus*"], exclude=['tests']) +
+    [f"morpheus._lib.{n}" for n in ["common", "messages", "modules", "stages"]],
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
