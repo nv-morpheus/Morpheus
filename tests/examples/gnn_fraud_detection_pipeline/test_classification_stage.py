@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import typing
 
 import pytest
@@ -30,13 +31,19 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestClassificationStage:
 
-    def test_constructor(config: Config, xgb_model: str, gnn_fraud_detection_pipeline: typing.Any, cuml: typing.Any):
+    def test_constructor(config: Config,
+                         xgb_model: str,
+                         gnn_fraud_detection_pipeline: types.ModuleType,
+                         cuml: types.ModuleType):
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
 
         stage = ClassificationStage(config, xgb_model)
         assert isinstance(stage._xgb_model, cuml.ForestInference)
 
-    def test_process_message(config: Config, xgb_model: str, gnn_fraud_detection_pipeline: typing.Any, dataset_cudf):
+    def test_process_message(config: Config,
+                             xgb_model: str,
+                             gnn_fraud_detection_pipeline: types.ModuleType,
+                             dataset_cudf):
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
 

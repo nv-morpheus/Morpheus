@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import types
 import typing
 from io import StringIO
 
@@ -33,7 +34,7 @@ from utils import TEST_DIRS
     [os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline/stages/graph_construction_stage.py')])
 class TestGraphConstructionStage:
 
-    def test_constructor(config: Config, training_file: str, import_mod: typing.List[typing.Any]):
+    def test_constructor(config: Config, training_file: str, import_mod: typing.List[types.ModuleType]):
         graph_construction_stage = import_mod[0]
         stage = graph_construction_stage.FraudGraphConstructionStage(config, training_file)
         assert isinstance(stage._training_data, cudf.DataFrame)
@@ -42,7 +43,11 @@ class TestGraphConstructionStage:
         # that are depended upon in the code
         assert {'client_node', 'index', 'fraud_label', 'merchant_node'}.issubset(stage._column_names)
 
-    def _check_graph(self, stellargraph: typing.Any, sg: "stellargraph.StellarGraph", expected_nodes, expected_edges):
+    def _check_graph(self,
+                     stellargraph: types.ModuleType,
+                     sg: "stellargraph.StellarGraph",
+                     expected_nodes,
+                     expected_edges):
         assert isinstance(sg, stellargraph.StellarGraph)
         sg.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
         assert not sg.is_directed()
@@ -53,7 +58,10 @@ class TestGraphConstructionStage:
         edges = sg.edges()
         assert set(edges) == expected_edges
 
-    def test_graph_construction(self, import_mod: typing.List[typing.Any], stellargraph: typing.Any, test_data: dict):
+    def test_graph_construction(self,
+                                import_mod: typing.List[types.ModuleType],
+                                stellargraph: types.ModuleType,
+                                test_data: dict):
         graph_construction_stage = import_mod[0]
         df = test_data['df']
 
@@ -77,15 +85,18 @@ class TestGraphConstructionStage:
 
         self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
 
-    def test_build_graph_features(self, import_mod: typing.List[typing.Any], stellargraph: typing.Any, test_data: dict):
+    def test_build_graph_features(self,
+                                  import_mod: typing.List[types.ModuleType],
+                                  stellargraph: types.ModuleType,
+                                  test_data: dict):
         graph_construction_stage = import_mod[0]
         sg = graph_construction_stage.FraudGraphConstructionStage._build_graph_features(test_data['df'])
         self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
 
     def test_process_message(self,
                              config: Config,
-                             import_mod: typing.List[typing.Any],
-                             stellargraph: typing.Any,
+                             import_mod: typing.List[types.ModuleType],
+                             stellargraph: types.ModuleType,
                              test_data: dict):
         graph_construction_stage = import_mod[0]
         df = test_data['df']

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 import typing
 
 import pytest
@@ -30,7 +31,8 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(config: Config, hinsage_model: str, gnn_fraud_detection_pipeline: typing.Any, tensorflow):
+    def test_constructor(config: Config, hinsage_model: str, gnn_fraud_detection_pipeline: types.ModuleType,
+                         tensorflow):
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
         stage = GraphSAGEStage(config,
                                model_hinsage_file=hinsage_model,
@@ -47,7 +49,7 @@ class TestGraphSageStage:
 
     def test_inductive_step_hinsage(config: Config,
                                     hinsage_model: str,
-                                    gnn_fraud_detection_pipeline: typing.Any,
+                                    gnn_fraud_detection_pipeline: types.ModuleType,
                                     test_data: dict,
                                     dataset_pandas: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
@@ -70,7 +72,7 @@ class TestGraphSageStage:
 
     def test_process_message(config: Config,
                              hinsage_model: str,
-                             gnn_fraud_detection_pipeline: typing.Any,
+                             gnn_fraud_detection_pipeline: types.ModuleType,
                              test_data: dict,
                              dataset_pandas: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
