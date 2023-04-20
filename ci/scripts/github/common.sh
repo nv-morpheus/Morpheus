@@ -68,14 +68,19 @@ print_env_vars
 
 function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
-    rapids-mamba-retry env update -n morpheus --prune -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+    # Deactivate the environment first before updating
     conda deactivate
-    conda activate morpheus
+
+    # Update the packages with --prune to remove any extra packages
+    rapids-mamba-retry env update -n morpheus --prune -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+    # Finally, reactivate
+    conda activate mrc
 
     rapids-logger "Final Conda Environment"
     conda list
 }
-
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API"
