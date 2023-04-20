@@ -63,7 +63,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 > **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
 ```bash
-conda install dask==2022.7.0 distributed==2022.7.0
+mamba install dask==2023.1.1 distributed==2023.1.1
 ```
 
 ## Run Ransomware Detection Pipeline
