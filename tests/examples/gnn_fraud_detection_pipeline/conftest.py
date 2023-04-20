@@ -51,6 +51,9 @@ def tensorflow():
 
 @pytest.fixture
 def config(config):
+    """
+    The GNN fraud detection pipeline utilizes the "other" pipeline mode.
+    """
     from morpheus.config import PipelineModes
     config.mode = PipelineModes.OTHER
     yield config
@@ -76,7 +79,7 @@ def xgb_model(example_dir: str):
     yield os.path.join(example_dir, 'model/xgb-model.pt')
 
 
-# Some of the code inside gnn_fraud_detection_pipeline performs some relativ imports in the form of:
+# Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
 @pytest.fixture
