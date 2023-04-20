@@ -32,7 +32,8 @@ EXPECTED_NEW_COLS = ['to_count', 'bcc_count', 'cc_count', 'total_recipients', 'd
 def test_recipient_features_stage_on_data(config: Config, dataset: DatasetManager, import_mod: typing.List[typing.Any]):
     recipient_features_stage = import_mod[0]
 
-    input_df = dataset[os.path.join(TEST_DIRS.tests_data_dir, 'examples/email_with_addresses_first_10.jsonlines')]
+    input_df = dataset[os.path.join(TEST_DIRS.tests_data_dir,
+                                    'examples/developer_guide/email_with_addresses_first_10.jsonlines')]
 
     config.mode = PipelineModes.NLP
     stage = recipient_features_stage.RecipientFeaturesStage(config)

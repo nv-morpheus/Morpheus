@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import random
 import typing
@@ -79,6 +80,9 @@ class DatasetManager(object):
         """
 
         if len(reader_kwargs) and not no_cache:
+            logger = logging.getLogger(f"morpheus.{__name__}")
+            logger.warning("Setting specific `reader_kwargs` requires bypassing the cache. "
+                           "Set `no_cache=True` to avoid this warning.")
             no_cache = True
 
         abs_path = os.path.abspath(file_path)

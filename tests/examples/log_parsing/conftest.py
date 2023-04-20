@@ -18,6 +18,9 @@ import pytest
 
 @pytest.fixture
 def config(config):
+    """
+    The log_parsing pipelie requires NLP mode. Set this here so all the tests don't need to set it themselves.
+    """
     from morpheus.config import PipelineModes
     config.mode = PipelineModes.NLP
     yield config
