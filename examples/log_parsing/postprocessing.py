@@ -20,6 +20,7 @@ from collections import defaultdict
 import mrc
 import numpy as np
 import pandas as pd
+from mrc.core import operators as ops
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
@@ -159,7 +160,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
-        stream = builder.make_node(self.unique_name, self._postprocess)
+        stream = builder.make_node(self.unique_name, ops.map(self._postprocess))
 
         builder.make_edge(input_stream[0], stream)
 

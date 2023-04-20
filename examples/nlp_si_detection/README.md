@@ -123,7 +123,7 @@ morpheus --log_level=DEBUG \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
    `# 7th Stage: Filtering removes any messages that did not detect SI` \
-   filter \
+   filter --filter_source=TENSOR \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \

@@ -53,7 +53,7 @@ def test_build_single_before_module_registration(config):
     mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
 
@@ -81,7 +81,7 @@ def test_build_single_after_module_registration(config):
     mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
 

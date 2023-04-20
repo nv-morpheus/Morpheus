@@ -19,6 +19,7 @@ import typing
 import cupy as cp
 import mlflow
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -155,7 +156,7 @@ class MLFlowDriftStage(SinglePortStage):
         stream = input_stream[0]
 
         # Convert the messages to rows of strings
-        node = builder.make_node(self.unique_name, self._calc_drift)
+        node = builder.make_node(self.unique_name, ops.map(self._calc_drift))
         builder.make_edge(input_stream[0], node)
         stream = node
 

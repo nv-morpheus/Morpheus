@@ -22,7 +22,6 @@
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
 
-#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -540,7 +539,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string& bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    return load_json_table(options.build());
+    return cudf::io::read_json(options.build());
 }
 
 template <bool EnableFilter>

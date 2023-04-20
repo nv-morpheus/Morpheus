@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Add new issue/PR to project
-
-on:
-  issues:
-    types:
-      - opened
-
-  pull_request_target:
-    types:
-      - opened
-
-jobs:
-  add-to-project:
-    name: Add issue or PR to project
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/add-to-project@v0.3.0
-        with:
-          project-url: https://github.com/orgs/nv-morpheus/projects/1
-          github-token: ${{ github.token }}
+blank_issues_enabled: true
+contact_links:
+  - name: Ask a Question
+    url: https://github.com/nv-morpheus/morpheus/discussions
+    about: Please ask any questions here.

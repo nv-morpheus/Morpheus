@@ -18,6 +18,7 @@ from abc import abstractmethod
 
 import mrc
 import typing_utils
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
@@ -73,7 +74,7 @@ class PreprocessBaseStage(MultiMessageStage):
         if self._build_cpp_node():
             stream = self._get_preprocess_node(builder)
         else:
-            stream = builder.make_node(self.unique_name, preprocess_fn)
+            stream = builder.make_node(self.unique_name, ops.map(preprocess_fn))
 
         builder.make_edge(input_stream[0], stream)
 

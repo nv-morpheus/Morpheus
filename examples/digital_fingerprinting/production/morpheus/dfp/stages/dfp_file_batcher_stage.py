@@ -128,11 +128,7 @@ class DFPFileBatcherStage(SinglePortStage):
         return output_batches
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.flatten()).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
         builder.make_edge(input_stream[0], stream)
 
         return stream, typing.List[fsspec.core.OpenFiles]

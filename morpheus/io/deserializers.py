@@ -26,17 +26,6 @@ from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
 
 
-def cudf_json_onread_cleanup(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
-    """
-    Fixes parsing issues when reading from a file. When loading a JSON file, cuDF converts ``\\n`` to
-    ``\\\\n`` for some reason.
-    """
-    if ("data" in x and not x.empty):
-        x["data"] = x["data"].str.replace('\\n', '\n', regex=False)
-
-    return x
-
-
 def read_file_to_df(file_name: str,
                     file_type: FileTypes = FileTypes.Auto,
                     parser_kwargs: dict = None,
@@ -92,9 +81,6 @@ def read_file_to_df(file_name: str,
     df = None
     if (mode == FileTypes.JSON):
         df = df_class.read_json(file_name, **kwargs)
-
-        if (df_type == "cudf"):
-            df = cudf_json_onread_cleanup(df)
 
     elif (mode == FileTypes.CSV):
         df: pd.DataFrame = df_class.read_csv(file_name, **kwargs)

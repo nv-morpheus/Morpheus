@@ -20,6 +20,7 @@ import os
 from recipient_features_stage import RecipientFeaturesStage
 
 import morpheus
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -92,7 +93,7 @@ def run_pipeline():
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
     # Filter values lower than 0.9
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9))
+    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9, filter_source=FilterSource.TENSOR))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))

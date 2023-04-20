@@ -35,6 +35,7 @@ We start our class definition with a few basic imports:
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -76,15 +77,15 @@ Our `on_data` method accepts an incoming message and returns a message. The retu
 Finally, the `_build_single` method will be used at stage build time to construct our node and wire it into the pipeline. `_build_single` receives an instance of an MRC segment builder (`mrc.Builder`) along with a `StreamPair` instance, which is a tuple consisting of our parent node and its output type. We will be using the builder instance to construct a node from our stage and connecting it to the Morpheus pipeline. The return type of `_build_single` is also a `StreamPair` which will be comprised of our node along with its data type.
 ```python
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
 ```
 
-For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution graph. To build the node, we will call the `make_node` method of the builder instance, passing it our `unique_name` and `on_data` methods. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
+For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution pipeline. To build the node, we will call the `make_node` method of the builder instance, passing it the `unique_name` property method and applying MRC's map operator to the `on_data` method. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
 ```python
-node = builder.make_node(self.unique_name, self.on_data)
+node = builder.make_node(self.unique_name, ops.map(self.on_data))
 ```
 
 Next, we will define an edge connecting our new node to our parent node:
@@ -102,6 +103,7 @@ return node, input_stream[1]
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -129,7 +131,7 @@ class PassThruStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

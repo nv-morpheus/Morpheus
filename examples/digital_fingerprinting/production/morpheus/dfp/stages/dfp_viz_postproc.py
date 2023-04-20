@@ -18,6 +18,7 @@ import typing
 
 import mrc
 import pandas as pd
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -119,7 +120,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
             return x
 
-        dfp_viz_postproc = builder.make_node(self.unique_name, write_to_files)
+        dfp_viz_postproc = builder.make_node(self.unique_name, ops.map(write_to_files))
 
         builder.make_edge(stream, dfp_viz_postproc)
         stream = dfp_viz_postproc

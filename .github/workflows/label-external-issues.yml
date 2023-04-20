@@ -20,9 +20,13 @@ on:
     types:
       - opened
       
+  discussion:
+    types:
+      - created
+      
 env:
-  GITHUB_TOKEN: ${{ github.token }}
-  # Label ID from an external graphQL query, represents '? - Needs Triage'
+  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+  # Label ID from an external graphQL query, represents 'Needs Triage'
   LABEL_ID: LA_kwDOFrb0NM7yzEQv
 
 permissions:

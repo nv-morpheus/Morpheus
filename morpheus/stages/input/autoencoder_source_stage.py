@@ -320,26 +320,23 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
-        def node_fn(input: mrc.Observable, output: mrc.Subscriber):
-
-            input.pipe(
-                # At this point, we have batches of filenames to process. Make a node for processing batches of
-                # filenames into batches of dataframes
-                ops.map(
-                    partial(
-                        self.files_to_dfs_per_user,
-                        userid_column_name=self._user_column_name,
-                        feature_columns=None,  # Use None here to leave all columns in
-                        userid_filter=self._userid_filter,
-                        repeat_count=self._repeat_count)),
-                ops.map(self._add_derived_features),
-                # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
-                # per user
-                ops.map(self._build_user_metadata),
-                # Finally flatten to single meta
-                ops.flatten()).subscribe(output)
-
-        post_node = seg.make_node_full(self.unique_name + "-post", node_fn)
+        # At this point, we have batches of filenames to process. Make a node for processing batches of
+        # filenames into batches of dataframes
+        post_node = seg.make_node(
+            self.unique_name + "-post",
+            ops.map(
+                partial(
+                    self.files_to_dfs_per_user,
+                    userid_column_name=self._user_column_name,
+                    feature_columns=None,  # Use None here to leave all columns in
+                    userid_filter=self._userid_filter,
+                    repeat_count=self._repeat_count)),
+            ops.map(self._add_derived_features),
+            # Now group the batch of dataframes into a single df, split by user, and send a single UserMessageMeta
+            # per user
+            ops.map(self._build_user_metadata),
+            # Finally flatten to single meta
+            ops.flatten())
         seg.make_edge(out_stream, post_node)
 
         out_stream = post_node

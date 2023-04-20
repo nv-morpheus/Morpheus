@@ -28,9 +28,6 @@ filterwarnings = [
    'ignore:Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe context manager to modify the DataFrame in-place instead.',
    'ignore:`np.MachAr` is deprecated \(NumPy 1.22\):DeprecationWarning',
    'ignore:Please use `spmatrix` from the `scipy.sparse` namespace, the `scipy.sparse.base` namespace is deprecated:DeprecationWarning',
-   # Warnings coming from MRC make_node and make_node full. Remove after #782 is completed
-   'ignore:make_node_full\(name, sub_fn\) is deprecated and will be removed in a future version.:DeprecationWarning',
-   'ignore:Passing a map function object to make_node\(\) is deprecated and will be removed in a future version.:DeprecationWarning'
 ]
 
 testpaths = ["tests"]

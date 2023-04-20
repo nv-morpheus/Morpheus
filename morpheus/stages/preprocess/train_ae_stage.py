@@ -311,29 +311,25 @@ class TrainAEStage(MultiMessageStage):
         else:
             get_model_fn = self._train_model
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
+        def on_next(x: UserMessageMeta):
 
-            def on_next(x: UserMessageMeta):
+            model, scores_mean, scores_std = get_model_fn(x)
 
-                model, scores_mean, scores_std = get_model_fn(x)
+            full_message = MultiAEMessage(meta=x,
+                                          model=model,
+                                          train_scores_mean=scores_mean,
+                                          train_scores_std=scores_std)
 
-                full_message = MultiAEMessage(meta=x,
-                                              model=model,
-                                              train_scores_mean=scores_mean,
-                                              train_scores_std=scores_std)
+            to_send = []
 
-                to_send = []
+            # Now split into batches
+            for i in range(0, full_message.mess_count, self._batch_size):
 
-                # Now split into batches
-                for i in range(0, full_message.mess_count, self._batch_size):
+                to_send.append(full_message.get_slice(i, min(i + self._batch_size, full_message.mess_count)))
 
-                    to_send.append(full_message.get_slice(i, min(i + self._batch_size, full_message.mess_count)))
+            return to_send
 
-                return to_send
-
-            obs.pipe(ops.map(on_next), ops.flatten()).subscribe(sub)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.map(on_next), ops.flatten())
         builder.make_edge(stream, node)
         stream = node
 
