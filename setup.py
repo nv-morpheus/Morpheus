@@ -25,6 +25,10 @@ import versioneer  # noqa: E402
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
 
+print(
+    find_packages(include=["morpheus*"], exclude=['tests']) +
+    (["morpheus.data"] + [f"morpheus._lib.{n}" for n in ["common", "cudf_helpers", "messages", "modules", "stages"]]))
+
 setup(
     name="morpheus",
     version=versioneer.get_version(),
@@ -43,8 +47,7 @@ setup(
     ],
     author="NVIDIA Corporation",
     include_package_data=True,
-    packages=find_packages(include=["morpheus*"], exclude=['tests']) +
-    (["morpheus.data"] + [f"morpheus._lib.{n}" for n in ["common", "cudf_helpers", "messages", "modules", "stages"]]),
+    packages=find_packages(include=["morpheus*"], exclude=['tests']),
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
