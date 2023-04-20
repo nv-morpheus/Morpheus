@@ -51,12 +51,12 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
-        - cmake 3.24
         - ccache
+        - cmake 3.24
+        - cuda-cudart-dev # Needed by CMake to compile a test application
         - ninja
       host:
-        - cuda-python 11.8
-        - cudatoolkit {{ cuda_version }}.*
+        - cuda-cudart-dev {{ cuda_version }}.*
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -67,13 +67,16 @@ outputs:
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
-        - scikit-build >=0.12
+        - scikit-build >=0.17
         - versioneer-518
+
+        # Remove cudatoolkit once `mamba repoquery whoneeds cudatoolkit` is empty. For now, we need to specify a version
+        - cudatoolkit {{ cuda_version }}.*
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
+        - {{ pin_compatible('cuda-cudart', min_pin='x.x', max_pin='x') }}
         - click >=8
         - configargparse 1.5.*
-        - cuda-python 11.8
         - cudf
         - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
@@ -96,13 +99,10 @@ outputs:
         - typing_utils 0.1.*
         - watchdog 2.1.*
       run_constrained:
-        # If cuml is installed, we need to constrain these two libraries. See:
-        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-        - libcusolver<=11.4.1.48
-        - libcusparse<12
+        # Since we dont explicitly require this but other packages might, constrain the versions.
+        - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
     test:
       requires:
-        - cudatoolkit {{ cuda_version }}.*
         - gputil
         - pytest
         - pytest-cov
