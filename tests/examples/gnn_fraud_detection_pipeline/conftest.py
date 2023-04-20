@@ -28,7 +28,7 @@ SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a num
 @pytest.fixture(autouse=True, scope='session')
 def stellargraph():
     """
-    All of the fixtures in this subdir require stellargraph
+    All of the tests in this subdir require stellargraph
     """
     yield pytest.importorskip("stellargraph", reason=SKIP_REASON)
 
@@ -36,7 +36,7 @@ def stellargraph():
 @pytest.fixture(autouse=True, scope='session')
 def cuml():
     """
-    All of the fixtures in this subdir require cuml
+    All of the tests in this subdir require cuml
     """
     yield pytest.importorskip("cuml", reason=SKIP_REASON)
 
@@ -44,7 +44,7 @@ def cuml():
 @pytest.fixture(autouse=True, scope='session')
 def tensorflow():
     """
-    All of the fixtures in this subdir require tensorflow
+    All of the tests in this subdir require tensorflow
     """
     yield pytest.importorskip("tensorflow", reason=SKIP_REASON)
 

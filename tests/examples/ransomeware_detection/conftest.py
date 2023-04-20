@@ -29,7 +29,7 @@ SKIP_REASON = ("Tests for the ransomeware_detection example require a number of 
 @pytest.fixture(autouse=True, scope='session')
 def dask_distributed():
     """
-    All of the fixtures in this subdir requires dask.distributed
+    All of the tests in this subdir requires dask.distributed
     """
     yield pytest.importorskip("dask.distributed", reason=SKIP_REASON)
 
