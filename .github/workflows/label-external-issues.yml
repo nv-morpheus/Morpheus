@@ -25,7 +25,7 @@ on:
       - created
       
 env:
-  GITHUB_TOKEN: ${{ github.token }}
+  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_SECRET }}
 
 jobs:
   Label-Issue:
