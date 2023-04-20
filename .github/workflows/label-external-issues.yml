@@ -35,5 +35,5 @@ jobs:
     steps: 
       - name: add-triage-label
         run: |
-          issue_url=${{ github.event.issue.url }}
-          gh issue edit ${issue_url} --add-label "Needs Triage"
+          issue_number=${{ github.event.issue.number }}
+          gh issue edit ${issue_number} --add-label "Needs Triage"
