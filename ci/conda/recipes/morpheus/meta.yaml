@@ -56,7 +56,7 @@ outputs:
         - cuda-cudart-dev # Needed by CMake to compile a test application
         - ninja
       host:
-        - cuda-cudart-dev {{ cuda_version }}.*
+        - cuda-cudart
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -67,7 +67,7 @@ outputs:
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
-        - scikit-build >=0.17
+        - scikit-build 0.17.1
         - versioneer-518
 
         # Remove cudatoolkit once `mamba repoquery whoneeds cudatoolkit` is empty. For now, we need to specify a version
@@ -88,13 +88,13 @@ outputs:
         - libmrc
         - mlflow >1.29,<2
         - mrc
-        - networkx 2.8.*
+        - networkx 3.1.*
         - numpydoc 1.4.*
         - pandas 1.3.*
         - pluggy 1.0.*
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - python
-        - scikit-learn 0.23.1
+        - scikit-learn 1.2.2
         - tqdm 4.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
