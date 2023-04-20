@@ -25,9 +25,7 @@ on:
       - created
       
 env:
-  GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
-  # Label ID from an external graphQL query, represents 'Needs Triage'
-  LABEL_ID: LA_kwDOFrb0NM7yzEQv
+  GITHUB_TOKEN: ${{ github.token }}
 
 permissions:
   issues: write
@@ -40,12 +38,8 @@ jobs:
     steps: 
       - name: add-triage-label
         run: |
-          gh api graphql -f query='
-            mutation {
-              addLabelsToLabelable(input: {labelableId : "${{ github.event.issue.node_id }}" , 
-                                           labelIds: [ "${{ env.LABEL_ID }}" ]
-                                           }
-                                   ){
-                                     clientMutationId
-                                     }
-                       }'
+          issue_number=${{ github.event.issue.number }}
+          label="Needs Triage"
+
+          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh issue label add "${issue_number}" "${label}"
