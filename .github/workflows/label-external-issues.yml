@@ -20,10 +20,6 @@ on:
     types:
       - opened
       
-  discussion:
-    types:
-      - created
-      
 env:
   GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
 
