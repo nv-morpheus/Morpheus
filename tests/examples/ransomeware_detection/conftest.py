@@ -46,7 +46,7 @@ def config(config):
 
 @pytest.fixture
 def example_dir():
-    yield os.path.join(TEST_DIRS.examples_dir, 'ransomeware_detection')
+    yield os.path.join(TEST_DIRS.examples_dir, 'ransomware_detection')
 
 
 @pytest.fixture
