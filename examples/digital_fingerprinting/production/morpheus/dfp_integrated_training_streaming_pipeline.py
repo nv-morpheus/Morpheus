@@ -74,7 +74,7 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
 @click.option(
     "--use_cpp",
     type=click.BOOL,
-    default=False,
+    default=True,
     help=("Indicates what type of logs are going to be used in the workload."),
 )
 @click.option(
