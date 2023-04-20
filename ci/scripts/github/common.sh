@@ -76,7 +76,7 @@ function update_conda_env() {
     rapids-mamba-retry env update -n morpheus --prune -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
     # Finally, reactivate
-    conda activate mrc
+    conda activate morpheus
 
     rapids-logger "Final Conda Environment"
     conda list
