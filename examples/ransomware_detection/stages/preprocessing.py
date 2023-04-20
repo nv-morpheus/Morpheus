@@ -167,6 +167,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
         # Rollover pending snapshots
         self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
 
+        # TODO: pre-allocate
         # This column is used to identify whether sequence is genuine or dummy
         x.set_meta('sequence', sequence)
 
