@@ -12,20 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
+
 import dataclasses
 import logging
 import re
 import typing
-from datetime import datetime
-
-import nvtabular as nvt
-import pandas as pd
-import numpy as np
 
 import cudf
-from merlin.core.dispatch import DataFrameType, annotate
-from merlin.schema import Schema, ColumnSchema
-from nvtabular.ops.operator import ColumnSelector, Operator
+
+import pandas as pd
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
