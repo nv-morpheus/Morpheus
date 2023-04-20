@@ -21,7 +21,7 @@ import yaml
 
 from utils import TEST_DIRS
 
-SKIP_REASON = ("Tests for the ransomeware_detection example require a number of packages not installed in the Morpheus "
+SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `/home/dagardner/work/morpheus/examples/ransomware_detection/README.md` "
                "for details on installing these additional dependencies")
 
@@ -37,7 +37,7 @@ def dask_distributed():
 @pytest.fixture
 def config(config):
     """
-    The ransomeware detection pipeline utilizes the FIL pipeline mode.
+    The ransomware detection pipeline utilizes the FIL pipeline mode.
     """
     from morpheus.config import PipelineModes
     config.mode = PipelineModes.FIL
@@ -62,9 +62,9 @@ def rwd_conf(conf_file):
     yield conf
 
 
-# Some of the code inside ransomeware_detection performs imports in the form of:
+# Some of the code inside ransomware_detection performs imports in the form of:
 #    from common....
-# For this reason we need to ensure that the examples/ransomeware_detection dir is in the sys.path first
+# For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
 @pytest.fixture(autouse=True)
-def ransomeware_detection_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
+def ransomware_detection_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
     sys.path.append(example_dir)
