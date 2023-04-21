@@ -62,6 +62,47 @@ def rwd_conf(conf_file):
     yield conf
 
 
+@pytest.fixture
+def interested_plugins():
+    yield ['ldrmodules', 'threadlist', 'envars', 'vadinfo', 'handles']
+
+
+@pytest.fixture
+@pytest.mark.use_pandas
+def df_with_pids(dataset_pandas):
+    """
+    Inserts a new column `pid_process` into the `filter_probs_df` dataframe. The values consist of 6 unique randomly
+    generated integers in the range of plausable process ids on a typical Linux system.
+
+    Note the pids here are intentionally un-sorted, much of the logic in this pipeline requires this DF to be sorted.
+    """
+    df = dataset_pandas["filter_probs.csv"]
+    df['pid_process'] = [
+        2788672,
+        75956,
+        75956,
+        2788672,
+        2788672,
+        2698363,
+        2721362,
+        118469,
+        1348612,
+        2698363,
+        118469,
+        2698363,
+        1348612,
+        118469,
+        75956,
+        2721362,
+        75956,
+        118469,
+        118469,
+        118469
+    ]
+
+    yield df
+
+
 # Some of the code inside ransomware_detection performs imports in the form of:
 #    from common....
 # For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
