@@ -129,7 +129,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
 
         return meta
 
-    def create_multi_messages(self, x: MessageMeta) -> typing.List[MultiMessage]:
+    def create_multi_messages(self, x: AppShieldMessageMeta) -> typing.List[MultiMessage]:
 
         multi_messages = []
 
@@ -137,7 +137,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
 
         pid_processes = df.pid_process.unique()
 
-        # Create multi messaage per pid_process
+        # Create multi messaage per pid_process, this assumes that the DF has been sorted by the `pid_process` column
         for pid_process in pid_processes:
 
             pid_process_index = df[df.pid_process == pid_process].index
