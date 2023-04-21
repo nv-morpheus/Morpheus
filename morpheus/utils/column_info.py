@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
-
-import dataclasses
 import logging
 import re
 import typing
+from datetime import datetime
+
+import dataclasses
 
 import cudf
 
 import pandas as pd
+import nvtabular as nvt
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -308,18 +309,26 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     return input_schema.row_filter(df_in)
 
 
-def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema) -> pd.DataFrame:
+def process_dataframe(df_in: pd.DataFrame,
+                      input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema]) -> pd.DataFrame:
     """
     Applies column transformations as defined by `input_schema`
     """
 
-    # Step 1 is to normalize any columns
-    df_processed = _normalize_dataframe(df_in, input_schema)
+    dataset = nvt.Dataset(df_in)
+    workflow = input_schema
+    if (isinstance(input_schema, DataFrameInputSchema)):
+        workflow = input_schema_to_nvt_workflow(input_schema)
 
-    # Step 2 is to process columns
-    df_processed = _process_columns(df_processed, input_schema)
+    return workflow.transform(dataset).to_ddf().compute()
 
-    # Step 3 is to run the row filter if needed
-    df_processed = _filter_rows(df_processed, input_schema)
+    ## Step 1 is to normalize any columns
+    # df_processed = _normalize_dataframe(df_in, input_schema)
 
-    return df_processed
+    ## Step 2 is to process columns
+    # df_processed = _process_columns(df_processed, input_schema)
+
+    ## Step 3 is to run the row filter if needed
+    # df_processed = _filter_rows(df_processed, input_schema)
+
+    # return df_processed
