@@ -67,10 +67,12 @@ class PreprocessingRWStage(PreprocessBaseStage):
         return False
 
     def _sliding_window_offsets(self, ids: typing.List[int], ids_len: int,
-                                window: int) -> typing.List[typing.List[int]]:
+                                window: int) -> typing.List[typing.Tuple[int]]:
         """
         Create snapshot_id's sliding sequence for a given window
         """
+        assert ids_len == len(ids)
+        assert ids_len >= window
 
         sliding_window_offsets = []
 
