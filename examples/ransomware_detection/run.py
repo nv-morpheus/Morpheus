@@ -36,7 +36,7 @@ from stages.preprocessing import PreprocessingRWStage
 
 @click.command()
 @click.option('--debug', default=False)
-@click.option('--use_cpp', default=False)
+@click.option('--use_cpp', default=False, help="Enable C++ execution for this pipeline, currently this is unsupported.")
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
