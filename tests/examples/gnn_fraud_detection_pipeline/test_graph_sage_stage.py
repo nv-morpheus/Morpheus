@@ -21,8 +21,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.utils import compare_df
-from utils import assert_results
 from utils.dataset_manager import DatasetManager
 
 
@@ -70,7 +68,7 @@ class TestGraphSageStage:
 
         assert isinstance(results, cudf.DataFrame)
         assert results.index.to_arrow().to_pylist() == test_data['index']
-        assert_results(compare_df.compare_df(results.to_pandas(), expected_df))
+        dataset_pandas.assert_compare_df(results, expected_df)
 
     def test_process_message(self,
                              config: Config,
@@ -102,4 +100,4 @@ class TestGraphSageStage:
         assert sorted(results.inductive_embedding_column_names) == sorted(expected_df.columns)
 
         ind_emb_df = results.get_meta(results.inductive_embedding_column_names)
-        assert_results(compare_df.compare_df(ind_emb_df.to_pandas(), expected_df))
+        dataset_pandas.assert_compare_df(ind_emb_df.to_pandas(), expected_df)

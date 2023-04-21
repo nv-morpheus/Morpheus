@@ -19,8 +19,6 @@ import pytest
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.utils import compare_df
-from utils import assert_results
 from utils.dataset_manager import DatasetManager
 
 
@@ -67,4 +65,4 @@ class TestClassificationStage:
         print(results.get_meta(['prediction', 'node_id']))
 
         # The stage actually edits the message in place, and returns it, but we don't need to assert that
-        assert_results(compare_df.compare_df(results.get_meta(['prediction', 'node_id']).to_pandas(), expected_df))
+        dataset_cudf.assert_compare_df(results.get_meta(['prediction', 'node_id']), expected_df)
