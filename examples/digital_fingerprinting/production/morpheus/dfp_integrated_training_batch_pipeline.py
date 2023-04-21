@@ -159,7 +159,7 @@ def run_pipeline(source: str,
     num_output_ports = dfp_deployment_module_config.get("num_output_ports")
 
     #                                          +--------------------------------------+
-    #                                          |             source_stage             |
+    #                                          |   control_message_file_source_stage  |
     #                                          +--------------------------------------+
     #                                                             |
     #                                                             v
