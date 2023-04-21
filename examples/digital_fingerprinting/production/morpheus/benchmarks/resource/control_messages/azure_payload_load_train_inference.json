@@ -7,7 +7,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"/home/bsuryadevara/Github/morpheus/examples/data/dfp/azure-training-data/*.json"
+				"/workspace/examples/data/dfp/azure-training-data/*.json"
 			  ]
 			}
 		  },
@@ -28,7 +28,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"/home/bsuryadevara/Github/morpheus/examples/data/dfp/azure-inference-data/*.json"
+				"/workspace/examples/data/dfp/azure-inference-data/*.json"
 			  ]
 			}
 		  },
