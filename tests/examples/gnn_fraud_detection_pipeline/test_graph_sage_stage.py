@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import types
-import typing
 
 import pytest
 
@@ -23,7 +22,6 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.utils import compare_df
-from utils import TEST_DIRS
 from utils import assert_results
 from utils.dataset_manager import DatasetManager
 
@@ -31,7 +29,10 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(config: Config, hinsage_model: str, gnn_fraud_detection_pipeline: types.ModuleType,
+    def test_constructor(self,
+                         config: Config,
+                         hinsage_model: str,
+                         gnn_fraud_detection_pipeline: types.ModuleType,
                          tensorflow):
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
         stage = GraphSAGEStage(config,
@@ -47,7 +48,8 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    def test_inductive_step_hinsage(config: Config,
+    def test_inductive_step_hinsage(self,
+                                    config: Config,
                                     hinsage_model: str,
                                     gnn_fraud_detection_pipeline: types.ModuleType,
                                     test_data: dict,
@@ -70,7 +72,8 @@ class TestGraphSageStage:
         assert results.index.to_arrow().to_pylist() == test_data['index']
         assert_results(compare_df.compare_df(results.to_pandas(), expected_df))
 
-    def test_process_message(config: Config,
+    def test_process_message(self,
+                             config: Config,
                              hinsage_model: str,
                              gnn_fraud_detection_pipeline: types.ModuleType,
                              test_data: dict,

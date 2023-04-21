@@ -34,7 +34,7 @@ from utils import TEST_DIRS
     [os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline/stages/graph_construction_stage.py')])
 class TestGraphConstructionStage:
 
-    def test_constructor(config: Config, training_file: str, import_mod: typing.List[types.ModuleType]):
+    def test_constructor(self, config: Config, training_file: str, import_mod: typing.List[types.ModuleType]):
         graph_construction_stage = import_mod[0]
         stage = graph_construction_stage.FraudGraphConstructionStage(config, training_file)
         assert isinstance(stage._training_data, cudf.DataFrame)

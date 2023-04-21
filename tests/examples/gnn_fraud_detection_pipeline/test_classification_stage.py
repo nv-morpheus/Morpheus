@@ -14,16 +14,12 @@
 # limitations under the License.
 
 import types
-import typing
 
 import pytest
-
-import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.utils import compare_df
-from utils import TEST_DIRS
 from utils import assert_results
 from utils.dataset_manager import DatasetManager
 
@@ -31,7 +27,8 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestClassificationStage:
 
-    def test_constructor(config: Config,
+    def test_constructor(self,
+                         config: Config,
                          xgb_model: str,
                          gnn_fraud_detection_pipeline: types.ModuleType,
                          cuml: types.ModuleType):
@@ -40,10 +37,11 @@ class TestClassificationStage:
         stage = ClassificationStage(config, xgb_model)
         assert isinstance(stage._xgb_model, cuml.ForestInference)
 
-    def test_process_message(config: Config,
+    def test_process_message(self,
+                             config: Config,
                              xgb_model: str,
                              gnn_fraud_detection_pipeline: types.ModuleType,
-                             dataset_cudf):
+                             dataset_cudf: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
 
