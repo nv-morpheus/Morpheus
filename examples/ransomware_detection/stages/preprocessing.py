@@ -32,7 +32,7 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 @register_stage("ransomware-preprocess", modes=[PipelineModes.FIL])
 class PreprocessingRWStage(PreprocessBaseStage):
     """
-    This class extends PreprocessBaseStage and process the features that aree derived from Appshield data.
+    This class extends PreprocessBaseStage and process the features that are derived from Appshield data.
     It also arranges the snapshots of Appshield data in a sequential order using provided sliding window.
 
     Parameters
