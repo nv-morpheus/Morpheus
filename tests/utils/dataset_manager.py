@@ -182,17 +182,17 @@ class DatasetManager(object):
         # Return a new dataframe where we replace some index values with others
         return cls.replace_index(df, replace_dict)
 
-    def value_as_pandas(val: typing.Union[pd.DataFrame, pd.Series, cdf.DataFrame, cdf.Series]):
+    def value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
         if (isinstance(val, cdf.DataFrame) or isinstance(val, cdf.Series)):
             return val.to_pandas()
-        elif (isinstance(val, pd.Series)):
-            return pd.DataFrame(val)
 
-        assert isinstance(val, (pd.DataFrame))
+        if assert_is_pandas:
+            assert isinstance(val, (pd.DataFrame, pd.Series)), type(val)
+
         return val
 
     @classmethod
-    def assert_df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any) -> bool:
+    def assert_df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
         """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
 
         # Comparisons work better in cudf so convert everything to that
@@ -201,11 +201,11 @@ class DatasetManager(object):
         if (isinstance(val_to_check, cp.ndarray)):
             val_to_check = val_to_check.get()
         else:
-            val_to_check = cls.value_as_pandas(val_to_check)
+            val_to_check = cls.value_as_pandas(val_to_check, assert_is_pandas=False)
 
         bool_df = df_to_check == val_to_check
 
-        return bool(bool_df.all(axis=None))
+        assert bool(bool_df.all(axis=None))
 
     @classmethod
     def compare_df(cls,

@@ -44,7 +44,7 @@ def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
-    assert dataset.assert_df_equal(meta.df, df)
+    dataset.assert_df_equal(meta.df, df)
 
     DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=True)
 
