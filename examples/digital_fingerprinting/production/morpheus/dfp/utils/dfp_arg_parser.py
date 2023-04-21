@@ -77,7 +77,8 @@ class DFPArgParser:
 
     def _configure_logging(self):
         configure_logging(log_level=self._log_level)
-        logging.getLogger("mlflow").setLevel(self._log_level)
+        # To prevent unnecessary logs from the mlflow.tracking.fluent module, explicitly set the log level to WARN.
+        logging.getLogger("mlflow").setLevel("WARN")
 
     @property
     @verify_init
