@@ -18,14 +18,14 @@ import os
 import types
 import typing
 
+import cupy as cp
 import pandas as pd
 import pytest
 
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
-from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
+from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
@@ -38,6 +38,7 @@ class TestPreprocessingRWStage:
         from stages.preprocessing import PreprocessingRWStage
 
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=6)
+        assert isinstance(stage, PreprocessBaseStage)
         assert stage._feature_columns == rwd_conf['model_features']
         assert stage._features_len == len(rwd_conf['model_features'])
         assert stage._snapshot_dict == {}
@@ -144,3 +145,26 @@ class TestPreprocessingRWStage:
 
         stage._merge_curr_and_prev_snapshots(df, source_pid_process)
         dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
+
+    def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
+        from stages.preprocessing import PreprocessingRWStage
+        df = dataset_pandas['examples/ransomware_detection/dask_results.csv']
+        df['source_pid_process'] = 'appshield_' + df.pid_process
+        expected_df = df.copy(deep=True).fillna('')
+        meta = AppShieldMessageMeta(df=df, source='tests')
+        mm = MultiMessage(meta=meta)
+
+        sliding_window = 4
+        stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
+        results = stage._pre_process_batch(mm)
+        assert isinstance(results, MultiInferenceFILMessage)
+
+        expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]
+        expected_input__0 = cp.asarray([0 for i in range(len(rwd_conf['model_features']) * sliding_window)])
+        expected_seq_ids = cp.zeros((len(expected_df), 3), dtype=cp.uint32)
+        expected_seq_ids[:, 0] = cp.arange(0, len(expected_df), dtype=cp.uint32)
+        expected_seq_ids[:, 2] = len(rwd_conf['model_features']) * 3
+
+        dataset_pandas.assert_compare_df(results.get_meta().fillna(''), expected_df)
+        assert (results.get_tensor('input__0') == expected_input__0).all()
+        assert (results.get_tensor('seq_ids') == expected_seq_ids).all()
