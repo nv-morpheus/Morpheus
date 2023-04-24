@@ -45,9 +45,9 @@ RUN apt update && \
 COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
-    rm -rf /tmp/conda && \
-    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc
+    rm -rf /tmp/conda
 
 
 # ============ build ==================
