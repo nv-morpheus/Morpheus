@@ -13,11 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-import os
-import types
-import typing
-
 import cupy as cp
 import pandas as pd
 import pytest
@@ -27,7 +22,6 @@ from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
-from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
 
 
