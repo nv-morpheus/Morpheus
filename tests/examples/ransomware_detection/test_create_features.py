@@ -128,9 +128,35 @@ class TestCreateFeaturesRWStage:
                                    config: Config,
                                    rwd_conf: dict,
                                    interested_plugins: typing.List[str],
-                                   df_with_pids: pd.DataFrame):
+                                   dataset_pandas: DatasetManager):
         from stages.create_features import CreateFeaturesRWStage
         mock_dask_client.return_value = mock_dask_client
+
+        pids = [75956, 118469, 1348612, 2698363, 2721362, 2788672]
+        df = dataset_pandas["filter_probs.csv"]
+        df['pid_process'] = [
+            2788672,
+            75956,
+            75956,
+            2788672,
+            2788672,
+            2698363,
+            2721362,
+            118469,
+            1348612,
+            2698363,
+            118469,
+            2698363,
+            1348612,
+            118469,
+            75956,
+            2721362,
+            75956,
+            118469,
+            118469,
+            118469
+        ]
+        df = df.sort_values(by=["pid_process"]).reset_index(drop=True)
 
         stage = CreateFeaturesRWStage(config,
                                       interested_plugins=interested_plugins,
@@ -139,11 +165,8 @@ class TestCreateFeaturesRWStage:
                                       n_workers=5,
                                       threads_per_worker=6)
 
-        df_with_pids = df_with_pids.sort_values(by=["pid_process"]).reset_index(drop=True)
-        meta = AppShieldMessageMeta(df_with_pids, source='tests')
+        meta = AppShieldMessageMeta(df, source='tests')
         multi_messages = stage.create_multi_messages(meta)
-
-        pids = sorted(df_with_pids['pid_process'].unique())
         assert len(multi_messages) == len(pids)
 
         prev_loc = 0
@@ -154,7 +177,7 @@ class TestCreateFeaturesRWStage:
             assert mm.mess_offset == prev_loc
             prev_loc = mm.mess_offset + mm.mess_count
 
-        assert prev_loc == len(df_with_pids)
+        assert prev_loc == len(df)
 
     @mock.patch('stages.create_features.Client')
     def test_on_completed(self, mock_dask_client, config: Config, rwd_conf: dict, interested_plugins: typing.List[str]):
