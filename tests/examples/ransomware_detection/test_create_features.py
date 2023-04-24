@@ -19,7 +19,6 @@ import types
 import typing
 from unittest import mock
 
-import pandas as pd
 import pytest
 
 from morpheus.config import Config
