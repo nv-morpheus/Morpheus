@@ -90,8 +90,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         for edge in edges:
             g_nx.add_edges_from(edge)
 
-        # TODO: StellarGraph.from_networkx
-        return StellarGraph(g_nx, node_type_name="ntype", node_features=node_features)
+        return StellarGraph.from_networkx(g_nx, node_type_attr='ntype', node_features=node_features)
 
     @staticmethod
     def _build_graph_features(dataset: pd.DataFrame) -> "stellargraph.StellarGraph":
