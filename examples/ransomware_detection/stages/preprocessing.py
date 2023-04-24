@@ -20,6 +20,7 @@ import pandas as pd
 
 from common.data_models import SnapshotData
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
@@ -58,6 +59,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         # Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
+        self._needed_columns.update({'sequence': TypeId.STRING})
 
     @property
     def name(self) -> str:
@@ -169,7 +171,6 @@ class PreprocessingRWStage(PreprocessBaseStage):
         # Rollover pending snapshots
         self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
 
-        # TODO: pre-allocate
         # This column is used to identify whether sequence is genuine or dummy
         x.set_meta('sequence', sequence)
 
