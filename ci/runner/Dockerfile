@@ -45,6 +45,8 @@ RUN apt update && \
 COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
+    conda clean -afy && \
+    rm -rf /tmp/conda && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc
 
 
@@ -66,9 +68,6 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN conda clean -afy && \
-    rm -rf /tmp/conda
-
 # ============ test ==================
 FROM base as test
 
@@ -83,6 +82,8 @@ RUN apt update && \
         openjdk-11-jdk && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
+
+COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
 
 # Install extra deps needed for gnn_fraud_detection_pipeline & ransomware_detection examples
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml && \
