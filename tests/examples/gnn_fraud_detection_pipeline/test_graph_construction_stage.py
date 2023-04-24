@@ -43,11 +43,12 @@ class TestGraphConstructionStage:
         # that are depended upon in the code
         assert {'client_node', 'index', 'fraud_label', 'merchant_node'}.issubset(stage._column_names)
 
-    def _check_graph(self,
-                     stellargraph: types.ModuleType,
-                     sg: "stellargraph.StellarGraph",
-                     expected_nodes,
-                     expected_edges):
+    def _check_graph(
+            self,
+            stellargraph: types.ModuleType,
+            sg: "stellargraph.StellarGraph",  # noqa: F821
+            expected_nodes,
+            expected_edges):
         assert isinstance(sg, stellargraph.StellarGraph)
         sg.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
         assert not sg.is_directed()
