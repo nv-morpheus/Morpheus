@@ -97,7 +97,7 @@ class TestPreprocessingRWStage:
             expected_snapshot_id = expected_snapshot_ids[i]
             assert snapshot.snapshot_id == expected_snapshot_id
             expected_data = df.loc[expected_snapshot_id].fillna('').values
-            assert (pd.Series(snapshot.data).fillna('').values == expected_data).all(), f"Data for {expected_snapshot_id} does not match"
+            assert (pd.Series(snapshot.data).fillna('').values == expected_data).all()
 
     def test_rollover_pending_snapshots_empty_results(self,
                                                       config: Config,
@@ -112,3 +112,35 @@ class TestPreprocessingRWStage:
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=4)
         stage._rollover_pending_snapshots(snapshot_ids, source_pid_process, df)
         assert len(stage._snapshot_dict) == 0
+
+    def test_merge_curr_and_prev_snapshots(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
+        from common.data_models import SnapshotData
+        from stages.preprocessing import PreprocessingRWStage
+
+        snapshot_ids = [5, 8, 10, 13]
+        source_pid_process = "123_test.exe"
+        df = dataset_pandas['examples/ransomware_detection/dask_results.csv']
+        assert len(df) == len(snapshot_ids)
+        df['snapshot_id'] = snapshot_ids
+        df.index = df.snapshot_id
+
+        stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=4)
+        test_row_8 = df.loc[8].copy(deep=True)
+        test_row_8.pid_process = 'test_val1'
+
+        test_row_13 = df.loc[13].copy(deep=True)
+        test_row_13.pid_process = 'test_val2'
+
+        stage._snapshot_dict = {
+            source_pid_process: [SnapshotData(8, test_row_8.values), SnapshotData(13, test_row_13.values)]
+        }
+
+        expected_df = dataset_pandas['examples/ransomware_detection/dask_results.csv'].fillna('')
+        expected_df['pid_process'][1] = 'test_val1'
+        expected_df['pid_process'][3] = 'test_val2'
+
+        expected_df['snapshot_id'] = snapshot_ids
+        expected_df.index = expected_df.snapshot_id
+
+        stage._merge_curr_and_prev_snapshots(df, source_pid_process)
+        dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
