@@ -13,19 +13,19 @@
 # limitations under the License.
 """
 Example Usage:
-python sid-minibert-20210614-script.py \
-       --training-data /datasets/training-data/sid-sample-training-data.csv \
+python sid-minibert-20230424-script.py \
+       --training-data ../../datasets/training-data/sid-sample-training-data.csv \
        --model-dir google/bert_uncased_L-4_H-256_A-4 \
-       --tokenizer-hash-filepath /resources/bert-base-uncased-hash.txt
-       --output-file /trained_models/model.pth
+       --tokenizer-hash-filepath /resources/bert-base-uncased-hash.txt \
+       --output-file sid-minibert-model.pt
 """
 
 import argparse
-
-import torch
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import multilabel_confusion_matrix
+
+import torch
 from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
@@ -62,9 +62,9 @@ def data_preprocessing(training_data):
 
     cased_tokenizer = SubwordTokenizer("resources/bert-base-uncased-hash.txt", do_lower_case=True)
 
-    tokenizer_output = cased_tokenizer(df.text,
+    tokenizer_output = cased_tokenizer(df.data,
                                        max_length=256,
-                                       max_num_rows=len(df.text),
+                                       max_num_rows=len(df.data),
                                        padding='max_length',
                                        return_tensors='pt',
                                        truncation=True,
