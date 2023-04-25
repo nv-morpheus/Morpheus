@@ -20,6 +20,7 @@ import pytest
 import yaml
 
 from utils import TEST_DIRS
+from utils import import_or_skip
 
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `/home/dagardner/work/morpheus/examples/ransomware_detection/README.md` "
@@ -27,11 +28,11 @@ SKIP_REASON = ("Tests for the ransomware_detection example require a number of p
 
 
 @pytest.fixture(autouse=True, scope='session')
-def dask_distributed():
+def dask_distributed(fail_missing: bool):
     """
     All of the tests in this subdir requires dask.distributed
     """
-    yield pytest.importorskip("dask.distributed", reason=SKIP_REASON)
+    yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture

@@ -19,6 +19,7 @@ import sys
 import pytest
 
 from utils import TEST_DIRS
+from utils import import_or_skip
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
@@ -26,27 +27,27 @@ SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a num
 
 
 @pytest.fixture(autouse=True, scope='session')
-def stellargraph():
+def stellargraph(fail_missing: bool):
     """
     All of the tests in this subdir require stellargraph
     """
-    yield pytest.importorskip("stellargraph", reason=SKIP_REASON)
+    yield import_or_skip("stellargraph", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture(autouse=True, scope='session')
-def cuml():
+def cuml(fail_missing: bool):
     """
     All of the tests in this subdir require cuml
     """
-    yield pytest.importorskip("cuml", reason=SKIP_REASON)
+    yield import_or_skip("cuml", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture(autouse=True, scope='session')
-def tensorflow():
+def tensorflow(fail_missing: bool):
     """
     All of the tests in this subdir require tensorflow
     """
-    yield pytest.importorskip("tensorflow", reason=SKIP_REASON)
+    yield import_or_skip("tensorflow", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture

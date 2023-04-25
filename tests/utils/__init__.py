@@ -17,7 +17,11 @@ import collections
 import json
 import os
 import time
+import types
 import typing
+
+import pytest
+from _pytest.outcomes import Skipped
 
 from morpheus.io.deserializers import read_file_to_df
 from .test_directories import TestDirectories
@@ -138,3 +142,18 @@ def assert_results(results: dict) -> dict:
     assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
     assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
     return results
+
+
+def import_or_skip(modname: str,
+                   minversion: str = None,
+                   reason: str = None,
+                   fail_missing: bool = False) -> types.ModuleType:
+    """
+    Wrapper for `pytest.importorskip` will re-raise any `Skipped` exceptions as `ImportError` if `fail_missing` is True.
+    """
+    try:
+        return pytest.importorskip(modname, minversion=minversion, reason=reason)
+    except Skipped as e:
+        if fail_missing:
+            raise ImportError(e)
+        raise
