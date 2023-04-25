@@ -263,12 +263,7 @@ RUN apt update && \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-<<<<<<< HEAD
-        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-=======
         libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
->>>>>>> 41e1a00fe1f96ef21acb9e6550c863248e417229
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
@@ -301,13 +296,13 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
     # Install morpheus
-<<<<<<< HEAD
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus  \
-      -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge \
-      morpheus &&\
-=======
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/cuda-11.8.0 -c nvidia/label/dev -c conda-forge morpheus &&\
->>>>>>> 41e1a00fe1f96ef21acb9e6550c863248e417229
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
+        -c local \
+        -c rapidsai \
+        -c nvidia/label/cuda-11.8.0 \
+        -c nvidia \
+        -c nvidia/label/dev \
+        -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate
@@ -373,19 +368,11 @@ RUN apt update && \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-<<<<<<< HEAD
-        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-=======
-        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         nodejs \
->>>>>>> 41e1a00fe1f96ef21acb9e6550c863248e417229
         npm && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
