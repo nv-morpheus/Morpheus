@@ -25,10 +25,6 @@ import versioneer  # noqa: E402
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
 
-print(
-    find_packages(include=["morpheus*"], exclude=['tests']) +
-    (["morpheus.data"] + [f"morpheus._lib.{n}" for n in ["common", "cudf_helpers", "messages", "modules", "stages"]]))
-
 setup(
     name="morpheus",
     version=versioneer.get_version(),

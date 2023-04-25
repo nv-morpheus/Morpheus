@@ -91,11 +91,6 @@ dependencies:
     - typing_utils=0.1
     - watchdog=2.1
     - yapf=0.32.0
-
-    # If cuml is installed, we need to constrain these two libraries. See:
-    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-    - libcusolver<=11.4.1.48
-    - libcusparse<12
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
