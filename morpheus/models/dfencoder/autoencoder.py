@@ -903,8 +903,10 @@ class AutoEncoder(torch.nn.Module):
                         _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out, _id=True)
                         id_loss.append(net_loss)
 
+                    mean_id_loss = np.array(id_loss).mean()
+
                     # Early stopping
-                    current_net_loss = net_loss
+                    current_net_loss = mean_id_loss
                     LOG.debug('The Current Net Loss: %s', current_net_loss)
 
                     if current_net_loss > last_loss:
@@ -925,7 +927,6 @@ class AutoEncoder(torch.nn.Module):
 
                     if self.verbose:
                         swapped_loss = np.array(swapped_loss).mean()
-                        id_loss = np.array(id_loss).mean()
 
                         msg = '\n'
                         msg += 'net validation loss, swapped input: \n'
@@ -933,7 +934,7 @@ class AutoEncoder(torch.nn.Module):
                         msg += 'baseline validation loss: '
                         msg += f"{round(baseline, 4)} \n\n"
                         msg += 'net validation loss, unaltered input: \n'
-                        msg += f"{round(id_loss, 4)} \n\n\n"
+                        msg += f"{round(mean_id_loss, 4)} \n\n\n"
                         LOG.debug(msg)
 
         #Getting training loss statistics
