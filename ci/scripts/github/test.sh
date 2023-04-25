@@ -20,6 +20,11 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
 update_conda_env
+rapids-logger "Checking for updates to test dependencies"
+rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
+conda deactivate
+conda activate morpheus
+
 
 aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
 aws s3 cp --no-progress "${ARTIFACT_URL}/cpp_tests.tar.bz" "${WORKSPACE_TMP}/cpp_tests.tar.bz"
