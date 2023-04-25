@@ -21,7 +21,6 @@ import types
 import typing
 
 import pytest
-from _pytest.outcomes import Skipped
 
 from morpheus.io.deserializers import read_file_to_df
 from .test_directories import TestDirectories
@@ -153,7 +152,7 @@ def import_or_skip(modname: str,
     """
     try:
         return pytest.importorskip(modname, minversion=minversion, reason=reason)
-    except Skipped as e:
+    except pytest.skip.Exception as e:
         if fail_missing:
             raise ImportError(e)
         raise
