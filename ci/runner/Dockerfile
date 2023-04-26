@@ -79,7 +79,7 @@ ARG CUDA_SHORT_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        openjdk-11-jdk && \
+        openjdk-11-jre-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
