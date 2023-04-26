@@ -43,3 +43,27 @@ def test_constructor(config: Config):
     assert stage._batch_size == batch_size
     assert stage._max_concurrent == n_threads
     assert stage._filenames == filenames
+
+
+def test_generate_frames_fsspec(config: Config):
+    from dfp.stages.multi_file_source import MultiFileSource
+
+    file_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
+    stage = MultiFileSource(config, filenames=[file_glob])
+
+    specs = next(stage._generate_frames_fsspec())
+
+    files = sorted(f.path for f in specs)
+    assert files == sorted(glob.glob(file_glob))
+
+
+def test_generate_frames_fsspec_no_files(config: Config, tmp_path: str):
+    from dfp.stages.multi_file_source import MultiFileSource
+
+    assert os.listdir(tmp_path) == []
+
+    filenames = [os.path.join(tmp_path, '*.csv')]
+    stage = MultiFileSource(config, filenames=filenames)
+
+    with pytest.raises(RuntimeError):
+        next(stage._generate_frames_fsspec())
