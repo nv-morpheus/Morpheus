@@ -22,6 +22,7 @@ Prior to running the GNN fraud detection pipeline, additional requirements must 
 
 ```bash
 mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
+pip install --ignore-requires-python stellargraph=1.2.1
 ```
 
 ## Running
