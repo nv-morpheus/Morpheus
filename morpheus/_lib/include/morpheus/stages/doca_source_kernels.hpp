@@ -45,6 +45,7 @@ void packet_receive_kernel(
   int32_t*                packet_size_total,
   int32_t*                packet_sizes,
   uint8_t*                packet_buffer,
+  uint32_t*               exit_condition,
   cudaStream_t            stream
 );
 

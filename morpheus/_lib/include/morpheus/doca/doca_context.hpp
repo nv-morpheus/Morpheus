@@ -49,53 +49,70 @@ public:
   doca_flow_port* flow_port();
 };
 
+template<typename T>
+struct doca_mem
+{
+private:
+  std::shared_ptr<doca_context> _context;
+  T *_mem_gpu;
+  T *_mem_cpu;
+ 
+public:
+  doca_mem(std::shared_ptr<doca_context> context, size_t count, enum doca_gpu_mem_type mem_type);
+  ~doca_mem();
+
+  T* gpu_ptr();
+  T* cpu_ptr();
+};
+
 struct doca_rx_queue
 {
-  private:
-    std::shared_ptr<doca_context> _context;
-    doca_gpu_eth_rxq* _rxq_info_gpu;
-    doca_eth_rxq* _rxq_info_cpu;
-    doca_mmap* _packet_buffer;
-    doca_ctx* _doca_ctx;
+private:
+  std::shared_ptr<doca_context> _context;
+  doca_gpu_eth_rxq* _rxq_info_gpu;
+  doca_eth_rxq* _rxq_info_cpu;
+  doca_mmap* _packet_buffer;
+  doca_ctx* _doca_ctx;
+  void* _packet_address;
 
-  public:
-    doca_rx_queue(std::shared_ptr<doca_context> context);
-    ~doca_rx_queue();
+public:
+  doca_rx_queue(std::shared_ptr<doca_context> context);
+  ~doca_rx_queue();
 
-    doca_gpu_eth_rxq* rxq_info_gpu();
-    doca_eth_rxq* rxq_info_cpu();
+  doca_gpu_eth_rxq* rxq_info_gpu();
+  doca_eth_rxq* rxq_info_cpu();
 };
 
 struct doca_rx_pipe
 {
-  private:
-    std::shared_ptr<doca_context> _context;
-    std::shared_ptr<doca_rx_queue> _rxq;
-    doca_flow_pipe* _pipe;
+private:
+  std::shared_ptr<doca_context> _context;
+  std::shared_ptr<doca_rx_queue> _rxq;
+  doca_flow_pipe* _pipe;
 
-  public:
-    doca_rx_pipe(
-      std::shared_ptr<doca_context> context,
-      std::shared_ptr<doca_rx_queue> rxq,
-      uint32_t source_ip_filter
-    );
-    ~doca_rx_pipe();
+public:
+  doca_rx_pipe(
+    std::shared_ptr<doca_context> context,
+    std::shared_ptr<doca_rx_queue> rxq,
+    uint32_t source_ip_filter
+  );
+  ~doca_rx_pipe();
 };
 
 struct doca_semaphore
 {
-  private:
-    std::shared_ptr<doca_context> _context;
-    uint16_t _size;
-    doca_gpu_semaphore* _semaphore;
-    doca_gpu_semaphore_gpu* _semaphore_gpu;
+private:
+  std::shared_ptr<doca_context> _context;
+  uint16_t _size;
+  doca_gpu_semaphore* _semaphore;
+  doca_gpu_semaphore_gpu* _semaphore_gpu;
 
-  public:
-    doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
-    ~doca_semaphore();
+public:
+  doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
+  ~doca_semaphore();
 
-    doca_gpu_semaphore_gpu* in_gpu();
-    uint16_t size();
+  doca_gpu_semaphore_gpu* in_gpu();
+  uint16_t size();
 };
 
 #pragma GCC visibility pop

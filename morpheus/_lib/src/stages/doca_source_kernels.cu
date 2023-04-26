@@ -232,7 +232,8 @@ __global__ void _packet_receive_kernel(
   int32_t*                packet_count_out,
   int32_t*                packet_size_total_out,
   int32_t*                packet_sizes,
-  uint8_t*                packet_buffer
+  uint8_t*                packet_buffer,
+  uint32_t*               exit_condition
 )
 {
   if (threadIdx.x == 0)
@@ -246,20 +247,18 @@ __global__ void _packet_receive_kernel(
 
   uint64_t packet_offset;
 
-  if (threadIdx.x == 0)
+  while (true)
   {
-    while (true)
+    auto ret = doca_gpu_dev_sem_get_status(sem_in, *sem_idx, &sem_status);
+
+    if (ret != DOCA_SUCCESS) {
+      DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
+      return;
+    }
+
+    if (sem_status == DOCA_GPU_SEMAPHORE_STATUS_FREE)
     {
-      auto ret = doca_gpu_dev_sem_get_status(sem_in, *sem_idx, &sem_status);
-
-      if (ret != DOCA_SUCCESS) {
-        // handle this eventually
-      }
-
-      if (sem_status == DOCA_GPU_SEMAPHORE_STATUS_FREE)
-      {
-        break;
-      }
+      break;
     }
   }
 
@@ -276,6 +275,11 @@ __global__ void _packet_receive_kernel(
     &packet_count,
     &packet_offset
   );
+
+  if (ret != DOCA_SUCCESS) {
+    DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
+    return;
+  }
 
   __threadfence();
   __syncthreads();
@@ -685,6 +689,7 @@ void packet_receive_kernel(
   int32_t*                packet_size_total,
   int32_t*                packet_sizes,
   uint8_t*                packet_buffer,
+  uint32_t*               exit_condition,
   cudaStream_t            stream
 )
 {
@@ -696,7 +701,8 @@ void packet_receive_kernel(
     packet_count,
     packet_size_total,
     packet_sizes,
-    packet_buffer
+    packet_buffer,
+    exit_condition
   );
 
   CHECK_CUDA(stream);

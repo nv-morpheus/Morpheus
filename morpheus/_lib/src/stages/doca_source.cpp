@@ -107,9 +107,17 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     auto packet_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
     auto packet_sizes_d      = rmm::device_uvector<int32_t>(2048, processing_stream);
     auto packet_buffer_d     = rmm::device_uvector<uint8_t>(2048 * 65536, processing_stream);
+    auto exit_condition      = std::make_unique<morpheus::doca::doca_mem<uint32_t>>(_context, 1, DOCA_GPU_MEM_GPU_CPU);
+
+    DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
     while (output.is_subscribed())
     {
+      if (DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) == 1) {
+        output.unsubscribe();
+        continue;
+      }
+
       morpheus::doca::packet_receive_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
@@ -119,6 +127,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         packet_size_total_d.data(),
         packet_sizes_d.data(),
         packet_buffer_d.data(),
+        static_cast<uint32_t*>(exit_condition->gpu_ptr()),
         processing_stream
       );
 

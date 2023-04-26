@@ -368,7 +368,7 @@ RUN apt update && \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        cublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
