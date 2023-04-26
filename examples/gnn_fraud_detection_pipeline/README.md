@@ -22,7 +22,10 @@ Prior to running the GNN fraud detection pipeline, additional requirements must 
 
 ```bash
 mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
+pip install --ignore-requires-python stellargraph==1.2.1
 ```
+
+> **Note**: The `--ignore-requires-python` is needed because Stellargraph only officially supports Python versions prior to 3.9 ([stellargraph/stellargraph#1960](https://github.com/stellargraph/stellargraph/issues/1960)).
 
 ## Running
 

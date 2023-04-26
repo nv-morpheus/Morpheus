@@ -33,7 +33,7 @@ dependencies:
     - mlflow>1.29.0,<2
     - papermill=2.3.4
     - s3fs==2022.8.2
+    - pip
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
-        - stellargraph==1.2.1
         - tensorflow==2.12.0
