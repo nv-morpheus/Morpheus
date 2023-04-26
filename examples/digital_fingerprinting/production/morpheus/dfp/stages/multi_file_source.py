@@ -67,7 +67,7 @@ class MultiFileSource(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _generate_frames_fsspec(self):
+    def _generate_frames_fsspec(self) -> typing.Iterable[fsspec.core.OpenFiles]:
 
         files: fsspec.core.OpenFiles = fsspec.open_files(self._filenames)
 
