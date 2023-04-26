@@ -24,10 +24,12 @@ from nvtabular.ops import LambdaOp, Rename
 from morpheus.utils.column_info import (BoolColumn, ColumnInfo, DataFrameInputSchema, DateTimeColumn,
                                         RenameColumn, StringCatColumn)
 from morpheus.utils.nvt import MutateOp, json_flatten
+from nvtabular.workflow.node import WorkflowNode
 
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
-    def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+    def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[
+        pd.DataFrame, cudf.DataFrame]:
         convert_to_cudf = False
         if type(df) == cudf.DataFrame:
             convert_to_cudf = True
@@ -83,36 +85,71 @@ def json_flatten_from_input_schema(input_schema: DataFrameInputSchema) -> Mutate
     if (output_cols is None or len(output_cols) == 0):
         raise RuntimeError("Failed to identify any output columns for json_flatten.")
 
-    json_flatten_op = [input_schema.json_columns] >> MutateOp(json_flatten, output_cols)
+    print(f"Creating with output cols: {output_cols}")
+    jcols = [c for c in input_schema.json_columns]
+    json_flatten_op = MutateOp(json_flatten, dependencies=jcols, output_columns=output_cols)
 
     return json_flatten_op
 
 
 @sync_series_as_pandas
-def datetime_converter(series: typing.Union[pd.Series, cudf.Series]) -> typing.Union[pd.Series, cudf.Series]:
-    series = pd.to_datetime(series, infer_datetime_format=True, utc=True)
+def datetime_converter(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column) -> typing.Union[
+    pd.DataFrame, cudf.DataFrame]:
+    _df = pd.DataFrame()
+    _df[output_column] = pd.to_datetime(df["timestamp"], infer_datetime_format=True, utc=True)
 
-    return series
+    return _df
+
+
+def nvt_datetime_converter(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                           output_column: str) -> \
+        typing.Union[pd.DataFrame, cudf.DataFrame]:
+    return datetime_converter(df[column_selector.names], output_column=output_column)
 
 
 @sync_df_as_pandas
-def string_cat_converter(df: typing.Union[pd.DataFrame, cudf.DataFrame], sep) -> typing.Union[
+def string_cat_col(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, sep) -> typing.Union[
     pd.DataFrame, cudf.DataFrame]:
-    return df.apply(lambda row: sep.join(row.values.astype(str)), axis=1)
+    cat_col = df.apply(lambda row: sep.join(row.values.astype(str)), axis=1)
+
+    return pd.DataFrame({output_column: cat_col})
 
 
-def nvt_string_cat_converter(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                             sep: str = ', '):
-    return string_cat_converter(df[column_selector.names], sep)
+def nvt_string_cat_col(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                       output_column, input_columns, sep: str = ', '):
+    return string_cat_col(df[input_columns], output_column=output_column, sep=sep)
 
 
 ColumnInfoProcessingMap = {
-    BoolColumn: lambda ci: [ci.name] >> LambdaOp(lambda series: series.map(ci.value_map).astype(bool)),
-    ColumnInfo: lambda ci: [ci.name] >> LambdaOp(lambda series: series),
-    DateTimeColumn: lambda ci: [ci.name] >> LambdaOp(datetime_converter),
-    RenameColumn: lambda ci: [ci.input_name] >> Rename(name=ci.name),
-    StringCatColumn: lambda ci: [ci.input_columns] >> MutateOp(partial(nvt_string_cat_converter, sep=ci.sep), ci.name),
+    BoolColumn: lambda ci, deps: [ci.name] >> LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
+                                                       dtype="bool"),
+    ColumnInfo: lambda ci, deps: LambdaOp(lambda series: series),
+    DateTimeColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name) >>
+                                     LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype),
+    RenameColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name),
+    StringCatColumn: lambda ci, deps: MutateOp(
+        partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
+        dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
 }
+
+
+def coalesce_ops(ops: list):
+    ops = [op for op in ops if op]  # Discard empty lists
+
+    if len(ops) == 1:
+        if isinstance(ops[0], list):
+            return coalesce_ops(ops[0])
+        else:
+            return ops[0]
+
+    operator_groups = []
+    for op in ops:
+        if isinstance(op, list):
+            operator_groups.append(coalesce_ops(op))
+        else:
+            operator_groups.append(op)
+
+    return operator_groups[0] + coalesce_ops(operator_groups[1:])
 
 
 def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Workflow:
@@ -127,24 +164,38 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
 
     # Items that need to be run before any other column operations, for example, we have to flatten json
     # columns so that we can do things like rename them.
-    preprocess_workflow = None
+    preprocess_workflow = []
+    column_workflow = []
 
     # Process the schema, so we can build up a list of workflow items
     if (input_schema.json_columns is not None and len(input_schema.json_columns) > 0):
-        op = json_flatten_from_input_schema(input_schema)
-        if (preprocess_workflow is None):
-            preprocess_workflow = op
+        op = ColumnSelector(input_schema.json_columns) >> json_flatten_from_input_schema(input_schema)
+        preprocess_workflow.append(op)
+
+    for col_info in input_schema.column_info:
+        if (type(col_info) not in ColumnInfoProcessingMap):
+            raise RuntimeError(f"No known conversion for ColumnInfo type: {type(col_info)}")
+
+        op = ColumnInfoProcessingMap[type(col_info)](col_info, deps=[])
+        column_workflow.append(op)
+
+    preproc_workflow = coalesce_ops([preprocess_workflow])
+    preproc_workflow = (preproc_workflow + ColumnSelector('*'))
+
+    column_workflow_nodes = []
+    for op in column_workflow:
+        if (isinstance(op, WorkflowNode)):
+            column_workflow_nodes.append(op)
         else:
-            preprocess_workflow = preprocess_workflow + op
+            column_workflow_nodes.append(preproc_workflow >> op)
 
-    #for col_info in input_schema.column_info:
-    #    if (type(col_info) not in ColumnInfoProcessingMap):
-    #        raise RuntimeError(f"No known conversion for ColumnInfo type: {type(col_info)}")
+    compound_workflow = None
+    for node in column_workflow_nodes:
+        if (compound_workflow is None):
+            compound_workflow = node
+        else:
+            compound_workflow = compound_workflow + node
 
-    #    op = ColumnInfoProcessingMap[type(col_info)](col_info)
-    #    if (preprocess_workflow is None):
-    #        preprocess_workflow = op
-    #    else:
-    #        preprocess_workflow = preprocess_workflow >> op
+    compound_workflow.graph.render(view=True, format='svg')
 
-    return nvt.Workflow(preprocess_workflow)
+    return nvt.Workflow(compound_workflow)
