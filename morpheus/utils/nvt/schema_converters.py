@@ -74,7 +74,7 @@ def sync_series_as_pandas(func: typing.Callable) -> typing.Callable:
 
 @dataclasses.dataclass
 class JSONFlattenInfo(ColumnInfo):
-    """Subclass of `ColumnInfo`, mock ColumnInfo object a JSON column into multiple columns."""
+    """Subclass of `ColumnInfo`, Dummy ColumnInfo -- Makes it easier to generate a graph of the column dependencies"""
     input_col_names: list
     output_col_names: list
 
@@ -97,9 +97,6 @@ def resolve_json_output_columns(input_schema) -> typing.List[ColumnInfo]:
         cnsplit = col[0].split('.')
         if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
             output_cols.append(col)
-
-    # print(f"Output candidates: {[c[0] for c in json_output_candidates]}")
-    print(f"Resolved Outputs: {[c[0] for c in output_cols]}")
 
     return output_cols
 
@@ -144,6 +141,17 @@ def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> n
     return G
 
 
+def get_ci_column_selector(ci: ColumnInfo):
+    if ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+        return ci.input_name
+
+    elif ci.__class__ == StringCatColumn:
+        return ci.input_columns
+
+    elif ci.__class__ == JSONFlattenInfo:
+        return ci.input_col_names
+
+
 def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateOp:
     json_flatten_op = MutateOp(json_flatten, dependencies=json_input_cols, output_columns=json_output_cols)
 
@@ -164,45 +172,20 @@ def nvt_string_cat_col(column_selector: ColumnSelector, df: typing.Union[pd.Data
 
 
 ColumnInfoProcessingMap = {
-    # BoolColumn: lambda ci, deps: [ci.name] >> LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
-    #                                                    dtype="bool"),
-    # ColumnInfo: lambda ci, deps: LambdaOp(lambda series: series),
-    # DateTimeColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name) >>
-    #                                  LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype),
-    # RenameColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name),
-    # StringCatColumn: lambda ci, deps: MutateOp(
-    #     partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
-    #     dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
     BoolColumn: lambda ci, deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
                                            dtype="bool")],
     ColumnInfo: lambda ci, deps: [LambdaOp(lambda series: series)],
-    DateTimeColumn: lambda ci, deps: [Rename(name=ci.name), LambdaOp(lambda series: series.astype(ci.dtype),
-                                                                     dtype=ci.dtype)],
-    RenameColumn: lambda ci, deps: [Rename(name=ci.name)],
+    DateTimeColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name),
+                                      LambdaOp(lambda series: series.astype(ci.dtype),
+                                               dtype=ci.dtype)],
+    # RenameColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name)],
+    RenameColumn: lambda ci, deps: [MutateOp(lambda selector, df: df.rename(columns={ci.input_name: ci.name}),
+                                             dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
     StringCatColumn: lambda ci, deps: [MutateOp(
         partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
         dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
     JSONFlattenInfo: lambda ci, deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
-
-
-def _coalesce_ops(ops: list):
-    ops = [op for op in ops if op]  # Discard empty lists
-
-    if len(ops) == 1:
-        if isinstance(ops[0], list):
-            return coalesce_ops(ops[0])
-        else:
-            return ops[0]
-
-    operator_groups = []
-    for op in ops:
-        if isinstance(op, list):
-            operator_groups.append(coalesce_ops(op))
-        else:
-            operator_groups.append(op)
-
-    return operator_groups[0] + coalesce_ops(operator_groups[1:])
 
 
 def dfs_coalesce(graph, ci_map, parent, start, visited=None):
@@ -215,23 +198,12 @@ def dfs_coalesce(graph, ci_map, parent, start, visited=None):
     for op in ops:
         parent = parent >> op
 
-    compound_op = parent
+    ops = []
     for neighbor in graph.neighbors(start):
         if neighbor not in visited:
-            compound_op = dfs_coalesce(graph, ci_map, compound_op, neighbor, visited)
+            ops.extend(dfs_coalesce(graph, ci_map, parent, neighbor, visited))
 
-    return compound_op
-
-
-def get_ci_column_selector(ci: ColumnInfo):
-    if ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
-        return ci.input_name
-
-    elif ci.__class__ == StringCatColumn:
-        return ci.input_columns
-
-    elif ci.__class__ == JSONFlattenInfo:
-        return ci.input_col_names
+    return ops or [parent]
 
 
 def coalesce_ops(graph, ci_map):
@@ -244,10 +216,11 @@ def coalesce_ops(graph, ci_map):
         ci = ci_map[node]
         op_chain = get_ci_column_selector(ci)
         op_chain = dfs_coalesce(graph, ci_map, op_chain, node, visited)
-        if (coalesced_workflow is None):
-            coalesced_workflow = op_chain
-        else:
-            coalesced_workflow = coalesced_workflow + op_chain
+        for op in op_chain:
+            if (coalesced_workflow is None):
+                coalesced_workflow = op
+            else:
+                coalesced_workflow = coalesced_workflow + op
 
     return coalesced_workflow
 
@@ -277,10 +250,10 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
         column_info_map = {ci.name: ci for ci in column_info_objects}
 
     graph = build_nx_dependency_graph(column_info_objects)
-    # pos = graphviz_layout(graph, prog='neato')
-    # nx.draw(graph, pos, with_labels=True, font_weight='bold')
-    ## Show the plot
-    # plt.show()
+    pos = graphviz_layout(graph, prog='neato')
+    nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    # Show the plot
+    plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
     coalesced_workflow.graph.render(view=True, format='svg')
