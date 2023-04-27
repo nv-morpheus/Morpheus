@@ -111,7 +111,7 @@ of information would be unsafe.
 
 ## Morpheus Modules
 
-Modules, introduced in the 23.07 release, introduce a new method for defining units of work which are compact,
+Modules, introduced in the 23.03 release, introduce a new method for defining units of work which are compact,
 composable, nestable, and fully reusable. Once a module has been defined and registered, it can be used in new and
 existing pipelines as either a new ModuleStage or loaded directly within the context of an existing stage using
 `builder.load_module(...)`.
