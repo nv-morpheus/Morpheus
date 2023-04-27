@@ -35,9 +35,9 @@ class DFPFileBatcherStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 date_conversion_func,
-                 period="D",
-                 sampling_rate_s=0,
+                 date_conversion_func: typing.Callable[[fsspec.core.OpenFile], datetime],
+                 period: str = "D",
+                 sampling_rate_s: int = 0,
                  start_time: datetime = None,
                  end_time: datetime = None):
         super().__init__(c)
@@ -52,13 +52,13 @@ class DFPFileBatcherStage(SinglePortStage):
     def name(self) -> str:
         return "dfp-file-batcher"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
     def accepted_types(self) -> typing.Tuple:
         return (fsspec.core.OpenFiles, )
 
-    def on_data(self, file_objects: fsspec.core.OpenFiles):
+    def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[fsspec.core.OpenFiles]:
 
         # Determine the date of the file, and apply the window filter if we have one
         ts_and_files = []
