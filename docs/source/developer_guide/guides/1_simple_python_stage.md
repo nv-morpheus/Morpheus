@@ -76,7 +76,7 @@ Our `on_data` method accepts an incoming message and returns a message. The retu
 Finally, the `_build_single` method will be used at stage build time to construct our node and wire it into the pipeline. `_build_single` receives an instance of an MRC segment builder (`mrc.Builder`) along with a `StreamPair` instance, which is a tuple consisting of our parent node and its output type. We will be using the builder instance to construct a node from our stage and connecting it to the Morpheus pipeline. The return type of `_build_single` is also a `StreamPair` which will be comprised of our node along with its data type.
 ```python
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
