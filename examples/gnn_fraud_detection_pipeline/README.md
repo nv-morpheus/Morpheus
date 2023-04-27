@@ -101,6 +101,7 @@ Serialize rate[Complete]: 265messages [00:01, 142.31messages/s]
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus pipeline. Alternately, the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+
 Note: Since the `gnn_fraud_detection_pipeline` module is visible to Python we can specify the plugins by their module name rather than the more verbose file path.
 
 From the root of the Morpheus repo, run:
