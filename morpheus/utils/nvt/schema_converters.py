@@ -250,10 +250,11 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
         column_info_map = {ci.name: ci for ci in column_info_objects}
 
     graph = build_nx_dependency_graph(column_info_objects)
-    pos = graphviz_layout(graph, prog='neato')
-    nx.draw(graph, pos, with_labels=True, font_weight='bold')
-    # Show the plot
-    plt.show()
+
+    # Uncomment to print the dependency layout
+    # pos = graphviz_layout(graph, prog='neato')
+    # nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    # plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
     coalesced_workflow.graph.render(view=True, format='svg')

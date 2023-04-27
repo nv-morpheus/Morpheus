@@ -35,10 +35,10 @@ source_column_info = [
                         "access_device.location.state",
                         "access_device.location.country"
                     ], sep=", "),
-    # RenameColumn(name="authdevicename", dtype="str", input_name="auth_device.name"),
+    RenameColumn(name="authdevicename", dtype="str", input_name="auth_device.name"),
     RenameColumn(name="username", dtype="str", input_name="user.name"),
-    # RenameColumn(name="accessdevicebrowser", dtype="str", input_name="access_device.browser"),
-    # RenameColumn(name="accessdeviceos", dtype="str", input_name="access_device.os"),
+    RenameColumn(name="accessdevicebrowser", dtype="str", input_name="access_device.browser"),
+    RenameColumn(name="accessdeviceos", dtype="str", input_name="access_device.os"),
 ]
 
 
@@ -88,9 +88,6 @@ def test_input_schema_conversion():
         "access_device": [
             '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}'],
         "user.name": ["John Doe"],
-        # "auth_device.name": ["Device1"],
-        # "access_device.browser": ["Chrome"],
-        # "access_device.os": ["Windows"],
         "application": ['{"name": "TestApp"}'],
         "auth_device": ['{"name": "Device1"}'],
         "user": ['{"name": "John Doe"}'],
@@ -104,26 +101,24 @@ def test_input_schema_conversion():
 
     # Apply the returned nvt.Workflow to the test dataframe
     dataset = nvt.Dataset(test_df)
-    # workflow.fit(dataset)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({
-        "timestamp": [pd.Timestamp("2021-01-01 00:00:00")],
-        "userid": ["John Doe"],
-        "accessdevicebrowser": ["Chrome"],
-        "accessdeviceos": ["Windows"], "location": ["New York, NY, USA"],
-        "authdevicename": ["Device1"],
         "result": [True],
-        "reason": ["Authorized"]
+        "timestamp": [pd.Timestamp("2021-01-01 00:00:00")],
+        "location": ["New York, NY, USA"],
+        "authdevicename": ["Device1"],
+        "username": ["John Doe"],
+        "accessdevicebrowser": ["Chrome"],
+        "accessdeviceos": ["Windows"],
     })
 
-    print(output_df.columns)
-    # print(expected_df.columns)
-    pd.set_option("display.max_colwidth", None)
-    print("SKIPPING EQUALITY TEST -- WORKFLOW RAN SUCCESSFULLY")
-    print(output_df)
-    # pd.testing.assert_frame_equal(output_df, expected_df)
+    pd.set_option('display.max_columns', None)
+    # print("")
+    # print(output_df)
+    # print(output_df.columns)
+    pd.testing.assert_frame_equal(output_df, expected_df)
 
 
 if (__name__ in ('main',)):
