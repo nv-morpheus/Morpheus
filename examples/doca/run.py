@@ -150,8 +150,8 @@ def run_pipeline(
         pipeline.add_stage(
             TritonInferenceStage(
                 config, 
-                model_name="sid-minibert-trt", 
-                #model_name="sid-minibert-onnx", 
+                # model_name="sid-minibert-trt", 
+                model_name="sid-minibert-onnx", 
                 server_url="localhost:8000", 
                 force_convert_inputs=True, 
                 use_shared_memory=True
@@ -162,15 +162,15 @@ def run_pipeline(
 
     #     # add class stage
     #     pipeline.add_stage(AddClassificationsStage(config))
-    #     pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))  
+    # #     pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))  
                   
     # if True:
     #     # add serialization stage
     #     pipeline.add_stage(SerializeStage(config))
-    #     pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))       
+    # #     pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))       
         
     #     #pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
-    #     #pipeline.add_stage(MonitorStage(config, description="File writer"))
+    # #     #pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     #     pipeline.add_stage(
     #         WriteToElasticsearchStage(

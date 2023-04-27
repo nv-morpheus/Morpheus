@@ -18,19 +18,20 @@
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
 #include "morpheus/doca/doca_context.hpp"
+#include "morpheus/doca/error.hpp"
 #include "morpheus/utilities/error.hpp"
 // #include "morpheus/doca/common.h"
 // #include "morpheus/doca/samples/common.h"
 
-#include <rte_eal.h>
-#include <rte_ethdev.h>
-#include <doca_version.h>
+#include <cuda_runtime.h>
 #include <doca_argp.h>
 #include <doca_dpdk.h>
-#include <doca_gpunetio.h>
 #include <doca_error.h>
-#include <cuda_runtime.h>
 #include <doca_eth_rxq.h>
+#include <doca_gpunetio.h>
+#include <doca_version.h>
+#include <rte_eal.h>
+#include <rte_ethdev.h>
 
 #include <glog/logging.h>
 #include <string>
@@ -38,56 +39,10 @@
 
 // #define GPU_SUPPORT
 
-namespace morpheus {
-
-struct doca_error : public std::runtime_error {
-  doca_error(std::string const& message) : std::runtime_error(message) {}
-};
-
-struct rte_error : public std::runtime_error {
-  rte_error(std::string const& message) : std::runtime_error(message) {}
-};
-
-namespace detail {
-
-inline void throw_doca_error(doca_error_t error, const char* file, unsigned int line)
-{
-  throw morpheus::doca_error(std::string{"DOCA error encountered at: " + std::string{file} + ":" +
-                                     std::to_string(line) + ": " + std::to_string(error) + " " +
-                                     std::string(doca_get_error_string(error))});
-}
-
-inline void throw_rte_error(int error, const char* file, unsigned int line)
-{
-  throw morpheus::rte_error(std::string{"RTE error encountered at: " + std::string{file} + ":" +
-                                     std::to_string(line) + ": " + std::to_string(error)});
-}
-
-}
-
-}
-
-#define DOCA_TRY(call)                                                \
-  do {                                                                \
-    doca_error_t const status = (call);                               \
-    if (DOCA_SUCCESS != status) {                                     \
-      morpheus::detail::throw_doca_error(status, __FILE__, __LINE__); \
-    }                                                                 \
-  } while (0);
-
-#define RTE_TRY(call)                                                \
-  do {                                                                \
-    int const status = (call);                               \
-    if (status) {                                     \
-      morpheus::detail::throw_rte_error(status, __FILE__, __LINE__); \
-    }                                                                 \
-  } while (0);
-
 namespace {
 
 static uint64_t default_flow_timeout_usec;
 
-#define GPU_PAGE_SIZE (1UL << 16)
 #define MAX_PKT_SIZE 8192
 #define FLOW_NB_COUNTERS 524228 /* 1024 x 512 */
 #define MAX_PORT_STR_LEN 128 /* Maximal length of port name */
@@ -188,7 +143,7 @@ open_doca_device_with_pci(const struct doca_pci_bdf *value, jobs_check func, str
 
     /* Search */
     for (i = 0; i < nb_devs; i++) {
-    DOCA_TRY(doca_devinfo_get_pci_addr(dev_list[i], &buf));
+      DOCA_TRY(doca_devinfo_get_pci_addr(dev_list[i], &buf));
         if (buf.raw == value->raw) {
             /* If any special capabilities are needed */
             if (func != NULL && func(dev_list[i]) != DOCA_SUCCESS)
@@ -237,7 +192,7 @@ struct doca_flow_port * init_doca_flow(uint16_t port_id, uint8_t rxq_num)
      * Following lines of code can be considered the minimum WAR for this issue.
      */
 
-  RTE_TRY(rte_eth_dev_info_get(port_id, &dev_info));
+    RTE_TRY(rte_eth_dev_info_get(port_id, &dev_info));
     RTE_TRY(rte_eth_dev_configure(port_id, rxq_num, rxq_num, &eth_conf));
 
     mp = rte_pktmbuf_pool_create("TEST", 8192, 0, 0, MAX_PKT_SIZE, rte_eth_dev_socket_id(port_id));
@@ -350,12 +305,9 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     argv.push_back("--log-level");
     argv.push_back("eal,8");
 
-    RTE_TRY(rte_eal_init(argv.size(), argv.data()));
-
     DOCA_TRY(parse_pci_addr(nic_addr_c, _pci_bdf));
-      DOCA_TRY(open_doca_device_with_pci(&_pci_bdf, nullptr, &_dev));
-    DOCA_TRY(doca_gpu_create(gpu_addr_c, &_gpu));
-
+    DOCA_TRY(open_doca_device_with_pci(&_pci_bdf, nullptr, &_dev));
+    RTE_TRY(rte_eal_init(argv.size(), argv.data()));
 
     // auto gpu_attack_dpdk_ret = doca_gpu_to_dpdk(_gpu);
     // if (gpu_attack_dpdk_ret != DOCA_SUCCESS) {
@@ -364,12 +316,14 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     //   );
     // }
 
-    DOCA_TRY(doca_dpdk_port_probe(_dev, ""));
+    DOCA_TRY(doca_dpdk_port_probe(_dev, "dv_flow_en=2"));
     DOCA_TRY(get_dpdk_port_id_doca_dev(_dev, &_nic_port));
     if (_nic_port == RTE_MAX_ETHPORTS) {
       throw std::runtime_error(
         "No DPDK port matches the DOCA device");
     }
+
+    DOCA_TRY(doca_gpu_create(gpu_addr_c, &_gpu));
 
     auto dpdk_config = [](){
       application_dpdk_config dpdk_config;
@@ -422,38 +376,6 @@ doca_flow_port* doca_context::flow_port()
   return _flow_port;
 }
 
-template<typename T>
-doca_mem<T>::doca_mem(std::shared_ptr<morpheus::doca::doca_context> context, size_t count, doca_gpu_mem_type mem_type):
-  _context(context)
-{
-  DOCA_TRY(doca_gpu_mem_alloc(
-    context->gpu(),
-    sizeof(T) * count,
-    GPU_PAGE_SIZE,
-    mem_type,
-    &_mem_gpu,
-    &_mem_cpu
-  ));
-}
-
-template<typename T>
-doca_mem<T>::~doca_mem()
-{
-  DOCA_TRY(doca_gpu_mem_free(_context->gpu(), _mem_gpu));
-}
-
-template<typename T>
-T* doca_mem<T>::gpu_ptr()
-{
-    return _mem_gpu;
-}
-
-template<typename T>
-T* doca_mem<T>::cpu_ptr()
-{
-    return _mem_cpu;
-}
-
 doca_rx_queue::doca_rx_queue(std::shared_ptr<doca_context> context):
   _context(context),
   _rxq_info_gpu(nullptr),
@@ -497,8 +419,8 @@ doca_rx_queue::doca_rx_queue(std::shared_ptr<doca_context> context):
 
 doca_rx_queue::~doca_rx_queue()
 {
-  DOCA_TRY(doca_gpu_mem_free(_context->gpu(), _packet_address));
-  DOCA_TRY(doca_eth_rxq_destroy(_rxq_info_cpu));
+  // DOCA_TRY(doca_gpu_mem_free(_context->gpu(), _packet_address));
+  // DOCA_TRY(doca_eth_rxq_destroy(_rxq_info_cpu));
 }
 
 doca_eth_rxq* doca_rx_queue::rxq_info_cpu()
@@ -525,55 +447,61 @@ doca_rx_pipe::doca_rx_pipe(
   doca_eth_rxq_get_flow_queue_id(rxq->rxq_info_cpu(), &flow_queue_id);
   rss_queues[0] = flow_queue_id;
 
-    struct doca_flow_match match_mask = {0};
-    struct doca_flow_match match = ([](){
-    doca_flow_match match;
+  struct doca_flow_match match_mask = {0};
+  struct doca_flow_match match = ([](){
+    doca_flow_match match{};
     match.outer = ([](){
-      doca_flow_header_format outer;
+      doca_flow_header_format outer{};
             outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+            outer.ip4.next_proto = IPPROTO_TCP;
             outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TCP;
       return outer;
     })();
     return match;
-    })();
+  })();
+
+  // match.outer.ip4.src_ip = 0xffffffff;
+  // match.outer.ip4.dst_ip = 0xffffffff;
+  // match.outer.tcp.l4_port.src_port = 0xffff;
+  // match.outer.tcp.l4_port.dst_port = 0xffff;
 
   auto fwd = ([&](){
-    doca_flow_fwd fwd;
-        fwd.type = DOCA_FLOW_FWD_RSS;
-        fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_TCP;
-        fwd.rss_queues = rss_queues;
-        fwd.num_of_queues = 1;
+    doca_flow_fwd fwd{};
+    fwd.type = DOCA_FLOW_FWD_RSS;
+    fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_TCP;
+    fwd.rss_queues = rss_queues;
+    fwd.num_of_queues = 1;
     return fwd;
-    })();
+  })();
 
-    auto miss_fwd = ([](){
-    doca_flow_fwd miss_fwd;
-        miss_fwd.type = DOCA_FLOW_FWD_DROP;
+  auto miss_fwd = ([](){
+    doca_flow_fwd miss_fwd{};
+    miss_fwd.type = DOCA_FLOW_FWD_DROP;
     return miss_fwd;
-    })();
+  })();
 
-    auto monitor = ([](){
-    doca_flow_monitor monitor;
-        monitor.flags = DOCA_FLOW_MONITOR_COUNT;
+  auto monitor = ([](){
+    doca_flow_monitor monitor{};
+    monitor.flags = DOCA_FLOW_MONITOR_COUNT;
     return monitor;
-    })();
+  })();
 
-    auto pipe_cfg = ([&](){
-    doca_flow_pipe_cfg pipe_cfg;
-        pipe_cfg.attr = ([](){
-      doca_flow_pipe_attr attr;
-            attr.name = "GPU_RXQ_TCP_PIPE";
-            attr.type = DOCA_FLOW_PIPE_BASIC;
-            attr.nb_actions = 0;
-            attr.is_root = false;
+  auto pipe_cfg = ([&](){
+    doca_flow_pipe_cfg pipe_cfg{};
+    pipe_cfg.attr = ([](){
+      doca_flow_pipe_attr attr{};
+      attr.name = "GPU_RXQ_TCP_PIPE";
+      attr.type = DOCA_FLOW_PIPE_BASIC;
+      attr.nb_actions = 0;
+      attr.is_root = false;
       return attr;
-        })(),
-        pipe_cfg.match = &match;
-        pipe_cfg.match_mask = &match_mask;
-        pipe_cfg.monitor = &monitor;
-        pipe_cfg.port = context->flow_port();
+    })(),
+    pipe_cfg.match = &match;
+    pipe_cfg.match_mask = &match_mask;
+    pipe_cfg.monitor = &monitor;
+    pipe_cfg.port = context->flow_port();
     return pipe_cfg;
-    })();
+  })();
 
   DOCA_TRY(doca_flow_pipe_create(&pipe_cfg, &fwd, &miss_fwd, &_pipe));
 }
@@ -592,7 +520,7 @@ doca_semaphore::doca_semaphore(
   _size(size)
 {
   DOCA_TRY(doca_gpu_semaphore_create(_context->gpu(), &_semaphore));
-    DOCA_TRY(doca_gpu_semaphore_set_memory_type(_semaphore, DOCA_GPU_MEM_CPU_GPU));
+  DOCA_TRY(doca_gpu_semaphore_set_memory_type(_semaphore, DOCA_GPU_MEM_CPU_GPU));
   DOCA_TRY(doca_gpu_semaphore_set_items_num(_semaphore, size));
   DOCA_TRY(doca_gpu_semaphore_start(_semaphore));
   DOCA_TRY(doca_gpu_semaphore_get_gpu_handle(_semaphore, &_semaphore_gpu));

@@ -16,13 +16,19 @@
  */
 
 #pragma once
+ 
+#define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <doca_gpunetio.h>
-#include <doca_flow.h>
+#include "morpheus/doca/error.hpp"
+
 #include <doca_eth_rxq.h>
+#include <doca_flow.h>
+#include <doca_gpunetio.h>
 
 #include <string>
 #include <memory>
+
+#define GPU_PAGE_SIZE (1UL << 16)
 
 namespace morpheus::doca
 {
@@ -64,6 +70,38 @@ public:
   T* gpu_ptr();
   T* cpu_ptr();
 };
+
+template<typename T>
+doca_mem<T>::doca_mem(std::shared_ptr<morpheus::doca::doca_context> context, size_t count, doca_gpu_mem_type mem_type):
+  _context(context)
+{
+  DOCA_TRY(doca_gpu_mem_alloc(
+    context->gpu(),
+    sizeof(T) * count,
+    GPU_PAGE_SIZE,
+    mem_type,
+    (void**)(&_mem_gpu),
+    (void**)(&_mem_cpu)
+  ));
+}
+
+template<typename T>
+doca_mem<T>::~doca_mem()
+{
+  DOCA_TRY(doca_gpu_mem_free(_context->gpu(), _mem_gpu));
+}
+
+template<typename T>
+T* doca_mem<T>::gpu_ptr()
+{
+    return _mem_gpu;
+}
+
+template<typename T>
+T* doca_mem<T>::cpu_ptr()
+{
+    return _mem_cpu;
+}
 
 struct doca_rx_queue
 {

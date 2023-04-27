@@ -91,8 +91,8 @@ DocaSourceStage::DocaSourceStage(
   );
 
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
-  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq, source_ip.value());
   _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
+  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq, source_ip.value());
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
