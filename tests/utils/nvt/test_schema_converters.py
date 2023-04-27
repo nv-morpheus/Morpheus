@@ -26,7 +26,7 @@ source_column_info = [
                input_name="result",
                true_values=["success", "SUCCESS"],
                false_values=["denied", "DENIED", "FRAUD"]),
-    # ColumnInfo(name="reason", dtype=str),
+    ColumnInfo(name="reason", dtype=str),
     DateTimeColumn(name="timestamp", dtype="datetime64[us]", input_name="timestamp"),
     StringCatColumn(name="location",
                     dtype="str",

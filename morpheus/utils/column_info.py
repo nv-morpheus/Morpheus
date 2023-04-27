@@ -199,6 +199,7 @@ class IncrementColumn(DateTimeColumn):
         return df.groupby([self.groupby_column, period]).cumcount()
 
 
+
 @dataclasses.dataclass
 class DataFrameInputSchema:
     """Defines the schema specifying the columns to be included in the output `DataFrame`."""

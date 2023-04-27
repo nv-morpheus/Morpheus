@@ -13,18 +13,28 @@
 # limitations under the License.
 
 import typing
+from collections import deque
 
 import cudf
+import dataclasses
+import json
 import pandas as pd
 import nvtabular as nvt
+import networkx as nx
+import matplotlib.pyplot as plt
+
 from functools import partial
 from merlin.dag import ColumnSelector
 from nvtabular.ops import LambdaOp, Rename
 
 from morpheus.utils.column_info import (BoolColumn, ColumnInfo, DataFrameInputSchema, DateTimeColumn,
-                                        RenameColumn, StringCatColumn)
+                                        RenameColumn, StringCatColumn, StringJoinColumn, IncrementColumn)
 from morpheus.utils.nvt import MutateOp, json_flatten
 from nvtabular.workflow.node import WorkflowNode
+
+import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+import matplotlib.pyplot as plt
 
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
@@ -62,49 +72,82 @@ def sync_series_as_pandas(func: typing.Callable) -> typing.Callable:
     return wrapper
 
 
-def json_flatten_from_input_schema(input_schema: DataFrameInputSchema) -> MutateOp:
-    json_cols = set(input_schema.json_columns)
+@dataclasses.dataclass
+class JSONFlattenInfo(ColumnInfo):
+    """Subclass of `ColumnInfo`, mock ColumnInfo object a JSON column into multiple columns."""
+    input_col_names: list
+    output_col_names: list
+
+
+def resolve_json_output_columns(input_schema) -> typing.List[ColumnInfo]:
+    column_info_objects = input_schema.column_info
 
     json_output_candidates = []
-    for col in input_schema.column_info:
-        json_output_candidates.append((col.name, col.dtype))
-        if (isinstance(col, StringCatColumn)):
-            for col_name in col.input_columns:
-                json_output_candidates.append((col_name, col.dtype))
+    for col_info in column_info_objects:
+        json_output_candidates.append((col_info.name, col_info.dtype))
+        if (hasattr(col_info, 'input_name')):
+            json_output_candidates.append((col_info.input_name, col_info.dtype))
+        if (hasattr(col_info, 'input_columns')):
+            for col_name in col_info.input_columns:
+                json_output_candidates.append((col_name, col_info.dtype))
 
     output_cols = []
+    json_cols = input_schema.json_columns
     for col in json_output_candidates:
         cnsplit = col[0].split('.')
         if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
             output_cols.append(col)
 
-    print(json_cols)
-    print([c[0] for c in json_output_candidates])
-    print([c[0] for c in output_cols])
+    # print(f"Output candidates: {[c[0] for c in json_output_candidates]}")
+    print(f"Resolved Outputs: {[c[0] for c in output_cols]}")
 
-    if (output_cols is None or len(output_cols) == 0):
-        raise RuntimeError("Failed to identify any output columns for json_flatten.")
+    return output_cols
 
-    print(f"Creating with output cols: {output_cols}")
-    jcols = [c for c in input_schema.json_columns]
-    json_flatten_op = MutateOp(json_flatten, dependencies=jcols, output_columns=output_cols)
+
+def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> nx.DiGraph:
+    G = nx.DiGraph()
+
+    def find_dependent_column(name, current_name):
+        for ci in column_info_objects:
+            if ci.name == current_name:
+                continue
+            if ci.name == name:
+                return ci
+            elif ci.__class__ == JSONFlattenInfo:
+                if name in [c for c, _ in ci.output_col_names]:
+                    return ci
+        return None
+
+    for col_info in column_info_objects:
+        G.add_node(col_info.name)
+
+        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+            # If col_info.name != col_info.input_name then we're creating a potential dependency
+            if col_info.name != col_info.input_name:
+                dep_col_info = find_dependent_column(col_info.input_name, col_info.name)
+                if dep_col_info:
+                    # This CI is dependent on the dep_col_info CI
+                    G.add_edge(dep_col_info.name, col_info.name)
+
+        elif col_info.__class__ == StringCatColumn:
+            for input_col_name in col_info.input_columns:
+                dep_col_info = find_dependent_column(input_col_name, col_info.name)
+                if dep_col_info:
+                    G.add_edge(dep_col_info.name, col_info.name)
+
+        elif col_info.__class__ == JSONFlattenInfo:
+            for output_col_name in [c for c, _ in col_info.output_col_names]:
+                dep_col_info = find_dependent_column(output_col_name, col_info.name)
+                if dep_col_info:
+                    G.add_edge(dep_col_info.name, col_info.name)
+
+    return G
+
+
+def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateOp:
+    json_flatten_op = MutateOp(json_flatten, dependencies=json_input_cols, output_columns=json_output_cols)
 
     return json_flatten_op
-
-
-@sync_series_as_pandas
-def datetime_converter(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column) -> typing.Union[
-    pd.DataFrame, cudf.DataFrame]:
-    _df = pd.DataFrame()
-    _df[output_column] = pd.to_datetime(df["timestamp"], infer_datetime_format=True, utc=True)
-
-    return _df
-
-
-def nvt_datetime_converter(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                           output_column: str) -> \
-        typing.Union[pd.DataFrame, cudf.DataFrame]:
-    return datetime_converter(df[column_selector.names], output_column=output_column)
 
 
 @sync_df_as_pandas
@@ -121,19 +164,29 @@ def nvt_string_cat_col(column_selector: ColumnSelector, df: typing.Union[pd.Data
 
 
 ColumnInfoProcessingMap = {
-    BoolColumn: lambda ci, deps: [ci.name] >> LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
-                                                       dtype="bool"),
-    ColumnInfo: lambda ci, deps: LambdaOp(lambda series: series),
-    DateTimeColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name) >>
-                                     LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype),
-    RenameColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name),
-    StringCatColumn: lambda ci, deps: MutateOp(
+    # BoolColumn: lambda ci, deps: [ci.name] >> LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
+    #                                                    dtype="bool"),
+    # ColumnInfo: lambda ci, deps: LambdaOp(lambda series: series),
+    # DateTimeColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name) >>
+    #                                  LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype),
+    # RenameColumn: lambda ci, deps: [ci.input_name] >> Rename(name=ci.name),
+    # StringCatColumn: lambda ci, deps: MutateOp(
+    #     partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
+    #     dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
+    BoolColumn: lambda ci, deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
+                                           dtype="bool")],
+    ColumnInfo: lambda ci, deps: [LambdaOp(lambda series: series)],
+    DateTimeColumn: lambda ci, deps: [Rename(name=ci.name), LambdaOp(lambda series: series.astype(ci.dtype),
+                                                                     dtype=ci.dtype)],
+    RenameColumn: lambda ci, deps: [Rename(name=ci.name)],
+    StringCatColumn: lambda ci, deps: [MutateOp(
         partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
-        dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
+        dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
+    JSONFlattenInfo: lambda ci, deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
-def coalesce_ops(ops: list):
+def _coalesce_ops(ops: list):
     ops = [op for op in ops if op]  # Discard empty lists
 
     if len(ops) == 1:
@@ -152,6 +205,53 @@ def coalesce_ops(ops: list):
     return operator_groups[0] + coalesce_ops(operator_groups[1:])
 
 
+def dfs_coalesce(graph, ci_map, parent, start, visited=None):
+    if visited is None:
+        visited = set()
+
+    visited.add(start)
+    # Parent is guaranteed to have an input schema
+    ops = ColumnInfoProcessingMap[type(ci_map[start])](ci_map[start], deps=[])
+    for op in ops:
+        parent = parent >> op
+
+    compound_op = parent
+    for neighbor in graph.neighbors(start):
+        if neighbor not in visited:
+            compound_op = dfs_coalesce(graph, ci_map, compound_op, neighbor, visited)
+
+    return compound_op
+
+
+def get_ci_column_selector(ci: ColumnInfo):
+    if ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+        return ci.input_name
+
+    elif ci.__class__ == StringCatColumn:
+        return ci.input_columns
+
+    elif ci.__class__ == JSONFlattenInfo:
+        return ci.input_col_names
+
+
+def coalesce_ops(graph, ci_map):
+    """Find nodes with no outgoing edges that are not dependent on the current node."""
+    root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
+
+    visited = set()
+    coalesced_workflow = None
+    for node in root_nodes:
+        ci = ci_map[node]
+        op_chain = get_ci_column_selector(ci)
+        op_chain = dfs_coalesce(graph, ci_map, op_chain, node, visited)
+        if (coalesced_workflow is None):
+            coalesced_workflow = op_chain
+        else:
+            coalesced_workflow = coalesced_workflow + op_chain
+
+    return coalesced_workflow
+
+
 def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Workflow:
     """
     Converts an `input_schema` to a `nvt.Workflow` object
@@ -162,40 +262,27 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
     pass them the updated schema from the preprocessing steps.
     """
 
-    # Items that need to be run before any other column operations, for example, we have to flatten json
-    # columns so that we can do things like rename them.
-    preprocess_workflow = []
-    column_workflow = []
+    # Try to guess which output columns we'll produce
+    json_output_cols = resolve_json_output_columns(input_schema)
 
-    # Process the schema, so we can build up a list of workflow items
-    if (input_schema.json_columns is not None and len(input_schema.json_columns) > 0):
-        op = ColumnSelector(input_schema.json_columns) >> json_flatten_from_input_schema(input_schema)
-        preprocess_workflow.append(op)
+    json_cols = input_schema.json_columns
+    column_info_objects = [ci for ci in input_schema.column_info]
+    if (json_cols is not None and len(json_cols) > 0):
+        column_info_objects.append(
+            JSONFlattenInfo(input_col_names=[c for c in json_cols],
+                            # output_col_names=[name for name, _ in json_output_cols],
+                            output_col_names=json_output_cols,
+                            dtype="str", name="json_info"))
 
-    for col_info in input_schema.column_info:
-        if (type(col_info) not in ColumnInfoProcessingMap):
-            raise RuntimeError(f"No known conversion for ColumnInfo type: {type(col_info)}")
+        column_info_map = {ci.name: ci for ci in column_info_objects}
 
-        op = ColumnInfoProcessingMap[type(col_info)](col_info, deps=[])
-        column_workflow.append(op)
+    graph = build_nx_dependency_graph(column_info_objects)
+    # pos = graphviz_layout(graph, prog='neato')
+    # nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    ## Show the plot
+    # plt.show()
 
-    preproc_workflow = coalesce_ops([preprocess_workflow])
-    preproc_workflow = (preproc_workflow + ColumnSelector('*'))
+    coalesced_workflow = coalesce_ops(graph, column_info_map)
+    coalesced_workflow.graph.render(view=True, format='svg')
 
-    column_workflow_nodes = []
-    for op in column_workflow:
-        if (isinstance(op, WorkflowNode)):
-            column_workflow_nodes.append(op)
-        else:
-            column_workflow_nodes.append(preproc_workflow >> op)
-
-    compound_workflow = None
-    for node in column_workflow_nodes:
-        if (compound_workflow is None):
-            compound_workflow = node
-        else:
-            compound_workflow = compound_workflow + node
-
-    compound_workflow.graph.render(view=True, format='svg')
-
-    return nvt.Workflow(compound_workflow)
+    return nvt.Workflow(coalesced_workflow)
