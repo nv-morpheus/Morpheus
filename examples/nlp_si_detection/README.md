@@ -17,7 +17,7 @@ limitations under the License.
 
 # Sensitive Information Detection with Natural Language Processing (NLP) Example
 
-This example illustrates how to use Morpheus to automatically detect Sensitive Information (SI) in network packets by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
+This example illustrates how to use Morpheus to detect Sensitive Information (SI) in network packets automatically by utilizing a Natural Language Processing (NLP) neural network and Triton Inference Server.
 
 ## Background
 
