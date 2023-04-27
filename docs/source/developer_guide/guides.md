@@ -35,7 +35,7 @@ in both Python and C++.
 
 ## Morpheus Modules
 
-Morpheus includes, as of version 23.03, a number of pre-defined module implementations to choose from when building a
+Morpheus includes, as of version 23.07, a number of pre-defined module implementations to choose from when building a
 custom pipeline. Modules can be thought of as units of work, which exist at a lower level than stages. Modules can
 be defined, registered, chained, nested, and loaded at runtime. Modules can be written in Python or C++.
 

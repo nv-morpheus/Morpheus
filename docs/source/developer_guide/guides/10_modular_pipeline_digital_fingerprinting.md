@@ -54,7 +54,7 @@ limitations under the License.
 
 This document presents the adaptation of the Digital Fingerprinting pipeline in Morpheus from the existing stage-based
 approach to one that is module-based; this process will provide a basis to work through motivation and
-usage examples for number of new features found in the 23.03 release. The updated pipeline incorporates extensions
+usage examples for number of new features found in the 23.07 release. The updated pipeline incorporates extensions
 to facilitate event-driven workflows and human-in-the-loop interactions through the use of control messages.
 Moreover, it introduces a dynamic method for acquiring and loading data, further enhancing the pipeline's capabilities.
 
@@ -256,7 +256,7 @@ handle the processing of control messages, and input and output ports are regist
 data processing pipeline seamlessly.
 
 The file batcher is one of the first pipeline components that begins to differ more substantially from the previous
-raw-data pipeline, prior to 23.03. In addition to its previous functionality, the file batcher is now control
+raw-data pipeline, prior to 23.07. In addition to its previous functionality, the file batcher is now control
 message aware, and can handle both streaming and encapsulated control messages, a property denoted by the `data_type`
 property of the control message's metadata being set as either `streaming` or `payload`. Additionally, the file
 batcher's default processing criteria for `period`, `sampling_rate_s`, `start_time`, and `end_time` can now be
