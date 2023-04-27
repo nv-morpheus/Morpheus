@@ -58,7 +58,7 @@ class DFPFileBatcherStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (fsspec.core.OpenFiles, )
 
-    def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[fsspec.core.OpenFiles]:
+    def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
 
         # Determine the date of the file, and apply the window filter if we have one
         ts_and_files = []
@@ -131,4 +131,4 @@ class DFPFileBatcherStage(SinglePortStage):
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
         builder.make_edge(input_stream[0], stream)
 
-        return stream, typing.List[fsspec.core.OpenFiles]
+        return stream, typing.Tuple[fsspec.core.OpenFiles, int]
