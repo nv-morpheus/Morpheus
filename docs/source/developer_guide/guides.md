@@ -24,7 +24,7 @@ pipeline, each of which can be included and configured to suit your application.
 
 - [List of available Morpheus stages](../stages/morpheus_stages.md)
 
-However, there are likely going to be situations that require writing a custom stage. Morpheus stages are written in
+There are likely going to be situations that require writing a custom stage. Morpheus stages are written in
 Python and optionally may include a C++ implementation. The following guides outline how to create your own stages
 in both Python and C++.
 
@@ -41,7 +41,7 @@ be defined, registered, chained, nested, and loaded at runtime. Modules can be w
 
 - [List of available Morpheus modules](../modules/morpheus_modules.md)
 
-However, there are likely going to be situations that require writing a custom module, either for creating your own
+There are likely going to be situations that require writing a custom module, either for creating your own
 reusable work units, or for creating a new compound module from a set of existing primitives. The following guides
 will walk through the process of creating a custom module in Python and C++.
 

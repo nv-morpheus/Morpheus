@@ -78,7 +78,7 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
-| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
+| `json_columns` | `List[str]` | Optional list of JSON columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a JSON field will be flattened into a new column named `<field>.<key>` for example a JSON field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
 | `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific operation to be performed upon a column. These include renames, type conversions, and custom computations. By default, this is an empty `list`. |
 | `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default, this is an empty `list`. |
 | `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as its only argument returning a `DataFrame`. |
@@ -108,7 +108,7 @@ Subclass of `ColumnInfo`, adds the ability to also perform a rename.
 | `input_name` | `str` | Original column name |
 
 #### Boolean Column (`BoolColumn`)
-Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
+Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of five possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
 ```python
 from morpheus.utils.column_info import BoolColumn
 ```
@@ -326,7 +326,7 @@ The `DFPMLFlowModelWriterStage` ([examples/digital_fingerprinting/production/mor
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.10/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+| `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
 | `experiment_name_formatter` | `str` | Optional format string to control the experiment name for models stored in MLflow, default is `/dfp-models/{reg_model_name}`.  Currently available field names are: `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once the field names have been applied. |
 | `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a databricks hosted MLflow server |
 
@@ -352,7 +352,7 @@ For any user without an associated model in MLflow, the model for the generic us
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.10/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
 
 #### Filter Detection Stage (`FilterDetectionsStage`)
 This stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage. All remaining logs which are below the threshold will be dropped. For the purposes of the DFP pipeline, this stage is configured to use the `mean_abs_z` column of the DataFrame as the filter criteria.
@@ -376,10 +376,8 @@ Let's first look at the module implementation structure before diving deeper int
 > Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
 
 ```py
-import typing
-
 import mrc
-from mrc.core import operators as ops
+import typing
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -397,8 +395,11 @@ def module_init(builder: mrc.Builder):
 
         # Your implementation goes here...
 
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
+        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
+
     # Here we are creating a node.
-    node = builder.make_node(module_id, ops.map(on_data), ops.filter(lambda x: x is not None))
+    node = builder.make_node_full(module_id, node_fn)
 
     # Register input and output port name for a module.
     builder.register_module_input("<input port name>", node)
@@ -426,7 +427,7 @@ module_config = {
 }
 ```
 
-The module must be packaged as a stage, as illustrated below, in order to be used in the Morpheus pipeline.
+The module must be packaged as a stage as illustrated below in order to be used in the Morpheus pipeline.
 
 ```py
 from morpheus.config import Config
@@ -507,7 +508,7 @@ Let's look at the DFP Training process based on modules. On a higher level, the 
 
 * [**DFPModelTrainDeploy**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_model_train_deploy.py)
 
-   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
+   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLflow server to serve inference requests.
    - [DFPTraining](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py)
    - [MLFlowModelWriter](/morpheus/modules/mlflow_model_writer.py)
 

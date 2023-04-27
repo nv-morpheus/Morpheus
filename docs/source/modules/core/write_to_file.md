@@ -25,9 +25,9 @@ This module writes messages to a file.
 |---------------------|-----------|------------------------------------------|---------------|------------------|
 | `filename`          | string    | Path to the output file                  | "output.csv"  | `None`           |
 | `file_type`         | string    | Type of file to write                    | "CSV"         | `AUTO`           |
-| `flush`             | bool      | If true, flush the file after each write | false         | `false `         |
-| `include_index_col` | bool      | If true, include the index column        | false         | `true`           |
-| `overwrite`         | bool      | If true, overwrite the file if it exists | true          | `false`          |
+| `flush`             | boolean      | If true, flush the file after each write | false         | `false `         |
+| `include_index_col` | boolean      | If true, include the index column        | false         | `true`           |
+| `overwrite`         | boolean      | If true, overwrite the file if it exists | true          | `false`          |
 
 ### Example JSON Configuration
 

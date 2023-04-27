@@ -41,14 +41,14 @@ More advanced users, or those who are interested in using the latest pre-release
 ### Pull the Morpheus Image
 1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
-1. Download the selected version, for example for `23.07`:
+1. Download the selected version, for example for `23.03`:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:23.07-runtime
+docker pull nvcr.io/nvidia/morpheus/morpheus:23.03-runtime
 ```
 
 > **Note about Morpheus versions:**
 >
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v23.07.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v23.07.01-runtime`, `v23.07.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v23.03.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v23.03.01-runtime`, `v23.03.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
@@ -56,14 +56,14 @@ docker pull nvcr.io/nvidia/morpheus/morpheus:23.07-runtime
 1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:23.07-runtime bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:23.03-runtime bash
 ```
 
 Note about some of the flags above:
 | Flag | Description |
 | ---- | ----------- |
 | `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
 | `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
 | `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
 
@@ -133,10 +133,10 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v23.07.00` use the following:
+The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v23.03.00` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v23.07.00-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v23.03.00-runtime" ./docker/run_container_release.sh
 ```
 
 ## Launching Triton Server
@@ -365,9 +365,9 @@ Commands:
   trigger          Buffer data until the previous stage has completed.
   validate         Validate pipeline output for testing.
 ```
-Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
+Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Check the CLI help for the most up-to-date information during development.
 
 ## Next Steps
 * [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
-* [Morpheus Pretrained Models](./models_and_datasets.md) - Pretrained models with corresponding training, validation scripts, and datasets
+* [Morpheus Pretrained Models](./models_and_datasets.md) - Pre-trained models with corresponding training, validation scripts, and datasets
 * [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs

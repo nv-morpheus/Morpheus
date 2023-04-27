@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Background
 
-Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges, called segments (think sub-graphs),  which can in turn be connected by ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. Our Morpheus stages interact with the MRC segment to define, build, and add nodes to the MRC graph; the stages themselves can be thought of as packaged units of work to be applied to data flowing through the pipeline. These work units comprising an individual Morpheus stage may consist of a single MRC node, a small collection of nodes, or an entire MRC subgraph.
+Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges, called segments (think sub-graphs),  which can in turn be connected by ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. Our Morpheus stages interact with the MRC segment to define, build, and add nodes to the MRC graph; the stages themselves can be thought of as packaged units of work to be applied to data flowing through the pipeline. These work units comprising an individual Morpheus stage may consist of a single MRC node, a small collection of nodes, or an entire MRC sub-graph.
 
 ## The Pass Through Stage
 
@@ -27,7 +27,7 @@ To start, we will implement a single stage that could be included in a pipeline.
 
 Defining this stage requires us to specify the stage type. Morpheus stages contain a single input and a single output inherited from `SinglePortStage`.  Stages that act as sources of data, in that they do not take an input from a prior stage but rather produce data from a source such as a file, Kafka service, or other external sources, will need to inherit from the `SingleOutputSource` base class.
 
-Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator.  This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line.  Any constructor arguments will be introspected using [numpydoc](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags.  Similarly the class's docstrings will be exposed in the help string of the stage on the command line.
+Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator.  This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line.  Any constructor arguments will be introspected using [numpydoc](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags.  Similarly, the class's docstrings will be exposed in the help string of the stage on the command line.
 
 We start our class definition with a few basic imports:
 
@@ -35,7 +35,6 @@ We start our class definition with a few basic imports:
 import typing
 
 import mrc
-from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -77,15 +76,15 @@ Our `on_data` method accepts an incoming message and returns a message. The retu
 Finally, the `_build_single` method will be used at stage build time to construct our node and wire it into the pipeline. `_build_single` receives an instance of an MRC segment builder (`mrc.Builder`) along with a `StreamPair` instance, which is a tuple consisting of our parent node and its output type. We will be using the builder instance to construct a node from our stage and connecting it to the Morpheus pipeline. The return type of `_build_single` is also a `StreamPair` which will be comprised of our node along with its data type.
 ```python
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
 ```
 
-For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution pipeline. To build the node, we will call the `make_node` method of the builder instance, passing it the `unique_name` property method and applying MRC's map operator to the `on_data` method. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
+For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution graph. To build the node, we will call the `make_node` method of the builder instance, passing it our `unique_name` and `on_data` methods. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
 ```python
-node = builder.make_node(self.unique_name, ops.map(self.on_data))
+node = builder.make_node(self.unique_name, self.on_data)
 ```
 
 Next, we will define an edge connecting our new node to our parent node:
@@ -103,7 +102,6 @@ return node, input_stream[1]
 import typing
 
 import mrc
-from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -131,7 +129,7 @@ class PassThruStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -248,9 +246,9 @@ if __name__ == "__main__":
 
 
 ### Alternate Morpheus CLI example
-The above example makes use of the Morpheus Python API, alternately we could have constructed the same pipeline using the Morpheus command line tool.  We will need to pass in the path to our stage via the `--plugin` argument so that it will be visible to the command line tool.
+The above example makes use of the Morpheus Python API. Alternately, we could have constructed the same pipeline using the Morpheus command line tool.  We will need to pass in the path to our stage via the `--plugin` argument so that it will be visible to the command line tool.
 
-From the root of the Morpheus repo run:
+From the root of the Morpheus repo, run:
 ```bash
 morpheus --log_level=debug --plugin examples/developer_guide/1_simple_python_stage/pass_thru.py \
   run pipeline-other \

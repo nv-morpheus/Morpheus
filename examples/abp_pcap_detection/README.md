@@ -19,7 +19,7 @@ limitations under the License.
 
 
 ## Setup
-To run this example, an instance of Triton Inference Server and a sample dataset is required. The following steps will outline how to build and run Trtion with the provided FIL model.
+To run this example, an instance of Triton Inference Server and a sample dataset is required. The following steps will outline how to build and run Triton with the provided FIL model.
 
 ### Triton Inference Server
 ```bash
@@ -52,7 +52,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 ## ABP Detection Pipeline
 Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the pcap data. A pipeline has been configured in `run.py` with several command line options:
 
-From the root of the Morpheus repo run:
+From the root of the Morpheus repo, run:
 ```bash
 cd examples/abp_pcap_detection
 python run.py --help
@@ -98,18 +98,18 @@ python run.py \
 	--model_name 'abp-pcap-xgb' \
 	--server_url localhost:8001
 ```
-Note: Both Morpheus and Trinton Inference Server containers must have access to the same GPUs in order for this example to work.
+Note: Both Morpheus and Triton Inference Server containers must have access to the same GPUs in order for this example to work.
 
 The pipeline will process the input `pcap_dump.jsonlines` sample data and write it to `pcap_out.jsonlines`.
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
-Alternately the Morpheus command line could have been used to accomplish the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
+Alternately, the Morpheus command line could have been used to accomplish the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
 
-From the root of the Morpheus repo run:
+From the root of the Morpheus repo, run:
 ```bash
 morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preprocessing.py" \
-    run --use_cpp False --pipeline_batch_size 100000 --model_max_batch_size 100000 \
+    run --use_cpp False --pipeline_batch_size 50000 --model_max_batch_size 40000 \
     pipeline-fil --model_fea_length 13 --label=probs \
     from-file --filename examples/data/abp_pcap_dump.jsonlines --filter_null False \
     deserialize \

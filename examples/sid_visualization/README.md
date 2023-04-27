@@ -70,17 +70,17 @@ The following GUI should be displayed when all containers have completed launchi
 
 Once docker-compose command has completed and GUI is displayed, exec into the container to build and run Morpheus:
 
-Exec into the morpheus container:
+Exec into the Morpheus container:
 ```bash
 docker-compose exec morpheus bash
 ```
 
-Inside the container, compile morpheus:
+Inside the container, compile Morpheus:
 ```bash
 BUILD_DIR=build-docker ./scripts/compile.sh
 ```
 
-Install morpheus with an extra dependency:
+Install Morpheus with an extra dependency:
 ```bash
 pip install -e .
 ```

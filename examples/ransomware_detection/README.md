@@ -17,7 +17,7 @@ limitations under the License.
 
 # Example Ransomware Detection Morpheus Pipeline for AppShield Data
 
-Example Morpheus pipeline using Triton Inference server and Morpheus.
+Example of Morpheus pipeline using Triton Inference server and Morpheus.
 
 ## Setup Triton Inference Server
 
@@ -63,7 +63,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 > **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
 ```bash
-mamba install dask==2023.1.1 distributed==2023.1.1
+conda install dask==2022.7.0 distributed==2022.7.0
 ```
 
 ## Run Ransomware Detection Pipeline

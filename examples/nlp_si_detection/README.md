@@ -101,7 +101,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
-From the Morpheus repo root directory run:
+From the Morpheus repo root directory, run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
@@ -123,7 +123,7 @@ morpheus --log_level=DEBUG \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
    `# 7th Stage: Filtering removes any messages that did not detect SI` \
-   filter --filter_source=TENSOR \
+   filter \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
    `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
@@ -203,7 +203,7 @@ The output file `detections.jsonlines` will contain the original PCAP messages w
 * secret_keys
 * user
 
-The value for these fields will either be a `1` indicating a detection and a `0` indicating no detection. An example row with a detection is:
+The value for these fields will be a `1` indicating a detection or a `0` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,

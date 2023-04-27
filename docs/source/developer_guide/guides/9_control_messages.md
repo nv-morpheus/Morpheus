@@ -36,7 +36,7 @@ requirements and use cases.
 
 ## Anatomy of a Control Message
 
-Control Messages a fairly simple objects that contain `tasks`, `metadata`, and possibly `payload` data. Currently
+Control Messages a fairly simple objects that contain `tasks`, `metadata`, and possibly `payload` data. Currently,
 tasks can be one of the following: `TRAINING`, `INFERENCE`, or `OTHER`. Metadata is a dictionary of key-value pairs
 that can be used to provide additional information about the message. Payload is a Morpheus MessageMeta object that can
 be used to move raw data. Each of these elements can be accessed via API as the message flows through the pipeline.
@@ -52,8 +52,7 @@ pipeline.
 ### Working with Tasks
 
 Control Messages can handle tasks such as `training`, `inference`, and a catchall category `other`. Tasks can be added,
-checked for
-existence, or removed from the Control Message using methods like `add_task`, `has_task`, and `remove_task`.
+checked for existence, or removed from the Control Message using methods like `add_task`, `has_task`, and `remove_task`.
 
 ```python
 import morpheus._lib.messages as messages
