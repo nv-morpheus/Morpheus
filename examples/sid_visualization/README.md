@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Prerequisites
 
-To run the demo you will need the following:
+To run the demo, you will need the following:
 - Docker
 - `docker-compose` (Tested with version 1.29)
 
