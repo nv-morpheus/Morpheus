@@ -64,7 +64,7 @@ This module function consolidates multiple DFP pipeline modules relevant to the 
 | `max_history`           | int    | Maximum history to include in a new training event          | 0             | `0`           |
 | `timestamp_column_name` | string | Name of the column containing timestamps                    | 'timestamp'   | `timestamp`   |
 | `aggregation_span`      | string | Lookback timespan for training data in a new training event | "60d"         | `60d`         |
-| `cache_to_disk`         | boolean   | Whether or not to cache streaming data to disk              | false         | `false`       |
+| `cache_to_disk`         | bool   | Whether or not to cache streaming data to disk              | false         | `false`       |
 | `cache_dir`             | string | Directory to use for caching streaming data                 | "./.cache"    | `./.cache`    |
 
 ### `dfencoder_options`

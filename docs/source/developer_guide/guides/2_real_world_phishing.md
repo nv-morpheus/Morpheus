@@ -108,9 +108,10 @@ Our `_build_single` method remains unchanged from the previous example; even tho
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
-from morpheus.common import TypeId
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -169,7 +170,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -548,7 +549,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
   inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
-  filter --threshold=0.9 \
+  filter --threshold=0.9 --filter_source=TENSOR \
   serialize \
   to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
@@ -625,7 +626,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -820,7 +821,7 @@ Note the return tuple contains our newly constructed node, along with the unchan
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.8/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):

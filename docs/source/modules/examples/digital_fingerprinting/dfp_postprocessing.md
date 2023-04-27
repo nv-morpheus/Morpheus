@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-## DFP Post-processing Module## DFP Post-processing Module
+## DFP Post-processing Module
 
 This module function performs post-processing tasks after the inference process.-
 

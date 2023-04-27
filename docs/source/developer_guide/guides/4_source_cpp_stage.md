@@ -56,7 +56,7 @@ class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Mess
   public:
     using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
-    using typename base_t::subscriber_fn_t
+    using typename base_t::subscriber_fn_t;
 ```
 
 Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>`, which we are going to use as it will occur in some of our function signatures. The way to think about `source_type_t` is it is the stage we are writing emits objects of type `MessageMeta`. The `subscriber_fn_t` is an alias for a function which will receive an `rxcpp::subscriber` instance and emit messages into the pipeline.  The class we are deriving from `PythonSource` defines both of these to make writing function signatures easier.

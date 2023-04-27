@@ -94,7 +94,7 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | `max_history`           | int    | Maximum history to include in a new training event          | 0             | `0`           |
 | `timestamp_column_name` | string | Name of the column containing timestamps                    | "timestamp"   | `timestamp`   |
 | `aggregation_span`      | string | Lookback timespan for training data in a new training event | "60d"         | `60d`         |
-| `cache_to_disk`         | boolean   | Whether or not to cache streaming data to disk              | false         | `false`       |
+| `cache_to_disk`         | bool   | Whether or not to cache streaming data to disk              | false         | `false`       |
 | `cache_dir`             | string | Directory to use for caching streaming data                 | "./.cache"    | `./.cache`    |
 
 ### `user_splitting_options`
@@ -102,8 +102,8 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | Key                     | Type | Description                                          | Example Value               | Default Value  |
 |-------------------------|------|------------------------------------------------------|-----------------------------|----------------|
 | `fallback_username`     | str  | The user ID to use if the user ID is not found       | "generic_user"              | `generic_user` |
-| `include_generic`       | boolean | Whether to include a generic user ID in the output   | false                       | `false`        |
-| `include_individual`    | boolean | Whether to include individual user IDs in the output | true                        | `false`        |
+| `include_generic`       | bool | Whether to include a generic user ID in the output   | false                       | `false`        |
+| `include_individual`    | bool | Whether to include individual user IDs in the output | true                        | `false`        |
 | `only_users`            | list | List of user IDs to include; others will be excluded | ["user1", "user2", "user3"] | `[]`           |
 | `skip_users`            | list | List of user IDs to exclude from the output          | ["user4", "user5"]          | `[]`           |
 | `timestamp_column_name` | str  | Name of the column containing timestamps             | "timestamp"                 | `timestamp`    |
@@ -130,6 +130,6 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 |---------------------|-----------|------------------------------------------|-----------------|------------------|
 | `filename`          | string    | Path to the output file                  | "output.csv"    | `None`           |
 | `file_type`         | string    | Type of file to write                    | "CSV"           | `AUTO`           |
-| `flush`             | boolean      | If true, flush the file after each write | false           | `false`          |
-| `include_index_col` | boolean      | If true, include the index column        | false           | `true`           |
-| `overwrite`         | boolean      | If true, overwrite the file if it exists | true            | `false`          |
+| `flush`             | bool      | If true, flush the file after each write | false           | `false`          |
+| `include_index_col` | bool      | If true, include the index column        | false           | `true`           |
+| `overwrite`         | bool      | If true, overwrite the file if it exists | true            | `false`          |

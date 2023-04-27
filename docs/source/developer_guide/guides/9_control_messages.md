@@ -19,7 +19,7 @@ limitations under the Licensesages.cpp
 
 ## Background
 
-Control Messages, introduced in version 23.07, provide a solution for numerous use cases that were previously
+Control Messages, introduced in version 23.03, provide a solution for numerous use cases that were previously
 unattainable. This new paradigm enhances the capabilities of Morpheus pipelines by enabling more reactive, event-driven
 operations. Control Messages involve sending message objects to a pipeline, which can represent a wide range of
 concepts, from raw data to explicit directives for loading data from specified sources or initiating out-of-band

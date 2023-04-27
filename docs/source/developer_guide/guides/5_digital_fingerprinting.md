@@ -279,7 +279,7 @@ In addition to this, for each input feature the following output fields will exi
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `<feature name>_loss` | FLOAT | The loss |
-| `<feature name>_z_loss` | FLOAT | The loss Z-score |
+| `<feature name>_z_loss` | FLOAT | The loss z-score |
 | `<feature name>_pred` | FLOAT | The predicted value |
 
 Refer to [DFPInferenceStage](#inference-stage-dfpinferencestage) for more on these fields.
