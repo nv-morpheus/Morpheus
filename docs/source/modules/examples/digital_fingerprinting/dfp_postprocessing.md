@@ -17,7 +17,7 @@ limitations under the License.
 
 ## DFP Post-processing Module
 
-This module function performs post-processing tasks after the inference process.-
+This module function performs post-processing tasks after the inference process.
 
 ### Configurable Parameters
 
