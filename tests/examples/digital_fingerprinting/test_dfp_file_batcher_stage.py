@@ -14,28 +14,17 @@
 # limitations under the License.
 
 import functools
-import glob
 import os
 import re
-import types
-import typing
 from datetime import datetime
 from datetime import timezone
-from unittest import mock
 
 import fsspec
-import pytest
 
 from morpheus.config import Config
-from morpheus.messages import MultiMessage
-from morpheus.messages.message_meta import AppShieldMessageMeta
-from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.file_utils import date_extractor
 from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
-
-DATE_RE = re.compile(r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-                     r"_(?P<hour>\d{1,2})-(?P<minute>\d{1,2})-(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})")
 
 
 def test_constructor(config: Config):
@@ -49,6 +38,7 @@ def test_constructor(config: Config):
                                 start_time=datetime(1999, 1, 1),
                                 end_time=datetime(2005, 10, 11, 4, 34, 21))
 
+    assert isinstance(stage, SinglePortStage)
     assert stage._date_conversion_func is date_conversion_func
     assert stage._sampling_rate_s == 55
     assert stage._period == 'Y'
@@ -59,7 +49,10 @@ def test_constructor(config: Config):
 def test_on_data(config: Config):
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
-    date_conversion_func = functools.partial(date_extractor, filename_regex=DATE_RE)
+    date_re = re.compile(r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
+                         r"_(?P<hour>\d{1,2})-(?P<minute>\d{1,2})-(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})")
+
+    date_conversion_func = functools.partial(date_extractor, filename_regex=date_re)
 
     stage = DFPFileBatcherStage(config, date_conversion_func)
 
