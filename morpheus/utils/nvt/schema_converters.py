@@ -13,15 +13,12 @@
 # limitations under the License.
 
 import typing
-from collections import deque
 
 import cudf
 import dataclasses
-import json
 import pandas as pd
-import nvtabular as nvt
 import networkx as nx
-import matplotlib.pyplot as plt
+import nvtabular as nvt
 
 from functools import partial
 from merlin.dag import ColumnSelector
@@ -30,11 +27,6 @@ from nvtabular.ops import LambdaOp, Rename
 from morpheus.utils.column_info import (BoolColumn, ColumnInfo, DataFrameInputSchema, DateTimeColumn,
                                         RenameColumn, StringCatColumn, StringJoinColumn, IncrementColumn)
 from morpheus.utils.nvt import MutateOp, json_flatten
-from nvtabular.workflow.node import WorkflowNode
-
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-import matplotlib.pyplot as plt
 
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
@@ -51,23 +43,6 @@ def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
             df = cudf.from_pandas(df)
 
         return df
-
-    return wrapper
-
-
-def sync_series_as_pandas(func: typing.Callable) -> typing.Callable:
-    def wrapper(series: typing.Union[pd.Series, cudf.Series], **kwargs) -> typing.Union[pd.Series, cudf.Series]:
-        convert_to_cudf = False
-        if (type(series) == cudf.Series):
-            convert_to_cudf = True
-            series = series.to_pandas()
-
-        series = func(series, **kwargs)
-
-        if (convert_to_cudf):
-            series = cudf.from_pandas(series)
-
-        return series
 
     return wrapper
 
@@ -178,7 +153,7 @@ ColumnInfoProcessingMap = {
     DateTimeColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name),
                                       LambdaOp(lambda series: series.astype(ci.dtype),
                                                dtype=ci.dtype)],
-    # RenameColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name)],
+    # RenameColumn: lambda ci, deps: [Rename(name=ci.name)],
     RenameColumn: lambda ci, deps: [MutateOp(lambda selector, df: df.rename(columns={ci.input_name: ci.name}),
                                              dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
     StringCatColumn: lambda ci, deps: [MutateOp(
@@ -257,6 +232,8 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
     # plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
-    coalesced_workflow.graph.render(view=True, format='svg')
+
+    # Uncomment to display the NVT workflow render
+    # coalesced_workflow.graph.render(view=True, format='svg')
 
     return nvt.Workflow(coalesced_workflow)

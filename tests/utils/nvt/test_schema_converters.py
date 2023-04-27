@@ -12,13 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
 import pandas as pd
-
 import nvtabular as nvt
-from morpheus.utils.column_info import DataFrameInputSchema, ColumnInfo, RenameColumn, DateTimeColumn, StringCatColumn, \
-    BoolColumn
-from morpheus.utils.nvt.schema_converters import input_schema_to_nvt_workflow, json_flatten_from_input_schema
+from morpheus.utils.column_info import BoolColumn
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.column_info import StringCatColumn
+from morpheus.utils.column_info import StringJoinColumn
+
+from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
+from morpheus.utils.nvt.schema_converters import input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import get_ci_column_selector
+from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
+from morpheus.utils.nvt.schema_converters import json_flatten_from_input_schema
 
 source_column_info = [
     BoolColumn(name="result",
@@ -42,40 +51,71 @@ source_column_info = [
 ]
 
 
-# Test 1: Test `json_flatten_from_input_schema` function
-def test_json_flatten_from_input_schema():
-    # Create a DataFrameInputSchema instance with the example schema provided
-    example_schema = DataFrameInputSchema(
-        json_columns=["access_device", "application", "auth_device", "user"],
-        column_info=source_column_info
+def test_get_ci_column_selector_rename_column():
+    ci = RenameColumn(input_name="original_name", name="new_name", dtype="str")
+    result = get_ci_column_selector(ci)
+    assert result == "original_name"
+
+
+def test_get_ci_column_selector_bool_column():
+    ci = BoolColumn(input_name="original_name", name="new_name", dtype="bool", true_values=["True"],
+                    false_values=["False"])
+    result = get_ci_column_selector(ci)
+    assert result == "original_name"
+
+
+def test_get_ci_column_selector_datetime_column():
+    ci = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
+    result = get_ci_column_selector(ci)
+    assert result == "original_name"
+
+
+def test_get_ci_column_selector_string_join_column():
+    ci = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
+    result = get_ci_column_selector(ci)
+    assert result == "original_name"
+
+
+def test_get_ci_column_selector_increment_column():
+    ci = IncrementColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]",
+                         groupby_column="groupby_col")
+    result = get_ci_column_selector(ci)
+    assert result == "original_name"
+
+
+def test_get_ci_column_selector_string_cat_column():
+    ci = StringCatColumn(name="new_name", dtype="str", input_columns=["col1", "col2"], sep=", ")
+    result = get_ci_column_selector(ci)
+    assert result == ["col1", "col2"]
+
+
+def test_get_ci_column_selector_json_flatten_info():
+    ci = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", "json_col2.b"],
+                         output_col_names=["json_col1_a", "json_col2_b"])
+    result = get_ci_column_selector(ci)
+    assert result == ["json_col1.a", "json_col2.b"]
+
+
+def test_resolve_json_output_columns():
+    input_schema = DataFrameInputSchema(
+        json_columns=["json_col"],
+        column_info=[
+            BoolColumn(input_name="bool_col", name="bool_col", dtype="bool", true_values=["True"],
+                       false_values=["False"]),
+            DateTimeColumn(input_name="datetime_col", name="datetime_col", dtype="datetime64[ns]"),
+            RenameColumn(input_name="json_col.a", name="new_rename_col", dtype="str"),
+            StringCatColumn(name="new_str_cat_col", dtype="str", input_columns=["A", "B"], sep=", "),
+        ]
     )
 
-    # Call `json_flatten_from_input_schema` with the created instance
-    mutate_op = json_flatten_from_input_schema(example_schema)
-
-    # Check if the returned `MutateOp` instance has the expected json_columns and output_columns
-    assert mutate_op.op.label == "MutateOp"
-    # assert set(mutate_op.output_columns) == set(
-    #    [("user.name", str), ("access_device.browser", str), ("access_device.os", str), ("auth_device.name", str)])
+    output_cols = resolve_json_output_columns(input_schema)
+    expected_output_cols = [
+        ("json_col.a", "str"),
+    ]
+    assert output_cols == expected_output_cols
 
 
-# Test 2: Test `input_schema_to_nvt_workflow` function
-def test_input_schema_to_nvt_workflow():
-    # Create a DataFrameInputSchema instance with the example schema provided
-    example_schema = DataFrameInputSchema(
-        json_columns=["access_device", "application", "auth_device", "user"],
-        column_info=source_column_info
-    )
-
-    # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = input_schema_to_nvt_workflow(example_schema)
-
-    # Check if the returned nvt.Workflow instance has the correct number of operations and if the operations are of the correct types
-    # assert len(len(workflow.output_schema)) == 4
-    assert set(workflow.output_schema) == set(["access_device", "application", "auth_device", "user"])
-
-
-# Test 3: Test the conversion of a DataFrameInputSchema to an nvt.Workflow
+# Test the conversion of a DataFrameInputSchema to an nvt.Workflow
 def test_input_schema_conversion():
     # Create a DataFrameInputSchema instance with the example schema provided
     example_schema = DataFrameInputSchema(
@@ -122,6 +162,4 @@ def test_input_schema_conversion():
 
 
 if (__name__ in ('main',)):
-    test_json_flatten_from_input_schema()
-    test_input_schema_to_nvt_workflow()
     test_input_schema_conversion()
