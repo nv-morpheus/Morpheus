@@ -34,6 +34,7 @@ dependencies:
     - papermill=2.3.4
     - s3fs==2022.8.2
     - pip
+    - wrapt=1.14.1 # ver 1.15 breaks the keras model used by the gnn_fraud_detection_pipeline
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - tensorflow==2.12.0
