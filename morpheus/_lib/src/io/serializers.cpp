@@ -22,21 +22,18 @@
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
+#include <cudf/io/json.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/cast.h>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <array>      // for array
-#include <cstddef>    // for size_t
-#include <exception>  // for exception
+#include <cstddef>  // for size_t
 #include <fstream>
 #include <numeric>
 #include <sstream>  // IWYU pragma: keep
@@ -144,58 +141,42 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
     return out_stream.str();
 }
 
-void table_to_json(py::object tbl, std::ostream& out_stream, bool include_index_col, bool flush)
+void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     if (!include_index_col)
     {
         LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by cuDF";
     }
 
-    std::string results;
+    auto column_names = tbl.column_names;
+    std::vector<cudf::size_type> col_idexes(column_names.size());
+    std::iota(col_idexes.begin(), col_idexes.end(), 1);
+    auto tbl_view = tbl.table_view.select(col_idexes);
 
-    // no cpp impl for to_json, instead python module converts to pandas and calls to_json
-    {
-        py::gil_scoped_acquire gil;
-        py::object StringIO = py::module_::import("io").attr("StringIO");
-        auto buffer         = StringIO();
+    cudf::io::table_metadata tbl_meta{
+        std::vector<cudf::io::column_name_info>{column_names.cbegin(), column_names.cend()}};
 
-        try
-        {
-            py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true);
+    OStreamSink sink(out_stream);
+    auto destination     = cudf::io::sink_info(&sink);
+    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view).metadata(tbl_meta).lines(true);
 
-            tbl.attr("to_json")(buffer, **kwargs);
-
-            buffer.attr("seek")(0);
-
-        } catch (std::exception& ex)
-        {
-            LOG(ERROR) << "Error during serialization to JSON. Message: " << ex.what();
-            throw ex;
-        }
-
-        py::object pyresults = buffer.attr("getvalue")();
-        results              = pyresults.cast<std::string>();
-    }
-
-    // Now write the contents to the stream
-    out_stream.write(results.data(), results.size());
+    cudf::io::write_json(options_builder.build(), rmm::mr::get_current_device_resource());
 
     if (flush)
     {
-        out_stream.flush();
+        sink.flush();
     }
 }
 
-void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
+void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
-    py::gil_scoped_acquire gil;
-
-    auto df = CudfHelper::table_from_table_info(tbl);
-
-    table_to_json(std::move(df), out_stream, include_index_col, flush);
+    table_to_json(TableInfoData{tbl.get_view(), tbl.get_index_names(), tbl.get_column_names()},
+                  out_stream,
+                  include_index_col,
+                  flush);
 }
 
-std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
+std::string df_to_json(const TableInfo& tbl, bool include_index_col)
 {
     // Create an ostringstream and use that with the overload accepting an ostream
     std::ostringstream out_stream;
@@ -276,17 +257,19 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
     std::ofstream out_file;
     out_file.open(filename);
 
+    auto tbl = CudfHelper::CudfHelper::table_info_data_from_table(df);
+
     switch (file_type)
     {
     case FileTypes::JSON: {
-        table_to_json(df,
+        table_to_json(tbl,
                       out_file,
                       get_with_default(kwargs, "include_index_col", true),
                       get_with_default(kwargs, "flush", false));
         break;
     }
     case FileTypes::CSV: {
-        table_to_csv(CudfHelper::CudfHelper::table_info_data_from_table(df),
+        table_to_csv(tbl,
                      out_file,
                      get_with_default(kwargs, "include_header", true),
                      get_with_default(kwargs, "include_index_col", true),

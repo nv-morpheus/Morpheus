@@ -41,9 +41,7 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from utils import assert_df_equal
-from utils import duplicate_df_index
-from utils import duplicate_df_index_rand
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python
@@ -114,27 +112,26 @@ def test_constructor_invalid(filter_probs_df: cudf.DataFrame):
         MultiMessage(meta=meta, mess_offset=5, mess_count=(meta.count - 5) + 1)
 
 
-def test_get_meta(filter_probs_df: cudf.DataFrame):
-
-    meta = MessageMeta(filter_probs_df)
+def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+    meta = MessageMeta(df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
     # Manually slice the dataframe according to the multi settings
-    df_sliced: cudf.DataFrame = filter_probs_df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
+    df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
-    assert assert_df_equal(multi.get_meta(), df_sliced)
+    assert DatasetManager.assert_df_equal(multi.get_meta(), df_sliced)
 
     # Make sure we return a table here, not a series
     col_name = df_sliced.columns[0]
-    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     col_name = [df_sliced.columns[0], df_sliced.columns[2]]
-    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Out of order columns
     col_name = [df_sliced.columns[3], df_sliced.columns[0]]
-    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Should fail with missing column
     with pytest.raises(KeyError):
@@ -142,27 +139,26 @@ def test_get_meta(filter_probs_df: cudf.DataFrame):
 
     # Finally, check that we dont overwrite the original dataframe
     multi.get_meta(col_name).iloc[:] = 5
-    # assert not assert_df_equal(df_sliced[col_name], 5.0)
-    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
+    assert DatasetManager.assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
 
-def test_get_meta_dup_index(filter_probs_df: cudf.DataFrame):
+def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+    _test_get_meta(filter_probs_df)
+
+
+def test_get_meta_dup_index(use_cpp: bool, dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index(filter_probs_df, replace_ids={3: 1, 5: 4})
+    df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 1, 5: 4})
 
     # Now just run the other test to reuse code
-    test_get_meta(df)
+    _test_get_meta(df)
 
 
-def test_set_meta(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta(use_cpp: bool, dataset: DatasetManager):
+    df_saved = dataset.pandas["filter_probs.csv"]
 
-    df_saved = filter_probs_df.copy()
-
-    if (df_type == "cudf"):
-        df_saved = df_saved.to_pandas()
-
-    meta = MessageMeta(filter_probs_df)
+    meta = MessageMeta(dataset["filter_probs.csv"])
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
@@ -171,10 +167,10 @@ def test_set_meta(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf
 
     def test_value(columns, value):
         multi.set_meta(columns, value)
-        assert assert_df_equal(multi.get_meta(columns), value)
+        assert dataset.assert_df_equal(multi.get_meta(columns), value)
 
         # Now make sure the original dataframe is untouched
-        assert assert_df_equal(df_saved[saved_mask], meta.df[saved_mask])
+        assert dataset.assert_df_equal(df_saved[saved_mask], meta.df[saved_mask])
 
     single_column = "v2"
     two_columns = ["v1", "v3"]
@@ -196,31 +192,32 @@ def test_set_meta(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf
     test_value(multi_columns, np.random.randn(multi.mess_count, 1))
 
     # Setting numpy arrays (multi column)
-    test_value(None, np.random.randn(multi.mess_count, len(filter_probs_df.columns)))
+    test_value(None, np.random.randn(multi.mess_count, len(dataset["filter_probs.csv"].columns)))
     test_value(two_columns, np.random.randn(multi.mess_count, len(two_columns)))
     test_value(multi_columns, np.random.randn(multi.mess_count, len(multi_columns)))
 
 
-def test_set_meta_new_column(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df_type: typing.Literal['cudf',
+                                                                                                      'pandas']):
 
-    meta = MessageMeta(filter_probs_df)
+    meta = MessageMeta(df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
     # Set a list
     val_to_set = list(range(multi.mess_count))
     multi.set_meta("list_column", val_to_set)
-    assert assert_df_equal(multi.get_meta("list_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("list_column"), val_to_set)
 
     # Set a string
     val_to_set = "string to set"
     multi.set_meta("string_column", val_to_set)
-    assert assert_df_equal(multi.get_meta("string_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("string_column"), val_to_set)
 
     # Set a date
     val_to_set = pd.date_range("2018-01-01", periods=multi.mess_count, freq="H")
     multi.set_meta("date_column", val_to_set)
-    assert assert_df_equal(multi.get_meta("date_column"), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta("date_column"), val_to_set)
 
     if (df_type == "cudf"):
         # cudf isnt capable of setting more than one new column at a time
@@ -229,15 +226,18 @@ def test_set_meta_new_column(filter_probs_df: cudf.DataFrame, df_type: typing.Li
     # Now set one with new and old columns
     val_to_set = np.random.randn(multi.mess_count, 2)
     multi.set_meta(["v2", "new_column2"], val_to_set)
-    assert assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
+    assert DatasetManager.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-def test_set_meta_new_column_dup_index(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta_new_column(use_cpp: bool, dataset: DatasetManager):
+    _test_set_meta_new_column(dataset["filter_probs.csv"], dataset.default_df_type)
 
+
+def test_set_meta_new_column_dup_index(use_cpp: bool, dataset: DatasetManager):
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index(filter_probs_df, replace_ids={3: 4, 5: 4})
+    df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 4, 5: 4})
 
-    test_set_meta_new_column(df, df_type)
+    _test_set_meta_new_column(df, dataset.default_df_type)
 
 
 @pytest.mark.use_cudf
@@ -259,9 +259,8 @@ def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
     mm2.set_meta('letters', values[5:10])
 
 
-def test_copy_ranges(filter_probs_df: cudf.DataFrame):
-
-    meta = MessageMeta(filter_probs_df)
+def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+    meta = MessageMeta(df)
 
     mm = MultiMessage(meta=meta)
 
@@ -270,10 +269,10 @@ def test_copy_ranges(filter_probs_df: cudf.DataFrame):
     assert mm2.meta.count == 4
     assert len(mm2.get_meta()) == 4
     assert mm2.meta is not meta
-    assert mm2.meta.df is not filter_probs_df
+    assert mm2.meta.df is not df
     assert mm2.mess_offset == 0
     assert mm2.mess_count == 6 - 2
-    assert assert_df_equal(mm2.get_meta(), filter_probs_df.iloc[2:6])
+    assert DatasetManager.assert_df_equal(mm2.get_meta(), df.iloc[2:6])
 
     # slice two different ranges of rows
     mm3 = mm.copy_ranges([(2, 6), (12, 15)])
@@ -282,27 +281,32 @@ def test_copy_ranges(filter_probs_df: cudf.DataFrame):
     assert len(mm3.get_meta()) == 7
     assert mm3.meta is not meta
     assert mm3.meta is not mm2.meta
-    assert mm3.meta.df is not filter_probs_df
+    assert mm3.meta.df is not df
     assert mm3.meta.df is not mm2.meta.df
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
 
-    if isinstance(filter_probs_df, pd.DataFrame):
+    if isinstance(df, pd.DataFrame):
         concat_fn = pd.concat
     else:
         concat_fn = cudf.concat
 
-    expected_df = concat_fn([filter_probs_df.iloc[2:6], filter_probs_df.iloc[12:15]])
-    assert assert_df_equal(mm3.get_meta(), expected_df)
+    expected_df = concat_fn([df.iloc[2:6], df.iloc[12:15]])
+
+    assert DatasetManager.assert_df_equal(mm3.get_meta(), expected_df)
 
 
-def test_copy_ranges_dup_index(filter_probs_df: cudf.DataFrame):
+def test_copy_ranges(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
+    _test_copy_ranges(filter_probs_df)
+
+
+def test_copy_ranges_dup_index(use_cpp: bool, dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index_rand(filter_probs_df, count=4)
+    df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
 
     # Now just run the other test to reuse code
-    test_copy_ranges(df)
+    _test_copy_ranges(df)
 
 
 def test_get_slice_ranges(filter_probs_df: cudf.DataFrame):
@@ -356,73 +360,76 @@ def test_get_slice_ranges(filter_probs_df: cudf.DataFrame):
         multi_full.get_slice(13, 16).get_slice(4, 5)
 
 
-def test_get_slice_values(filter_probs_df: cudf.DataFrame):
+def _test_get_slice_values(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
 
-    meta = MessageMeta(filter_probs_df)
+    meta = MessageMeta(df)
 
     multi_full = MultiMessage(meta=meta)
 
     # Single slice
-    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(), filter_probs_df.iloc[3:8])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
 
     # Single slice with one columns
-    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), filter_probs_df.iloc[3:8]["v1"])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
 
     # Single slice with multiple columns
-    assert assert_df_equal(
-        multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), filter_probs_df.iloc[3:8][["v4", "v3", "v1"]])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), df.iloc[3:8][["v4", "v3", "v1"]])
 
     # Chained slice
-    assert assert_df_equal(
-        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), df.iloc[2 + 5:(2 + 5) + (9 - 5)])
 
     # Chained slice one column
-    assert assert_df_equal(
-        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
 
     # Chained slice multi column
-    assert assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(["v4", "v3", "v1"]),
-        filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
+        df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
 
     # Set values
     multi_full.get_slice(4, 10).set_meta(None, 1.15)
-    assert assert_df_equal(multi_full.get_slice(4, 10).get_meta(), filter_probs_df.iloc[4:10])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
 
     # Set values one column
     multi_full.get_slice(1, 6).set_meta("v3", 5.3)
-    assert assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), filter_probs_df.iloc[1:6]["v3"])
+    assert DatasetManager.assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
 
     # Set values multi column
     multi_full.get_slice(5, 8).set_meta(["v4", "v1", "v3"], 7)
-    assert assert_df_equal(
-        multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), filter_probs_df.iloc[5:8][["v4", "v1", "v3"]])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), df.iloc[5:8][["v4", "v1", "v3"]])
 
     # Chained Set values
     multi_full.get_slice(10, 20).get_slice(1, 4).set_meta(None, 8)
-    assert assert_df_equal(
-        multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), filter_probs_df.iloc[10 + 1:(10 + 1) + (4 - 1)])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), df.iloc[10 + 1:(10 + 1) + (4 - 1)])
 
     # Chained Set values one column
     multi_full.get_slice(10, 20).get_slice(3, 5).set_meta("v4", 112)
-    assert assert_df_equal(
-        multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"),
-        filter_probs_df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
+    assert DatasetManager.assert_df_equal(
+        multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"), df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
 
     # Chained Set values multi column
     multi_full.get_slice(10, 20).get_slice(5, 8).set_meta(["v4", "v1", "v2"], 22)
-    assert assert_df_equal(
+    assert DatasetManager.assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(5, 8).get_meta(["v4", "v1", "v2"]),
-        filter_probs_df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
+        df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
 
 
-def test_get_slice_values_dup_index(filter_probs_df: cudf.DataFrame):
+def test_get_slice_values(filter_probs_df: cudf.DataFrame):
+    _test_get_slice_values(filter_probs_df)
+
+
+def test_get_slice_values_dup_index(use_cpp: bool, dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index_rand(filter_probs_df, count=4)
+    df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
 
     # Now just run the other test to reuse code
-    test_get_slice_values(df)
+    _test_get_slice_values(df)
 
 
 def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
@@ -693,8 +700,8 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-def test_tensor_slicing(filter_probs_df: cudf.DataFrame):
-
+def test_tensor_slicing(use_cpp: bool, dataset: DatasetManager):
+    filter_probs_df = dataset["filter_probs.csv"]
     mess_len = len(filter_probs_df)
 
     repeat_counts = [1] * mess_len
@@ -762,7 +769,7 @@ def test_tensor_slicing(filter_probs_df: cudf.DataFrame):
     assert multi_slice.mess_count == equiv_slice.mess_count
     assert multi_slice.offset == equiv_slice.offset
     assert multi_slice.count == equiv_slice.count
-    assert assert_df_equal(multi_slice.get_meta(), equiv_slice.get_meta())
+    assert dataset.assert_df_equal(multi_slice.get_meta(), equiv_slice.get_meta())
 
     # Finally, compare a double slice to a single
     memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
@@ -774,4 +781,4 @@ def test_tensor_slicing(filter_probs_df: cudf.DataFrame):
     assert double_slice.offset == single_slice.offset
     assert double_slice.count == single_slice.count
     assert cp.all(double_slice.get_tensor("probs") == single_slice.get_tensor("probs"))
-    assert assert_df_equal(double_slice.get_meta(), single_slice.get_meta())
+    assert dataset.assert_df_equal(double_slice.get_meta(), single_slice.get_meta())

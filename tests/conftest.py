@@ -442,22 +442,111 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(request.config.invocation_dir)
 
 
-@pytest.fixture(scope="session")
-def _filter_probs_df():
-    from morpheus.io.deserializers import read_file_to_df
-    from utils import TEST_DIRS
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    yield read_file_to_df(input_file, df_type='cudf')
+@pytest.fixture(scope="function")
+def dataset(df_type: typing.Literal['cudf', 'pandas']):
+    """
+    Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
+    Users of this fixture can still explicitly request either a cudf or pandas dataframe with the `cudf` and `pandas`
+    properties:
+    ```
+    def test_something(dataset: DatasetManager):
+        df = dataset["filter_probs.csv"]  # type will match the df_type parameter
+        if dataset.default_df_type == 'pandas':
+            assert isinstance(df, pd.DataFrame)
+        else:
+            assert isinstance(df, cudf.DataFrame)
+
+        pdf = dataset.pandas["filter_probs.csv"]
+        cdf = dataset.cudf["filter_probs.csv"]
+
+    ```
+
+    A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
+    If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
+    the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
+    df_type=pandas & use_cpp=True combinations as this will cause an unsupported usage of Pandas dataframes with the
+    C++ implementation of message classes.
+
+    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
+    ```
+    # This test will only run once with C++ enabled and cudf dataframes
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ...
+    # This test will run once for each dataframe type, with C++ disabled both times
+    @pytest.mark.use_python
+    def test something(dataset: DatasetManager):
+    ...
+    # This test will run twice with C++ mode enabled/disabled, using cudf dataframes both times
+    @pytest.mark.use_cudf
+    def test something(use_cpp: bool, dataset: DatasetManager):
+    ...
+    # This test will run only once
+    @pytest.mark.use_cudf
+    @pytest.mark.use_python
+    def test something(dataset: DatasetManager):
+    ...
+    # This test creates an incompatible combination and will raise a RuntimeError without being executed
+    @pytest.mark.use_pandas
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ```
+
+    Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type=df_type)
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-    if df_type == 'cudf':
-        yield _filter_probs_df.copy(deep=True)
-    elif df_type == 'pandas':
-        yield _filter_probs_df.to_pandas()
-    else:
-        assert False, "Unknown df_type type"
+def dataset_pandas():
+    """
+    Yields a DatasetLoader instance with pandas as the default DataFrame type.
+
+    Note: This fixture won't prevent a user from writing a test requiring C++ mode execution and requesting Pandas
+    dataframes. This is quite useful for tests like `tests/test_add_scores_stage_pipe.py` where we want to test with
+    both Python & C++ executions, but we use Pandas to build up the expected DataFrame to validate the test against.
+
+    In addition to this, users can use this fixture to explicitly request a cudf Dataframe as well, allowing for a test
+    that looks like:
+    ```
+    @pytest.mark.use_cpp
+    def test_something(dataset_pandas: DatasetManager):
+        input_df = dataset_pandas.cudf["filter_probs.csv"] # Feed our source stage a cudf DF
+
+        # Perform pandas transformations to mimic the add scores stage
+        expected_df = dataset["filter_probs.csv"]
+        expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
+    ```
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='pandas')
+
+
+@pytest.fixture(scope="function")
+def dataset_cudf():
+    """
+    Yields a DatasetLoader instance with cudf as the default DataFrame type.
+
+    Users who wish to have both cudf and pandas DataFrames can do so with this fixture and using the `pandas` property:
+    def test_something(dataset_cudf: DatasetManager):
+        cdf = dataset_cudf["filter_probs.csv"]
+        pdf = dataset_cudf.pandas["filter_probs.csv"]
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(dataset, use_cpp: bool):
+    """
+    Shortcut fixture for loading the filter_probs.csv dataset.
+
+    Unless your test uses the `use_pandas` or `use_cudf` marks this fixture will parametarize over the two dataframe
+    types. Similarly unless your test uses the `use_cpp` or `use_python` marks this fixture will also parametarize over
+    that as well, while excluding the combination of C++ execution and Pandas dataframes.
+    """
+    yield dataset["filter_probs.csv"]
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):

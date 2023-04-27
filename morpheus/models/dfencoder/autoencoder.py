@@ -905,15 +905,14 @@ class AutoEncoder(torch.nn.Module):
 
                     # Early stopping
                     current_net_loss = net_loss
-                    LOG.debug('The Current Net Loss:', current_net_loss)
+                    LOG.debug('The Current Net Loss: %s', current_net_loss)
 
                     if current_net_loss > last_loss:
                         count_es += 1
-                        LOG.debug('Early stop count:', count_es)
+                        LOG.debug('Early stop count: %s', count_es)
 
                         if count_es >= self.patience:
-                            LOG.debug('Early stopping: early stop count({}) >= patience({})'.format(
-                                count_es, self.patience))
+                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)', count_es, self.patience)
                             break
 
                     else:
@@ -1617,15 +1616,15 @@ class AutoEncoder(torch.nn.Module):
         """
         self.eval()
 
-        n_batches = len(df) // self.batch_size
-        if len(df) % self.batch_size > 0:
+        n_batches = len(df) // self.eval_batch_size
+        if len(df) % self.eval_batch_size > 0:
             n_batches += 1
 
         mse_loss_slices, bce_loss_slices, cce_loss_slices = [], [], []
         with torch.no_grad():
             for i in range(n_batches):
-                start = i * self.batch_size
-                stop = (i + 1) * self.batch_size
+                start = i * self.eval_batch_size
+                stop = (i + 1) * self.eval_batch_size
 
                 df_slice = df.iloc[start:stop]
                 data_slice = self.prepare_df(df_slice)
@@ -1643,8 +1642,12 @@ class AutoEncoder(torch.nn.Module):
                     loss = self.cce(cat[i], codes[i])
                     # Convert to 2 dimensions
                     cce_loss_slice_of_each_feat.append(loss.data.reshape(-1, 1))
-                # merge the tensors into one (n_records * n_features) tensor
-                cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat, dim=1)
+
+                if cce_loss_slice_of_each_feat:
+                    # merge the tensors into one (n_records * n_features) tensor
+                    cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat, dim=1)
+                else:
+                    cce_loss_slice = torch.empty((len(df_slice), 0))
 
                 mse_loss_slices.append(mse_loss_slice)
                 bce_loss_slices.append(bce_loss_slice)
