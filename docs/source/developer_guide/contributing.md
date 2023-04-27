@@ -30,7 +30,7 @@ Contributions to Morpheus fall into the following three categories.
     intended feature and discuss the design and implementation with the team and
     community. Once the team agrees that the plan is good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
-3. To implement a feature or bug-fix for an existing outstanding issue, 
+3. To implement a feature or bug-fix for an existing outstanding issue,
     follow the [code contributions](#code-contributions) guide below. If you
     need more context on a particular issue, ask in a comment.
 
@@ -65,16 +65,18 @@ The following instructions are for developers who are getting started with the M
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.10`
+ - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.02`
+ - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
  - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.8`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-export PYTHON_VER=3.8
-export RAPIDS_VER=22.10
+export PYTHON_VER=3.10
+export RAPIDS_VER=23.02
+export TRITONCLIENT_VERSION=22.10
 export CUDA_VER=11.8
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
@@ -187,8 +189,8 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Set up env variables and clone the repo:
    ```bash
-   export PYTHON_VER=3.8
-   export RAPIDS_VER=22.10
+   export PYTHON_VER=3.10
+   export RAPIDS_VER=23.02
    export CUDA_VER=11.8
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
@@ -235,7 +237,7 @@ git submodule update --init --recursive
 1. Optional: Install cuML
    - Many users may wish to install cuML. Due to the complex dependency structure and versioning requirements, we need to specify exact versions of each package. The command to accomplish this is:
       ```bash
-      mamba install -c rapidsai -c nvidia -c conda-forge "cuda-python<=11.7.0" "libcusolver<=11.4.1.48" "libcusparse<12" cuml=22.10
+      mamba install -c rapidsai -c nvidia -c conda-forge cuml=23.02
       ```
 1. Run Morpheus
    ```bash
