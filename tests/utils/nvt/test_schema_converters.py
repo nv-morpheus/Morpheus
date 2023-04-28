@@ -33,8 +33,10 @@ from morpheus.utils.nvt.schema_converters import input_schema_to_nvt_workflow
 from morpheus.utils.nvt.schema_converters import get_ci_column_selector
 from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import sync_df_as_pandas
+from morpheus.utils.nvt.schema_converters import build_nx_dependency_graph
+from morpheus.utils.nvt.schema_converters import bfs_traversal_with_op_map
+from morpheus.utils.nvt.schema_converters import coalesce_leaf_nodes
 from morpheus.utils.nvt.schema_converters import coalesce_ops
-from morpheus.utils.nvt.schema_converters import json_flatten_from_input_schema
 
 source_column_info = [
     BoolColumn(name="result",
@@ -227,6 +229,66 @@ def test_resolve_json_output_columns_with_complex_schema():
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 
+def test_bfs_traversal_with_op_map():
+    input_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=source_column_info
+    )
+
+    column_info_objects = [ci for ci in input_schema.column_info]
+    column_info_map = {ci.name: ci for ci in column_info_objects}
+    graph = build_nx_dependency_graph(column_info_objects)
+    root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
+    visited, node_op_map = bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
+
+    # Check if all nodes have been visited
+    assert len(visited) == len(column_info_map)
+
+    # Check if node_op_map is constructed for all nodes
+    assert len(node_op_map) == len(column_info_map)
+
+
+def test_coalesce_leaf_nodes():
+    input_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=source_column_info
+    )
+
+    column_info_objects = [ci for ci in input_schema.column_info]
+    column_info_map = {ci.name: ci for ci in column_info_objects}
+    graph = build_nx_dependency_graph(column_info_objects)
+    root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
+
+    # Call bfs_traversal_with_op_map() and coalesce_leaf_nodes()
+    _, node_op_map = bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
+    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph)
+
+    # Check if the coalesced workflow is not None
+    assert coalesced_workflow is not None
+
+    # Extract the leaf nodes from the coalesced workflow
+    leaf_nodes = []
+    for node, op in node_op_map.items():
+        neighbors = list(graph.neighbors(node))
+        if len(neighbors) == 0:
+            leaf_nodes.append(node)
+
+    # Define the expected leaf node names
+    expected_leaf_node_names = [
+        "result",
+        "reason",
+        "timestamp",
+        "location",
+        "authdevicename",
+        "username",
+        "accessdevicebrowser",
+        "accessdeviceos",
+    ]
+
+    # Compare the expected leaf node names with the actual leaf node names
+    assert set(leaf_nodes) == set(expected_leaf_node_names)
+
+
 def test_input_schema_conversion_empty_schema():
     empty_schema = DataFrameInputSchema()
 
@@ -301,6 +363,41 @@ def test_input_schema_conversion_interdependent_columns():
 
 
 def test_input_schema_conversion_nested_operations():
+    additional_column = StringCatColumn(name="appname", dtype="str", input_columns=["application.name", "appsuffix"],
+                                        sep="")
+    modified_source_column_info = source_column_info + [additional_column]
+
+    modified_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=modified_source_column_info
+    )
+
+    test_df = create_test_dataframe()
+    test_df["appsuffix"] = ["_v1"]
+
+    # Add the 'appsuffix' column to the schema
+    modified_schema.column_info.append(ColumnInfo(name="appsuffix", dtype="str"))
+
+    workflow = input_schema_to_nvt_workflow(modified_schema)
+    dataset = nvt.Dataset(test_df)
+    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+
+    expected_df = pd.DataFrame({
+        "result": [False],
+        "reason": ["Denied"],
+        "timestamp": [pd.Timestamp("2021-02-02 12:00:00")],
+        "location": ["San Francisco, CA, USA"],
+        "authdevicename": ["Device2"],
+        "username": ["Jane Smith"],
+        "accessdevicebrowser": ["Firefox"],
+        "accessdeviceos": ["Linux"],
+        "appname": ["AnotherApp_v1"]
+    })
+
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
+def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     additional_column_1 = StringCatColumn(name="rootcat", dtype="str", input_columns=["lhs_top_level", "rhs_top_level"],
                                           sep="-")
     additional_column_2 = RenameColumn(name="rhs_top_level", dtype="str", input_name="rhs_top_level_pre")
@@ -316,7 +413,7 @@ def test_input_schema_conversion_nested_operations():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = input_schema_to_nvt_workflow(modified_schema, visualize=True)
+    workflow = input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -349,7 +446,7 @@ def test_input_schema_conversion():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = input_schema_to_nvt_workflow(example_schema, visualize=True)
+    workflow = input_schema_to_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
     dataset = nvt.Dataset(test_df)

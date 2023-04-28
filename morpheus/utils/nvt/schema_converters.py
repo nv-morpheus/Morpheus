@@ -195,32 +195,27 @@ ColumnInfoProcessingMap = {
 }
 
 
-def coalesce_ops(graph, ci_map):
-    """Find nodes with no outgoing edges that are not dependent on the current node."""
-    root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
-
-    node_op_map = {}
-
+def bfs_traversal_with_op_map(graph, ci_map, root_nodes):
     visited = set()
     queue = [n for n in root_nodes]
+    node_op_map = {}
+
     while queue:
         node = queue.pop(0)
         if node not in visited:
             visited.add(node)
 
-            # Collect parent inputs
             parents = [n for n in graph.predecessors(node)]
-            if (len(parents) == 0):
+            if len(parents) == 0:
                 parent_input = get_ci_column_selector(ci_map[node])
             else:
                 parent_input = None
                 for parent in parents:
-                    if (parent_input is None):
+                    if parent_input is None:
                         parent_input = node_op_map[parent]
                     else:
                         parent_input = parent_input + node_op_map[parent]
 
-            # Construct our node operator
             ops = ColumnInfoProcessingMap[type(ci_map[node])](ci_map[node], deps=[])
             node_op = parent_input
             for op in ops:
@@ -232,14 +227,26 @@ def coalesce_ops(graph, ci_map):
             for neighbor in neighbors:
                 queue.append(neighbor)
 
+    return visited, node_op_map
+
+
+def coalesce_leaf_nodes(node_op_map, graph):
     coalesced_workflow = None
     for node, op in node_op_map.items():
         neighbors = [n for n in graph.neighbors(node)]
-        if (len(neighbors) == 0):  #  Only add the operators for leaf nodes.
-            if (coalesced_workflow is None):
+        if len(neighbors) == 0:  # Only add the operators for leaf nodes.
+            if coalesced_workflow is None:
                 coalesced_workflow = op
             else:
                 coalesced_workflow = coalesced_workflow + op
+
+    return coalesced_workflow
+
+
+def coalesce_ops(graph, ci_map):
+    root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
+    visited, node_op_map = bfs_traversal_with_op_map(graph, ci_map, root_nodes)
+    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph)
 
     return coalesced_workflow
 
@@ -274,10 +281,10 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, visualize=F
     graph = build_nx_dependency_graph(column_info_objects)
 
     # Uncomment to print the dependency layout
-    from matplotlib import pyplot as plt
-    pos = graphviz_layout(graph, prog='neato')
-    nx.draw(graph, pos, with_labels=True, font_weight='bold')
-    plt.show()
+    # from matplotlib import pyplot as plt
+    # pos = graphviz_layout(graph, prog='neato')
+    # nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    # plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
 
