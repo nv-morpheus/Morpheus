@@ -20,6 +20,7 @@ from functools import partial
 from unittest import mock
 
 import fsspec
+import pandas as pd
 import pytest
 
 from morpheus.common import FileTypes
@@ -235,6 +236,11 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 
     assert not cache_hit
     dataset_pandas.assert_df_equal(output_df, expected_df)
+
+    expected_cache_file_path = os.path.join(stage._cache_dir, "batches", f"{expected_hash}.pkl")
+    assert os.path.exists(expected_cache_file_path)
+    dataset_pandas.assert_df_equal(pd.read_pickle(expected_cache_file_path),
+                                   expected_df[dataset_pandas['filter_probs.csv'].columns])
 
 
 @pytest.mark.restore_environ
