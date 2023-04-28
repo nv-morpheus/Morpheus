@@ -112,7 +112,7 @@ class RenameColumn(ColumnInfo):
         if (self.input_name not in df.columns):
             return pd.Series(None, index=df.index, dtype=self.get_pandas_dtype())
 
-        return df[self.input_name]
+        return df[self.input_name].astype(self.get_pandas_dtype())
 
 
 @dataclasses.dataclass

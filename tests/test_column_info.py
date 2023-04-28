@@ -326,10 +326,10 @@ def test_type_cast():
     data_s = "\n".join(json.dumps(d) for d in data)
     df = pd.read_json(io.StringIO(data_s), lines=True)
 
-    col = ColumnInfo(name='FeatureA', dtype=str)
+    cols = [ColumnInfo(name='FeatureA', dtype=str), RenameColumn(name='FeatureB', dtype=str, input_name='FeatureA')]
+    for col in cols:
+        actutal = col._process_column(df)
+        expected = pd.Series(["81", "1"])
 
-    actutal = col._process_column(df)
-    expected = pd.Series(["81", "1"])
-
-    assert actutal.dtype == np.dtype('O')
-    assert actutal.equals(expected)
+        assert actutal.dtype == np.dtype('O')
+        assert actutal.equals(expected)
