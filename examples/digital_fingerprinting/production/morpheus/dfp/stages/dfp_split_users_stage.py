@@ -17,6 +17,7 @@ import typing
 
 import mrc
 import numpy as np
+import pandas as pd
 from mrc.core import operators as ops
 
 import cudf
@@ -57,7 +58,7 @@ class DFPSplitUsersStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (cudf.DataFrame, )
+        return (cudf.DataFrame, pd.DataFrame)
 
     def extract_users(self, message: cudf.DataFrame):
         if (message is None):
