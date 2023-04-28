@@ -468,5 +468,95 @@ def test_input_schema_conversion():
     pd.testing.assert_frame_equal(output_df, expected_df)
 
 
+def test_input_schema_conversion_with_trivial_filter():
+    # Create a DataFrameInputSchema instance with the example schema provided
+    example_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=source_column_info,
+        row_filter=lambda df: df
+    )
+
+    # Create a test dataframe with data according to the schema
+    test_df = pd.DataFrame({
+        "access_device": [
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}'],
+        "user.name": ["John Doe"],
+        "application": ['{"name": "TestApp"}'],
+        "auth_device": ['{"name": "Device1"}'],
+        "user": ['{"name": "John Doe"}'],
+        "timestamp": [pd.Timestamp("2021-01-01 00:00:00")],
+        "result": ["SUCCESS"],
+        "reason": ["Authorized"]
+    })
+
+    # Call `input_schema_to_nvt_workflow` with the created instance
+    workflow = input_schema_to_nvt_workflow(example_schema)
+
+    # Apply the returned nvt.Workflow to the test dataframe
+    dataset = nvt.Dataset(test_df)
+    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+
+    # Check if the output dataframe has the expected schema and values
+    expected_df = pd.DataFrame({
+        "result": [True],
+        "reason": ["Authorized"],
+        "timestamp": [pd.Timestamp("2021-01-01 00:00:00")],
+        "location": ["New York, NY, USA"],
+        "authdevicename": ["Device1"],
+        "username": ["John Doe"],
+        "accessdevicebrowser": ["Chrome"],
+        "accessdeviceos": ["Windows"],
+    })
+
+    pd.set_option('display.max_columns', None)
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
+def test_input_schema_conversion_with_functional_filter():
+    # Create a DataFrameInputSchema instance with the example schema provided
+    example_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=source_column_info,
+        row_filter=lambda df: df[df["result"] == True]
+    )
+
+    # Create a test dataframe with data according to the schema
+    test_df = pd.DataFrame({
+        "access_device": [
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
+            '{"browser": "Firefox", "os": "Linux", "location": {"city": "San Francisco", "state": "CA", "country": "USA"}}'
+        ],
+        "user.name": ["John Doe", "Jane Smith"],
+        "application": ['{"name": "TestApp"}', '{"name": "AnotherApp"}'],
+        "auth_device": ['{"name": "Device1"}', '{"name": "Device2"}'],
+        "user": ['{"name": "John Doe"}', '{"name": "Jane Smith"}'],
+        "timestamp": [pd.Timestamp("2021-01-01 00:00:00"), pd.Timestamp("2021-02-02 12:00:00")],
+        "result": ["SUCCESS", "FAILURE"],
+        "reason": ["Authorized", "Unauthorized"]
+    })
+
+    # Call `input_schema_to_nvt_workflow` with the created instance
+    workflow = input_schema_to_nvt_workflow(example_schema)
+
+    # Apply the returned nvt.Workflow to the test dataframe
+    dataset = nvt.Dataset(test_df)
+    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+
+    # Check if the output dataframe has the expected schema and values
+    expected_df = pd.DataFrame({
+        "result": [True],
+        "reason": ["Authorized"],
+        "timestamp": [pd.Timestamp("2021-01-01 00:00:00")],
+        "location": ["New York, NY, USA"],
+        "authdevicename": ["Device1"],
+        "username": ["John Doe"],
+        "accessdevicebrowser": ["Chrome"],
+        "accessdeviceos": ["Windows"],
+    })
+
+    pd.set_option('display.max_columns', None)
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
 if (__name__ in ('main',)):
     test_input_schema_conversion()

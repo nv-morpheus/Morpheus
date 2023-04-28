@@ -22,8 +22,7 @@ import nvtabular as nvt
 
 from functools import partial
 from merlin.dag import ColumnSelector
-from networkx.drawing.nx_agraph import graphviz_layout
-from nvtabular.ops import LambdaOp, Rename
+from nvtabular.ops import LambdaOp, Rename, Filter
 
 from morpheus.utils.column_info import (BoolColumn, ColumnInfo, DataFrameInputSchema, DateTimeColumn,
                                         RenameColumn, StringCatColumn, StringJoinColumn, IncrementColumn)
@@ -287,6 +286,8 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, visualize=F
     # plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
+    if (input_schema.row_filter is not None):
+        coalesced_workflow = coalesced_workflow >> Filter(f=input_schema.row_filter)
 
     # Uncomment to display the NVT workflow render
     if (visualize):
