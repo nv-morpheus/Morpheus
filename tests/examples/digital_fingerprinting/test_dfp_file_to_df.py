@@ -17,8 +17,10 @@ import functools
 import json
 import os
 import re
+import types
 from datetime import datetime
 from datetime import timezone
+from unittest import mock
 
 import fsspec
 import pytest
@@ -101,3 +103,52 @@ def test_constructor_download_type(config: Config, dl_type: str):
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
     assert stage._download_method == dl_type
+
+
+@pytest.mark.restore_environ
+@pytest.mark.parametrize('dl_type,use_processes', [("dask", True), ("dask_thread", False)])
+@mock.patch('dask.config')
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
+                          mock_dask_config: mock.MagicMock,
+                          config: Config,
+                          dl_type: str,
+                          use_processes: bool):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    mock_dask_cluster.return_value = mock_dask_cluster
+
+    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
+    assert stage._get_dask_cluster() is mock_dask_cluster
+
+    mock_dask_config.set.assert_called_once()
+    mock_dask_cluster.assert_called_once_with(start=True, processes=use_processes)
+
+
+@mock.patch('dask.config')
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+def test_close_dask_cluster(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, config: Config):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    mock_dask_cluster.return_value = mock_dask_cluster
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
+    assert stage._get_dask_cluster() is mock_dask_cluster
+
+    mock_dask_config.set.assert_called_once()
+
+    mock_dask_cluster.close.assert_not_called()
+    stage._close_dask_cluster()
+    mock_dask_cluster.close.assert_called_once()
+
+
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Config):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    mock_dask_cluster.return_value = mock_dask_cluster
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
+
+    # Method is a no-op when Dask is not used
+    assert stage._dask_cluster is None
+    stage._close_dask_cluster()
+
+    mock_dask_cluster.assert_not_called()
+    mock_dask_cluster.close.assert_not_called()

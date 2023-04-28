@@ -28,7 +28,7 @@ SKIP_REASON = (
     "for details on installing these additional dependencies")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(autouse=True, scope='session')
 def dask_distributed(fail_missing: bool):
     """
     Mark tests requiring dask.distributed
