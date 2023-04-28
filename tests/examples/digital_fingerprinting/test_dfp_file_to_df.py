@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import functools
+import json
 import os
 import re
 from datetime import datetime
@@ -26,8 +27,44 @@ from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from utils import TEST_DIRS
+
+
+def test_single_object_to_dataframe():
+    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
+
+    input_file = os.path.join(TEST_DIRS.tests_data_dir,
+                              'appshield',
+                              'snapshot-1',
+                              'threadlist_2022-01-30_10-26-01.670391.json')
+    file_specs = fsspec.open_files(input_file)
+    assert len(file_specs)
+
+    file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
+
+    schema = DataFrameInputSchema(
+        column_info=[ColumnInfo(name='titles', dtype=str), ColumnInfo(name='data', dtype=str)])
+    df = _single_object_to_dataframe(file_obj, schema, FileTypes.Auto, False, {})
+
+    assert sorted(df.columns) == ['data', 'titles']
+    assert df['titles'].to_list() == [["TID", "Offset", "State", "WaitReason", "PID", "Process"]]
+
+    with open(input_file, encoding='UTF-8') as fh:
+        d = json.load(fh)
+        expected_data = d['data']
+
+    df['data'].to_list() == expected_data
+
+
+def test_single_object_to_dataframe_timeout():
+    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
+
+    input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', 'fake_wont_match*.json')
+    bad_file = fsspec.core.OpenFile(fs=fsspec.open_files(input_glob).fs, path='/tmp/fake/doesnt/exit.csv')
+
+    assert _single_object_to_dataframe(bad_file, DataFrameInputSchema(), FileTypes.CSV, False, {}) is None
 
 
 @pytest.mark.restore_environ
