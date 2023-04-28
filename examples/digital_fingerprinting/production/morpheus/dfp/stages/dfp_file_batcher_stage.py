@@ -78,7 +78,6 @@ class DFPFileBatcherStage(SinglePortStage):
         file_objs = []
 
         # Determine the date of the file, and apply the window filter if we have one
-        ts_and_files = []
         for file_object in file_objects:
             ts = self._date_conversion_func(file_object)
 
