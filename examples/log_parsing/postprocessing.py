@@ -54,11 +54,14 @@ class LogParsingPostProcessingStage(SinglePortStage):
         self._model_config_path = model_config_path
 
         self._vocab_lookup = {}
-        with open(vocab_path) as f:
+
+        # Explicitly setting the encoding, we know we have unicode chars in this file and we need to avoid issue:
+        # https://github.com/nv-morpheus/Morpheus/issues/859
+        with open(vocab_path, encoding='UTF-8') as f:
             for index, line in enumerate(f):
                 self._vocab_lookup[index] = line.split()[0]
 
-        with open(model_config_path) as f:
+        with open(model_config_path, encoding='UTF-8') as f:
             config = json.load(f)
 
         self._label_map = {int(k): v for k, v in config["id2label"].items()}
