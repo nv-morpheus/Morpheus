@@ -32,28 +32,31 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 
-def test_single_object_to_dataframe():
-    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
-
+@pytest.fixture
+def single_file_obj():
     input_file = os.path.join(TEST_DIRS.tests_data_dir,
                               'appshield',
                               'snapshot-1',
                               'threadlist_2022-01-30_10-26-01.670391.json')
     file_specs = fsspec.open_files(input_file)
-    assert len(file_specs)
+    assert len(file_specs) == 1
+    yield fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
-    file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
+
+def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
+    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
     schema = DataFrameInputSchema(
         column_info=[ColumnInfo(name='titles', dtype=str), ColumnInfo(name='data', dtype=str)])
-    df = _single_object_to_dataframe(file_obj, schema, FileTypes.Auto, False, {})
+    df = _single_object_to_dataframe(single_file_obj, schema, FileTypes.Auto, False, {})
 
     assert sorted(df.columns) == ['data', 'titles']
     assert df['titles'].to_list() == [["TID", "Offset", "State", "WaitReason", "PID", "Process"]]
 
-    with open(input_file, encoding='UTF-8') as fh:
+    with open(single_file_obj.path, encoding='UTF-8') as fh:
         d = json.load(fh)
         expected_data = d['data']
 
@@ -152,3 +155,75 @@ def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Conf
 
     mock_dask_cluster.assert_not_called()
     mock_dask_cluster.close.assert_not_called()
+
+
+@pytest.mark.restore_environ
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@mock.patch('multiprocessing.get_context')
+@mock.patch('dask.config')
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
+def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.MagicMock,
+                                                          mock_dask_cluster: mock.MagicMock,
+                                                          mock_dask_config: mock.MagicMock,
+                                                          mock_mp_gc: mock.MagicMock,
+                                                          config: Config,
+                                                          dl_type: str,
+                                                          tmp_path: str,
+                                                          single_file_obj: fsspec.core.OpenFile,
+                                                          dataset_pandas: DatasetManager):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+
+    # We're going to feed the function a file object pointing to a different file than the one we are going to return
+    # from out mocked fetch function. This way we will be able to easily tell if our mocks are working
+    mock_obf_to_df.return_value = dataset_pandas['filter_probs.csv']
+    mock_dask_cluster.return_value = mock_dask_cluster
+
+    mock_mp_gc.return_value = mock_mp_gc
+    mock_pool = mock.MagicMock()
+    mock_mp_gc.Pool.return_value = mock_pool
+
+    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
+
+    results = stage._get_or_create_dataframe_from_s3_batch((single_file_obj, 1))
+
+    if dl_type == "multiprocess":
+        mock_mp_gc.assert_called_once()
+        mock_pool.map.assert_called_once()
+    else:
+        mock_mp_gc.assert_not_called()
+        mock_pool.map.assert_not_called()
+
+
+@pytest.mark.restore_environ
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@mock.patch('multiprocessing.get_context')
+@mock.patch('dask.config')
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
+def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
+                                                         mock_dask_cluster: mock.MagicMock,
+                                                         mock_dask_config: mock.MagicMock,
+                                                         mock_mp_gc: mock.MagicMock,
+                                                         config: Config,
+                                                         dl_type: str,
+                                                         tmp_path: str):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    mock_dask_cluster.return_value = mock_dask_cluster
+
+    mock_mp_gc.return_value = mock_mp_gc
+    mock_pool = mock.MagicMock()
+    mock_mp_gc.Pool.return_value = mock_pool
+
+    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
+    assert stage._get_or_create_dataframe_from_s3_batch(None) == (None, False)
+
+    mock_obf_to_df.assert_not_called()
+    mock_dask_cluster.assert_not_called()
+    mock_dask_config.assert_not_called()
+    mock_mp_gc.assert_not_called()
+    mock_pool.map.assert_not_called()
+
+    assert os.listdir(tmp_path) == []
