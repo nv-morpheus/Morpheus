@@ -22,6 +22,7 @@ import nvtabular as nvt
 
 from functools import partial
 from merlin.dag import ColumnSelector
+from networkx.drawing.nx_agraph import graphviz_layout
 from nvtabular.ops import LambdaOp, Rename
 
 from morpheus.utils.column_info import (BoolColumn, ColumnInfo, DataFrameInputSchema, DateTimeColumn,
@@ -54,7 +55,7 @@ class JSONFlattenInfo(ColumnInfo):
     output_col_names: list
 
 
-def resolve_json_output_columns(input_schema) -> typing.List[ColumnInfo]:
+def resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
     column_info_objects = input_schema.column_info
 
     json_output_candidates = []
@@ -77,7 +78,7 @@ def resolve_json_output_columns(input_schema) -> typing.List[ColumnInfo]:
 
 
 def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> nx.DiGraph:
-    G = nx.DiGraph()
+    graph = nx.DiGraph()
 
     def find_dependent_column(name, current_name):
         for ci in column_info_objects:
@@ -91,7 +92,7 @@ def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> n
         return None
 
     for col_info in column_info_objects:
-        G.add_node(col_info.name)
+        graph.add_node(col_info.name)
 
         if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
             # If col_info.name != col_info.input_name then we're creating a potential dependency
@@ -99,25 +100,28 @@ def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> n
                 dep_col_info = find_dependent_column(col_info.input_name, col_info.name)
                 if dep_col_info:
                     # This CI is dependent on the dep_col_info CI
-                    G.add_edge(dep_col_info.name, col_info.name)
+                    graph.add_edge(dep_col_info.name, col_info.name)
 
         elif col_info.__class__ == StringCatColumn:
             for input_col_name in col_info.input_columns:
                 dep_col_info = find_dependent_column(input_col_name, col_info.name)
                 if dep_col_info:
-                    G.add_edge(dep_col_info.name, col_info.name)
+                    graph.add_edge(dep_col_info.name, col_info.name)
 
         elif col_info.__class__ == JSONFlattenInfo:
             for output_col_name in [c for c, _ in col_info.output_col_names]:
                 dep_col_info = find_dependent_column(output_col_name, col_info.name)
                 if dep_col_info:
-                    G.add_edge(dep_col_info.name, col_info.name)
+                    graph.add_edge(dep_col_info.name, col_info.name)
 
-    return G
+    return graph
 
 
-def get_ci_column_selector(ci: ColumnInfo):
-    if ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+def get_ci_column_selector(ci):
+    if (ci.__class__ == ColumnInfo):
+        return ci.name
+
+    elif ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
         return ci.input_name
 
     elif ci.__class__ == StringCatColumn:
@@ -125,6 +129,9 @@ def get_ci_column_selector(ci: ColumnInfo):
 
     elif ci.__class__ == JSONFlattenInfo:
         return ci.input_col_names
+
+    else:
+        raise Exception(f"Unknown ColumnInfo type: {ci.__class__}")
 
 
 def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateOp:
@@ -146,52 +153,89 @@ def nvt_string_cat_col(column_selector: ColumnSelector, df: typing.Union[pd.Data
     return string_cat_col(df[input_columns], output_column=output_column, sep=sep)
 
 
+@sync_df_as_pandas
+def increment_column(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, input_column, period: str = 'D') -> \
+        typing.Union[
+            pd.DataFrame, cudf.DataFrame]:
+    period_index = pd.to_datetime(df[input_column]).dt.to_period(period)
+    groupby_col = df.groupby([output_column, period_index]).cumcount()
+
+    return pd.DataFrame({output_column: groupby_col})
+
+
+def nvt_increment_column(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                         output_column, input_column, period: str = 'D'):
+    return increment_column(column_selector, df, output_column, input_column, period)
+
+
 ColumnInfoProcessingMap = {
     BoolColumn: lambda ci, deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
-                                           dtype="bool")],
-    ColumnInfo: lambda ci, deps: [LambdaOp(lambda series: series)],
+                                           dtype="bool", label=f"[BOOL] '{ci.name}'")],
+    ColumnInfo: lambda ci, deps: [
+        LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[COl_SELECT] '{ci.name}'")],
     DateTimeColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name),
                                       LambdaOp(lambda series: series.astype(ci.dtype),
-                                               dtype=ci.dtype)],
-    # RenameColumn: lambda ci, deps: [Rename(name=ci.name)],
+                                               dtype=ci.dtype, label=f"[DATETIME] '{ci.name}'")],
+    IncrementColumn: lambda ci, deps: [
+        MutateOp(partial(nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
+                 dependencies=deps, output_columns=[(ci.name, ci.groupby_column)],
+                 label=f"[INCREMENT] '{ci.name}' => '{ci.groupby_column}'")],
     RenameColumn: lambda ci, deps: [MutateOp(lambda selector, df: df.rename(columns={ci.input_name: ci.name}),
-                                             dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
+                                             dependencies=deps, output_columns=[(ci.name, ci.dtype)],
+                                             label=f"[RENAME] '{ci.input_name}' => '{ci.name}'")],
     StringCatColumn: lambda ci, deps: [MutateOp(
         partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
-        dependencies=deps, output_columns=[(ci.name, ci.dtype)])],
+        dependencies=deps, output_columns=[(ci.name, ci.dtype)],
+        label=f"[STRING_CAT] '{','.join(ci.input_columns)}' => '{ci.name}'")],
+    StringJoinColumn: lambda ci, deps: [MutateOp(
+        partial(nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
+        dependencies=deps, output_columns=[(ci.name, ci.dtype)],
+        label=f"[STRING_JOIN] '{ci.input_name}' => '{ci.name}'")],
     JSONFlattenInfo: lambda ci, deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
-
-
-def dfs_coalesce(graph, ci_map, parent, start, visited=None):
-    if visited is None:
-        visited = set()
-
-    visited.add(start)
-    # Parent is guaranteed to have an input schema
-    ops = ColumnInfoProcessingMap[type(ci_map[start])](ci_map[start], deps=[])
-    for op in ops:
-        parent = parent >> op
-
-    ops = []
-    for neighbor in graph.neighbors(start):
-        if neighbor not in visited:
-            ops.extend(dfs_coalesce(graph, ci_map, parent, neighbor, visited))
-
-    return ops or [parent]
 
 
 def coalesce_ops(graph, ci_map):
     """Find nodes with no outgoing edges that are not dependent on the current node."""
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
 
+    node_op_map = {}
+
     visited = set()
+    queue = [n for n in root_nodes]
+    while queue:
+        node = queue.pop(0)
+        if node not in visited:
+            visited.add(node)
+
+            # Collect parent inputs
+            parents = [n for n in graph.predecessors(node)]
+            if (len(parents) == 0):
+                parent_input = get_ci_column_selector(ci_map[node])
+            else:
+                parent_input = None
+                for parent in parents:
+                    if (parent_input is None):
+                        parent_input = node_op_map[parent]
+                    else:
+                        parent_input = parent_input + node_op_map[parent]
+
+            # Construct our node operator
+            ops = ColumnInfoProcessingMap[type(ci_map[node])](ci_map[node], deps=[])
+            node_op = parent_input
+            for op in ops:
+                node_op = node_op >> op
+
+            node_op_map[node] = node_op
+
+            neighbors = [n for n in graph.neighbors(node)]
+            for neighbor in neighbors:
+                queue.append(neighbor)
+
     coalesced_workflow = None
-    for node in root_nodes:
-        ci = ci_map[node]
-        op_chain = get_ci_column_selector(ci)
-        op_chain = dfs_coalesce(graph, ci_map, op_chain, node, visited)
-        for op in op_chain:
+    for node, op in node_op_map.items():
+        neighbors = [n for n in graph.neighbors(node)]
+        if (len(neighbors) == 0):  #  Only add the operators for leaf nodes.
             if (coalesced_workflow is None):
                 coalesced_workflow = op
             else:
@@ -200,7 +244,7 @@ def coalesce_ops(graph, ci_map):
     return coalesced_workflow
 
 
-def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Workflow:
+def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, visualize=False) -> nvt.Workflow:
     """
     Converts an `input_schema` to a `nvt.Workflow` object
 
@@ -209,6 +253,9 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
     Next we aggregate all column operations, which we assume are independent of each other and can be run in parallel and
     pass them the updated schema from the preprocessing steps.
     """
+
+    if (input_schema is None or len(input_schema.column_info) == 0):
+        raise ValueError("Input schema is empty")
 
     # Try to guess which output columns we'll produce
     json_output_cols = resolve_json_output_columns(input_schema)
@@ -222,18 +269,20 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema) -> nvt.Work
                             output_col_names=json_output_cols,
                             dtype="str", name="json_info"))
 
-        column_info_map = {ci.name: ci for ci in column_info_objects}
+    column_info_map = {ci.name: ci for ci in column_info_objects}
 
     graph = build_nx_dependency_graph(column_info_objects)
 
     # Uncomment to print the dependency layout
-    # pos = graphviz_layout(graph, prog='neato')
-    # nx.draw(graph, pos, with_labels=True, font_weight='bold')
-    # plt.show()
+    from matplotlib import pyplot as plt
+    pos = graphviz_layout(graph, prog='neato')
+    nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    plt.show()
 
     coalesced_workflow = coalesce_ops(graph, column_info_map)
 
     # Uncomment to display the NVT workflow render
-    # coalesced_workflow.graph.render(view=True, format='svg')
+    if (visualize):
+        coalesced_workflow.graph.render(view=True, format='svg')
 
     return nvt.Workflow(coalesced_workflow)

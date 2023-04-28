@@ -21,11 +21,12 @@ from nvtabular.ops.operator import ColumnSelector, Operator
 
 
 class MutateOp(Operator):
-    def __init__(self, func, dependencies, output_columns):
+    def __init__(self, func, dependencies, output_columns, label=None):
         super().__init__()
 
         self._dependencies = dependencies
         self._func = func
+        self._label = label
         self._output_columns = output_columns or []
 
     def _remove_deps(self, column_selector):
@@ -37,11 +38,13 @@ class MutateOp(Operator):
 
     @property
     def label(self):
+        if (self._label is not None):
+            return self._label
+
         # if we have a named function (not a lambda) return the function name
-        name = self._func.__name__
+        name = self._func.__name__.split(".")[-1]
         if name != "<lambda>":
             return f"MutateOp: {name}"
-
         else:
             try:
                 # otherwise get the lambda source code from the inspect module if possible
