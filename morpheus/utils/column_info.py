@@ -91,7 +91,7 @@ class ColumnInfo:
         if (self.name not in df.columns):
             return pd.Series(None, index=df.index, dtype=self.get_pandas_dtype())
 
-        return df[self.name]
+        return df[self.name].astype(self.get_pandas_dtype())
 
 
 @dataclasses.dataclass
