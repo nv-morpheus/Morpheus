@@ -14,6 +14,7 @@
 
 import logging
 import typing
+import warnings
 from collections import namedtuple
 from datetime import datetime
 
@@ -37,16 +38,28 @@ class DFPFileBatcherStage(SinglePortStage):
                  c: Config,
                  date_conversion_func,
                  period="D",
-                 sampling_rate_s=0,
+                 sampling_rate_s: typing.Optional[int] = None,
                  start_time: datetime = None,
-                 end_time: datetime = None):
+                 end_time: datetime = None,
+                 sampling: typing.Union[str, float, int, None] = None):
         super().__init__(c)
 
         self._date_conversion_func = date_conversion_func
-        self._sampling_rate_s = sampling_rate_s
         self._period = period
         self._start_time = start_time
         self._end_time = end_time
+
+        if (sampling_rate_s is not None and sampling_rate_s > 0):
+            assert sampling is None, "Cannot set both sampling and sampling_rate_s at the same time"
+
+            # Show the deprecation message
+            warnings.warn(("The `sampling_rate_s` argument has been deprecated. "
+                           "Please use `sampling={sampling_rate_s}S` instead"),
+                          DeprecationWarning)
+
+            sampling = f"{sampling_rate_s}S"
+
+        self._sampling = sampling
 
     @property
     def name(self) -> str:
@@ -60,6 +73,10 @@ class DFPFileBatcherStage(SinglePortStage):
 
     def on_data(self, file_objects: fsspec.core.OpenFiles):
 
+        timestamps = []
+        full_names = []
+        file_objs = []
+
         # Determine the date of the file, and apply the window filter if we have one
         ts_and_files = []
         for file_object in file_objects:
@@ -70,60 +87,52 @@ class DFPFileBatcherStage(SinglePortStage):
                     or (self._end_time is not None and ts > self._end_time)):
                 continue
 
-            ts_and_files.append(TimestampFileObj(ts, file_object))
-
-        # sort the incoming data by date
-        ts_and_files.sort(key=lambda x: x.timestamp)
-
-        # Create a dataframe with the incoming metadata
-        if ((len(ts_and_files) > 1) and (self._sampling_rate_s > 0)):
-            file_sampled_list = []
-
-            ts_last = ts_and_files[0].timestamp
-
-            file_sampled_list.append(ts_and_files[0])
-
-            for idx in range(1, len(ts_and_files)):
-                ts = ts_and_files[idx].timestamp
-
-                if ((ts - ts_last).seconds >= self._sampling_rate_s):
-
-                    ts_and_files.append(ts_and_files[idx])
-                    ts_last = ts
-            else:
-                ts_and_files = file_sampled_list
-
-        df = pd.DataFrame()
-
-        timestamps = []
-        full_names = []
-        file_objs = []
-        for (ts, file_object) in ts_and_files:
             timestamps.append(ts)
             full_names.append(file_object.full_name)
             file_objs.append(file_object)
 
-        df["dfp_timestamp"] = timestamps
-        df["key"] = full_names
-        df["objects"] = file_objs
+        # Build the dataframe
+        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names, "objects": file_objects})
+
+        # sort the incoming data by date
+        df.sort_index(inplace=True)
+
+        # If sampling was provided, perform that here
+        if (self._sampling is not None):
+
+            if (isinstance(self._sampling, str)):
+                # We have a frequency for sampling. Resample by the frequency, taking the first
+                df = df.resample(self._sampling).first().dropna()
+
+            elif (self._sampling < 1.0):
+                # Sample a fraction of the rows
+                df = df.sample(frac=self._sampling).sort_index()
+
+            else:
+                # Sample a fixed amount
+                df = df.sample(n=self._sampling).sort_index()
+
+        # Early exit if no files were found
+        if (len(df) == 0):
+            return []
+
+        if (self._period is None):
+            # No period was set so group them all into one single batch
+            return [(fsspec.core.OpenFiles(df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs),
+                     len(df))]
+
+        # Now group the rows by the period
+        resampled = df.resample(self._period)
+
+        n_groups = len(resampled)
 
         output_batches = []
 
-        if len(df) > 0:
-            # Now split by the batching settings
-            df_period = df["dfp_timestamp"].dt.to_period(self._period)
+        for _, period_df in resampled:
 
-            period_gb = df.groupby(df_period)
+            obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs)
 
-            n_groups = len(period_gb)
-            for group in period_gb.groups:
-                period_df = period_gb.get_group(group)
-
-                obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(),
-                                                 mode=file_objects.mode,
-                                                 fs=file_objects.fs)
-
-                output_batches.append((obj_list, n_groups))
+            output_batches.append((obj_list, n_groups))
 
         return output_batches
 
