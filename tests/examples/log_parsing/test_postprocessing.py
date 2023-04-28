@@ -73,4 +73,4 @@ def test_log_parsing_post_processing_stage(config: Config,
     out_meta = stage._postprocess(post_proc_message)
 
     assert isinstance(out_meta, MessageMeta)
-    DatasetManager.assert_compare_df(out_meta._df, expected_df)
+    DatasetManager.assert_df_equal(out_meta._df, expected_df)
