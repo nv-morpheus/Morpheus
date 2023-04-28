@@ -376,17 +376,23 @@ def import_mod(request: pytest.FixtureRequest, restore_sys_path):
             mod_paths = [mod_paths]
 
         modules = []
+        module_names = []
         for mod_path in mod_paths:
             mod_dir, mod_fname = os.path.split(mod_path)
             mod_name, _ = os.path.splitext(mod_fname)
 
             sys.path.append(mod_dir)
+            module_names.append(mod_name)
             mod = importlib.import_module(mod_name)
             assert mod.__file__ == mod_path
 
             modules.append(mod)
 
         yield modules
+
+        # Un-import modules we previously imported, this allows for multiple examples to contain a `messages.py`
+        for mod in module_names:
+            sys.modules.pop(mod, None)
 
     else:
         raise ValueError("import_mod fixture requires setting paths in markers: "
