@@ -67,8 +67,6 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                 logger.warning("Refreshing S3 credentials")
                 # cred_refresh()
                 retries += 1
-            else:
-                raise e
 
     # Run the pre-processing before returning
     if (s3_df is None):
