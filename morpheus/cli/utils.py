@@ -52,7 +52,7 @@ def is_pybind_enum(cls: typing.Any):
     """
     Determines if the given `cls` is an enum.
     C++ enums exposed via pybind11 do not inherit from Enum, but do expose the `__members__` convention.
-    https://docs.python.org/3.8/library/enum.html?highlight=__members__#iteration
+    https://docs.python.org/3.10/library/enum.html?highlight=__members__#iteration
     """
     return 'pybind11' in type(cls).__name__ and hasattr(cls, '__members__')
 
