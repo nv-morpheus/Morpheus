@@ -181,7 +181,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
                     dfs = client.gather(dfs)
 
-            elif (self._download_method == "multiprocessing"):
+            elif (self._download_method == "multiprocess"):
                 # Use multiprocessing here since parallel downloads are a pain
                 with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
                     dfs = p.map(download_method, download_buckets)
