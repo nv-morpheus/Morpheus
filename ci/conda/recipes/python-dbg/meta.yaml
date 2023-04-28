@@ -25,7 +25,7 @@ source:
   # md5: c4b7100dcaace9d33ab1fda9a3a038d6
   # If you want to build from the github source. This is quite a bit slower than pulling the tarball.
   #git_url: https://github.com/python/cpython.git
-  #git_rev: 3.8
+  #git_rev: 3.10
 
 build:
   include_recipe: False
