@@ -26,9 +26,6 @@ SHELL ["/bin/bash", "-c"]
 # Set the workdir to the DFP base folder
 WORKDIR /workspace/examples/digital_fingerprinting/
 
-# Add library path where DFP Viz can find libnvrtc
-ENV LD_LIBRARY_PATH=/opt/conda/envs/morpheus/lib:$LD_LIBRARY_PATH
-
 # Copy the conda_env file
 COPY ./conda_env.yml ./
 
