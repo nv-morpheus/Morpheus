@@ -229,11 +229,12 @@ def bfs_traversal_with_op_map(graph, ci_map, root_nodes):
     return visited, node_op_map
 
 
-def coalesce_leaf_nodes(node_op_map, graph):
+def coalesce_leaf_nodes(node_op_map, graph, preserve_re):
     coalesced_workflow = None
     for node, op in node_op_map.items():
         neighbors = [n for n in graph.neighbors(node)]
-        if len(neighbors) == 0:  # Only add the operators for leaf nodes.
+        # Only add the operators for leaf nodes, or those explicitly preserved
+        if len(neighbors) == 0 or (preserve_re and preserve_re.match(node)):
             if coalesced_workflow is None:
                 coalesced_workflow = op
             else:
@@ -242,10 +243,10 @@ def coalesce_leaf_nodes(node_op_map, graph):
     return coalesced_workflow
 
 
-def coalesce_ops(graph, ci_map):
+def coalesce_ops(graph, ci_map, preserve_re=None):
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
     visited, node_op_map = bfs_traversal_with_op_map(graph, ci_map, root_nodes)
-    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph)
+    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph, preserve_re=preserve_re)
 
     return coalesced_workflow
 
@@ -285,7 +286,7 @@ def input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, visualize=F
     # nx.draw(graph, pos, with_labels=True, font_weight='bold')
     # plt.show()
 
-    coalesced_workflow = coalesce_ops(graph, column_info_map)
+    coalesced_workflow = coalesce_ops(graph, column_info_map, preserve_re=input_schema.preserve_columns)
     if (input_schema.row_filter is not None):
         coalesced_workflow = coalesced_workflow >> Filter(f=input_schema.row_filter)
 

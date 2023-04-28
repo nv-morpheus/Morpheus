@@ -261,7 +261,7 @@ def test_coalesce_leaf_nodes():
 
     # Call bfs_traversal_with_op_map() and coalesce_leaf_nodes()
     _, node_op_map = bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
-    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph)
+    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph, [])
 
     # Check if the coalesced workflow is not None
     assert coalesced_workflow is not None
@@ -418,6 +418,36 @@ def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
+        "rootcat": ["lhs-rhs"]
+    })
+
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
+def test_input_schema_conversion_preserve_column():
+    additional_column_1 = StringCatColumn(name="rootcat", dtype="str", input_columns=["lhs_top_level", "rhs_top_level"],
+                                          sep="-")
+    additional_column_2 = RenameColumn(name="rhs_top_level", dtype="str", input_name="rhs_top_level_pre")
+    additional_column_3 = ColumnInfo(name="lhs_top_level", dtype="str")
+    modified_source_column_info = [additional_column_1, additional_column_2, additional_column_3]
+
+    modified_schema = DataFrameInputSchema(
+        json_columns=[],
+        column_info=modified_source_column_info,
+        preserve_columns=["lhs_top_level|rhs_top_level"]
+    )
+
+    test_df = create_test_dataframe()
+    test_df["lhs_top_level"] = ["lhs"]
+    test_df["rhs_top_level_pre"] = ["rhs"]
+
+    workflow = input_schema_to_nvt_workflow(modified_schema)
+    dataset = nvt.Dataset(test_df)
+    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+
+    expected_df = pd.DataFrame({
+        "lhs_top_level": ["lhs"],
+        "rhs_top_level": ["rhs"],
         "rootcat": ["lhs-rhs"]
     })
 
