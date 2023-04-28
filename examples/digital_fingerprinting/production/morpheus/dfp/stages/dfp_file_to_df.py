@@ -30,8 +30,6 @@ import dask
 from dask.distributed import Client
 from dask.distributed import LocalCluster
 
-import cudf
-
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
@@ -136,7 +134,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             logger.debug("Stopping dask cluster... Done.")
 
     def _get_or_create_dataframe_from_s3_batch(
-            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
+            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 
         if (not file_object_batch):
             return None, False
@@ -248,4 +246,4 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
                                    ops.on_completed(self._close_dask_cluster))
         builder.make_edge(input_stream[0], stream)
 
-        return stream, cudf.DataFrame
+        return stream, pd.DataFrame
