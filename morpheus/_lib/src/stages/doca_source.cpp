@@ -120,7 +120,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       morpheus::doca::packet_receive_kernel(
         _rxq->rxq_info_gpu(),
-        _semaphore->in_gpu(),
+        _semaphore->gpu_ptr(),
         _semaphore->size(),
         semaphore_idx_d.data(),
         packet_count_d.data(),
@@ -160,7 +160,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       morpheus::doca::packet_gather_kernel(
         _rxq->rxq_info_gpu(),
-        _semaphore->in_gpu(),
+        _semaphore->gpu_ptr(),
         _semaphore->size(),
         semaphore_idx_d.data(),
         packet_sizes_d.data(),

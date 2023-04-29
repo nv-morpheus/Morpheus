@@ -149,7 +149,7 @@ public:
   doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
   ~doca_semaphore();
 
-  doca_gpu_semaphore_gpu* in_gpu();
+  doca_gpu_semaphore_gpu* gpu_ptr();
   uint16_t size();
 };
 

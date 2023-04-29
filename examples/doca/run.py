@@ -33,7 +33,7 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.utils.logger import configure_logging
 
-from elasticsearch_ingest_stage import WriteToElasticsearchStage
+# from elasticsearch_ingest_stage import WriteToElasticsearchStage
 
 
 @click.command()
