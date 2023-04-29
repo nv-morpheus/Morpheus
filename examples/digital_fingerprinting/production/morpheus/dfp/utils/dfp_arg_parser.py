@@ -45,6 +45,7 @@ class DFPArgParser:
                  duration: str,
                  source: str,
                  tracking_uri: str,
+                 silence_monitors: bool,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -62,15 +63,16 @@ class DFPArgParser:
         self._include_generic = None
         self._include_individual = None
         self._time_fields: TimeFields = None
+        self._silence_monitors = silence_monitors
 
-        self._model_name_formatter = "DFP-%s-{user_id}" % (source)
-        self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (source)
+        self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
+        self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
 
     def verify_init(func):
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
-                raise Exception('Instance not initialized')
+                raise NameError('Instance not initialized')
             return func(self, *args, **kwargs)
 
         return wrapper
@@ -84,6 +86,10 @@ class DFPArgParser:
     @verify_init
     def time_fields(self):
         return self._time_fields
+
+    @property
+    def silence_monitors(self):
+        return self._silence_monitors
 
     @property
     @verify_init

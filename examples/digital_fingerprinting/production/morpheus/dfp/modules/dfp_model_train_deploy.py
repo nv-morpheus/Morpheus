@@ -14,6 +14,7 @@
 
 import logging
 
+# flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_training  # noqa: F401
 import mrc
 
@@ -27,7 +28,7 @@ from morpheus.utils.module_utils import register_module
 from ..utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_MODEL_TRAIN_DEPLOY, MORPHEUS_MODULE_NAMESPACE)

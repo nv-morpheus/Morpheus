@@ -24,7 +24,7 @@ from functools import partial
 import fsspec
 import fsspec.utils
 import pandas as pd
-
+import time
 import cudf
 
 from morpheus._lib.common import FileTypes
@@ -140,14 +140,13 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
     try:
         file_type = str_to_file_type(file_type.lower())
-    except Exception:
-        raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
+    except Exception as exec_info:
+        raise ValueError(f"Invalid input file type '{file_type}'. Available file types are: CSV, JSON.") from exec_info
 
     def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                    file_type: FileTypes,
                                    filter_null: bool,
                                    parser_kwargs: dict):
-
         retries = 0
         s3_df = None
         while (retries < 2):
@@ -158,14 +157,13 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
                                             filter_nulls=filter_null,
                                             df_type="pandas",
                                             parser_kwargs=parser_kwargs)
-
                 break
-            except Exception as e:
+            except Exception as exec_info:
                 if (retries < 2):
                     logger.warning("Refreshing S3 credentials")
                     retries += 1
                 else:
-                    raise e
+                    raise exec_info
 
         # Run the pre-processing before returning
         if (s3_df is None):
@@ -265,15 +263,16 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
             return None
 
         try:
-            # start_time = time.time()
+            start_time = time.time()
             output_df, cache_hit = get_or_create_dataframe_from_s3_batch(filenames)
 
-            # duration = (time.time() - start_time) * 1000.0
-            #
-            # logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
-            #             len(output_df),
-            #             "hit" if cache_hit else "miss",
-            #             duration)
+            if logger.isEnabledFor(logging.DEBUG):
+                duration = (time.time() - start_time) * 1000.0
+
+                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
+                             len(output_df),
+                             "hit" if cache_hit else "miss",
+                             duration)
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
@@ -282,12 +281,8 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     pdf = convert_to_dataframe(files)
 
     df = cudf.from_pandas(pdf)
-    payload = control_message.payload()
-    if (payload is None):
-        control_message.payload(MessageMeta(df))
-    else:
-        with payload.mutable_dataframe() as dfm:
-            dfm = cudf.concat([dfm, df], ignore_index=True)
-            control_message.payload(MessageMeta(dfm))
+
+    # Overwriting payload with derived data
+    control_message.payload(MessageMeta(df))
 
     return control_message

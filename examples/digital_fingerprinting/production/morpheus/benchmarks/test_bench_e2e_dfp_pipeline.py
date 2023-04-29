@@ -22,6 +22,9 @@ import typing
 # flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_deployment  # noqa: F401
 import pytest
+from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
+from benchmarks.benchmark_conf_generator import load_json
+from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -35,9 +38,6 @@ from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 from dfp.utils.schema_utils import Schema
 
-from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
-from benchmarks.benchmark_conf_generator import load_json
-from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.config import Config
@@ -52,17 +52,17 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 PIPELINES_CONF = load_json("resource/pipelines_conf.json")
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
 
-def remove_cache(dir: str):
-    logger.debug(f"Cleaning up cache `{dir}` directory...")
-    shutil.rmtree(dir, ignore_errors=True)
-    logger.debug(f"Cleaning up cache `{dir}` directory... Done")
+def remove_cache(cache_dir: str):
+    logger.debug("Cleaning up cache `%s` directory...", cache_dir)
+    shutil.rmtree(cache_dir, ignore_errors=True)
+    logger.debug("Cleaning up cache `%s` directory... Done", cache_dir)
 
 
 def dfp_modules_pipeline(pipe_config: Config,
@@ -88,7 +88,7 @@ def dfp_modules_pipeline(pipe_config: Config,
 
     if not reuse_cache:
         cache_dir = modules_conf["inference_options"]["cache_dir"]
-        remove_cache(dir=cache_dir)
+        remove_cache(cache_dir=cache_dir)
 
 
 def dfp_training_pipeline_stages(pipe_config: Config,
@@ -139,7 +139,7 @@ def dfp_training_pipeline_stages(pipe_config: Config,
     pipeline.run()
 
     if not reuse_cache:
-        remove_cache(dir=stages_conf["cache_dir"])
+        remove_cache(cache_dir=stages_conf["cache_dir"])
 
 
 def dfp_inference_pipeline_stages(pipe_config: Config,
@@ -194,7 +194,7 @@ def dfp_inference_pipeline_stages(pipe_config: Config,
     pipeline.run()
 
     if not reuse_cache:
-        remove_cache(dir=stages_conf["cache_dir"])
+        remove_cache(cache_dir=stages_conf["cache_dir"])
 
 
 @pytest.mark.benchmark
@@ -301,6 +301,8 @@ def test_dfp_modules_azure_payload_lti_e2e(benchmark: typing.Any):
     benchmark(dfp_modules_pipeline, pipe_config, module_config, filenames=input_filenames)
 
 
+@pytest.mark.skip_by_default(
+    reason="To download input logs from an S3 bucket, the AWS configure setup is required for this test.")
 @pytest.mark.benchmark
 def test_dfp_modules_azure_payload_lti_s3_e2e(benchmark: typing.Any):
 

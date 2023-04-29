@@ -14,8 +14,11 @@
 
 import logging
 
+# flake8 warnings are silenced by the addition of noqa.
+import dfp.modules.dfp_monitor  # noqa: F401
 import dfp.modules.dfp_split_users  # noqa: F401
 import mrc
+from dfp.utils.module_ids import DFP_MONITOR
 
 import morpheus.loaders.file_to_df_loader  # noqa: F401
 import morpheus.modules.file_batcher  # noqa: F401
@@ -31,7 +34,7 @@ from morpheus.utils.module_utils import register_module
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 def dfp_preproc_module():
@@ -77,14 +80,52 @@ def dfp_preproc(builder: mrc.Builder):
             - batching_options (dict): Options for batching files
             - user_splitting_options (dict): Options for splitting data by user
             - supported_loaders (dict): Supported data loaders for different file types
+            - monitor_options (dict): Options for monitoring throughput
     """
+
+    #        MODULE_INPUT_PORT
+    #                |
+    #                v
+    # +-------------------------------+
+    # | filter_control_message_module |
+    # +-------------------------------+
+    #                |
+    #                v
+    # +-------------------------------+
+    # |      file_batcher_module      |
+    # +-------------------------------+
+    #                |
+    #                v
+    # +-------------------------------+
+    # | file_to_df_dataloader_module  |
+    # +-------------------------------+
+    #                |
+    #                v
+    # +-------------------------------+
+    # |     dfp_monitor_module        |
+    # +-------------------------------+
+    #                |
+    #                v
+    # +-------------------------------+
+    # |    dfp_split_users_module     |
+    # +-------------------------------+
+    #                |
+    #                v
+    # +-------------------------------+
+    # |     dfp_monitor_module        |
+    # +-------------------------------+
+    #                |
+    #                v
+    #        MODULE_OUTPUT_PORT
 
     config = builder.get_current_module_config()
 
     cache_dir = config.get("cache_dir", None)
     ts_column_name = config.get("timestamp_column_name", None)
 
+    monitor_options = config.get("monitor_options", {})
     pre_filter_options = config.get("pre_filter_options", {})
+    task_type = pre_filter_options.get("filter_task_type")
 
     batching_opts = config.get("batching_options", {})
     batching_opts["cache_dir"] = cache_dir
@@ -95,6 +136,9 @@ def dfp_preproc(builder: mrc.Builder):
     splitting_opts["timestamp_col_name"] = ts_column_name
 
     supported_loaders = config.get("supported_loaders", {})
+
+    file_to_df_monitor_default = {"description": f"FileToDF [{task_type}_pipe]"}
+    file_to_df_monitor_conf = merge_dictionaries(monitor_options, file_to_df_monitor_default)
 
     pre_filter_default = {}
     pre_filter_conf = merge_dictionaries(pre_filter_options, pre_filter_default)
@@ -119,6 +163,9 @@ def dfp_preproc(builder: mrc.Builder):
     dfp_split_users_default = {"fallback_username": config.get("fallback_username", "generic_user")}
     dfp_split_users_conf = merge_dictionaries(splitting_opts, dfp_split_users_default)
 
+    dfp_split_users_monitor_default = {"description": f"SplitUsers [{task_type}_pipe]"}
+    dfp_split_users_monitor_conf = merge_dictionaries(monitor_options, dfp_split_users_monitor_default)
+
     filter_control_message_module = builder.load_module(FILTER_CONTROL_MESSAGE,
                                                         "morpheus",
                                                         "filter_control_message",
@@ -128,13 +175,23 @@ def dfp_preproc(builder: mrc.Builder):
                                                        "morpheus",
                                                        "dfp_file_to_df_dataloader",
                                                        file_to_df_conf)
+    file_to_df_monitor_module = builder.load_module(DFP_MONITOR,
+                                                    "morpheus",
+                                                    "file_to_df_monitor",
+                                                    file_to_df_monitor_conf)
     dfp_split_users_module = builder.load_module(DFP_SPLIT_USERS, "morpheus", "dfp_split_users", dfp_split_users_conf)
+    dfp_split_users_monitor_module = builder.load_module(DFP_MONITOR,
+                                                         "morpheus",
+                                                         "dfp_training_ingested_monitor",
+                                                         dfp_split_users_monitor_conf)
 
     # Make an edge between the modules.
     builder.make_edge(filter_control_message_module.output_port("output"), file_batcher_module.input_port("input"))
     builder.make_edge(file_batcher_module.output_port("output"), file_to_df_dataloader_module.input_port("input"))
-    builder.make_edge(file_to_df_dataloader_module.output_port("output"), dfp_split_users_module.input_port("input"))
+    builder.make_edge(file_to_df_dataloader_module.output_port("output"), file_to_df_monitor_module.input_port("input"))
+    builder.make_edge(file_to_df_monitor_module.output_port("output"), dfp_split_users_module.input_port("input"))
+    builder.make_edge(dfp_split_users_module.output_port("output"), dfp_split_users_monitor_module.input_port("input"))
 
     # Register input and output port for a module.
     builder.register_module_input("input", filter_control_message_module.input_port("input"))
-    builder.register_module_output("output", dfp_split_users_module.output_port("output"))
+    builder.register_module_output("output", dfp_split_users_monitor_module.output_port("output"))

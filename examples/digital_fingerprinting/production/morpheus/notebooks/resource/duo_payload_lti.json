@@ -7,7 +7,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/azure-training-data/*.json"
+				"../../../../../examples/data/dfp/duo-training-data/*.json"
 			  ]
 			}
 		  },
@@ -18,8 +18,8 @@
 		  }
 		],
 		"metadata": {
-		  "data_type": "streaming",
-		  "batching_options": {"period": "W", "start_time": "2022-08-01", "end_time": "2022-08-31"},
+		  "data_type": "payload",
+		  "batching_options": {"period": "Y", "start_time": "2022-08-01", "end_time": "2022-08-31"},
 		  "file_to_df_options":{
 				"parser_kwargs": {
 					"lines": false, "orient": "records"
@@ -34,7 +34,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/azure-inference-data/*.json"
+				"../../../../../examples/data/dfp/duo-inference-data/*.json"
 			  ]
 			}
 		  },
@@ -45,13 +45,13 @@
 		  }
 		],
 		"metadata": {
-		  "data_type": "streaming",
-		  "batching_options": {"period": "H", "start_time": "2022-08-01", "end_time": "2022-08-31"},
+		  "data_type": "payload",
+		  "batching_options": {"period": "D", "start_time": "2022-08-01", "end_time": "2022-09-01"},
 		  "file_to_df_options":{
 				"parser_kwargs": {
 					"lines": false, "orient": "records"
 				}
-			  }
+			}
 		}
 	  }
 	]

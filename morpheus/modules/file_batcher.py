@@ -31,11 +31,11 @@ from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_utils import to_period_cudf_approximation
+from morpheus.utils.module_utils import to_period_approximation
 
 logger = logging.getLogger(__name__)
 
-default_iso_date_regex_pattern = (
+DEFAULT_ISO_DATE_REGEX_PATTERN = (
     r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
     r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
 
@@ -80,7 +80,7 @@ def file_batcher(builder: mrc.Builder):
 
     TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_name"])
 
-    iso_date_regex_pattern = config.get("batch_iso_date_regex_pattern", default_iso_date_regex_pattern)
+    iso_date_regex_pattern = config.get("batch_iso_date_regex_pattern", DEFAULT_ISO_DATE_REGEX_PATTERN)
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
     default_batching_opts = {
@@ -88,6 +88,15 @@ def file_batcher(builder: mrc.Builder):
         "sampling_rate_s": config.get("sampling_rate_s", 0),
         "start_time": config.get("start_time"),
         "end_time": config.get("end_time"),
+    }
+
+    default_file_to_df_opts = {
+        "timestamp_column_name": config.get("timestamp_column_name"),
+        "schema": config.get("schema"),
+        "file_type": config.get("file_type"),
+        "filter_null": config.get("filter_null"),
+        "parser_kwargs": config.get("parser_kwargs"),
+        "cache_dir": config.get("cache_dir")
     }
 
     def validate_control_message(control_message: ControlMessage):
@@ -124,8 +133,8 @@ def file_batcher(builder: mrc.Builder):
             if (end_time is not None):
                 end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
 
-        except Exception as e:
-            logger.error(f"Error parsing parameters: {e}")
+        except Exception as exec_info:
+            logger.error("Error parsing parameters: %s", (exec_info))
             raise
 
         ts_and_files = []
@@ -169,40 +178,43 @@ def file_batcher(builder: mrc.Builder):
 
         return df
 
+    def build_file_df_params(control_message):
+        file_to_df_opts = {}
+        if (control_message.has_metadata("file_to_df_options")):
+            file_to_df_opts = control_message.get_metadata("file_to_df_options")
+
+        return merge_dictionaries(file_to_df_opts, default_file_to_df_opts)
+
     def generate_cms_for_batch_periods(control_message: ControlMessage, period_gb, n_groups):
         data_type = control_message.get_metadata("data_type")
+        file_to_df_params = build_file_df_params(control_message=control_message)
 
         control_messages = []
         for group in period_gb.groups:
-            period_df = period_gb.get_group(group)
-            filenames = period_df["key"].to_arrow().to_pylist()
 
+            period_df = period_gb.get_group(group)
+            filenames = period_df["key"].tolist()
             load_task = {
                 "loader_id": FILE_TO_DF_LOADER,
                 "strategy": "aggregate",
                 "files": filenames,
                 "n_groups": n_groups,
                 "batcher_config": {  # TODO(Devin): Remove this when we're able to attach config to the loader
-                    "timestamp_column_name": config.get("timestamp_column_name"),
-                    "schema": config.get("schema"),
-                    "file_type": config.get("file_type"),
-                    "filter_null": config.get("filter_null"),
-                    "parser_kwargs": config.get("parser_kwargs"),
-                    "cache_dir": config.get("cache_dir")
+                    "timestamp_column_name": file_to_df_params.get("timestamp_column_name"),
+                    "schema": file_to_df_params.get("schema"),
+                    "file_type": file_to_df_params.get("file_type"),
+                    "filter_null": file_to_df_params.get("filter_null"),
+                    "parser_kwargs": file_to_df_params.get("parser_kwargs"),
+                    "cache_dir": file_to_df_params.get("cache_dir")
                 }
             }
 
-            if (data_type == "payload"):
-                control_message.add_task("load", load_task)
-            elif (data_type == "streaming"):
+            if (data_type == "payload" or data_type == "streaming"):
                 batch_control_message = control_message.copy()
                 batch_control_message.add_task("load", load_task)
                 control_messages.append(batch_control_message)
             else:
-                raise Exception("Unknown data type")
-
-        if (data_type == "payload"):
-            control_messages.append(control_message)
+                raise ValueError(f"Unknown data type: {data_type}")
 
         return control_messages
 
@@ -217,9 +229,10 @@ def file_batcher(builder: mrc.Builder):
         try:
             validate_control_message(control_message)
 
-            mm = control_message.payload()
+            message_meta = control_message.payload()
+
             params = build_processing_params(control_message)
-            with mm.mutable_dataframe() as dfm:
+            with message_meta.mutable_dataframe() as dfm:
                 files = dfm.files.to_arrow().to_pylist()
                 ts_filenames_df = build_fs_filename_df(files, params)
 
@@ -227,15 +240,17 @@ def file_batcher(builder: mrc.Builder):
             if len(ts_filenames_df) > 0:
                 # Now split by the batching settings
 
-                ts_filenames_df = to_period_cudf_approximation(ts_filenames_df, params["period"])
+                ts_filenames_df = to_period_approximation(ts_filenames_df, params["period"])
+                # Converting to pandas as groupby performance scales poorly with number of groups.
+                ts_filenames_df = ts_filenames_df.to_pandas()
                 period_gb = ts_filenames_df.groupby("period")
                 n_groups = len(period_gb.groups)
-
                 control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
 
             return control_messages
-        except Exception as e:
-            logger.error(f"Error building file list, discarding control message: {e}")
+
+        except Exception as exec_info:
+            logger.error("Error building file list, discarding control message %s", exec_info)
             return []
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):

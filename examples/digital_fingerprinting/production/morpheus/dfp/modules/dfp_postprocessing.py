@@ -25,7 +25,7 @@ from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_POST_PROCESSING
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_POST_PROCESSING, MORPHEUS_MODULE_NAMESPACE)

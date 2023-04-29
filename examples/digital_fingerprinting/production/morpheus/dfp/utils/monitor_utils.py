@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DFP_DATA_PREP = "DFPDataPrep"
-DFP_PREPROCESSING = "DFPPreprocessing"
-DFP_ROLLING_WINDOW = "DFPRollingWindow"
-DFP_SPLIT_USERS = "DFPSplitUsers"
-DFP_MODEL_TRAIN_DEPLOY = "DFPModelTrainDeploy"
-DFP_TRAINING = "DFPTraining"
-DFP_TRAINING_PIPELINE = "DFPTrainingPipeline"
-DFP_INFERENCE_PIPELINE = "DFPInferencePipeline"
-DFP_INFERENCE = "DFPInference"
-DFP_POST_PROCESSING = "DFPPostProcessing"
-DFP_PREPROC = "DFPPreproc"
-DFP_INFERENCE_PIPE = "DFPInferencePipe"
-DFP_TRAINING_PIPE = "DFPTrainingPipe"
-DFP_DEPLOYMENT = "DFPDeployment"
-DFP_MONITOR = "DFPMonitor"
+from morpheus.stages.general.monitor_stage import MorpheusTqdm
+
+
+class SilentMorpheusTqdm(MorpheusTqdm):
+
+    def refresh(self, nolock=False, lock_args=None):
+        return

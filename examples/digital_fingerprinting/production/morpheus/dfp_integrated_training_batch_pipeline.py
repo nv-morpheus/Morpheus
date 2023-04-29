@@ -17,6 +17,7 @@ import typing
 from datetime import datetime
 
 import click
+# flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_deployment  # noqa: F401
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
@@ -28,7 +29,6 @@ from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.multiport_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
 
@@ -104,13 +104,13 @@ from morpheus.stages.input.control_message_file_source_stage import ControlMessa
                     "This is only useful when inputs are known to be valid json."))
 @click.option(
     "--input_file",
-    "-f",
     type=str,
     multiple=True,
     help=("List of control message defination files to process. Can specify multiple arguments for multiple files."
           "Also accepts glob (*) wildcards"
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option('--silence_monitors', flag_value=True, help='Controls whether monitors will be verbose.')
 def run_pipeline(source: str,
                  train_users: str,
                  skip_user: typing.Tuple[str],
@@ -121,6 +121,7 @@ def run_pipeline(source: str,
                  log_level: int,
                  sample_rate_s: int,
                  tracking_uri,
+                 silence_monitors,
                  use_cpp,
                  **kwargs):
     if (skip_user and only_user):
@@ -135,6 +136,7 @@ def run_pipeline(source: str,
                                   duration,
                                   source,
                                   tracking_uri,
+                                  silence_monitors,
                                   train_users)
 
     dfp_arg_parser.init()
@@ -195,41 +197,49 @@ def run_pipeline(source: str,
     # |   |                        |                           |        |                          |                          |   |
     # |   |                        v                           |        |                          v                          |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
-    # |   |      |       dfp_data_prep_module          |       |        |       |         dfp_data_prep_module        |       |   |
+    # |   |      |        dfp_data_prep_module         |       |        |       |         dfp_data_prep_module        |       |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
     # |   |                        |                           |        |                          |                          |   |
     # |   |                        v                           |        |                          v                          |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
-    # |   |      |       dfp_training_module           |       |        |       |         dfp_inference_module        |       |   |
+    # |   |      |         dfp_monitor_module          |       |        |       |           dfp_monitor_module        |       |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
     # |   |                        |                           |        |                          |                          |   |
     # |   |                        v                           |        |                          v                          |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
-    # |   |      |     mlflow_model_writer_module      |       |        |       |       filter_detections_module      |       |   |
+    # |   |      |        dfp_training_module          |       |        |       |         dfp_inference_module        |       |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |                        |                           |        |                          |                          |   |
+    # |   |                        v                           |        |                          v                          |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |      |         dfp_monitor_module          |       |        |       |           dfp_monitor_module        |       |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |                        |                           |        |                          |                          |   |
+    # |   |                        v                           |        |                          v                          |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |      |       mlflow_model_writer_module    |       |        |       |        filter_detections_module     |       |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |                        |                           |        |                          |                          |   |
+    # |   |                        v                           |        |                          v                          |   |
+    # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
+    # |   |      |          dfp_monitor_module         |       |        |       |        dfp_post_proc_module         |       |   |
     # |   |      +-------------------------------------+       |        |       +-------------------------------------+       |   |
     # |    ----------------------------------------------------         |                          |                          |   |
-    # |                            |                                    |                          v                          |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                    |       |          dfp_post_proc_module       |       |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                    |                          |                          |   |
-    # |                            |                                    |                          v                          |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                    |       |           serialize_module          |       |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                    |                          |                          |   |
-    # |                            |                                    |                          v                          |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                    |       |         write_to_file_module        |       |   |
-    # |                            |                                    |       +-------------------------------------+       |   |
-    # |                            |                                     -----------------------------------------------------    |
-    #  ----------------------------|---------------------------------------------------------------|------------------------------
-    #                              |                                                               |
-    #                              |                                                               |
-    #                              v                                                               v
-    #            +-------------------------------------+                        +-------------------------------------+
-    #            |        train_monitor_stage          |                        |         infer_monitor_stage         |
-    #            +-------------------------------------+                        +-------------------------------------+
+    # |                                                                 |                          v                          |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                 |       |          serialize_module           |       |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                 |                          |                          |   |
+    # |                                                                 |                          v                          |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                 |       |         write_to_file_module        |       |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                 |                          |                          |   |
+    # |                                                                 |                          v                          |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                 |       |           dfp_monitor_module        |       |   |
+    # |                                                                 |       +-------------------------------------+       |   |
+    # |                                                                  -----------------------------------------------------    |
 
     # Create a pipeline object
     pipeline = Pipeline(config)
@@ -243,15 +253,7 @@ def run_pipeline(source: str,
                               output_port_name_prefix="output",
                               num_output_ports=num_output_ports))
 
-    train_moniter_stage = pipeline.add_stage(
-        MonitorStage(config, description="DFP Training Pipeline rate", smoothing=0.001))
-
-    infer_moniter_stage = pipeline.add_stage(
-        MonitorStage(config, description="DFP Inference Pipeline rate", smoothing=0.001))
-
     pipeline.add_edge(source_stage, dfp_deployment_stage)
-    pipeline.add_edge(dfp_deployment_stage.output_ports[0], train_moniter_stage)
-    pipeline.add_edge(dfp_deployment_stage.output_ports[1], infer_moniter_stage)
 
     # Run the pipeline
     pipeline.run()

@@ -14,6 +14,7 @@
 
 import logging
 
+# flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_inference_pipe  # noqa: F401
 import dfp.modules.dfp_training_pipe  # noqa: F401
 import mrc
@@ -30,7 +31,7 @@ from ..utils.module_ids import DFP_DEPLOYMENT
 from ..utils.module_ids import DFP_INFERENCE_PIPE
 from ..utils.module_ids import DFP_TRAINING_PIPE
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_DEPLOYMENT, MORPHEUS_MODULE_NAMESPACE)
@@ -102,13 +103,14 @@ def dfp_deployment(builder: mrc.Builder):
 
     stream_aggregation_options:
         - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
-        - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
-        - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
+        - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+        - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
+        Example: 0; Default: 0
         - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
         Default: 'timestamp'
         - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
         Default: '60d'
-        - cache_to_disk (bool): Whether or not to cache streaming data to disk; Example: false; Default: false
+        - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
         - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
 
     user_splitting_options:
@@ -140,7 +142,46 @@ def dfp_deployment(builder: mrc.Builder):
         - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
         - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
         - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
+
+    monitoring_options:
+        - description (string): Name to show for this Monitor Stage in the console window; Example: 'Progress';
+        Default: 'Progress'
+        - silence_monitors (bool): Slience the monitors on the console; Example: True; Default: False
+        - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged.
+        0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
+        - unit (string): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
+        - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first
+        message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
+        immediately. In large pipelines, this option may be desired to give a more accurate timing;
+        Example: True; Default: False
+        - determine_count_fn_schema (string): Custom function for determining the count in a message. Gets called for
+        each message. Allows for correct counting of batched and sliced messages.; Example: func_str; Default: None
+        - log_level (string): Enable this stage when the configured log level is at `log_level` or lower;
+        Example: 'DEBUG'; Default: INFO
     """
+
+    #                               MODULE_INPUT_PORT
+    #                                       |
+    #                                       v
+    #                     +-------------------------------------+
+    #                     |          fsspec_loader_module       |
+    #                     +-------------------------------------+
+    #                                        |
+    #                                        v
+    #                     +-------------------------------------+
+    #                     |              broadcast              |
+    #                     +-------------------------------------+
+    #                               /                   \
+    #                              /                     \
+    #                             /                       \
+    #                            v                         v
+    # +-------------------------------------+      +-------------------------------------+
+    # |      dfp_trianing_pipe_module       |      |       dfp_inference_pipe_module     |
+    # |              (NESTED)               |      |               (NESTED)              |
+    # +-------------------------------------+      +-------------------------------------+
+    #                   |                                              |
+    #                   v                                              v
+    #          MODULE_OUTPUT_PORT_0                           MODULE_OUTPUT_PORT_1
 
     module_config = builder.get_current_module_config()
 
