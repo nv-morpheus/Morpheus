@@ -258,7 +258,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     mlflow_model_writer_defaults = {}
     mlflow_model_writer_conf = merge_dictionaries(mlflow_writer_options, mlflow_model_writer_defaults)
 
-    mlflow_model_writer_monitor_options = {"description": "Train&Saved [training_pipe]"}
+    mlflow_model_writer_monitor_options = {"description": "Train & Saved [training_pipe]"}
     mlflow_model_writer_module_conf = merge_dictionaries(mlflow_model_writer_monitor_options, monitor_options)
 
     # Load modules
