@@ -17,46 +17,23 @@
 
 #pragma once
 
-#define DOCA_ALLOW_EXPERIMENTAL_API
-
-#include <morpheus/doca/error.hpp>
-#include <morpheus/doca/rte_context.hpp>
-
-#include <doca_eth_rxq.h>
-#include <doca_flow.h>
-#include <doca_gpunetio.h>
+#include <morpheus/doca/doca_context.hpp>
+#include <morpheus/doca/doca_rx_queue.hpp>
 
 #include <memory>
-#include <string>
-#include <type_traits>
-
-#define GPU_PAGE_SIZE (1UL << 16)
 
 namespace morpheus::doca {
 
-#pragma GCC visibility push(default)
-
-struct DocaContext
+struct DocaRxPipe
 {
   private:
-    doca_gpu* m_gpu;
-    doca_dev* m_dev;
-    doca_pci_bdf m_pci_bdf;
-    doca_flow_port* m_flow_port;
-    uint16_t m_nic_port;
-    uint32_t m_max_queue_count;
-    std::unique_ptr<RTEContext> m_rte_context;
+    std::shared_ptr<DocaContext> m_context;
+    std::shared_ptr<DocaRxQueue> m_rxq;
+    doca_flow_pipe* m_pipe;
 
   public:
-    DocaContext(std::string nic_addr, std::string gpu_addr);
-    ~DocaContext();
-
-    doca_gpu* gpu();
-    doca_dev* dev();
-    uint16_t nic_port();
-    doca_flow_port* flow_port();
+    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq, uint32_t source_ip_filter);
+    ~DocaRxPipe();
 };
-
-#pragma GCC visibility pop
 
 }  // namespace morpheus::doca

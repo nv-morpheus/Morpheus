@@ -15,48 +15,36 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <morpheus/doca/error.hpp>
-#include <morpheus/doca/rte_context.hpp>
-
-#include <doca_eth_rxq.h>
-#include <doca_flow.h>
-#include <doca_gpunetio.h>
-
-#include <memory>
-#include <string>
-#include <type_traits>
-
-#define GPU_PAGE_SIZE (1UL << 16)
+#include <morpheus/doca/doca_semaphore.hpp>
 
 namespace morpheus::doca {
 
-#pragma GCC visibility push(default)
-
-struct DocaContext
+DocaSemaphore::DocaSemaphore(std::shared_ptr<DocaContext> context, uint16_t size) :
+  m_context(std::move(context)),
+  m_size(size)
 {
-  private:
-    doca_gpu* m_gpu;
-    doca_dev* m_dev;
-    doca_pci_bdf m_pci_bdf;
-    doca_flow_port* m_flow_port;
-    uint16_t m_nic_port;
-    uint32_t m_max_queue_count;
-    std::unique_ptr<RTEContext> m_rte_context;
+    DOCA_TRY(doca_gpu_semaphore_create(m_context->gpu(), &m_semaphore));
+    DOCA_TRY(doca_gpu_semaphore_set_memory_type(m_semaphore, DOCA_GPU_MEM_CPU_GPU));
+    DOCA_TRY(doca_gpu_semaphore_set_items_num(m_semaphore, size));
+    DOCA_TRY(doca_gpu_semaphore_start(m_semaphore));
+    DOCA_TRY(doca_gpu_semaphore_get_gpu_handle(m_semaphore, &m_semaphore_gpu));
+}
 
-  public:
-    DocaContext(std::string nic_addr, std::string gpu_addr);
-    ~DocaContext();
+DocaSemaphore::~DocaSemaphore()
+{
+    doca_gpu_semaphore_destroy(m_semaphore);
+}
 
-    doca_gpu* gpu();
-    doca_dev* dev();
-    uint16_t nic_port();
-    doca_flow_port* flow_port();
-};
+doca_gpu_semaphore_gpu* DocaSemaphore::gpu_ptr()
+{
+    return m_semaphore_gpu;
+}
 
-#pragma GCC visibility pop
+uint16_t DocaSemaphore::size()
+{
+    return m_size;
+}
 
 }  // namespace morpheus::doca

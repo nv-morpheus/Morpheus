@@ -18,27 +18,19 @@
 #pragma once
 
 #include <morpheus/doca/doca_context.hpp>
+#include <morpheus/doca/doca_rx_pipe.hpp>
+#include <morpheus/doca/doca_rx_queue.hpp>
+#include <morpheus/doca/doca_semaphore.hpp>
 #include <morpheus/messages/meta.hpp>
 
-#include <cudf/io/types.hpp>  // for table_with_metadata
 #include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
 
 #include <memory>
-#include <string>
-#include <vector>  // for vector
 
 namespace morpheus {
-/****** Component public implementations *******************/
-/****** DocaSourceStage*************************************/
-/**
- * TODO(Documentation)
- */
+
 #pragma GCC visibility push(default)
+
 class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
@@ -46,19 +38,17 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    DocaSourceStage(
-      std::string const& nic_pci_address,
-      std::string const& gpu_pci_address,
-      std::string const& source_ip_filter
-    );
+    DocaSourceStage(std::string const& nic_pci_address,
+                    std::string const& gpu_pci_address,
+                    std::string const& source_ip_filter);
 
   private:
     subscriber_fn_t build();
 
-    std::shared_ptr<morpheus::doca::doca_context> _context;
-    std::shared_ptr<morpheus::doca::doca_rx_queue> _rxq;
-    std::shared_ptr<morpheus::doca::doca_rx_pipe> _rxpipe;
-    std::shared_ptr<morpheus::doca::doca_semaphore> _semaphore;
+    std::shared_ptr<morpheus::doca::DocaContext> m_context;
+    std::shared_ptr<morpheus::doca::DocaRxQueue> m_rxq;
+    std::shared_ptr<morpheus::doca::DocaRxPipe> m_rxpipe;
+    std::shared_ptr<morpheus::doca::DocaSemaphore> m_semaphore;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/
@@ -70,12 +60,13 @@ struct DocaSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a DocaSourceStage, and return the result.
      */
-    static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(
-      mrc::segment::Builder& builder,
-      std::string const& name,
-      std::string const& nic_pci_address,
-      std::string const& gpu_pci_address,
-      std::string const& source_ip_filter);
+    static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(mrc::segment::Builder& builder,
+                                                                       std::string const& name,
+                                                                       std::string const& nic_pci_address,
+                                                                       std::string const& gpu_pci_address,
+                                                                       std::string const& source_ip_filter);
 };
+
 #pragma GCC visibility pop
+
 }  // namespace morpheus

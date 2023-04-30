@@ -50,6 +50,10 @@ set(DOCA_BUILD_FILES "")
 if(MORPHEUS_SUPPORT_DOCA)
   set(DOCA_BUILD_FILES
     ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/doca_rx_pipe.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/doca_rx_queue.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/doca_semaphore.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/rte_context.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/doca_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/doca_source_kernels.cu
   )

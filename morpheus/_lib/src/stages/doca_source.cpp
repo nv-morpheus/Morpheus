@@ -15,34 +15,20 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/doca_source.hpp"
-#include "morpheus/stages/doca_source_kernels.hpp"
-// #include "morpheus/doca/common.h"
+#include <morpheus/stages/doca_source.hpp>
+#include <morpheus/stages/doca_source_kernels.hpp>
 
-#include <cudf/column/column.hpp>  // for column
 #include <cudf/column/column_factories.hpp>
-#include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
-#include <cudf/scalar/scalar.hpp>  // for string_scalar
-#include <cudf/strings/replace.hpp>
-#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
-#include <cudf/table/table.hpp>                  // for table
-#include <cudf/types.hpp>
 #include <cudf/strings/convert/convert_ipv4.hpp>
-#include <glog/logging.h>
-#include <cuda/std/chrono>
+
+#include <rmm/device_scalar.hpp>
+
+#include <mrc/segment/builder.hpp>
+
 #include <rte_byteorder.h>
 
-#include <rmm/device_uvector.hpp>
-
-#include <algorithm>  // for find
-#include <cstddef>    // for size_t
-#include <filesystem>
 #include <memory>
-#include <regex>
-#include <sstream>
-#include <stdexcept>  // for runtime_error
-#include <utility>
+#include <stdexcept>
 #include <iostream>
 
 #define BE_IPV4_ADDR(a, b, c, d) (RTE_BE32((a << 24) + (b << 16) + (c << 8) + d))	/* Big endian conversion */
@@ -70,8 +56,7 @@ std::optional<uint32_t> ip_to_int(std::string const& ip_address)
 }
 
 namespace morpheus {
-// Component public implementations
-// ************ DocaSourceStage ************* //
+
 DocaSourceStage::DocaSourceStage(
   std::string const& nic_pci_address,
   std::string const& gpu_pci_address,
@@ -85,14 +70,14 @@ DocaSourceStage::DocaSourceStage(
     throw std::runtime_error("source ip filter invalid");
   }
 
-  _context   = std::make_shared<morpheus::doca::doca_context>(
+  m_context   = std::make_shared<morpheus::doca::DocaContext>(
     nic_pci_address, // "17:00.1"
     gpu_pci_address  // "ca:00.0"
   );
 
-  _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
-  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
-  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq, source_ip.value());
+  m_rxq       = std::make_shared<morpheus::doca::DocaRxQueue>(m_context);
+  m_semaphore = std::make_shared<morpheus::doca::DocaSemaphore>(m_context, 1024);
+  m_rxpipe    = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq, source_ip.value());
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
@@ -107,7 +92,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     auto packet_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
     auto packet_sizes_d      = rmm::device_uvector<int32_t>(2048, processing_stream);
     auto packet_buffer_d     = rmm::device_uvector<uint8_t>(2048 * 65536, processing_stream);
-    auto exit_condition      = std::make_unique<morpheus::doca::doca_mem<uint32_t>>(_context, 1, DOCA_GPU_MEM_GPU_CPU);
+    auto exit_condition      = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
 
     DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
@@ -119,9 +104,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       }
 
       morpheus::doca::packet_receive_kernel(
-        _rxq->rxq_info_gpu(),
-        _semaphore->gpu_ptr(),
-        _semaphore->size(),
+        m_rxq->rxq_info_gpu(),
+        m_semaphore->gpu_ptr(),
+        m_semaphore->size(),
         semaphore_idx_d.data(),
         packet_count_d.data(),
         packet_size_total_d.data(),
@@ -159,9 +144,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       data_offsets_out_d.set_element_async(packet_count, packet_size_total, processing_stream);
 
       morpheus::doca::packet_gather_kernel(
-        _rxq->rxq_info_gpu(),
-        _semaphore->gpu_ptr(),
-        _semaphore->size(),
+        m_rxq->rxq_info_gpu(),
+        m_semaphore->gpu_ptr(),
+        m_semaphore->size(),
         semaphore_idx_d.data(),
         packet_sizes_d.data(),
         packet_buffer_d.data(),
@@ -183,7 +168,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       );
 
       auto sem_idx_old = semaphore_idx_d.value(processing_stream);
-      auto sem_idx_new = (sem_idx_old + 1) % _semaphore->size();
+      auto sem_idx_new = (sem_idx_old + 1) % m_semaphore->size();
       semaphore_idx_d.set_value_async(sem_idx_new, processing_stream);
 
       // int32_t last_offset = data_offsets_out_d.back_element(processing_stream);
@@ -302,40 +287,40 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
       auto metadata = cudf::io::table_metadata();
 
-      metadata.column_names.push_back("timestamp");
+      metadata.column_names.emplace_back("timestamp");
       my_columns.push_back(std::move(timestamp_out_d_col));
 
-      metadata.column_names.push_back("src_mac");
+      metadata.column_names.emplace_back("src_mac");
       my_columns.push_back(std::move(src_mac_out_str_col));
 
-      metadata.column_names.push_back("dst_mac");
+      metadata.column_names.emplace_back("dst_mac");
       my_columns.push_back(std::move(dst_mac_out_str_col));
 
-      metadata.column_names.push_back("src_ip");
+      metadata.column_names.emplace_back("src_ip");
       my_columns.push_back(std::move(src_ip_out_str_col));
 
-      metadata.column_names.push_back("dst_ip");
+      metadata.column_names.emplace_back("dst_ip");
       my_columns.push_back(std::move(dst_ip_out_str_col));
 
-      metadata.column_names.push_back("src_port");
+      metadata.column_names.emplace_back("src_port");
       my_columns.push_back(std::move(src_port_out_d_col));
 
-      metadata.column_names.push_back("dst_port");
+      metadata.column_names.emplace_back("dst_port");
       my_columns.push_back(std::move(dst_port_out_d_col));
 
-      metadata.column_names.push_back("packet_size");
+      metadata.column_names.emplace_back("packet_size");
       my_columns.push_back(std::move(data_size_out_d_col));
 
-      metadata.column_names.push_back("tcp_flags");
+      metadata.column_names.emplace_back("tcp_flags");
       my_columns.push_back(std::move(tcp_flags_out_d_col));
 
-      metadata.column_names.push_back("ether_type");
+      metadata.column_names.emplace_back("ether_type");
       my_columns.push_back(std::move(ether_type_out_d_col));
 
-      metadata.column_names.push_back("next_proto_id");
+      metadata.column_names.emplace_back("next_proto_id");
       my_columns.push_back(std::move(next_proto_id_out_d_col));
 
-      metadata.column_names.push_back("data");
+      metadata.column_names.emplace_back("data");
       my_columns.push_back(std::move(data_col));
 
       auto my_table_w_metadata = cudf::io::table_with_metadata{
@@ -354,7 +339,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
   };
 }
 
-// ************ DocaSourceStageInterfaceProxy ************ //
 std::shared_ptr<mrc::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     std::string const& name,
