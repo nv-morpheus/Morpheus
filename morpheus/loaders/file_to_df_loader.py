@@ -18,13 +18,14 @@ import logging
 import multiprocessing as mp
 import os
 import pickle
+import time
 import typing
 from functools import partial
 
 import fsspec
 import fsspec.utils
 import pandas as pd
-import time
+
 import cudf
 
 from morpheus._lib.common import FileTypes

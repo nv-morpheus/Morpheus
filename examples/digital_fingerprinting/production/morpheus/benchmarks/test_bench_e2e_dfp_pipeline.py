@@ -22,9 +22,6 @@ import typing
 # flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_deployment  # noqa: F401
 import pytest
-from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
-from benchmarks.benchmark_conf_generator import load_json
-from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -38,6 +35,9 @@ from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 from dfp.utils.schema_utils import Schema
 
+from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
+from benchmarks.benchmark_conf_generator import load_json
+from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.config import Config

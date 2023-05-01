@@ -16,9 +16,10 @@
 import glob
 import json
 from os import path
-import pytest
 
 import GPUtil
+import pytest
+
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 
 
