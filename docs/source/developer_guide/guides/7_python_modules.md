@@ -20,10 +20,10 @@ limitations under the License.
 ## Background
 
 Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are
-comprised of collections of nodes and edges, called segments (think sub-graphs), which can in turn be connected by
+comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
 ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus
-Stages are the primary building blocks of Morpheus pipelines, Morpheus Modules can be thought of as a way to define
-basic units of work, which can, in turn, be composed and (re)used to build more complex stages. Modules can be
+stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define
+basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be
 written in Python or C++.
 
 ## The Passthrough Module
@@ -64,7 +64,7 @@ Here, we define a module, or rather a blueprint for creating a module, named `my
 `my_module_namespace` namespace. The `register_module` decorator is used to register the module with the system and
 make it available to be loaded by other modules, stages, or pipelines. The `register_module` decorator takes two
 parameters: the name of the module, and the namespace in which the module is defined. The namespace is used to avoid
-naming collisions between core morpheus, custom, and third party modules.
+naming collisions between core Morpheus, custom, and third-party modules.
 
 The `my_test_module_initialization` function is called by the Morpheus module loader when the module is loaded. It
 then creates a new instance of the module, which creates the appropriate MRC nodes and edges, and registers inputs
@@ -76,8 +76,8 @@ customize their behavior based on runtime parameters. We will see an example of 
 
 ### Loading the Module
 
-After a module has been defined and registered, it can be loaded by other modules or stages. Below we
-illustrate this process, in both cases: first usage within another module, and second we'll load the module we just
+After a module has been defined and registered, it can be loaded by other modules or stages. Below, we
+illustrate this process in both cases. First, usage within another module, and second, we'll load the module we just
 created as simple stage, a process that specializes the general behavior of the existing `LinearModuleStage`.
 
 `my_test_module_consumer.py`
@@ -97,7 +97,7 @@ def my_test_module_consumer_initialization(builder: mrc.Builder):
 ```
 
 Here, we've defined a new module that loads the `my_test_module` module that we defined above, and then connects
-directly to its input and output ports. Obviously this is a trivial example, but it illustrates the basic process and
+directly to its input and output ports. Obviously, this is a trivial example, but it illustrates the basic process and
 ease of use when loading and incorporating modules into existing workflows.
 
 `my_test_module_consumer_stage.py`
