@@ -40,7 +40,8 @@ jobs:
        - name: add-comment-to-issue
          run: |
            issue_url=${{ github.event.issue.html_url }}
-           # author=${{ github.event.issue.author.login }}
-           gh issue comment ${issue_url} --body "Hi ${author}!
+           author=${{ github.event.issue.author.login }}
+           gh issue comment ${issue_url} --body "Hi @${author}!
+             
              Thanks for submitting this issue - our team has been notified and we'll get back to you as soon as we can!
              In the mean time, feel free to add any relevant information to this issue."
