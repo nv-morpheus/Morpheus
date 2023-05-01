@@ -156,6 +156,7 @@ def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Conf
 
 @pytest.mark.restore_environ
 @pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dfp.stages.dfp_file_to_df.Client')
@@ -168,6 +169,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
                                                           mock_mp_gc: mock.MagicMock,
                                                           config: Config,
                                                           dl_type: str,
+                                                          use_convert_to_dataframe: bool,
                                                           tmp_path: str,
                                                           single_file_obj: fsspec.core.OpenFile,
                                                           dataset_pandas: DatasetManager):
@@ -210,7 +212,14 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
 
     batch = fsspec.core.OpenFiles([single_file_obj], fs=single_file_obj.fs)
-    (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+
+    if use_convert_to_dataframe:
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # a new test for it
+        output_df = stage.convert_to_dataframe((batch, 1))
+    else:
+        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        assert not cache_hit
 
     if dl_type == "multiprocess":
         mock_mp_gc.assert_called_once()
@@ -233,7 +242,6 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
         mock_dask_client.assert_not_called()
         mock_dask_config.assert_not_called()
 
-    assert not cache_hit
     dataset_pandas.assert_df_equal(output_df, expected_df)
 
     expected_cache_file_path = os.path.join(stage._cache_dir, "batches", f"{expected_hash}.pkl")
@@ -244,6 +252,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 
 @pytest.mark.restore_environ
 @pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dfp.stages.dfp_file_to_df.Client')
@@ -256,6 +265,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
                                                          mock_mp_gc: mock.MagicMock,
                                                          config: Config,
                                                          dl_type: str,
+                                                         use_convert_to_dataframe: bool,
                                                          tmp_path: str,
                                                          dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
@@ -289,8 +299,13 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
 
     batch = fsspec.core.OpenFiles([file_obj], fs=file_obj.fs)
-    (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
-    assert cache_hit
+    if use_convert_to_dataframe:
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # a new test for it
+        output_df = stage.convert_to_dataframe((batch, 1))
+    else:
+        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        assert cache_hit
 
     # When we get a cache hit, none of the download methods should be executed
     mock_mp_gc.assert_not_called()
@@ -305,6 +320,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
 @pytest.mark.restore_environ
 @pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dfp.stages.dfp_file_to_df.Client')
@@ -317,6 +333,7 @@ def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.Ma
                                                          mock_mp_gc: mock.MagicMock,
                                                          config: Config,
                                                          dl_type: str,
+                                                         use_convert_to_dataframe: bool,
                                                          tmp_path: str):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -328,7 +345,10 @@ def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.Ma
 
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
-    assert stage._get_or_create_dataframe_from_s3_batch(None) == (None, False)
+    if use_convert_to_dataframe:
+        assert stage.convert_to_dataframe(None) is None
+    else:
+        assert stage._get_or_create_dataframe_from_s3_batch(None) == (None, False)
 
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
