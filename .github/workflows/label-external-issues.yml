@@ -33,13 +33,9 @@ jobs:
         run: |
           issue_url=${{ github.event.issue.html_url }}
           gh issue edit ${issue_url} --add-label "Needs Triage"
-          
-  Add-Comment:
-     runs-on: ubuntu-latest
-     steps:
-       - name: add-comment-to-issue
-         run: |
-           issue_url=${{ github.event.issue.html_url }}
+      
+      - name: add-comment-to-issue
+        run: |
            author=${{ github.event.issue.author.login }}
            gh issue comment ${issue_url} --body "Hi @${author}!
              
