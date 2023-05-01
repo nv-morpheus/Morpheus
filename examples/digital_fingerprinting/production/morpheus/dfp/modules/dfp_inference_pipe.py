@@ -106,7 +106,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
         stream_aggregation_options:
             - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
             - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
-            - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
+            - trigger_on_min_increment (int): Minimum increment from the last trained to new training event;
             Example: 0; Default: 0
             - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
             Default: 'timestamp'
