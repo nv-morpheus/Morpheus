@@ -249,6 +249,67 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 @mock.patch('dfp.stages.dfp_file_to_df.Client')
 @mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
+def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
+                                                         mock_dask_cluster: mock.MagicMock,
+                                                         mock_dask_client: mock.MagicMock,
+                                                         mock_dask_config: mock.MagicMock,
+                                                         mock_mp_gc: mock.MagicMock,
+                                                         config: Config,
+                                                         dl_type: str,
+                                                         tmp_path: str,
+                                                         dataset_pandas: DatasetManager):
+    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+    config.ae.timestamp_column_name = 'v1'
+    mock_dask_cluster.return_value = mock_dask_cluster
+    mock_dask_client.return_value = mock_dask_client
+    mock_dask_client.__enter__.return_value = mock_dask_client
+    mock_dask_client.__exit__.return_value = False
+
+    mock_mp_gc.return_value = mock_mp_gc
+    mock_mp_pool = mock.MagicMock()
+    mock_mp_gc.Pool.return_value = mock_mp_pool
+    mock_mp_pool.return_value = mock_mp_pool
+    mock_mp_pool.__enter__.return_value = mock_mp_pool
+    mock_mp_pool.__exit__.return_value = False
+
+    file_specs = fsspec.open_files(os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')))
+    file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
+
+    hash_data = hashlib.md5(json.dumps([{'ukey': file_obj.fs.ukey(file_obj.path)}]).encode()).hexdigest()
+
+    expected_cache_dir = os.path.join(tmp_path, "file_cache", "batches")
+    os.makedirs(expected_cache_dir)
+    dataset_pandas['filter_probs.csv'].to_pickle(os.path.join(expected_cache_dir, f"{hash_data}.pkl"))
+
+    expected_df = dataset_pandas['filter_probs.csv']
+    expected_df['batch_count'] = 1
+    expected_df["origin_hash"] = hash_data
+
+    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
+    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
+
+    batch = fsspec.core.OpenFiles([file_obj], fs=file_obj.fs)
+    (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+    assert cache_hit
+
+    # When we get a cache hit, none of the download methods should be executed
+    mock_mp_gc.assert_not_called()
+    mock_mp_pool.map.assert_not_called()
+    mock_obf_to_df.assert_not_called()
+    mock_dask_cluster.assert_not_called()
+    mock_dask_client.assert_not_called()
+    mock_dask_config.assert_not_called()
+
+    dataset_pandas.assert_df_equal(output_df, expected_df)
+
+
+@pytest.mark.restore_environ
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@mock.patch('multiprocessing.get_context')
+@mock.patch('dask.config')
+@mock.patch('dfp.stages.dfp_file_to_df.Client')
+@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
                                                          mock_dask_client: mock.MagicMock,
