@@ -55,7 +55,7 @@ limitations under the License.
 - [Write To File Stage](./output/write_to_file_stage.md)
 - [Write To Kafka Stage](./output/write_to_kafka_stage.md)
 
-## Postprocess
+## Post-process
 
 - [Add Classifications Stage](./postprocess/add_classifications_stage.md)
 - [Add Scores Stage](./postprocess/add_scores_stage.md)
@@ -66,7 +66,7 @@ limitations under the License.
 - [Timeseries Stage](./postprocess/timeseries_stage.md)
 - [Validation Stage](./postprocess/validation_stage.md)
 
-## Preprocess
+## Pre-process
 
 - [Deserialize Stage](./preprocess/deserialize_stage.md)
 - [Drop Null Stage](./preprocess/drop_null_stage.md)

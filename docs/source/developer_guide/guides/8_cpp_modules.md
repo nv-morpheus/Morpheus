@@ -24,7 +24,7 @@ See [Simple Python Module](./7_simple_python_module.md) for an introduction to M
 ## The Passthrough Module
 
 The following example will create a simple C++ module that passes through the input data without modification. This
-module will be written in C++ and would be compiled into the morpheus core library.
+module will be written in C++ and would be compiled into the Morpheus core library.
 
 **Note**: One thing that is different with respect to c++ modules, is that they are assumed to be stateless by default,
 meaning that the module itself can be released after the initialize function as been called. If you need a module

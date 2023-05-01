@@ -74,7 +74,7 @@ def __init__(self, config: Config):
 
 Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
-If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
+If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note, however, that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
     # Get a copy of the DataFrame from the incoming message
@@ -403,7 +403,7 @@ In addition to providing the `Config` object that we defined above, we also conf
 
 Note that the tokenizer parameters and vocabulary hash file should exactly match what was used for tokenization during the training of the NLP model.
 
-At this point, we have a pipeline that reads in a set of records and preprocesses them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
+At this point, we have a pipeline that reads in a set of records and pre-processes them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
 
 Next we will add a monitor stage to measure the inference rate as well as a filter stage to filter out any results below a probability threshold of `0.9`.
 ```python
@@ -833,8 +833,9 @@ def on_data(self, message: MessageMeta):
     return message
 ```
 
-The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure that the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
-Note: we didn't close the channel object since closing the connection will also close any associated channel objects.
+The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure  the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
+
+Note: We didn't close the channel object since closing the connection will also close any associated channel objects.
 
 ```python
 def on_error(self, ex: Exception):
