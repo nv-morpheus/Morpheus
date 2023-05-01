@@ -94,7 +94,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch a root cause analysis pipeline which uses binary sequence classification. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
-From the Morpheus repo root directory run:
+From the Morpheus repo root directory, run:
 
 ```bash
 export MORPHEUS_ROOT=$(pwd)

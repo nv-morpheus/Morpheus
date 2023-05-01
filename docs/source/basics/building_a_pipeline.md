@@ -17,12 +17,12 @@ limitations under the License.
 
 # Building a Pipeline
 > **Prerequisites**
-> The following examples assume that the example dataset has been fetched, from the root of the Morpheus repo run:
+> The following examples assume that the example dataset has been fetched. From the root of the Morpheus repo, run:
 >```bash
 >./scripts/fetch_data.py fetch examples
 >```
 
-To build a pipeline via the CLI, users must first specify the type of pipeline, a source object, followed by a sequential list of stages. For each stage, options can be specified to configure the particular stage. Since stages are listed sequentially the output of one stage becomes the input to the next. Unless heavily customized, pipelines will start with either:
+To build a pipeline via the CLI, users must first specify the type of pipeline, a source object, followed by a sequential list of stages. For each stage, options can be specified to configure the particular stage. Since stages are listed sequentially the output of one stage becomes the input to the next. Unless heavily customized, pipelines start with either:
 
 ```bash
 # For NLP Pipelines
@@ -31,7 +31,7 @@ morpheus run pipeline-nlp ...
 morpheus run pipeline-fil ...
 ```
 
-While each stage will have configuration options, there are options that apply to the pipeline as a whole as well. Check
+While each stage has configuration options, there are options that apply to the pipeline as a whole as well. Check
 ``morpheus run --help``, ``morpheus run pipeline-nlp --help`` and ``morpheus run pipeline-fil --help`` for these global
 Pipeline options.
 
@@ -51,7 +51,7 @@ All pipelines configured with the CLI need to start with a source object. Two co
 
 ## Stages
 
-From this point on, any number of stages can be sequentially added to the command line from start to finish. For example, we could build a trivial pipeline that reads from a file, deserializes messages, serializes them, and then writes to a file, use the following:
+From this point on, any number of stages can be sequentially added to the command line from start to finish. For example, we could build a trivial pipeline that reads from a file, deserializes messages, serializes them, and then writes to a file use the following:
 ```bash
 morpheus --log_level=DEBUG run pipeline-nlp --viz_file=.tmp/simple_identity.png \
   from-file --filename=examples/data/pcap_dump.jsonlines \
@@ -117,7 +117,7 @@ Pipeline visualization saved to .tmp/simple_identity.png
 ```
 
 ### Pipeline Build Checks
-After the `====Building Pipeline====` message, if logging is `INFO` or greater, the CLI will print a list of all stages and the type transformations of each stage. To be a valid Pipeline, the output type of one stage must match the input type of the next. Many stages are flexible and will determine their type at runtime but some stages require a specific input type. If your Pipeline is configured incorrectly, Morpheus will report the error. For example, if we run the same command as above but forget the `serialize` stage:
+After the `====Building Pipeline====` message, if logging is `INFO` or greater, the CLI prints a list of all stages and the type transformations of each stage. To be a valid Pipeline, the output type of one stage must match the input type of the next. Many stages are flexible and determines their type at runtime but some stages require a specific input type. If your Pipeline is configured incorrectly, Morpheus reports the error. For example, if we run the same command as above but forget the `serialize` stage:
 ```bash
 morpheus --log_level=DEBUG run pipeline-nlp \
   from-file --filename=examples/data/pcap_dump.jsonlines \
@@ -125,16 +125,16 @@ morpheus --log_level=DEBUG run pipeline-nlp \
   to-file --overwrite --filename .tmp/temp_out.json
 ```
 
-Then the following error will be displayed:
+Then the following error displays:
 ```
 RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
 This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`.
-This is because the ``to-file`` stage has no idea how to write that class to a file, it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
+This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
 
 ### Kafka Source Example
-The above example essentially just copies a file. However it is an important to note that most Morpheus pipelines are similar in structure, in that they begin with a source stage (`from-file`) followed by a `deserialize` stage, end with a `serialize` stage followed by a sink stage (`to-file`), with the actual training or inference logic occurring in between.
+The above example essentially just copies a file. However, it is an important to note that most Morpheus pipelines are similar in structure, in that they begin with a source stage (`from-file`) followed by a `deserialize` stage, end with a `serialize` stage followed by a sink stage (`to-file`), with the actual training or inference logic occurring in between.
 
 We could also easily swap out the source or sink stages in the above example without any impact to the pipeline as a whole. For example, to read from a Kafka topic, simply replace the `from-file` stage with `from-kafka`:
 
@@ -154,7 +154,7 @@ For a complete list of available stages, use the CLI help commands. The availabl
 ## Basic Usage Examples
 
 ### Remove Fields from JSON Objects
-This example will only copy the fields 'timestamp', 'src_ip' and 'dest_ip' from `examples/data/pcap_dump.jsonlines` to
+This example only copies the fields 'timestamp', 'src_ip' and 'dest_ip' from `examples/data/pcap_dump.jsonlines` to
 `out.jsonlines`.
 
 ![../img/remove_fields_from_json_objects.png](../img/remove_fields_from_json_objects.png)
@@ -169,7 +169,7 @@ morpheus run pipeline-nlp --viz_file=.tmp/remove_fields_from_json_objects.png \
 
 ### Monitor Throughput
 
-This example will report the throughput on the command line.
+This example reports the throughput on the command line.
 
 ![../img/monitor_throughput.png](../img/monitor_throughput.png)
 
@@ -192,7 +192,7 @@ Pipeline visualization saved to .tmp/monitor_throughput.png
 
 ### Multi-Monitor Throughput
 
-This example will report the throughput for each stage independently.
+This example reports the throughput for each stage independently.
 
 ![../img/multi_monitor_throughput.png](../img/multi_monitor_throughput.png)
 

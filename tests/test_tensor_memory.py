@@ -60,6 +60,12 @@ def check_tensor_memory(cls, count, tensors):
     m.set_tensors(other_tensors)
     compare_tensors(m.get_tensors(), other_tensors)
 
+    with pytest.raises(TypeError):
+        cls(count)
+
+    with pytest.raises(TypeError):
+        cls(count, tensors)
+
 
 def test_tensor_memory(config):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
@@ -89,6 +95,9 @@ def test_inference_memory_ae(config):
     assert (m.input == input).all()
     assert (m.seq_ids == seq_ids).all()
 
+    with pytest.raises(TypeError):
+        InferenceMemoryAE(count, input, seq_ids)
+
 
 def test_inference_memory_fil(config):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
@@ -102,6 +111,9 @@ def test_inference_memory_fil(config):
     compare_tensors(m.get_tensors(), {'input__0': input_0, 'seq_ids': seq_ids})
     assert (m.input__0 == input_0).all()
     assert (m.seq_ids == seq_ids).all()
+
+    with pytest.raises(TypeError):
+        InferenceMemoryFIL(count, input_0, seq_ids)
 
 
 def test_inference_memory_nlp(config):
@@ -119,6 +131,9 @@ def test_inference_memory_nlp(config):
     assert (m.input_mask == input_mask).all()
     assert (m.seq_ids == seq_ids).all()
 
+    with pytest.raises(TypeError):
+        InferenceMemoryNLP(count, input_ids, input_mask, seq_ids)
+
 
 def check_response_memory_probs_and_ae(cls):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
@@ -128,6 +143,10 @@ def check_response_memory_probs_and_ae(cls):
     assert m.count == count
     compare_tensors(m.get_tensors(), {'probs': test_data})
     assert (m.get_output('probs') == test_data).all()
+
+    with pytest.raises(TypeError):
+        cls(count, test_data)
+
     return m
 
 

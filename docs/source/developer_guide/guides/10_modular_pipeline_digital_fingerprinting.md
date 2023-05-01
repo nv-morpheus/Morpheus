@@ -122,13 +122,12 @@ pipeline.run()
 ## Setting up Morpheus
 
 <a id="setting-up-morpheus"></a>
-For a full introduction in how to set up and run morpheus, please refer to
-the [Getting Started]() guide.
+For a full introduction in how to set up and run Morpheus, refer to the [Getting Started]() guide.
 
 ## Morpheus Modules
 
 <a id="morpheus-modules"></a>
-For a full introduction to Morpheus modules, please refer to the [Python Modules](7_python_modules.md)
+For a full introduction to Morpheus modules, refer to the [Python Modules](7_python_modules.md)
 and [C++ Modules](8_cpp_modules.md) guides.
 
 > ## DFP Deployment
@@ -150,7 +149,7 @@ The module consists of three chained sub-modules:
 - `dfp_inference`
     - Connected to the output of the preprocessing stage. Responsible for handling inference based control messages.
 
-For a complete reference, see: [DFP Deployment](./docs/source/modules/examples/digital_fingerprinting/dfp_deployment.md)
+For a complete reference, refer to: [DFP Deployment](./docs/source/modules/examples/digital_fingerprinting/dfp_deployment.md)
 
 ```python
 @register_module(DFP_DEPLOYMENT, MORPHEUS_MODULE_NAMESPACE)
@@ -177,8 +176,7 @@ Source: `morpheus/loaders/fsspec_loader.py`
 This is an instance of the new DataLoader module, utilizing a pre-defined 'fsspec' style loader. The module is used to
 transform regex specified file lists into individual file paths and update the control message with those paths.
 
-For a complete reference,
-see: [DataLoader Module](./docs/source/modules/core/data_loader.md)
+For a complete reference, refer to: [DataLoader Module](./docs/source/modules/core/data_loader.md)
 
 ## DFP Training and Inference Pipelines
 
@@ -210,7 +208,7 @@ The module itself consists of a series of chained sub-modules, which are connect
 - `dfp_split_users_module`
     - Responsible for splitting the dataframe into a series of dataframes, one per user.
 
-For a complete reference, see: [DFP Preproc](./docs/source/modules/examples/digital_fingerprinting/dfp_preproc.md)
+For a complete reference, refer to: [DFP Preproc](./docs/source/modules/examples/digital_fingerprinting/dfp_preproc.md)
 
 ```python
 @register_module(DFP_PREPROC, MORPHEUS_MODULE_NAMESPACE)
@@ -241,7 +239,7 @@ specified criteria. If the control message does not match the criteria, it is di
 function to filter and process control messages, and registers input and output ports to facilitate seamless
 integration into the data processing pipeline.
 
-For a complete reference, see: [Filter Control Message](./modules/core/filter_control_message.md)
+For a complete reference, refer to: [Filter Control Message](./modules/core/filter_control_message.md)
 
 > ### File Batcher
 
@@ -270,7 +268,7 @@ batch, and forwarding them downstream. In the case of encapsulated data, the fil
 will only create a single control message for the entire payload, and forward it downstream. In this way, it is
 possible to attach all the necessary training data to a given training task, and skip any downstream aggregation.
 
-For a complete reference, see: [File Batcher](./docs/source/modules/core/file_batcher.md)
+For a complete reference, refer to: [File Batcher](./docs/source/modules/core/file_batcher.md)
 
 ```python
 @register_module(FILE_BATCHER, MORPHEUS_MODULE_NAMESPACE)
@@ -289,7 +287,7 @@ used to process 'load' tasks that reference files which need to be retrieved, po
 cuDF dataframe with is set as the control message payload.
 
 For a complete reference,
-see: [DataLoader Module](./docs/source/modules/core/data_loader.md)
+refer to: [DataLoader Module](./docs/source/modules/core/data_loader.md)
 
 > ### DFP Split Users
 
@@ -306,7 +304,7 @@ the function generates a new control message containing the corresponding data a
 processing.
 
 For a complete reference,
-see: [DFP Split Users](./docs/source/modules/examples/digital_fingerprinting/dfp_split_users.md)
+refer to: [DFP Split Users](./docs/source/modules/examples/digital_fingerprinting/dfp_split_users.md)
 
 ```python
 @register_module(DFP_SPLIT_USERS, MORPHEUS_MODULE_NAMESPACE)
@@ -343,7 +341,7 @@ inference pipeline, and improves performance by reducing the bookkeeping require
 by the `cache_mode` property of the module's configuration.
 
 For a complete reference,
-see: [DFP Rolling Window](./modules/examples/digital_fingerprinting/dfp_rolling_window.md)
+refer to: [DFP Rolling Window](./modules/examples/digital_fingerprinting/dfp_rolling_window.md)
 
 ```python
 @register_module(DFP_ROLLING_WINDOW, MORPHEUS_MODULE_NAMESPACE)
@@ -364,7 +362,7 @@ The main functionality of the module is in the process_features function. For ea
 function processes the columns of the data according to the given schema. The processed dataframe is then applied to the
 control message payload.
 
-For a complete reference, see: [DFP Data Prep](./docs/source/modules/examples/digital_fingerprinting/dfp_data_prep.md)
+For a complete reference, refer to: [DFP Data Prep](./docs/source/modules/examples/digital_fingerprinting/dfp_data_prep.md)
 
 ```python
 @register_module(DFP_DATA_PREP, MORPHEUS_MODULE_NAMESPACE)
@@ -387,7 +385,7 @@ allow for the trained model to be saved for future use.
 The module itself consists of a series of chained sub-modules, each of which performs a specific task in the training:
 
 - `preproc`
-    - Data filerting and preprocessing
+    - Data filtering and preprocessing
 - `dfp_rolling_window`
     - Data caching and batching
 - `dfp_data_prep`
@@ -397,7 +395,7 @@ The module itself consists of a series of chained sub-modules, each of which per
 - `mlflow_model_writer`
     - Model and telemetry saving to MLflow
 
-For a complete reference, see: [DFP Training Pipe](modules/examples/digital_fingerprinting/dfp_training_pipe.md)
+For a complete reference, refer to: [DFP Training Pipe](modules/examples/digital_fingerprinting/dfp_training_pipe.md)
 
 ```python
 @register_module(DFP_TRAINING_PIPE, MORPHEUS_MODULE_NAMESPACE)
@@ -416,7 +414,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     builder.register_module_output("output", mlflow_model_writer_module.output_port("output"))
 ```
 
-> ### MLFlow Model Writer
+> ### MLflow Model Writer
 
 <a id="mlflow_model_writer"></a>
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/mlflow_model_writer.py`
@@ -427,8 +425,7 @@ For each MultiAEMessage received, containing a trained model, the function uploa
 associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow
 server is running on Databricks, the function also applies the required permissions to the registered model.
 
-For a complete reference,
-see: [MLFlow Model Writer](./docs/source/modules/examples/digital_fingerprinting/mlflow_model_writer.md)
+For a complete reference, refer to: [MLflow Model Writer](./docs/source/modules/examples/digital_fingerprinting/mlflow_model_writer.md)
 
 ```python
 @register_module(MLFLOW_MODEL_WRITER, MORPHEUS_MODULE_NAMESPACE)
@@ -470,7 +467,7 @@ inference pipeline:
 - `write_to_file`
     - Detection writing to file
 
-For a complete reference, see: [DFP Inference Pipe](modules/examples/digital_fingerprinting/dfp_inference_pipe.md)
+For a complete reference, refer to: [DFP Inference Pipe](modules/examples/digital_fingerprinting/dfp_inference_pipe.md)
 
 ```python
 @register_module(DFP_INFERENCE_PIPE, MORPHEUS_MODULE_NAMESPACE)
@@ -506,7 +503,7 @@ DataFrame to pandas format. It then attempts to load the model for the specified
 loaded model. Finally, it adds any additional columns from the input data to the results DataFrame and creates an output
 message with the results and metadata.
 
-For a complete reference, see: [DFP Inference](modules/examples/digital_fingerprinting/dfp_inference.md)
+For a complete reference, refer to: [DFP Inference](modules/examples/digital_fingerprinting/dfp_inference.md)
 
 ```python
 @register_module(DFP_INFERENCE, MORPHEUS_MODULE_NAMESPACE)

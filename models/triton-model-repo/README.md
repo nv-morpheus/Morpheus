@@ -19,7 +19,7 @@ limitations under the License.
 
 This directory contains the necessary directory structure and configuration files in order to run the Morpheus Models in Triton Inference Server.
 
-Each directory in the Triton Model Repo contains a single model and configuration file. The model file is stored in a directory indicating the version number (by default this is `1`). The model file itself is a symlink to a specific model file elsewhere in the repo.
+Each directory in the Triton Model repo contains a single model and configuration file. The model file is stored in a directory indicating the version number (by default this is `1`). The model file itself is a symlink to a specific model file elsewhere in the repo.
 
 For example, the Triton model `sid-minibert-onnx` can be found in the `triton-model-repo` directory with the following layout:
 
@@ -35,7 +35,7 @@ triton-model-repo/
 
 Sym links are used to minimize changes to the `config.pbtxt` files while still allowing for new models to be added at a future date. Without symlinks, each `config.pbtxt` would need to update the `default_model_filename:` option each time the model was changed.
 
-The downside of using symlinks is that the entire morpheus model repo must be volume mounted when launching Triton. See the next section for information on how to correctly mount this repo and select which models should be loaded.
+The downside of using symlinks is that the entire Morpheus model repo must be volume mounted when launching Triton. Refer to the next section for information on how to correctly mount this repo, and select which models should be loaded.
 
 ## Launching Triton
 
