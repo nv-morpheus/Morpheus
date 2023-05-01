@@ -156,9 +156,9 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         # Return the cache if it exists
         if (os.path.exists(batch_cache_location)):
             output_df = pd.read_pickle(batch_cache_location)
-            output_df["origin_hash"] = objects_hash_hex
             output_df["batch_count"] = batch_count
-
+            output_df["origin_hash"] = objects_hash_hex
+            
             return (output_df, True)
 
         # Cache miss
