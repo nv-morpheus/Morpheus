@@ -16,7 +16,6 @@
 import hashlib
 import json
 import os
-from functools import partial
 from unittest import mock
 
 import fsspec
@@ -27,7 +26,6 @@ from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from utils import TEST_DIRS
