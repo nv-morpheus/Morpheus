@@ -30,6 +30,7 @@
 #include <cudf/strings/detail/utilities.hpp>
 #include <cudf/column/column_factories.hpp>
 #include <cudf/column/column_device_view.cuh>
+#include <cudf/strings/detail/strings_children.cuh>
 #include <cuda/std/chrono>
 #include <memory>
 #include <stdio.h>
@@ -634,8 +635,13 @@ std::unique_ptr<cudf::column> integers_to_mac(
     return cudf::make_empty_column(cudf::type_id::STRING);
   }
 
-  auto offsets_transformer_itr = thrust::constant_iterator<int32_t>(17);
-  auto offsets_column = cudf::strings::detail::make_offsets_child_column(
+  auto const_17_itr = thrust::constant_iterator<cudf::size_type>(17);
+  // this transform iterator is a workaround for a compilation issue caused by passing a plain constant iteartor
+  auto offsets_transformer = [] __device__(auto item) -> cudf::size_type { return item;};
+  auto offsets_transformer_itr = thrust::make_transform_iterator(const_17_itr, offsets_transformer);
+
+  // TODO: determine if this new bytes value is the same as the one we used to calculate below
+  auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
     offsets_transformer_itr,
     offsets_transformer_itr + strings_count,
     stream,
@@ -647,8 +653,8 @@ std::unique_ptr<cudf::column> integers_to_mac(
   auto column   = cudf::column_device_view::create(integers, stream);
   auto d_column = *column;
 
-  auto const bytes =
-    cudf::detail::get_value<int32_t>(offsets_column->view(), strings_count, stream);
+  // auto const bytes =
+  //   cudf::detail::get_value<int32_t>(offsets_column->view(), strings_count, stream);
 
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
   auto d_chars      = chars_column->mutable_view().data<char>();

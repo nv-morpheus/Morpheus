@@ -19,15 +19,16 @@ import pytest
 
 import cudf
 
+from morpheus.config import Config
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
-from utils import assert_df_equal
+from utils.dataset_manager import DatasetManager
 
 
-def test_constructor(config):
+def test_constructor(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     config.feature_length = 12
 
@@ -62,9 +63,9 @@ def test_add_labels():
 
     labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=None)
 
-    assert assert_df_equal(labeled.get_meta("frogs"), probs_array[:, 0])
-    assert assert_df_equal(labeled.get_meta("lizards"), probs_array[:, 1])
-    assert assert_df_equal(labeled.get_meta("toads"), probs_array[:, 2])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array[:, 0])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array[:, 1])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array[:, 2])
 
     # Same thing but change the probs tensor name
     message = MultiResponseMessage(meta=MessageMeta(df),
@@ -73,9 +74,9 @@ def test_add_labels():
 
     labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=None)
 
-    assert assert_df_equal(labeled.get_meta("frogs"), probs_array[:, 0])
-    assert assert_df_equal(labeled.get_meta("lizards"), probs_array[:, 1])
-    assert assert_df_equal(labeled.get_meta("toads"), probs_array[:, 2])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("frogs"), probs_array[:, 0])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("lizards"), probs_array[:, 1])
+    assert DatasetManager.assert_df_equal(labeled.get_meta("toads"), probs_array[:, 2])
 
     # Fail in missing probs data
     message = MultiResponseMessage(meta=MessageMeta(df),

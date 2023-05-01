@@ -147,9 +147,10 @@ autodoc_typehints_description_target = "documented"  # Dont double up on type hi
 add_module_names = False  # Remove namespaces from class/method signatures
 myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
+    "cudf",  # Avoid loading GPU libraries during the documentation build
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "tqdm",
     "tensorrt",
+    "tqdm",
 ]
 
 # Config numpydoc

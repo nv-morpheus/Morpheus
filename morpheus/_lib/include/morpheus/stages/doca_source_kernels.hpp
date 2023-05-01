@@ -33,7 +33,7 @@ namespace doca {
 
 std::unique_ptr<cudf::column> integers_to_mac(
   cudf::column_view const& integers,
-  rmm::cuda_stream_view stream = cudf::default_stream_value,
+  rmm::cuda_stream_view stream = cudf::detail::default_stream_value,
   rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 void packet_receive_kernel(

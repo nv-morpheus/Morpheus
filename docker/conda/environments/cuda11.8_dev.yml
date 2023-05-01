@@ -16,8 +16,8 @@
 name: morpheus
 channels:
     - rapidsai
-    - nvidia
     - nvidia/label/cuda-11.8.0
+    - nvidia
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
     - conda-forge
 dependencies:
@@ -31,11 +31,12 @@ dependencies:
     - click >=8
     - cmake=3.24
     - configargparse=1.5
+    - cuda-compiler=11.8
     - cuda-nvml-dev=11.8
-    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.8
-    - cudf 22.10
-    - cupy=9.5.0
+    - cudf=23.02
+    - cupy=11.6.0
+    - cxx-compiler
     - cython=0.29.24
     - datacompy=0.8
     - dill
@@ -57,25 +58,21 @@ dependencies:
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
-    # If cuml is installed, we need to constrain these two libraries. See:
-    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-    - libcusolver<=11.4.1.48
-    - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
     - mrc=23.07
-    - myst-parser==0.17
-    - networkx=2.8
+    - myst-parser==1.0.0
+    - networkx=3.1
     - ninja=1.10
-    - nodejs=17.4.0
+    - nodejs=18.15.0
     - numba>=0.56.2
     - numpydoc=1.4
-    - nvcc_linux-64=11.8
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake
     - pluggy=1.0
-    - protobuf=3.20.2
+    - protobuf=4.21.*
+    - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
     - pybind11-stubgen=0.10.5
     - pydot
     - pytest
@@ -83,10 +80,10 @@ dependencies:
     - pytest-cov
     - python-confluent-kafka=1.7.0
     - python-graphviz
-    - python=3.8
+    - python=3.10
     - rapidjson=1.1.0
-    - scikit-build=0.13
-    - scikit-learn=0.23.1
+    - scikit-build=0.17.1
+    - scikit-learn=1.2.2
     - sphinx
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17

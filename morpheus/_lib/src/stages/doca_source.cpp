@@ -287,40 +287,40 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
       auto metadata = cudf::io::table_metadata();
 
-      metadata.column_names.emplace_back("timestamp");
+      metadata.schema_info.emplace_back("timestamp");
       my_columns.push_back(std::move(timestamp_out_d_col));
 
-      metadata.column_names.emplace_back("src_mac");
+      metadata.schema_info.emplace_back("src_mac");
       my_columns.push_back(std::move(src_mac_out_str_col));
 
-      metadata.column_names.emplace_back("dst_mac");
+      metadata.schema_info.emplace_back("dst_mac");
       my_columns.push_back(std::move(dst_mac_out_str_col));
 
-      metadata.column_names.emplace_back("src_ip");
+      metadata.schema_info.emplace_back("src_ip");
       my_columns.push_back(std::move(src_ip_out_str_col));
 
-      metadata.column_names.emplace_back("dst_ip");
+      metadata.schema_info.emplace_back("dst_ip");
       my_columns.push_back(std::move(dst_ip_out_str_col));
 
-      metadata.column_names.emplace_back("src_port");
+      metadata.schema_info.emplace_back("src_port");
       my_columns.push_back(std::move(src_port_out_d_col));
 
-      metadata.column_names.emplace_back("dst_port");
+      metadata.schema_info.emplace_back("dst_port");
       my_columns.push_back(std::move(dst_port_out_d_col));
 
-      metadata.column_names.emplace_back("packet_size");
+      metadata.schema_info.emplace_back("packet_size");
       my_columns.push_back(std::move(data_size_out_d_col));
 
-      metadata.column_names.emplace_back("tcp_flags");
+      metadata.schema_info.emplace_back("tcp_flags");
       my_columns.push_back(std::move(tcp_flags_out_d_col));
 
-      metadata.column_names.emplace_back("ether_type");
+      metadata.schema_info.emplace_back("ether_type");
       my_columns.push_back(std::move(ether_type_out_d_col));
 
-      metadata.column_names.emplace_back("next_proto_id");
+      metadata.schema_info.emplace_back("next_proto_id");
       my_columns.push_back(std::move(next_proto_id_out_d_col));
 
-      metadata.column_names.emplace_back("data");
+      metadata.schema_info.emplace_back("data");
       my_columns.push_back(std::move(data_col));
 
       auto my_table_w_metadata = cudf::io::table_with_metadata{

@@ -21,6 +21,10 @@ set -e
 BUILD_DIR=${BUILD_DIR:-"build"}
 
 echo "Runing CMake configure..."
+
+# Use some standard default values plus CMAKE_ARGS and CMAKE_CONFIGURE_EXTRA_ARGS
+# CMAKE_ARGS is supplied by the conda environment
+# CMAKE_CONFIGURE_EXTRA_ARGS is supplied by the user
 cmake -B ${BUILD_DIR} -GNinja \
    -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
    -DCMAKE_BUILD_TYPE=Debug \
@@ -31,6 +35,7 @@ cmake -B ${BUILD_DIR} -GNinja \
    -DMORPHEUS_BUILD_TESTS=ON \
    -DMORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-"OFF"} \
    ${INSTALL_PREFIX:+"-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}"} \
+   ${CMAKE_ARGS:+${CMAKE_ARGS}} \
    ${CMAKE_CONFIGURE_EXTRA_ARGS:+"${CMAKE_CONFIGURE_EXTRA_ARGS}"} .
 
 echo "Running CMake build..."

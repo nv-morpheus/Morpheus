@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define DOCA_ALLOW_EXPERIMENTAL_API
+
 #include <doca_error.h>
 
 #include <stdexcept>

@@ -29,7 +29,7 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
-from utils import IW
+from utils.inference_worker import IW
 
 
 class InferenceStage(InferenceStage):
@@ -282,7 +282,7 @@ def test_convert_one_response():
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemory(2, tensors={"probs": cp.zeros((2, 2))})
+    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 2))})
     inf = _mk_message(mess_count=2, count=2)
     res = _mk_message(mess_count=1, count=1)
 

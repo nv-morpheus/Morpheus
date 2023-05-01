@@ -156,7 +156,10 @@ PYBIND11_MODULE(messages, _module)
 
     // Tensor Memory classes
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(_module, "TensorMemory")
-        .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
+        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
+             py::kw_only(),
+             py::arg("count"),
+             py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
         .def_property_readonly("tensor_names", &TensorMemoryInterfaceProxy::tensor_names_getter)
         .def("has_tensor", &TensorMemoryInterfaceProxy::has_tensor)
@@ -166,12 +169,16 @@ PYBIND11_MODULE(messages, _module)
         .def("set_tensor", &TensorMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
     py::class_<InferenceMemory, TensorMemory, std::shared_ptr<InferenceMemory>>(_module, "InferenceMemory")
-        .def(py::init<>(&InferenceMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
+        .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
+             py::kw_only(),
+             py::arg("count"),
+             py::arg("tensors") = py::none())
         .def("get_input", &InferenceMemoryInterfaceProxy::get_tensor, py::arg("name"), py::return_value_policy::move)
         .def("set_input", &InferenceMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
     py::class_<InferenceMemoryFIL, InferenceMemory, std::shared_ptr<InferenceMemoryFIL>>(_module, "InferenceMemoryFIL")
         .def(py::init<>(&InferenceMemoryFILInterfaceProxy::init),
+             py::kw_only(),
              py::arg("count"),
              py::arg("input__0"),
              py::arg("seq_ids"))
@@ -183,6 +190,7 @@ PYBIND11_MODULE(messages, _module)
 
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(_module, "InferenceMemoryNLP")
         .def(py::init<>(&InferenceMemoryNLPInterfaceProxy::init),
+             py::kw_only(),
              py::arg("count"),
              py::arg("input_ids"),
              py::arg("input_mask"),
@@ -197,13 +205,16 @@ PYBIND11_MODULE(messages, _module)
             "seq_ids", &InferenceMemoryNLPInterfaceProxy::get_seq_ids, &InferenceMemoryNLPInterfaceProxy::set_seq_ids);
 
     py::class_<ResponseMemory, TensorMemory, std::shared_ptr<ResponseMemory>>(_module, "ResponseMemory")
-        .def(py::init<>(&ResponseMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
+        .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
+             py::kw_only(),
+             py::arg("count"),
+             py::arg("tensors") = py::none())
         .def("get_output", &ResponseMemoryInterfaceProxy::get_tensor, py::arg("name"), py::return_value_policy::move)
         .def("set_output", &ResponseMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
     py::class_<ResponseMemoryProbs, ResponseMemory, std::shared_ptr<ResponseMemoryProbs>>(_module,
                                                                                           "ResponseMemoryProbs")
-        .def(py::init<>(&ResponseMemoryProbsInterfaceProxy::init), py::arg("count"), py::arg("probs"))
+        .def(py::init<>(&ResponseMemoryProbsInterfaceProxy::init), py::kw_only(), py::arg("count"), py::arg("probs"))
         .def_property(
             "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
 

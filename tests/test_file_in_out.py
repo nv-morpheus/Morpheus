@@ -32,8 +32,8 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
-from utils import assert_df_equal
 from utils import assert_path_exists
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.slow
@@ -187,7 +187,7 @@ def test_file_roundtrip(use_cpp, tmp_path, input_file, extra_kwargs):
                              os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.parquet")
                          ],
                          ids=["CSV", "CSV_ID", "JSON", "PARQUET"])
-def test_read_cpp_compare(input_file):
+def test_read_cpp_compare(input_file: str):
 
     # First read with python
     CppConfig.set_should_use_cpp(False)
@@ -197,7 +197,7 @@ def test_read_cpp_compare(input_file):
     CppConfig.set_should_use_cpp(True)
     df_cpp = read_file_to_df(input_file, df_type='cudf')
 
-    assert assert_df_equal(df_python, df_cpp)
+    assert DatasetManager.assert_df_equal(df_python, df_cpp)
 
 
 @pytest.mark.slow
