@@ -75,7 +75,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
             - monitor_options (dict): Options for monitoring throughput; Example: See Below
 
         batching_options:
-            - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+            - end_time (datetime/string): End time of the time window; Example: "2023-03-14T23:59:59"; Default: None
             - iso_date_regex_pattern (string): Regex pattern for ISO date matching;
             Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
             - parser_kwargs (dictionary): Additional arguments for the parser; Example: {}; Default: {}
