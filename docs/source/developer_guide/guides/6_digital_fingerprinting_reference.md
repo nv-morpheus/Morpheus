@@ -78,7 +78,7 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
-| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
+| `json_columns` | `List[str]` | Optional list of JSON columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a JSON field will be flattened into a new column named `<field>.<key>` for example a JSON field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
 | `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific operation to be performed upon a column. These include renames, type conversions, and custom computations. By default, this is an empty `list`. |
 | `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default, this is an empty `list`. |
 | `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as its only argument returning a `DataFrame`. |
@@ -108,7 +108,7 @@ Subclass of `ColumnInfo`, adds the ability to also perform a rename.
 | `input_name` | `str` | Original column name |
 
 #### Boolean Column (`BoolColumn`)
-Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
+Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of five possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
 ```python
 from morpheus.utils.column_info import BoolColumn
 ```
@@ -426,7 +426,7 @@ module_config = {
 }
 ```
 
-The module must be packaged as a stage, as illustrated below, in order to be used in the Morpheus pipeline.
+The module must be packaged as a stage as illustrated below in order to be used in the Morpheus pipeline.
 
 ```py
 from morpheus.config import Config
@@ -507,7 +507,7 @@ Let's look at the DFP Training process based on modules. On a higher level, the 
 
 * [**DFPModelTrainDeploy**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_model_train_deploy.py)
 
-   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
+   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLflow server to serve inference requests.
    - [DFPTraining](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py)
    - [MLFlowModelWriter](/morpheus/modules/mlflow_model_writer.py)
 

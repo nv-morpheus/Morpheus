@@ -43,7 +43,7 @@ Create a Kafka topic named `test_cm` to submit control messages. Run the followi
 docker exec -it kafka kafka-topics --create --topic test_cm --bootstrap-server localhost:9092
 ```
 
-To ensure that the topic is receiving messages, run the following command:
+To ensure the topic is receiving messages, run the following command:
 ```
 docker exec -it kafka kafka-console-consumer --topic test_cm --from-beginning --bootstrap-server localhost:9092
 ```
