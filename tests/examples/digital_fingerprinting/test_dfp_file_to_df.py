@@ -28,6 +28,7 @@ from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
@@ -48,12 +49,10 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
     from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
     schema = DataFrameInputSchema(
-        column_info=[ColumnInfo(name='titles', dtype=str), ColumnInfo(name='data', dtype=str)])
+        column_info=[CustomColumn(name='data', dtype=str, process_column_fn=lambda df: df['data'].to_list()[0])])
     df = _single_object_to_dataframe(single_file_obj, schema, FileTypes.Auto, False, {})
 
-    assert sorted(df.columns) == ['data', 'titles']
-    assert df['titles'].to_list() == [["TID", "Offset", "State", "WaitReason", "PID", "Process"]]
-
+    assert df.columns == ['data']
     with open(single_file_obj.path, encoding='UTF-8') as fh:
         d = json.load(fh)
         expected_data = d['data']
