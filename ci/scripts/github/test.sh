@@ -21,8 +21,8 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 rapids-logger "Checking for updates to test dependencies"
-rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
 conda deactivate
+rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
 conda activate morpheus
 
 
