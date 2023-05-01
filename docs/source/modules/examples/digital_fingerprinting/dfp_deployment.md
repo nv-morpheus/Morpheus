@@ -80,7 +80,7 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | Key                         | Type    | Description                                                | Example Value | Default Value |
 | ----------------------------|---------|------------------------------------------------------------|---------------|---------------|
 | `description`               | string  | Name to show for this Monitor Stage in the console window  | "Progress"    | `Progress`    |
-| `silence_monitors`          | bool    | Silence the monitors on the console                        | See Below     | `None`        |
+| `silence_monitors`          | bool    | Silence the monitors on the console                        | `True`     | `None`        |
 | `smoothing`                 | float   | Smoothing parameter to determine how much the throughput should be averaged | 0.01 | `0.05` |
 | `unit`                      | string  | Units to show in the rate value                             | "messages"    | `messages`    |
 | `delayed_start`             | bool    | When delayed_start is enabled, the progress bar will not be shown until the first message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines, this option may be desired to give a more accurate timing. | True  | `False`   |
