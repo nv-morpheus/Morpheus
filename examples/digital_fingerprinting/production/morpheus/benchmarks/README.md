@@ -18,7 +18,7 @@
 
 ### Set Environment
 
-To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLFlow server have been set up and running with `docker-compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
+To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLflow server have been set up and running with `docker-compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
 
 ## Requirements
 > **Note**: Make sure `gputil`, `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
@@ -31,7 +31,7 @@ conda install gputil dask==2022.7.0 distributed==2022.7.0
 
 Benchmarks are run using `pytest-benchmark`. By default, there are five rounds of measurement. For each round, there will be one iteration of each workflow. Measurements are taken for each round. Final results such as `min`, `max` and `mean` times will be based on these measurements.
 
-To provide your own calibration or use other `pytest-benchmark` features with these workflows, please refer to their [documentation](https://pytest-benchmark.readthedocs.io/en/latest/).
+To provide your own calibration or use other `pytest-benchmark` features with these workflows, refer to their [documentation](https://pytest-benchmark.readthedocs.io/en/latest/).
 
 Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `dfp_modules_duo_payload_inference`:
 ```
@@ -52,7 +52,7 @@ Morpheus pipeline configurations for each workflow are managed using [pipelines_
 
 When using MRC SegmentModule, pipelines need requires module configuration which does gets generated within the test. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
 
-To ensure that the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS FILE DOWNLOAD TYPE` environment variable with any one of given choices (`multiprocess`, `dask`, `dask thread`, `single thread`).
+To ensure the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS FILE DOWNLOAD TYPE` environment variable with any one of given choices (`multiprocess`, `dask`, `dask thread`, `single thread`).
 
 ```
 export MORPHEUS_FILE_DOWNLOAD_TYPE=multiprocess

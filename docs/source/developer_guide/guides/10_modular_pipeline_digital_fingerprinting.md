@@ -128,7 +128,7 @@ the [Getting Started](../../getting_started.md) guide.
 ## Morpheus Modules
 
 <a id="morpheus-modules"></a>
-For a full introduction to Morpheus modules, please refer to the [Python Modules](7_python_modules.md)
+For a full introduction to Morpheus modules, refer to the [Python Modules](7_python_modules.md)
 and [C++ Modules](8_cpp_modules.md) guides.
 
 > ## DFP Deployment
@@ -387,7 +387,7 @@ allow for the trained model to be saved for future use.
 The module itself consists of a series of chained sub-modules, each of which performs a specific task in the training:
 
 - `preproc`
-    - Data filerting and preprocessing
+    - Data filtering and preprocessing
 - `dfp_rolling_window`
     - Data caching and batching
 - `dfp_data_prep`
@@ -443,8 +443,7 @@ For each MultiAEMessage received, containing a trained model, the function uploa
 associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow
 server is running on Databricks, the function also applies the required permissions to the registered model.
 
-For a complete reference,
-see: [MLFlow Model Writer](./docs/source/modules/examples/digital_fingerprinting/mlflow_model_writer.md)
+For a complete reference, refer to: [MLflow Model Writer](./docs/source/modules/examples/digital_fingerprinting/mlflow_model_writer.md)
 
 ```python
 @register_module(MLFLOW_MODEL_WRITER, MORPHEUS_MODULE_NAMESPACE)

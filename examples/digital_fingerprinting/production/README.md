@@ -57,13 +57,13 @@ jupyter  |         http://localhost:8888/lab?token=<token>
 jupyter  |      or http://127.0.0.1:8888/lab?token=<token>
 ```
 
-Copy and paste the url into a web browser. There are four notebooks included with the DFP example:
+Copy and paste the URL into a web browser. There are four notebooks included with the DFP example:
 * dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
 * dfp_azure_inference.ipynb - Inference pipeline for Azure Active Directory data
 * dfp_duo_training.ipynb - Training pipeline for Duo Authentication
 * dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
 
-> **Note:** The token in the url is a one-time use token, and a new one is generated with each invocation.
+> **Note:** The token in the URL is a one-time use token, and a new one is generated with each invocation.
 
 #### Morpheus Pipeline
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
@@ -71,7 +71,7 @@ By default the `morpheus_pipeline` will run the training pipeline for Duo data, 
 docker-compose up morpheus_pipeline
 ```
 
-If instead you wish to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
+If instead you want to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
 docker-compose run morpheus_pipeline bash
 ```
@@ -151,7 +151,7 @@ From the `examples/digital_fingerprinting/production` dir run:
 docker-compose up mlflow
 ```
 
-By default, a mlflow dashboard will be available at:
+By default, a MLflow dashboard will be available at:
 ```bash
 http://localhost:5000
 ```
@@ -168,7 +168,7 @@ MLflow for this production digital fingerprint use case can be installed from NG
 
 The deployment of the [Morpheus SDK Client](../../../docs/source/cloud_deployment_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Cloud Deployment Guide. However, you would specify command arguments differently for this production DFP use case.
 
-NOTE: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
+Note: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
 
 #### Notebooks
 
