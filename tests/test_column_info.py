@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
+import json
 import os
 from datetime import datetime
 from functools import partial
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -306,3 +309,27 @@ def test_custom_column():
     expected = pd.Series(["NEW YORK", "DALLAS", "AUSTIN"])
 
     assert actutal.equals(expected)
+
+
+@pytest.mark.use_python
+def test_type_cast():
+    """
+    Test reproduces issue reported in #922
+    """
+
+    data = [{
+        "username": "tom", "timestamp": 1666741856, "FeatureA": "81"
+    }, {
+        "username": "jerry", "timestamp": 1666741856, "FeatureA": "1"
+    }]
+
+    data_s = "\n".join(json.dumps(d) for d in data)
+    df = pd.read_json(io.StringIO(data_s), lines=True)
+
+    cols = [ColumnInfo(name='FeatureA', dtype=str), RenameColumn(name='FeatureB', dtype=str, input_name='FeatureA')]
+    for col in cols:
+        actutal = col._process_column(df)
+        expected = pd.Series(["81", "1"])
+
+        assert actutal.dtype == np.dtype('O')
+        assert actutal.equals(expected)
