@@ -24,12 +24,12 @@ def ip_to_int(values):
 
     Parameters
     ----------
-    values : cudf.Series, IPv4 address
-        IP addresses to be converted
+    values : cudf.Series
+        IPv4 addresses to be converted
 
     Returns
     -------
-    rtype : cudf.Series, integer
+    rtype : cudf.Series
         Integer representations of IP addresses
 
     Examples
@@ -51,13 +51,13 @@ def int_to_ip(values):
 
     Parameters
     ----------
-    values : cudf.Series, integer
+    values : cudf.Series
         Integer representations of IP addresses
 
     Returns
     -------
-    rtype : cudf.Series, IPv4 address
-        IP addresses to be converted
+    rtype : cudf.Series
+        IPv4 addresses
 
     Examples
     --------
@@ -79,7 +79,7 @@ def is_ip(ips):
     Parameters
     ----------
     ips : IPv4 address
-        IP addresses to be checked
+        IPv4 addresses to be checked
 
     Returns
     -------
@@ -106,12 +106,12 @@ def is_reserved(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -136,12 +136,12 @@ def is_loopback(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -166,12 +166,12 @@ def is_link_local(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -196,12 +196,12 @@ def is_unspecified(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -224,12 +224,12 @@ def is_multicast(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -254,12 +254,12 @@ def is_private(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -297,12 +297,12 @@ def is_global(ips):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
 
     Returns
     -------
-    rtype : cudf.Series, booleans
+    rtype : cudf.Series
         Boolean values true or false
 
     Examples
@@ -338,14 +338,14 @@ def netmask(ips, prefixlen=16):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
-    prefixlen: integer
+    ips : cudf.Series
+        IPv4 addresses to be checked
+    prefixlen: int
         Length of the network prefix, in bits, for IPv4 addresses
 
     Returns
     -------
-    rtype : cudf.Series, netmask
+    rtype : cudf.Series
         Netmask ouput from set of IP address
 
 
@@ -392,14 +392,14 @@ def hostmask(ips, prefixlen=16):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
+    ips : cudf.Series
+        IPv4 addresses to be checked
     prefixlen: integer
         Length of the network prefix, in bits, for IPv4 addresses
 
     Returns
     -------
-    rtype : cudf.Series, hostmask
+    rtype : cudf.Series
         Hostmask ouput from set of IP address
 
     Examples
@@ -445,14 +445,14 @@ def mask(ips, masks):
 
     Parameters
     ----------
-    ips : IPv4 address
-        IP addresses to be checked
-    masks: Subnet mask value
+    ips : cudf.Series
+        IPv4 addresses to be checked
+    masks: cudf.Series
         The host or subnet masks to be applied
 
     Returns
     -------
-    rtype : cudf.Series, masked IPv4 address
+    rtype : cudf.Series
         Masked IP address from list of IPs
     Examples
     --------
