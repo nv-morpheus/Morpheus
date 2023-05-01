@@ -60,7 +60,7 @@ class DFPSplitUsersStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (cudf.DataFrame, pd.DataFrame)
 
-    def extract_users(self, message: cudf.DataFrame):
+    def extract_users(self, message: cudf.DataFrame) -> typing.List[DFPMessageMeta]:
         if (message is None):
             return []
 
