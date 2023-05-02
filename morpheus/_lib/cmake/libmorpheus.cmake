@@ -118,7 +118,7 @@ add_library(morpheus
   src/utilities/string_util.cpp
   src/utilities/table_util.cpp
   src/utilities/tensor_util.cpp
-    ${DOCA_BUILD_FILES}
+  ${DOCA_BUILD_FILES}
   $<TARGET_OBJECTS:cuda_objs>
 )
 
@@ -143,17 +143,13 @@ target_include_directories(morpheus
 )
 
 if(MORPHEUS_SUPPORT_DOCA)
+    find_package(doca REQUIRED)
     target_link_libraries(morpheus
         PUBLIC
-            -L/opt/mellanox/doca/lib/x86_64-linux-gnu/
-            libdoca_eth.so
-            libdoca_flow.so
-            libdoca_gpunetio.so
-            libdoca_gpunetio_device.a
+          doca::doca
     )
     target_include_directories(morpheus
         PUBLIC
-            /opt/mellanox/doca/include/
             /opt/mellanox/dpdk/include/dpdk
             /opt/mellanox/dpdk/include/x86_64-linux-gnu/dpdk
             /usr/local/include

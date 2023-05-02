@@ -305,52 +305,20 @@ __global__ void _packet_receive_kernel(
     uintptr_t buf_addr;
     doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
 
-    // rte_ether_hdr* packet_l2;
-    // rte_ipv4_hdr*  packet_l3;
-    // rte_tcp_hdr*   packet_l4;
-    // uint8_t*       packet_data;
-
-    // get_packet_tcp_headers(
-    //   buf_addr,
-    //   &packet_l2,
-    //   &packet_l3,
-    //   &packet_l4,
-    //   &packet_data
-    // );
-
-
     struct eth_ip_tcp_hdr *hdr;
     uint8_t *packet_data;
 		raw_to_tcp(buf_addr, &hdr, &packet_data);
 
     auto packet_size = get_packet_size(hdr->l3_hdr);
-
-    // for (auto i = 0; i < packet_size; i++) {
-    //   packet_buffer[(packet_idx * 65536) + i] = packet_data[i];
-    // }
-
-    // raw_to_tcp(packet_buffer + (packet_idx * 65536), &hdr, &packet_data);
-    // get_packet_tcp_headers(
-    //   packet_buffer + (packet_idx * 65536),
-    //   &packet_l2,
-    //   &packet_l3,
-    //   &packet_l4,
-    //   &packet_data
-    // );
-
     auto data_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
     packet_sizes[packet_idx] = data_size;
 
     if (is_tcp_packet(hdr->l3_hdr))
     {
-      // printf("tid(%03i) pid(%04i) RK1 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
-
       atomicAdd(packet_size_total_out, data_size);
       atomicAdd(packet_count_out, 1);
     }
-
-    // printf("packet_idx(%d) data_size(%d) atom\n", packet_idx, data_size);
   }
 
   __syncthreads();
@@ -412,9 +380,6 @@ __global__ void _packet_gather_kernel(
   uint64_t packet_offset;
 
   if (threadIdx.x == 0) {
-
-    // printf("===== begin gk =====\n");
-
     doca_error_t ret;
     do
     {
@@ -460,8 +425,6 @@ __global__ void _packet_gather_kernel(
     {
       data_capture[i] = 1;
       data_offsets[i] = data_size;
-
-      // printf("tid(%03i) pid(%04i) GK1 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
     }
     else
     {
@@ -505,8 +468,6 @@ __global__ void _packet_gather_kernel(
       continue;
     }
 
-    // printf("tid(%03i) pid(%04i) GK2 data_size(%i)\n", threadIdx.x, packet_idx, data_size);
-
     auto packet_idx_out = data_capture[i];
 
     data_offsets_out[packet_idx_out] = data_offsets[i];
@@ -523,8 +484,6 @@ __global__ void _packet_gather_kernel(
         } else {
           data_out[data_out_idx] = '_';
         }
-      } else {
-        // printf("tid(%03i) pid(%04i) OOB write(%i/%i): %c.\n", threadIdx.x, packet_idx, data_out_idx, data_out_size, value);
       }
     }
 
@@ -544,8 +503,8 @@ __global__ void _packet_gather_kernel(
     dst_mac_out[packet_idx_out] = mac_bytes_to_int64(dst_mac);
 
     // ip address
-    auto src_address  = hdr->l3_hdr.src_addr;
-    auto dst_address  = hdr->l3_hdr.dst_addr;
+    auto src_address = hdr->l3_hdr.src_addr;
+    auto dst_address = hdr->l3_hdr.dst_addr;
 
     auto src_address_rev = (src_address & 0x000000ff) << 24
                           | (src_address & 0x0000ff00) << 8
@@ -561,8 +520,8 @@ __global__ void _packet_gather_kernel(
     dst_ip_out[packet_idx_out] = dst_address_rev;
 
     // ports
-    auto src_port     = BYTE_SWAP16(hdr->l4_hdr.src_port);
-    auto dst_port     = BYTE_SWAP16(hdr->l4_hdr.dst_port);
+    auto src_port = BYTE_SWAP16(hdr->l4_hdr.src_port);
+    auto dst_port = BYTE_SWAP16(hdr->l4_hdr.dst_port);
 
     src_port_out[packet_idx_out] = src_port;
     dst_port_out[packet_idx_out] = dst_port;
@@ -593,8 +552,6 @@ __global__ void _packet_gather_kernel(
       *sem_idx,
       DOCA_GPU_SEMAPHORE_STATUS_FREE
     );
-
-    // printf("===== end gk =====\n");
   }
 }
 
@@ -765,4 +722,5 @@ void packet_gather_kernel(
 }
 
 }
+
 }
