@@ -30,13 +30,6 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-# Setup conda environment
-conda_env = {
-    'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.8'), 'pip'],
-    'pip': ['mlflow', 'dfencoder'],
-    'name': 'mlflow-env'
-}
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
