@@ -72,7 +72,7 @@ class DFPTraining(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiDFPMessage, )
 
-    def on_data(self, message: MultiDFPMessage):
+    def on_data(self, message: MultiDFPMessage) -> MultiAEMessage:
         if (message is None or message.mess_count == 0):
             return None
 
