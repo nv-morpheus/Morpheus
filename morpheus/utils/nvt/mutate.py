@@ -21,10 +21,10 @@ from nvtabular.ops.operator import ColumnSelector, Operator
 
 
 class MutateOp(Operator):
-    def __init__(self, func, dependencies, output_columns, label=None):
+    def __init__(self, func, output_columns=None, dependencies=None, label=None):
         super().__init__()
 
-        self._dependencies = dependencies
+        self._dependencies = dependencies or []
         self._func = func
         self._label = label
         self._output_columns = output_columns or []
@@ -63,18 +63,13 @@ class MutateOp(Operator):
 
     @annotate("MutateOp", color="darkgreen", domain="nvt_python")
     def transform(self, column_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
-        column_selector = ColumnSelector(self._dependencies)
-        _df = self._func(column_selector, df)
-
-        return _df
+        return self._func(column_selector, df)
 
     def column_mapping(self, col_selector: ColumnSelector, ) -> typing.Dict[str, str]:
-        # filtered_selector = self._remove_deps(col_selector)
-        # column_mapping = super().column_mapping(filtered_selector)
         column_mapping = {}
 
         for col_name, _ in self._output_columns:
-            column_mapping[col_name] = []
+            column_mapping[col_name] = col_selector.names
 
         return column_mapping
 

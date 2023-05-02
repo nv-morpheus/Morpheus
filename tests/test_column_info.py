@@ -18,6 +18,7 @@ import os
 from datetime import datetime
 from functools import partial
 
+import cudf
 import pandas as pd
 import pytest
 
@@ -34,7 +35,6 @@ from utils import TEST_DIRS
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_with_json_cols():
-
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
     input_df = pd.read_json(src_file)
@@ -60,6 +60,7 @@ def test_dataframe_input_schema_with_json_cols():
 
     assert len(input_df.columns) == 16
     assert list(input_df.columns) == raw_data_columns
+    print("")
 
     column_info = [
         DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
@@ -97,7 +98,6 @@ def test_dataframe_input_schema_with_json_cols():
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_without_json_cols():
-
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
     input_df = pd.read_json(src_file)
@@ -160,7 +160,6 @@ def test_dataframe_input_schema_without_json_cols():
 
 @pytest.mark.use_python
 def test_string_cat_column():
-
     cities = pd.Series([
         "New York",
         "Dallas",
@@ -205,7 +204,6 @@ def test_string_cat_column():
 
 @pytest.mark.use_python
 def test_string_join_column():
-
     cities = pd.Series([
         "Boston",
         "Dallas",
@@ -225,7 +223,6 @@ def test_string_join_column():
 
 @pytest.mark.use_python
 def test_column_info():
-
     cities = pd.Series([
         "Boston",
         "Dallas",
@@ -244,7 +241,6 @@ def test_column_info():
 
 @pytest.mark.use_python
 def test_date_column():
-
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
         "2022-08-29T21:23:19.500982Z",
@@ -264,7 +260,6 @@ def test_date_column():
 
 @pytest.mark.use_python
 def test_rename_column():
-
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
         "2022-08-29T21:23:19.500982Z",
@@ -288,7 +283,6 @@ def convert_to_upper(df, column_name: str):
 
 @pytest.mark.use_python
 def test_custom_column():
-
     cities = pd.Series([
         "New York",
         "Dallas",

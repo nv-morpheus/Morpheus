@@ -20,6 +20,8 @@ import pandas as pd
 import networkx as nx
 import nvtabular as nvt
 
+import morpheus.utils.nvt.cudf_dtype_mappings  # noqa: F401
+
 from functools import partial
 from merlin.dag import ColumnSelector
 from nvtabular.ops import LambdaOp, Rename, Filter

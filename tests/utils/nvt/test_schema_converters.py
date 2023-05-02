@@ -19,15 +19,6 @@ import networkx as nx
 import nvtabular as nvt
 import pandas as pd
 
-from morpheus.utils.column_info import BoolColumn
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import DateTimeColumn
-from morpheus.utils.column_info import IncrementColumn
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import StringJoinColumn
-
 from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
 from morpheus.utils.nvt.schema_converters import input_schema_to_nvt_workflow
 from morpheus.utils.nvt.schema_converters import get_ci_column_selector
@@ -37,6 +28,15 @@ from morpheus.utils.nvt.schema_converters import build_nx_dependency_graph
 from morpheus.utils.nvt.schema_converters import bfs_traversal_with_op_map
 from morpheus.utils.nvt.schema_converters import coalesce_leaf_nodes
 from morpheus.utils.nvt.schema_converters import coalesce_ops
+
+from morpheus.utils.column_info import BoolColumn
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.column_info import StringCatColumn
+from morpheus.utils.column_info import StringJoinColumn
 
 source_column_info = [
     BoolColumn(name="result",

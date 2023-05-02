@@ -42,7 +42,7 @@ def setUp():
 
 def test_transform():
     df, example_transform = setUp()
-    op = MutateOp(example_transform, [('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
+    op = MutateOp(example_transform, output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
     col_selector = ColumnSelector(['A', 'B'])
     transformed_df = op.transform(col_selector, df)
 
@@ -50,12 +50,16 @@ def test_transform():
     expected_df['A_new'] = df['A'] * 2
     expected_df['B_new'] = df['B'] * 2
 
+    print("")
+    print(expected_df)
+    print(transformed_df)
+
     assert transformed_df.equals(expected_df), "Test transform failed"
 
 
 def test_column_mapping():
     _, example_transform = setUp()
-    op = MutateOp(example_transform, [('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
+    op = MutateOp(example_transform, output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
     col_selector = ColumnSelector(['A', 'B'])
     column_mapping = op.column_mapping(col_selector)
 
@@ -69,7 +73,7 @@ def test_column_mapping():
 
 def test_compute_output_schema():
     _, example_transform = setUp()
-    op = MutateOp(example_transform, [('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
+    op = MutateOp(example_transform, output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
     col_selector = ColumnSelector(['A', 'B'])
 
     input_schema = Schema([

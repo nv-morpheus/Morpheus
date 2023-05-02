@@ -14,13 +14,11 @@
 
 import logging
 import re
-import typing
 from datetime import datetime
-
-import dataclasses
+import typing
 
 import cudf
-
+import dataclasses
 import pandas as pd
 import nvtabular as nvt
 
@@ -231,20 +229,12 @@ def process_dataframe(df_in: pd.DataFrame,
     Applies column transformations as defined by `input_schema`
     """
 
+    # TODO (Devin): extract this so we dont' have a circular dep
+    from morpheus.utils.nvt import input_schema_to_nvt_workflow
+
     dataset = nvt.Dataset(df_in)
     workflow = input_schema
     if (isinstance(input_schema, DataFrameInputSchema)):
         workflow = input_schema_to_nvt_workflow(input_schema)
 
     return workflow.transform(dataset).to_ddf().compute()
-
-    ## Step 1 is to normalize any columns
-    # df_processed = _normalize_dataframe(df_in, input_schema)
-
-    ## Step 2 is to process columns
-    # df_processed = _process_columns(df_processed, input_schema)
-
-    ## Step 3 is to run the row filter if needed
-    # df_processed = _filter_rows(df_processed, input_schema)
-
-    # return df_processed
