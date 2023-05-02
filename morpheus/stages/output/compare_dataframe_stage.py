@@ -107,13 +107,15 @@ class CompareDataFrameStage(InMemorySinkStage):
         if self._reset_index:
             combined_df.reset_index(inplace=True)
 
+        results = compare_df.compare_df(self._compare_df,
+                                        combined_df,
+                                        include_columns=self._include_columns,
+                                        exclude_columns=self._exclude_columns,
+                                        replace_idx=self._index_col,
+                                        abs_tol=self._abs_tol,
+                                        rel_tol=self._rel_tol)
+
         if clear:
             self.clear()
 
-        return compare_df.compare_df(self._compare_df,
-                                     combined_df,
-                                     include_columns=self._include_columns,
-                                     exclude_columns=self._exclude_columns,
-                                     replace_idx=self._index_col,
-                                     abs_tol=self._abs_tol,
-                                     rel_tol=self._rel_tol)
+        return results
