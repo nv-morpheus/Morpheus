@@ -107,7 +107,7 @@ class CompareDataFrameStage(InMemorySinkStage):
         if self._reset_index:
             combined_df.reset_index(inplace=True)
 
-        retults = compare_df.compare_df(self._compare_df,
+        results = compare_df.compare_df(self._compare_df,
                                         combined_df,
                                         include_columns=self._include_columns,
                                         exclude_columns=self._exclude_columns,
@@ -118,4 +118,4 @@ class CompareDataFrameStage(InMemorySinkStage):
         if clear:
             self.clear()
 
-        return retults
+        return results
