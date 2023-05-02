@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 
 from morpheus.config import Config
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -45,3 +46,20 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
 
     with pytest.raises(ValueError):
         stage = DFPTraining(config, validation_size=validation_size)
+
+
+@pytest.mark.parametrize('validation_size', [0., 0.2])
+def test_on_data(
+        config: Config,
+        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        dataset_pandas: DatasetManager,
+        validation_size: float):
+    from dfp.stages.dfp_training import DFPTraining
+    config.ae.feature_columns = ['v2', 'v3']
+    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
+
+    stage = DFPTraining(config)
+    results = stage.on_data(dfp_multi_message)
+
+    assert isinstance(results, MultiAEMessage)
+    dataset_pandas.assert_df_equal(results.get_meta(), expected_df)
