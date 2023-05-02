@@ -16,6 +16,7 @@
 import json
 import os
 import typing
+from unittest import mock
 
 import pytest
 
@@ -34,3 +35,33 @@ def test_constructor(config: Config):
     assert stage._min_increment == 7
     assert stage._max_history == 100
     assert stage._cache_dir.startswith('/test/path/cache')
+    assert stage._user_cache_map == {}
+
+
+def test_get_user_cache_hit(config: Config):
+    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+
+    stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
+
+    mock_cache = mock.MagicMock()
+    stage._user_cache_map['test_user'] = mock_cache
+
+    with stage._get_user_cache('test_user') as user_cache:
+        assert user_cache is mock_cache
+
+
+def test_get_user_cache_miss(config: Config):
+    from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
+    from dfp.utils.cached_user_window import CachedUserWindow
+
+    config.ae.timestamp_column_name = 'test_timestamp_col'
+    stage = DFPRollingWindowStage(config, min_history=5, min_increment=7, max_history=100, cache_dir='/test/path/cache')
+
+    with stage._get_user_cache('test_user') as results:
+        assert isinstance(results, CachedUserWindow)
+        assert results.user_id == 'test_user'
+        assert results.cache_location == os.path.join(stage._cache_dir, 'test_user.pkl')
+        assert results.timestamp_column == 'test_timestamp_col'
+
+    with stage._get_user_cache('test_user') as results2:
+        results2 is results
