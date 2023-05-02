@@ -64,7 +64,7 @@ class DFPRollingWindowStage(SinglePortStage):
 
 
     @contextmanager
-    def _get_user_cache(self, user_id: str):
+    def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
 
         # Determine cache location
         cache_location = os.path.join(self._cache_dir, f"{user_id}.pkl")
