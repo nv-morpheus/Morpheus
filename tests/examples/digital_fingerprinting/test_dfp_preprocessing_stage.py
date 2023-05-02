@@ -43,7 +43,7 @@ def test_constructor(config: Config):
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 def test_process_features(
         config: Config,
-        dfp_message_meta: "DFPMessageMeta",  # noqa: F821
+        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
         dataset_pandas: DatasetManager,
         morpheus_log_level: int):
     from dfp.messages.multi_dfp_message import MultiDFPMessage
@@ -51,7 +51,7 @@ def test_process_features(
 
     set_log_level(morpheus_log_level)
 
-    expected_df = dfp_message_meta.get_df().copy(deep=True)
+    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
     expected_df['v210'] = expected_df['v2'] + 10
     expected_df['v3'] = expected_df['v3'].astype(str)
 
@@ -60,10 +60,8 @@ def test_process_features(
         ColumnInfo(name='v3', dtype=str)
     ])
 
-    msg = MultiDFPMessage(meta=dfp_message_meta, mess_offset=0, mess_count=len(dfp_message_meta.get_df()))
-
     stage = DFPPreprocessingStage(config, input_schema=schema)
-    results = stage.process_features(msg)
+    results = stage.process_features(dfp_multi_message)
 
     assert isinstance(results, MultiDFPMessage)
     dataset_pandas.assert_df_equal(results.get_meta_dataframe(), expected_df)

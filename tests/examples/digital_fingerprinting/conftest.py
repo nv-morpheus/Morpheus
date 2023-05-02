@@ -69,3 +69,9 @@ def dfp_message_meta(config, dataset_pandas):
     df[config.ae.timestamp_column_name] = [1683054498 + i for i in range(0, len(df) * 100, 100)]
     df['user_id'] = user_id
     yield DFPMessageMeta(df, user_id)
+
+
+@pytest.fixture
+def dfp_multi_message(dfp_message_meta):
+    from dfp.messages.multi_dfp_message import MultiDFPMessage
+    yield MultiDFPMessage(meta=dfp_message_meta)
