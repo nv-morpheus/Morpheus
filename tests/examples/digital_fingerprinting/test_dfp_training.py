@@ -27,6 +27,7 @@ from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.logger import set_log_level
+from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
 
 
@@ -49,17 +50,21 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
 
 
 @pytest.mark.parametrize('validation_size', [0., 0.2])
-def test_on_data(
-        config: Config,
-        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
-        dataset_pandas: DatasetManager,
-        validation_size: float):
+def test_on_data(config: Config, dataset_pandas: DatasetManager, validation_size: float):
+    from dfp.messages.multi_dfp_message import DFPMessageMeta
+    from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_training import DFPTraining
-    config.ae.feature_columns = ['v2', 'v3']
-    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
+
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    df = dataset_pandas[input_file]
+    meta = DFPMessageMeta(df, 'Account-123456789')
+    msg = MultiDFPMessage(meta=meta)
+
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     stage = DFPTraining(config)
-    results = stage.on_data(dfp_multi_message)
+    results = stage.on_data(msg)
 
     assert isinstance(results, MultiAEMessage)
-    dataset_pandas.assert_df_equal(results.get_meta(), expected_df)
+    dataset_pandas.assert_compare_df(results.get_meta(), dataset_pandas[input_file])
