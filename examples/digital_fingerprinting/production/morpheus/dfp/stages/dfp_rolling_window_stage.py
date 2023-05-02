@@ -62,28 +62,6 @@ class DFPRollingWindowStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (DFPMessageMeta, )
 
-    def _trim_dataframe(self, df: pd.DataFrame):
-
-        if (self._max_history is None):
-            return df
-
-        # See if max history is an int
-        if (isinstance(self._max_history, int)):
-            return df.tail(self._max_history)
-
-        # If its a string, then its a duration
-        if (isinstance(self._max_history, str)):
-            # Get the latest timestamp
-            latest = df[self._config.ae.timestamp_column_name].max()
-
-            time_delta = pd.Timedelta(self._max_history)
-
-            # Calc the earliest
-            earliest = latest - time_delta
-
-            return df[df['timestamp'] >= earliest]
-
-        raise RuntimeError("Unsupported max_history")
 
     @contextmanager
     def _get_user_cache(self, user_id: str):
