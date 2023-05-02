@@ -58,3 +58,14 @@ def example_dir():
 @pytest.fixture(autouse=True)
 def dfp_prod_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
     sys.path.append(example_dir)
+
+
+@pytest.fixture
+def dfp_message_meta(config, dataset_pandas):
+    from dfp.messages.multi_dfp_message import DFPMessageMeta
+
+    user_id = 'test_user'
+    df = dataset_pandas['filter_probs.csv']
+    df[config.ae.timestamp_column_name] = [1683054498 + i for i in range(0, len(df) * 100, 100)]
+    df['user_id'] = user_id
+    yield DFPMessageMeta(df, user_id)

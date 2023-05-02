@@ -24,17 +24,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from utils.dataset_manager import DatasetManager
 
 
-@pytest.fixture
-def dfp_message_meta(config: Config, dataset_pandas: DatasetManager):
-    from dfp.messages.multi_dfp_message import DFPMessageMeta
-
-    user_id = 'test_user'
-    df = dataset_pandas['filter_probs.csv']
-    df[config.ae.timestamp_column_name] = [1683054498 + i for i in range(0, len(df) * 100, 100)]
-    df['user_id'] = user_id
-    yield DFPMessageMeta(df, user_id)
-
-
 def build_mock_user_cache(user_id: str = 'test_user',
                           train_df: pd.DataFrame = None,
                           count: int = 10,
@@ -195,8 +184,10 @@ def test_build_window(
         msg = stage._build_window(dfp_message_meta)
 
     assert isinstance(msg, MultiDFPMessage)
+    assert msg.user_id == dfp_message_meta.user_id
     assert msg.meta.user_id == dfp_message_meta.user_id
     assert msg.mess_offset == 0
     assert msg.mess_count == len(dataset_pandas['filter_probs.csv'])
     dataset_pandas.assert_df_equal(msg.get_meta(), train_df)
     dataset_pandas.assert_df_equal(msg.meta.get_df(), train_df)
+    dataset_pandas.assert_df_equal(msg.get_meta_dataframe(), train_df)
