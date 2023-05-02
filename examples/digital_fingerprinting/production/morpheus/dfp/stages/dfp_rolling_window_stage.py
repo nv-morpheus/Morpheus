@@ -134,7 +134,7 @@ class DFPRollingWindowStage(SinglePortStage):
                                    mess_offset=0,
                                    mess_count=len(train_df))
 
-    def on_data(self, message: DFPMessageMeta):
+    def on_data(self, message: DFPMessageMeta) -> MultiDFPMessage:
 
         with log_time(logger.debug) as log_info:
 
