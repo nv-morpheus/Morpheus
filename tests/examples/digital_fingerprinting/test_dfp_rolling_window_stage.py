@@ -94,7 +94,6 @@ def test_get_user_cache_miss(config: Config):
 
 def test_build_window_no_new(
         config: Config,
-        use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
@@ -109,7 +108,6 @@ def test_build_window_no_new(
 
 def test_build_window_not_enough_data(
         config: Config,
-        use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
@@ -123,7 +121,6 @@ def test_build_window_not_enough_data(
 
 def test_build_window_min_increment(
         config: Config,
-        use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
@@ -135,10 +132,8 @@ def test_build_window_min_increment(
     stage._build_window(dfp_message_meta) is None
 
 
-@pytest.mark.parametrize('use_on_data', [True, False])
 def test_build_window_invalid(
         config: Config,
-        use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
@@ -158,7 +153,6 @@ def test_build_window_invalid(
 
 def test_build_window_overlap(
         config: Config,
-        use_on_data: bool,
         dfp_message_meta: "DFPMessageMeta"  # noqa: F821
 ):
     from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
