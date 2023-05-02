@@ -145,48 +145,11 @@ target_include_directories(morpheus
 if(MORPHEUS_SUPPORT_DOCA)
     target_link_libraries(morpheus
         PUBLIC
-            -L/opt/mellanox/dpdk/lib/x86_64-linux-gnu/
             -L/opt/mellanox/doca/lib/x86_64-linux-gnu/
-            libdoca_apsh.so
-            libdoca_argp.so
-            libdoca_comm_channel.so
-            libdoca_common.so
-            libdoca_compress.so
-            libdoca_ct.so
-            libdoca_dma.so
-            libdoca_dpa.so
-            libdoca_dpdk_bridge.so
-            libdoca_dpi.so
-            libdoca_erasure_coding.so
             libdoca_eth.so
-            libdoca_flow_grpc.so
             libdoca_flow.so
-            libdoca_gpunetio_device.a
             libdoca_gpunetio.so
-            libdoca_ipsec.so
-            libdoca_rdma.so
-            libdoca_regex.so
-            libdoca_sha.so
-            libdoca_telemetry.so
-            librte_bus_auxiliary.so
-            librte_bus_pci.so
-            librte_bus_vdev.so
-            librte_common_mlx5.so
-            librte_eal.so
-            librte_ethdev.so
-            librte_gpudev.so
-            librte_hash.so
-            librte_ip_frag.so
-            librte_kvargs.so
-            librte_mbuf.so
-            librte_mempool.so
-            librte_meter.so
-            librte_net_mlx5.so
-            librte_net.so
-            librte_pci.so
-            librte_rcu.so
-            librte_ring.so
-            librte_telemetry.so
+            libdoca_gpunetio_device.a
     )
     target_include_directories(morpheus
         PUBLIC
