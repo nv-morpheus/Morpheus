@@ -53,3 +53,18 @@ def test_constructor(config: Config):
     assert stage._model_name_formatter == "test_model_name-{user_id}-{user_md5}"
     assert stage._experiment_name_formatter == "test_experiment_name-{user_id}-{user_md5}-{reg_model_name}"
     assert stage._databricks_permissions == {'test': 'this'}
+
+
+@pytest.mark.parametrize(
+    "model_name_formatter,user_id,expected_val",
+    [("test_model_name-{user_id}", 'test_user', "test_model_name-test_user"),
+     ("test_model_name-{user_id}-{user_md5}", 'test_user',
+      "test_model_name-test_user-81dc9bdb52d04dc20036dbd8313ed055"),
+     ("test_model_name-{user_id}", 'test_城安宮川', "test_model_name-test_城安宮川"),
+     ("test_model_name-{user_id}-{user_md5}", 'test_城安宮川', "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
+     ])
+def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: str, expected_val: str):
+    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+
+    stage = DFPMLFlowModelWriterStage(config, model_name_formatter=model_name_formatter)
+    assert stage._user_id_to_model(user_id) == expected_val

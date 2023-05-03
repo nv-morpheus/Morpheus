@@ -46,7 +46,10 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
 @pytest.mark.parametrize('validation_size', [0., 0.2])
 @mock.patch('dfp.stages.dfp_training.AutoEncoder')
 @mock.patch('dfp.stages.dfp_training.train_test_split')
-def test_on_data(mock_train_test_split, mock_ae, config: Config, dataset_pandas: DatasetManager,
+def test_on_data(mock_train_test_split: mock.MagicMock,
+                 mock_ae: mock.MagicMock,
+                 config: Config,
+                 dataset_pandas: DatasetManager,
                  validation_size: float):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.messages.multi_dfp_message import MultiDFPMessage
