@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 
 import pandas as pd
 import numpy as np
@@ -57,6 +56,53 @@ def test_transform():
     assert transformed_df.equals(expected_df), "Test transform failed"
 
 
+# Test for lambda function transformation
+def test_transform_lambda():
+    df = pd.DataFrame({
+        'A': [1, 2, 3],
+        'B': [4, 5, 6],
+        'C': [7, 8, 9]
+    })
+
+    op = MutateOp(lambda col_selector, df: df.assign(**{f"{col}_new": df[col] * 2 for col in col_selector.names}),
+                  output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
+    col_selector = ColumnSelector(['A', 'B'])
+    transformed_df = op.transform(col_selector, df)
+
+    expected_df = df.copy()
+    expected_df['A_new'] = df['A'] * 2
+    expected_df['B_new'] = df['B'] * 2
+
+    assert transformed_df.equals(expected_df), "Test transform with lambda failed"
+
+
+def test_transform_additional_columns():
+    df = pd.DataFrame({
+        'A': [1, 2, 3],
+        'B': [4, 5, 6],
+        'C': [7, 8, 9]
+    })
+
+    def additional_transform(col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        selected_columns = col_selector.names
+        for col in selected_columns:
+            df[col + '_new'] = df[col] * 2
+        df['D'] = df['A'] + df['B']
+        return df
+
+    op = MutateOp(additional_transform,
+                  output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64')), ('D', np.dtype('int64'))])
+    col_selector = ColumnSelector(['A', 'B'])
+    transformed_df = op.transform(col_selector, df)
+
+    expected_df = df.copy()
+    expected_df['A_new'] = df['A'] * 2
+    expected_df['B_new'] = df['B'] * 2
+    expected_df['D'] = df['A'] + df['B']
+
+    assert transformed_df.equals(expected_df), "Test transform with additional columns failed"
+
+
 def test_column_mapping():
     _, example_transform = setUp()
     op = MutateOp(example_transform, output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
@@ -85,8 +131,8 @@ def test_compute_output_schema():
     output_schema = op.compute_output_schema(input_schema, col_selector)
 
     expected_schema = Schema([
-        ColumnSchema('A_new', dtype=np.dtype('int64'), tags=["mutated"]),
-        ColumnSchema('B_new', dtype=np.dtype('int64'), tags=["mutated"])
+        ColumnSchema('A_new', dtype=np.dtype('int64')),
+        ColumnSchema('B_new', dtype=np.dtype('int64'))
     ])
 
     assert str(output_schema) == str(expected_schema), "Test compute output schema failed"

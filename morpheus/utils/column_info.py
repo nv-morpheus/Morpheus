@@ -229,7 +229,6 @@ def process_dataframe(df_in: pd.DataFrame,
     Applies column transformations as defined by `input_schema`
     """
 
-    # TODO (Devin): extract this so we dont' have a circular dep
     from morpheus.utils.nvt import input_schema_to_nvt_workflow
 
     dataset = nvt.Dataset(df_in)

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import typing
 
 import cudf
 import json
@@ -18,7 +19,7 @@ import json
 import pandas as pd
 
 
-def json_flatten(col_selector, df):
+def json_flatten(col_selector, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
     convert_to_cudf = False
     if isinstance(df, cudf.DataFrame):
         convert_to_cudf = True

@@ -185,6 +185,7 @@ def test_resolve_json_output_columns():
     assert output_cols == expected_output_cols
 
 
+
 def test_resolve_json_output_columns_empty_input_schema():
     input_schema = DataFrameInputSchema()
     output_cols = resolve_json_output_columns(input_schema)

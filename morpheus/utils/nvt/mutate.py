@@ -83,6 +83,6 @@ class MutateOp(Operator):
 
         # Add new columns to the output schema
         for col, dtype in self._output_columns:
-            output_schema += Schema([ColumnSchema(col, dtype=dtype, tags=["mutated"])])
+            output_schema += Schema([ColumnSchema(col, dtype=dtype)])
 
         return output_schema
