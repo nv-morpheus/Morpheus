@@ -18,13 +18,7 @@
 		  }
 		],
 		"metadata": {
-		  "data_type": "streaming",
-		  "batching_options": {"period": "W", "start_time": "2022-08-01", "end_time": "2022-08-31"},
-		  "file_to_df_options":{
-				"parser_kwargs": {
-					"lines": false, "orient": "records"
-				}
-			}
+		  "data_type": "payload"
 		}
 	  },
 	  {
@@ -45,13 +39,7 @@
 		  }
 		],
 		"metadata": {
-		  "data_type": "streaming",
-		  "batching_options": {"period": "H", "start_time": "2022-08-01", "end_time": "2022-08-31"},
-		  "file_to_df_options":{
-				"parser_kwargs": {
-					"lines": false, "orient": "records"
-				}
-			  }
+		  "data_type": "payload"
 		}
 	  }
 	]

@@ -29,7 +29,7 @@ from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import SchemaBuilder
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 THIS_DIR = path.dirname(path.abspath(__file__))
 
@@ -143,6 +143,7 @@ class BenchmarkConfGenerator:
                                       duration=(self._pipe_conf.get('duration')),
                                       source=(self.source),
                                       tracking_uri=mlflow.get_tracking_uri(),
+                                      silence_monitors=True,
                                       train_users='generic')
         dfp_arg_parser.init()
         config_generator = ConfigGenerator(self.pipe_config, dfp_arg_parser, self.get_schema())
