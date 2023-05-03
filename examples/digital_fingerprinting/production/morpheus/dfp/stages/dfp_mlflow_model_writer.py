@@ -44,8 +44,8 @@ from ..utils.model_cache import user_to_model_name
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.8'), 'pip'],
-    'pip': ['mlflow', 'dfencoder'],
+    'dependencies': ['python={}'.format('3.10'), 'pip'],
+    'pip': ['mlflow'],
     'name': 'mlflow-env'
 }
 
