@@ -168,7 +168,7 @@ class MonitorController:
         correct counting of batched and sliced messages.
     log_level : `morpheus.utils.logger.LogLevels`, default = 'INFO'
         Enable this stage when the configured log level is at `log_level` or lower.
-    tqdm_class: `tqdm`, default = MorpheusTqdm
+    tqdm_class: `tqdm`, default = None
         Custom implementation of tqdm if required.
     """
 
@@ -182,7 +182,7 @@ class MonitorController:
                  delayed_start: bool,
                  determine_count_fn: typing.Callable[[typing.Any], int],
                  log_level: LogLevels,
-                 tqdm_class: tqdm = MorpheusTqdm):
+                 tqdm_class: tqdm = None):
 
         self._progress: tqdm = None
         self._position = position
@@ -191,7 +191,7 @@ class MonitorController:
         self._unit = unit
         self._delayed_start = delayed_start
         self._determine_count_fn = determine_count_fn
-        self._tqdm_class = tqdm_class
+        self._tqdm_class = tqdm_class if tqdm_class else MorpheusTqdm
 
         if isinstance(log_level, LogLevels):
             log_level = log_level.value
