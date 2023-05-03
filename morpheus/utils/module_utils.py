@@ -206,7 +206,7 @@ def to_period_approximation(data_df: typing.Union[cudf.DataFrame, pd.DataFrame],
         raise ValueError(f"Invalid period format: {period}.")
 
     if period not in period_to_strptime:
-        raise ValueError(f"Unknown period: {period}. Suporrted period: {period_to_strptime}")
+        raise ValueError(f"Unknown period: {period}. Supported period: {period_to_strptime}")
 
     strptime_format = period_to_strptime[period]
 
