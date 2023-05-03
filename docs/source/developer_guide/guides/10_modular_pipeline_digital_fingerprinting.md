@@ -407,7 +407,7 @@ def dfp_training_pipe(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py`
 
-The dfp_training module function is responsible for training the model. The on_data function is defined to handle incoming ControlMessage instances. It retrieves the user ID and the input data from the ControlMessage, creates an instance of the AutoEncoder class with the specified model_kwargs, and trains the model on the input data. The output message includes the trained model and metadata.
+The `dfp_training` module function is responsible for training the model. The `on_data` function is defined to handle incoming `ControlMessage` instances. It retrieves the user ID and the input data from the `ControlMessage`, creates an instance of the `AutoEncoder` class with the specified `model_kwargs`, and trains the model on the input data. The output message includes the trained model and metadata.
 
 For a complete reference, refer to: [DFP Training](../../modules/examples/digital_fingerprinting/dfp_training.md)
 

@@ -65,7 +65,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
             - monitor_options (dict): Options for monitoring throughput; Example: See Below
 
         batching_options:
-            - end_time (datetime/str): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+            - end_time (datetime/str): End time of the time window; Example: "2023-03-14T23:59:59"; Default: None
             - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
             Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
             - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
@@ -96,7 +96,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
         stream_aggregation_options:
             - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
             - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
-            - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
+            - trigger_on_min_increment (int): Minimum increment from the last trained to new training event;
             Example: 0; Default: 0
             - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
             Default: 'timestamp'
