@@ -27,6 +27,8 @@
 
 #include <rte_byteorder.h>
 
+#include <glog/logging.h>
+
 #include <memory>
 #include <stdexcept>
 #include <iostream>
@@ -126,6 +128,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       }
 
       auto packet_size_total = packet_size_total_d.value(processing_stream);
+
+      LOG(INFO) << "packet count: " << packet_count << " and size " << packet_size_total;
 
       auto timestamp_out_d     = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
       auto src_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
@@ -331,6 +335,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
 
       output.on_next(std::move(meta));
+      // output.unsubscribe();
     }
 
     cudaStreamDestroy(processing_stream);

@@ -110,27 +110,29 @@ raw_to_tcp(const uintptr_t buf_addr, struct eth_ip_tcp_hdr **hdr, uint8_t **pack
 	return 0;
 }
 
-__device__ __forceinline__ uint8_t
-gpu_ipv4_hdr_len(const struct ipv4_hdr& hdr)
-{
-	return (uint8_t)((hdr.version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
-};
-
-__device__ __forceinline__ int32_t
-get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
-{
-  auto total_length      = static_cast<int32_t>(BYTE_SWAP16(packet_l3.total_length));
-  auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
-  auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off * sizeof(int32_t));
-  auto data_size         = total_length - ip_header_length - tcp_header_length;
-
-  return data_size;
-}
+// __device__ __forceinline__ uint8_t
+// gpu_ipv4_hdr_len(const struct ipv4_hdr& packet_l3)
+// {
+// 	return (uint8_t)((packet_l3.version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
+// };
 
 __device__ __forceinline__ uint32_t
 get_packet_size(ipv4_hdr& packet_l3)
 {
   return static_cast<int32_t>(BYTE_SWAP16(packet_l3.total_length));
+}
+
+__device__ __forceinline__ int32_t
+get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
+{
+  auto packet_size       = get_packet_size(packet_l3);
+  // auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
+  // auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off * sizeof(int32_t));
+  auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off >> 4);
+  // auto payload_size      = packet_size - ip_header_length - tcp_header_length;
+  auto payload_size      = packet_size - sizeof(ipv4_hdr) - tcp_header_length;
+
+  return payload_size;
 }
 
 __device__ __forceinline__ bool
@@ -244,9 +246,9 @@ __global__ void _packet_receive_kernel(
   }
 
   __shared__ uint32_t packet_count;
+  __shared__ uint64_t packet_offset;
   __shared__ doca_gpu_semaphore_status sem_status;
 
-  uint64_t packet_offset;
 
   while (true)
   {
@@ -310,13 +312,15 @@ __global__ void _packet_receive_kernel(
 		raw_to_tcp(buf_addr, &hdr, &packet_data);
 
     auto packet_size = get_packet_size(hdr->l3_hdr);
-    auto data_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
+    auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
-    packet_sizes[packet_idx] = data_size;
+    printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, 0, payload_size);
+
+    packet_sizes[packet_idx] = payload_size;
 
     if (is_tcp_packet(hdr->l3_hdr))
     {
-      atomicAdd(packet_size_total_out, data_size);
+      atomicAdd(packet_size_total_out, payload_size);
       atomicAdd(packet_count_out, 1);
     }
   }
@@ -376,8 +380,7 @@ __global__ void _packet_gather_kernel(
   __shared__ typename BlockScan::TempStorage temp_storage;
 
 	__shared__ uint32_t packet_count;
-
-  uint64_t packet_offset;
+  __shared__ uint64_t packet_offset;
 
   if (threadIdx.x == 0) {
     doca_error_t ret;
@@ -419,12 +422,12 @@ __global__ void _packet_gather_kernel(
     uint8_t *packet_data;
 		raw_to_tcp(buf_addr, &hdr, &packet_data);
 
-    auto data_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
+    auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
     if (is_tcp_packet(hdr->l3_hdr))
     {
       data_capture[i] = 1;
-      data_offsets[i] = data_size;
+      data_offsets[i] = payload_size;
     }
     else
     {
@@ -440,6 +443,11 @@ __global__ void _packet_gather_kernel(
   __syncthreads();
 
   BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture);
+
+  if (threadIdx.x == 0)
+  {
+    printf("==================================================\n");
+  }
 
   __syncthreads();
 
@@ -461,7 +469,7 @@ __global__ void _packet_gather_kernel(
     uint8_t *packet_data;
 		raw_to_tcp(buf_addr, &hdr, &packet_data);
 
-    auto data_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
+    auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
     if (not is_tcp_packet(hdr->l3_hdr))
     {
@@ -470,9 +478,12 @@ __global__ void _packet_gather_kernel(
 
     auto packet_idx_out = data_capture[i];
 
-    data_offsets_out[packet_idx_out] = data_offsets[i];
+    printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, data_offsets[i], payload_size);
 
-    for (auto data_idx = 0; data_idx < data_size; data_idx++)
+    data_offsets_out[packet_idx_out] = data_offsets[i]; // data_offsets_out is wrong?
+    // data_offsets_out[packet_idx_out] = 0; // data_offsets_out is wrong?
+
+    for (auto data_idx = 0; data_idx < payload_size; data_idx++)
     {
       auto value = packet_data[data_idx];
 
@@ -543,6 +554,10 @@ __global__ void _packet_gather_kernel(
     next_proto_id_out[packet_idx_out] = static_cast<int32_t> (next_proto_id);
   }
 
+  if (threadIdx.x == 0) {
+    printf("==================================================\n");
+  }
+
   __syncthreads();
 
   if (threadIdx.x == 0)
@@ -605,17 +620,12 @@ std::unique_ptr<cudf::column> integers_to_mac(
     mr
   );
 
-  auto d_offsets = offsets_column->view().data<int32_t>();
-
-  auto column   = cudf::column_device_view::create(integers, stream);
-  auto d_column = *column;
-
-  // auto const bytes =
-  //   cudf::detail::get_value<int32_t>(offsets_column->view(), strings_count, stream);
-
+  auto column       = cudf::column_device_view::create(integers, stream);
+  auto d_column     = *column;
+  auto d_offsets    = offsets_column->view().data<int32_t>();
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
   auto d_chars      = chars_column->mutable_view().data<char>();
-
+  
   thrust::for_each_n(
     rmm::exec_policy(stream),
     thrust::make_counting_iterator<cudf::size_type>(0),
