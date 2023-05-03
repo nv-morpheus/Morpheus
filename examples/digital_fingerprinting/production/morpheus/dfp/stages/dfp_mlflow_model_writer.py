@@ -75,11 +75,11 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiAEMessage, )
 
-    def user_id_to_model(self, user_id: str):
+    def user_id_to_model(self, user_id: str) -> str:
 
         return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
-    def user_id_to_experiment(self, user_id: str):
+    def user_id_to_experiment(self, user_id: str) -> str:
         kwargs = {
             "user_id": user_id,
             "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
