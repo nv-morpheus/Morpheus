@@ -22,6 +22,7 @@ import pytest
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -49,6 +50,7 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
         stage = DFPTraining(config, validation_size=validation_size)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('validation_size', [0., 0.2])
 def test_on_data(config: Config, dataset_pandas: DatasetManager, validation_size: float):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
@@ -63,8 +65,14 @@ def test_on_data(config: Config, dataset_pandas: DatasetManager, validation_size
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
-    stage = DFPTraining(config)
+    stage = DFPTraining(config, validation_size=validation_size)
     results = stage.on_data(msg)
 
     assert isinstance(results, MultiAEMessage)
+    assert results.meta is meta
+    assert results.mess_offset == msg.mess_offset
+    assert results.mess_count == msg.mess_count
+    assert isinstance(results.model, AutoEncoder)
+
+    # The stage shouldn't be modifying the dataframe
     dataset_pandas.assert_compare_df(results.get_meta(), dataset_pandas[input_file])
