@@ -99,7 +99,7 @@ def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.refresh.assert_called_once()
 
 
-def testauto_count_fn(config):
+def test_auto_count_fn(config):
     m = MonitorStage(config, log_level=logging.WARNING)
 
     assert m._mc.auto_count_fn(None) is None
