@@ -13,21 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 from unittest import mock
 
-import pandas as pd
 import pytest
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.logger import set_log_level
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
 
@@ -50,20 +43,29 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
         stage = DFPTraining(config, validation_size=validation_size)
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize('validation_size', [0., 0.2])
-def test_on_data(config: Config, dataset_pandas: DatasetManager, validation_size: float):
+@mock.patch('dfp.stages.dfp_training.AutoEncoder')
+@mock.patch('dfp.stages.dfp_training.train_test_split')
+def test_on_data(mock_train_test_split, mock_ae, config: Config, dataset_pandas: DatasetManager,
+                 validation_size: float):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_training import DFPTraining
 
-    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
-    df = dataset_pandas[input_file]
-    meta = DFPMessageMeta(df, 'Account-123456789')
-    msg = MultiDFPMessage(meta=meta)
+    mock_ae.return_value = mock_ae
 
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
+
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    df = dataset_pandas[input_file]
+    train_df = df[df.columns.intersection(config.ae.feature_columns)]
+
+    mock_validation_df = mock.MagicMock()
+    mock_train_test_split.return_value = (train_df, mock_validation_df)
+
+    meta = DFPMessageMeta(df, 'Account-123456789')
+    msg = MultiDFPMessage(meta=meta)
 
     stage = DFPTraining(config, validation_size=validation_size)
     results = stage.on_data(msg)
@@ -72,7 +74,29 @@ def test_on_data(config: Config, dataset_pandas: DatasetManager, validation_size
     assert results.meta is meta
     assert results.mess_offset == msg.mess_offset
     assert results.mess_count == msg.mess_count
-    assert isinstance(results.model, AutoEncoder)
+    assert results.model is mock_ae
+
+    # Pandas doesn't like the comparison that mock will make if we called MagicMock.assert_called_once_with(df)
+    # Checking the call args manually
+    if validation_size > 0:
+        expected_run_validation = True
+        expected_val_data = mock_validation_df
+        mock_train_test_split.assert_called_once()
+        assert len(mock_train_test_split.call_args.args) == 1
+        dataset_pandas.assert_compare_df(mock_train_test_split.call_args.args[0], train_df)
+        mock_train_test_split.call_args.kwargs == {'test_size': validation_size, 'shuffle': False}
+    else:
+        expected_run_validation = False
+        expected_val_data = None
+        mock_train_test_split.assert_not_called()
+
+    mock_ae.fit.assert_called_once()
+
+    assert len(mock_ae.fit.call_args.args) == 1
+    dataset_pandas.assert_compare_df(mock_ae.fit.call_args.args[0], train_df)
+    mock_ae.fit.call_args.kwargs == {
+        'epochs': stage._epochs, 'val_data': expected_val_data, 'run_validation': expected_run_validation
+    }
 
     # The stage shouldn't be modifying the dataframe
     dataset_pandas.assert_compare_df(results.get_meta(), dataset_pandas[input_file])
