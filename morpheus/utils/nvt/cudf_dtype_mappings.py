@@ -14,17 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
+from datetime import datetime
 
 import merlin.dtypes.aliases as mn
 
 from merlin.dtypes.mapping import DTypeMapping
 from merlin.dtypes import register
 
-cudf_extension = DTypeMapping(
-    {
-        mn.string: [cudf.StructDtype],
-    }
+morpheus_extension = DTypeMapping(
+    mapping={
+        mn.datetime64: [datetime],
+    },
 )
 
-register("cudf_ext", cudf_extension)
+register("morpheus_ext", morpheus_extension)

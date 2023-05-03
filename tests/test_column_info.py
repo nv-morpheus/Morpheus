@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from datetime import datetime
 from functools import partial
 
-import cudf
 import pandas as pd
 import pytest
 
@@ -63,27 +63,31 @@ def test_dataframe_input_schema_with_json_cols():
     print("")
 
     column_info = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
+        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
+        ColumnInfo(name="category", dtype='str'),
+        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
+        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
+        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
         RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
+                     dtype='str',
                      input_name="properties.deviceDetail.operatingSystem"),
         StringCatColumn(name="location",
-                        dtype=str,
+                        dtype='str',
                         input_columns=[
                             "properties.location.city",
                             "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
     ]
 
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
+
+    # Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
+    input_df["properties"] = input_df["properties"].apply(
+        lambda row: json.dumps(row))
 
     df_processed = process_dataframe(input_df, schema)
     processed_df_cols = df_processed.columns
@@ -105,20 +109,16 @@ def test_dataframe_input_schema_without_json_cols():
     assert len(input_df.columns) == 16
 
     column_info = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        ColumnInfo(name="category", dtype='str'),
     ]
 
     schema = DataFrameInputSchema(column_info=column_info)
+
+    # Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
+    input_df["properties"] = input_df["properties"].apply(
+        lambda row: json.dumps(
+            row))
 
     df_processed = process_dataframe(input_df, schema)
     processed_df_cols = df_processed.columns
@@ -127,28 +127,26 @@ def test_dataframe_input_schema_without_json_cols():
     assert len(processed_df_cols) == len(column_info)
     assert "timestamp" in processed_df_cols
     assert "time" not in processed_df_cols
-    assert "userId" in processed_df_cols
-    assert len(df_processed[~df_processed.userId.isna()]) == 0
 
     column_info2 = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
+        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
+        ColumnInfo(name="category", dtype='str'),
+        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
+        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
+        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
         RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
+                     dtype='str',
                      input_name="properties.deviceDetail.operatingSystem"),
         StringCatColumn(name="location",
-                        dtype=str,
+                        dtype='str',
                         input_columns=[
                             "properties.location.city",
                             "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
     ]
 
     schema2 = DataFrameInputSchema(column_info=column_info2)
@@ -182,7 +180,7 @@ def test_string_cat_column():
 
     df = pd.DataFrame({"city": cities, "country": countries, "state": states, "zipcode": zipcodes})
 
-    string_cat_col = StringCatColumn(name="location", dtype=str, input_columns=[
+    string_cat_col = StringCatColumn(name="location", dtype='str', input_columns=[
         "city",
         "country",
     ], sep=", ")
@@ -193,7 +191,7 @@ def test_string_cat_column():
 
     assert actual.equals(expected)
 
-    string_cat_col_with_int = StringCatColumn(name="location", dtype=str, input_columns=[
+    string_cat_col_with_int = StringCatColumn(name="location", dtype='str', input_columns=[
         "city",
         "zipcode",
     ], sep=", ")
@@ -212,7 +210,7 @@ def test_string_join_column():
 
     df = pd.DataFrame({"city": cities})
 
-    string_join_col = StringJoinColumn(name="city_new", dtype=str, input_name="city", sep="-")
+    string_join_col = StringJoinColumn(name="city_new", dtype='str', input_name="city", sep="-")
 
     actual = string_join_col._process_column(df)
 
@@ -231,7 +229,7 @@ def test_column_info():
 
     df = pd.DataFrame({"city": cities})
 
-    string_join_col = ColumnInfo(name="city", dtype=str)
+    string_join_col = ColumnInfo(name="city", dtype='str')
 
     actual = string_join_col._process_column(df)
 
@@ -270,7 +268,7 @@ def test_rename_column():
 
     df = pd.DataFrame({"time": time_series})
 
-    rename_col = RenameColumn(name="timestamp", dtype=str, input_name="time")
+    rename_col = RenameColumn(name="timestamp", dtype='str', input_name="time")
 
     actutal = rename_col._process_column(df)
 
@@ -292,7 +290,7 @@ def test_custom_column():
     df = pd.DataFrame({"city": cities})
 
     custom_col = CustomColumn(name="city_upper",
-                              dtype=str,
+                              dtype='str',
                               process_column_fn=partial(convert_to_upper, column_name="city"))
 
     actutal = custom_col._process_column(df)

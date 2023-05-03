@@ -17,3 +17,23 @@ from .mutate import MutateOp
 from .transforms import json_flatten
 
 from .schema_converters import input_schema_to_nvt_workflow
+
+
+def register_morpheus_extensions():
+    from datetime import datetime
+
+    import merlin.dtypes.aliases as mn
+
+    from merlin.dtypes.mapping import DTypeMapping
+    from merlin.dtypes import register
+
+    morpheus_extension = DTypeMapping(
+        mapping={
+            mn.datetime64: [datetime],
+        },
+    )
+
+    register("morpheus_ext", morpheus_extension)
+
+
+register_morpheus_extensions()
