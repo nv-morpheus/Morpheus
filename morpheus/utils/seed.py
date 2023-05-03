@@ -15,17 +15,19 @@
 
 import random
 
+import cupy as cp
 import numpy as np
 import torch
 
 
 def manual_seed(seed: int):
     """
-    Manually see the random number generators for the stdlib, PyTorch and NumPy
+    Manually see the random number generators for the stdlib, PyTorch, NumPy and CuPy
     """
     random.seed(seed)
 
     np.random.seed(seed)
+    cp.random.seed(seed)
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # the "all" refers to all GPUs

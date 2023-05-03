@@ -102,6 +102,16 @@ def test_dataset_properties(dataset: DatasetManager):
     assert isinstance(cdf, cudf.DataFrame)
 
 
+def test_dataset_reader_args(dataset: DatasetManager):
+    # When `filter_nulls=False` this returns all 20 rows, or 3 when True
+    input_file = 'examples/abp_pcap_detection/abp_pcap.jsonlines'
+    assert len(dataset.get_df(input_file, filter_nulls=False)) == 20
+    assert len(dataset[input_file]) == 3
+
+    # input_file is now in the cache with the default args, double check to make sure we still ignore the cache
+    assert len(dataset.get_df(input_file, filter_nulls=False)) == 20
+
+
 # === No Marks ===
 def test_no_mark():
     assert CppConfig.get_should_use_cpp()

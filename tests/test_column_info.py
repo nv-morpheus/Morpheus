@@ -14,11 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
 import json
 import os
 from datetime import datetime
 from functools import partial
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -37,6 +39,7 @@ from utils import TEST_DIRS
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_with_json_cols():
+
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
     input_df = pd.read_json(src_file)
@@ -62,7 +65,6 @@ def test_dataframe_input_schema_with_json_cols():
 
     assert len(input_df.columns) == 16
     assert list(input_df.columns) == raw_data_columns
-    print("")
 
     column_info = [
         DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
@@ -306,3 +308,27 @@ def test_custom_column():
     expected = pd.Series(["NEW YORK", "DALLAS", "AUSTIN"])
 
     assert actutal.equals(expected)
+
+
+@pytest.mark.use_python
+def test_type_cast():
+    """
+    Test reproduces issue reported in #922
+    """
+
+    data = [{
+        "username": "tom", "timestamp": 1666741856, "FeatureA": "81"
+    }, {
+        "username": "jerry", "timestamp": 1666741856, "FeatureA": "1"
+    }]
+
+    data_s = "\n".join(json.dumps(d) for d in data)
+    df = pd.read_json(io.StringIO(data_s), lines=True)
+
+    cols = [ColumnInfo(name='FeatureA', dtype=str), RenameColumn(name='FeatureB', dtype=str, input_name='FeatureA')]
+    for col in cols:
+        actutal = col._process_column(df)
+        expected = pd.Series(["81", "1"])
+
+        assert actutal.dtype == np.dtype('O')
+        assert actutal.equals(expected)

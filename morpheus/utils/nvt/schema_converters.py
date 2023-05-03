@@ -19,8 +19,6 @@ import cudf
 import dataclasses
 import pandas as pd
 
-import morpheus.utils.nvt.cudf_dtype_mappings  # noqa: F401
-
 from merlin.dag import ColumnSelector
 
 from morpheus.utils.column_info import BoolColumn

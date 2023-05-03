@@ -20,19 +20,19 @@ limitations under the License.
 Contributions to Morpheus fall into the following three categories.
 
 1. To report a bug, request a new feature, or report a problem with
-    documentation, please file an [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose)
+    documentation, file an [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose)
     describing in detail the problem or new feature. The Morpheus team evaluates
     and triages issues, and schedules them for a release. If you believe the
-    issue needs priority attention, please comment on the issue to notify the
+    issue needs priority attention, comment on the issue to notify the
     team.
-2. To propose and implement a new Feature, please file a new feature request
+2. To propose and implement a new Feature, file a new feature request
     [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose). Describe the
     intended feature and discuss the design and implementation with the team and
     community. Once the team agrees that the plan is good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
-3. To implement a feature or bug-fix for an existing outstanding issue, please
+3. To implement a feature or bug-fix for an existing outstanding issue,
     follow the [code contributions](#code-contributions) guide below. If you
-    need more context on a particular issue, please ask in a comment.
+    need more context on a particular issue, ask in a comment.
 
 As contributors and maintainers to this project,
 you are expected to abide by Morpheus' code of conduct.
@@ -65,16 +65,18 @@ The following instructions are for developers who are getting started with the M
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.10`
+ - `PYTHON_VER`: The desired Python version. Minimum required is `3.10`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. If in doubt use `23.02`
+ - `TRITONCLIENT_VERSION`: The desired Triton client. If in doubt use `22.10`
  - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.8`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-export PYTHON_VER=3.8
-export RAPIDS_VER=22.10
+export PYTHON_VER=3.10
+export RAPIDS_VER=23.02
+export TRITONCLIENT_VERSION=22.10
 export CUDA_VER=11.8
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
@@ -89,7 +91,7 @@ git submodule update --init --recursive
 
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
-By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. See the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Refer to the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
 
 ### Build in Docker Container
 
@@ -135,7 +137,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a Triton Docker container within the morpheus container. To enable this you will need to grant the morpheus container access to your host OS's Docker socket file with:
+   3. Some of the validation tests require launching a Triton Docker container within the Morpheus container. To enable this you will need to grant the Morpheus container access to your host OS's Docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
@@ -175,7 +177,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 - NVIDIA driver `450.80.02` or higher
 - [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive)
 - `conda` and `mamba`
-  - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
+  - Refer to the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
 
       ```bash
@@ -187,8 +189,8 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Set up env variables and clone the repo:
    ```bash
-   export PYTHON_VER=3.8
-   export RAPIDS_VER=22.10
+   export PYTHON_VER=3.10
+   export RAPIDS_VER=23.02
    export CUDA_VER=11.8
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
@@ -201,7 +203,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 git submodule update --init --recursive
 ```
 
-1. Create the morpheus Conda environment
+1. Create the Morpheus Conda environment
    ```bash
    mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
@@ -235,7 +237,7 @@ git submodule update --init --recursive
 1. Optional: Install cuML
    - Many users may wish to install cuML. Due to the complex dependency structure and versioning requirements, we need to specify exact versions of each package. The command to accomplish this is:
       ```bash
-      mamba install -c rapidsai -c nvidia -c conda-forge "cuda-python<=11.7.0" "libcusolver<=11.4.1.48" "libcusparse<12" cuml=22.10
+      mamba install -c rapidsai -c nvidia -c conda-forge cuml=23.02
       ```
 1. Run Morpheus
    ```bash
@@ -245,7 +247,7 @@ git submodule update --init --recursive
 
 ### Quick Launch Kafka Cluster
 
-Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
+Launching a full production Kafka cluster is outside the scope of this project; however, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. Refer to [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
 
 1. Install `docker-compose` if not already installed:
 
@@ -323,7 +325,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    # Change the number of partitions
    kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --alter --topic ${MY_TOPIC} --partitions 3
 
-   # See the topic info
+   # Refer to the topic info
    kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --describe --topic=${MY_TOPIC}
    ```
    **Note:** If you are using `to-kafka`, ensure your output topic is also created.
@@ -367,7 +369,7 @@ TensorRT    :Skipped
 Complete!
 ```
 
-This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete successfully.
+This indicates that only 3 out of 314 rows did not match the validation dataset. Errors similar to `:/ ( %)` or very high percentages display, then the workflow did not complete successfully.
 
 ### Troubleshooting the Build
 
@@ -377,7 +379,7 @@ Due to the large number of dependencies, it's common to run into build issues. T
    - To avoid rebuilding every compilation unit for all dependencies after each change, a fair amount of the build is cached. By default, the cache is located at `${MORPHEUS_ROOT}/.cache`. The cache contains both compiled object files, source repositories, ccache files, clangd files and even the cuDF build.
    - The entire cache folder can be deleted at any time and will be redownload/recreated on the next build
  - Message indicating `git apply ...` failed
-   - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If you see this error, try deleting the offending package from the `build/_deps/<offending_package>` directory or from `.cache/cpm/<offending_package>`.
+   - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If this error displays, try deleting the offending package from the `build/_deps/<offending_package>` directory or from `.cache/cpm/<offending_package>`.
    - If all else fails, delete the entire `build/` directory and `.cache/` directory.
 
 ## Licensing
@@ -403,7 +405,7 @@ Morpheus is licensed under the Apache v2.0 license. All new source files includi
  ```
 
 ### Third-party code
-Third-party code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a url to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the url to the original code.
+Third-party code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a URL to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the URL to the original code.
 
 Ex:
 ```

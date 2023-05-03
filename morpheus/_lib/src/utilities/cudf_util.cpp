@@ -17,6 +17,7 @@
 
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
@@ -33,8 +34,6 @@
  * translation unit.
  */
 #include "cudf_helpers_api.h"
-
-#include "morpheus/objects/data_table.hpp"
 
 namespace morpheus {
 

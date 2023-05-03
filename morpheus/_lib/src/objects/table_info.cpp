@@ -45,51 +45,48 @@ namespace morpheus {
 namespace py = pybind11;
 using namespace py::literals;
 
-TableInfoData::TableInfoData(cudf::table_view view,
-                             std::vector<std::string> indices,
-                             std::vector<std::string> columns) :
-  table_view(std::move(view)),
-  index_names(std::move(indices)),
-  column_names(std::move(columns))
-{}
-
-TableInfoData TableInfoData::get_slice(std::vector<std::string> column_names) const
-{
-    return this->get_slice(0, -1, std::move(column_names));
-}
-
-TableInfoData TableInfoData::get_slice(cudf::size_type start,
-                                       cudf::size_type stop,
-                                       std::vector<std::string> column_names) const
+/**
+ * @brief Helper function for calculating the slice of a `TableInfoData` object
+ *
+ * @param table Object to slice
+ * @param start Start row for the slice. Relative to the "offset" in `table`
+ * @param stop Stop row for the slice. Relative to the "offset" in `table`
+ * @param column_names Columns to filter by
+ * @return TableInfoData
+ */
+TableInfoData get_table_info_data_slice(const TableInfoData& table,
+                                        cudf::size_type start,
+                                        cudf::size_type stop,
+                                        std::vector<std::string> column_names)
 {
     CHECK_GE(start, 0) << "Start must be >= 0";
 
     if (stop < 0)
     {
-        stop = this->table_view.num_rows();
+        stop = table.table_view.num_rows();
     }
 
     CHECK_GT(stop, 0) << "Stop must be > 0";
-    CHECK_LE(stop, this->table_view.num_rows()) << "Stop must be less than the number of rows";
+    CHECK_LE(stop, table.table_view.num_rows()) << "Stop must be less than the number of rows";
     CHECK_LE(start, stop) << "Start must be less than stop";
 
     if (column_names.empty())
     {
-        column_names = this->column_names;
+        column_names = table.column_names;
     }
 
     // Start with our table view
-    auto table_view_out = this->table_view;
+    auto table_view_out = table.table_view;
 
     // If the columns are different, calculate the new slice
-    if (column_names != this->column_names)
+    if (column_names != table.column_names)
     {
         std::vector<cudf::size_type> col_indices;
 
         std::vector<std::string> new_column_names;
 
         // Append the indices column idx by default
-        for (cudf::size_type i = 0; i < this->index_names.size(); ++i)
+        for (cudf::size_type i = 0; i < table.index_names.size(); ++i)
         {
             col_indices.push_back(i);
         }
@@ -97,10 +94,10 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
         std::transform(column_names.begin(),
                        column_names.end(),
                        std::back_inserter(col_indices),
-                       [this, &new_column_names](const std::string& c) {
-                           auto found_col = std::find(this->column_names.begin(), this->column_names.end(), c);
+                       [&table, &new_column_names](const std::string& c) {
+                           auto found_col = std::find(table.column_names.begin(), table.column_names.end(), c);
 
-                           if (found_col == this->column_names.end())
+                           if (found_col == table.column_names.end())
                            {
                                throw py::key_error("Unknown column: " + c);
                            }
@@ -108,20 +105,20 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
                            // Add the found column to the metadata
                            new_column_names.push_back(c);
 
-                           return (found_col - this->column_names.begin() + this->index_names.size());
+                           return (found_col - table.column_names.begin() + table.index_names.size());
                        });
 
         table_view_out = table_view_out.select(col_indices);
     }
 
     // If the start/stop is different, then perform the slice
-    if (start != 0 || stop != this->table_view.num_rows())
+    if (start != 0 || stop != table.table_view.num_rows())
     {
         table_view_out = cudf::slice(table_view_out, {start, stop})[0];
     }
 
     // Create a new TableInfoData
-    return {table_view_out, this->index_names, column_names};
+    return {table_view_out, table.index_names, column_names};
 }
 
 /****** Component public implementations *******************/
@@ -212,7 +209,7 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
     // Create a new Table info, (cloning the shared_lock)
     return {this->get_parent(),
             std::shared_lock<std::shared_mutex>(*m_lock.mutex()),
-            this->get_data().get_slice(start, stop, column_names)};
+            get_table_info_data_slice(this->get_data(), start, stop, column_names)};
 }
 
 MutableTableInfo::MutableTableInfo(std::shared_ptr<const IDataTable> parent,
@@ -235,7 +232,8 @@ MutableTableInfo MutableTableInfo::get_slice(cudf::size_type start,
                                              std::vector<std::string> column_names) &&
 {
     // Create a new Table info, (moving the unique_lock)
-    return {this->get_parent(), std::move(m_lock), this->get_data().get_slice(start, stop, column_names)};
+    return {
+        this->get_parent(), std::move(m_lock), get_table_info_data_slice(this->get_data(), start, stop, column_names)};
 }
 
 void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
