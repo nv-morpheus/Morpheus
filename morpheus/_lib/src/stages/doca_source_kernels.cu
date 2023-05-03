@@ -314,6 +314,7 @@ __global__ void _packet_receive_kernel(
     auto packet_size = get_packet_size(hdr->l3_hdr);
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
+    // works when this printf statement is present, does not work when it's commented out.
     printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, 0, payload_size);
 
     packet_sizes[packet_idx] = payload_size;
@@ -382,7 +383,8 @@ __global__ void _packet_gather_kernel(
 	__shared__ uint32_t packet_count;
   __shared__ uint64_t packet_offset;
 
-  if (threadIdx.x == 0) {
+  if (threadIdx.x == 0)
+  {
     doca_error_t ret;
     do
     {
@@ -394,7 +396,6 @@ __global__ void _packet_gather_kernel(
         &packet_offset);
 
     } while(ret == DOCA_ERROR_NOT_FOUND);
-
   }
 
   __syncthreads();
@@ -444,10 +445,10 @@ __global__ void _packet_gather_kernel(
 
   BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture);
 
-  if (threadIdx.x == 0)
-  {
-    printf("==================================================\n");
-  }
+  // if (threadIdx.x == 0)
+  // {
+  //   printf("==================================================\n");
+  // }
 
   __syncthreads();
 
@@ -478,7 +479,7 @@ __global__ void _packet_gather_kernel(
 
     auto packet_idx_out = data_capture[i];
 
-    printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, data_offsets[i], payload_size);
+    // printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, data_offsets[i], payload_size);
 
     data_offsets_out[packet_idx_out] = data_offsets[i]; // data_offsets_out is wrong?
     // data_offsets_out[packet_idx_out] = 0; // data_offsets_out is wrong?
@@ -554,9 +555,10 @@ __global__ void _packet_gather_kernel(
     next_proto_id_out[packet_idx_out] = static_cast<int32_t> (next_proto_id);
   }
 
-  if (threadIdx.x == 0) {
-    printf("==================================================\n");
-  }
+  // if (threadIdx.x == 0)
+  // {
+  //   printf("==================================================\n");
+  // }
 
   __syncthreads();
 
