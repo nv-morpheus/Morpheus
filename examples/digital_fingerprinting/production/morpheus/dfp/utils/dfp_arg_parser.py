@@ -72,7 +72,7 @@ class DFPArgParser:
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
-                raise NameError('Instance not initialized')
+                raise RuntimeError('Instance not initialized')
             return func(self, *args, **kwargs)
 
         return wrapper
@@ -80,7 +80,7 @@ class DFPArgParser:
     def _configure_logging(self):
         configure_logging(log_level=self._log_level)
         # To prevent unnecessary logs from the mlflow.tracking.fluent module, explicitly set the log level to WARN.
-        logging.getLogger("mlflow").setLevel("WARN")
+        logging.getLogger("mlflow").setLevel(logging.WARN)
 
     @property
     @verify_init

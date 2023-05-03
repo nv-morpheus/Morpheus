@@ -14,15 +14,9 @@
 
 import logging
 
-# flake8 warnings are silenced by the addition of noqa.
-import dfp.modules.dfp_monitor  # noqa: F401
-import dfp.modules.dfp_split_users  # noqa: F401
 import mrc
 from dfp.utils.module_ids import DFP_MONITOR
 
-import morpheus.loaders.file_to_df_loader  # noqa: F401
-import morpheus.modules.file_batcher  # noqa: F401
-import morpheus.modules.filter_control_message  # noqa: F401
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER

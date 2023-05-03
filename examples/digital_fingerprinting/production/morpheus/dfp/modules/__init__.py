@@ -11,3 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+DFP module definitions, each module is automatically registered when imported
+"""
+
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+from dfp.modules import dfp_monitor  # noqa: F401
+from dfp.modules import dfp_split_users  # noqa: F401
+from dfp.modules import dfp_data_prep  # noqa: F401
+from dfp.modules import dfp_inference  # noqa: F401
+from dfp.modules import dfp_postprocessing  # noqa: F401
+from dfp.modules import dfp_preproc  # noqa: F401
+from dfp.modules import dfp_rolling_window  # noqa: F401
+from dfp.modules import dfp_training  # noqa: F401
+from dfp.modules import dfp_inference_pipe  # noqa: F401
+from dfp.modules import dfp_training_pipe  # noqa: F401
+from dfp.modules import dfp_deployment  # noqa: F401
+
+__all__ = []

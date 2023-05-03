@@ -18,20 +18,8 @@ import json
 from os import path
 
 import GPUtil
-import pytest
 
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
-
-
-def pytest_addoption(parser):
-    parser.addoption("--run-skipped", action="store_true", default=False, help="Include skipped tests in the run.")
-
-
-def pytest_collection_modifyitems(config, items):
-    for item in items:
-        if "skip_by_default" in item.keywords:
-            reason = "Skipped by default, use --run-skipped option to run."
-            item.add_marker(pytest.mark.skipif(not config.getoption("--run-skipped"), reason=reason))
 
 
 def get_json_lines_count(filename):

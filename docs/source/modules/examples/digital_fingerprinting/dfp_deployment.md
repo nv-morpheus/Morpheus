@@ -63,7 +63,7 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | `<iso_date_regex_pattern>` |
 | `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | `{}`                       |
 | `period`                 | string          | Time period for grouping files      | "1d"                                        | `D`                        |
-| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 60                                          | `60`                       |
+| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 0                                          | `None`                       |
 | `start_time`             | datetime/string | Start time of the time window       | "2023-03-01T00:00:00"                       | `None`                     |
 
 ### `dfencoder_options`
@@ -80,7 +80,7 @@ This module function sets up modular Digital Fingerprinting Pipeline instance.
 | Key                         | Type    | Description                                                | Example Value | Default Value |
 | ----------------------------|---------|------------------------------------------------------------|---------------|---------------|
 | `description`               | string  | Name to show for this Monitor Stage in the console window  | "Progress"    | `Progress`    |
-| `silence_monitors`          | bool    | Silence the monitors on the console                        | See Below     | `None`        |
+| `silence_monitors`          | bool    | Silence the monitors on the console                        | True     | `False`        |
 | `smoothing`                 | float   | Smoothing parameter to determine how much the throughput should be averaged | 0.01 | `0.05` |
 | `unit`                      | string  | Units to show in the rate value                             | "messages"    | `messages`    |
 | `delayed_start`             | bool    | When delayed_start is enabled, the progress bar will not be shown until the first message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines, this option may be desired to give a more accurate timing. | True  | `False`   |

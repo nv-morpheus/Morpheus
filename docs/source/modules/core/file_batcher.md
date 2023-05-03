@@ -39,7 +39,7 @@ remaining files by period that fall inside the window.
 | `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | `<iso_date_regex_pattern>` |
 | `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | `{}`                       |
 | `period`                 | string          | Time period for grouping files      | "1d"                                        | `"D"`                      |
-| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 60                                          | `60`                       |
+| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 0                                          | `None`                       |
 | `start_time`             | datetime/string | Start time of the time window       | "2023-03-01T00:00:00"                       | `None`                     |
 
 ### `schema`

@@ -17,14 +17,17 @@ import typing
 from datetime import datetime
 
 import click
-# flake8 warnings are silenced by the addition of noqa.
-import dfp.modules.dfp_deployment  # noqa: F401
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+from dfp import modules  # noqa: F401
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
+from morpheus import loaders  # noqa: F401
+from morpheus import modules  # noqa: F401
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config

@@ -14,19 +14,9 @@
 
 import logging
 
-# flake8 warnings are silenced by the addition of noqa.
-import dfp.modules.dfp_data_prep  # noqa: F401
-import dfp.modules.dfp_inference  # noqa: F401
-import dfp.modules.dfp_monitor  # noqa: F401
-import dfp.modules.dfp_postprocessing  # noqa: F401
-import dfp.modules.dfp_preproc  # noqa: F401
-import dfp.modules.dfp_rolling_window  # noqa: F401
 import mrc
 from dfp.utils.module_ids import DFP_MONITOR
 
-import morpheus.modules.filter_detections  # noqa: F401
-import morpheus.modules.serialize  # noqa: F401
-import morpheus.modules.write_to_file  # noqa: F401
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
@@ -75,13 +65,13 @@ def dfp_inference_pipe(builder: mrc.Builder):
             - monitor_options (dict): Options for monitoring throughput; Example: See Below
 
         batching_options:
-            - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
-            - iso_date_regex_pattern (string): Regex pattern for ISO date matching;
+            - end_time (datetime/str): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+            - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
             Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
-            - parser_kwargs (dictionary): Additional arguments for the parser; Example: {}; Default: {}
-            - period (string): Time period for grouping files; Example: "1d"; Default: "1d"
-            - sampling_rate_s (integer): Sampling rate in seconds; Example: 60; Default: 60
-            - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00";
+            - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
+            - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
+            - sampling_rate_s (int): Sampling rate in seconds; Example: 0; Default: None
+            - start_time (datetime/str): Start time of the time window; Example: "2023-03-01T00:00:00";
             Default: None
 
         detection_criteria:
@@ -97,23 +87,23 @@ def dfp_inference_pipe(builder: mrc.Builder):
                 - schema_str (str): Schema string; Example: "string"; Default: `[Required]`
 
         inference_options:
-            - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+            - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
             Default: `[Required]`
-            - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+            - fallback_username (str): Fallback user to use if no model is found for a user; Example: "generic_user";
             Default: generic_user
-            - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
+            - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
 
         stream_aggregation_options:
-            - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+            - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
             - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
             - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
             Example: 0; Default: 0
-            - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+            - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
             Default: 'timestamp'
-            - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+            - aggregation_span (str): Lookback timespan for training data in a new training event; Example: '60d';
             Default: '60d'
             - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
-            - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
+            - cache_dir (str): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
 
         user_splitting_options:
             - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
@@ -130,24 +120,24 @@ def dfp_inference_pipe(builder: mrc.Builder):
             - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
 
         monitor_options:
-            - description (string): Name to show for this Monitor Stage in the console window; Example: 'Progress';
+            - description (str): Name to show for this Monitor Stage in the console window; Example: 'Progress';
             Default: 'Progress'
             - silence_monitors (bool): Slience the monitors on the console; Example: True; Default: False
             - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged.
             0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
-            - unit (string): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
+            - unit (str): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
             - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first
             message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
             immediately. In large pipelines, this option may be desired to give a more accurate timing;
             Example: True; Default: False
-            - determine_count_fn_schema (string): Custom function for determining the count in a message. Gets called
+            - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called
             for each message. Allows for correct counting of batched and sliced messages.; Example: func_str;
             Default: None
-            - log_level (string): Enable this stage when the configured log level is at `log_level` or lower;
+            - log_level (str): Enable this stage when the configured log level is at `log_level` or lower;
             Example: 'DEBUG'; Default: INFO
 
         write_to_file_options:
-            - filename (string): Path to the output file; Example: `output.csv`; Default: None
+            - filename (str): Path to the output file; Example: `output.csv`; Default: None
             - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
             - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
             - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
@@ -260,8 +250,8 @@ def dfp_inference_pipe(builder: mrc.Builder):
 
     stream_aggregation_defaults = {
         "cache_mode": "batch",
-        "trigger_on_min_history": 300,
-        "trigger_on_min_increment": 300,
+        "trigger_on_min_history": 1,
+        "trigger_on_min_increment": 0,
     }
     dfp_rolling_window_conf = merge_dictionaries(stream_aggregation_options, stream_aggregation_defaults)
 

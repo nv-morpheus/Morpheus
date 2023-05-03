@@ -79,3 +79,12 @@ class MultiDFPMessage(MultiMessage):
             df[columns] = value
 
         typing.cast(DFPMessageMeta, self.meta).set_df(df)
+
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
+
+        sliced_rows = self.copy_meta_ranges(ranges)
+
+        return self.from_message(self,
+                                 meta=DFPMessageMeta(sliced_rows, self.user_id),
+                                 mess_offset=0,
+                                 mess_count=len(sliced_rows))

@@ -19,9 +19,14 @@ import os
 import shutil
 import typing
 
-# flake8 warnings are silenced by the addition of noqa.
-import dfp.modules.dfp_deployment  # noqa: F401
+import boto3
 import pytest
+from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
+from benchmarks.benchmark_conf_generator import load_json
+from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
+# When segment modules are imported, they're added to the module registry.
+# To avoid flake8 warnings about unused code, the noqa flag is used during import.
+from dfp import modules  # noqa: F401
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -35,9 +40,8 @@ from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 from dfp.utils.schema_utils import Schema
 
-from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
-from benchmarks.benchmark_conf_generator import load_json
-from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
+from morpheus import loaders  # noqa: F401
+from morpheus import modules  # noqa: F401
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.config import Config
@@ -57,6 +61,15 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 PIPELINES_CONF = load_json("resource/pipelines_conf.json")
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
+
+
+def aws_credentials_available():
+    try:
+        session = boto3.Session()
+        session.client('s3').list_buckets()
+        return True
+    except Exception:
+        return False
 
 
 def remove_cache(cache_dir: str):
@@ -301,8 +314,8 @@ def test_dfp_modules_azure_payload_lti_e2e(benchmark: typing.Any):
     benchmark(dfp_modules_pipeline, pipe_config, module_config, filenames=input_filenames)
 
 
-@pytest.mark.skip_by_default(
-    reason="To download input logs from an S3 bucket, the AWS configure setup is required for this test.")
+@pytest.mark.skipif(not aws_credentials_available(),
+                    reason="AWS credentials not found or invalid. Configure them to run this test.")
 @pytest.mark.benchmark
 def test_dfp_modules_azure_payload_lti_s3_e2e(benchmark: typing.Any):
 

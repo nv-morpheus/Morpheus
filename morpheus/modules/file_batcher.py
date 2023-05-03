@@ -15,14 +15,14 @@
 import datetime
 import logging
 import re
-from collections import namedtuple
+import typing
+import warnings
 
 import fsspec
 import fsspec.utils
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
-
-import cudf
 
 from morpheus.messages import ControlMessage
 from morpheus.utils.file_utils import date_extractor
@@ -31,7 +31,6 @@ from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_utils import to_period_approximation
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,8 @@ def file_batcher(builder: mrc.Builder):
             Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
             - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
             - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
-            - sampling_rate_s (int): Sampling rate in seconds; Example: 60; Default: 60
+            - sampling_rate_s (int): Sampling rate in seconds; Example: 0; Default: None
+            - sampling (int): Sampling rate in seconds; Example: 0; Default: None
             - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00"; Default: None
 
         schema:
@@ -77,15 +77,26 @@ def file_batcher(builder: mrc.Builder):
     """
 
     config = builder.get_current_module_config()
-
-    TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_name"])
+    sampling = config.get("sampling", None)
+    sampling_rate_s = config.get("sampling_rate_s", None)
 
     iso_date_regex_pattern = config.get("batch_iso_date_regex_pattern", DEFAULT_ISO_DATE_REGEX_PATTERN)
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
+    if (sampling_rate_s is not None and sampling_rate_s > 0):
+        assert sampling is None, "Cannot set both sampling and sampling_rate_s at the same time"
+
+        # Show the deprecation message
+        warnings.warn(("The `sampling_rate_s` argument has been deprecated. "
+                       "Please use `sampling={sampling_rate_s}S` instead"),
+                      DeprecationWarning)
+
+        sampling = f"{sampling_rate_s}S"
+
     default_batching_opts = {
         "period": config.get("period", 'D'),
-        "sampling_rate_s": config.get("sampling_rate_s", 0),
+        "sampling_rate_s": sampling_rate_s,
+        "sampling": sampling,
         "start_time": config.get("start_time"),
         "end_time": config.get("end_time"),
     }
@@ -108,12 +119,14 @@ def file_batcher(builder: mrc.Builder):
         if data_type not in {"payload", "streaming"}:
             raise ValueError(f"Invalid 'data_type' metadata in control message: {data_type}")
 
-    def build_fs_filename_df(files, params):
+    def build_period_batches(files: typing.List[str],
+                             params: typing.Dict[any, any]) -> typing.List[typing.Tuple[typing.List[str], int]]:
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
         try:
             start_time = params["start_time"]
             end_time = params["end_time"]
+            period = params["period"]
             sampling_rate_s = params["sampling_rate_s"]
 
             if not isinstance(start_time, (str, type(None))) or (start_time is not None
@@ -137,7 +150,9 @@ def file_batcher(builder: mrc.Builder):
             logger.error("Error parsing parameters: %s", (exec_info))
             raise
 
-        ts_and_files = []
+        timestamps = []
+        full_names = []
+
         for file_object in file_objects:
             ts = date_extractor(file_object, iso_date_regex)
 
@@ -145,87 +160,106 @@ def file_batcher(builder: mrc.Builder):
             if ((start_time is not None and ts < start_time) or (end_time is not None and ts > end_time)):
                 continue
 
-            ts_and_files.append(TimestampFileObj(ts, file_object.full_name))
+            timestamps.append(ts)
+            full_names.append(file_object.full_name)
+
+        # Build the dataframe
+        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names})
 
         # sort the incoming data by date
-        ts_and_files.sort(key=lambda x: x.timestamp)
+        df.sort_index(inplace=True)
 
-        if ((len(ts_and_files) > 1) and (sampling_rate_s > 0)):
-            file_sampled_list = []
+        # If sampling was provided, perform that here
+        if (sampling is not None):
 
-            ts_last = ts_and_files[0].timestamp
+            if (isinstance(sampling, str)):
+                # We have a frequency for sampling. Resample by the frequency, taking the first
+                df = df.resample(sampling).first().dropna()
 
-            file_sampled_list.append(ts_and_files[0])
+            elif (sampling < 1.0):
+                # Sample a fraction of the rows
+                df = df.sample(frac=sampling).sort_index()
 
-            for idx in range(1, len(ts_and_files)):
-                ts = ts_and_files[idx].timestamp
-
-                if ((ts - ts_last).seconds >= sampling_rate_s):
-                    ts_and_files.append(ts_and_files[idx])
-                    ts_last = ts
             else:
-                ts_and_files = file_sampled_list
+                # Sample a fixed amount
+                df = df.sample(n=sampling).sort_index()
 
-        timestamps = []
-        full_names = []
-        for (ts, file_name) in ts_and_files:
-            timestamps.append(ts)
-            full_names.append(file_name)
+        # Early exit if no files were found
+        if (len(df) == 0):
+            return []
 
-        df = cudf.DataFrame()
-        df["ts"] = timestamps
-        df["key"] = full_names
+        if (period is None):
+            # No period was set so group them all into one single batch
+            return [(df["filename"].to_list(), len(df))]
 
-        return df
+        # Now group the rows by the period
+        resampled = df.resample(period)
 
-    def build_file_df_params(control_message):
+        n_groups = len(resampled)
+
+        output_batches = []
+
+        for _, period_df in resampled:
+
+            filename_list = period_df["filename"].to_list()
+
+            output_batches.append((filename_list, n_groups))
+
+        return output_batches
+
+    def build_file_df_params(control_message: ControlMessage) -> typing.Dict[any, any]:
         file_to_df_opts = {}
         if (control_message.has_metadata("file_to_df_options")):
             file_to_df_opts = control_message.get_metadata("file_to_df_options")
 
         return merge_dictionaries(file_to_df_opts, default_file_to_df_opts)
 
-    def generate_cms_for_batch_periods(control_message: ControlMessage, period_gb, n_groups):
+    def generate_cms_for_batch_periods(
+            control_message: ControlMessage,
+            batch_periods: typing.List[typing.Tuple[typing.List[str], int]]) -> typing.List[ControlMessage]:
         data_type = control_message.get_metadata("data_type")
         file_to_df_params = build_file_df_params(control_message=control_message)
 
         control_messages = []
-        for group in period_gb.groups:
 
-            period_df = period_gb.get_group(group)
-            filenames = period_df["key"].tolist()
-            load_task = {
-                "loader_id": FILE_TO_DF_LOADER,
-                "strategy": "aggregate",
-                "files": filenames,
-                "n_groups": n_groups,
-                "batcher_config": {  # TODO(Devin): Remove this when we're able to attach config to the loader
-                    "timestamp_column_name": file_to_df_params.get("timestamp_column_name"),
-                    "schema": file_to_df_params.get("schema"),
-                    "file_type": file_to_df_params.get("file_type"),
-                    "filter_null": file_to_df_params.get("filter_null"),
-                    "parser_kwargs": file_to_df_params.get("parser_kwargs"),
-                    "cache_dir": file_to_df_params.get("cache_dir")
+        for batch_period in batch_periods:
+
+            filenames = batch_period[0]
+            n_groups = batch_period[1]
+
+            if filenames:
+                load_task = {
+                    "loader_id": FILE_TO_DF_LOADER,
+                    "strategy": "aggregate",
+                    "files": filenames,
+                    "n_groups": n_groups,
+                    "batcher_config": {  # TODO(Devin): Remove this when we're able to attach config to the loader
+                        "timestamp_column_name": file_to_df_params.get("timestamp_column_name"),
+                        "schema": file_to_df_params.get("schema"),
+                        "file_type": file_to_df_params.get("file_type"),
+                        "filter_null": file_to_df_params.get("filter_null"),
+                        "parser_kwargs": file_to_df_params.get("parser_kwargs"),
+                        "cache_dir": file_to_df_params.get("cache_dir")
+                    }
                 }
-            }
 
-            if (data_type == "payload" or data_type == "streaming"):
-                batch_control_message = control_message.copy()
-                batch_control_message.add_task("load", load_task)
-                control_messages.append(batch_control_message)
-            else:
-                raise ValueError(f"Unknown data type: {data_type}")
+                if (data_type == "payload" or data_type == "streaming"):
+                    batch_control_message = control_message.copy()
+                    batch_control_message.add_task("load", load_task)
+                    control_messages.append(batch_control_message)
+                else:
+                    raise ValueError(f"Unknown data type: {data_type}")
 
         return control_messages
 
-    def build_processing_params(control_message):
+    def build_processing_params(control_message) -> typing.Dict[any, any]:
         batching_opts = {}
         if (control_message.has_metadata("batching_options")):
             batching_opts = control_message.get_metadata("batching_options")
 
         return merge_dictionaries(batching_opts, default_batching_opts)
 
-    def on_data(control_message: ControlMessage):
+    def on_data(control_message: ControlMessage) -> typing.List[ControlMessage]:
         try:
             validate_control_message(control_message)
 
@@ -234,18 +268,9 @@ def file_batcher(builder: mrc.Builder):
             params = build_processing_params(control_message)
             with message_meta.mutable_dataframe() as dfm:
                 files = dfm.files.to_arrow().to_pylist()
-                ts_filenames_df = build_fs_filename_df(files, params)
+                batch_periods = build_period_batches(files, params)
 
-            control_messages = []
-            if len(ts_filenames_df) > 0:
-                # Now split by the batching settings
-
-                ts_filenames_df = to_period_approximation(ts_filenames_df, params["period"])
-                # Converting to pandas as groupby performance scales poorly with number of groups.
-                ts_filenames_df = ts_filenames_df.to_pandas()
-                period_gb = ts_filenames_df.groupby("period")
-                n_groups = len(period_gb.groups)
-                control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
+            control_messages = generate_cms_for_batch_periods(control_message, batch_periods)
 
             return control_messages
 

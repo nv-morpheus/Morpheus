@@ -25,7 +25,6 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.messages import ControlMessage
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
@@ -49,11 +48,11 @@ def dfp_inference(builder: mrc.Builder):
     Notes
     ----------
         Configurable parameters:
-            - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+            - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
             Default: `[Required]`
-            - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+            - fallback_username (str): Fallback user to use if no model is found for a user; Example: "generic_user";
             Default: generic_user
-            - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
+            - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
     """
 
     config = builder.get_current_module_config()
@@ -110,13 +109,7 @@ def dfp_inference(builder: mrc.Builder):
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(df=results_df, user_id=user_id)
-        multi_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(results_df))
-        output_message = MultiAEMessage(meta=multi_message.meta,
-                                        mess_offset=multi_message.mess_offset,
-                                        mess_count=multi_message.mess_count,
-                                        model=loaded_model,
-                                        train_scores_std=1.0,
-                                        train_scores_mean=0.0)
+        output_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(results_df))
 
         output_message.set_meta(list(results_df.columns), results_df)
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
