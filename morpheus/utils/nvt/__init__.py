@@ -16,7 +16,7 @@ from .mutate import MutateOp
 
 from .transforms import json_flatten
 
-from .schema_converters import input_schema_to_nvt_workflow
+from .schema_converters import dataframe_input_schema_to_nvt_workflow
 
 
 def register_morpheus_extensions():

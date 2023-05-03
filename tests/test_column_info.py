@@ -22,6 +22,8 @@ from functools import partial
 import pandas as pd
 import pytest
 
+from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
+
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -84,20 +86,26 @@ def test_dataframe_input_schema_with_json_cols():
     ]
 
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
+    nvt_workflow = dataframe_input_schema_to_nvt_workflow(schema)
 
     # Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
     input_df["properties"] = input_df["properties"].apply(
         lambda row: json.dumps(row))
 
-    df_processed = process_dataframe(input_df, schema)
-    processed_df_cols = df_processed.columns
+    df_processed_schema = process_dataframe(input_df, schema)
+    processed_df_cols = df_processed_schema.columns
 
-    assert len(input_df) == len(df_processed)
+    assert len(input_df) == len(df_processed_schema)
     assert len(processed_df_cols) == len(column_info)
     assert "timestamp" in processed_df_cols
     assert "userId" in processed_df_cols
     assert "time" not in processed_df_cols
     assert "properties.userPrincipalName" not in processed_df_cols
+
+    # Test that we get the same answer when the dataframe is processed via workflow
+    df_processed_workflow = process_dataframe(input_df, nvt_workflow)
+
+    assert df_processed_schema.equals(df_processed_workflow)
 
 
 @pytest.mark.use_python

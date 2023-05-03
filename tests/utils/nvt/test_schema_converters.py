@@ -20,7 +20,7 @@ import nvtabular as nvt
 import pandas as pd
 
 from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
-from morpheus.utils.nvt.schema_converters import input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
 from morpheus.utils.nvt.schema_converters import get_ci_column_selector
 from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import sync_df_as_pandas
@@ -294,7 +294,7 @@ def test_input_schema_conversion_empty_schema():
     empty_schema = DataFrameInputSchema()
 
     with pytest.raises(ValueError, match="Input schema is empty"):
-        workflow = input_schema_to_nvt_workflow(empty_schema)  # noqa
+        workflow = dataframe_input_schema_to_nvt_workflow(empty_schema)  # noqa
 
 
 def test_input_schema_conversion_additional_column():
@@ -307,7 +307,7 @@ def test_input_schema_conversion_additional_column():
     )
     test_df = create_test_dataframe()
 
-    workflow = input_schema_to_nvt_workflow(modified_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -343,7 +343,7 @@ def test_input_schema_conversion_interdependent_columns():
     test_df["user"] = ['{"firstname": "Jane", "lastname": "Smith", "name": "Jane Smith"}']
     test_df["application"] = ['{"name": "AnotherApp", "version": "1.0"}']
 
-    workflow = input_schema_to_nvt_workflow(modified_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -379,7 +379,7 @@ def test_input_schema_conversion_nested_operations():
     # Add the 'appsuffix' column to the schema
     modified_schema.column_info.append(ColumnInfo(name="appsuffix", dtype="str"))
 
-    workflow = input_schema_to_nvt_workflow(modified_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -414,7 +414,7 @@ def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = input_schema_to_nvt_workflow(modified_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -442,7 +442,7 @@ def test_input_schema_conversion_preserve_column():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = input_schema_to_nvt_workflow(modified_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
 
@@ -477,7 +477,7 @@ def test_input_schema_conversion():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = input_schema_to_nvt_workflow(example_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
     dataset = nvt.Dataset(test_df)
@@ -521,7 +521,7 @@ def test_input_schema_conversion_with_trivial_filter():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = input_schema_to_nvt_workflow(example_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
     dataset = nvt.Dataset(test_df)
@@ -567,7 +567,7 @@ def test_input_schema_conversion_with_functional_filter():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = input_schema_to_nvt_workflow(example_schema)
+    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
     dataset = nvt.Dataset(test_df)

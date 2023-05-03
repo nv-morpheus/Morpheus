@@ -224,16 +224,22 @@ class DataFrameInputSchema:
 
 
 def process_dataframe(df_in: pd.DataFrame,
-                      input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema]) -> pd.DataFrame:
+                      input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+                      output_dtype="ddf") -> pd.DataFrame:
     """
     Applies column transformations as defined by `input_schema`
     """
 
-    from morpheus.utils.nvt import input_schema_to_nvt_workflow
+    from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
 
     dataset = nvt.Dataset(df_in)
     workflow = input_schema
     if (isinstance(input_schema, DataFrameInputSchema)):
-        workflow = input_schema_to_nvt_workflow(input_schema)
+        workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
 
-    return workflow.transform(dataset).to_ddf().compute()
+    if (output_dtype == "ddf"):
+        return workflow.fit_transform(dataset).to_ddf().compute()
+    elif (output_dtype == "gpu"):
+        return workflow.fit_transform(dataset).to_gpu()
+    elif (output_dtype == "cpu"):
+        return workflow.fit_transform(dataset).to_cpu()
