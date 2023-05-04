@@ -61,7 +61,7 @@ class DFPInferenceStage(SinglePortStage):
 
         return self._model_manager.load_user_model(self._client, user_id=user, fallback_user_ids=[self._fallback_user])
 
-    def on_data(self, message: MultiDFPMessage):
+    def on_data(self, message: MultiDFPMessage) -> MultiDFPMessage:
         if (not message or message.mess_count == 0):
             return None
 
