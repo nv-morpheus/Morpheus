@@ -110,11 +110,11 @@ raw_to_tcp(const uintptr_t buf_addr, struct eth_ip_tcp_hdr **hdr, uint8_t **pack
 	return 0;
 }
 
-// __device__ __forceinline__ uint8_t
-// gpu_ipv4_hdr_len(const struct ipv4_hdr& packet_l3)
-// {
-// 	return (uint8_t)((packet_l3.version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
-// };
+__device__ __forceinline__ uint8_t
+gpu_ipv4_hdr_len(const struct ipv4_hdr& packet_l3)
+{
+	return (uint8_t)((packet_l3.version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
+};
 
 __device__ __forceinline__ uint32_t
 get_packet_size(ipv4_hdr& packet_l3)
@@ -126,11 +126,10 @@ __device__ __forceinline__ int32_t
 get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
 {
   auto packet_size       = get_packet_size(packet_l3);
-  // auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
-  // auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off * sizeof(int32_t));
-  auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off >> 4);
-  // auto payload_size      = packet_size - ip_header_length - tcp_header_length;
-  auto payload_size      = packet_size - sizeof(ipv4_hdr) - tcp_header_length;
+  auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
+  // auto ip_header_length  = sizeof(ipv4_hdr);
+  auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off >> 4) * sizeof(int32_t);
+  auto payload_size      = packet_size - ip_header_length - tcp_header_length;
 
   return payload_size;
 }
@@ -138,7 +137,13 @@ get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
 __device__ __forceinline__ bool
 is_tcp_packet(ipv4_hdr& packet_l3)
 {
-  return packet_l3.next_proto_id == IPPROTO_TCP;
+  if(packet_l3.next_proto_id == IPPROTO_TCP) {
+    return true;
+  }
+
+  assert(0);
+
+  return false;
 }
 
 __device__ char to_hex_16(uint8_t value)
@@ -239,6 +244,12 @@ __global__ void _packet_receive_kernel(
   uint32_t*               exit_condition
 )
 {
+  // Specialize BlockReduce for a 1D block of 128 threads of type int
+  using BlockReduce = cub::BlockReduce<int32_t, THREADS_PER_BLOCK>;
+
+  // Allocate shared memory for BlockReduce
+  __shared__ typename BlockReduce::TempStorage temp_storage;
+
   if (threadIdx.x == 0)
   {
     *packet_count_out = 0;
@@ -259,11 +270,20 @@ __global__ void _packet_receive_kernel(
       return;
     }
 
+    // if (DOCA_GPUNETIO_VOLATILE(*exit_condition) == 1)
+    // {
+    //   return;
+    // }
+
     if (sem_status == DOCA_GPU_SEMAPHORE_STATUS_FREE)
     {
       break;
     }
+
+    // printf("doca_gpu_dev_sem_get_status waiting\n");
   }
+
+  // printf("doca_gpu_dev_sem_get_status got\n");
 
   __syncthreads();
 
@@ -287,22 +307,25 @@ __global__ void _packet_receive_kernel(
   __threadfence();
   __syncthreads();
 
-  if (packet_count == 0) {
+  if (DOCA_GPUNETIO_VOLATILE(packet_count) == 0) {
     return;
   }
 
   __syncthreads();
 
+  int32_t something[4];
+
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
-    if (packet_idx >= packet_count) {
+    if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count)) {
+      something[i] = 0;
       continue;
     }
 
     doca_gpu_buf *buf_ptr;
-    doca_gpu_dev_eth_rxq_get_buf(rxq_info, packet_offset + packet_idx, &buf_ptr);
+    doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset) + packet_idx, &buf_ptr);
 
     uintptr_t buf_addr;
     doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
@@ -315,7 +338,9 @@ __global__ void _packet_receive_kernel(
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
     // works when this printf statement is present, does not work when it's commented out.
-    printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, 0, payload_size);
+    // printf("", threadIdx.x);
+
+    something[i] = payload_size;
 
     packet_sizes[packet_idx] = payload_size;
 
@@ -326,6 +351,27 @@ __global__ void _packet_receive_kernel(
     }
   }
 
+  auto something_total = BlockReduce(temp_storage).Sum(something);
+
+  __syncthreads();
+
+  if (threadIdx.x == 0){
+    // printf("a: %i b: %i\n", *packet_size_total_out, something_total);
+    assert(*packet_size_total_out == something_total);
+  }
+
+
+  // auto payload_size_total = BlockReduce(temp_storage).Sum(payload_sizes);
+
+  // printf("", threadIdx.x);
+
+  // __syncthreads();
+
+  // if (threadIdx.x == 0) {
+  //   *packet_size_total_out = payload_size_total;
+  //   *packet_count_out = packet_count;
+  // }
+
   __syncthreads();
 
   if (threadIdx.x == 0)
@@ -335,8 +381,8 @@ __global__ void _packet_receive_kernel(
         sem_in,
         *sem_idx,
         DOCA_GPU_SEMAPHORE_STATUS_HOLD,
-        packet_count,
-        packet_offset
+        DOCA_GPUNETIO_VOLATILE(packet_count),
+        DOCA_GPUNETIO_VOLATILE(packet_offset)
       );
     } else {
       doca_gpu_dev_sem_set_status(
@@ -407,14 +453,14 @@ __global__ void _packet_gather_kernel(
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
-    if (packet_idx >= packet_count) {
+    if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count)) {
       data_capture[i] = 0;
       data_offsets[i] = 0;
       continue;
     }
 
     doca_gpu_buf *buf_ptr;
-    doca_gpu_dev_eth_rxq_get_buf(rxq_info, packet_offset + packet_idx, &buf_ptr);
+    doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset) + packet_idx, &buf_ptr);
 
     uintptr_t buf_addr;
     doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
@@ -425,16 +471,8 @@ __global__ void _packet_gather_kernel(
 
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
-    if (is_tcp_packet(hdr->l3_hdr))
-    {
-      data_capture[i] = 1;
-      data_offsets[i] = payload_size;
-    }
-    else
-    {
-      data_capture[i] = 0;
-      data_offsets[i] = 0;
-    }
+    data_capture[i] = 1;
+    data_offsets[i] = payload_size;
   }
 
   __syncthreads();
@@ -445,23 +483,18 @@ __global__ void _packet_gather_kernel(
 
   BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture);
 
-  // if (threadIdx.x == 0)
-  // {
-  //   printf("==================================================\n");
-  // }
-
   __syncthreads();
 
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
-    if (packet_idx >= packet_count) {
+    if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count)) {
       continue;
     }
 
     doca_gpu_buf *buf_ptr;
-    doca_gpu_dev_eth_rxq_get_buf(rxq_info, packet_offset + packet_idx, &buf_ptr);
+    doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset) + packet_idx, &buf_ptr);
 
     uintptr_t buf_addr;
     doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
@@ -491,11 +524,11 @@ __global__ void _packet_gather_kernel(
       auto data_out_idx = data_offsets[i] + data_idx;
 
       if (data_out_idx < data_out_size) {
-        if((value >= 'a' and value <= 'z') or (value >= 'A' and value <= 'Z')) {
+        // if((value >= 'a' and value <= 'z') or (value >= 'A' and value <= 'Z')) {
           data_out[data_out_idx] = value;
-        } else {
-          data_out[data_out_idx] = '_';
-        }
+        // } else {
+        //   data_out[data_out_idx] = '_';
+        // }
       }
     }
 
@@ -554,11 +587,6 @@ __global__ void _packet_gather_kernel(
     auto next_proto_id = hdr->l3_hdr.next_proto_id;
     next_proto_id_out[packet_idx_out] = static_cast<int32_t> (next_proto_id);
   }
-
-  // if (threadIdx.x == 0)
-  // {
-  //   printf("==================================================\n");
-  // }
 
   __syncthreads();
 
@@ -627,7 +655,7 @@ std::unique_ptr<cudf::column> integers_to_mac(
   auto d_offsets    = offsets_column->view().data<int32_t>();
   auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
   auto d_chars      = chars_column->mutable_view().data<char>();
-  
+
   thrust::for_each_n(
     rmm::exec_policy(stream),
     thrust::make_counting_iterator<cudf::size_type>(0),

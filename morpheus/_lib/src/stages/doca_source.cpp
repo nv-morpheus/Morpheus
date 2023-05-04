@@ -98,6 +98,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
     DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
+    auto cancel_thread = std::thread([&] {
+      while (output.is_subscribed()){}
+      DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 1;
+    });
+
     while (output.is_subscribed())
     {
       if (DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) == 1) {
@@ -336,6 +341,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       output.on_next(std::move(meta));
     }
+
+    cancel_thread.join();
 
     cudaStreamDestroy(processing_stream);
 
