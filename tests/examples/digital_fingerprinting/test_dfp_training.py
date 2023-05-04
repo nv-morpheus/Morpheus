@@ -57,9 +57,6 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
 
     mock_ae.return_value = mock_ae
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
-        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
-
     input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
     df = dataset_pandas[input_file]
     train_df = df[df.columns.intersection(config.ae.feature_columns)]

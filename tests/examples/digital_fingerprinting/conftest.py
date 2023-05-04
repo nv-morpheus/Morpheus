@@ -17,7 +17,6 @@ import os
 import sys
 
 import pytest
-import yaml
 
 from utils import TEST_DIRS
 from utils import import_or_skip
@@ -36,14 +35,21 @@ def dask_distributed(fail_missing: bool):
     yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
+@pytest.fixture(scope='session')
+def ae_feature_cols():
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+        yield [x.strip() for x in fh.readlines()]
+
+
 @pytest.fixture
 @pytest.mark.use_python
-def config(config):
+def config(config, ae_feature_cols):
     """
     The digital_fingerprinting production example utilizes the Auto Encoder config, and requires C++ execution disabled.
     """
     from morpheus.config import ConfigAutoEncoder
     config.ae = ConfigAutoEncoder()
+    config.ae.feature_columns = ae_feature_cols
     yield config
 
 
