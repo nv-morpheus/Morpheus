@@ -13,15 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-import os
+import logging
 from unittest import mock
 
+import pandas as pd
 import pytest
 
 from morpheus.config import Config
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.utils.logger import set_log_level
 from utils import TEST_DIRS
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(autouse=True)
@@ -51,3 +54,77 @@ def test_constructor(config: Config, mock_mlflow_client: mock.MagicMock, mock_mo
 
     mock_mlflow_client.assert_called_once()
     mock_model_manager.assert_called_once_with(model_name_formatter="test_model_name-{user_id}-{user_md5}")
+
+
+def test_get_model(config: Config, mock_mlflow_client: mock.MagicMock, mock_model_manager: mock.MagicMock):
+    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+
+    mock_model_cache = mock.MagicMock()
+    mock_model_manager.load_user_model.return_value = mock_model_cache
+
+    stage = DFPInferenceStage(config)
+    assert stage.get_model("test_user") is mock_model_cache
+
+    mock_model_manager.load_user_model.assert_called_once_with(mock_mlflow_client,
+                                                               user_id="test_user",
+                                                               fallback_user_ids=[config.ae.fallback_username])
+
+
+@pytest.mark.usefixtures("reset_loglevel")
+@pytest.mark.parametrize('morpheus_log_level',
+                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+def test_on_data(
+        config: Config,
+        mock_mlflow_client: mock.MagicMock,
+        mock_model_manager: mock.MagicMock,
+        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        morpheus_log_level: int,
+        dataset_pandas: DatasetManager):
+    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+
+    set_log_level(morpheus_log_level)
+
+    expected_results = [i for i in range(1000, dfp_multi_message.mess_count + 1000)]
+
+    expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
+    expected_df["results"] = expected_results
+    expected_df["model_version"] = "test_model_name:test_model_version"
+
+    mock_model = mock.MagicMock()
+    mock_model.get_results.return_value = pd.DataFrame({"results": expected_results})
+
+    mock_model_cache = mock.MagicMock()
+    mock_model_cache.load_model.return_value = mock_model
+    mock_model_cache.reg_model_name = "test_model_name"
+    mock_model_cache.reg_model_version = "test_model_version"
+
+    mock_model_manager.load_user_model.return_value = mock_model_cache
+
+    stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}")
+    results = stage.on_data(dfp_multi_message)
+
+    assert isinstance(results, MultiAEMessage)
+    assert results.meta is dfp_multi_message.meta
+    assert results.mess_offset == dfp_multi_message.mess_offset
+    assert results.mess_count == dfp_multi_message.mess_count
+    assert results.model is mock_model
+    dataset_pandas.assert_compare_df(results.get_meta(), expected_df)
+
+
+@pytest.mark.parametrize("raise_error", [True, False])
+def test_on_data_get_model_error(
+        config: Config,
+        mock_mlflow_client: mock.MagicMock,
+        mock_model_manager: mock.MagicMock,
+        dfp_multi_message: "MultiDFPMessage",  # noqa: F821
+        raise_error: bool):
+    from dfp.stages.dfp_inference_stage import DFPInferenceStage
+
+    # There are two error conditions that can occur in get_model can return None or raise an error
+    if raise_error:
+        mock_model_manager.load_user_model.side_effect = RuntimeError("test error")
+    else:
+        mock_model_manager.load_user_model.return_value = None
+
+    stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}")
+    assert stage.on_data(dfp_multi_message) is None
