@@ -69,10 +69,17 @@ class ColumnInfo:
 
     def get_pandas_dtype(self) -> str:
         """Return the pandas type string of column."""
-        if (issubclass(self.dtype, datetime)):
+        # TODO(Devin) - Previous usages of dtype were not consistent with its typing information
+        #               and it was used to store both the final type and the original type. So we
+        #               need to handle both cases here.
+        if ((isinstance(self.dtype, str) and self.dtype.startswith("datetime")) or
+                (isinstance(self.dtype, type) and issubclass(self.dtype, datetime))):
             return "datetime64[ns]"
         else:
-            return self.dtype
+            if (isinstance(self.dtype, str)):
+                return self.dtype
+            else:
+                return self.dtype.__name__
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
