@@ -72,6 +72,7 @@ def databricks_env(restore_environ):
 def mock_requests():
     with mock.patch("requests.get") as mock_requests_get, mock.patch("requests.patch") as mock_requests_patch:
         mock_response = mock.MagicMock(status_code=200)
+        mock_response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
         mock_requests_get.return_value = mock_response
         yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
 
@@ -188,8 +189,6 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-    mock_requests.response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
-
     databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
     stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
     stage._apply_model_permissions("test_experiment")
@@ -239,15 +238,27 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
     mock_requests.patch.assert_not_called()
 
 
-
-def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: MockedRequests, dataset_pandas: DatasetManager):
+@pytest.mark.parametrize("databricks_permissions", [None, {}])
+@pytest.mark.parametrize("tracking_uri", ['file:///home/user/morpheus/mlruns', "databricks"])
+def test_on_data(config: Config,
+                 mock_mlflow: MockedMLFlow,
+                 mock_requests: MockedRequests,
+                 dataset_pandas: DatasetManager,
+                 databricks_env: dict,
+                 databricks_permissions: dict,
+                 tracking_uri: str):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     from dfp.stages.dfp_mlflow_model_writer import conda_env
 
-    # We aren't setting databricks_permissions, so we shouldn't be trying to make any request calls
-    mock_requests.get.side_effect = RuntimeError("should not be called")
-    mock_requests.patch.side_effect = RuntimeError("should not be called")
+    should_apply_permissions = (databricks_permissions is not None and tracking_uri == "databricks")
+
+    if not should_apply_permissions:
+        # We aren't setting databricks_permissions, so we shouldn't be trying to make any request calls
+        mock_requests.get.side_effect = RuntimeError("should not be called")
+        mock_requests.patch.side_effect = RuntimeError("should not be called")
+
+    mock_mlflow.get_tracking_uri.return_value = tracking_uri
 
     config.ae.timestamp_column_name = 'eventTime'
 
@@ -273,11 +284,8 @@ def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: Mocke
     meta = DFPMessageMeta(df, 'Account-123456789')
     msg = MultiAEMessage(meta=meta, model=mock_model)
 
-    stage = DFPMLFlowModelWriterStage(config)
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
     assert stage.on_data(msg) is msg  # Should be a pass-thru
-
-    mock_requests.get.assert_not_called()
-    mock_requests.patch.assert_not_called()
 
     # Test mocks in order that they're called
     mock_mlflow.end_run.assert_called_once()
@@ -302,12 +310,25 @@ def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: Mocke
 
     mock_mlflow.ModelSignature.assert_called_once()
 
-    mock_mlflow.pytorch_log_model.assert_called_once_with(pytorch_model=mock_model, artifact_path="dfencoder-test_run_uuid", conda_env=conda_env, signature=mock_mlflow.ModelSignature)
+    mock_mlflow.pytorch_log_model.assert_called_once_with(pytorch_model=mock_model,
+                                                          artifact_path="dfencoder-test_run_uuid",
+                                                          conda_env=conda_env,
+                                                          signature=mock_mlflow.ModelSignature)
 
     mock_mlflow.MlflowClient.assert_called_once()
     mock_mlflow.MlflowClient.create_registered_model.assert_called_once_with("dfp-Account-123456789")
 
-    mock_mlflow.get_tracking_uri.assert_not_called()
+    if databricks_permissions is not None:
+        mock_mlflow.get_tracking_uri.assert_called_once()
+    else:
+        mock_mlflow.get_tracking_uri.assert_not_called()
+
+    if should_apply_permissions:
+        verify_apply_model_permissions(mock_requests, databricks_env, databricks_permissions, 'dfp-Account-123456789')
+    else:
+        mock_requests.get.assert_not_called()
+        mock_requests.patch.assert_not_called()
+
     mock_mlflow.RunsArtifactRepository.get_underlying_uri.assert_called_once_with(mock_mlflow.model_info.model_uri)
 
     expected_tags = {"start": min_time, "end": max_time, "count": len(df)}
