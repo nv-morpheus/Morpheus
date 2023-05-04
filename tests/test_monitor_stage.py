@@ -52,31 +52,31 @@ def test_constructor(config):
         return x * 2
 
     m = MonitorStage(config, description="Test Description", smoothing=0.7, unit='units', determine_count_fn=two_x)
-    assert m._description == "Test Description"
-    assert m._smoothing == 0.7
-    assert m._unit == "units"
-    assert m._determine_count_fn is two_x
+    assert m._mc._description == "Test Description"
+    assert m._mc._smoothing == 0.7
+    assert m._mc._unit == "units"
+    assert m._mc._determine_count_fn is two_x
 
 
-@mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
+@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_on_start(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._progress is None
+    assert m._mc._progress is None
 
     m.on_start()
     mock_morph_tqdm.assert_called_once()
     mock_morph_tqdm.reset.assert_called_once()
-    assert m._progress is mock_morph_tqdm
+    assert m._mc._progress is mock_morph_tqdm
 
 
-@mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
+@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_stop(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._progress is None
+    assert m._mc._progress is None
 
     # Calling on_stop is a noop if we are stopped
     m.stop()
@@ -87,54 +87,54 @@ def test_stop(mock_morph_tqdm, config):
     mock_morph_tqdm.close.assert_called_once()
 
 
-@mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
+@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._progress is None
+    assert m._mc._progress is None
 
     m.on_start()
-    m._refresh_progress(None)
+    m._mc.refresh_progress(None)
     mock_morph_tqdm.refresh.assert_called_once()
 
 
 def test_auto_count_fn(config):
     m = MonitorStage(config, log_level=logging.WARNING)
 
-    assert m._auto_count_fn(None) is None
-    assert m._auto_count_fn([]) is None
+    assert m._mc.auto_count_fn(None) is None
+    assert m._mc.auto_count_fn([]) is None
 
     # Ints not supported, lists are, but lists of unsupported are also unsupported
-    pytest.raises(NotImplementedError, m._auto_count_fn, 1)
-    pytest.raises(NotImplementedError, m._auto_count_fn, [1])
+    pytest.raises(NotImplementedError, m._mc.auto_count_fn, 1)
+    pytest.raises(NotImplementedError, m._mc.auto_count_fn, [1])
 
     # Just verify that we get a valid function for each supported type
-    assert inspect.isfunction(m._auto_count_fn(['s']))
-    assert inspect.isfunction(m._auto_count_fn('s'))
-    assert inspect.isfunction(m._auto_count_fn(cudf.DataFrame()))
+    assert inspect.isfunction(m._mc.auto_count_fn(['s']))
+    assert inspect.isfunction(m._mc.auto_count_fn('s'))
+    assert inspect.isfunction(m._mc.auto_count_fn(cudf.DataFrame()))
     assert inspect.isfunction(
-        m._auto_count_fn(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"])))))
+        m._mc.auto_count_fn(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"])))))
 
     # Other iterables return the len function
-    assert m._auto_count_fn({}) is len
-    assert m._auto_count_fn(()) is len
-    assert m._auto_count_fn(set()) is len
+    assert m._mc.auto_count_fn({}) is len
+    assert m._mc.auto_count_fn(()) is len
+    assert m._mc.auto_count_fn(set()) is len
 
 
-@mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
+@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_progress_sink(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     m = MonitorStage(config, log_level=logging.WARNING)
     m.on_start()
 
-    m._progress_sink(None)
-    assert m._determine_count_fn is None
+    m._mc.progress_sink(None)
+    assert m._mc._determine_count_fn is None
     mock_morph_tqdm.update.assert_not_called()
 
-    m._progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
-    assert inspect.isfunction(m._determine_count_fn)
+    m._mc.progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
+    assert inspect.isfunction(m._mc._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)
 
 

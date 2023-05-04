@@ -214,4 +214,4 @@ examples/digital_fingerprinting/visualization/*-dfp-output/
 
 # Ignore saved benchmark data
 tests/benchmarks/.benchmarks/
-
+examples/digital_fingerprinting/production/benchmarks/.benchmarks/

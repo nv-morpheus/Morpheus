@@ -48,7 +48,7 @@ def write_to_file(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - filename (string): Path to the output file; Example: `output.csv`; Default: None
+            - filename (str): Path to the output file; Example: `output.csv`; Default: None
             - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
             - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
             - include_index_col (bool): If true, include the index column; Example: `false`; Default: true

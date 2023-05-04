@@ -62,6 +62,7 @@ def mlflow_model_writer(builder: mrc.Builder):
             - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
             Default: `[Required]`
             - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+            - source (str): from source where the logs are generated; Example: `azure`; Default: `[Required]`
 
         databricks_permissions:
             - read (array): List of users with read permissions; Example: `["read_user1", "read_user2"]`; Default: -
@@ -72,6 +73,9 @@ def mlflow_model_writer(builder: mrc.Builder):
 
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
+    if ("source" not in config):
+        raise ValueError("Source is required")
+
     if ("model_name_formatter" not in config):
         raise ValueError("Model name formatter is required")
 
@@ -81,6 +85,7 @@ def mlflow_model_writer(builder: mrc.Builder):
     if ("conda_env" not in config):
         raise ValueError("Conda environment is required")
 
+    source = config["source"]
     model_name_formatter = config["model_name_formatter"]
     experiment_name_formatter = config["experiment_name_formatter"]
     conda_env = config.get("conda_env", None)
@@ -171,7 +176,7 @@ def mlflow_model_writer(builder: mrc.Builder):
             # Creates a new experiment if it doesnt exist
             experiment = mlflow.set_experiment(experiment_name)
 
-            with mlflow.start_run(run_name="Duo autoencoder model training run",
+            with mlflow.start_run(run_name=f"{source} autoencoder model training run",
                                   experiment_id=experiment.experiment_id) as run:
 
                 model_path = f"{model_path}-{run.info.run_uuid}"
