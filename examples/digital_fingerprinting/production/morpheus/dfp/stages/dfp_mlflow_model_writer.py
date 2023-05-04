@@ -153,7 +153,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
             # Creates a new experiment if it doesn't exist
             experiment = mlflow.set_experiment(experiment_name)
 
-            with mlflow.start_run(run_name="Duo autoencoder model training run",
+            with mlflow.start_run(run_name="autoencoder model training run",
                                   experiment_id=experiment.experiment_id) as run:
 
                 model_path = f"{model_path}-{run.info.run_uuid}"
