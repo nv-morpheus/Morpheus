@@ -20,7 +20,6 @@ import pandas as pd
 import pytest
 
 from morpheus.config import Config
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
 from utils import TEST_DIRS
@@ -80,6 +79,7 @@ def test_on_data(
         dfp_multi_message: "MultiDFPMessage",  # noqa: F821
         morpheus_log_level: int,
         dataset_pandas: DatasetManager):
+    from dfp.messages.multi_dfp_message import MultiDFPMessage
     from dfp.stages.dfp_inference_stage import DFPInferenceStage
 
     set_log_level(morpheus_log_level)
@@ -103,11 +103,10 @@ def test_on_data(
     stage = DFPInferenceStage(config, model_name_formatter="test_model_name-{user_id}")
     results = stage.on_data(dfp_multi_message)
 
-    assert isinstance(results, MultiAEMessage)
+    assert isinstance(results, MultiDFPMessage)
     assert results.meta is dfp_multi_message.meta
     assert results.mess_offset == dfp_multi_message.mess_offset
     assert results.mess_count == dfp_multi_message.mess_count
-    assert results.model is mock_model
     dataset_pandas.assert_compare_df(results.get_meta(), expected_df)
 
 
