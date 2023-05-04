@@ -39,12 +39,15 @@ MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
 MockedMLFlow = namedtuple("MockedMLFlow",
                           [
                               'MlflowClient',
+                              'ModelSignature',
                               'RunsArtifactRepository',
                               'end_run',
                               'get_tracking_uri',
                               'log_metrics',
-                              'log_model',
                               'log_params',
+                              'model_info',
+                              'model_src',
+                              'pytorch_log_model',
                               'set_experiment',
                               'start_run'
                           ])
@@ -72,23 +75,47 @@ def mock_requests():
         mock_requests_get.return_value = mock_response
         yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
 
-
 @pytest.fixture
 def mock_mlflow():
     with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
+          mock.patch("dfp.stages.dfp_mlflow_model_writer.ModelSignature") as mock_model_signature,
           mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
           mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
-          mock.patch("mlflow.pytorch.log_model") as mock_mlflow_pytorch_log_model,
           mock.patch("mlflow.log_params") as mock_mlflow_log_params,
+          mock.patch("mlflow.pytorch.log_model") as mock_mlflow_pytorch_log_model,
           mock.patch("mlflow.set_experiment") as mock_mlflow_set_experiment,
           mock.patch("mlflow.start_run") as mock_mlflow_start_run):
-        yield MockedMLFlow(mock_mlflow_client, mock_runs_artifact_repository, mock_mlflow_end_run,
+
+        mock_mlflow_client.return_value = mock_mlflow_client
+        mock_model_signature.return_value = mock_model_signature
+
+        mock_model_info = mock.MagicMock()
+        mock_mlflow_pytorch_log_model.return_value = mock_model_info
+
+        mock_model_src = mock.MagicMock()
+        mock_runs_artifact_repository.get_underlying_uri.return_value = mock_model_src
+
+        mock_experiment = mock.MagicMock()
+        mock_experiment.experiment_id = "test_experiment_id"
+        mock_mlflow_set_experiment.return_value = mock_experiment
+
+        mock_mlflow_start_run.return_value = mock_mlflow_start_run
+        mock_mlflow_start_run.__enter__.return_value = mock_mlflow_start_run
+        mock_mlflow_start_run.info.run_id = "test_run_id"
+        mock_mlflow_start_run.info.run_uuid = "test_run_uuid"
+
+        yield MockedMLFlow(mock_mlflow_client,
+                           mock_model_signature,
+                           mock_runs_artifact_repository,
+                           mock_mlflow_end_run,
                            mock_mlflow_get_tracking_uri,
-                            mock_mlflow_log_metrics,
-                           mock_mlflow_pytorch_log_model,
+                           mock_mlflow_log_metrics,
                            mock_mlflow_log_params,
+                           mock_model_info,
+                           mock_model_src,
+                           mock_mlflow_pytorch_log_model,
                            mock_mlflow_set_experiment,
                            mock_mlflow_start_run)
 
@@ -213,10 +240,79 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
 
 
 
-def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: MockedRequests):
+def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: MockedRequests, dataset_pandas: DatasetManager):
+    from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    from dfp.stages.dfp_mlflow_model_writer import conda_env
+
+    # We aren't setting databricks_permissions, so we shouldn't be trying to make any request calls
     mock_requests.get.side_effect = RuntimeError("should not be called")
+    mock_requests.patch.side_effect = RuntimeError("should not be called")
+
+    config.ae.timestamp_column_name = 'eventTime'
+
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    df = dataset_pandas[input_file]
+    time_col = df['eventTime']
+    min_time = time_col.min()
+    max_time = time_col.max()
+
+    mock_model = mock.MagicMock()
+    mock_model.lr_decay.state_dict.return_value = {'last_epoch': 42}
+    mock_model.lr = 0.1
+    mock_model.batch_size = 100
+
+    mock_embedding = mock.MagicMock()
+    mock_embedding.num_embeddings = 101
+    mock_embedding.embedding_dim = 102
+    mock_model.categorical_fts = {'test': {'embedding': mock_embedding}}
+
+    mock_model.prepare_df.return_value = df
+    mock_model.get_anomaly_score.return_value = pd.Series(float(i) for i in range(len(df)))
+
+    meta = DFPMessageMeta(df, 'Account-123456789')
+    msg = MultiAEMessage(meta=meta, model=mock_model)
 
     stage = DFPMLFlowModelWriterStage(config)
+    assert stage.on_data(msg) is msg  # Should be a pass-thru
 
     mock_requests.get.assert_not_called()
+    mock_requests.patch.assert_not_called()
+
+    # Test mocks in order that they're called
+    mock_mlflow.end_run.assert_called_once()
+    mock_mlflow.set_experiment.assert_called_once_with("/dfp-models/dfp-Account-123456789")
+    mock_mlflow.start_run.assert_called_once_with(run_name="autoencoder model training run",
+                                                  experiment_id="test_experiment_id")
+
+    mock_mlflow.log_params.assert_called_once_with({
+        "Algorithm": "Denosing Autoencoder",
+        "Epochs": 42,
+        "Learning rate": 0.1,
+        "Batch size": 100,
+        "Start Epoch": min_time,
+        "End Epoch": max_time,
+        "Log Count": len(df)})
+
+    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
+                                                     "embedding-test-embedding_dim": 102})
+
+    mock_model.prepare_df.assert_called_once()
+    mock_model.get_anomaly_score.assert_called_once()
+
+    mock_mlflow.ModelSignature.assert_called_once()
+
+    mock_mlflow.pytorch_log_model.assert_called_once_with(pytorch_model=mock_model, artifact_path="dfencoder-test_run_uuid", conda_env=conda_env, signature=mock_mlflow.ModelSignature)
+
+    mock_mlflow.MlflowClient.assert_called_once()
+    mock_mlflow.MlflowClient.create_registered_model.assert_called_once_with("dfp-Account-123456789")
+
+    mock_mlflow.get_tracking_uri.assert_not_called()
+    mock_mlflow.RunsArtifactRepository.get_underlying_uri.assert_called_once_with(mock_mlflow.model_info.model_uri)
+
+    expected_tags = {"start": min_time, "end": max_time, "count": len(df)}
+
+    mock_mlflow.MlflowClient.create_model_version.assert_called_once_with(name="dfp-Account-123456789",
+                                                                          source=mock_mlflow.model_src,
+                                                                          run_id="test_run_id",
+                                                                          tags=expected_tags)
