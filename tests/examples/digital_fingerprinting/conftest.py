@@ -15,6 +15,7 @@
 
 import os
 import sys
+from unittest import mock
 
 import pytest
 
@@ -89,3 +90,8 @@ def dfp_message_meta(config, dataset_pandas):
 def dfp_multi_message(dfp_message_meta):
     from dfp.messages.multi_dfp_message import MultiDFPMessage
     yield MultiDFPMessage(meta=dfp_message_meta)
+
+@pytest.fixture
+def dfp_multi_ae_message(dfp_message_meta):
+    from morpheus.messages.multi_ae_message import MultiAEMessage
+    yield MultiAEMessage(meta=dfp_message_meta, model=mock.MagicMock())
