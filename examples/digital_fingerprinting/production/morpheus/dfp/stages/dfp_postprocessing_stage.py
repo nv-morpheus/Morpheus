@@ -21,6 +21,7 @@ import mrc
 import numpy as np
 from mrc.core import operators as ops
 
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -33,6 +34,7 @@ class DFPPostprocessingStage(SinglePortStage):
 
     def __init__(self, c: Config):
         super().__init__(c)
+        self._needed_columns['event_time'] = TypeId.STRING
 
     @property
     def name(self) -> str:
