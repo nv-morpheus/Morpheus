@@ -52,7 +52,7 @@ def serialize(builder: mrc.Builder):
             Default: `[r'^ID$', r'^_ts_']`
             - fixed_columns (bool): If true, the columns are fixed and not determined at runtime; Example: `true`;
             Default: true
-            - include (string): Regex to include columns; Example: `^column`; Default: None
+            - include (str): Regex to include columns; Example: `^column`; Default: None
             - use_cpp (bool): If true, use C++ to serialize; Example: `true`; Default: false
     """
 

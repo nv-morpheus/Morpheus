@@ -34,6 +34,7 @@ limitations under the License.
 - [DFP Deployment](./examples/digital_fingerprinting/dfp_deployment.md)
 - [DFP Inference](./examples/digital_fingerprinting/dfp_inference.md)
 - [DFP Inference Pipe](./examples/digital_fingerprinting/dfp_inference_pipe.md)
+- [DFP Monitor](./examples/digital_fingerprinting/dfp_monitor.md)
 - [DFP Postprocessing](./examples/digital_fingerprinting/dfp_postprocessing.md)
 - [DFP Preprocessing](./examples/digital_fingerprinting/dfp_preproc.md)
 - [DFP Rolling Window](./examples/digital_fingerprinting/dfp_rolling_window.md)
