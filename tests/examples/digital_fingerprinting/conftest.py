@@ -35,6 +35,14 @@ def dask_distributed(fail_missing: bool):
     yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
+@pytest.fixture(autouse=True, scope='session')
+def mlflow(fail_missing: bool):
+    """
+    Mark tests requiring mlflow
+    """
+    yield import_or_skip("mlflow", reason=SKIP_REASON, fail_missing=fail_missing)
+
+
 @pytest.fixture(scope='session')
 def ae_feature_cols():
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:

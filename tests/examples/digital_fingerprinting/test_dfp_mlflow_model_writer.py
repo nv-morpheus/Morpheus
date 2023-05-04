@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
-import typing
 from collections import OrderedDict
 from collections import namedtuple
 from unittest import mock
@@ -25,14 +23,8 @@ import pytest
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.logger import set_log_level
 from utils import TEST_DIRS
-from utils import import_or_skip
 from utils.dataset_manager import DatasetManager
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
@@ -51,14 +43,6 @@ MockedMLFlow = namedtuple("MockedMLFlow",
                               'set_experiment',
                               'start_run'
                           ])
-
-
-@pytest.fixture(autouse=True, scope='session')
-def mlflow(fail_missing: bool):
-    """
-    Mark tests requiring mlflow
-    """
-    yield import_or_skip("mlflow", reason="dfp_mlflow_model_writer tests require mlflow ", fail_missing=fail_missing)
 
 
 @pytest.fixture
