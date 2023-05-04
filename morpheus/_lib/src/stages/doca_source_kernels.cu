@@ -134,18 +134,6 @@ get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
   return payload_size;
 }
 
-__device__ __forceinline__ bool
-is_tcp_packet(ipv4_hdr& packet_l3)
-{
-  if(packet_l3.next_proto_id == IPPROTO_TCP) {
-    return true;
-  }
-
-  assert(0);
-
-  return false;
-}
-
 __device__ char to_hex_16(uint8_t value)
 {
     return "0123456789ABCDEF"[value];
@@ -239,8 +227,7 @@ __global__ void _packet_receive_kernel(
   int32_t*                sem_idx,
   int32_t*                packet_count_out,
   int32_t*                packet_size_total_out,
-  int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
+  int32_t*                packet_sizes_out,
   uint32_t*               exit_condition
 )
 {
@@ -270,20 +257,16 @@ __global__ void _packet_receive_kernel(
       return;
     }
 
-    // if (DOCA_GPUNETIO_VOLATILE(*exit_condition) == 1)
-    // {
-    //   return;
-    // }
+    if (DOCA_GPUNETIO_VOLATILE(*exit_condition) == 1)
+    {
+      return;
+    }
 
     if (sem_status == DOCA_GPU_SEMAPHORE_STATUS_FREE)
     {
       break;
     }
-
-    // printf("doca_gpu_dev_sem_get_status waiting\n");
   }
-
-  // printf("doca_gpu_dev_sem_get_status got\n");
 
   __syncthreads();
 
@@ -314,6 +297,7 @@ __global__ void _packet_receive_kernel(
   __syncthreads();
 
   int32_t something[4];
+  int32_t count_packet[4];
 
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
@@ -321,6 +305,7 @@ __global__ void _packet_receive_kernel(
 
     if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count)) {
       something[i] = 0;
+      count_packet[i] = 0;
       continue;
     }
 
@@ -341,36 +326,25 @@ __global__ void _packet_receive_kernel(
     // printf("", threadIdx.x);
 
     something[i] = payload_size;
+    count_packet[i] = 1;
 
-    packet_sizes[packet_idx] = payload_size;
-
-    if (is_tcp_packet(hdr->l3_hdr))
-    {
-      atomicAdd(packet_size_total_out, payload_size);
-      atomicAdd(packet_count_out, 1);
-    }
+    packet_sizes_out[packet_idx] = payload_size;
   }
 
   auto something_total = BlockReduce(temp_storage).Sum(something);
 
   __syncthreads();
 
+  auto count_packet_total = BlockReduce(temp_storage).Sum(count_packet);
+
+  __syncthreads();
+
   if (threadIdx.x == 0){
     // printf("a: %i b: %i\n", *packet_size_total_out, something_total);
-    assert(*packet_size_total_out == something_total);
+    // assert(*packet_size_total_out == something_total);
+    *packet_size_total_out = something_total;
+    *packet_count_out = count_packet_total;
   }
-
-
-  // auto payload_size_total = BlockReduce(temp_storage).Sum(payload_sizes);
-
-  // printf("", threadIdx.x);
-
-  // __syncthreads();
-
-  // if (threadIdx.x == 0) {
-  //   *packet_size_total_out = payload_size_total;
-  //   *packet_count_out = packet_count;
-  // }
 
   __syncthreads();
 
@@ -403,7 +377,6 @@ __global__ void _packet_gather_kernel(
   int32_t                 sem_count,
   int32_t*                sem_idx,
   int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
   uint32_t*               timestamp_out,
   int64_t*                src_mac_out,
   int64_t*                dst_mac_out,
@@ -505,17 +478,9 @@ __global__ void _packet_gather_kernel(
 
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
-    if (not is_tcp_packet(hdr->l3_hdr))
-    {
-      continue;
-    }
-
     auto packet_idx_out = data_capture[i];
 
-    // printf("tid(%6i) data_offset[%6i](%6i) payload_size(%6i)\n", threadIdx.x, i, data_offsets[i], payload_size);
-
-    data_offsets_out[packet_idx_out] = data_offsets[i]; // data_offsets_out is wrong?
-    // data_offsets_out[packet_idx_out] = 0; // data_offsets_out is wrong?
+    data_offsets_out[packet_idx_out] = data_offsets[i];
 
     for (auto data_idx = 0; data_idx < payload_size; data_idx++)
     {
@@ -672,26 +637,14 @@ std::unique_ptr<cudf::column> integers_to_mac(
     {});
 }
 
-struct picker {
-  uint32_t* lengths;
-  __device__ uint32_t operator()(cudf::size_type idx){
-    if (lengths[idx] > 0)
-    {
-      printf("pdl: %d\n", lengths[idx]);
-    }
-    return lengths[idx];
-  }
-};
-
 void packet_receive_kernel(
   doca_gpu_eth_rxq*       rxq_info,
   doca_gpu_semaphore_gpu* sem_in,
   int32_t                 sem_count,
   int32_t*                sem_idx,
   int32_t*                packet_count,
-  int32_t*                packet_size_total,
-  int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
+  int32_t*                packet_size_total_out,
+  int32_t*                packet_sizes_out,
   uint32_t*               exit_condition,
   cudaStream_t            stream
 )
@@ -702,9 +655,8 @@ void packet_receive_kernel(
     sem_count,
     sem_idx,
     packet_count,
-    packet_size_total,
-    packet_sizes,
-    packet_buffer,
+    packet_size_total_out,
+    packet_sizes_out,
     exit_condition
   );
 
@@ -717,7 +669,6 @@ void packet_gather_kernel(
   int32_t                 sem_count,
   int32_t*                sem_idx,
   int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
   uint32_t*               timestamp_out,
   int64_t*                src_mac_out,
   int64_t*                dst_mac_out,
@@ -741,7 +692,6 @@ void packet_gather_kernel(
     sem_count,
     sem_idx,
     packet_sizes,
-    packet_buffer,
     timestamp_out,
     src_mac_out,
     dst_mac_out,

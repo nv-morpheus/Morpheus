@@ -43,8 +43,7 @@ void packet_receive_kernel(
   int32_t*                sem_idx,
   int32_t*                packet_count,
   int32_t*                packet_size_total,
-  int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
+  int32_t*                packet_sizes_out,
   uint32_t*               exit_condition,
   cudaStream_t            stream
 );
@@ -55,7 +54,6 @@ void packet_gather_kernel(
   int32_t                 sem_count,
   int32_t*                sem_idx,
   int32_t*                packet_sizes,
-  uint8_t*                packet_buffer,
   uint32_t*               timestamp_out,
   int64_t*                src_mac_out,
   int64_t*                dst_mac_out,

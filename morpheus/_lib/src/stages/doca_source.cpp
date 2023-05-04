@@ -93,7 +93,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     auto packet_count_d      = rmm::device_scalar<int32_t>(0, processing_stream);
     auto packet_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
     auto packet_sizes_d      = rmm::device_uvector<int32_t>(2048, processing_stream);
-    auto packet_buffer_d     = rmm::device_uvector<uint8_t>(2048 * 65536, processing_stream);
     auto exit_condition      = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
 
     DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
@@ -118,7 +117,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         packet_count_d.data(),
         packet_size_total_d.data(),
         packet_sizes_d.data(),
-        packet_buffer_d.data(),
         static_cast<uint32_t*>(exit_condition->gpu_ptr()),
         processing_stream
       );
@@ -158,7 +156,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         m_semaphore->size(),
         semaphore_idx_d.data(),
         packet_sizes_d.data(),
-        packet_buffer_d.data(),
         timestamp_out_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),
