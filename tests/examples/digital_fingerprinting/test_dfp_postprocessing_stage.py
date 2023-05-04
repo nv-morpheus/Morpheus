@@ -19,6 +19,7 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -29,21 +30,29 @@ def test_constructor(config: Config):
     from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
     stage = DFPPostprocessingStage(config)
     assert isinstance(stage, SinglePortStage)
+    assert stage._needed_columns['event_time'] == TypeId.STRING
 
 
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('use_on_data', [True, False])
 @pytest.mark.parametrize('morpheus_log_level',
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
-def test_process_events_on_data(config: Config,
+@mock.patch('dfp.stages.dfp_postprocessing_stage.datetime')
+def test_process_events_on_data(mock_datetime: mock.MagicMock,
+                                config: Config,
                                 dfp_multi_ae_message: MultiAEMessage,
                                 use_on_data: bool,
                                 morpheus_log_level: int):
     from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 
+    mock_dt_obj = mock.MagicMock()
+    mock_dt_obj.strftime.return_value = '2021-01-01T00:00:00Z'
+    mock_datetime.now.return_value = mock_dt_obj
+
     # post-process should replace nans, lets add a nan to the DF
     with dfp_multi_ae_message.meta.mutable_dataframe() as df:
         df['v2'][10] = np.nan
+        df['event_time'] = ''
 
     set_log_level(morpheus_log_level)
     stage = DFPPostprocessingStage(config)
@@ -56,8 +65,7 @@ def test_process_events_on_data(config: Config,
 
     assert isinstance(dfp_multi_ae_message, MultiAEMessage)
     result_df = dfp_multi_ae_message.meta.copy_dataframe()
-    assert 'event_time' in result_df.columns
-    assert result_df['event_time'].dtype == np.dtype('O')
+    assert (result_df['event_time'] == '2021-01-01T00:00:00Z').all()
     assert result_df['v2'][10] == 'NaN'
 
 
