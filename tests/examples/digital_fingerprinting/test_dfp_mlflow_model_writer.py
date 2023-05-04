@@ -15,7 +15,9 @@
 
 import logging
 import os
+import typing
 from collections import OrderedDict
+from collections import namedtuple
 from unittest import mock
 
 import pandas as pd
@@ -33,6 +35,20 @@ from utils import TEST_DIRS
 from utils import import_or_skip
 from utils.dataset_manager import DatasetManager
 
+MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
+MockedMLFlow = namedtuple("MockedMLFlow",
+                          [
+                              'MlflowClient',
+                              'RunsArtifactRepository',
+                              'end_run',
+                              'get_tracking_uri',
+                              'log_metrics',
+                              'log_model',
+                              'log_params',
+                              'set_experiment',
+                              'start_run'
+                          ])
+
 
 @pytest.fixture(autouse=True, scope='session')
 def mlflow(fail_missing: bool):
@@ -47,6 +63,34 @@ def databricks_env(restore_environ):
     env = {'DATABRICKS_HOST': 'https://test_host', 'DATABRICKS_TOKEN': 'test_token'}
     os.environ.update(env)
     yield env
+
+
+@pytest.fixture
+def mock_requests():
+    with mock.patch("requests.get") as mock_requests_get, mock.patch("requests.patch") as mock_requests_patch:
+        mock_response = mock.MagicMock(status_code=200)
+        mock_requests_get.return_value = mock_response
+        yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
+
+
+@pytest.fixture
+def mock_mlflow():
+    with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
+          mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
+          mock.patch("mlflow.end_run") as mock_mlflow_end_run,
+          mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
+          mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
+          mock.patch("mlflow.pytorch.log_model") as mock_mlflow_pytorch_log_model,
+          mock.patch("mlflow.log_params") as mock_mlflow_log_params,
+          mock.patch("mlflow.set_experiment") as mock_mlflow_set_experiment,
+          mock.patch("mlflow.start_run") as mock_mlflow_start_run):
+        yield MockedMLFlow(mock_mlflow_client, mock_runs_artifact_repository, mock_mlflow_end_run,
+                           mock_mlflow_get_tracking_uri,
+                            mock_mlflow_log_metrics,
+                           mock_mlflow_pytorch_log_model,
+                           mock_mlflow_log_params,
+                           mock_mlflow_set_experiment,
+                           mock_mlflow_start_run)
 
 
 def test_constructor(config: Config):
@@ -97,40 +141,33 @@ def test_user_id_to_experiment(config: Config, experiment_name_formatter: str, u
     assert stage.user_id_to_experiment(user_id) == expected_val
 
 
-@mock.patch("requests.patch")
-@mock.patch("requests.get")
-def test_apply_model_permissions(mock_requests_get: mock.MagicMock,
-                                 mock_requests_patch: mock.MagicMock,
-                                 config: Config,
-                                 databricks_env: dict):
-    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-    mock_response = mock.MagicMock(status_code=200)
-    mock_response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
-    mock_requests_get.return_value = mock_response
-
-    stage = DFPMLFlowModelWriterStage(config,
-                                      databricks_permissions=OrderedDict([('group1', 'CAN_READ'),
-                                                                          ('group2', 'CAN_WRITE')]))
-    stage._apply_model_permissions("test_experiment")
-
+def verify_apply_model_permissions(mock_requests: MockedRequests,
+                                   databricks_env: dict,
+                                   databricks_permissions: OrderedDict,
+                                   experiment_name: str):
     expected_headers = {"Authorization": "Bearer {DATABRICKS_TOKEN}".format(**databricks_env)}
-    mock_requests_get.assert_called_once_with(
+    mock_requests.get.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/mlflow/databricks/registered-models/get".format(**databricks_env),
         headers=expected_headers,
-        params={"name": "test_experiment"})
+        params={"name": experiment_name})
 
-    # get(url='/api/2.0/mlflow/databricks/registered-models/get', headers={'Authorization': 'Bearer test_token'}, params={'name': 'test_experiment'})
+    expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
-    mock_requests_patch.assert_called_once_with(
+    mock_requests.patch.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/preview/permissions/registered-models/test_id".format(**databricks_env),
         headers=expected_headers,
-        json={
-            'access_control_list': [{
-                'group_name': 'group1', 'permission_level': 'CAN_READ'
-            }, {
-                'group_name': 'group2', 'permission_level': 'CAN_WRITE'
-            }]
-        })
+        json={'access_control_list': expected_acl})
+
+
+def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
+    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    mock_requests.response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
+
+    databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
+    stage._apply_model_permissions("test_experiment")
+
+    verify_apply_model_permissions(mock_requests, databricks_env, databricks_permissions, 'test_experiment')
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -139,13 +176,10 @@ def test_apply_model_permissions(mock_requests_get: mock.MagicMock,
     (None, "test_token"),
     (None, None),
 ])
-@mock.patch("requests.patch")
-@mock.patch("requests.get")
-def test_apply_model_permissions_no_perms_error(mock_requests_get: mock.MagicMock,
-                                                mock_requests_patch: mock.MagicMock,
-                                                config: Config,
+def test_apply_model_permissions_no_perms_error(config: Config,
                                                 databricks_host: str,
-                                                databricks_token: str):
+                                                databricks_token: str,
+                                                mock_requests: MockedRequests):
     if databricks_host is not None:
         os.environ["DATABRICKS_HOST"] = databricks_host
     else:
@@ -161,22 +195,28 @@ def test_apply_model_permissions_no_perms_error(mock_requests_get: mock.MagicMoc
     with pytest.raises(RuntimeError):
         stage._apply_model_permissions("test_experiment")
 
-    mock_requests_get.assert_not_called()
-    mock_requests_patch.assert_not_called()
+    mock_requests.get.assert_not_called()
+    mock_requests.patch.assert_not_called()
 
 
 @pytest.mark.usefixtures("databricks_env")
-@mock.patch("requests.patch")
-@mock.patch("requests.get")
-def test_apply_model_permissions_requests_error(mock_requests_get: mock.MagicMock,
-                                                mock_requests_patch: mock.MagicMock,
-                                                config: Config):
+def test_apply_model_permissions_requests_error(config: Config, mock_requests: MockedRequests):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
-    mock_requests_get.side_effect = RuntimeError("test error")
+    mock_requests.get.side_effect = RuntimeError("test error")
 
     stage = DFPMLFlowModelWriterStage(config)
     stage._apply_model_permissions("test_experiment")
 
     # This method just catches and logs any errors
-    mock_requests_get.assert_called_once()
-    mock_requests_patch.assert_not_called()
+    mock_requests.get.assert_called_once()
+    mock_requests.patch.assert_not_called()
+
+
+
+def test_on_data(config: Config, mock_mlflow: MockedMLFlow, mock_requests: MockedRequests):
+    from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
+    mock_requests.get.side_effect = RuntimeError("should not be called")
+
+    stage = DFPMLFlowModelWriterStage(config)
+
+    mock_requests.get.assert_not_called()
