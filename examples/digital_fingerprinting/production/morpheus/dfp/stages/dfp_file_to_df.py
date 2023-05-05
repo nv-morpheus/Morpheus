@@ -60,7 +60,7 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                         parser_kwargs=parser_kwargs)
 
             break
-        except Exception as e:
+        except Exception:
             if (retries < 2):
                 logger.warning("Refreshing S3 credentials")
                 # cred_refresh()
@@ -95,7 +95,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
         self._dask_cluster: Client = None
 
-        self._download_method: typing.Literal["single_thread", "multiprocess", "dask",
+        self._download_method: typing.Literal["single_thread", "multiprocess", "multiprocessing", "dask",
                                               "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE",
                                                                               "dask_thread")
 
@@ -158,7 +158,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             output_df = pd.read_pickle(batch_cache_location)
             output_df["batch_count"] = batch_count
             output_df["origin_hash"] = objects_hash_hex
-            
+
             return (output_df, True)
 
         # Cache miss
@@ -181,7 +181,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
                     dfs = client.gather(dfs)
 
-            elif (self._download_method == "multiprocess"):
+            elif (self._download_method in ("multiprocess", "multiprocessing")):
                 # Use multiprocessing here since parallel downloads are a pain
                 with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
                     dfs = p.map(download_method, download_buckets)
