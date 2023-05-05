@@ -28,5 +28,6 @@ dependencies:
     - kfp
     - librdkafka
     - mlflow>1.29.0,<2
+    - nodejs=17.4.0
     - papermill
     - s3fs==2022.8.2
