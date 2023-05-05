@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cudf
 import io
 import json
 import os
@@ -37,12 +38,34 @@ from morpheus.utils.column_info import process_dataframe
 from utils import TEST_DIRS
 
 
+# def f_to_pandas(col, df):
+#    pd_series = col.to_pandas()
+#
+#    return cudf.from_pandas(pd_series)
+#
+#
+# def test_cudf_struct_type_conversion():
+#    import nvtabular as nvt
+#    from nvtabular.ops import LambdaOp
+#    from nvtabular.ops.operator import ColumnSelector
+#
+#    src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
+#    input_df = cudf.read_json(src_file)
+#
+#    single_op = ColumnSelector("properties") >> LambdaOp(f=f_to_pandas)
+#    workflow = nvt.Workflow(single_op)
+#
+#    ds = nvt.Dataset(input_df)
+#    result = workflow.fit_transform(ds).to_ddf().compute()
+#
+#    print(result)
+
+
 @pytest.mark.use_python
 def test_dataframe_input_schema_with_json_cols():
-
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
-    input_df = pd.read_json(src_file)
+    input_df = cudf.read_json(src_file)
 
     raw_data_columns = [
         'time',
@@ -90,9 +113,7 @@ def test_dataframe_input_schema_with_json_cols():
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
     nvt_workflow = dataframe_input_schema_to_nvt_workflow(schema)
 
-    # Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
-    input_df["properties"] = input_df["properties"].apply(
-        lambda row: json.dumps(row))
+    #  Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
 
     df_processed_schema = process_dataframe(input_df, schema)
     processed_df_cols = df_processed_schema.columns
@@ -124,11 +145,6 @@ def test_dataframe_input_schema_without_json_cols():
     ]
 
     schema = DataFrameInputSchema(column_info=column_info)
-
-    # Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
-    input_df["properties"] = input_df["properties"].apply(
-        lambda row: json.dumps(
-            row))
 
     df_processed = process_dataframe(input_df, schema)
     processed_df_cols = df_processed.columns

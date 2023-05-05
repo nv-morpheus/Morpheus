@@ -182,8 +182,14 @@ def nvt_increment_column(column_selector: ColumnSelector, df: typing.Union[pd.Da
 ColumnInfoProcessingMap = {
     BoolColumn: lambda ci, deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
                                            dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
+    # ColumnInfo: lambda ci, deps: [
+    #    LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[ColumnInfo] '{ci.name}'")],
     ColumnInfo: lambda ci, deps: [
-        LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[ColumnInfo] '{ci.name}'")],
+        MutateOp(lambda selector, df: df.assign(
+            **{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns) else df.assign(
+            **{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                 dependencies=deps, output_columns=[(ci.name, ci.dtype)], label=f"[ColumnInfo] '{ci.name}'")
+    ],
     CustomColumn: lambda ci, deps: [
         MutateOp(lambda selector, df: ci.process_column_fn(df), dependencies=deps,
                  output_columns=[(ci.name, ci.dtype)]),

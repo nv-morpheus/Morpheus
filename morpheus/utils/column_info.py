@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import re
 from datetime import datetime
@@ -230,7 +231,7 @@ class DataFrameInputSchema:
         self.preserve_columns = input_preserve_columns
 
 
-def process_dataframe(df_in: pd.DataFrame,
+def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
                       input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
                       output_dtype="ddf") -> pd.DataFrame:
     """
@@ -239,14 +240,31 @@ def process_dataframe(df_in: pd.DataFrame,
 
     from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
 
-    dataset = nvt.Dataset(df_in)
     workflow = input_schema
     if (isinstance(input_schema, DataFrameInputSchema)):
         workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
 
+    convert_to_pd = False
+    if (isinstance(df_in, pd.DataFrame)):
+        convert_to_pd = True
+        df_in = cudf.DataFrame(df_in)
+
+    # TODO(Devin) - Hack to convert struct columns to string until NVT natively supports
+    for col, dtype in zip(df_in.columns, df_in.dtypes):
+        if (dtype == "struct"):
+            print("Converting column {} from struct to string".format(col))
+            df_in[col] = cudf.from_pandas(df_in[col].to_pandas().apply(
+                lambda row: json.dumps(row)))
+    dataset = nvt.Dataset(df_in)
+
     if (output_dtype == "ddf"):
-        return workflow.fit_transform(dataset).to_ddf().compute()
+        result = workflow.fit_transform(dataset).to_ddf().compute()
     elif (output_dtype == "gpu"):
-        return workflow.fit_transform(dataset).to_gpu()
+        result = workflow.fit_transform(dataset).to_gpu()
     elif (output_dtype == "cpu"):
-        return workflow.fit_transform(dataset).to_cpu()
+        result = workflow.fit_transform(dataset).to_cpu()
+
+    if (convert_to_pd):
+        return result.to_pandas()
+    else:
+        return result
