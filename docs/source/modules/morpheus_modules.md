@@ -25,7 +25,9 @@ limitations under the License.
 - [Filter Control Message](./core/filter_control_message.md)
 - [Filter Detections](./core/filter_detections.md)
 - [MLflow Model Writer](./core/mlflow_model_writer.md)
+- [Multiplexer](./core/multiplexer.md)
 - [Serializer](./core/serializer.md)
+- [To Control Message](./core/to_control_message.md)
 - [Write to File](./core/write_to_file.md)
 
 ## Digital Fingerprinting Modules

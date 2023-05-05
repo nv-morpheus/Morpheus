@@ -39,7 +39,7 @@ def multiplexer(builder: mrc.Builder):
     -----
         Configurable Parameters:
             - num_input_ports_to_merge (int): Number of upstream nodes data to be merged; Example: `3`;
-            Default: `-1`
+            Default: `2`
             - stop_after_secs (int): Time in seconds to halt the process; Example: `10`;
             Default: -1 (runs indefinitely).
             - streaming (bool): Execution in streaming mode is indicated by this flag; Example: `True`;
@@ -48,12 +48,12 @@ def multiplexer(builder: mrc.Builder):
 
     config = builder.get_current_module_config()
 
-    num_input_ports_to_merge = config.get("num_input_ports_to_merge", -1)
+    num_input_ports_to_merge = config.get("num_input_ports_to_merge", 2)
     streaming = config.get("streaming", False)
     stop_after_secs = config.get("stop_after_secs", -1)
 
     if num_input_ports_to_merge <= 0:
-        raise ValueError("The value for the 'num_input_ports_to_merge' must be >= 0")
+        raise ValueError("The value for the 'num_input_ports_to_merge' must be > 0")
 
     q = queue.Queue()
 
