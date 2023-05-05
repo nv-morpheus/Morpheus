@@ -26,7 +26,7 @@ from morpheus.utils.module_ids import MULTIPLEXER
 from utils.dataset_manager import DatasetManager
 
 
-def test_multi_input_pipeline(config, dataset_cudf: DatasetManager):
+def test_multi_inputport_pipeline(config, dataset_cudf: DatasetManager):
     filter_probs_df = dataset_cudf["filter_probs.csv"]
 
     pipe = Pipeline(config)
@@ -58,7 +58,7 @@ def test_multi_input_pipeline(config, dataset_cudf: DatasetManager):
     assert len(sink_stage.get_messages()) == 2
 
 
-def test_multi_input_pipeline2(config, dataset_cudf: DatasetManager):
+def test_multi_inputport_pipeline2(config, dataset_cudf: DatasetManager):
     filter_probs_df = dataset_cudf["filter_probs.csv"]
 
     pipe = Pipeline(config)
