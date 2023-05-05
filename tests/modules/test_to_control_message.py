@@ -80,7 +80,7 @@ def test_get_module_with_bad_config():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"meta_data": {"data_type": "streaming"}}
+        config = "test"
         to_control_message = builder.load_module("ToControlMessage", "morpheus", "ToControlMessageTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
@@ -98,7 +98,7 @@ def test_get_module_with_bad_config():
     executor.register_pipeline(pipeline)
 
     # This should fail, because no valid module config is specified
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         executor.start()
         executor.join()
 

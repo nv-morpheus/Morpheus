@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @register_module(MULTIPLEXER, MORPHEUS_MODULE_NAMESPACE)
 def multiplexer(builder: mrc.Builder):
     """
-    The multiplexer receives data from one or more input ports and sends it to a single output port.
+    The multiplexer receives data packets from one or more input ports and interleaves them into a single output.
 
     Parameters
     ----------

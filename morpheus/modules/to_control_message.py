@@ -19,8 +19,6 @@ from mrc.core import operators as ops
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_ids import SUPPORTED_DATA_TYPES
-from morpheus.utils.module_ids import SUPPORTED_TASK_TYPES
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 from morpheus.utils.module_utils import register_module
 
@@ -40,50 +38,25 @@ def to_control_message(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - tasks (array[dict]): Control message tasks configuration.
-            - meta_data (dict): Control message metadata Configuration.
+            - control_message_conf (dict): Control message configuration;
+            Example: `{"meta_data": {"data_type": "streaming"}, "tasks": [{"type": "inference", "properties": {}}]}`;
+            Default: `{}`.
     """
 
     config = builder.get_current_module_config()
 
-    meta_data = config.get("meta_data", None)
-    tasks = config.get("tasks", None)
+    control_message_conf = config.get("control_message_conf", {})
 
-    if not meta_data:
-        raise ValueError(
-            "The `meta_data` required to add to the control message has not been provided in the module configuration.")
-
-    # Validate meta_data configuration
-    if "data_type" in meta_data and meta_data["data_type"] not in SUPPORTED_DATA_TYPES:
-        raise ValueError(f"Unsupported data type: {meta_data['data_type']}")
-
-    # Validate tasks configuration
-    if not tasks:
-        raise ValueError(
-            "The `tasks` required to add to the control message has not been provided in the module configuration.")
-
-    control_message = ControlMessage()
-
-    # Set meta_data configuration to control message
-    for key, value in meta_data.items():
-        control_message.set_metadata(key, value)
-
-    # Validate and add tasks to control message
-    for task in tasks:
-        task_type = task.get("type")
-        task_properties = task.get("properties", {})
-        if task_type in SUPPORTED_TASK_TYPES:
-            control_message.add_task(task.get("type"), task_properties)
-        else:
-            raise ValueError(f"Unsupported task type: {task_type}")
+    if not isinstance(control_message_conf, dict):
+        raise TypeError(
+            f"Expected dictionary type for 'control_message_conf' but recieved: {type(control_message_conf)}")
 
     def meta_to_control_message(x: MessageMeta) -> ControlMessage:
-        # Copying control message to avoid setting same metadata for every batch.
-        control_message_copy = control_message.copy()
+        # Set control message configuration
+        control_message = ControlMessage(control_message_conf)
+        control_message.payload(x)
 
-        control_message_copy.payload(x)
-
-        return control_message_copy
+        return control_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(meta_to_control_message)).subscribe(sub)

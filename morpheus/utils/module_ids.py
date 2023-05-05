@@ -24,6 +24,3 @@ MULTIPLEXER = "Multiplexer"
 SERIALIZE = "Serialize"
 TO_CONTROL_MESSAGE = "ToControlMessage"
 WRITE_TO_FILE = "WriteToFile"
-
-SUPPORTED_DATA_TYPES = ["payload", "streaming"]
-SUPPORTED_TASK_TYPES = ["load", "inference", "training"]
