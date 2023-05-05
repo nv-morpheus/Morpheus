@@ -92,6 +92,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
         viz_pdf["anomalyScore"] = x.get_meta("mean_abs_z")
 
+        # TODO: just return viz_pdf instead of MessageMeta
         return MessageMeta(df=viz_pdf)
 
     def _write_to_files(self, x: MultiDFPMessage):
