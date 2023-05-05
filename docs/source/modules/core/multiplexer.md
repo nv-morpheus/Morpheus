@@ -23,7 +23,7 @@ The multiplexer receives data packets from one or more input ports and interleav
 
 | Parameter                 | Type      | Description                                                                                               | Example Value | Default Value |
 |---------------------------|-----------|-----------------------------------------------------------------------------------------------------------|---------------|---------------|
-| `num_input_ports_to_merge`| integer   | Number of upstream nodes data to be merged.                                                      | `3`        | `2`        |
+| `num_input_ports_to_merge`| integer   | Number of nodes stream data to be combined                                                      | `3`        | `2`        |
 | `stop_after_secs`         | integer   | Time in seconds to halt the process                     | `100`          | `-1`          |
 | `streaming`         | boolean   | Execution in streaming mode is indicated by this flag                     | `True`          | `False`          |
 

@@ -37,11 +37,11 @@ class MultiInputportModulesStage(Stage):
     module_conf : typing.Dict
         Module configuration.
     num_input_ports_to_merge : str
-        Number of upstream data to be merged.
+        Number of nodes stream data to be combined.
     input_port_name_prefix : str
-        Prefix name of the input ports for the registered module.
+        Registered module's input ports' name prefix.
     output_port_name: int
-        Output port name for the registered module.
+        Name of the registered module's output port.
     input_type : default `typing.Any`
         The stage acceptable input type.
     output_type : default `typing.Any`

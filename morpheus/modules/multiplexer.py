@@ -38,7 +38,7 @@ def multiplexer(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - num_input_ports_to_merge (int): Number of upstream nodes data to be merged; Example: `3`;
+            - num_input_ports_to_merge (int): Number of nodes stream data to be combined; Example: `3`;
             Default: `2`
             - stop_after_secs (int): Time in seconds to halt the process; Example: `10`;
             Default: -1 (runs indefinitely).
