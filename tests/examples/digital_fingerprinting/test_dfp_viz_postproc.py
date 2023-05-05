@@ -19,7 +19,6 @@ import pandas as pd
 import pytest
 
 from morpheus.config import Config
-from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from utils.dataset_manager import DatasetManager
 
@@ -76,8 +75,8 @@ def test_postprocess(
     stage = DFPVizPostprocStage(config, period='min', output_dir='/fake/test/dir', output_prefix='test_prefix')
     results = stage._postprocess(dfp_multi_message)
 
-    assert isinstance(results, MessageMeta)
-    dataset_pandas.assert_compare_df(results.copy_dataframe(), expected_df)
+    assert isinstance(results, pd.DataFrame)
+    dataset_pandas.assert_compare_df(results, expected_df)
 
 
 def test_write_to_files(
