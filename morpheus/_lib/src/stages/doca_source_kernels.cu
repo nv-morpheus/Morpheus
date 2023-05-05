@@ -184,8 +184,7 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
 uint32_t const PACKETS_PER_THREAD = 4;
 uint32_t const THREADS_PER_BLOCK = 512;
 uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
-uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
-// uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
+uint32_t const PACKET_RX_TIMEOUT_NS = 5000;
 
 // what if I had receive, gather, and release kernels?
 // what if I abstracted away the GPUNetIO aspects by making these calls templated?
