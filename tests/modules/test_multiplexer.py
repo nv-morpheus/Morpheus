@@ -204,6 +204,5 @@ if (__name__ == "__main__"):
     test_contains_namespace()
     test_is_version_compatible()
     test_get_module()
-    test_get_module_with_empty_config()
     test_multiplexer_module()
     test_multiplexer_bad_config_module()
