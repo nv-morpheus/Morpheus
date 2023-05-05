@@ -17,7 +17,7 @@ limitations under the License.
 
 ## Multiplexer Module
 
-The multiplexer receives data from one or more input ports and sends it to a single output port.
+The multiplexer receives data packets from one or more input ports and interleaves them into a single output.
 
 ### Configurable Parameters
 
