@@ -51,12 +51,12 @@ def ae_feature_cols():
 
 
 @pytest.fixture
-@pytest.mark.use_python
-def config(config, ae_feature_cols):
+def config(config_no_cpp, ae_feature_cols):
     """
     The digital_fingerprinting production example utilizes the Auto Encoder config, and requires C++ execution disabled.
     """
     from morpheus.config import ConfigAutoEncoder
+    config = config_no_cpp
     config.ae = ConfigAutoEncoder()
     config.ae.feature_columns = ae_feature_cols
     yield config
@@ -82,7 +82,7 @@ def dfp_message_meta(config, dataset_pandas):
     user_id = 'test_user'
     df = dataset_pandas['filter_probs.csv']
     df[config.ae.timestamp_column_name] = [1683054498 + i for i in range(0, len(df) * 100, 100)]
-    df['user_id'] = user_id
+    df[config.ae.userid_column_name] = user_id
     yield DFPMessageMeta(df, user_id)
 
 
@@ -90,6 +90,7 @@ def dfp_message_meta(config, dataset_pandas):
 def dfp_multi_message(dfp_message_meta):
     from dfp.messages.multi_dfp_message import MultiDFPMessage
     yield MultiDFPMessage(meta=dfp_message_meta)
+
 
 @pytest.fixture
 def dfp_multi_ae_message(dfp_message_meta):
