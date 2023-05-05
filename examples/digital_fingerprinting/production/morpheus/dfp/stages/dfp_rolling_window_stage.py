@@ -30,7 +30,6 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
@@ -61,7 +60,6 @@ class DFPRollingWindowStage(SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         return (DFPMessageMeta, )
-
 
     @contextmanager
     def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
