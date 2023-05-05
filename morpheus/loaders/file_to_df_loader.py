@@ -127,7 +127,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    download_method: typing.Literal["single_thread", "multiprocess", "dask",
+    download_method: typing.Literal["single_thread", "multiprocess", "multiprocessing", "dask",
                                     "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     if (cache_dir is None):
@@ -221,7 +221,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
                     dfs = client.gather(dfs)
 
-            elif (download_method == "multiprocessing"):
+            elif (download_method in ("multiprocess", "multiprocessing")):
                 # Use multiprocessing here since parallel downloads are a pain
                 with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
                     dfs = p.map(download_method_func, download_buckets)
