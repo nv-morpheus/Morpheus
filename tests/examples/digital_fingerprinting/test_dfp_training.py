@@ -40,7 +40,7 @@ def test_constructor_bad_validation_size(config: Config, validation_size: float)
     from dfp.stages.dfp_training import DFPTraining
 
     with pytest.raises(ValueError):
-        stage = DFPTraining(config, validation_size=validation_size)
+        DFPTraining(config, validation_size=validation_size)
 
 
 @pytest.mark.parametrize('validation_size', [0., 0.2])

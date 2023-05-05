@@ -60,6 +60,7 @@ def mock_requests():
         mock_requests_get.return_value = mock_response
         yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
 
+
 @pytest.fixture
 def mock_mlflow():
     with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
