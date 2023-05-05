@@ -78,7 +78,6 @@ def dfp_prod_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset
 @pytest.fixture
 def dfp_message_meta(config, dataset_pandas):
     import pandas as pd
-
     from dfp.messages.multi_dfp_message import DFPMessageMeta
 
     user_id = 'test_user'
