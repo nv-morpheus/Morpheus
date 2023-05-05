@@ -94,7 +94,7 @@ def test_constructor(config: Config):
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 def test_constructor_download_type(config: Config, dl_type: str):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 
@@ -153,7 +153,7 @@ def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Conf
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
@@ -201,7 +201,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
     returnd_df = dataset_pandas['filter_probs.csv']
     if dl_type.startswith('dask'):
         mock_dask_client.gather.return_value = [returnd_df]
-    elif dl_type == "multiprocess":
+    elif dl_type in ("multiprocess", "multiprocessing"):
         mock_mp_pool.map.return_value = [returnd_df]
     else:
         mock_obf_to_df.return_value = returnd_df
@@ -219,7 +219,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
         (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
         assert not cache_hit
 
-    if dl_type == "multiprocess":
+    if dl_type in ("multiprocess", "multiprocessing"):
         mock_mp_gc.assert_called_once()
         mock_mp_pool.map.assert_called_once()
     else:
@@ -249,7 +249,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
@@ -317,7 +317,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
