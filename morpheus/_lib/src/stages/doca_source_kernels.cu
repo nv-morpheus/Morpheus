@@ -181,8 +181,8 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
   out[16] = to_hex_16(mac_5 % 16);
 }
 
-uint32_t const PACKETS_PER_THREAD = 32;
-uint32_t const THREADS_PER_BLOCK = 32;
+uint32_t const PACKETS_PER_THREAD = 4;
+uint32_t const THREADS_PER_BLOCK = 512;
 uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
 // uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
@@ -273,7 +273,7 @@ __global__ void _packet_receive_kernel(
 
   __syncthreads();
 
-  auto ret = doca_gpu_dev_eth_rxq_receive_warp(
+  auto ret = doca_gpu_dev_eth_rxq_receive_block(
     rxq_info,
     PACKETS_PER_BLOCK,
     PACKET_RX_TIMEOUT_NS,
@@ -298,9 +298,6 @@ __global__ void _packet_receive_kernel(
 
   int32_t payload_sizes[PACKETS_PER_THREAD];
   int32_t payload_flags[PACKETS_PER_THREAD];
-
-  auto packet_count_fixed = DOCA_GPUNETIO_VOLATILE(packet_count);
-
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
@@ -327,7 +324,6 @@ __global__ void _packet_receive_kernel(
     payload_sizes_out[packet_idx] = payload_size;
     payload_sizes[i] = payload_size;
     payload_flags[i] = 1;
-
   }
 
   auto payload_size_total = BlockReduce(temp_storage).Sum(payload_sizes);
@@ -341,11 +337,15 @@ __global__ void _packet_receive_kernel(
   if (threadIdx.x == 0){
     *packet_size_total_out = payload_size_total;
     *packet_count_out = payload_count_total;
-    printf("a: %i b: %i\n", payload_count_total, DOCA_GPUNETIO_VOLATILE(packet_count));
-    assert(payload_count_total == DOCA_GPUNETIO_VOLATILE(packet_count));
   }
 
-  __syncthreads();
+  // if (threadIdx.x == 0)
+  // {
+  //   if (DOCA_GPUNETIO_VOLATILE(packet_count) > PACKETS_PER_BLOCK)
+  //   {
+  //     printf("WARNING: GPUNetIO Received too many packets. Asked for %i, got %i. Packets will be dropped.\n", PACKETS_PER_BLOCK, DOCA_GPUNETIO_VOLATILE(packet_count));
+  //   }
+  // }
 
   if (threadIdx.x == 0)
   {
