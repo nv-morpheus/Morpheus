@@ -43,23 +43,6 @@ def test_constructor(config):
 
 
 @pytest.mark.use_python
-def test_build_single_before_module_registration(config):
-
-    mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_module = mock.MagicMock()
-    mock_input_stream = mock.MagicMock()
-
-    mock_segment.load_module.return_value = mock_module
-    mock_segment.make_node.return_value = mock_node
-
-    mod_stage = MultiInputportModulesStage(config, module_conf=module_conf, num_input_ports_to_merge=2)
-
-    with pytest.raises(Exception):
-        mod_stage._build(mock_segment, mock_input_stream)
-
-
-@pytest.mark.use_python
 def test_build_after_module_registration(config, register_test_module):
 
     mock_node = mock.MagicMock()

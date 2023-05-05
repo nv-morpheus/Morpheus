@@ -66,7 +66,8 @@ def test_get_module():
     module_instance = fn_constructor("ModuleMultiplexerTest", config)  # noqa: F841 -- we don't need to use it
 
 
-def test_get_module_with_empty_config():
+def test_multiplexer_module_with_empty_config():
+    packets_received = 0
 
     def init_wrapper(builder: mrc.Builder):
 
@@ -74,13 +75,18 @@ def test_get_module_with_empty_config():
             for i in range(PACKET_COUNT):
                 yield i
 
+        def _on_next(i):
+            nonlocal packets_received
+            packets_received += 1
+
         source_1 = builder.make_source("source_1", gen_data)
         source_2 = builder.make_source("source_2", gen_data)
 
+        # When empty config is passed, default values are loaded.
         config = {}
         multiplexer = builder.load_module("Multiplexer", "morpheus", "ModuleMultiplexerTest", config)
 
-        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
         builder.make_edge(source_1, multiplexer.input_port("input-0"))
         builder.make_edge(source_2, multiplexer.input_port("input-1"))
@@ -90,15 +96,15 @@ def test_get_module_with_empty_config():
     pipeline.make_segment("main", init_wrapper)
 
     options = mrc.Options()
-    options.topology.user_cpuset = "0-1"
+    options.topology.user_cpuset = "0-3"
 
     executor = mrc.Executor(options)
     executor.register_pipeline(pipeline)
 
-    # This should fail, because no module config is specified
-    with pytest.raises(ValueError):
-        executor.start()
-        executor.join()
+    executor.start()
+    executor.join()
+
+    assert packets_received == 2 * PACKET_COUNT
 
 
 def test_multiplexer_module():
@@ -168,7 +174,8 @@ def test_multiplexer_bad_config_module():
         source_1 = builder.make_source("source_1", gen_data)
         source_2 = builder.make_source("source_2", gen_data)
 
-        config = {"stop_after_secs": 1}
+        # num_input_ports_to_merge <=0 would raise an error
+        config = {"num_input_ports_to_merge": 0}
         multiplexer = builder.load_module("Multiplexer", "morpheus", "ModuleMultiplexerTest", config)
 
         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
