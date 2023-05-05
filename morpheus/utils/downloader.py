@@ -47,11 +47,10 @@ class Downloader:
     def download_method(self) -> str:
         return self._download_method
 
-    def download(
-            self,
-            download_buckets: typing.Iterable[fsspec.core.OpenFiles],
-            download_fn: typing.Callable[[fsspec.core.OpenFiles], pd.DataFrame],
-            get_dask_client_fn: typing.Callable[[], "dask.distributed.Client"] = None) -> typing.List[pd.DataFrame]:
+    def download(self,
+                 download_buckets: typing.Iterable[fsspec.core.OpenFiles],
+                 download_fn: typing.Callable[[fsspec.core.OpenFiles], pd.DataFrame],
+                 get_dask_client_fn: typing.Callable = None) -> typing.List[pd.DataFrame]:
         """
         Download the files in `download_buckets` using the method specified in the constructor.
         If dask or dask_thread is used, the `get_dask_client_fn` function is used to create a dask client, otherwise
@@ -72,6 +71,7 @@ class Downloader:
         """
         dfs = []
         if (self._download_method.startswith("dask")):
+            assert get_dask_client_fn is not None, "get_dask_client_fn must be set if using dask or dask_thread"
 
             # Create the client each time to ensure all connections to the cluster are closed (they can time out)
             with get_dask_client_fn() as client:
