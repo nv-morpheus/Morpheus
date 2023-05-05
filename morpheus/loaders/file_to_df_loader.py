@@ -15,7 +15,6 @@
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import pickle
 import time
@@ -34,6 +33,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
 
@@ -64,9 +64,9 @@ def get_dask_cluster(download_method: str):
     return dask_cluster
 
 
-def get_dask_client(dask_cluster):
+def get_dask_client(download_method: str):
     from dask.distributed import Client
-    dask_client = Client(get_dask_cluster(dask_cluster))
+    dask_client = Client(get_dask_cluster(download_method))
     logger.debug("Creating dask client %s ... Done.", dask_client)
 
     return dask_client
@@ -127,8 +127,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    download_method: typing.Literal["single_thread", "multiprocess", "multiprocessing", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    downloader = Downloader()
 
     if (cache_dir is None):
         cache_dir = "./.cache"
@@ -211,25 +210,9 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (download_method.startswith("dask")):
-                # Create the client each time to ensure all connections to the cluster are
-                # closed (they can time out)
-                dask_cluster = get_dask_cluster(download_method)
-                with get_dask_client(dask_cluster) as client:
-                    dfs = client.map(download_method_func, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (download_method in ("multiprocess", "multiprocessing")):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method_func, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method_func(s3_object))
-
+            dfs = downloader.download(download_buckets,
+                                      download_method_func,
+                                      partial(get_dask_client, downloader.download_method))
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False

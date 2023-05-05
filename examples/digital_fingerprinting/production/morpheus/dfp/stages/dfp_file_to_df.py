@@ -15,7 +15,6 @@
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import time
 import typing
@@ -38,6 +37,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -46,7 +46,7 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                 schema: DataFrameInputSchema,
                                 file_type: FileTypes,
                                 filter_null: bool,
-                                parser_kwargs: dict):
+                                parser_kwargs: dict) -> pd.DataFrame:
 
     retries = 0
     s3_df = None
@@ -94,10 +94,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         self._cache_dir = os.path.join(cache_dir, "file_cache")
 
         self._dask_cluster: Client = None
-
-        self._download_method: typing.Literal["single_thread", "multiprocess", "multiprocessing", "dask",
-                                              "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE",
-                                                                              "dask_thread")
+        self._downloader = Downloader()
 
     @property
     def name(self) -> str:
@@ -117,7 +114,8 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             # Up the heartbeat interval which can get violated with long download times
             dask.config.set({"distributed.client.heartbeat": "30s"})
 
-            self._dask_cluster = LocalCluster(start=True, processes=not self._download_method == "dask_thread")
+            self._dask_cluster = LocalCluster(start=True,
+                                              processes=not self._downloader.download_method == "dask_thread")
 
             logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
 
@@ -132,6 +130,9 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             self._dask_cluster = None
 
             logger.debug("Stopping dask cluster... Done.")
+
+    def _get_dask_client(self) -> Client:
+        return Client(self._get_dask_cluster())
 
     def _get_or_create_dataframe_from_s3_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
@@ -172,24 +173,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (self._download_method.startswith("dask")):
-
-                # Create the client each time to ensure all connections to the cluster are closed (they can time out)
-                with Client(self._get_dask_cluster()) as client:
-                    dfs = client.map(download_method, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (self._download_method in ("multiprocess", "multiprocessing")):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method(s3_object))
-
+            dfs = self._downloader.download(download_buckets, download_method, get_dask_client_fn=self._get_dask_client)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False
