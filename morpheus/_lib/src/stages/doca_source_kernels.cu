@@ -181,8 +181,8 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
   out[16] = to_hex_16(mac_5 % 16);
 }
 
-uint32_t const PACKETS_PER_THREAD = 4;
-uint32_t const THREADS_PER_BLOCK = 512;
+uint32_t const PACKETS_PER_THREAD = 32;
+uint32_t const THREADS_PER_BLOCK = 32;
 uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
 // uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
@@ -227,7 +227,7 @@ __global__ void _packet_receive_kernel(
   int32_t*                sem_idx,
   int32_t*                packet_count_out,
   int32_t*                packet_size_total_out,
-  int32_t*                packet_sizes_out,
+  int32_t*                payload_sizes_out,
   uint32_t*               exit_condition
 )
 {
@@ -246,7 +246,6 @@ __global__ void _packet_receive_kernel(
   __shared__ uint32_t packet_count;
   __shared__ uint64_t packet_offset;
   __shared__ doca_gpu_semaphore_status sem_status;
-
 
   while (true)
   {
@@ -274,7 +273,7 @@ __global__ void _packet_receive_kernel(
 
   __syncthreads();
 
-  auto ret = doca_gpu_dev_eth_rxq_receive_block(
+  auto ret = doca_gpu_dev_eth_rxq_receive_warp(
     rxq_info,
     PACKETS_PER_BLOCK,
     PACKET_RX_TIMEOUT_NS,
@@ -294,18 +293,21 @@ __global__ void _packet_receive_kernel(
     return;
   }
 
+  __threadfence();
   __syncthreads();
 
-  int32_t something[4];
-  int32_t count_packet[4];
+  int32_t payload_sizes[PACKETS_PER_THREAD];
+  int32_t payload_flags[PACKETS_PER_THREAD];
+
+  auto packet_count_fixed = DOCA_GPUNETIO_VOLATILE(packet_count);
 
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
     if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count)) {
-      something[i] = 0;
-      count_packet[i] = 0;
+      payload_sizes[i] = 0;
+      payload_flags[i] = 0;
       continue;
     }
 
@@ -322,28 +324,25 @@ __global__ void _packet_receive_kernel(
     auto packet_size = get_packet_size(hdr->l3_hdr);
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
-    // works when this printf statement is present, does not work when it's commented out.
-    // printf("", threadIdx.x);
+    payload_sizes_out[packet_idx] = payload_size;
+    payload_sizes[i] = payload_size;
+    payload_flags[i] = 1;
 
-    something[i] = payload_size;
-    count_packet[i] = 1;
-
-    packet_sizes_out[packet_idx] = payload_size;
   }
 
-  auto something_total = BlockReduce(temp_storage).Sum(something);
+  auto payload_size_total = BlockReduce(temp_storage).Sum(payload_sizes);
 
   __syncthreads();
 
-  auto count_packet_total = BlockReduce(temp_storage).Sum(count_packet);
+  auto payload_count_total = BlockReduce(temp_storage).Sum(payload_flags);
 
   __syncthreads();
 
   if (threadIdx.x == 0){
-    // printf("a: %i b: %i\n", *packet_size_total_out, something_total);
-    // assert(*packet_size_total_out == something_total);
-    *packet_size_total_out = something_total;
-    *packet_count_out = count_packet_total;
+    *packet_size_total_out = payload_size_total;
+    *packet_count_out = payload_count_total;
+    printf("a: %i b: %i\n", payload_count_total, DOCA_GPUNETIO_VOLATILE(packet_count));
+    assert(payload_count_total == DOCA_GPUNETIO_VOLATILE(packet_count));
   }
 
   __syncthreads();
@@ -644,7 +643,7 @@ void packet_receive_kernel(
   int32_t*                sem_idx,
   int32_t*                packet_count,
   int32_t*                packet_size_total_out,
-  int32_t*                packet_sizes_out,
+  int32_t*                payload_sizes_out,
   uint32_t*               exit_condition,
   cudaStream_t            stream
 )
@@ -656,7 +655,7 @@ void packet_receive_kernel(
     sem_idx,
     packet_count,
     packet_size_total_out,
-    packet_sizes_out,
+    payload_sizes_out,
     exit_condition
   );
 

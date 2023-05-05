@@ -73,8 +73,8 @@ DocaSourceStage::DocaSourceStage(
   }
 
   m_context   = std::make_shared<morpheus::doca::DocaContext>(
-    nic_pci_address, // "17:00.1"
-    gpu_pci_address  // "ca:00.0"
+    nic_pci_address,
+    gpu_pci_address
   );
 
   m_rxq       = std::make_shared<morpheus::doca::DocaRxQueue>(m_context);
@@ -176,14 +176,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto sem_idx_old = semaphore_idx_d.value(processing_stream);
       auto sem_idx_new = (sem_idx_old + 1) % m_semaphore->size();
       semaphore_idx_d.set_value_async(sem_idx_new, processing_stream);
-
-      // int32_t last_offset = data_offsets_out_d.back_element(processing_stream);
-
-      // std::cout << "sem_idx:     "      << sem_idx_old      << std::endl
-      //           << "packet_count:     " << packet_count     << std::endl
-      //           << "packet_size_total: " << packet_size_total << std::endl
-      //           << "last_offset:      " << last_offset      << std::endl
-      //           << std::flush;
 
       cudaStreamSynchronize(processing_stream);
 

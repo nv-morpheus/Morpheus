@@ -123,17 +123,17 @@ def run_pipeline(
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, source_ip_filter))
     #pipeline.set_source(FileSourceStage(config, filename='/workspace/examples/data/pcap_dump.jsonlines', repeat=10))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
     # add deserialize stage
     pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
 
     pipeline.add_stage(SerializeStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
     pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
-    pipeline.add_stage(MonitorStage(config, description="File writer"))
+    # pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     # if True:
 
