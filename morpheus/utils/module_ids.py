@@ -20,5 +20,10 @@ FILE_TO_DF = "FileToDF"
 FILTER_CONTROL_MESSAGE = "FilterControlMessage"
 FILTER_DETECTIONS = "FilterDetections"
 MLFLOW_MODEL_WRITER = "MLFlowModelWriter"
+MULTIPLEXER = "Multiplexer"
 SERIALIZE = "Serialize"
+TO_CONTROL_MESSAGE = "ToControlMessage"
 WRITE_TO_FILE = "WriteToFile"
+
+SUPPORTED_DATA_TYPES = ["payload", "streaming"]
+SUPPORTED_TASK_TYPES = ["load", "inference", "training"]

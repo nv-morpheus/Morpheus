@@ -26,6 +26,7 @@ import warnings
 from collections import namedtuple
 from functools import partial
 
+import mrc
 import pytest
 import requests
 
@@ -802,3 +803,20 @@ def loglevel_fatal():
 
 
 # ==== DataFrame Fixtures ====
+
+
+# ==== Module Fixtures ====
+@pytest.fixture(scope="function")
+def register_test_module():
+    registry = mrc.ModuleRegistry
+
+    module_id = "TestModule"
+    namespace = "test_morpheus_modules"
+
+    def module_init_fn(builder: mrc.Builder):
+        pass
+
+    if not registry.contains(module_id, namespace):
+        mrc_version = [int(i) for i in mrc.__version__.split('.')]
+        registry.register_module(module_id, namespace, mrc_version, module_init_fn)
+        assert registry.contains(module_id, namespace)

@@ -46,9 +46,9 @@ def serialize(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - columns (list[string]): List of columns to include; Example: `["column1", "column2", "column3"]`;
+            - columns (list[str]): List of columns to include; Example: `["column1", "column2", "column3"]`;
             Default: None
-            - exclude (list[string]): List of regex patterns to exclude columns; Example: `["column_to_exclude"]`;
+            - exclude (list[str]): List of regex patterns to exclude columns; Example: `["column_to_exclude"]`;
             Default: `[r'^ID$', r'^_ts_']`
             - fixed_columns (bool): If true, the columns are fixed and not determined at runtime; Example: `true`;
             Default: true
