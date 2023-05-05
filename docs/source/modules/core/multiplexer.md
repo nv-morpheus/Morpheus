@@ -23,13 +23,15 @@ The multiplexer receives data from one or more input ports and sends it to a sin
 
 | Parameter                 | Type      | Description                                                                                               | Example Value | Default Value |
 |---------------------------|-----------|-----------------------------------------------------------------------------------------------------------|---------------|---------------|
-| `num_input_ports_to_merge`| integer   | Number of upstream data to be merged; Example: `3`.                                                      | `None`        | `None`        |
-| `stop_after_secs`         | integer   | Time in seconds to halt the process Example: `10`. Default: `-1` (runs indefinitely).                     | `100`          | `-1`          |
+| `num_input_ports_to_merge`| integer   | Number of upstream nodes data to be merged.                                                      | `3`        | `-1`        |
+| `stop_after_secs`         | integer   | Time in seconds to halt the process                     | `100`          | `-1`          |
+| `streaming`         | boolean   | Execution in streaming mode is indicated by this flag                     | `True`          | `False`          |
 
 ### Example JSON Configuration
 
 ```json
 {
   "num_input_ports_to_merge": 3,
-  "stop_after_secs": -1
+  "stop_after_secs": -1,
+  "streaming": true
 }

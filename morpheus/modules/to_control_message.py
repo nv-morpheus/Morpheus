@@ -40,8 +40,8 @@ def to_control_message(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - tasks (array[dict]): Tasks configuration.
-            - meta_data (dict): Metadata Configuration.
+            - tasks (array[dict]): Control message tasks configuration.
+            - meta_data (dict): Control message metadata Configuration.
     """
 
     config = builder.get_current_module_config()

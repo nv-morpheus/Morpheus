@@ -23,8 +23,8 @@ This module converts `MessageMeta` to a `ControlMessage`.
 
 | Parameter  | Type                | Description                                          | Example Value | Default Value |
 |------------|---------------------|-------------------------------------------------------|---------------|---------------|
-| `tasks`     | Array of Dictionaries | Tasks configuration.                                  | `[{ "type": "inference", "properties": {} }]` | `None`        |
-| `meta_data` | Dictionary          | Metadata configuration.                              | `{"data_type": "streaming"}`               | `None`        |
+| `tasks`     | Array of Dictionaries | Control message tasks configuration                                  | `[{ "type": "inference", "properties": {} }]` | `None`        |
+| `meta_data` | Dictionary          | Control message metadata configuration                              | `{"data_type": "streaming"}`               | `None`        |
 
 ### Example JSON Configuration
 
