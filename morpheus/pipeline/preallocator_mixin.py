@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import typing
 from abc import ABC
 from collections import OrderedDict
 
@@ -34,6 +35,8 @@ from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
+DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
+
 
 class PreallocatorMixin(ABC):
     """
@@ -54,7 +57,7 @@ class PreallocatorMixin(ABC):
         """
         self._needed_columns = needed_columns
 
-    def _preallocate_df(self, df):
+    def _preallocate_df(self, df: DataFrameType) -> DataFrameType:
         missing_columns = [col for col in self._needed_columns.keys() if col not in df.columns]
         if len(missing_columns) > 0:
             if isinstance(df, cudf.DataFrame):
@@ -72,13 +75,15 @@ class PreallocatorMixin(ABC):
                 else:
                     df[column_name] = ''
 
-    def _preallocate_meta(self, msg: MessageMeta):
+        return df
+
+    def _preallocate_meta(self, msg: MessageMeta) -> MessageMeta:
         with msg.mutable_dataframe() as df:
             self._preallocate_df(df)
 
         return msg
 
-    def _preallocate_multi(self, msg: MultiMessage):
+    def _preallocate_multi(self, msg: MultiMessage) -> MultiMessage:
         self._preallocate_meta(msg.meta)
         return msg
 
