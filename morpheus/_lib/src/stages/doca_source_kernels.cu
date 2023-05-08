@@ -334,6 +334,8 @@ __global__ void _packet_receive_kernel(
   __syncthreads();
 
   if (threadIdx.x == 0){
+    printf("==================================================\n");
+    printf("REC. sizes: %6i, flags: %6i\n", payload_size_total, payload_count_total);
     *packet_size_total_out = payload_size_total;
     *packet_count_out = payload_count_total;
   }
@@ -448,13 +450,20 @@ __global__ void _packet_gather_kernel(
 
   __syncthreads();
 
-  BlockScan(temp_storage).ExclusiveSum(data_offsets, data_offsets);
+  int32_t data_offsets_agg;
+  BlockScan(temp_storage).ExclusiveSum(data_offsets, data_offsets, data_offsets_agg);
 
   __syncthreads();
 
-  BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture);
+  int32_t data_capture_agg;
+  BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture, data_capture_agg);
 
   __syncthreads();
+
+  if (threadIdx.x == 0)
+  {
+    printf("GAT. sizes: %6i, flags: %6i\n", data_offsets_agg, data_capture_agg);
+  }
 
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
@@ -635,6 +644,38 @@ std::unique_ptr<cudf::column> integers_to_mac(
     {});
 }
 
+void cuda_memory_test1()
+{
+    const unsigned int N = 10485760;
+    const unsigned int bytes = N * sizeof(int);
+    int *h_a = (int*)malloc(bytes);
+    memset(h_a, 0, bytes);
+    int *d_a;
+
+    CUDA_TRY(cudaMalloc((int**)&d_a, bytes));
+    CUDA_TRY(cudaMemcpy(d_a, h_a, bytes, cudaMemcpyHostToDevice));
+    CUDA_TRY(cudaMemcpy(h_a, d_a, bytes, cudaMemcpyDeviceToHost));
+
+    free(h_a);
+    CUDA_TRY(cudaFree(d_a));
+}
+
+void cuda_memory_test2()
+{
+    const unsigned int N = 10485760;
+    const unsigned int bytes = N * sizeof(int);
+    int *h_a = (int*)malloc(bytes);
+    memset(h_a, 0, bytes);
+    int *d_a;
+
+    CUDA_TRY(cudaMalloc((int**)&d_a, bytes));
+    CUDA_TRY(cudaMemcpy(d_a, h_a, bytes, cudaMemcpyHostToDevice));
+    CUDA_TRY(cudaMemcpy(h_a, d_a, bytes, cudaMemcpyDeviceToHost));
+
+    free(h_a);
+    CUDA_TRY(cudaFree(d_a));
+}
+
 void packet_receive_kernel(
   doca_gpu_eth_rxq*       rxq_info,
   doca_gpu_semaphore_gpu* sem_in,
@@ -657,6 +698,10 @@ void packet_receive_kernel(
     payload_sizes_out,
     exit_condition
   );
+
+  CHECK_CUDA(stream);
+
+  cuda_memory_test1();
 
   CHECK_CUDA(stream);
 }
@@ -705,6 +750,10 @@ void packet_gather_kernel(
     data_out,
     data_out_size
   );
+
+  CHECK_CUDA(stream);
+
+  cuda_memory_test2();
 
   CHECK_CUDA(stream);
 }

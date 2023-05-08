@@ -33,7 +33,7 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.utils.logger import configure_logging
 
-# from elasticsearch_ingest_stage import WriteToElasticsearchStage
+from elasticsearch_ingest_stage import WriteToElasticsearchStage
 
 
 @click.command()
@@ -123,14 +123,14 @@ def run_pipeline(
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, source_ip_filter))
     # pipeline.set_source(FileSourceStage(config, filename='.tmp/doca_test-in.csv', repeat=1))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
     # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
     # pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     # add deserialize stage
     pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
 
     # pipeline.add_stage(SerializeStage(config))
@@ -152,19 +152,19 @@ def run_pipeline(
                 )
             )
 
-        pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
+        # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
-        # # add inference stage
-        # pipeline.add_stage(
-        #     TritonInferenceStage(
-        #         config,
-        #         # model_name="sid-minibert-trt",
-        #         model_name="sid-minibert-onnx",
-        #         server_url="localhost:8000",
-        #         force_convert_inputs=True,
-        #         use_shared_memory=True
-        #         )
-        #     )
+        # add inference stage
+        pipeline.add_stage(
+            TritonInferenceStage(
+                config,
+                # model_name="sid-minibert-trt",
+                model_name="sid-minibert-onnx",
+                server_url="localhost:8000",
+                force_convert_inputs=True,
+                use_shared_memory=True
+                )
+            )
 
         # pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 
@@ -175,10 +175,10 @@ def run_pipeline(
     # if True:
     #     # add serialization stage
     #     pipeline.add_stage(SerializeStage(config))
-    # #     pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
+    #     pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
 
     #     #pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
-    # #     #pipeline.add_stage(MonitorStage(config, description="File writer"))
+    #     #pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     #     pipeline.add_stage(
     #         WriteToElasticsearchStage(
