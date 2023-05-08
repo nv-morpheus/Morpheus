@@ -34,7 +34,6 @@ class MorpheusTqdmMonitor(TMonitor):
     """
     Monitoring thread for tqdm bars.
     """
-
     def run(self):
         """
         This function does exactly the same as `TMonitor.run`, except we do not check for `instance.miniters == 1`
@@ -139,7 +138,6 @@ class SilentMorpheusTqdm(MorpheusTqdm):
     Subclass of MorpheusTqdm to silent monitors, it provides slightly different functionality with their TMonitor.
 
     """
-
     def refresh(self, nolock=False, lock_args=None):
         return
 
@@ -320,7 +318,7 @@ class MonitorController:
         elif (hasattr(x, "__len__")):
             return len  # Return len directly (same as `lambda y: len(y)`)
         else:
-            raise NotImplementedError(f"Unsupported type: {type(x)}")
+            return lambda y: 1
 
     def sink_on_completed(self):
         """
