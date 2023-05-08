@@ -37,7 +37,7 @@ By clicking on the `Add Control Message` button adds a new control message to th
 ## Example
 Let's just create an example with some digital fingerprinting pipeline properties and generate multiple control messages.
 
-**Note**: By default DataType is set to `Text`. If the DataType is set to `Array`, string with commas in the value field will be converted to an array. Similar to this, a dictionary will be created from a json string whose DataType is set to an `Object`.
+**Note**: By default DataType is set to `Text`. If the DataType is set to `Array`, string with commas in the value field will be converted to an array. Similar to this, a dictionary will be created from a JSON string whose DataType is set to an `Object`.
 
 ### Control Message Training
 

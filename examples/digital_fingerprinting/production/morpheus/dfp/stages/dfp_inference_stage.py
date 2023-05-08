@@ -87,10 +87,9 @@ class DFPInferenceStage(SinglePortStage):
         results_df = loaded_model.get_results(df_user, return_abs=True)
 
         # Create an output message to allow setting meta
-        output_message = MultiAEMessage(meta=message.meta,
-                                        mess_offset=message.mess_offset,
-                                        mess_count=message.mess_count,
-                                        model=loaded_model)
+        output_message = MultiDFPMessage(meta=message.meta,
+                                         mess_offset=message.mess_offset,
+                                         mess_count=message.mess_count)
 
         output_message.set_meta(list(results_df.columns), results_df)
 

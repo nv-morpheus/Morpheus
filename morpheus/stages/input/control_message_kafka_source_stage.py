@@ -23,7 +23,7 @@ import pandas as pd
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_control import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair

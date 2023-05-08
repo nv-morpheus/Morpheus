@@ -32,7 +32,7 @@ from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_ROLLING_WINDOW, MORPHEUS_MODULE_NAMESPACE)
@@ -48,15 +48,16 @@ def dfp_rolling_window(builder: mrc.Builder):
     Notes
     -----
     Configurable parameters:
-        - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
-        - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
-        - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
-        - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+        - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+        - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+        - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
+        Example: 0; Default: 0
+        - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
         Default: 'timestamp'
-        - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+        - aggregation_span (str): Lookback timespan for training data in a new training event; Example: '60d';
         Default: '60d'
         - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
-        - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
+        - cache_dir (str): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
     """
 
     config = builder.get_current_module_config()
@@ -152,6 +153,7 @@ def dfp_rolling_window(builder: mrc.Builder):
             return MessageMeta(cudf.from_pandas(df_window))
 
     def on_data(control_message: ControlMessage):
+
         try:
             payload = control_message.payload()
             user_id = control_message.get_metadata("user_id")
@@ -176,8 +178,9 @@ def dfp_rolling_window(builder: mrc.Builder):
 
                 return control_message
 
-        except Exception as e:
-            logger.error(f"Error processing control message in rolling window: {e}\nDiscarding control message.")
+        except Exception as exec_info:
+            logger.error("Error processing control message in rolling window: %s\nDiscarding control message.",
+                         exec_info)
             return None
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):

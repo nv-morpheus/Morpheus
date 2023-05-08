@@ -23,7 +23,7 @@ from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 
 
 def get_json_lines_count(filename):
-    with open(filename, 'r') as f:
+    with open(filename, encoding='utf-8') as f:
         lines = json.loads(f.read())
     return len(lines)
 
@@ -64,14 +64,15 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         elif "message_path" in PIPELINES_CONF[bench["name"]]:
             source_message_glob = path.join(curr_dir, PIPELINES_CONF[bench["name"]]["message_path"])
             for message_fn in glob.glob(source_message_glob):
-                message_file = open(message_fn)
-                control_message = json.load(message_file)
+                with open(message_fn, encoding='utf-8') as message_file:
+                    control_message = json.load(message_file)
                 inputs = control_message.get("inputs")
                 # Iterating over inputs
-                for input in inputs:
+                for inpt in inputs:
+                    non_load_task = None
                     line_count_per_task = 0
                     byte_count_per_task = 0
-                    tasks = input.get("tasks")
+                    tasks = inpt.get("tasks")
                     # Iterating over tasks
                     for task in tasks:
                         if task.get("type") == "load":
@@ -79,9 +80,9 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
                             # Iterating over files in a task
                             for file_glob in files:
                                 # Iterating over a file glob
-                                for fn in glob.glob(file_glob):
-                                    count = get_json_lines_count(fn)
-                                    size = path.getsize(fn)
+                                for file_name in glob.glob(file_glob):
+                                    count = get_json_lines_count(file_name)
+                                    size = path.getsize(file_name)
                                     line_count += count
                                     byte_count += size
                                     line_count_per_task += count

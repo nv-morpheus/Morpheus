@@ -29,7 +29,7 @@ from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_TRAINING, MORPHEUS_MODULE_NAMESPACE)
@@ -65,8 +65,8 @@ def dfp_training(builder: mrc.Builder):
     validation_size = config.get("validation_size", 0.0)
 
     if (validation_size < 0.0 or validation_size > 1.0):
-        raise ValueError("validation_size={0} should be a positive float in the "
-                         "(0, 1) range".format(validation_size))
+        raise ValueError(f"validation_size={validation_size} should be a positive float in the "
+                         "(0, 1) range")
 
     def on_data(control_message: ControlMessage):
         if (control_message is None):

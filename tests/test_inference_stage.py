@@ -282,7 +282,7 @@ def test_convert_one_response():
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemory(2, tensors={"probs": cp.zeros((2, 2))})
+    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 2))})
     inf = _mk_message(mess_count=2, count=2)
     res = _mk_message(mess_count=1, count=1)
 

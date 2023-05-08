@@ -53,7 +53,7 @@ docker-compose run -p 3000:3000 morpheus_pipeline bash
 
 The `-p 3000:3000` maps the visualization app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
-By default, a mlflow dashboard will be available at:
+By default, a MLflow dashboard will be available at:
 ```bash
 http://localhost:5000
 ```
@@ -101,7 +101,7 @@ python dfp_viz_azure_pipeline.py \
 ```
 **Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
 
-Run inference with DFP viz postprocessing using Azure log files in `/workspace/examples/data/dfp/azure-inference-data` to generate input files for Azure DFP visualization:
+Run inference with DFP viz post-processing using Azure log files in `/workspace/examples/data/dfp/azure-inference-data` to generate input files for Azure DFP visualization:
 ```
 python dfp_viz_azure_pipeline.py \
     --train_users=none \
@@ -139,15 +139,6 @@ While still in the `morpheus_pipeline` container, perform the following steps to
 
 ### Install dependencies
 
-```
-# Install Node.js
-apt update
-curl -sL https://deb.nodesource.com/setup_16.x | bash
-apt install nodejs
-```
-```
-export LD_LIBRARY_PATH=/opt/conda/envs/morpheus/lib:${LD_LIBRARY_PATH}
-```
 ```
 cd viz
 ```
