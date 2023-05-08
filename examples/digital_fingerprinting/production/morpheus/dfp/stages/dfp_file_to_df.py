@@ -60,10 +60,9 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                         parser_kwargs=parser_kwargs)
 
             break
-        except Exception:
+        except Exception as e:
             if (retries < 2):
-                logger.warning("Refreshing S3 credentials")
-                # cred_refresh()
+                logger.warning(f"Error fetching {file_object}: {e}\nRetrying...")
                 retries += 1
 
     # Run the pre-processing before returning
