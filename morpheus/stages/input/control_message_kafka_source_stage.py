@@ -19,7 +19,6 @@ import time
 import confluent_kafka as ck
 import mrc
 import pandas as pd
-import typing
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config

@@ -22,7 +22,6 @@ import mrc
 import pandas as pd
 
 import cudf
-import typing
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
