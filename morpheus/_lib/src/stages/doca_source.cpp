@@ -17,6 +17,7 @@
 
 #include <morpheus/stages/doca_source.hpp>
 #include <morpheus/stages/doca_source_kernels.hpp>
+#include <morpheus/doca/common.hpp>
 
 #include <cudf/column/column_factories.hpp>
 #include <cudf/strings/convert/convert_ipv4.hpp>
@@ -89,11 +90,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStream_t processing_stream;
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    auto semaphore_idx_d     = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_count_d      = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_sizes_d      = rmm::device_uvector<int32_t>(2048, processing_stream);
-    auto exit_condition      = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
+    auto semaphore_idx_d      = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_count_d       = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_buffer_d      = rmm::device_uvector<uint8_t>(2048 * MAX_PKT_SIZE, processing_stream);
+    auto payload_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto exit_condition       = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
 
     DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
@@ -115,8 +116,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         m_semaphore->size(),
         semaphore_idx_d.data(),
         packet_count_d.data(),
-        packet_size_total_d.data(),
-        packet_sizes_d.data(),
+        packet_buffer_d.data(),
+        payload_size_total_d.data(),
         static_cast<uint32_t*>(exit_condition->gpu_ptr()),
         processing_stream
       );
@@ -130,7 +131,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         continue;
       }
 
-      auto packet_size_total = packet_size_total_d.value(processing_stream);
+      auto packet_size_total = payload_size_total_d.value(processing_stream);
 
       // LOG(INFO) << "packet count: " << packet_count << " and size " << packet_size_total;
 
@@ -155,7 +156,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         m_semaphore->gpu_ptr(),
         m_semaphore->size(),
         semaphore_idx_d.data(),
-        packet_sizes_d.data(),
+        packet_count_d.data(),
+        packet_buffer_d.data(),
         timestamp_out_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),

@@ -28,8 +28,7 @@
 #include <doca_gpunetio.h>
 #include <memory>
 
-namespace morpheus {
-namespace doca {
+namespace morpheus::doca {
 
 std::unique_ptr<cudf::column> integers_to_mac(
   cudf::column_view const& integers,
@@ -41,9 +40,9 @@ void packet_receive_kernel(
   doca_gpu_semaphore_gpu* sem_in,
   int32_t                 sem_count,
   int32_t*                sem_idx,
-  int32_t*                packet_count,
-  int32_t*                packet_size_total,
-  int32_t*                packet_sizes_out,
+  int32_t*                packet_count_out,
+  uint8_t*                packet_buffer_out,
+  int32_t*                payload_size_total_out,
   uint32_t*               exit_condition,
   cudaStream_t            stream
 );
@@ -53,7 +52,8 @@ void packet_gather_kernel(
   doca_gpu_semaphore_gpu* sem_in,
   int32_t                 sem_count,
   int32_t*                sem_idx,
-  int32_t*                packet_sizes,
+  int32_t*                packet_count,
+  uint8_t*                packet_buffer,
   uint32_t*               timestamp_out,
   int64_t*                src_mac_out,
   int64_t*                dst_mac_out,
@@ -71,5 +71,4 @@ void packet_gather_kernel(
   cudaStream_t            stream
 );
 
-}
 }
