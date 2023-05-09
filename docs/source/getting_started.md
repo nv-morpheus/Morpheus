@@ -240,13 +240,13 @@ Several examples on using the Morpheus CLI can be found in the [Basic Usage](./e
 When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from Kafka, deserializes messages, serializes them, and then writes to a file, use the following:
 
 ```bash
-morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json --overwrite
+morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topics test_pcap deserialize serialize to-file --filename .tmp/temp_out.json --overwrite
 ```
 
 The output should contain lines similar to:
 ```
 ====Pipeline Started====
-Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
+Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topics=test_pcap, group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
@@ -259,7 +259,7 @@ Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite
 This is important because, when the log level is set to `INFO` and above, it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
 
 ```bash
-$ morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
+$ morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topics test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
 Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 E20221214 14:53:17.425515 452045 controller.cpp:62] exception caught while performing update - this is fatal - issuing kill

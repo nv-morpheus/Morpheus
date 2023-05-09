@@ -64,7 +64,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @brief Construct a new Kafka Source Stage object
      *
      * @param max_batch_size : The maximum batch size for the messages batch.
-     * @param topic : Input kafka topic.
+     * @param topics : Input kafka topics.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
      * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
@@ -76,7 +76,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
     KafkaSourceStage(TensorIndex max_batch_size,
-                     std::string topic,
+                     std::vector<std::string> topics,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
@@ -139,7 +139,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     TensorIndex m_max_batch_size{128};
     uint32_t m_batch_timeout_ms{100};
 
-    std::string m_topic;
+    std::vector<std::string> m_topics;
     std::map<std::string, std::string> m_config;
 
     bool m_disable_commit{false};
@@ -163,7 +163,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param max_batch_size : The maximum batch size for the messages batch.
-     * @param topic : Input kafka topic.
+     * @param topics : Input kafka topics.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
      * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
@@ -177,7 +177,7 @@ struct KafkaSourceStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder& builder,
                                                                         const std::string& name,
                                                                         TensorIndex max_batch_size,
-                                                                        std::string topic,
+                                                                        std::vector<std::string> topics,
                                                                         uint32_t batch_timeout_ms,
                                                                         std::map<std::string, std::string> config,
                                                                         bool disable_commit,

@@ -518,7 +518,7 @@ helm install --set ngc.apiKey="$API_KEY" \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=data/labels_phishing.txt \
-        from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
+        from-kafka --input_topics <YOUR_INPUT_KAFKA_TOPICS> --bootstrap_servers broker:9092 \
         monitor --description 'FromKafka Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -593,7 +593,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=32 \
         pipeline-nlp \
           --model_seq_length=256 \
-          from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
+          from-kafka --input_topics <YOUR_INPUT_KAFKA_TOPICS> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
           preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -662,7 +662,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
-          from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
+          from-kafka --input_topics <YOUR_INPUT_KAFKA_TOPICS> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
           preprocess \

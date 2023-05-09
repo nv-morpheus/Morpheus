@@ -82,7 +82,7 @@ ulimit -n 4096
     ```bash
     morpheus --log_level=DEBUG run \
         pipeline-nlp \
-        from-kafka --input_topic morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
+        from-kafka --input_topics morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
         monitor --description "Kafka Read" \
         deserialize \
         serialize \
@@ -113,7 +113,7 @@ ulimit -n 4096
     ```bash
     morpheus --log_level=DEBUG run \
         pipeline-nlp \
-        from-kafka --input_topic morpheus-src-copy-test-p --bootstrap_servers "${BROKER_LIST}" \
+        from-kafka --input_topics morpheus-src-copy-test-p --bootstrap_servers "${BROKER_LIST}" \
         deserialize \
         monitor --description "Kafka Read" \
         serialize \

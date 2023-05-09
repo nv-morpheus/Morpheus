@@ -307,6 +307,7 @@ def register_stage(command_name: str = None,
                         option = click.Option(click_option_name, **option_kwargs)
 
                         command_params.append(option)
+
                     except Exception as ex:
                         raise RuntimeError((f"Error auto registering CLI command '{command_name}' with "
                                             f"class '{stage_class}' and parameter '{p_name}'. Error:")) from ex

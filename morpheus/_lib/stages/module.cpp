@@ -141,7 +141,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("builder"),
              py::arg("name"),
              py::arg("max_batch_size"),
-             py::arg("topic"),
+             py::arg("topics"),
              py::arg("batch_timeout_ms"),
              py::arg("config"),
              py::arg("disable_commits")       = false,

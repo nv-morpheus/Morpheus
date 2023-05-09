@@ -19,6 +19,7 @@ import time
 import confluent_kafka as ck
 import mrc
 import pandas as pd
+import typing
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -44,8 +45,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topic : str
-        Input kafka topic.
+    input_topics : str
+        Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
+        list the topic names separated by comma (,).
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     client_id : str, default = None
@@ -70,7 +72,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: str = "test_cm",
+                 input_topics: str = "test_cm",
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -94,9 +96,8 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        self._topic = input_topic
-        # Setting max batch size to 1. As this source recieves only task defination (control messages)
-        self._max_batch_size = 1
+        self._topics = list(input_topics.split(","))
+
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
@@ -149,7 +150,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
-            consumer.subscribe([self._topic])
+            consumer.subscribe(self._topics)
 
             while not self._stop_requested:
 
