@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
+#include <cudf/column/column_view.hpp>
+#include <cudf/copying.hpp>
+#include <cudf/table/table.hpp>
 #include <morpheus/stages/doca_source.hpp>
 #include <morpheus/stages/doca_source_kernels.hpp>
 #include <morpheus/doca/common.hpp>
 
 #include <cudf/column/column_factories.hpp>
 #include <cudf/strings/convert/convert_ipv4.hpp>
+#include <cudf/column/column_factories.hpp>
+#include <cudf/scalar/scalar_factories.hpp>
+#include <cudf/filling.hpp>
 
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_scalar.hpp>
 
 #include <mrc/segment/builder.hpp>
@@ -87,14 +94,36 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
   return [this](rxcpp::subscriber<source_type_t> output) {
 
-    cudaStream_t processing_stream;
-    cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
+    auto semaphore_idx_d      = rmm::device_scalar<int32_t>(0, rmm::cuda_stream_default);
+    auto packet_count_d       = rmm::device_scalar<int32_t>(0, rmm::cuda_stream_default);
+    auto payload_buffer_d     = rmm::device_uvector<char>(MAX_PKT_RECEIVE * MAX_PKT_SIZE, rmm::cuda_stream_default);
+    auto payload_size_total_d = rmm::device_scalar<int32_t>(0, rmm::cuda_stream_default);
+    auto payload_sizes_d      = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
 
-    auto semaphore_idx_d      = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_count_d       = rmm::device_scalar<int32_t>(0, processing_stream);
-    auto packet_buffer_d      = rmm::device_uvector<uint8_t>(2048 * MAX_PKT_SIZE, processing_stream);
-    auto payload_size_total_d = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto src_mac_out_d        = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto dst_mac_out_d        = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto src_ip_out_d         = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto dst_ip_out_d         = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto src_port_out_d       = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto dst_port_out_d       = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto tcp_flags_out_d      = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto ether_type_out_d     = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto next_proto_id_out_d  = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+    auto timestamp_out_d      = rmm::device_uvector<uint32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
     auto exit_condition       = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
+
+    auto fixed_width_inputs_table_view = cudf::table_view(std::vector<cudf::column_view>{
+      cudf::column_view(cudf::device_span<const int64_t>(src_mac_out_d)),
+      cudf::column_view(cudf::device_span<const int64_t>(dst_mac_out_d)),
+      cudf::column_view(cudf::device_span<const int64_t>(src_ip_out_d)),
+      cudf::column_view(cudf::device_span<const int64_t>(dst_ip_out_d)),
+      cudf::column_view(cudf::device_span<const uint16_t>(src_port_out_d)),
+      cudf::column_view(cudf::device_span<const uint16_t>(dst_port_out_d)),
+      cudf::column_view(cudf::device_span<const int32_t>(tcp_flags_out_d)),
+      cudf::column_view(cudf::device_span<const int32_t>(ether_type_out_d)),
+      cudf::column_view(cudf::device_span<const int32_t>(next_proto_id_out_d)),
+      cudf::column_view(cudf::device_span<const uint32_t>(timestamp_out_d)),
+    });
 
     DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
@@ -116,226 +145,133 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         m_semaphore->size(),
         semaphore_idx_d.data(),
         packet_count_d.data(),
-        packet_buffer_d.data(),
+        payload_buffer_d.data(),
         payload_size_total_d.data(),
-        static_cast<uint32_t*>(exit_condition->gpu_ptr()),
-        processing_stream
-      );
-
-      cudaStreamSynchronize(processing_stream);
-
-      auto packet_count = packet_count_d.value(processing_stream);
-
-      if (packet_count == 0)
-      {
-        continue;
-      }
-
-      auto packet_size_total = payload_size_total_d.value(processing_stream);
-
-      // LOG(INFO) << "packet count: " << packet_count << " and size " << packet_size_total;
-
-      auto timestamp_out_d     = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
-      auto src_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_ip_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_ip_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_port_out_d      = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto dst_port_out_d      = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto data_offsets_out_d  = rmm::device_uvector<int32_t>(packet_count + 1, processing_stream);
-      auto data_size_out_d     = rmm::device_uvector<int32_t>(packet_count, processing_stream);
-      auto tcp_flags_out_d     = rmm::device_uvector<int32_t>(packet_count, processing_stream);
-      auto ether_type_out_d    = rmm::device_uvector<int32_t>(packet_count, processing_stream);
-      auto next_proto_id_out_d = rmm::device_uvector<int32_t>(packet_count, processing_stream);
-      auto data_out_d          = rmm::device_uvector<char>(packet_size_total, processing_stream);
-
-      data_offsets_out_d.set_element_async(packet_count, packet_size_total, processing_stream);
-
-      morpheus::doca::packet_gather_kernel(
-        m_rxq->rxq_info_gpu(),
-        m_semaphore->gpu_ptr(),
-        m_semaphore->size(),
-        semaphore_idx_d.data(),
-        packet_count_d.data(),
-        packet_buffer_d.data(),
-        timestamp_out_d.data(),
+        payload_sizes_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),
         src_ip_out_d.data(),
         dst_ip_out_d.data(),
         src_port_out_d.data(),
         dst_port_out_d.data(),
-        data_offsets_out_d.data(),
-        data_size_out_d.data(),
         tcp_flags_out_d.data(),
         ether_type_out_d.data(),
         next_proto_id_out_d.data(),
-        data_out_d.data(),
-        packet_size_total,
-        processing_stream
+        timestamp_out_d.data(),
+        exit_condition->gpu_ptr(),
+        rmm::cuda_stream_default
       );
 
-      auto sem_idx_old = semaphore_idx_d.value(processing_stream);
-      auto sem_idx_new = (sem_idx_old + 1) % m_semaphore->size();
-      semaphore_idx_d.set_value_async(sem_idx_new, processing_stream);
+      cudaStreamSynchronize(rmm::cuda_stream_default);
 
-      cudaStreamSynchronize(processing_stream);
+      auto packet_count = packet_count_d.value(rmm::cuda_stream_default);
+
+      if (packet_count == 0)
+      {
+        continue;
+      }
+
+      auto packet_size_total = payload_size_total_d.value(rmm::cuda_stream_default);
+
+      LOG(INFO) << "packet_count(" << packet_count << ") packet_size_total(" << packet_size_total << ")";
+
+      // gather payload data
+
+      rmm::device_uvector<int32_t> payload_offsets_d(packet_count + 1, rmm::cuda_stream_default);
+      rmm::device_uvector<char> payload_chars_d(packet_size_total, rmm::cuda_stream_default);
+
+      payload_offsets_d.set_element_async(packet_count, packet_size_total, rmm::cuda_stream_default);
+
+      morpheus::doca::packet_gather_kernel(
+        packet_count_d.data(),
+        payload_buffer_d.data(),
+        payload_size_total_d.data(),
+        payload_sizes_d.data(),
+        payload_offsets_d.data() + 1,
+        payload_chars_d.data(),
+        rmm::cuda_stream_default
+      );
+
+      cudaStreamSynchronize(rmm::cuda_stream_default);
 
       // data columns
-      auto data_offsets_out_d_size = data_offsets_out_d.size();
-      auto data_offsets_out_d_col  = std::make_unique<cudf::column>(
+      auto payload_offsets_d_size = payload_offsets_d.size();
+      auto payload_offsets_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
-        data_offsets_out_d_size,
-        data_offsets_out_d.release());
+        payload_offsets_d_size,
+        payload_offsets_d.release());
 
-      auto data_out_d_size = data_out_d.size();
-      auto data_out_d_col  = std::make_unique<cudf::column>(
+      auto payload_chars_d_size = payload_chars_d.size();
+      auto payload_chars_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int8_t>()},
-        data_out_d_size,
-        data_out_d.release());
+        payload_chars_d_size,
+        payload_chars_d.release());
 
-      auto data_col = cudf::make_strings_column(
+      auto payload_col = cudf::make_strings_column(
         packet_count,
-        std::move(data_offsets_out_d_col),
-        std::move(data_out_d_col),
+        std::move(payload_offsets_d_col),
+        std::move(payload_chars_d_col),
         0,
         {});
 
-      // timestamp column
-      auto timestamp_out_d_size = timestamp_out_d.size();
-      auto timestamp_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint32_t>()},
-        timestamp_out_d_size,
-        timestamp_out_d.release());
+      auto iota_col = [packet_count](){
+        using scalar_type_t = cudf::scalar_type_t<uint32_t>;
+        auto zero = cudf::make_numeric_scalar(cudf::data_type(cudf::data_type{cudf::type_to_id<uint32_t>()}));
+        static_cast<scalar_type_t*>(zero.get())->set_value(0);
+        zero->set_valid_async(false);
+        return cudf::sequence(packet_count, *zero);
+      }();
 
-      // src_mac address column
-      auto src_mac_out_d_size = src_mac_out_d.size();
-      auto src_mac_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int64_t>()},
-        src_mac_out_d_size,
-        src_mac_out_d.release());
-      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+      auto gathered_table = cudf::gather(fixed_width_inputs_table_view, iota_col->view());
+      auto gathered_metadata = cudf::io::table_metadata();
+      auto gathered_columns = gathered_table->release();
 
-      // dst_mac address column
-      auto dst_mac_out_d_size = dst_mac_out_d.size();
-      auto dst_mac_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int64_t>()},
-        dst_mac_out_d_size,
-        dst_mac_out_d.release());
-      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view());
+      // post-processing for mac addresses
+      auto src_mac_col = gathered_columns[0].release();
+      auto src_mac_str_col = morpheus::doca::integers_to_mac(src_mac_col->view());
+      gathered_columns[0].reset(src_mac_str_col.release());
 
-      // src ip address column
-      auto src_ip_out_d_size = src_ip_out_d.size();
-      auto src_ip_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int64_t>()},
-        src_ip_out_d_size,
-        src_ip_out_d.release());
-      auto src_ip_out_str_col = cudf::strings::integers_to_ipv4(src_ip_out_d_col->view());
+      auto dst_mac_col = gathered_columns[1].release();
+      auto dst_mac_str_col = morpheus::doca::integers_to_mac(dst_mac_col->view());
+      gathered_columns[1].reset(dst_mac_str_col.release());
 
-      // dst ip address column
-      auto dst_ip_out_d_size = dst_ip_out_d.size();
-      auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int64_t>()},
-        dst_ip_out_d_size,
-        dst_ip_out_d.release());
-      auto dst_ip_out_str_col = cudf::strings::integers_to_ipv4(dst_ip_out_d_col->view());
+      // post-processing for ip addresses
+      auto src_ip_col = gathered_columns[2].release();
+      auto src_ip_str_col = cudf::strings::integers_to_ipv4(src_ip_col->view());
+      gathered_columns[2].reset(src_ip_str_col.release());
 
-      // src port column
-      auto src_port_out_d_size = src_port_out_d.size();
-      auto src_port_out_d_col = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint16_t>()},
-        src_port_out_d_size,
-        src_port_out_d.release());
+      auto dst_ip_col = gathered_columns[3].release();
+      auto dst_ip_str_col = cudf::strings::integers_to_ipv4(dst_ip_col->view());
+      gathered_columns[3].reset(dst_ip_str_col.release());
 
-      // dst port column
-      auto dst_port_out_d_size = dst_port_out_d.size();
-      auto dst_port_out_d_col = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint16_t>()},
-        dst_port_out_d_size,
-        dst_port_out_d.release());
+      gathered_columns.emplace_back(std::move(payload_col));
 
-      // packet size column
-      auto data_size_out_d_size = data_size_out_d.size();
-      auto data_size_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        data_size_out_d_size,
-        data_size_out_d.release());
+      // assemble metadata
+      gathered_metadata.schema_info.emplace_back("src_mac");
+      gathered_metadata.schema_info.emplace_back("dst_mac");
+      gathered_metadata.schema_info.emplace_back("src_ip");
+      gathered_metadata.schema_info.emplace_back("dst_ip");
+      gathered_metadata.schema_info.emplace_back("src_port");
+      gathered_metadata.schema_info.emplace_back("dst_port");
+      gathered_metadata.schema_info.emplace_back("tcp_flags");
+      gathered_metadata.schema_info.emplace_back("ether_type");
+      gathered_metadata.schema_info.emplace_back("next_proto");
+      gathered_metadata.schema_info.emplace_back("timestamp");
+      gathered_metadata.schema_info.emplace_back("data");
 
-      // tcp flags column
-      auto tcp_flags_out_d_size = tcp_flags_out_d.size();
-      auto tcp_flags_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        tcp_flags_out_d_size,
-        tcp_flags_out_d.release());
+      gathered_table = std::make_unique<cudf::table>(std::move(gathered_columns));
 
-      // frame type column
-      auto ether_type_out_d_size = ether_type_out_d.size();
-      auto ether_type_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        ether_type_out_d_size,
-        ether_type_out_d.release());
-
-      // protocol id column
-      auto next_proto_id_out_d_size = next_proto_id_out_d.size();
-      auto next_proto_id_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        next_proto_id_out_d_size,
-        next_proto_id_out_d.release());
-
-      // create dataframe
-
-      auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
-      auto metadata = cudf::io::table_metadata();
-
-      metadata.schema_info.emplace_back("timestamp");
-      my_columns.push_back(std::move(timestamp_out_d_col));
-
-      metadata.schema_info.emplace_back("src_mac");
-      my_columns.push_back(std::move(src_mac_out_str_col));
-
-      metadata.schema_info.emplace_back("dst_mac");
-      my_columns.push_back(std::move(dst_mac_out_str_col));
-
-      metadata.schema_info.emplace_back("src_ip");
-      my_columns.push_back(std::move(src_ip_out_str_col));
-
-      metadata.schema_info.emplace_back("dst_ip");
-      my_columns.push_back(std::move(dst_ip_out_str_col));
-
-      metadata.schema_info.emplace_back("src_port");
-      my_columns.push_back(std::move(src_port_out_d_col));
-
-      metadata.schema_info.emplace_back("dst_port");
-      my_columns.push_back(std::move(dst_port_out_d_col));
-
-      metadata.schema_info.emplace_back("packet_size");
-      my_columns.push_back(std::move(data_size_out_d_col));
-
-      metadata.schema_info.emplace_back("tcp_flags");
-      my_columns.push_back(std::move(tcp_flags_out_d_col));
-
-      metadata.schema_info.emplace_back("ether_type");
-      my_columns.push_back(std::move(ether_type_out_d_col));
-
-      metadata.schema_info.emplace_back("next_proto_id");
-      my_columns.push_back(std::move(next_proto_id_out_d_col));
-
-      metadata.schema_info.emplace_back("data");
-      my_columns.push_back(std::move(data_col));
-
-      auto my_table_w_metadata = cudf::io::table_with_metadata{
-        std::make_unique<cudf::table>(std::move(my_columns)),
-        std::move(metadata)
+      auto gathered_table_w_metadata = cudf::io::table_with_metadata{
+        std::move(gathered_table),
+        std::move(gathered_metadata)
       };
 
-      auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
+      auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
 
       output.on_next(std::move(meta));
     }
 
     cancel_thread.join();
-
-    cudaStreamDestroy(processing_stream);
 
     output.on_completed();
   };

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <rmm/cuda_stream_view.hpp>
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
 #include <cudf/column/column.hpp>
@@ -41,34 +42,31 @@ void packet_receive_kernel(
   int32_t                 sem_count,
   int32_t*                sem_idx,
   int32_t*                packet_count_out,
-  uint8_t*                packet_buffer_out,
+  char*                   payload_buffer_out,
   int32_t*                payload_size_total_out,
-  uint32_t*               exit_condition,
-  cudaStream_t            stream
-);
-
-void packet_gather_kernel(
-  doca_gpu_eth_rxq*       rxq_info,
-  doca_gpu_semaphore_gpu* sem_in,
-  int32_t                 sem_count,
-  int32_t*                sem_idx,
-  int32_t*                packet_count,
-  uint8_t*                packet_buffer,
-  uint32_t*               timestamp_out,
+  int32_t*                payload_sizes_out,
   int64_t*                src_mac_out,
   int64_t*                dst_mac_out,
   int64_t*                src_ip_out,
   int64_t*                dst_ip_out,
   uint16_t*               src_port_out,
   uint16_t*               dst_port_out,
-  int32_t*                data_offsets_out,
-  int32_t*                data_size_out,
   int32_t*                tcp_flags_out,
   int32_t*                ether_type_out,
   int32_t*                next_proto_id_out,
-  char*                   data_out,
-  int32_t                 data_out_size,
+  uint32_t*               timestamp_out,
+  uint32_t*               exit_condition,
   cudaStream_t            stream
+);
+
+void packet_gather_kernel(
+  int32_t*     packet_count,
+  char*     packet_buffer,
+  int32_t*     payload_size_total,
+  int32_t*     payload_sizes,
+  int32_t*     payload_offsets_out,
+  char*        payload_chars_out,
+  cudaStream_t stream
 );
 
 }

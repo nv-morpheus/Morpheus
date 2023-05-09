@@ -14,8 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- #pragma once
 
-#define MAX_PKT_SIZE 8192
-#define MAX_PKT_NUM 65536
+#pragma once
+
+#include <cstdint>
+
+uint32_t const PACKETS_PER_THREAD = 4;
+uint32_t const THREADS_PER_BLOCK = 512;
+uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
+uint32_t const PACKET_RX_TIMEOUT_NS = 5000;
+
+uint32_t const MAX_PKT_RECEIVE = PACKETS_PER_BLOCK;
+uint32_t const MAX_PKT_SIZE    = 8192;
+uint32_t const MAX_PKT_NUM     = 65536;

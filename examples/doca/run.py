@@ -125,11 +125,11 @@ def run_pipeline(
     # pipeline.set_source(FileSourceStage(config, filename='.tmp/doca_test-in.csv', repeat=1))
     # pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
-    pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
+    # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
     # pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     # add deserialize stage
-    # pipeline.add_stage(DeserializeStage(config))
+    pipeline.add_stage(DeserializeStage(config))
     # pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
 
@@ -138,39 +138,39 @@ def run_pipeline(
     # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
     # pipeline.add_stage(MonitorStage(config, description="File writer"))
 
-    # if True:
+    if True:
 
-    #     # add preprocessing stage
-    #     pipeline.add_stage(
-    #         PreprocessNLPStage(
-    #             config,
-    #             vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
-    #             do_lower_case=True,
-    #             truncation=True,
-    #             add_special_tokens=False,
-    #             column='data'
-    #             )
-    #         )
+        # add preprocessing stage
+        pipeline.add_stage(
+            PreprocessNLPStage(
+                config,
+                vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+                do_lower_case=True,
+                truncation=True,
+                add_special_tokens=False,
+                column='data'
+                )
+            )
 
-    #     # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
+        # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
-    #     # add inference stage
-    #     pipeline.add_stage(
-    #         TritonInferenceStage(
-    #             config,
-    #             # model_name="sid-minibert-trt",
-    #             model_name="sid-minibert-onnx",
-    #             server_url="localhost:8000",
-    #             force_convert_inputs=True,
-    #             use_shared_memory=True
-    #             )
-    #         )
+        # add inference stage
+        pipeline.add_stage(
+            TritonInferenceStage(
+                config,
+                # model_name="sid-minibert-trt",
+                model_name="sid-minibert-onnx",
+                server_url="localhost:8000",
+                force_convert_inputs=True,
+                use_shared_memory=True
+                )
+            )
 
-        # pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
+        pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 
-        # # add class stage
-        # pipeline.add_stage(AddClassificationsStage(config))
-        # pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))
+        # add class stage
+        pipeline.add_stage(AddClassificationsStage(config))
+        pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))
 
     # if True:
     #     # add serialization stage
