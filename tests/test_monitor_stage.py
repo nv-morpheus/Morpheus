@@ -103,9 +103,6 @@ def test_refresh(mock_morph_tqdm, config):
                          [
                              (None, False, None),
                              ([], False, None),
-                             (1, True, 1),
-                             ([1], True, 1),
-                             ([2, 0], True, 2),
                              (['s'], True, 1),
                              ('s', True, 1),
                              ('test', True, 1),
@@ -125,6 +122,14 @@ def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: t
         assert auto_fn(value) == expected
     else:
         assert auto_fn is None
+
+
+@pytest.mark.parametrize('value', [1, [1], [2, 0]])
+def test_auto_count_fn_not_impl(config, value: typing.Any):
+    m = MonitorStage(config, log_level=logging.WARNING)
+
+    with pytest.raises(NotImplementedError):
+        m._mc.auto_count_fn(value)
 
 
 @mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
