@@ -18,6 +18,7 @@ import re
 import typing
 from datetime import datetime
 
+import nvtabular as nvt
 import pandas as pd
 
 import cudf
@@ -69,9 +70,6 @@ class ColumnInfo:
 
     def get_pandas_dtype(self) -> str:
         """Return the pandas type string of column."""
-        # TODO(Devin) - Previous usages of dtype were not consistent with its typing information
-        #               and it was used to store both the final type and the original type. So we
-        #               need to handle both cases here.
         if ((isinstance(self.dtype, str) and self.dtype.startswith("datetime"))
                 or (isinstance(self.dtype, type) and issubclass(self.dtype, datetime))):
             return "datetime64[ns]"
@@ -313,55 +311,29 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     return input_schema.row_filter(df_in)
 
 
-def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema) -> pd.DataFrame:
+def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+                      input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+                ) -> pd.DataFrame:
     """
-    Applies colmn transformations as defined by `input_schema`
+    Applies column transformations as defined by `input_schema`
     """
-    # Step 1 is to normalize any columns
-    df_processed = _normalize_dataframe(df_in, input_schema)
 
-    # Step 2 is to process columns
-    df_processed = _process_columns(df_processed, input_schema)
+    from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
 
-    # Step 3 is to run the row filter if needed
-    df_processed = _filter_rows(df_processed, input_schema)
+    workflow = input_schema
+    if (isinstance(input_schema, DataFrameInputSchema)):
+        workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
 
-    return df_processed
+    convert_to_pd = False
+    if (isinstance(df_in, pd.DataFrame)):
+        convert_to_pd = True
+        df_in = cudf.DataFrame(df_in)
 
+    dataset = nvt.Dataset(df_in)
 
-#  def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
-#                        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
-#                        output_dtype="ddf") -> pd.DataFrame:
-#      """
-#      Applies column transformations as defined by `input_schema`
-#      """
-#
-#      from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
-#
-#      workflow = input_schema
-#      if (isinstance(input_schema, DataFrameInputSchema)):
-#          workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
-#
-#      convert_to_pd = False
-#      if (isinstance(df_in, pd.DataFrame)):
-#          convert_to_pd = True
-#          df_in = cudf.DataFrame(df_in)
-#
-#      # TODO(Devin) - Hack to convert struct columns to string until NVT natively supports
-#      for col, dtype in zip(df_in.columns, df_in.dtypes):
-#          if (dtype == "struct"):
-#              print("Converting column {} from struct to string".format(col))
-#              df_in[col] = cudf.from_pandas(df_in[col].explode())
-#      dataset = nvt.Dataset(df_in)
-#
-#      if (output_dtype == "ddf"):
-#          result = workflow.fit_transform(dataset).to_ddf().compute()
-#      elif (output_dtype == "gpu"):
-#          result = workflow.fit_transform(dataset).to_gpu()
-#      elif (output_dtype == "cpu"):
-#          result = workflow.fit_transform(dataset).to_cpu()
-#
-#      if (convert_to_pd):
-#          return result.to_pandas()
-#      else:
-#          return result
+    result = workflow.fit_transform(dataset).to_ddf().compute()
+
+    if (convert_to_pd):
+        return result.to_pandas()
+    else:
+        return result
