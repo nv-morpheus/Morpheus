@@ -27,12 +27,15 @@
 #include <cudf/column/column_factories.hpp>
 #include <cudf/scalar/scalar_factories.hpp>
 #include <cudf/filling.hpp>
+#include <cudf/strings/detail/utilities.cuh>
+#include <cudf/strings/detail/utilities.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_scalar.hpp>
 
 #include <mrc/segment/builder.hpp>
 
+#include <rmm/mr/device/per_device_resource.hpp>
 #include <rte_byteorder.h>
 
 #include <glog/logging.h>
@@ -171,48 +174,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         continue;
       }
 
-      auto packet_size_total = payload_size_total_d.value(rmm::cuda_stream_default);
+      auto payload_size_total = payload_size_total_d.value(rmm::cuda_stream_default);
 
-      LOG(INFO) << "packet_count(" << packet_count << ") packet_size_total(" << packet_size_total << ")";
+      // LOG(INFO) << "packet_count(" << packet_count << ") payload_size_total(" << payload_size_total << ")";
 
       // gather payload data
 
-      rmm::device_uvector<int32_t> payload_offsets_d(packet_count + 1, rmm::cuda_stream_default);
-      rmm::device_uvector<char> payload_chars_d(packet_size_total, rmm::cuda_stream_default);
-
-      payload_offsets_d.set_element_async(packet_count, packet_size_total, rmm::cuda_stream_default);
-
-      morpheus::doca::packet_gather_kernel(
-        packet_count_d.data(),
-        payload_buffer_d.data(),
-        payload_size_total_d.data(),
-        payload_sizes_d.data(),
-        payload_offsets_d.data() + 1,
-        payload_chars_d.data(),
-        rmm::cuda_stream_default
-      );
-
-      cudaStreamSynchronize(rmm::cuda_stream_default);
-
-      // data columns
-      auto payload_offsets_d_size = payload_offsets_d.size();
-      auto payload_offsets_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        payload_offsets_d_size,
-        payload_offsets_d.release());
-
-      auto payload_chars_d_size = payload_chars_d.size();
-      auto payload_chars_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int8_t>()},
-        payload_chars_d_size,
-        payload_chars_d.release());
-
-      auto payload_col = cudf::make_strings_column(
-        packet_count,
-        std::move(payload_offsets_d_col),
-        std::move(payload_chars_d_col),
-        0,
-        {});
+      auto payload_col = doca::gather_payload(packet_count, payload_buffer_d.data(), payload_sizes_d.data());
 
       auto iota_col = [packet_count](){
         using scalar_type_t = cudf::scalar_type_t<uint32_t>;
@@ -267,6 +235,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       };
 
       auto meta = MessageMeta::create_from_cpp(std::move(gathered_table_w_metadata), 0);
+
+      cudaStreamSynchronize(rmm::cuda_stream_default);
 
       output.on_next(std::move(meta));
     }

@@ -30,6 +30,13 @@
 #include <memory>
 
 namespace morpheus::doca {
+  
+std::unique_ptr<cudf::column> gather_payload(
+  int32_t      packet_count,
+  char*        payload_buffer,
+  int32_t*     payload_sizes,
+  rmm::cuda_stream_view stream = cudf::detail::default_stream_value,
+  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 std::unique_ptr<cudf::column> integers_to_mac(
   cudf::column_view const& integers,
@@ -60,11 +67,9 @@ void packet_receive_kernel(
 );
 
 void packet_gather_kernel(
-  int32_t*     packet_count,
-  char*     packet_buffer,
-  int32_t*     payload_size_total,
+  int32_t      packet_count,
+  char*        packet_buffer,
   int32_t*     payload_sizes,
-  int32_t*     payload_offsets_out,
   char*        payload_chars_out,
   cudaStream_t stream
 );

@@ -131,12 +131,6 @@ __device__ __forceinline__ int32_t
 get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
 {
   auto packet_size       = get_packet_size(packet_l3);
-
-  if (packet_size > MAX_PKT_SIZE) {
-    printf("tid(%3i): packet_size(%6i) > MAX_PKT_SIZE(%i)", threadIdx.x, packet_size, MAX_PKT_SIZE);
-    return 0;
-  }
-
   auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
   // auto ip_header_length  = sizeof(ipv4_hdr);
   auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off >> 4) * sizeof(int32_t);
@@ -421,11 +415,9 @@ __global__ void _packet_receive_kernel(
 }
 
 __global__ void _packet_gather_kernel(
-  int32_t* packet_count,
+  int32_t  packet_count,
   char*    payload_buffer,
-  int32_t* payload_size_total,
   int32_t* payload_sizes,
-  int32_t* payload_offsets_out,
   char*    payload_chars_out
 )
 {
@@ -442,7 +434,7 @@ __global__ void _packet_gather_kernel(
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
-    if (packet_idx >= *packet_count) {
+    if (packet_idx >= packet_count) {
       payload_capture[i] = 0;
       payload_offsets[i] = 0;
     } else {
@@ -467,14 +459,14 @@ __global__ void _packet_gather_kernel(
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
-    if (packet_idx >= *packet_count) {
+    if (packet_idx >= packet_count) {
       continue;
     }
 
     auto payload_size = payload_sizes[packet_idx];
     auto packet_idx_out = payload_capture[i];
 
-    payload_offsets_out[packet_idx_out] = payload_offsets[i];
+    // payload_offsets_out[packet_idx_out] = payload_offsets[i];
 
     for (auto j = 0; j < payload_size; j++)
     {
@@ -482,7 +474,7 @@ __global__ void _packet_gather_kernel(
 
       auto payload_chars_out_idx = payload_offsets[i] + j;
 
-      if (payload_chars_out_idx < *payload_size_total) {
+      if (payload_chars_out_idx) {
         payload_chars_out[payload_chars_out_idx] = value;
       }
     }
@@ -645,23 +637,28 @@ void packet_receive_kernel(
   CHECK_CUDA(stream);
 }
 
-void packet_gather_kernel(
-  int32_t*     packet_count,
+std::unique_ptr<cudf::column> gather_payload(
+  int32_t      packet_count,
   char*        payload_buffer,
-  int32_t*     payload_size_total,
   int32_t*     payload_sizes,
-  int32_t*     payload_offsets_out,
-  char*        payload_chars_out,
-  cudaStream_t stream
-)
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr)
 {
+  auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
+    payload_sizes,
+    payload_sizes + packet_count,
+    stream,
+    mr
+  );
+
+  auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
+  auto d_chars      = chars_column->mutable_view().data<char>();
+
   _packet_gather_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     packet_count,
     payload_buffer,
-    payload_size_total,
     payload_sizes,
-    payload_offsets_out,
-    payload_chars_out
+    d_chars
   );
 
   CHECK_CUDA(stream);
@@ -669,6 +666,12 @@ void packet_gather_kernel(
   cuda_memory_test2();
 
   CHECK_CUDA(stream);
+
+  return cudf::make_strings_column(packet_count,
+    std::move(offsets_column),
+    std::move(chars_column),
+    0,
+    {});
 }
 
 }
