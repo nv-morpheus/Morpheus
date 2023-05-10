@@ -58,7 +58,7 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     def __init__(self,
                  c: Config,
-                 compare_df: typing.Union[pd.DataFrame, cudf.DataFrame, str],
+                 compare_df: typing.Union[pd.DataFrame, cudf.DataFrame, str, typing.List[str]],
                  include: typing.List[str] = None,
                  exclude: typing.List[str] = None,
                  index_col: str = None,
@@ -71,6 +71,13 @@ class CompareDataFrameStage(InMemorySinkStage):
             compare_df = read_file_to_df(compare_df, df_type='pandas')
         elif isinstance(compare_df, cudf.DataFrame):
             compare_df = compare_df.to_pandas()
+        elif isinstance(compare_df, list):
+            tmp_dfs = []
+            for item in compare_df:
+                tmp_df = read_file_to_df(item, df_type='pandas')
+                tmp_dfs.append(tmp_df)
+            compare_df = pd.concat(tmp_dfs)
+            compare_df.reset_index(inplace=True, drop=True)
 
         self._compare_df = compare_df
 

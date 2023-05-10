@@ -104,7 +104,10 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        self._topics = list(input_topics.split(","))
+        # Convert input_topics string to list and remove duplicates
+        unique_topics = set(input_topics.split(","))
+        # Convert back to a list
+        self._topics = list(unique_topics)
         self._max_batch_size = c.pipeline_batch_size
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
