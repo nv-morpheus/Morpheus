@@ -122,10 +122,3 @@ def test_compute_output_schema():
         [ColumnSchema('A_new', dtype=np.dtype('int64')), ColumnSchema('B_new', dtype=np.dtype('int64'))])
 
     assert str(output_schema) == str(expected_schema), "Test compute output schema failed"
-
-
-# Run tests
-if (__name__ in ("__main__", )):
-    test_transform()
-    test_column_mapping()
-    test_compute_output_schema()

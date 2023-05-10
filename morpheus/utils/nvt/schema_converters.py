@@ -343,7 +343,7 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, v
 
     graph = build_nx_dependency_graph(column_info_objects)
 
-    # Uncomment to print the dependency layout
+    # Uncomment to print the computed: dependency layout
     # from matplotlib import pyplot as plt
     # pos = graphviz_layout(graph, prog='neato')
     # nx.draw(graph, pos, with_labels=True, font_weight='bold')
@@ -353,7 +353,6 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, v
     if (input_schema.row_filter is not None):
         coalesced_workflow = coalesced_workflow >> Filter(f=input_schema.row_filter)
 
-    # Uncomment to display the NVT workflow render
     if (visualize):
         coalesced_workflow.graph.render(view=True, format='svg')
 

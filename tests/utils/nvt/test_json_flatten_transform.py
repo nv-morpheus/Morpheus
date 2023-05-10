@@ -61,9 +61,3 @@ def assert_frame_equal(df1, df2):
     for col in df1.columns:
         assert col in df2, f"Column {col} not found in the second DataFrame"
         assert (df1[col] == df2[col]).all(), f"Column {col} values do not match"
-
-
-if __name__ == "__main__":
-    test_json_flatten_pandas()
-    test_json_flatten_cudf()
-    print("All tests passed.")

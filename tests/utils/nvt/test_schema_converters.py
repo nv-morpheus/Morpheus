@@ -574,7 +574,3 @@ def test_input_schema_conversion_with_functional_filter():
 
     pd.set_option('display.max_columns', None)
     pd.testing.assert_frame_equal(output_df, expected_df)
-
-
-if (__name__ in ('main', )):
-    test_input_schema_conversion()

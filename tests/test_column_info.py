@@ -89,8 +89,6 @@ def test_dataframe_input_schema_with_json_cols():
 
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
 
-    #  Required until Merlin natively supports JSON columns: https://github.com/NVIDIA-Merlin/NVTabular/issues/1808
-
     df_processed_schema = process_dataframe(input_df, schema)
     processed_df_cols = df_processed_schema.columns
 

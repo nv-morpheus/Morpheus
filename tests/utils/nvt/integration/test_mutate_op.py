@@ -62,9 +62,3 @@ def test_integration_cudf():
     result_pdf = result_cdf.to_pandas()
 
     assert result_pdf.equals(expected_pdf), "Integration test with cuDF DataFrame failed"
-
-
-# Run tests
-if (__name__ in ('__main__',)):
-    test_integration_pandas()
-    test_integration_cudf()
