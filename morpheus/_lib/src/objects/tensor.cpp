@@ -21,7 +21,6 @@
 #include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/error.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
 #include <cuda_runtime.h>       // for cudaMemcpy, cudaMemcpyDeviceToHost
@@ -63,7 +62,7 @@ std::vector<uint8_t> Tensor::get_host_data() const
 
     out_data.resize(this->bytes_count());
 
-    CUDA_TRY(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
 
     return out_data;
 }
