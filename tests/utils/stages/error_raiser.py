@@ -36,6 +36,7 @@ class ErrorRaiserStage(SinglePortStage):
         self._exception_cls = exception_cls
         self._raise_on = raise_on
         self._counter = AtomicInteger(0)
+        self._error_raised = False
 
     @property
     def name(self) -> str:
@@ -50,8 +51,13 @@ class ErrorRaiserStage(SinglePortStage):
     def on_data(self, message: typing.Any):
         count = self._counter.get_and_inc()
         if count >= self._raise_on:
+            self._error_raised = True
             raise self._exception_cls(f"ErrorRaiserStage: raising exception on message {count}")
         return message
+
+    @property
+    def error_raised(self) -> bool:
+        return self._error_raised
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
