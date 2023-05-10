@@ -91,34 +91,3 @@ def test_monitor_not_impl(config: Config, delayed_start: bool):
         pipe.run()
 
     assert len(sink_stage.get_messages()) == 0
-
-
-if __name__ == '__main__':
-
-    class UnsupportedType:
-        pass
-
-    from morpheus.config import CppConfig
-    CppConfig.set_should_use_cpp(False)
-    config = Config()
-    config.num_threads = 1
-    configure_logging(logging.DEBUG)
-    pipe = LinearPipeline(config)
-    pipe.set_source(
-        InMemSourceXStage(config,
-                          [
-                              UnsupportedType(),
-                              UnsupportedType(),
-                              UnsupportedType(),
-                              UnsupportedType(),
-                              UnsupportedType(),
-                              UnsupportedType()
-                          ]))
-    #pipe.add_stage(ErrorRaiserStage(config, raise_on=0))
-    monitor_stage = pipe.add_stage(MonitorStage(config, log_level=logging.WARNING))
-    sink_stage = pipe.add_stage(InMemorySinkStage(config))
-
-    assert monitor_stage._mc.is_enabled()
-    print(0)
-    pipe.run()
-    print(1)
