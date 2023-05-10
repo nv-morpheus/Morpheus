@@ -81,7 +81,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topics: str = "test_cm",
+                 input_topics: str = "test_pcap",
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",

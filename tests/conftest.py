@@ -68,7 +68,7 @@ def init_pytest_kafka():
                                                           group_id='morpheus_unittest_reader',
                                                           client_id='morpheus_unittest_reader',
                                                           seek_to_beginning=True,
-                                                          kafka_topics=KAFKA_TOPICS.output_topic)
+                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
 
         return True
     except Exception as e:
