@@ -21,6 +21,7 @@ import threading
 import typing
 from unittest import mock
 
+import fsspec
 import mrc
 import pytest
 
@@ -112,6 +113,7 @@ def test_refresh(mock_morph_tqdm, config):
                              ({}, True, 0),
                              (tuple(), True, 0),
                              (set(), True, 0),
+                             (fsspec.open_files(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')), True, 1),
                          ])
 def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: typing.Union[int, None]):
     m = MonitorStage(config, log_level=logging.WARNING)
