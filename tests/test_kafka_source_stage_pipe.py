@@ -70,7 +70,7 @@ class OffsetChecker(SinglePortStage):
     def __init__(self, c: Config, bootstrap_servers: str, group_id: str):
         super().__init__(c)
 
-        # importing here so that running without the --run_kafka flag won't fail due
+        # Importing here so that running without the --run_kafka flag won't fail due
         # to not having the kafka libs installed
         from kafka import KafkaAdminClient
 
