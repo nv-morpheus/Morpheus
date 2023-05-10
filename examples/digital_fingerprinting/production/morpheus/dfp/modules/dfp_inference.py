@@ -25,7 +25,6 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.messages import ControlMessage
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
@@ -33,7 +32,7 @@ from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_INFERENCE
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_INFERENCE, MORPHEUS_MODULE_NAMESPACE)
@@ -49,11 +48,11 @@ def dfp_inference(builder: mrc.Builder):
     Notes
     ----------
         Configurable parameters:
-            - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+            - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
             Default: `[Required]`
-            - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+            - fallback_username (str): Fallback user to use if no model is found for a user; Example: "generic_user";
             Default: generic_user
-            - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
+            - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
     """
 
     config = builder.get_current_module_config()
@@ -76,7 +75,7 @@ def dfp_inference(builder: mrc.Builder):
 
         return model_manager.load_user_model(client, user_id=user, fallback_user_ids=[fallback_user])
 
-    def process_task(control_message: ControlMessage, task: dict):
+    def process_task(control_message: ControlMessage):
         start_time = time.time()
 
         user_id = control_message.get_metadata("user_id")
@@ -90,13 +89,13 @@ def dfp_inference(builder: mrc.Builder):
             model_cache: ModelCache = get_model(user_id)
 
             if (model_cache is None):
-                raise RuntimeError("Could not find model for user {}".format(user_id))
+                raise RuntimeError(f"Could not find model for user {user_id}")
 
             loaded_model = model_cache.load_model(client)
 
         # TODO(Devin): Recovery strategy should be more robust/configurable in practice
-        except Exception:
-            logger.exception(f"Error retrieving model for user {user_id}, discarding training message.")
+        except Exception as exec_info:
+            logger.exception("Error retrieving model for user %s, discarding training message. %s", user_id, exec_info)
             return None
 
         post_model_time = time.time()
@@ -110,13 +109,7 @@ def dfp_inference(builder: mrc.Builder):
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(df=results_df, user_id=user_id)
-        multi_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(results_df))
-        output_message = MultiAEMessage(meta=multi_message.meta,
-                                        mess_offset=multi_message.mess_offset,
-                                        mess_count=multi_message.mess_count,
-                                        model=loaded_model,
-                                        train_scores_std=1.0,
-                                        train_scores_mean=0.0)
+        output_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(results_df))
 
         output_message.set_meta(list(results_df.columns), results_df)
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
@@ -140,8 +133,10 @@ def dfp_inference(builder: mrc.Builder):
 
         task_results = []
         while (control_message.has_task("inference")):
-            task = control_message.remove_task("inference")
-            task_results.append(process_task(control_message, task))
+            task_results.append(process_task(control_message))
+            # After the inference task is completed, we remove it from the control messages.
+            control_message.remove_task("inference")
+            logger.debug("Removed inference task from the control message")
 
         return task_results
 
