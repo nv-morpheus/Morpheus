@@ -12,23 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import pandas as pd
 import numpy as np
-
-from merlin.core.dispatch import DataFrameType, annotate
-from merlin.schema import Schema, ColumnSchema
-from nvtabular.ops.operator import ColumnSelector, Operator
+import pandas as pd
+from merlin.core.dispatch import DataFrameType
+from merlin.core.dispatch import annotate
+from merlin.schema import ColumnSchema
+from merlin.schema import Schema
+from nvtabular.ops.operator import ColumnSelector
+from nvtabular.ops.operator import Operator
 
 from morpheus.utils.nvt import MutateOp
 
 
 def setUp():
-    df = pd.DataFrame({
-        'A': [1, 2, 3],
-        'B': [4, 5, 6],
-        'C': [7, 8, 9]
-    })
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]})
 
     def example_transform(col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
         selected_columns = col_selector.names
@@ -58,13 +55,11 @@ def test_transform():
 
 # Test for lambda function transformation
 def test_transform_lambda():
-    df = pd.DataFrame({
-        'A': [1, 2, 3],
-        'B': [4, 5, 6],
-        'C': [7, 8, 9]
-    })
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]})
 
-    op = MutateOp(lambda col_selector, df: df.assign(**{f"{col}_new": df[col] * 2 for col in col_selector.names}),
+    op = MutateOp(lambda col_selector,
+                  df: df.assign(**{f"{col}_new": df[col] * 2
+                                   for col in col_selector.names}),
                   output_columns=[('A_new', np.dtype('int64')), ('B_new', np.dtype('int64'))])
     col_selector = ColumnSelector(['A', 'B'])
     transformed_df = op.transform(col_selector, df)
@@ -77,11 +72,7 @@ def test_transform_lambda():
 
 
 def test_transform_additional_columns():
-    df = pd.DataFrame({
-        'A': [1, 2, 3],
-        'B': [4, 5, 6],
-        'C': [7, 8, 9]
-    })
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]})
 
     def additional_transform(col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
         selected_columns = col_selector.names
@@ -109,10 +100,7 @@ def test_column_mapping():
     col_selector = ColumnSelector(['A', 'B'])
     column_mapping = op.column_mapping(col_selector)
 
-    expected_mapping = {
-        'A_new': ['A', 'B'],
-        'B_new': ['A', 'B']
-    }
+    expected_mapping = {'A_new': ['A', 'B'], 'B_new': ['A', 'B']}
 
     assert column_mapping == expected_mapping, "Test column mapping failed"
 
@@ -130,16 +118,14 @@ def test_compute_output_schema():
 
     output_schema = op.compute_output_schema(input_schema, col_selector)
 
-    expected_schema = Schema([
-        ColumnSchema('A_new', dtype=np.dtype('int64')),
-        ColumnSchema('B_new', dtype=np.dtype('int64'))
-    ])
+    expected_schema = Schema(
+        [ColumnSchema('A_new', dtype=np.dtype('int64')), ColumnSchema('B_new', dtype=np.dtype('int64'))])
 
     assert str(output_schema) == str(expected_schema), "Test compute output schema failed"
 
 
 # Run tests
-if (__name__ in ("__main__",)):
+if (__name__ in ("__main__", )):
     test_transform()
     test_column_mapping()
     test_compute_output_schema()

@@ -12,38 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
-import typing
-
-import cudf
 import dataclasses
-import pandas as pd
-
-from merlin.dag import ColumnSelector
-
-from morpheus.utils.column_info import BoolColumn
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DateTimeColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import IncrementColumn
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import StringJoinColumn
-
-from morpheus.utils.nvt import MutateOp
-from morpheus.utils.nvt import json_flatten
+import typing
+from functools import partial
 
 import networkx as nx
 import nvtabular as nvt
+import pandas as pd
+from merlin.dag import ColumnSelector
 from nvtabular.ops import Filter
 from nvtabular.ops import LambdaOp
 from nvtabular.ops import Rename
 
+import cudf
+
+from morpheus.utils.column_info import BoolColumn
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import CustomColumn
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.column_info import StringCatColumn
+from morpheus.utils.column_info import StringJoinColumn
+from morpheus.utils.nvt import MutateOp
+from morpheus.utils.nvt.transforms import json_flatten
+
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
-    def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[
-        pd.DataFrame, cudf.DataFrame]:
+
+    def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
         convert_to_cudf = False
         if type(df) == cudf.DataFrame:
             convert_to_cudf = True
@@ -152,15 +150,18 @@ def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateO
 
 
 @sync_df_as_pandas
-def string_cat_col(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, sep) -> typing.Union[
-    pd.DataFrame, cudf.DataFrame]:
+def string_cat_col(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column,
+                   sep) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     cat_col = df.apply(lambda row: sep.join(row.values.astype(str)), axis=1)
 
     return pd.DataFrame({output_column: cat_col})
 
 
-def nvt_string_cat_col(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       output_column, input_columns, sep: str = ', '):
+def nvt_string_cat_col(column_selector: ColumnSelector,
+                       df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                       output_column,
+                       input_columns,
+                       sep: str = ', '):
     return string_cat_col(df[input_columns], output_column=output_column, sep=sep)
 
 
@@ -174,45 +175,83 @@ def increment_column(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_colu
     return pd.DataFrame({output_column: groupby_col})
 
 
-def nvt_increment_column(column_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                         output_column, input_column, period: str = 'D'):
+def nvt_increment_column(column_selector: ColumnSelector,
+                         df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                         output_column,
+                         input_column,
+                         period: str = 'D'):
     return increment_column(column_selector, df, output_column, input_column, period)
 
 
 ColumnInfoProcessingMap = {
-    BoolColumn: lambda ci, deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool),
-                                           dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
+    BoolColumn:
+        lambda ci,
+        deps: [
+            LambdaOp(
+                lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
+        ],
     # ColumnInfo: lambda ci, deps: [
     #    LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[ColumnInfo] '{ci.name}'")],
-    ColumnInfo: lambda ci, deps: [
-        MutateOp(lambda selector, df: df.assign(
-            **{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns) else df.assign(
-            **{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
-                 dependencies=deps, output_columns=[(ci.name, ci.dtype)], label=f"[ColumnInfo] '{ci.name}'")
-    ],
-    CustomColumn: lambda ci, deps: [
-        MutateOp(lambda selector, df: ci.process_column_fn(df), dependencies=deps,
-                 output_columns=[(ci.name, ci.dtype)]),
-    ],
-    DateTimeColumn: lambda ci, deps: [Rename(f=lambda name: ci.name if name == ci.input_name else name),
-                                      LambdaOp(lambda series: series.astype(ci.dtype),
-                                               dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")],
-    IncrementColumn: lambda ci, deps: [
-        MutateOp(partial(nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
-                 dependencies=deps, output_columns=[(ci.name, ci.groupby_column)],
-                 label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")],
-    RenameColumn: lambda ci, deps: [MutateOp(lambda selector, df: df.rename(columns={ci.input_name: ci.name}),
-                                             dependencies=deps, output_columns=[(ci.name, ci.dtype)],
-                                             label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")],
-    StringCatColumn: lambda ci, deps: [MutateOp(
-        partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
-        dependencies=deps, output_columns=[(ci.name, ci.dtype)],
-        label=f"[StringCatColumn] '{','.join(ci.input_columns)}' => '{ci.name}'")],
-    StringJoinColumn: lambda ci, deps: [MutateOp(
-        partial(nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
-        dependencies=deps, output_columns=[(ci.name, ci.dtype)],
-        label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")],
-    JSONFlattenInfo: lambda ci, deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+    ColumnInfo:
+        lambda ci,
+        deps: [
+            MutateOp(lambda selector,
+                     df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
+                     else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[ColumnInfo] '{ci.name}'")
+        ],
+    CustomColumn:
+        lambda ci,
+        deps: [
+            MutateOp(
+                lambda selector, df: ci.process_column_fn(df), dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
+        ],
+    DateTimeColumn:
+        lambda ci,
+        deps: [
+            Rename(f=lambda name: ci.name if name == ci.input_name else name),
+            LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")
+        ],
+    IncrementColumn:
+        lambda ci,
+        deps: [
+            MutateOp(partial(
+                nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.groupby_column)],
+                     label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
+        ],
+    RenameColumn:
+        lambda ci,
+        deps: [
+            MutateOp(lambda selector,
+                     df: df.rename(columns={ci.input_name: ci.name}),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
+        ],
+    StringCatColumn:
+        lambda ci,
+        deps: [
+            MutateOp(partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[StringCatColumn] '{','.join(ci.input_columns)}' => '{ci.name}'")
+        ],
+    StringJoinColumn:
+        lambda ci,
+        deps: [
+            MutateOp(partial(
+                nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
+        ],
+    JSONFlattenInfo:
+        lambda ci,
+        deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
@@ -293,10 +332,12 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, v
     column_info_objects = [ci for ci in input_schema.column_info]
     if (json_cols is not None and len(json_cols) > 0):
         column_info_objects.append(
-            JSONFlattenInfo(input_col_names=[c for c in json_cols],
-                            # output_col_names=[name for name, _ in json_output_cols],
-                            output_col_names=json_output_cols,
-                            dtype="str", name="json_info"))
+            JSONFlattenInfo(
+                input_col_names=[c for c in json_cols],
+                # output_col_names=[name for name, _ in json_output_cols],
+                output_col_names=json_output_cols,
+                dtype="str",
+                name="json_info"))
 
     column_info_map = {ci.name: ci for ci in column_info_objects}
 

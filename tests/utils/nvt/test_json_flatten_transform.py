@@ -13,29 +13,25 @@
 # limitations under the License.
 
 import pandas as pd
+from nvtabular.ops.operator import ColumnSelector
+
 import cudf
 
 from morpheus.utils.nvt.transforms import json_flatten
-from nvtabular.ops.operator import ColumnSelector
 
 
 def test_json_flatten_pandas():
     data = {
         "id": [1, 2],
         "info": [
-            '{"name": "John", "age": 30, "city": "New York"}',
-            '{"name": "Jane", "age": 28, "city": "San Francisco"}'
+            '{"name": "John", "age": 30, "city": "New York"}', '{"name": "Jane", "age": 28, "city": "San Francisco"}'
         ]
     }
     df = pd.DataFrame(data)
     col_selector = ColumnSelector(["info"])
     result = json_flatten(col_selector, df)
 
-    expected_data = {
-        "info.name": ["John", "Jane"],
-        "info.age": [30, 28],
-        "info.city": ["New York", "San Francisco"]
-    }
+    expected_data = {"info.name": ["John", "Jane"], "info.age": [30, 28], "info.city": ["New York", "San Francisco"]}
     expected_df = pd.DataFrame(expected_data)
 
     pd.testing.assert_frame_equal(result, expected_df)
@@ -45,8 +41,7 @@ def test_json_flatten_cudf():
     data = {
         "id": [1, 2],
         "info": [
-            '{"name": "John", "age": 30, "city": "New York"}',
-            '{"name": "Jane", "age": 28, "city": "San Francisco"}'
+            '{"name": "John", "age": 30, "city": "New York"}', '{"name": "Jane", "age": 28, "city": "San Francisco"}'
         ]
     }
     df = cudf.DataFrame(data)
@@ -54,10 +49,7 @@ def test_json_flatten_cudf():
     result = json_flatten(col_selector, df)
 
     expected_data = {
-        "id": [1, 2],
-        "info.name": ["John", "Jane"],
-        "info.age": [30, 28],
-        "info.city": ["New York", "San Francisco"]
+        "id": [1, 2], "info.name": ["John", "Jane"], "info.age": [30, 28], "info.city": ["New York", "San Francisco"]
     }
     expected_df = cudf.DataFrame(expected_data)
 

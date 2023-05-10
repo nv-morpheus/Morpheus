@@ -15,12 +15,16 @@
 import typing
 from inspect import getsourcelines
 
-from merlin.core.dispatch import DataFrameType, annotate
-from merlin.schema import Schema, ColumnSchema
-from nvtabular.ops.operator import ColumnSelector, Operator
+from merlin.core.dispatch import DataFrameType
+from merlin.core.dispatch import annotate
+from merlin.schema import ColumnSchema
+from merlin.schema import Schema
+from nvtabular.ops.operator import ColumnSelector
+from nvtabular.ops.operator import Operator
 
 
 class MutateOp(Operator):
+
     def __init__(self, func, output_columns=None, dependencies=None, label=None):
         super().__init__()
 
@@ -31,8 +35,7 @@ class MutateOp(Operator):
 
     def _remove_deps(self, column_selector):
         to_skip = ColumnSelector(
-            [dep if isinstance(dep, str) else dep.output_schema.column_names for dep in self._dependencies]
-        )
+            [dep if isinstance(dep, str) else dep.output_schema.column_names for dep in self._dependencies])
 
         return column_selector.filter_columns(to_skip)
 
@@ -65,7 +68,10 @@ class MutateOp(Operator):
     def transform(self, column_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
         return self._func(column_selector, df)
 
-    def column_mapping(self, col_selector: ColumnSelector, ) -> typing.Dict[str, str]:
+    def column_mapping(
+        self,
+        col_selector: ColumnSelector,
+    ) -> typing.Dict[str, str]:
         column_mapping = {}
 
         for col_name, _ in self._output_columns:
@@ -74,10 +80,10 @@ class MutateOp(Operator):
         return column_mapping
 
     def compute_output_schema(
-            self,
-            input_schema: Schema,
-            col_selector: ColumnSelector,
-            prev_output_schema: typing.Optional[Schema] = None,
+        self,
+        input_schema: Schema,
+        col_selector: ColumnSelector,
+        prev_output_schema: typing.Optional[Schema] = None,
     ) -> Schema:
         output_schema = super().compute_output_schema(input_schema, col_selector, prev_output_schema)
 

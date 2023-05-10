@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import pandas as pd
-import cudf
 from merlin.dag import ColumnSelector
 
-from morpheus.utils.nvt import MutateOp, json_flatten
+import cudf
+
+from morpheus.utils.nvt import MutateOp
+from morpheus.utils.nvt.transforms import json_flatten
 
 
 def setUp():
@@ -42,8 +43,8 @@ def test_integration_pandas():
     pdf = pd.DataFrame({'col1': json_data})
     col_selector = ColumnSelector(['col1'])
 
-    op = MutateOp(json_flatten,
-                  [("col1.key1", "object"), ("col1.key2.subkey1", "object"), ("col1.key2.subkey2", "object")])
+    op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
+                                 ("col1.key2.subkey2", "object")])
     result_pdf = op.transform(col_selector, pdf)
 
     assert result_pdf.equals(expected_pdf), "Integration test with pandas DataFrame failed"
@@ -55,8 +56,8 @@ def test_integration_cudf():
     cdf = cudf.DataFrame({'col1': json_data})
     col_selector = ColumnSelector(['col1'])
 
-    op = MutateOp(json_flatten,
-                  [("col1.key1", "object"), ("col1.key2.subkey1", "object"), ("col1.key2.subkey2", "object")])
+    op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
+                                 ("col1.key2.subkey2", "object")])
     result_cdf = op.transform(col_selector, cdf)
     result_pdf = result_cdf.to_pandas()
 

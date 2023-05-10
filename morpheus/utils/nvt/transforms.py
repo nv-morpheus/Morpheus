@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import typing
 
-import cudf
-import json
-
 import pandas as pd
+
+import cudf
 
 
 def json_flatten(col_selector, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
