@@ -308,6 +308,7 @@ __global__ void _packet_receive_kernel(
 
   int32_t payload_sizes[PACKETS_PER_THREAD];
   int32_t payload_flags[PACKETS_PER_THREAD];
+
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
   {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
