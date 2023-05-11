@@ -20,6 +20,7 @@ from datetime import datetime
 from datetime import timezone
 
 import fsspec
+import pytest
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -33,6 +34,21 @@ def test_constructor(config: Config):
     date_conversion_func = lambda x: x  # noqa E731
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
+                                'M',
+                                sampling=55,
+                                start_time=datetime(1999, 1, 1),
+                                end_time=datetime(2005, 10, 11, 4, 34, 21))
+
+    assert isinstance(stage, SinglePortStage)
+    assert stage._date_conversion_func is date_conversion_func
+    assert stage._sampling == 55
+    assert stage._period == 'M'
+    assert stage._start_time == datetime(1999, 1, 1)
+    assert stage._end_time == datetime(2005, 10, 11, 4, 34, 21)
+
+    # Test deprecated usage
+    stage = DFPFileBatcherStage(config,
+                                date_conversion_func,
                                 'Y',
                                 sampling_rate_s=55,
                                 start_time=datetime(1999, 1, 1),
@@ -40,10 +56,17 @@ def test_constructor(config: Config):
 
     assert isinstance(stage, SinglePortStage)
     assert stage._date_conversion_func is date_conversion_func
-    assert stage._sampling_rate_s == 55
+    assert stage._sampling == "55S"
     assert stage._period == 'Y'
     assert stage._start_time == datetime(1999, 1, 1)
     assert stage._end_time == datetime(2005, 10, 11, 4, 34, 21)
+
+
+def test_constructor_error(config: Config):
+    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+
+    with pytest.raises(AssertionError):
+        DFPFileBatcherStage(config, lambda x: x, sampling=55, sampling_rate_s=20)
 
 
 def test_on_data(config: Config):
