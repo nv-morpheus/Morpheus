@@ -48,7 +48,7 @@ GIT_UPSTREAM_URL=$(git_ssh_to_https ${GIT_UPSTREAM_URL})
 GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
-LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tm}
+LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
 CONTAINER_VER=${CONTAINER_VER:-230510}
 CUDA_VER=${CUDA_VER:-11.8}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
