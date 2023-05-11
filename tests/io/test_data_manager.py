@@ -15,6 +15,7 @@
 
 import io
 import os
+import shutil
 import tempfile
 import unittest
 import uuid
@@ -58,14 +59,14 @@ def dataframe_fixture_data():
     test_cudf_dataframe.to_csv(csv_filepath, index=False, header=True)
 
     # Provide the file paths and data as a dictionary
-    data = {
+    yield {
         'test_cudf_dataframe': test_cudf_dataframe,
         'test_pd_dataframe': test_pd_dataframe,
         'test_parquet_filepath': parquet_filepath,
         'test_csv_filepath': csv_filepath
     }
 
-    return data
+    shutil.rmtree(temp_dir)
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory'])
