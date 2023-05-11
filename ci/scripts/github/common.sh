@@ -131,3 +131,23 @@ function show_conda_info() {
     conda config --show-sources
     conda list --show-channel-urls
 }
+
+function upload_artifact() {
+    FILE_NAME=$1
+    BASE_NAME=$(basename "${FILE_NAME}")
+    rapids-logger "Uploading artifact: ${BASE_NAME}"
+    if [[ "${LOCAL_CI}" == "1" ]]; then
+        cp ${FILE_NAME} "${LOCAL_CI_TMP}/${BASE_NAME}"
+    else
+        aws s3 cp --only-show-errors "${FILE_NAME}" "${ARTIFACT_URL}/${BASE_NAME}"
+    fi
+}
+
+function download_artifact() {
+    ARTIFACT=$1
+    if [[ "${LOCAL_CI}" == "1" ]]; then
+        cp "${LOCAL_CI_TMP}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
+    else
+        aws s3 cp --only-show-errors "${ARTIFACT_URL}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
+    fi
+}
