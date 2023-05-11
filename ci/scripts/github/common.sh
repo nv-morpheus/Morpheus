@@ -60,6 +60,9 @@ export SCCACHE_REGION="us-east-2"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
+export CONDA_ENV_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+export CONDA_EXAMPLES_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
+
 export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_CUDA_ARCHITECTURES=60;70;75;80 -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_PYTHON_BUILD_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
 
 export FETCH_STATUS=0
@@ -72,8 +75,15 @@ function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
 
+    ENV_YAML=${CONDA_ENV_YML}
+    if [[ "${MERGE_EXAMPLES_YAML}" == "1" ]]; then
+        # Merge the dev and examples envs, otherwise --prune will remove the examples packages
+        ENV_YAML=${condatmpdir}/merged_env.yml
+        conda run -n morpheus --live-stream conda-merge ${CONDA_ENV_YML} ${CONDA_EXAMPLES_YML} > ${ENV_YAML}
+    fi
+
     # Update the packages
-    rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
 
     # Finally, reactivate
     conda activate morpheus
