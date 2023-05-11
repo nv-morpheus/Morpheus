@@ -59,7 +59,7 @@ for STAGE in "${STAGES[@]}"; do
         CONTAINER="${TEST_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia --gpus all"
         if [[ "${STAGE}" == "test" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_EXAMPLES_YAML=1"
+            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_EXAMPLES_YAML=1 --cap-add=sys_nice"
         fi
     else
         CONTAINER="${BUILD_CONTAINER}"
@@ -77,8 +77,9 @@ for STAGE in "${STAGES[@]}"; do
 
     echo "Running ${STAGE} stage in ${CONTAINER}"
     docker run ${DOCKER_RUN_ARGS} ${DOCKER_EXTRA_ARGS} ${CONTAINER} ${DOCKER_RUN_CMD}
+
     STATUS=$?
-    if [ ${STATUS} -ne 0 ]; then
+    if [[ ${STATUS} -ne 0 ]]; then
         echo "Error: docker exited with a non-zero status code for ${STAGE} of ${STATUS}"
         exit ${STATUS}
     fi

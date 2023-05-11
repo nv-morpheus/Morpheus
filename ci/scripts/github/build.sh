@@ -14,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [[ "${LOCAL_CI}" == "" ]]; then
-    set -e
-fi
+set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
