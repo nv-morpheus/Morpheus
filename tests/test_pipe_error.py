@@ -28,7 +28,6 @@ from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.utils.logger import configure_logging
 from utils.stages.error_raiser import ErrorRaiserStage
 
 
