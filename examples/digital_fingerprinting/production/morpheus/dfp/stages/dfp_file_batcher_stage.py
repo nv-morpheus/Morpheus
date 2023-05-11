@@ -91,7 +91,7 @@ class DFPFileBatcherStage(SinglePortStage):
             file_objs.append(file_object)
 
         # Build the dataframe
-        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names, "objects": file_objects})
+        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names, "objects": file_objs})
 
         # sort the incoming data by date
         df.sort_index(inplace=True)
