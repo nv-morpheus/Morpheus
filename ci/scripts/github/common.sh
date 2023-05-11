@@ -137,7 +137,7 @@ function fetch_base_branch_gh_api() {
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh
-    BASE_BRANCH=$(get_base_branch)
+    export BASE_BRANCH=$(get_base_branch)
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
 }
 
