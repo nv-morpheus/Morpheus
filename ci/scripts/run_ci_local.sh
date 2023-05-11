@@ -30,8 +30,21 @@ case "$1" in
         ;;
 esac
 
+# CI image doesn't contain ssh, need to use https
+function git_ssh_to_https()
+{
+    local url=$1
+    echo $url | sed -e 's|^git@github\.com:|https://github.com/|'
+}
+
 MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
-GIT_URL=$(git remote get-url origin | sed -e 's|^git@github\.com:|https://github.com/|')
+
+GIT_URL=$(git remote get-url origin)
+GIT_URL=$(git_ssh_to_https ${GIT_URL})
+
+GIT_UPSTREAM_URL=$(git remote get-url upstream)
+GIT_UPSTREAM_URL=$(git_ssh_to_https ${GIT_UPSTREAM_URL})
+
 GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
@@ -45,6 +58,7 @@ TEST_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-${CONTAINER
 
 ENV_LIST="--env LOCAL_CI_TMP=/ci_tmp"
 ENV_LIST="${ENV_LIST} --env GIT_URL=${GIT_URL}"
+ENV_LIST="${ENV_LIST} --env GIT_UPSTREAM_URL=${GIT_UPSTREAM_URL}"
 ENV_LIST="${ENV_LIST} --env GIT_BRANCH=${GIT_BRANCH}"
 ENV_LIST="${ENV_LIST} --env GIT_COMMIT=${GIT_COMMIT}"
 ENV_LIST="${ENV_LIST} --env PARALLEL_LEVEL=$(nproc)"
