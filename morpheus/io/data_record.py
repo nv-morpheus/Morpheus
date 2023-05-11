@@ -61,15 +61,15 @@ class DataRecord:
         self._backing_source = None
         self._storage_type = storage_type
 
-        if self._file_format not in self.VALID_FILE_FORMATS:
+        if (self._file_format not in self.VALID_FILE_FORMATS):
             raise ValueError(f"Invalid file_format '{self._file_format}'")
 
-        if self._storage_type not in self.VALID_STORAGE_TYPES:
+        if (self._storage_type not in self.VALID_STORAGE_TYPES):
             raise ValueError(f"Invalid storage_type '{self._storage_type}'")
 
-        if self._file_format == 'csv':
+        if (self._file_format == 'csv'):
             self._data_reader = cudf.read_csv
-        elif self._file_format == 'parquet':
+        elif (self._file_format == 'parquet'):
             self._data_reader = cudf.read_parquet
 
         self._store(data_source)
@@ -115,9 +115,9 @@ class DataRecord:
 
         _file_format = file_format or file_path.split('.')[-1]
 
-        if _file_format == 'parquet':
+        if (_file_format == 'parquet'):
             source_df = cudf.read_parquet(file_path)
-        elif _file_format == 'csv':
+        elif (_file_format == 'csv'):
             source_df = cudf.read_csv(file_path)
         else:
             raise ValueError(f"Unknown file format '{file_path}'")
@@ -138,11 +138,11 @@ class DataRecord:
 
         _file_format = file_format or file_path.split('.')[-1]
 
-        if _file_format == 'parquet':
+        if (_file_format == 'parquet'):
             # For Parquet files, use PyArrow to read the row count directly.
             par_file = pq.ParquetFile(file_path)
             row_count = par_file.metadata.num_rows
-        elif _file_format == 'csv':
+        elif (_file_format == 'csv'):
             # For CSV files, use pandas to read the file and count the rows.
             with pd.read_csv(file_path, chunksize=10**6) as reader:
                 row_count = sum(chunk.shape[0] for chunk in reader)

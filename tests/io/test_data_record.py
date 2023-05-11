@@ -25,16 +25,26 @@ import cudf
 
 from morpheus.io.data_record import DataRecord
 
-test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
-test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
-test_parquet_filepath = 'test_file.parquet'
-test_csv_filepath = 'test_file.csv'
 
-test_cudf_dataframe.to_parquet(test_parquet_filepath)
-test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
+@pytest.fixture(scope='session')
+def test_data():
+    # setup part
+    test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
+    test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
+    test_parquet_filepath = 'test_file.parquet'
+    test_csv_filepath = 'test_file.csv'
 
+    test_cudf_dataframe.to_parquet(test_parquet_filepath)
+    test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
 
-def tearDownModule():
+    yield {
+        'cudf_dataframe': test_cudf_dataframe,
+        'pd_dataframe': test_pd_dataframe,
+        'parquet_filepath': test_parquet_filepath,
+        'csv_filepath': test_csv_filepath
+    }
+
+    # teardown part
     if os.path.exists(test_parquet_filepath):
         os.remove(test_parquet_filepath)
     if os.path.exists(test_csv_filepath):
@@ -43,39 +53,39 @@ def tearDownModule():
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_data_record_load(storage_type, file_format):
-    data_record = DataRecord(data_source=test_cudf_dataframe,
+def test_data_record_load(storage_type, file_format, test_data):
+    data_record = DataRecord(data_source=test_data['cudf_dataframe'],
                              data_label='test_data',
                              storage_type=storage_type,
                              file_format=file_format)
     loaded_df = data_record.load()
-    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
+    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_data['cudf_dataframe'].to_pandas())
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_data_record_num_rows(storage_type, file_format):
-    data_record = DataRecord(data_source=test_cudf_dataframe,
+def test_data_record_num_rows(storage_type, file_format, test_data):
+    data_record = DataRecord(data_source=test_data['cudf_dataframe'],
                              data_label='test_data',
                              storage_type=storage_type,
                              file_format=file_format)
     num_rows = data_record.num_rows
-    assert num_rows == len(test_cudf_dataframe)
+    assert num_rows == len(test_data['cudf_dataframe'])
 
 
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
-def test_invalid_storage_type(storage_type):
+def test_invalid_storage_type(storage_type, test_data):
     with pytest.raises(ValueError):
-        DataRecord(data_source=test_cudf_dataframe,
+        DataRecord(data_source=test_data['cudf_dataframe'],
                    data_label='test_data',
                    storage_type=storage_type,
                    file_format='parquet')
 
 
 @pytest.mark.parametrize("file_format", ['invalid', "something else invalid"])
-def test_invalid_data_format(file_format):
+def test_invalid_data_format(file_format, test_data):
     with pytest.raises(ValueError):
-        DataRecord(data_source=test_cudf_dataframe,
+        DataRecord(data_source=test_data['cudf_dataframe'],
                    data_label='test_data',
                    storage_type='in_memory',
                    file_format=file_format)

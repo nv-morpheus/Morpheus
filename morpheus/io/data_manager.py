@@ -19,15 +19,11 @@ import shutil
 import tempfile
 import uuid
 from typing import Any
-from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import fsspec
 import pandas as pd
-import torch
-from torch.utils.data import Dataset
 
 import cudf
 
@@ -57,10 +53,9 @@ class DataManager():
                             f"{self.VALID_STORAGE_TYPES}")
 
         if (file_format not in self.VALID_FILE_FORMATS):
-            file_format = 'parquet'
-            logging.warning(f"Invalid file_format '{file_format}' defaulting to 'parquet', valid options are "
-                            f"{self.VALID_FILE_FORMATS}")
+            raise ValueError(f"Invalid file_format '{file_format}'")
 
+        self._dirty = True
         self._file_format = file_format
         self._fs = fsspec.filesystem('file')
         self._manifest = {}
@@ -99,16 +94,6 @@ class DataManager():
                 f"storage type: {self._storage_type}, "
                 f"storage directory: {self._storage_dir}")
 
-    def _update_manifest(self, source_id: uuid.UUID, action: str) -> None:
-        data_record = self._records[source_id]
-
-        if action == 'store':
-            self._manifest[source_id] = data_record.data
-            self._total_rows += data_record.num_rows
-        elif action == 'remove':
-            self._total_rows -= data_record.num_rows
-            del self._manifest[source_id]
-
     @property
     def manifest(self) -> dict:
         """
@@ -116,6 +101,9 @@ class DataManager():
 
         :return: A dictionary containing UUID to filename/label mappings.
         """
+
+        if (self._dirty):
+            self._manifest = {source_id: data_record.data for source_id, data_record in self._records.items()}
 
         return self._manifest
 
@@ -198,8 +186,9 @@ class DataManager():
                                  file_format=self._file_format,
                                  copy_from_source=copy_from_source)
 
+        self._total_rows += len(data_record)
         self._records[tracking_id] = data_record
-        self._update_manifest(tracking_id, action='store')
+        self._dirty = True
 
         return tracking_id
 
@@ -213,5 +202,8 @@ class DataManager():
         if (source_id not in self._records):
             raise KeyError(f"Source ID '{source_id}' does not exist.")
 
-        self._update_manifest(source_id, 'remove')
+        row_count = len(self._records[source_id])
         del self._records[source_id]
+
+        self._total_rows -= row_count
+        self._dirty = True

@@ -15,6 +15,7 @@
 
 import io
 import os
+import tempfile
 import unittest
 import uuid
 
@@ -36,31 +37,48 @@ sources = [
         'a': [5, 6], 'b': [7, 8]
     }),
 ]
-test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
-test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
-test_parquet_filepath = 'test_file.parquet'
-test_csv_filepath = 'test_file.csv'
-
-test_cudf_dataframe.to_parquet(test_parquet_filepath)
-test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
 
 
-def tearDownModule():
-    if os.path.exists(test_parquet_filepath):
-        os.remove(test_parquet_filepath)
-    if os.path.exists(test_csv_filepath):
-        os.remove(test_csv_filepath)
+@pytest.fixture(scope='session')
+def dataframe_fixture_data():
+    print("Creating test data...")
+    # Create temporary file paths
+    temp_dir = tempfile.mkdtemp()
+
+    parquet_filepath = f"{temp_dir}/test_file.parquet"
+    csv_filepath = f"{temp_dir}/test_file.csv"
+
+    print(parquet_filepath)
+    # Create test data
+    test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
+    test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
+
+    # Write data to temporary files
+    test_cudf_dataframe.to_parquet(parquet_filepath)
+    test_cudf_dataframe.to_csv(csv_filepath, index=False, header=True)
+
+    # Provide the file paths and data as a dictionary
+    data = {
+        'test_cudf_dataframe': test_cudf_dataframe,
+        'test_pd_dataframe': test_pd_dataframe,
+        'test_parquet_filepath': parquet_filepath,
+        'test_csv_filepath': csv_filepath
+    }
+
+    return data
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_memory_storage(storage_type, file_format):
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    assert (len(dm) == 0)
+def test_memory_storage(storage_type, file_format, dataframe_fixture_data):
+    data = dataframe_fixture_data["test_cudf_dataframe"]
 
-    sid = dm.store(test_cudf_dataframe)
-    assert (len(dm) == 1)
-    assert (sid in dm)
+    dm = DataManager(storage_type=storage_type, file_format=file_format)
+    assert len(dm) == 0
+
+    sid = dm.store(data)
+    assert len(dm) == 1
+    assert sid in dm
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -91,7 +109,10 @@ def test_add_remove_source(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_filesystem_storage_files_exist(storage_type, file_format):
+def test_filesystem_storage_files_exist(storage_type, file_format, dataframe_fixture_data):
+    test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
+    test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
+
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid1 = dm.store(test_cudf_dataframe)
     sid2 = dm.store(test_pd_dataframe)
@@ -136,7 +157,8 @@ def test_large_fileset_filesystem_storage(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_load_cudf_dataframe(storage_type, file_format):
+def test_load_cudf_dataframe(storage_type, file_format, dataframe_fixture_data):
+    test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
@@ -146,7 +168,8 @@ def test_load_cudf_dataframe(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_load_pd_dataframe(storage_type, file_format):
+def test_load_pd_dataframe(storage_type, file_format, dataframe_fixture_data):
+    test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_pd_dataframe)
     loaded_df = dm.load(sid)
@@ -156,7 +179,8 @@ def test_load_pd_dataframe(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_load(storage_type, file_format):
+def test_load(storage_type, file_format, dataframe_fixture_data):
+    test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
@@ -178,7 +202,8 @@ def test_load_non_existent_source_id(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_get_num_rows(storage_type, file_format):
+def test_get_num_rows(storage_type, file_format, dataframe_fixture_data):
+    test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_pd_dataframe)
     num_rows = dm.get_record(sid).num_rows
@@ -187,7 +212,8 @@ def test_get_num_rows(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_source_property(storage_type, file_format):
+def test_source_property(storage_type, file_format, dataframe_fixture_data):
+    test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_cudf_dataframe)
     data_records = dm.records
@@ -204,7 +230,10 @@ def test_source_property(storage_type, file_format):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_store_from_existing_file_path(storage_type, file_format):
+def test_store_from_existing_file_path(storage_type, file_format, dataframe_fixture_data):
+    test_parquet_filepath = dataframe_fixture_data["test_parquet_filepath"]
+    test_csv_filepath = dataframe_fixture_data["test_csv_filepath"]
+    test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     if (file_format == 'parquet'):
         sid = dm.store(test_parquet_filepath)
