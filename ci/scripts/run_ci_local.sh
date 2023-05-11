@@ -19,13 +19,13 @@ case "$1" in
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("check" "build" "docs" "test")
+        STAGES=("checks" "build" "docs" "test")
         ;;
-    "check" | "build" | "docs" | "test" | "bash" )
+    "checks" | "build" | "docs" | "test" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"check\", \"build\", \"docs\", \"test\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", or \"bash\""
         exit 1
         ;;
 esac
@@ -75,5 +75,6 @@ for STAGE in "${STAGES[@]}"; do
         DOCKER_RUN_CMD="/ci_tmp/bootstrap_local_ci.sh"
     fi
 
+    echo "Running ${STAGE} stage in ${CONTAINER}"
     docker run ${DOCKER_RUN_ARGS} ${DOCKER_EXTRA_ARGS} ${CONTAINER} ${DOCKER_RUN_CMD}
 done
