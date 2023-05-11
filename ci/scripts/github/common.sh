@@ -89,7 +89,7 @@ function update_conda_env() {
     conda activate morpheus
 
     rapids-logger "Final Conda Environment"
-    conda list
+    show_conda_info
 }
 
 function fetch_base_branch() {
@@ -108,36 +108,6 @@ function fetch_base_branch() {
     # the checkout it isn't recognized by git without the origin/ prefix
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
     rapids-logger "Base branch: ${BASE_BRANCH}"
-}
-
-function fetch_s3() {
-    ENDPOINT=$1
-    DESTINATION=$2
-    if [[ "${USE_S3_CURL}" == "1" ]]; then
-        curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
-        FETCH_STATUS=$?
-    else
-        aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" "${DESTINATION}"
-        FETCH_STATUS=$?
-    fi
-}
-
-function restore_conda_env() {
-
-    rapids-logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-    fetch_s3 "${ARTIFACT_ENDPOINT}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-    fetch_s3 "${ARTIFACT_ENDPOINT}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
-
-    rapids-logger "Extracting"
-    mkdir -p /opt/conda/envs/morpheus
-
-    # We are using the --no-same-owner flag since user id & group id's are inconsistent between nodes in our CI pool
-    tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-    tar xf "${WORKSPACE_TMP}/wheel.tar.bz" --no-same-owner --directory ${MORPHEUS_ROOT}
-
-    rapids-logger "Setting conda env"
-    conda activate morpheus
-    conda-unpack
 }
 
 function show_conda_info() {
