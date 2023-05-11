@@ -77,4 +77,9 @@ for STAGE in "${STAGES[@]}"; do
 
     echo "Running ${STAGE} stage in ${CONTAINER}"
     docker run ${DOCKER_RUN_ARGS} ${DOCKER_EXTRA_ARGS} ${CONTAINER} ${DOCKER_RUN_CMD}
+    STATUS=$?
+    if [ ${STATUS} -ne 0 ]; then
+        echo "Error: docker exited with a non-zero status code for ${STAGE} of ${STATUS}"
+        exit ${STATUS}
+    fi
 done
