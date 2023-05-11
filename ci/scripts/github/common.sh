@@ -41,17 +41,6 @@ rapids-logger "Memory"
 rapids-logger "User Info"
 id
 
-if [[ "${LOCAL_CI}" == "1" ]]; then
-    REPO_NAME="Morpheus"
-    ORG_NAME="nv-morpheus"
-    PR_NUM=""
-else
-    # For PRs, $GIT_BRANCH is like: pull-request/989
-    REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
-    ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
-    PR_NUM="${GITHUB_REF_NAME##*/}"
-fi
-
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"
@@ -118,6 +107,11 @@ function update_conda_env() {
 }
 
 function fetch_base_branch_gh_api() {
+    # For PRs, $GIT_BRANCH is like: pull-request/989
+    REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
+    ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
+    PR_NUM="${GITHUB_REF_NAME##*/}"
+
     rapids-logger "Retrieving base branch from GitHub API"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
     RESP=$(
