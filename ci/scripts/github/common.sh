@@ -41,10 +41,16 @@ rapids-logger "Memory"
 rapids-logger "User Info"
 id
 
-# For PRs, $GIT_BRANCH is like: pull-request/989
-REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
-ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
-PR_NUM="${GITHUB_REF_NAME##*/}"
+if [[ "${LOCAL_CI}" == "1" ]]; then
+    REPO_NAME="Morpheus"
+    ORG_NAME="nv-morpheus"
+    PR_NUM=""
+else
+    # For PRs, $GIT_BRANCH is like: pull-request/989
+    REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
+    ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
+    PR_NUM="${GITHUB_REF_NAME##*/}"
+fi
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
@@ -111,7 +117,7 @@ function update_conda_env() {
     show_conda_info
 }
 
-function fetch_base_branch() {
+function fetch_base_branch_gh_api() {
     rapids-logger "Retrieving base branch from GitHub API"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
     RESP=$(
@@ -121,11 +127,27 @@ function fetch_base_branch() {
         "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
 
-    BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
+    export BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
 
     # Change target is the branch name we are merging into but due to the weird way jenkins does
     # the checkout it isn't recognized by git without the origin/ prefix
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
+}
+
+function fetch_base_branch_local() {
+    rapids-logger "Retrieving base branch from git"
+    source ${MORPHEUS_ROOT}/ci/scripts/common.sh
+    BASE_BRANCH=$(get_base_branch)
+    export CHANGE_TARGET="origin/${BASE_BRANCH}"
+}
+
+function fetch_base_branch() {
+    if [[ "${LOCAL_CI}" == "1" ]]; then
+        fetch_base_branch_local
+    else
+        fetch_base_branch_gh_api
+    fi
+
     rapids-logger "Base branch: ${BASE_BRANCH}"
 }
 
