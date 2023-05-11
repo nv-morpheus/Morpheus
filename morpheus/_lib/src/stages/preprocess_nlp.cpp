@@ -118,27 +118,27 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 else
                 {
                     // workaround for a situation where the input strings contain either no characters or only whitespace
-                    using scalar_type_t = cudf::scalar_type_t<uint32_t>;
-                    auto zero = cudf::make_numeric_scalar(cudf::data_type(cudf::data_type{cudf::type_to_id<uint32_t>()}));
-                    static_cast<scalar_type_t*>(zero.get())->set_value(0);
-                    zero->set_valid_async(false);
-
-                    auto iota = cudf::sequence(normalized_col_view.size(), *zero);
-                    auto zeroes = cudf::make_column_from_scalar(*zero, normalized_col_view.size());
-                    auto ids = cudf::interleave_columns(cudf::table_view{
-                        std::vector<cudf::column_view>{
-                            iota->view(),
-                            zeroes->view(),
-                            zeroes->view()
-                        }
-                    });
+                    auto zero     = cudf::numeric_scalar<uint32_t>(0, true, rmm::cuda_stream_default);
+                    auto ids      = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto mask     = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto metadata = [&](){
+                        auto iota     = cudf::sequence(normalized_col_view.size(), zero);
+                        auto zeroes   = cudf::make_column_from_scalar(zero, normalized_col_view.size());
+                        return cudf::interleave_columns(cudf::table_view{
+                            std::vector<cudf::column_view>{
+                                iota->view(),
+                                zeroes->view(),
+                                zeroes->view()
+                            }
+                        });
+                    }();
 
                     token_results = nvtext::tokenizer_result{
                         static_cast<uint32_t>(normalized_col_view.size()),
                         this->m_sequence_length,
-                        cudf::make_column_from_scalar(*zero, this->m_sequence_length * normalized_col_view.size()),
-                        cudf::make_column_from_scalar(*zero, this->m_sequence_length * normalized_col_view.size()),
-                        std::move(ids)
+                        std::move(ids),
+                        std::move(mask),
+                        std::move(metadata)
                     };
                 }
 
