@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "morpheus_export.h"
-
+#include "morpheus/export.h"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info_data.hpp"

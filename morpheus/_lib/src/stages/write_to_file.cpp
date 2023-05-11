@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -80,9 +80,8 @@ WriteToFileStage::WriteToFileStage(
 
 void WriteToFileStage::write_json(WriteToFileStage::sink_type_t& msg)
 {
-    auto mutable_info = msg->get_mutable_info();
     // Call df_to_json passing our fstream
-    df_to_json(mutable_info, m_fstream, m_include_index_col, m_flush);
+    df_to_json(msg->get_info(), m_fstream, m_include_index_col, m_flush);
 }
 
 void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t& msg)

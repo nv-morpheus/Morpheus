@@ -63,7 +63,7 @@ python run.py \
     --num_threads 1 \
     --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt \
+    --model_vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt \
     --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_seq_length=256 \
     --model_name log-parsing-onnx \
@@ -102,20 +102,19 @@ Options:
 ```
 
 ### CLI Example
-The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure that the `examples/log_parsing` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+The above example is illustrative of using the Python API to build a custom Morpheus pipeline. Alternately, the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure the `examples/log_parsing` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
 
-From the root of the Morpheus repo run:
+From the root of the Morpheus repo, run:
 ```bash
 PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
-	--plugin "preprocessing" \
 	--plugin "inference" \
 	--plugin "postprocessing" \
 	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
-	log-preprocess --vocab_hash_file ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt --stride 64 \
+	preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \

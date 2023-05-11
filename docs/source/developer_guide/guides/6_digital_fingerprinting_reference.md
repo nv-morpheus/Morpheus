@@ -78,7 +78,7 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
-| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
+| `json_columns` | `List[str]` | Optional list of JSON columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a JSON field will be flattened into a new column named `<field>.<key>` for example a JSON field named `user` containing a key named `id` will result in a new column named `user.id`. By default, this is an empty `list`. |
 | `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific operation to be performed upon a column. These include renames, type conversions, and custom computations. By default, this is an empty `list`. |
 | `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default, this is an empty `list`. |
 | `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as its only argument returning a `DataFrame`. |
@@ -108,7 +108,7 @@ Subclass of `ColumnInfo`, adds the ability to also perform a rename.
 | `input_name` | `str` | Original column name |
 
 #### Boolean Column (`BoolColumn`)
-Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
+Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of five possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
 ```python
 from morpheus.utils.column_info import BoolColumn
 ```
@@ -194,7 +194,7 @@ The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `date_conversion_func` | `function` | Function receives a single [fsspec.core.OpenFile](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFile) argument and returns a `datetime.datetime` object |
 | `period` | `str` | Time period to group data by, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases) |
-| `sampling_rate_s` | `int` | Optional, default=`0`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |
+| `sampling_rate_s` | `int` | Optional, default=`None`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |
 | `start_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created prior to `start_time` |
 | `end_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created after `end_time` |
 
@@ -326,7 +326,7 @@ The `DFPMLFlowModelWriterStage` ([examples/digital_fingerprinting/production/mor
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+| `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.10/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
 | `experiment_name_formatter` | `str` | Optional format string to control the experiment name for models stored in MLflow, default is `/dfp-models/{reg_model_name}`.  Currently available field names are: `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once the field names have been applied. |
 | `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a databricks hosted MLflow server |
 
@@ -352,7 +352,7 @@ For any user without an associated model in MLflow, the model for the generic us
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.10/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
 
 #### Filter Detection Stage (`FilterDetectionsStage`)
 This stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage. All remaining logs which are below the threshold will be dropped. For the purposes of the DFP pipeline, this stage is configured to use the `mean_abs_z` column of the DataFrame as the filter criteria.
@@ -366,165 +366,3 @@ This stage filters the output from the inference stage for any anomalous message
 
 #### Post Processing Stage (`DFPPostprocessingStage`)
 This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.
-
-## Morpheus Pipeline with Modules
-
-A module is a type of work unit that can be utilized in the Morpheus stage and can be registered to a MRC segment module registry. Modules are beneficial when there is a possibility for the work-unit to be reused. We can load the module from the registry into a multiple contexts without having to be familiar with the inner workings of the Module; all that is needed is that we pass an input and it returns the output.
-
-Let's first look at the module implementation structure before diving deeper into the DFP Training pipeline as a module.
-
-> Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
-
-```py
-import mrc
-import typing
-
-from morpheus.utils.module_utils import get_module_config
-from morpheus.utils.module_utils import register_module
-
-@register_module("SimpleModule", "morpheus_modules")
-def module_init(builder: mrc.Builder):
-
-    module_id = "SimpleModule"
-
-    config: typing.Dict[str, str] = get_module_config(module_id, builder)
-
-    sep = config.get("sep", ",")
-
-    def on_data(message: str):
-
-        # Your implementation goes here...
-
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-    # Here we are creating a node.
-    node = builder.make_node_full(module_id, node_fn)
-
-    # Register input and output port name for a module.
-    builder.register_module_input("<input port name>", node)
-    builder.register_module_output("<output port name>", node)
-
-```
-
-The `register_module` decorator on the module initializer function registers the module with the `SimpleModule` (module_id) and the `morpheus_modules` (namespace).
-
-> **Note:** While registering the module, the user has the opportunity to choose the input and output port names. When the module has been registered. To obtain the input /output port connection, the same names must be used.
-
-
-Required key meta fields for module configuration as shown below.
-   -  `module_id` : Unique identifier for a module in the module registry.
-   -  `module_name` : Specifies the module name.
-   -  `namespace` : Virtually cluster the modules.
-
-```py
-# Module configuration
-module_config = {
-   "module_id": "SimpleModule",
-   "module_name": "simple_module",
-   "namespace": "morpheus_modules",
-   "sep": ":"
-}
-```
-
-The module must be packaged as a stage, as illustrated below, in order to be used in the Morpheus pipeline.
-
-```py
-from morpheus.config import Config
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-
-# Morpheus configuration
-c = Config()
-
-module_stage = LinearModulesStage(c,
-                                  module_config,
-                                  input_port_name="<input port name>",
-                                  output_port_name="<input port name>",
-                                  output_type="<module output type>")
-
-
-```
-[LinearModulesStage](/morpheus/stages/general/linear_modules_stage.py) is an utility stage that loads an existing, registered, MRC SegmentModule and wraps it as a Morpheus SinglePortStage.
-
-| Argument | Type | Description |
-| -------- | ---- | ----------- |
-| `c` | `morpheus.config.Config` | Morpheus config object |
-| `module_config` | `dict` or `None` | Module configuration |
-| `input_port_name` | `str` | Name of a module input port, as used during registration |
-| `output_port_name` | `str` | Name of a module output port, as used during registration |
-| `output_type` | `typing.Any` [default] | Module output data type |
-
-
-A module can serve as a wrapper for a chain of complex constructs-containing child modules. The example below demonstrates how to establish a chain module, presuming `modules_1` through `module_n` are already registered.
-
-```py
-import mrc
-import typing
-
-from morpheus.utils.module_utils import get_module_config
-from morpheus.utils.module_utils import register_module
-
-@register_module("ChainModule", "morpheus_modules")
-def simple_module(builder: mrc.Builder):
-
-   module_id = "ChainModule"
-
-   config: typing.Dict[str, str] = get_module_config(module_id, builder)
-
-   # Get module configurations
-   module_1_config = config.get("module_1", None)
-         ...
-         ...
-   module_n_config = config.get("module_n", None)
-
-   # Load modules from the registry
-   module_1 = load_module(module_1_config, builder=builder)
-         ...
-         ...
-   module_n = load_module(module_n_config, builder=builder)
-
-   # Make an edge between the modules.
-   # input/output port names used at 'builder.register_module_input' and 'builder.register_module_output'.
-   builder.make_edge(module_1.output_port("<output port name>"), module_2.input_port("<input port name>"))
-         ...
-         ...
-   builder.make_edge(module_n-1.output_port("<output port name>"), module_n.input_port("<input port name>"))
-
-   # Register input and output port for a module.
-   builder.register_module_input("<your input port name>", module_1.input_port("<input port name>"))
-   builder.register_module_output("<your output port name>", module_n.output_port("<output port name>"))
-```
-
-Let's look at the DFP Training process based on modules. On a higher level, the complete DFP training process has been divided into two modules.
-
-* [**DFPPreprocessing**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preprocessing.py)
-
-   This module constructs a chain module by combining the separate modules listed below into a single module that contains all of the internal components for preprocessing the Azure Active Directory and Duo Authentication logs.
-   - [FileBatcher](/morpheus/modules/file_batcher.py)
-   - [FileToDF](/morpheus/modules/file_to_df.py)
-   - [DFPSplitUsers](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_split_users.py)
-   - [DFPRollingWindow](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_rolling_window.py)
-   - [DFPDataPrep](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_data_prep.py)
-
-* [**DFPModelTrainDeploy**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_model_train_deploy.py)
-
-   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
-   - [DFPTraining](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py)
-   - [MLFlowModelWriter](/morpheus/modules/mlflow_model_writer.py)
-
-
-#### Run DFP Training Pipeline with Modules
-To run the DFP pipelines using modules with the example datasets, within the container run:
-
-* Duo Training Pipeline
-   ```bash
-   python dfp_duo_modules_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json"
-   ```
-* Azure Training Pipeline
-   ```bash
-   python dfp_azure_modules_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
-   ```
-
-### Benchmarks
-
-DFP pipeline benchmarks setup and execution instructions are provided [here](/examples/digital_fingerprinting/production/morpheus/benchmarks/README.md)

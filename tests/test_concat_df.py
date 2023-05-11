@@ -15,16 +15,15 @@
 
 import pandas as pd
 
-import cudf
-
+from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
-from utils import assert_df_equal
+from utils.dataset_manager import DatasetManager
 
 
-def test_concat_df(config, filter_probs_df):
-    meta = MessageMeta(filter_probs_df.copy(deep=True))
+def test_concat_df(config: Config, dataset: DatasetManager):
+    meta = MessageMeta(dataset["filter_probs.csv"])
     messages = [
         meta,
         MultiMessage(meta=meta, mess_offset=0, mess_count=10),
@@ -33,9 +32,7 @@ def test_concat_df(config, filter_probs_df):
 
     results = concat_df.concat_dataframes(messages)
 
-    pdf = filter_probs_df.copy(deep=True)
-    if isinstance(pdf, cudf.DataFrame):
-        pdf = pdf.to_pandas()
+    pdf = dataset.pandas["filter_probs.csv"]
 
     expected_df = pd.concat([pdf, pdf[0:10], pdf[10:]])
-    assert_df_equal(results, expected_df)
+    dataset.assert_df_equal(results, expected_df)

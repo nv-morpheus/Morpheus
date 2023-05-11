@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -147,10 +147,17 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<Ra
         cudf_ranges.push_back(p.second + this->mess_offset);
     }
 
-    auto table_info                       = this->meta->get_info();
-    std::vector<std::string> column_names = table_info.get_column_names();
-    column_names.insert(column_names.begin(), std::string());  // cudf id col
-    cudf::io::table_metadata metadata{std::move(column_names)};
+    auto table_info   = this->meta->get_info();
+    auto column_names = table_info.get_column_names();
+    auto metadata     = cudf::io::table_metadata{};
+
+    metadata.schema_info.reserve(column_names.size() + 1);
+    metadata.schema_info.emplace_back("");
+
+    for (auto column_name : column_names)
+    {
+        metadata.schema_info.emplace_back(column_name);
+    }
 
     auto table_view                     = table_info.get_view();
     auto sliced_views                   = cudf::slice(table_view, cudf_ranges);

@@ -18,6 +18,7 @@ import typing
 
 import mrc
 from mlflow.tracking.client import MlflowClient
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -86,10 +87,9 @@ class DFPInferenceStage(SinglePortStage):
         results_df = loaded_model.get_results(df_user, return_abs=True)
 
         # Create an output message to allow setting meta
-        output_message = MultiAEMessage(meta=message.meta,
-                                        mess_offset=message.mess_offset,
-                                        mess_count=message.mess_count,
-                                        model=loaded_model)
+        output_message = MultiDFPMessage(meta=message.meta,
+                                         mess_offset=message.mess_offset,
+                                         mess_count=message.mess_count)
 
         output_message.set_meta(list(results_df.columns), results_df)
 
@@ -109,7 +109,7 @@ class DFPInferenceStage(SinglePortStage):
         return output_message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         # node.launch_options.pe_count = self._config.num_threads

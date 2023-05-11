@@ -280,7 +280,7 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = seg.make_node_full(self.unique_name, node_fn)
+        to_file = seg.make_node(self.unique_name, ops.build(node_fn))
         seg.make_edge(stream, to_file)
         stream = to_file
 

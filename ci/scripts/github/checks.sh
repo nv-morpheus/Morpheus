@@ -39,5 +39,8 @@ cmake --build build --target morpheus_style_checks --parallel ${PARALLEL_LEVEL}
 rapids-logger "sccache usage for source build:"
 sccache --show-stats
 
+rapids-logger "Checking versions"
+${MORPHEUS_ROOT}/ci/scripts/version_checks.sh
+
 rapids-logger "Runing C++ style checks"
 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh

@@ -183,16 +183,13 @@ def filter_detections(builder: mrc.Builder):
     elif filter_source == "DATAFRAME":
         filter_source = FilterSource.DATAFRAME
     else:
-        raise Exception("Unknown filter source: {}".format(filter_source))
+        raise Exception(f"Unknown filter source: {filter_source}")
 
     if copy:
-        node = builder.make_node(FILTER_DETECTIONS, filter_copy)
+        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_copy))
     else:
-        # Convert list back to individual messages
-        def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(filter_slice), ops.flatten()).subscribe(sub)
-
-        node = builder.make_node_full(FILTER_DETECTIONS, flatten_fn)
+        # Convert list returned by `filter_slice` back to individual messages
+        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_slice), ops.flatten())
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

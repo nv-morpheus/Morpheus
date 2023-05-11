@@ -18,7 +18,6 @@ from functools import partial
 import mrc
 
 import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -93,8 +92,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self._truncation = truncation
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
-
-        self._tokenizer: SubwordTokenizer = None
 
     @property
     def name(self) -> str:

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,6 +17,7 @@
 
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
@@ -27,14 +28,12 @@
 #include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
-/**
+/*
  * **************This needs to come last.********************
  * A note to posterity: We only ever want to have a single place where cudf_helpers_api.h is included in any
  * translation unit.
  */
 #include "cudf_helpers_api.h"
-
-#include "morpheus/objects/data_table.hpp"
 
 namespace morpheus {
 

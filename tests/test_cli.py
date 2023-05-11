@@ -54,8 +54,8 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
-from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
+from utils.stages.conv_msg import ConvMsg
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
 MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--unit', 'inf']
@@ -232,9 +232,9 @@ class TestCLI:
         assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
         assert validation._results_file_name == 'results.json'
@@ -326,9 +326,9 @@ class TestCLI:
         assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
         assert validation._results_file_name == 'results.json'
@@ -391,9 +391,9 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
 
@@ -513,9 +513,9 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
 
@@ -647,9 +647,9 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
 
@@ -728,9 +728,9 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
         assert add_class._labels == ('pred', )
@@ -861,9 +861,9 @@ class TestCLI:
         assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(monitor, MonitorStage)
-        assert monitor._description == 'Unittest'
-        assert monitor._smoothing == 0.001
-        assert monitor._unit == 'inf'
+        assert monitor._mc._description == 'Unittest'
+        assert monitor._mc._smoothing == 0.001
+        assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
         assert add_class._labels == ('pred', )
