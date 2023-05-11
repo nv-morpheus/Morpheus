@@ -46,7 +46,7 @@ jobs:
     uses: ./.github/workflows/ci_pipe.yml
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230426
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230426
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230510
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230510
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}

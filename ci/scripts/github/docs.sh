@@ -32,9 +32,6 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
-rapids-logger "Installing Documentation dependencies"
-mamba env update -f ${MORPHEUS_ROOT}/docs/conda_docs.yml
-
 git submodule update --init --recursive
 
 rapids-logger "Configuring for docs"
