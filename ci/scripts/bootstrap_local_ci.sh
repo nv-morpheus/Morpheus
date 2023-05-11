@@ -22,8 +22,12 @@ git checkout ${GIT_BRANCH}
 git pull
 
 export MORPHEUS_ROOT=$(pwd)
+export WORKSPACE=${MORPHEUS_ROOT}
 export LOCAL_CI=1
 unset CMAKE_CUDA_COMPILER_LAUNCHER
 unset CMAKE_CXX_COMPILER_LAUNCHER
 unset CMAKE_C_COMPILER_LAUNCHER
-ci/scripts/github/${STAGE}.sh
+
+if [[ "${STAGE}" != "" ]]; then
+    ci/scripts/github/${STAGE}.sh
+fi

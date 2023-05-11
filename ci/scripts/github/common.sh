@@ -51,7 +51,12 @@ export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"
 export ARTIFACT_ENDPOINT="/pull-request/${PR_NUM}/${GIT_COMMIT}/${NVARCH}"
 export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
-export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
+
+if [[ "${LOCAL_CI}" == "1" ]]; then
+    export DISPLAY_ARTIFACT_URL="${LOCAL_CI_TMP}"
+else
+    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
+fi
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
@@ -145,6 +150,7 @@ function upload_artifact() {
 
 function download_artifact() {
     ARTIFACT=$1
+    rapids-logger "Downloading ${ARTIFACT} from ${DISPLAY_ARTIFACT_URL}"
     if [[ "${LOCAL_CI}" == "1" ]]; then
         cp "${LOCAL_CI_TMP}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
     else
