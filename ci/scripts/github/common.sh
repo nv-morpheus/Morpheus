@@ -134,7 +134,7 @@ function fetch_base_branch_local() {
     git fetch upstream --tags
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh
     export BASE_BRANCH=$(get_base_branch)
-    export CHANGE_TARGET="origin/${BASE_BRANCH}"
+    export CHANGE_TARGET="upstream/${BASE_BRANCH}"
 }
 
 function fetch_base_branch() {
