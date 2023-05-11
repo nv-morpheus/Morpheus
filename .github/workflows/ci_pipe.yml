@@ -165,6 +165,8 @@ jobs:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: ${{ inputs.container }}
+      env:
+        MERGE_DOCS_YAML: '1'
     strategy:
       fail-fast: true
 
