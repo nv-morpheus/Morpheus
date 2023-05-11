@@ -63,6 +63,7 @@ export SCCACHE_IDLE_TIMEOUT=32768
 export CONDA_ENV_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 export CONDA_EXAMPLES_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
 export CONDA_DOCS_YML=${MORPHEUS_ROOT}/docs/conda_docs.yml
+export PIP_REQUIREMENTS=${MORPHEUS_ROOT}/docker/conda/environments/requirements.txt
 
 export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_CUDA_ARCHITECTURES=60;70;75;80 -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_PYTHON_BUILD_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
 
@@ -85,6 +86,9 @@ function update_conda_env() {
         if [[ "${MERGE_DOCS_YAML}" == "1" ]]; then
             YAMLS="${YAMLS} ${CONDA_DOCS_YML}"
         fi
+
+        # Conda is going to expect a requirements.txt file to be in the same directory as the env yaml
+        cp ${PIP_REQUIREMENTS} ${condatmpdir}/requirements.txt
 
         rapids-logger "Merging conda envs: ${YAMLS}"
         conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}
