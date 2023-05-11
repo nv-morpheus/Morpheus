@@ -169,6 +169,7 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
   morpheus_utils_print_target_properties(
       TARGETS
         morpheus
+        morpheus_utils
       WRITE_TO_FILE
   )
 
