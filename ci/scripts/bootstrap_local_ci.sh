@@ -28,6 +28,6 @@ unset CMAKE_CUDA_COMPILER_LAUNCHER
 unset CMAKE_CXX_COMPILER_LAUNCHER
 unset CMAKE_C_COMPILER_LAUNCHER
 
-if [[ "${STAGE}" != "" ]]; then
-    ci/scripts/github/${STAGE}.sh
+if [[ "${STAGE}" != "bash" ]]; then
+    ${MORPHEUS_ROOT}/ci/scripts/github/${STAGE}.sh
 fi
