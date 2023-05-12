@@ -46,7 +46,7 @@ def auto_determine_bootstrap():
     bootstrap_servers = ",".join(
         [bridge_ip + ":" + c.ports["9092/tcp"][0]["HostPort"] for c in kafka_net.containers if "9092/tcp" in c.ports])
 
-    logger.info("Auto determined Bootstrap Servers: {}".format(bootstrap_servers))
+    logger.info("Auto determined Bootstrap Servers: %s", bootstrap_servers)
 
     return bootstrap_servers
 
