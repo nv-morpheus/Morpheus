@@ -67,13 +67,6 @@ class DataManager():
         if (storage_type == 'filesystem'):
             self._storage_dir = tempfile.mkdtemp()
 
-        if (file_format == 'parquet'):
-            self._data_reader = cudf.read_parquet
-        elif (file_format == 'csv'):
-            self._data_reader = cudf.read_csv
-        else:
-            raise ValueError(f"Invalid file_format '{self._file_format}'")
-
     def __contains__(self, item: Any) -> bool:
         return item in self._records
 
@@ -103,7 +96,7 @@ class DataManager():
         """
 
         if (self._dirty):
-            self._manifest = {source_id: data_record.data for source_id, data_record in self._records.items()}
+            self._manifest = {source_id: data_record.backing_source for source_id, data_record in self._records.items()}
 
         return self._manifest
 

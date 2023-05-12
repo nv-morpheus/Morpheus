@@ -224,9 +224,9 @@ def test_source_property(storage_type, file_format, dataframe_fixture_data):
     for k, v in data_records.items():
         assert (v._storage_type == storage_type)
         if (storage_type == 'in_memory'):
-            assert (isinstance(v.data, io.BytesIO))
+            assert (isinstance(v.data, cudf.DataFrame))
         elif (storage_type == 'filesystem'):
-            assert (isinstance(v.data, str))
+            assert (isinstance(v.data, cudf.DataFrame))
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -235,6 +235,7 @@ def test_store_from_existing_file_path(storage_type, file_format, dataframe_fixt
     test_parquet_filepath = dataframe_fixture_data["test_parquet_filepath"]
     test_csv_filepath = dataframe_fixture_data["test_csv_filepath"]
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
+
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     if (file_format == 'parquet'):
         sid = dm.store(test_parquet_filepath)

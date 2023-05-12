@@ -53,7 +53,7 @@ def test_data():
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_data_record_load(storage_type, file_format, test_data):
+def test_load(storage_type, file_format, test_data):
     data_record = DataRecord(data_source=test_data['cudf_dataframe'],
                              data_label='test_data',
                              storage_type=storage_type,
@@ -64,7 +64,7 @@ def test_data_record_load(storage_type, file_format, test_data):
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
-def test_data_record_num_rows(storage_type, file_format, test_data):
+def test_num_rows(storage_type, file_format, test_data):
     data_record = DataRecord(data_source=test_data['cudf_dataframe'],
                              data_label='test_data',
                              storage_type=storage_type,
@@ -84,21 +84,21 @@ def test_invalid_storage_type(storage_type, test_data):
 
 @pytest.mark.parametrize("file_format", ['invalid', "something else invalid"])
 def test_invalid_data_format(file_format, test_data):
-    with pytest.raises(ValueError):
+    with pytest.raises(NotImplementedError):
         DataRecord(data_source=test_data['cudf_dataframe'],
                    data_label='test_data',
                    storage_type='in_memory',
                    file_format=file_format)
 
 
-def test_data_record_deletion_filesystem_csv():
+def test_deletion_filesystem_csv():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.csv')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     df.to_csv(temp_file)
 
     data_record = DataRecord(temp_file, 'test_label', 'filesystem', 'csv', copy_from_source=True)
-    path_on_disk = data_record.backing_file
+    path_on_disk = data_record.backing_source
 
     del data_record
     assert not os.path.exists(path_on_disk)
@@ -106,14 +106,14 @@ def test_data_record_deletion_filesystem_csv():
     shutil.rmtree(temp_dir)
 
 
-def test_data_record_deletion_filesystem_parquet():
+def test_deletion_filesystem_parquet():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.parquet')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     df.to_parquet(temp_file)
 
     data_record = DataRecord(temp_file, 'test_label', 'filesystem', 'parquet', copy_from_source=True)
-    path_on_disk = data_record.backing_file
+    path_on_disk = data_record.backing_source
 
     del data_record
     assert not os.path.exists(path_on_disk)
@@ -121,14 +121,14 @@ def test_data_record_deletion_filesystem_parquet():
     shutil.rmtree(temp_dir)
 
 
-def test_data_record_deletion_no_owner():
+def test_deletion_no_owner():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.csv')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     df.to_csv(temp_file)
 
     data_record = DataRecord(temp_file, 'test_label', 'filesystem', 'csv', copy_from_source=False)
-    path_on_disk = data_record.backing_file
+    path_on_disk = data_record.backing_source
 
     del data_record
     assert os.path.exists(path_on_disk)
@@ -136,16 +136,16 @@ def test_data_record_deletion_no_owner():
     shutil.rmtree(temp_dir)
 
 
-def test_data_record_properties_csv():
+def test_properties_csv():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.csv')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     df.to_csv(temp_file)
 
-    data_record = DataRecord(temp_file, 'test_label', 'filesystem', 'csv', copy_from_source=True)
+    data_record = DataRecord(temp_file, f'{temp_dir}/test_label', 'filesystem', 'csv', copy_from_source=True)
 
-    assert data_record.backing_file == 'test_label'
-    assert data_record.data == 'test_label'
+    assert data_record.backing_source == f'{temp_dir}/test_label.csv'
+    pd.testing.assert_frame_equal(data_record.data.to_pandas(), df.to_pandas())
     assert data_record.format == 'csv'
     assert data_record.num_rows == 3
 
@@ -153,7 +153,7 @@ def test_data_record_properties_csv():
     shutil.rmtree(temp_dir)
 
 
-def test_data_record_properties_parquet():
+def test_properties_parquet():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.parquet')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
@@ -161,8 +161,8 @@ def test_data_record_properties_parquet():
 
     data_record = DataRecord(temp_file, 'test_label', 'filesystem', 'parquet', copy_from_source=True)
 
-    assert data_record.backing_file == 'test_label'
-    assert data_record.data == 'test_label'
+    assert data_record.data_label == 'test_label'
+    pd.testing.assert_frame_equal(data_record.data.to_pandas(), df.to_pandas())
     assert data_record.format == 'parquet'
     assert data_record.num_rows == 3
 
@@ -170,14 +170,14 @@ def test_data_record_properties_parquet():
     shutil.rmtree(temp_dir)
 
 
-def test_data_record_properties_in_memory():
+def test_properties_in_memory():
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     data_record = DataRecord(df, 'test_label', 'in_memory', 'csv')
 
     print(data_record)
     print(repr(data_record))
-    assert data_record.backing_file == 'IO Buffer'
-    assert isinstance(data_record.data, io.BytesIO)
+    assert data_record.backing_source == 'IO Buffer'
+    pd.testing.assert_frame_equal(data_record.data.to_pandas(), df.to_pandas())
     assert data_record.format == 'csv'
     assert data_record.num_rows == 3
 
