@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
 from typing import Union
 
 import fsspec
@@ -24,15 +25,16 @@ import cudf
 from morpheus.io.data_storage_interface import RecordStorageInterface
 
 
-def row_count_from_file(file_path, file_format_hint=None) -> int:
-    """Compute the number of rows in a Parquet or CSV file using pandas.
+def row_count_from_file(file_path: str, file_format_hint: Optional[str] = None) -> int:
+    """
+    Compute the number of rows in a Parquet or CSV file using pandas.
 
-    Args:
-        file_path (str): The path to the input file.
-        file_format_hint (str, optional): File format. Defaults to None.
-
-    Returns:
-        int: The number of rows in the file.
+    :param file_path: The path to the input file.
+    :type file_path: str
+    :param file_format_hint: File format. Defaults to None.
+    :type file_format_hint: str, optional
+    :return: The number of rows in the file.
+    :rtype: int
     """
 
     _file_format = file_format_hint or file_path.split('.')[-1]
@@ -52,18 +54,23 @@ def row_count_from_file(file_path, file_format_hint=None) -> int:
 
 
 class FileSystemStorage(RecordStorageInterface):
-    """A class to manage storage of data in various file formats."""
+    """
+    A class to manage storage of data in various file formats.
+    """
 
-    def __init__(self, data_label: str, file_format: str):
-        """Initialize FileSystemStorage with a label and file format.
+    def __init__(self, file_path: str, file_format: str):
+        """
+        Initialize FileSystemStorage with a label and file format.
 
-        Args:
-            data_label: The label for the data.
-            file_format: The format of the file ('csv' or 'parquet').
+        :param file_path: The label for the data.
+        :type file_path: str
+        :param file_format: The format of the file ('csv' or 'parquet').
+        :type file_format: str
         """
 
-        super().__init__(data_label, file_format)
+        super().__init__(file_format)
 
+        self._backing_source = file_path
         self._fs = fsspec.filesystem('file')
         self._num_rows = 0
 
@@ -75,23 +82,6 @@ class FileSystemStorage(RecordStorageInterface):
             self._data_writer = lambda df, path: df.to_parquet(path, index=False)
         else:
             raise NotImplementedError(f"File format {self._file_format} is not supported.")
-
-    def _write_to_file(self, data_source: pd.DataFrame) -> str:
-        """Write data to a file.
-
-        Args:
-            data_source: The data to write to the file.
-
-        Returns:
-            The path to the file.
-        """
-
-        # This method assumes data_source is either a BytesIO object or a file path
-        file_path = f"{self._data_label}.{self._file_format}"
-
-        self._data_writer(data_source, file_path)
-
-        return file_path
 
     def delete(self) -> None:
         """Delete the backing source file if this instance is the owner."""
@@ -109,31 +99,30 @@ class FileSystemStorage(RecordStorageInterface):
         return self._data_reader(self._backing_source)
 
     def store(self, data_source: Union[pd.DataFrame, cudf.DataFrame, str], copy_from_source: bool = False) -> None:
-        """Store data in the backing source file.
+        """
+        Store data in the backing source file.
 
-        Args:
-            data_source: The data to store. Can be a pandas.DataFrame, cudf.DataFrame, or a file path.
-            copy_from_source: If True, data_source is assumed to be a file path and the data will be copied
-                              from this file to the backing source file. If False, the backing source file will
-                              simply be updated to point to data_source (which is assumed to be a file path).
+        :param data_source: The data to store. Can be a pandas.DataFrame, cudf.DataFrame, or a file path.
+        :type data_source: Union[pd.DataFrame, cudf.DataFrame, str]
+        :param copy_from_source: If True, data_source is assumed to be a file path and the data will be copied
+                                 from this file to the backing source file. If False, the backing source file will
+                                 simply be updated to point to data_source (which is assumed to be a file path).
+        :type copy_from_source: bool, optional
         """
 
-        if (isinstance(data_source, cudf.DataFrame)):
-            data_source = data_source.to_pandas()
-
-        if (isinstance(data_source, pd.DataFrame)):
-            self._backing_source = self._write_to_file(data_source)
+        if (isinstance(data_source, (cudf.DataFrame, pd.DataFrame))):
+            self._data_writer(data_source, self._backing_source)
             self._num_rows = len(data_source)
             self._owner = True
         elif (isinstance(data_source, str)):
             if (copy_from_source):
                 data_source = self._data_reader(data_source)
-                self._backing_source = self._write_to_file(data_source)
+                self._data_writer(data_source, self._backing_source)
                 self._num_rows = len(data_source)
                 self._owner = True
-            else:
+            else:  # Wrap a source file, no copy
                 self._backing_source = data_source
-                self._num_rows = row_count_from_file(data_source, self._file_format)
+                self._num_rows = row_count_from_file(self._backing_source, self._file_format)
                 self._owner = False
 
     @property

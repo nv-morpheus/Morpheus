@@ -24,8 +24,7 @@ import cudf
 
 class RecordStorageInterface(ABC):
 
-    def __init__(self, data_label: str, file_format: str):
-        self._data_label = data_label
+    def __init__(self, file_format: str):
         self._file_format = file_format
         self._backing_source = None
         self._owner = False

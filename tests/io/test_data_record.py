@@ -140,14 +140,15 @@ def test_properties_csv():
     temp_dir = tempfile.mkdtemp()
     temp_file = os.path.join(temp_dir, 'temp_data.csv')
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-    df.to_csv(temp_file)
+    df.to_csv(temp_file, index=False, header=True)
 
-    data_record = DataRecord(temp_file, f'{temp_dir}/test_label', 'filesystem', 'csv', copy_from_source=True)
+    data_record = DataRecord(temp_file, f'{temp_dir}/test_label.csv', 'filesystem', 'csv', copy_from_source=True)
 
     assert data_record.backing_source == f'{temp_dir}/test_label.csv'
-    # pd.testing.assert_frame_equal(data_record.data, df.to_pandas())
     assert data_record.format == 'csv'
     assert data_record.num_rows == 3
+
+    pd.testing.assert_frame_equal(data_record.data, df.to_pandas())
 
     del data_record
     shutil.rmtree(temp_dir)

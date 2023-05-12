@@ -22,13 +22,13 @@ from morpheus.io.data_storage import InMemoryStorage
 def test_in_memory_storage_invalid_file_format():
     # Test that an error is raised when an unsupported file format is used
     with pytest.raises(NotImplementedError):
-        InMemoryStorage('test_data', 'txt')
+        InMemoryStorage('txt')
 
 
 def test_in_memory_storage_store_df():
     # Test that a DataFrame can be stored and loaded correctly
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-    storage = InMemoryStorage('test_data', 'csv')
+    storage = InMemoryStorage('csv')
     storage.store(df)
     assert storage.num_rows == 3
     assert isinstance(storage.load(), pd.DataFrame)
@@ -38,7 +38,7 @@ def test_in_memory_storage_store_df():
 def test_in_memory_storage_store_file():
     # Test that a file can be stored and loaded correctly
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-    storage = InMemoryStorage('test_data', 'csv')
+    storage = InMemoryStorage('csv')
     storage.store(df)
     assert storage.num_rows == 3
     assert isinstance(storage.load(), pd.DataFrame)
@@ -48,7 +48,7 @@ def test_in_memory_storage_store_file():
 def test_in_memory_storage_delete():
     # Test that delete closes the buffer
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-    storage = InMemoryStorage('test_data', 'csv')
+    storage = InMemoryStorage('csv')
     storage.store(df)
     storage.delete()
     with pytest.raises(ValueError):

@@ -91,9 +91,8 @@ def test_filesystem_storage_type(storage_type):
 
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
 def test_invalid_storage_type(storage_type):
-    dm = DataManager(storage_type=storage_type)
-
-    assert (dm.storage_type == 'in_memory')
+    with pytest.raises(ValueError):
+        dm = DataManager(storage_type=storage_type)
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])

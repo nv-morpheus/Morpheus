@@ -48,9 +48,7 @@ class DataManager():
         """
 
         if (storage_type not in self.VALID_STORAGE_TYPES):
-            storage_type = 'in_memory'
-            logging.warning(f"Invalid storage_type '{storage_type}' defaulting to 'in_memory', valid options are "
-                            f"{self.VALID_STORAGE_TYPES}")
+            raise ValueError(f"Invalid storage_type '{storage_type}'")
 
         if (file_format not in self.VALID_FILE_FORMATS):
             raise ValueError(f"Invalid file_format '{file_format}'")
@@ -167,6 +165,9 @@ class DataManager():
         """
 
         tracking_id = uuid.uuid4()
+        while (tracking_id in self._records):
+            # Ensure that the tracking ID is unique.
+            tracking_id = uuid.uuid4()
 
         if (self._storage_type == 'filesystem'):
             data_label = os.path.join(self._storage_dir, f"{tracking_id}.{self._file_format}")

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import io
+import typing
 from typing import Union
 
 import pandas as pd
@@ -44,7 +45,7 @@ class DataRecord:
         """Initialize a DataRecord instance.
 
         Args:
-            data_source (Union[io.BytesIO, str]): Data source, either a file path or a BytesIO object.
+            data_source (Union[io.BytesIO, str]): Data source, either a file path or Dataframe.
             data_label (str): Label for the data record.
             storage_type (str): Storage type, either 'in_memory' or 'filesystem'.
             file_format (str): File format, either 'parquet' or 'csv'.
@@ -54,16 +55,14 @@ class DataRecord:
         self._copy_from_source = copy_from_source
         self._data_label = data_label  # This will be the full path to the file or the name of the BytesIO object
         self._file_format = file_format
-        self._owner = False
         self._storage = None
         self._storage_type = storage_type
 
         if (self._storage_type == 'in_memory'):
-            self._storage = InMemoryStorage(self._data_label, self._file_format)
+            self._storage = InMemoryStorage(file_format=self._file_format)
         elif (self._storage_type == 'filesystem'):
-            self._storage = FileSystemStorage(self._data_label, self._file_format)
+            self._storage = FileSystemStorage(file_path=self._data_label, file_format=self._file_format)
         else:
-            self._storage_type = "Unknown"
             raise ValueError(f"Invalid storage_type'{storage_type}'")
 
         self._storage.store(data_source, self._copy_from_source)
@@ -86,7 +85,7 @@ class DataRecord:
                 f"storage_type={self._storage_type!r}, "
                 f"file_format={self._file_format!r}, "
                 f"num_rows={self.num_rows}, "
-                f"owner={self._owner})")
+                f"owner={self._storage.owner})")
 
     def __str__(self) -> str:
         """Return a string representation of the DataRecord instance."""
@@ -126,7 +125,7 @@ class DataRecord:
         return self._storage.backing_source
 
     @property
-    def data(self) -> pd.DataFrame:
+    def data(self) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
         """Get the data associated with the data record.
 
         Returns:

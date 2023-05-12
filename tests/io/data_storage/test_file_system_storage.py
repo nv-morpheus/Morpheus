@@ -49,7 +49,7 @@ def parquet_file(parquet_data):
 
 # Tests
 def test_csv(csv_data):
-    storage = FileSystemStorage('test_data', 'csv')
+    storage = FileSystemStorage('test_data.csv', 'csv')
     storage.store(csv_data)
 
     assert storage.backing_source == 'test_data.csv'
@@ -64,7 +64,7 @@ def test_csv(csv_data):
 
 
 def test_parquet(parquet_data):
-    storage = FileSystemStorage('test_data', 'parquet')
+    storage = FileSystemStorage(file_path="test_data.parquet", file_format='parquet')
     storage.store(parquet_data)
 
     assert storage.backing_source == 'test_data.parquet'
@@ -80,14 +80,14 @@ def test_parquet(parquet_data):
 
 def test_copy_from_source(csv_file, parquet_file):
     # Test store from file and load with copy_from_source=True
-    storage_csv = FileSystemStorage('test_data_copy', 'csv')
+    storage_csv = FileSystemStorage('test_data_copy.csv', 'csv')
     storage_csv.store(csv_file, copy_from_source=True)
     assert storage_csv.backing_source == 'test_data_copy.csv'
     assert storage_csv.num_rows == 3
     assert storage_csv.owner == True
     assert os.path.exists('test_data_copy.csv')
 
-    storage_parquet = FileSystemStorage('test_data_copy', 'parquet')
+    storage_parquet = FileSystemStorage('test_data_copy.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=True)
     assert storage_parquet.backing_source == 'test_data_copy.parquet'
     assert storage_parquet.num_rows == 3
@@ -101,13 +101,13 @@ def test_copy_from_source(csv_file, parquet_file):
 
 def test_no_copy_from_source(csv_file, parquet_file):
     # Test store from file and load with copy_from_source=False
-    storage_csv = FileSystemStorage('test_data_link', 'csv')
+    storage_csv = FileSystemStorage('test_data_link.csv', 'csv')
     storage_csv.store(csv_file, copy_from_source=False)
     assert storage_csv.backing_source == csv_file
     assert storage_csv.num_rows == 3
     assert storage_csv.owner == False
 
-    storage_parquet = FileSystemStorage('test_data_link', 'parquet')
+    storage_parquet = FileSystemStorage('test_data_link.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=False)
     assert storage_parquet.backing_source == parquet_file
     assert storage_parquet.num_rows == 3
@@ -122,12 +122,12 @@ def test_invalid_file_format():
 
 def test_delete_non_owner(csv_file, parquet_file):
     # Test that delete does not delete the file if it is not the owner
-    storage_csv = FileSystemStorage('test_data_link', 'csv')
+    storage_csv = FileSystemStorage('test_data_link.csv', 'csv')
     storage_csv.store(csv_file, copy_from_source=False)
     storage_csv.delete()
     assert os.path.exists(csv_file)
 
-    storage_parquet = FileSystemStorage('test_data_link', 'parquet')
+    storage_parquet = FileSystemStorage('test_data_link.csv', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=False)
     storage_parquet.delete()
     assert os.path.exists(parquet_file)

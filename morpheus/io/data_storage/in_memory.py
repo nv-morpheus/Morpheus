@@ -26,7 +26,7 @@ from morpheus.io.data_storage_interface import RecordStorageInterface
 class InMemoryStorage(RecordStorageInterface):
     """A class to manage storage of data in memory."""
 
-    def __init__(self, data_label: str, file_format: str):
+    def __init__(self, file_format: str):
         """Initialize InMemoryStorage with a label and file format.
 
         Args:
@@ -34,7 +34,7 @@ class InMemoryStorage(RecordStorageInterface):
             file_format: The format of the file ('csv' or 'parquet').
         """
 
-        super().__init__(data_label, file_format)
+        super().__init__(file_format)
 
         self._backing_source = "IO Buffer"
         self._data = io.BytesIO()
