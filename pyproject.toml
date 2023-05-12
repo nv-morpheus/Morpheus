@@ -227,7 +227,7 @@ function-naming-style = "snake_case"
 # function-rgx =
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["ae", "df", "f", "i", "j", "k", "ex", "Run", "_", "x", "y", "X", "Y"]
+good-names = ["ae", "df", "f", "i", "ip", "j", "k", "ex", "Run", "_", "x", "y", "X", "Y"]
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
@@ -443,7 +443,10 @@ disable = [
   "raw-checker-failed",
   "superfluous-parens",
   "suppressed-message",
+  "too-many-arguments",
+  "too-many-branches",
   "too-many-instance-attributes",
+  "too-many-nested-blocks",
   "unnecessary-pass",
   "use-symbolic-message-instead",
   "useless-suppression",
