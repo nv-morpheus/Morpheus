@@ -107,7 +107,7 @@ def run_pipeline(num_threads,
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.feature_scaler = AEFeatureScalar.STANDARD
 
-    with open(columns_file, "r") as lf:
+    with open(columns_file, "r", encoding='UTF-8') as lf:
         config.ae.feature_columns = [x.strip() for x in lf.readlines()]
 
     config.num_threads = num_threads

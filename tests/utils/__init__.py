@@ -34,7 +34,7 @@ def calc_error_val(results_file):
     """
     Based on the calc_error_val function in val-utils.sh
     """
-    with open(results_file) as fh:
+    with open(results_file, encoding='UTF-8') as fh:
         results = json.load(fh)
 
     total_rows = results['total_rows']
@@ -75,7 +75,7 @@ def write_file_to_kafka(bootstrap_servers: str,
     Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
     Returning the number of messages written
     """
-    with open(input_file) as fh:
+    with open(input_file, encoding='UTF-8') as fh:
         data = [line.strip() for line in fh]
 
     return write_data_to_kafka(bootstrap_servers=bootstrap_servers,

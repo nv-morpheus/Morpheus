@@ -70,7 +70,7 @@ def test_parse_log_file(tmpdir):
     fname = tmpdir.mkdir("tmp_clx_zeek_test").join("tst_zeek_conn_log.csv")
     actual.to_csv(fname, sep="\t", index=False, header=False)
 
-    with open(fname, "r+") as f:
+    with open(fname, "r+", encoding='UTF-8') as f:
         content = f.read()
         f.seek(0, 0)
         f.write(header + content + footer)

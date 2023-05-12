@@ -42,12 +42,12 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 
         if "file_path" in E2E_TEST_CONFIGS[bench["name"]]:
             source_file = E2E_TEST_CONFIGS[bench["name"]]["file_path"]
-            line_count = len(open(source_file).readlines())
+            line_count = len(open(source_file, encoding='UTF-8').readlines())
             byte_count = os.path.getsize(source_file)
 
         elif "glob_path" in E2E_TEST_CONFIGS[bench["name"]]:
             for fn in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["glob_path"]):
-                line_count += len(open(fn).readlines())
+                line_count += len(open(fn, encoding='UTF-8').readlines())
                 byte_count += os.path.getsize(fn)
 
         repeat = E2E_TEST_CONFIGS[bench["name"]]["repeat"]

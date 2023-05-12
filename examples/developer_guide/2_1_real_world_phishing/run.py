@@ -57,7 +57,7 @@ def run_pipeline():
     config.num_threads = os.cpu_count()
     config.feature_length = 128
 
-    with open(labels_file) as fh:
+    with open(labels_file, encoding='UTF-8') as fh:
         config.class_labels = [x.strip() for x in fh]
 
     # Create a linear pipeline object

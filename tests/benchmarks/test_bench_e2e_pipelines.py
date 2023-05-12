@@ -44,7 +44,7 @@ from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
 e2e_config_file = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
-with open(e2e_config_file, 'r') as f:
+with open(e2e_config_file, 'r', encoding='UTF-8') as f:
     E2E_TEST_CONFIGS = json.load(f)
 
 
@@ -173,7 +173,7 @@ def test_abp_fil_e2e(benchmark, tmp_path):
     config.class_labels = ["mining"]
     config.fil = ConfigFIL()
     fil_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')
-    with open(fil_cols_filepath, "r") as lf:
+    with open(fil_cols_filepath, "r", encoding='UTF-8') as lf:
         config.fil.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(True)
 
@@ -223,7 +223,7 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     config.ae.userid_column_name = "userIdentityaccountId"
     config.ae.userid_filter = "Account-123456789"
     ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')
-    with open(ae_cols_filepath, "r") as lf:
+    with open(ae_cols_filepath, "r", encoding='UTF-8') as lf:
         config.ae.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(False)
 

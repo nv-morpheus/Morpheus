@@ -96,7 +96,7 @@ def test_config_save(tmp_path):
     c.save(filename)
 
     assert_path_exists(filename)
-    with open(filename) as fh:
+    with open(filename, encoding='UTF-8') as fh:
         assert isinstance(json.load(fh), dict)
 
 

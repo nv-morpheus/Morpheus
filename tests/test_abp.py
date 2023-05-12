@@ -89,7 +89,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
 
     config.fil = ConfigFIL()
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
         config.fil.feature_columns = [x.strip() for x in fh.readlines()]
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
@@ -130,7 +130,7 @@ def test_abp_cpp(config, tmp_path):
 
     config.fil = ConfigFIL()
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
         config.fil.feature_columns = [x.strip() for x in fh.readlines()]
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
@@ -203,7 +203,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
 
     config.fil = ConfigFIL()
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
         config.fil.feature_columns = [x.strip() for x in fh.readlines()]
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
@@ -260,7 +260,7 @@ def test_abp_multi_segment_cpp(config, tmp_path):
 
     config.fil = ConfigFIL()
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
         config.fil.feature_columns = [x.strip() for x in fh.readlines()]
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')

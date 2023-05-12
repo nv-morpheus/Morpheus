@@ -41,7 +41,7 @@ def set_mlflow_tracking_uri(tracking_uri):
 
 def load_json(filepath: str):
     full_filepath = path.join(THIS_DIR, filepath)
-    with open(full_filepath, 'r') as (f):
+    with open(full_filepath, 'r', encoding='UTF-8') as (f):
         json_dict = json.load(f)
     return json_dict
 

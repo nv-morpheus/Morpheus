@@ -115,7 +115,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
                 lines = serializers.df_to_csv(period_df, include_header=is_first, include_index_col=False)
                 os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
-                with open(output_file, "a") as out_file:
+                with open(output_file, "a", encoding='UTF-8') as out_file:
                     out_file.writelines(lines)
 
             return x

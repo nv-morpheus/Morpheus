@@ -132,7 +132,7 @@ class TestCLI:
         """
         Used to read in labels and columns files
         """
-        with open(data_file) as fh:
+        with open(data_file, encoding='UTF-8') as fh:
             return [line.strip() for line in fh]
 
     def test_help(self):
@@ -416,11 +416,11 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w') as fh:
+        with open(tmp_model, 'w', encoding='UTF-8') as fh:
             pass
 
         labels_file = os.path.join(tmp_path, 'labels.txt')
-        with open(labels_file, 'w') as fh:
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
         args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file] + FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
@@ -542,11 +542,11 @@ class TestCLI:
         Test parsing of CLI flags for C++ enum values issue #675
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w'):
+        with open(tmp_model, 'w', encoding='UTF-8'):
             pass
 
         labels_file = os.path.join(tmp_path, 'labels.txt')
-        with open(labels_file, 'w') as fh:
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
         file_src_args = FILE_SRC_ARGS[:]
@@ -756,7 +756,7 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w'):
+        with open(tmp_model, 'w', encoding='UTF-8'):
             pass
 
         labels_file = os.path.join(TEST_DIRS.data_dir, 'labels_phishing.txt')
@@ -952,7 +952,7 @@ class TestCLI:
         test_labels = ["label1", "label2", "label3"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         args = (GENERAL_ARGS + ['pipeline-nlp', f"--labels_file={labels_file}"] + FILE_SRC_ARGS +
@@ -993,14 +993,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
         test_columns = [f"column{i}" for i in range(29)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + ['pipeline-fil', f"--labels_file={labels_file}", f"--columns_file={columns_file}"] +
@@ -1037,14 +1037,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
         test_columns = [f"column{i}" for i in range(33)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + [
