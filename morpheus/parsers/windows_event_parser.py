@@ -58,7 +58,7 @@ class WindowsEventParser(EventParser):
         text = self.clean_raw_data(text)
         output_chunks = []
         for eventcode in self._event_regex.keys():
-            pattern = "eventcode=%s" % (eventcode)
+            pattern = f"eventcode={eventcode}"
             # input_chunk = self.filter_by_pattern(dataframe, raw_column, pattern)
             input_chunk = text[text.str.contains(pattern)]
             if not input_chunk.empty:
@@ -78,9 +78,6 @@ class WindowsEventParser(EventParser):
         ----------
         text : cudf.Series
             Raw event log text to be clean
-        event_regex: typing.Dict[str, any]
-            Required regular expressions for a given event type
-
         Returns
         -------
         cudf.Series
@@ -95,8 +92,8 @@ class WindowsEventParser(EventParser):
             for eventcode in self._interested_eventcodes:
                 required_event_regex = {}
                 if eventcode not in event_regex:
-                    raise KeyError("Regex for eventcode %s is not available in the config file. Please choose from %s" %
-                                   (eventcode, list(event_regex.keys())))
+                    raise KeyError(f"Regex for eventcode {eventcode} is not available in the config file. "
+                                   f"Please choose from {list(event_regex.keys())}")
                 required_event_regex[eventcode] = event_regex[eventcode]
             return required_event_regex
         return event_regex

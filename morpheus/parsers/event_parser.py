@@ -90,7 +90,7 @@ class EventParser(ABC):
         cudf.DataFrame
             Parsed logs dataframe
         """
-        log.debug("Parsing raw events. Event type: " + self.event_name)
+        log.debug("Parsing raw events. Event type: %s", self.event_name)
 
         parsed_gdf = cudf.DataFrame({col: [""] for col in self.columns})
         parsed_gdf = parsed_gdf[:0]
@@ -113,6 +113,6 @@ class EventParser(ABC):
         """
         Returns a dictionary of event regexes contained in the given yaml file.
         """
-        with open(yaml_file) as yaml_file:
-            regex_dict = yaml.safe_load(yaml_file)
+        with open(yaml_file) as yaml_file_h:
+            regex_dict = yaml.safe_load(yaml_file_h)
         return regex_dict
