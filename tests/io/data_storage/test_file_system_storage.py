@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import os
-import pytest
+
 import pandas as pd
+import pytest
 
 from morpheus.io.data_storage import FileSystemStorage
 from morpheus.io.data_storage.file_system import row_count_from_file
@@ -57,7 +57,7 @@ def test_csv(csv_data):
     assert storage.owner == True
 
     loaded_data = storage.load()
-    pd.testing.assert_frame_equal(loaded_data.to_pandas(), csv_data)
+    pd.testing.assert_frame_equal(loaded_data, csv_data)
 
     storage.delete()
     assert not os.path.exists('test_data.csv')
@@ -72,7 +72,7 @@ def test_parquet(parquet_data):
     assert storage.owner == True
 
     loaded_data = storage.load()
-    pd.testing.assert_frame_equal(loaded_data.to_pandas(), parquet_data)
+    pd.testing.assert_frame_equal(loaded_data, parquet_data)
 
     storage.delete()
     assert not os.path.exists('test_data.parquet')

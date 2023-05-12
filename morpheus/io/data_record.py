@@ -70,23 +70,27 @@ class DataRecord:
 
     def __del__(self):
         """Delete the DataRecord instance."""
+
         if (self._storage is not None):
             self._storage.delete()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of rows in the data record."""
+
         return self.num_rows
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return a string representation of the DataRecord instance."""
+
         return (f"DataRecord(data_label={self._data_label!r}, "
                 f"storage_type={self._storage_type!r}, "
                 f"file_format={self._file_format!r}, "
                 f"num_rows={self.num_rows}, "
                 f"owner={self._owner})")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the DataRecord instance."""
+
         return (f"DataRecord with label '{self._data_label}', "
                 f"stored as {self._storage_type}, "
                 f"file format: {self._file_format}, "
@@ -122,7 +126,7 @@ class DataRecord:
         return self._storage.backing_source
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame:
         """Get the data associated with the data record.
 
         Returns:
@@ -132,7 +136,7 @@ class DataRecord:
         return self._storage.load()
 
     @property
-    def format(self):
+    def format(self) -> str:
         """
         Get the file format of the data record.
         Returns:

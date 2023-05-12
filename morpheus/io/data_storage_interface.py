@@ -13,15 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
-
+from abc import ABC
+from abc import abstractmethod
 from typing import Union
-from abc import ABC, abstractmethod
 
 import pandas as pd
 
+import cudf
+
 
 class RecordStorageInterface(ABC):
+
     def __init__(self, data_label: str, file_format: str):
         self._data_label = data_label
         self._file_format = file_format

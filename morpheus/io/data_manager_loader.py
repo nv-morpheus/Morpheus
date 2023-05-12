@@ -14,7 +14,9 @@
 # limitations under the License.
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+
 
 class DataManagerDataset(Dataset):
     """Custom Dataset for loading data from a DataManager instance."""

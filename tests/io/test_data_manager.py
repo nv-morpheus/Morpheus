@@ -160,11 +160,12 @@ def test_large_fileset_filesystem_storage(storage_type, file_format):
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_load_cudf_dataframe(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
+
     dm = DataManager(storage_type=storage_type, file_format=file_format)
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
 
-    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
+    pd.testing.assert_frame_equal(loaded_df, test_cudf_dataframe.to_pandas())
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -175,7 +176,7 @@ def test_load_pd_dataframe(storage_type, file_format, dataframe_fixture_data):
     sid = dm.store(test_pd_dataframe)
     loaded_df = dm.load(sid)
 
-    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_pd_dataframe)
+    pd.testing.assert_frame_equal(loaded_df, test_pd_dataframe)
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -186,7 +187,7 @@ def test_load(storage_type, file_format, dataframe_fixture_data):
     sid = dm.store(test_cudf_dataframe)
     loaded_df = dm.load(sid)
 
-    pd.testing.assert_frame_equal(loaded_df.to_pandas(), test_cudf_dataframe.to_pandas())
+    pd.testing.assert_frame_equal(loaded_df, test_cudf_dataframe.to_pandas())
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -224,9 +225,9 @@ def test_source_property(storage_type, file_format, dataframe_fixture_data):
     for k, v in data_records.items():
         assert (v._storage_type == storage_type)
         if (storage_type == 'in_memory'):
-            assert (isinstance(v.data, cudf.DataFrame))
+            assert (isinstance(v.data, pd.DataFrame))
         elif (storage_type == 'filesystem'):
-            assert (isinstance(v.data, cudf.DataFrame))
+            assert (isinstance(v.data, pd.DataFrame))
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -243,7 +244,7 @@ def test_store_from_existing_file_path(storage_type, file_format, dataframe_fixt
         sid = dm.store(test_csv_filepath)
 
     loaded_df = dm.load(sid)
-    assert (loaded_df.equals(test_cudf_dataframe))
+    assert (loaded_df.equals(test_cudf_dataframe.to_pandas()))
 
 
 if __name__ == '__main__':
