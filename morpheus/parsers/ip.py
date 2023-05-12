@@ -434,7 +434,7 @@ def hostmask(ips, prefixlen=16):
     return df["hostmask"]
 
 
-def _mask_kernel(masked_ip_int, out1, out2, out3, out4, _):
+def _mask_kernel(masked_ip_int, out1, out2, out3, out4, kwarg1):
     for i, ipnum in enumerate(masked_ip_int):
         out1[i] = int(ipnum / 16777216) % 256
         out2[i] = int(ipnum / 65536) % 256
