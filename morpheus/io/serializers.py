@@ -134,7 +134,7 @@ def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True)
     ----------
     df : cudf.DataFrame
         Input DataFrame to serialize.
-    strip_newline : bool, optional
+    strip_newlines : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
     include_index_col: bool, optional
         Write out the index as a column, by default True.
@@ -206,11 +206,14 @@ def write_df_to_file(df: typing.Union[pd.DataFrame, cudf.DataFrame],
     file_type : FileTypes, optional
         The type of serialization to use. By default this is `FileTypes.Auto` which will determine the type from the
         filename extension
+    **kwargs : dict
+        Additional arguments forwarded to the underlying serialization function. Where the underlying serialization
+        function is one of `write_df_to_file_cpp`, `df_to_stream_csv`, or `df_to_stream_json`.
     """
 
     if (CppConfig.get_should_use_cpp() and isinstance(df, cudf.DataFrame)):
         # Use the C++ implementation
-        return write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
+        write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
 
     mode = file_type
 
