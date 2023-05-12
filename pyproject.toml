@@ -433,11 +433,9 @@ confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFIN
 disable = [
   "bad-inline-option",
   "deprecated-pragma",
-  "consider-using-f-string",
   "file-ignored",
+  "import-outside-toplevel",
   "locally-disabled",
-  "logging-format-interpolation",
-  "logging-fstring-interpolation",
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
