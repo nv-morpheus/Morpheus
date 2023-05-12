@@ -75,7 +75,7 @@ def load_labels_file(labels_filename: str) -> typing.List[str]:
         List of labels
     """
 
-    with open(labels_filename, "r") as lf:
+    with open(labels_filename, "r", encoding='UTF-8') as lf:
         return [x.strip() for x in lf.readlines()]
 
 

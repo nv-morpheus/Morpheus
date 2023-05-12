@@ -57,7 +57,7 @@ def install_code(append=False, shell=None, path=None):
     output_lines = []
 
     if (os.path.exists(path)):
-        with open(path, 'r') as fp:
+        with open(path, 'r', encoding='UTF-8') as fp:
             input_lines = fp.readlines()
 
             found_match = False
@@ -77,7 +77,7 @@ def install_code(append=False, shell=None, path=None):
     # Now append the output lines with our code
     output_lines.extend(code.splitlines(keepends=True))
 
-    with open(path, 'w') as fp:
+    with open(path, 'w', encoding='UTF-8') as fp:
         fp.writelines(output_lines)
 
     return shell, path

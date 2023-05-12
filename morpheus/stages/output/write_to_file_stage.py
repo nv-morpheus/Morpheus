@@ -142,7 +142,7 @@ class WriteToFileStage(SinglePortStage):
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
                 # Open up the file handle
-                with open(self._output_file, "a") as out_file:
+                with open(self._output_file, "a", encoding='UTF-8') as out_file:
 
                     def write_to_file(x: MessageMeta):
 

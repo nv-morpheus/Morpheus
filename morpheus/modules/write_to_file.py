@@ -100,7 +100,7 @@ def write_to_file(builder: mrc.Builder):
         os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
 
         # Open up the file handle
-        with open(output_file, "a") as out_file:
+        with open(output_file, "a", encoding='UTF-8') as out_file:
 
             def write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)

@@ -196,7 +196,7 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
 
 
 def load_labels_file(labels_file: str) -> typing.List[str]:
-    with open(labels_file, "r") as lf:
+    with open(labels_file, "r", encoding='UTF-8') as lf:
         return [x.strip() for x in lf.readlines()]
 
 

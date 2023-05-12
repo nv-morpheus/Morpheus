@@ -164,7 +164,7 @@ class DuoSourceStage(AutoencoderSourceStage):
 
         dfs = []
         for file in x:
-            with open(file) as json_in:
+            with open(file, encoding='UTF-8') as json_in:
                 log = json.load(json_in)
             df = pd.json_normalize(log)
             df = DuoSourceStage.change_columns(df)

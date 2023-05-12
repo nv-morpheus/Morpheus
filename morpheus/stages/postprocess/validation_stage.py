@@ -117,7 +117,7 @@ class ValidationStage(CompareDataFrameStage):
     def _do_comparison(self):
         results = self.get_results(clear=False)
         if (len(results) and self._results_file_name is not None):
-            with open(self._results_file_name, "w") as f:
+            with open(self._results_file_name, "w", encoding='UTF-8') as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:

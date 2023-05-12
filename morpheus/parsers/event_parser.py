@@ -113,6 +113,6 @@ class EventParser(ABC):
         """
         Returns a dictionary of event regexes contained in the given yaml file.
         """
-        with open(yaml_file) as yaml_file_h:
+        with open(yaml_file, encoding='UTF-8') as yaml_file_h:
             regex_dict = yaml.safe_load(yaml_file_h)
         return regex_dict

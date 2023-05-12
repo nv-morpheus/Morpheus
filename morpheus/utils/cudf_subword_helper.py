@@ -42,7 +42,7 @@ def create_vocab_table(vocabpath):
     id2vocab = []
     vocab2id = {}
     import numpy as np
-    with open(vocabpath) as f:
+    with open(vocabpath, encoding='UTF-8') as f:
         for index, line in enumerate(f):
             token = line.split()[0]
             id2vocab.append(token)

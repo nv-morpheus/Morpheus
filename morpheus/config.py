@@ -238,7 +238,7 @@ class Config(ConfigBase):
             File path to save Config.
         """
         # Read the json file and store as
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding='UTF-8') as f:
             json.dump(dataclasses.asdict(self), f, indent=3, sort_keys=True)
 
     def to_string(self):

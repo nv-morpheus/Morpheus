@@ -220,7 +220,7 @@ def write_df_to_file(df: typing.Union[pd.DataFrame, cudf.DataFrame],
     if (mode == FileTypes.Auto):
         mode = determine_file_type(file_name)
 
-    with open(file_name, mode="w") as f:
+    with open(file_name, mode="w", encoding='UTF-8') as f:
 
         if (mode == FileTypes.JSON):
             df_to_stream_json(df=df, stream=f, **kwargs)

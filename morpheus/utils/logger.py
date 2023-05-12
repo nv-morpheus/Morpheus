@@ -86,7 +86,7 @@ def _configure_from_log_file(log_config_file: str):
         dict_config: dict = None
 
         # Try and load from dict
-        with open(log_config_file, "r") as fp:
+        with open(log_config_file, "r", encoding='UTF-8') as fp:
             dict_config = json.load(fp)
 
         logging.config.dictConfig(dict_config)
