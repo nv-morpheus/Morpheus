@@ -21,7 +21,6 @@ from io import StringIO
 from unittest import mock
 
 import numpy as np
-import pandas
 import pandas as pd
 import pytest
 
@@ -41,6 +40,7 @@ from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
@@ -88,9 +88,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
-        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
+    config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -132,10 +130,10 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
-    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = pd.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
     assert len(output_df) == len(val_df)
@@ -190,9 +188,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
-        config.ae.feature_columns = [x.strip() for x in fh.readlines()]
+    config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -234,10 +230,10 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
-    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = pd.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
     assert len(output_df) == len(val_df)
