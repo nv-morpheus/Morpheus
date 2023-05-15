@@ -94,7 +94,7 @@ def read_file_to_df(file_name: str,
         df = df_class.read_parquet(file_name, **kwargs)
 
     else:
-        assert False, f"Unsupported file type mode: {mode}"
+        assert False, "Unsupported file type mode: {}".format(mode)
 
     assert df is not None
 

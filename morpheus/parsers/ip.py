@@ -71,7 +71,7 @@ def int_to_ip(values):
     return cudf.Series(values._column.int2ip())
 
 
-def is_ip(ips: cudf.Series):
+def is_ip(ips):
     """
     Indicates whether each address is an ip string.
     **Addresses must be IPv4. IPv6 not yet supported.**
@@ -95,8 +95,8 @@ def is_ip(ips: cudf.Series):
     1    False
     dtype: bool
     """
-    is_ip_regex = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-    return ips.str.match(is_ip_regex)
+    is_ip_REGEX = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    return ips.str.match(is_ip_REGEX)
 
 
 def is_reserved(ips):
@@ -123,10 +123,10 @@ def is_reserved(ips):
     1    False
     dtype: bool
     """
-    reserved_ipv4_regex = (
+    reserved_ipv4_REGEX = (
         r"^(2(4[0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])"
         r"|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$")
-    return ips.str.match(reserved_ipv4_regex)
+    return ips.str.match(reserved_ipv4_REGEX)
 
 
 def is_loopback(ips):
@@ -153,10 +153,10 @@ def is_loopback(ips):
     1    False
     dtype: bool
     """
-    loopback_ipv4_regex = (
+    loopback_ipv4_REGEX = (
         r"^127\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]"
         r"|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$")
-    return ips.str.match(loopback_ipv4_regex)
+    return ips.str.match(loopback_ipv4_REGEX)
 
 
 def is_link_local(ips):
@@ -183,10 +183,10 @@ def is_link_local(ips):
     1    True
     dtype: bool
     """
-    link_local_ipv4_regex = (
+    link_local_ipv4_REGEX = (
         r"^169\.254\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4]"
         r"[0-9]|5[0-5]))$")
-    return ips.str.match(link_local_ipv4_regex)
+    return ips.str.match(link_local_ipv4_REGEX)
 
 
 def is_unspecified(ips):
@@ -213,8 +213,8 @@ def is_unspecified(ips):
     1    False
     dtype: bool
     """
-    unspecified_regex = r"^0\.0\.0\.0$"
-    return ips.str.match(unspecified_regex)
+    unspecified_REGEX = r"^0\.0\.0\.0$"
+    return ips.str.match(unspecified_REGEX)
 
 
 def is_multicast(ips):
@@ -241,10 +241,10 @@ def is_multicast(ips):
     1    True
     dtype: bool
     """
-    is_multicast_ipv4_regex = (
+    is_multicast_ipv4_REGEX = (
         r"^(2(2[4-9]|3[0-9]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])"
         r"|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$")
-    return ips.str.match(is_multicast_ipv4_regex)
+    return ips.str.match(is_multicast_ipv4_REGEX)
 
 
 def is_private(ips):
@@ -271,7 +271,7 @@ def is_private(ips):
     1    False
     dtype: bool
     """
-    private_regex = (
+    private_REGEX = (
         r"((^0\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]"
         r"|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$)|(^10\.([0-9]|[1-9][0-9]|1([0-9][0-9])|"
         r"2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9]"
@@ -287,7 +287,7 @@ def is_private(ips):
         r"[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$)|(^(2(4[0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2("
         r"[0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])"
         r"|2([0-4][0-9]|5[0-5]))$)|(^255\.255\.255\.255$))")
-    return ips.str.match(private_regex)
+    return ips.str.match(private_REGEX)
 
 
 def is_global(ips):
@@ -314,17 +314,17 @@ def is_global(ips):
     1    True
     dtype: bool
     """
-    is_global_regex = (
+    is_global_REGEX = (
         r"^(100\.(6[4-9]|[7-9][0-9]|1([0-1][0-9]|2[0-7]))\.([0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))\.("
         r"[0-9]|[1-9][0-9]|1([0-9][0-9])|2([0-4][0-9]|5[0-5]))$)")
-    part1 = ips.str.match(is_global_regex)
+    part1 = ips.str.match(is_global_REGEX)
     part2 = is_private(ips)
     result = ~part1 & ~part2
     return result
 
 
 def _netmask_kernel(idx, out1, out2, out3, out4, kwarg1):
-    for i, _ in enumerate(idx):
+    for i, ipnum in enumerate(idx):
         out1[i] = int(kwarg1 / 16777216) % 256
         out2[i] = int(kwarg1 / 65536) % 256
         out3[i] = int(kwarg1 / 256) % 256
@@ -358,17 +358,15 @@ def netmask(ips, prefixlen=16):
     1    255.255.0.0
     Name: net_mask, dtype: object
     """
-    all_ones = (2**32) - 1
-    mask_int = all_ones ^ (all_ones >> prefixlen)
+    _ALL_ONES = (2**32) - 1
+    mask_int = _ALL_ONES ^ (_ALL_ONES >> prefixlen)
     df = cudf.DataFrame()
     df["idx"] = ips.index
     x = df.apply_rows(
         _netmask_kernel,
         incols=["idx"],
-        outcols={
-            'out1': np.int64, 'out2': np.int64, 'out3': np.int64, 'out4': np.int64
-        },
-        kwargs={'kwarg1': mask_int},
+        outcols=dict(out1=np.int64, out2=np.int64, out3=np.int64, out4=np.int64),
+        kwargs=dict(kwarg1=mask_int),
     )
 
     out1 = x["out1"].astype(str)
@@ -380,7 +378,7 @@ def netmask(ips, prefixlen=16):
 
 
 def _hostmask_kernel(idx, out1, out2, out3, out4, kwarg1):
-    for i, _ in enumerate(idx):
+    for i, ipnum in enumerate(idx):
         out1[i] = int(kwarg1 / 16777216) % 256
         out2[i] = int(kwarg1 / 65536) % 256
         out3[i] = int(kwarg1 / 256) % 256
@@ -413,17 +411,15 @@ def hostmask(ips, prefixlen=16):
     1    0.0.255.255
     Name: hostmask, dtype: object
     """
-    all_ones = (2**32) - 1
-    host_mask_int = int(all_ones ^ (all_ones >> prefixlen)) ^ all_ones
+    _ALL_ONES = (2**32) - 1
+    host_mask_int = int(_ALL_ONES ^ (_ALL_ONES >> prefixlen)) ^ _ALL_ONES
     df = cudf.DataFrame()
     df["idx"] = ips.index
     x = df.apply_rows(
         _hostmask_kernel,
         incols=["idx"],
-        outcols={
-            "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
-        },
-        kwargs={"kwarg1": host_mask_int},
+        outcols=dict(out1=np.int64, out2=np.int64, out3=np.int64, out4=np.int64),
+        kwargs=dict(kwarg1=host_mask_int),
     )
 
     out1 = x["out1"].astype(str)
@@ -477,10 +473,8 @@ def mask(ips, masks):
     x = df.apply_rows(
         _mask_kernel,
         incols=["masked_ip_int"],
-        outcols={
-            "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
-        },
-        kwargs={"kwarg1": 0},
+        outcols=dict(out1=np.int64, out2=np.int64, out3=np.int64, out4=np.int64),
+        kwargs=dict(kwarg1=0),
     )
 
     out1 = x["out1"].astype(str)
