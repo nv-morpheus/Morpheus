@@ -588,7 +588,7 @@ def validate_4768(parsed_rec):
 
 
 def unknown_record_type(parsed_rec):
-    raise Exception("Unknown eventcode appeared")
+    raise ValueError("Unknown eventcode appeared")
 
 
 VALIDATE_DICT = {
