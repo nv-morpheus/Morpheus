@@ -30,7 +30,7 @@ from utils import TEST_DIRS
 from utils import assert_results
 
 
-class DatasetManager(object):
+class DatasetManager:
     """
     Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
 
@@ -181,13 +181,14 @@ class DatasetManager(object):
         dup_ids = random.sample(df.index.values.tolist(), 2 * count)
 
         # Create a dictionary of old ID to new ID
-        replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+        replace_dict = dict(zip(dup_ids[:count], dup_ids[count:]))
 
         # Return a new dataframe where we replace some index values with others
         return cls.replace_index(df, replace_dict)
 
+    @staticmethod
     def _value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
-        if (isinstance(val, cdf.DataFrame) or isinstance(val, cdf.Series)):
+        if (isinstance(val, (cdf.DataFrame, cdf.Series))):
             return val.to_pandas()
 
         if assert_is_pandas:

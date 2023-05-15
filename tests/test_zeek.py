@@ -16,7 +16,7 @@ import numpy as np
 
 import cudf
 
-import morpheus.parsers.zeek as zeek
+from morpheus.parsers import zeek
 
 
 def test_parse_log_file(tmpdir):

@@ -157,5 +157,5 @@ def import_or_skip(modname: str,
         return pytest.importorskip(modname, minversion=minversion, reason=reason)
     except pytest.skip.Exception as e:
         if fail_missing:
-            raise ImportError(e)
+            raise ImportError(e) from e
         raise
