@@ -151,8 +151,7 @@ def import_or_skip(modname: str,
                    reason: str = None,
                    fail_missing: bool = False) -> types.ModuleType:
     """
-    Wrapper for `pytest.importorskip` will re-raise any `Skipped` exceptions as `ImportError` if `fail_missing` is
-    `True`.
+    Wrapper for `pytest.importorskip` will re-raise any `Skipped` exceptions as `ImportError` if `fail_missing` is True.
     """
     try:
         return pytest.importorskip(modname, minversion=minversion, reason=reason)
