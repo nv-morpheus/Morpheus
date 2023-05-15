@@ -23,6 +23,7 @@ from morpheus.cli import register_stage
 from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
+DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 logger = logging.getLogger(__name__)
 
 
@@ -108,7 +109,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df : typing.List[pd.DataFrame]
             Dataframe with actual and derived columns.
         """
-        _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
         timestamp_column = "isotimestamp"
         city_column = "accessdevicelocationcity"
         state_column = "accessdevicelocationstate"
@@ -116,7 +116,7 @@ class DuoSourceStage(AutoencoderSourceStage):
 
         df['time'] = pd.to_datetime(df[timestamp_column], errors='coerce')
         df['day'] = df['time'].dt.date
-        df.fillna({'time': pd.to_datetime(_DEFAULT_DATE), 'day': pd.to_datetime(_DEFAULT_DATE).date()}, inplace=True)
+        df.fillna({'time': pd.to_datetime(DEFAULT_DATE), 'day': pd.to_datetime(DEFAULT_DATE).date()}, inplace=True)
         df.sort_values(by=['time'], inplace=True)
 
         overall_location_columns = [col for col in [city_column, state_column, country_column] if col is not None]

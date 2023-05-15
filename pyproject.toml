@@ -447,6 +447,7 @@ disable = [
   "too-many-branches",
   "too-many-instance-attributes",
   "too-many-nested-blocks",
+  "unnecessary-lambda",
   "unnecessary-pass",
   "use-symbolic-message-instead",
   "useless-suppression",

@@ -75,8 +75,8 @@ def load_labels_file(labels_filename: str) -> typing.List[str]:
     typing.List[str]
         List of labels
     """
-    with open(labels_filename, "r", encoding='UTF-8') as lf:
-        return [x.strip() for x in lf.readlines()]
+    with open(labels_filename, "r", encoding='UTF-8') as fh:
+        return [x.strip() for x in fh.readlines()]
 
 
 def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern):

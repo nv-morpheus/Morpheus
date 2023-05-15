@@ -59,10 +59,11 @@ class TqdmLoggingHandler(logging.Handler):
         # See issue 36272 https://bugs.python.org/issue36272
         except (KeyboardInterrupt, SystemExit, RecursionError):  # noqa
             raise
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.handleError(record)
 
     def _determine_color(self, levelno: int):
+        # pylint: disable=no-else-return
         if (levelno >= logging.CRITICAL):
             return {"fg": "red", "bold": True}
         elif (levelno >= logging.ERROR):
@@ -85,8 +86,8 @@ def _configure_from_log_file(log_config_file: str):
         dict_config: dict = None
 
         # Try and load from dict
-        with open(log_config_file, "r", encoding='UTF-8') as fp:
-            dict_config = json.load(fp)
+        with open(log_config_file, "r", encoding='UTF-8') as fh:
+            dict_config = json.load(fh)
 
         logging.config.dictConfig(dict_config)
     else:

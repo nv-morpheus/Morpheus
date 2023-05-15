@@ -74,8 +74,8 @@ class WriteToFileStage(SinglePortStage):
             if (self._overwrite):
                 os.remove(self._output_file)
             else:
-                raise FileExistsError("Cannot output classifications to '{}'. File exists and overwrite = False".format(
-                    self._output_file))
+                raise FileExistsError(
+                    f"Cannot output classifications to '{self._output_file}'. File exists and overwrite = False")
 
         self._file_type = file_type
 
@@ -116,7 +116,7 @@ class WriteToFileStage(SinglePortStage):
                                                 include_index_col=self._include_index_col)
             self._is_first = False
         else:
-            raise NotImplementedError("Unknown file type: {}".format(self._file_type))
+            raise NotImplementedError(f"Unknown file type: {self._file_type}")
 
         # Remove any trailing whitespace
         if (len(output_strs[-1].strip()) == 0):
