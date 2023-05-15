@@ -30,7 +30,7 @@ from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import SchemaBuilder
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 THIS_DIR = path.dirname(path.abspath(__file__))
 
@@ -74,11 +74,11 @@ class BenchmarkConfGenerator:
         return self._pipe_conf.get('source')
 
     def _get_model_name_formatter(self) -> str:
-        model_name_formatter = 'DFP-{}-'.format(self.source) + '{user_id}'
+        model_name_formatter = f'DFP-{self.source}-' + '{user_id}'
         return model_name_formatter
 
     def _get_experiment_name_formatter(self) -> str:
-        experiment_name_formatter = 'dfp/{}/training/'.format(self.source) + '{reg_model_name}'
+        experiment_name_formatter = f'dfp/{self.source}/training/' + '{reg_model_name}'
         return experiment_name_formatter
 
     def _get_start_stop_time(self) -> typing.Tuple[(datetime, datetime)]:

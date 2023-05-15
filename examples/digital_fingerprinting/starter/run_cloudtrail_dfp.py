@@ -32,6 +32,7 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
@@ -107,10 +108,7 @@ def run_pipeline(num_threads,
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.feature_scaler = AEFeatureScalar.STANDARD
-
-    with open(columns_file, "r", encoding='UTF-8') as lf:
-        config.ae.feature_columns = [x.strip() for x in lf.readlines()]
-
+    config.ae.feature_columns = load_labels_file(columns_file)
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
@@ -154,4 +152,6 @@ def run_pipeline(num_threads,
 
 
 if __name__ == "__main__":
+    # The click decordators add all of the needed arguments to the `run_pipeline` function but pylint doesn't know that
+    # pylint: disable=no-value-for-parameter
     run_pipeline()

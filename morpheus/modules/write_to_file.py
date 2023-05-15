@@ -33,7 +33,7 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-is_first = True
+IS_FIRST = True
 
 
 @register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
@@ -68,23 +68,23 @@ def write_to_file(builder: mrc.Builder):
             os.remove(output_file)
         else:
             raise FileExistsError(
-                "Cannot output classifications to '{}'. File exists and overwrite = False".format(output_file))
+                f"Cannot output classifications to '{output_file}'. File exists and overwrite = False")
 
     if (file_type == FileTypes.Auto):
         file_type = determine_file_type(output_file)
 
     def convert_to_strings(df: typing.Union[pd.DataFrame, cudf.DataFrame]):
-
-        global is_first
+        # pylint: disable=global-statement
+        global IS_FIRST
 
         if (file_type == FileTypes.JSON):
             output_strs = serializers.df_to_json(df, include_index_col=include_index_col)
         elif (file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=is_first, include_index_col=include_index_col)
+            output_strs = serializers.df_to_csv(df, include_header=IS_FIRST, include_index_col=include_index_col)
         else:
-            raise NotImplementedError("Unknown file type: {}".format(file_type))
+            raise NotImplementedError(f"Unknown file type: {file_type}")
 
-        is_first = False
+        IS_FIRST = False
 
         # Remove any trailing whitespace
         if (len(output_strs[-1].strip()) == 0):
@@ -102,7 +102,7 @@ def write_to_file(builder: mrc.Builder):
         # Open up the file handle
         with open(output_file, "a", encoding='UTF-8') as out_file:
 
-            def write_to_file(x: MessageMeta):
+            def _write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)
 
                 out_file.writelines(lines)
@@ -112,7 +112,7 @@ def write_to_file(builder: mrc.Builder):
 
                 return x
 
-            obs.pipe(ops.map(write_to_file)).subscribe(sub)
+            obs.pipe(ops.map(_write_to_file)).subscribe(sub)
 
         # File should be closed by here
 

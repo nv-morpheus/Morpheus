@@ -81,9 +81,9 @@ def show_defaults(f):
 
 
 def _apply_to_config(config: ConfigBase, **kwargs):
-    for param in kwargs:
+    for (param, value) in kwargs.items():
         if hasattr(config, param):
-            setattr(config, param, kwargs[param])
+            setattr(config, param, value)
         else:
             warnings.warn(f"No config option matches for {param}")
 
@@ -148,11 +148,12 @@ def get_log_levels():
     return morpheus_log_levels
 
 
+# pylint: disable=unused-argument
 def parse_log_level(ctx, param, value):
     """Click callback that parses a command line value into a logging level"""
     x = logging._nameToLevel.get(value.upper(), None)
     if x is None:
-        raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
+        raise click.BadParameter(f'Must be one of {", ".join(logging._nameToLevel.keys())}. Passed: {value}')
     return x
 
 
@@ -191,8 +192,8 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
 
 def load_labels_file(labels_file: str) -> typing.List[str]:
     """Returns a list of labels from the given file, where each line is a label."""
-    with open(labels_file, "r", encoding='UTF-8') as lf:
-        return [x.strip() for x in lf.readlines()]
+    with open(labels_file, "r", encoding='UTF-8') as fh:
+        return [x.strip() for x in fh.readlines()]
 
 
 def get_package_relative_file(filename: str):

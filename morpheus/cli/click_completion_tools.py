@@ -38,9 +38,9 @@ def get_code(shell=None, path=None) -> str:
     if (tool_name.endswith(".py")):
         tool_name = "morpheus"
 
-    tool_env_name = '_%s_COMPLETE' % tool_name.upper().replace('-', '_')
+    tool_env_name = f"_{tool_name.upper().replace('-', '_')}_COMPLETE"
 
-    response = subprocess.check_output(["{}=bash_source morpheus".format(tool_env_name)], shell=True).decode("utf-8")
+    response = subprocess.check_output([f"{tool_env_name}=bash_source morpheus"], shell=True).decode("utf-8")
 
     code = "# >>> morpheus completion >>>\n{}\n# <<< morpheus completion <<<\n".format(response.rstrip("\n"))
 
@@ -57,8 +57,8 @@ def install_code(append=False, shell=None, path=None):
     output_lines = []
 
     if (os.path.exists(path)):
-        with open(path, 'r', encoding='UTF-8') as fp:
-            input_lines = fp.readlines()
+        with open(path, 'r', encoding='UTF-8') as fh:
+            input_lines = fh.readlines()
 
             found_match = False
 
@@ -77,7 +77,7 @@ def install_code(append=False, shell=None, path=None):
     # Now append the output lines with our code
     output_lines.extend(code.splitlines(keepends=True))
 
-    with open(path, 'w', encoding='UTF-8') as fp:
-        fp.writelines(output_lines)
+    with open(path, 'w', encoding='UTF-8') as fh:
+        fh.writelines(output_lines)
 
     return shell, path
