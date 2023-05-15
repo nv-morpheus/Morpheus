@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Wrapper around cudf's subword tokenizer"""
 
 import collections
 import threading
@@ -88,7 +89,6 @@ def get_cached_tokenizer(vocab_hash_file: str, do_lower_case: bool):
     cudf.core.subword_tokenizer.SubwordTokenizer
         Cached subword tokenizer
     """
-
     hashed_inputs = hash((vocab_hash_file, do_lower_case))
 
     cached_tokenizers = getattr(_tl, "cached_tokenizers", None)
@@ -140,7 +140,6 @@ def tokenize_text_series(vocab_hash_file: str,
         A named tuple with these keys {'input_ids':,'input_mask':,'segment_ids':}
 
     """
-
     tokenizer = get_cached_tokenizer(vocab_hash_file, do_lower_case)
 
     assert tokenizer is not None, "Must create tokenizer first using `create_tokenizer()`"

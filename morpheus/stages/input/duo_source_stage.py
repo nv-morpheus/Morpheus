@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Sourse stage for Duo Authentication logs."""
 
 import json
 import logging
@@ -64,9 +65,11 @@ class DuoSourceStage(AutoencoderSourceStage):
 
     @property
     def name(self) -> str:
+        """Unique name for the stage."""
         return "from-duo"
 
     def supports_cpp_node(self):
+        """Indicate that this stages does not support a C++ node."""
         return False
 
     @staticmethod
@@ -84,7 +87,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df : `pd.DataFrame`
             Dataframe with renamed columns.
         """
-
         df.columns = df.columns.str.replace('[_,.,{,},:]', '')
         df.columns = df.columns.str.strip()
         return df
@@ -106,7 +108,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df : typing.List[pd.DataFrame]
             Dataframe with actual and derived columns.
         """
-
         _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
         timestamp_column = "isotimestamp"
         city_column = "accessdevicelocationcity"
@@ -161,7 +162,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df_per_user  : typing.Dict[str, pd.DataFrame]
             Dataframe per userid.
         """
-
         dfs = []
         for file in x:
             with open(file, encoding='UTF-8') as json_in:

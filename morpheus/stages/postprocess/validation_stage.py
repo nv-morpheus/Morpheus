@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Validate pipeline output for testing."""
 
 import json
 import logging
@@ -100,6 +101,7 @@ class ValidationStage(CompareDataFrameStage):
 
     @property
     def name(self) -> str:
+        """Unique name for this stage."""
         return "validation"
 
     def accepted_types(self) -> typing.Tuple:
