@@ -20,7 +20,7 @@ import GPUtil
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
-#pylint: disable=unused-argument
+# pylint: disable=unused-argument
 def pytest_benchmark_update_json(config, benchmarks, output_json):
 
     gpus = GPUtil.getGPUs()
