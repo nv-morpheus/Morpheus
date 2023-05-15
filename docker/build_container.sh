@@ -36,7 +36,7 @@ TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
-GS="${DOCKER_ARGS} --build-arg FROM_IMAGE=${FROM_IMAGE}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg FROM_IMAGE=${FROM_IMAGE}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_MAJOR_VER=${CUDA_MAJOR_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_MINOR_VER=${CUDA_MINOR_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_REV_VER=${CUDA_REV_VER}"
@@ -74,4 +74,4 @@ echo ""
 echo "   COMMAND: docker build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"
 
-docker build ${DOCKER_ARGS} --progress plain -f docker/Dockerfile .
+docker build ${DOCKER_ARGS} -f docker/Dockerfile .
