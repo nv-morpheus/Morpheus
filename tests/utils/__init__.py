@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Miscellaneous utilities for unit tests."""
 
 import collections
 import json
@@ -31,9 +32,7 @@ Results = collections.namedtuple('Results', ['total_rows', 'diff_rows', 'error_p
 
 
 def calc_error_val(results_file):
-    """
-    Based on the calc_error_val function in val-utils.sh
-    """
+    """Based on the `calc_error_val` function in `val-utils.sh`."""
     with open(results_file, encoding='UTF-8') as fh:
         results = json.load(fh)
 
@@ -85,6 +84,11 @@ def write_file_to_kafka(bootstrap_servers: str,
 
 
 def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
+    """
+    Checks for expected columns in the dataframe which should be added by the `AddClassificationsStage` and
+    `AddScoresStage` stages, and ensuring that the values produced by the `AddClassificationsStage` are consistent
+    with the values produced by the `AddScoresStage` when the threshold is applied.
+    """
     df = read_file_to_df(file_name, df_type='pandas')
     for field_name in field_names:
         class_field = f"{class_prefix}{field_name}"
@@ -113,7 +117,6 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
     -------
     Returns none but will throw an assertion error on failure.
     """
-
     # Quick exit if the file exists
     if (os.path.exists(filename)):
         return
@@ -148,7 +151,8 @@ def import_or_skip(modname: str,
                    reason: str = None,
                    fail_missing: bool = False) -> types.ModuleType:
     """
-    Wrapper for `pytest.importorskip` will re-raise any `Skipped` exceptions as `ImportError` if `fail_missing` is True.
+    Wrapper for `pytest.importorskip` will re-raise any `Skipped` exceptions as `ImportError` if `fail_missing` is
+    `True`.
     """
     try:
         return pytest.importorskip(modname, minversion=minversion, reason=reason)

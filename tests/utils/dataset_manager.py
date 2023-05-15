@@ -82,7 +82,6 @@ class DatasetManager(object):
 
         Passing values to `reader_kwargs` will cause the cache to by bypassed
         """
-
         if len(reader_kwargs) and not no_cache:
             logger = logging.getLogger(f"morpheus.{__name__}")
             logger.warning("Setting specific `reader_kwargs` requires bypassing the cache. "
@@ -126,6 +125,7 @@ class DatasetManager(object):
     def __getitem__(
         self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf', 'pandas']]]
     ) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+        """Implements `__getitem__` to allow for fetching DataFrames using the `[]` operator."""
         if not isinstance(item, tuple):
             item = (item, )
 
@@ -150,9 +150,7 @@ class DatasetManager(object):
     def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
                repeat_count: int = 2,
                reset_index: bool = True) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
-        """
-        Returns a DF consisting of `repeat_count` copies of the original
-        """
+        """Returns a DF consisting of `repeat_count` copies of the original."""
         if isinstance(df, pd.DataFrame):
             concat_fn = pd.concat
         else:
@@ -200,7 +198,6 @@ class DatasetManager(object):
     @classmethod
     def assert_df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
         """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
-
         # Comparisons work better in cudf so convert everything to that
         df_to_check = cls._value_as_pandas(df_to_check)
 
@@ -218,9 +215,7 @@ class DatasetManager(object):
                    dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
                    dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                    **compare_args):
-        """
-        Wrapper for morpheus.utils.compare_df.compare_df
-        """
+        """Wrapper for `morpheus.utils.compare_df.compare_df`."""
         return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
 
     @classmethod
@@ -228,7 +223,5 @@ class DatasetManager(object):
                           dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
                           dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                           **compare_args):
-        """
-        Convenience method for calling compare_df and asserting that the results are the same
-        """
+        """Convenience method for calling `compare_df` and asserting that the results are equivalent."""
         assert_results(cls.compare_df(dfa, dfb, **compare_args))
