@@ -54,6 +54,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
+from morpheus.utils.file_utils import load_labels_file
 from utils import TEST_DIRS
 from utils.stages.conv_msg import ConvMsg
 
@@ -128,16 +129,9 @@ def mlflow_uri(tmp_path):
 
 
 @pytest.mark.reload_modules(commands)
-@pytest.mark.usefixtures("reload_modules")
+@pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
 @pytest.mark.use_python
 class TestCLI:
-
-    def _read_data_file(self, data_file):
-        """
-        Used to read in labels and columns files
-        """
-        with open(data_file, encoding='UTF-8') as fh:
-            return [line.strip() for line in fh]
 
     def test_help(self):
         runner = CliRunner()
@@ -163,7 +157,6 @@ class TestCLI:
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
@@ -208,7 +201,7 @@ class TestCLI:
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
@@ -254,7 +247,7 @@ class TestCLI:
         assert to_file._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_all(self, config, callback_values):
+    def test_pipeline_ae_all(self, callback_values):
         """
         Attempt to add all possible stages to the pipeline_ae, even if the pipeline doesn't
         actually make sense, just test that cli could assemble it
@@ -351,7 +344,6 @@ class TestCLI:
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil(self, config, callback_values):
         """
@@ -370,7 +362,7 @@ class TestCLI:
         assert config.mode == PipelineModes.FIL
         assert config.class_labels == ["mining"]
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
         assert config.fil.feature_columns == expected_columns
 
         assert config.ae is None
@@ -890,7 +882,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_alias(self, config, callback_values):
+    def test_pipeline_alias(self, config, callback_values):  # pylint: disable=unused-argument
         """
         Verify that pipeline implies pipeline-nlp
         """
@@ -905,7 +897,6 @@ class TestCLI:
         # Ensure our config is populated correctly
         assert config.mode == PipelineModes.NLP
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_paths(self, config, callback_values):
         """
@@ -923,7 +914,7 @@ class TestCLI:
         result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
-        expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
+        expected_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
 
         # Ensure our config is populated correctly
         config = obj["config"]
@@ -931,11 +922,11 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_name
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
         """
@@ -974,13 +965,15 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_local
 
+    # pylint: disable=unused-argument
     @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_fil_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
@@ -1022,9 +1015,10 @@ class TestCLI:
 
         assert config.fil.feature_columns == test_columns
 
+    # pylint: disable=unused-argument
     @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
