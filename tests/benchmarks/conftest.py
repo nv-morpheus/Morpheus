@@ -20,6 +20,7 @@ import GPUtil
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
+#pylint: disable=unused-argument
 def pytest_benchmark_update_json(config, benchmarks, output_json):
 
     gpus = GPUtil.getGPUs()
@@ -42,13 +43,13 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 
         if "file_path" in E2E_TEST_CONFIGS[bench["name"]]:
             source_file = E2E_TEST_CONFIGS[bench["name"]]["file_path"]
-            line_count = len(open(source_file, encoding='UTF-8').readlines())
+            line_count = len(open(source_file, encoding='UTF-8').readlines())  # pylint: disable=consider-using-with
             byte_count = os.path.getsize(source_file)
 
         elif "glob_path" in E2E_TEST_CONFIGS[bench["name"]]:
-            for fn in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["glob_path"]):
-                line_count += len(open(fn, encoding='UTF-8').readlines())
-                byte_count += os.path.getsize(fn)
+            for file_name in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["glob_path"]):
+                line_count += len(open(file_name, encoding='UTF-8').readlines())  # pylint: disable=consider-using-with
+                byte_count += os.path.getsize(file_name)
 
         repeat = E2E_TEST_CONFIGS[bench["name"]]["repeat"]
 

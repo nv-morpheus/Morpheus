@@ -40,6 +40,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
+from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
@@ -173,8 +174,7 @@ def test_abp_fil_e2e(benchmark, tmp_path):
     config.class_labels = ["mining"]
     config.fil = ConfigFIL()
     fil_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')
-    with open(fil_cols_filepath, "r", encoding='UTF-8') as lf:
-        config.fil.feature_columns = [x.strip() for x in lf.readlines()]
+    config.fil.feature_columns = load_labels_file(fil_cols_filepath)
     CppConfig.set_should_use_cpp(True)
 
     input_filepath = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["file_path"]
@@ -223,8 +223,7 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     config.ae.userid_column_name = "userIdentityaccountId"
     config.ae.userid_filter = "Account-123456789"
     ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')
-    with open(ae_cols_filepath, "r", encoding='UTF-8') as lf:
-        config.ae.feature_columns = [x.strip() for x in lf.readlines()]
+    config.ae.feature_columns = load_labels_file(ae_cols_filepath)
     CppConfig.set_should_use_cpp(False)
 
     input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]

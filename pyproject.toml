@@ -451,6 +451,7 @@ disable = [
   "unnecessary-pass",
   "use-symbolic-message-instead",
   "useless-suppression",
+  "wrong-import-order", # pylint mistakenly thinks that the test utils are third party, and we have isort for this
 ]
 
 # Enable the message, report, category or checker with the given id(s). You can

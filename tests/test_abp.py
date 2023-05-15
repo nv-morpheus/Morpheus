@@ -38,6 +38,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
+from morpheus.utils.file_utils import load_labels_file
 from utils import TEST_DIRS
 from utils import calc_error_val
 from utils import compare_class_to_scores
@@ -74,6 +75,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
 
+    # pylint: disable=unused-argument
     def async_infer(callback=None, **k):
         callback(mock_infer_result, None)
 
@@ -88,9 +90,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -129,9 +129,7 @@ def test_abp_cpp(config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -188,6 +186,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
 
+    # pylint: disable=unused-argument
     def async_infer(callback=None, **k):
         callback(mock_infer_result, None)
 
@@ -202,9 +201,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -259,9 +256,7 @@ def test_abp_multi_segment_cpp(config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'), encoding='UTF-8') as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
