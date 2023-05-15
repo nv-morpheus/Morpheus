@@ -79,6 +79,10 @@ KAFKA_BOOTS = ['--bootstrap_servers', 'kserv1:123,kserv2:321']
 FROM_KAFKA_ARGS = ['from-kafka', '--input_topic', 'test_topic'] + KAFKA_BOOTS
 TO_KAFKA_ARGS = ['to-kafka', '--output_topic', 'test_topic'] + KAFKA_BOOTS
 
+# Pylint doesn't understand how pytest fixtures work and flags fixture uasage as a redefinition of the symbol in the
+# outer scope.
+# pylint: disable=redefined-outer-name
+
 
 # Fixtures specific to the cli tests
 @pytest.fixture(scope="function")
@@ -89,7 +93,7 @@ def callback_values(request: pytest.FixtureRequest):
     without actually running it. When run the callback will update the
     `callback_values` dictionary with the context, pipeline & stages constructed.
     """
-    cv = {}
+    callback_values_ = {}
 
     marker = request.node.get_closest_marker("replace_callback")
     group_name = marker.args[0]
@@ -97,17 +101,17 @@ def callback_values(request: pytest.FixtureRequest):
 
     @group.result_callback(replace=True)
     @click.pass_context
-    def mock_post_callback(ctx, stages, *a, **k):
-        cv.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
+    def mock_post_callback(ctx, stages, *a, **k):  # pylint: disable=unused-argument
+        callback_values_.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
         ctx.exit(47)
 
-    return cv
+    return callback_values_
 
 
 @pytest.fixture(scope="function")
 def mlflow_uri(tmp_path):
     experiment_name = "Morpheus"
-    uri = "file://{}".format(tmp_path)
+    uri = f"file://{tmp_path}"
     mlflow.set_tracking_uri(uri)
     mlflow.create_experiment(experiment_name)
     experiment = mlflow.get_experiment_by_name(experiment_name)
@@ -250,7 +254,7 @@ class TestCLI:
         assert to_file._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_all(self, config, callback_values, tmp_path):
+    def test_pipeline_ae_all(self, config, callback_values):
         """
         Attempt to add all possible stages to the pipeline_ae, even if the pipeline doesn't
         actually make sense, just test that cli could assemble it
@@ -349,7 +353,7 @@ class TestCLI:
 
     @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil(self, config, callback_values, tmp_path):
+    def test_pipeline_fil(self, config, callback_values):
         """
         Creates a pipeline roughly matching that of the abp validation test
         """
@@ -672,7 +676,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp(self, config, callback_values):
         """
         Build a pipeline roughly ressembles the phishing validation script
         """
@@ -886,7 +890,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_alias(self, config, callback_values, tmp_path):
+    def test_pipeline_alias(self, config, callback_values):
         """
         Verify that pipeline implies pipeline-nlp
         """
@@ -903,7 +907,7 @@ class TestCLI:
 
     @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp_relative_paths(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp_relative_paths(self, config, callback_values):
         """
         Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
