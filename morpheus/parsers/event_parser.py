@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Abstract class for all event log parsers."""
 
 import logging
 import typing
@@ -79,7 +80,6 @@ class EventParser(ABC):
 
         Parameters
         ----------
-
         text : cudf.Series
             Raw event log text to be parsed.
         event_regex: typing.Dict[str, any]
@@ -90,7 +90,7 @@ class EventParser(ABC):
         cudf.DataFrame
             Parsed logs dataframe
         """
-        log.debug("Parsing raw events. Event type: " + self.event_name)
+        log.debug("Parsing raw events. Event type: %s", self.event_name)
 
         parsed_gdf = cudf.DataFrame({col: [""] for col in self.columns})
         parsed_gdf = parsed_gdf[:0]
@@ -110,9 +110,7 @@ class EventParser(ABC):
         return parsed_gdf
 
     def _load_regex_yaml(self, yaml_file) -> typing.Dict[str, any]:
-        """
-        Returns a dictionary of event regexes contained in the given yaml file.
-        """
+        """Returns a dictionary of event regexes contained in the given yaml file."""
         with open(yaml_file, encoding='UTF-8') as yaml_file_h:
             regex_dict = yaml.safe_load(yaml_file_h)
         return regex_dict
