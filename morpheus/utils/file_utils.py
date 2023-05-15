@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""File utilities for Morpheus"""
 
 import os
 import re
@@ -74,7 +75,6 @@ def load_labels_file(labels_filename: str) -> typing.List[str]:
     typing.List[str]
         List of labels
     """
-
     with open(labels_filename, "r", encoding='UTF-8') as lf:
         return [x.strip() for x in lf.readlines()]
 
