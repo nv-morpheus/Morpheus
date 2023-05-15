@@ -13,13 +13,10 @@
 # limitations under the License.
 
 import logging
-import time
-import typing
 
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.common import FiberQueue
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import MULTIPLEXER
 from morpheus.utils.module_utils import register_module

@@ -169,8 +169,6 @@ def run_pipeline(source: str,
 
     dfp_deployment_module_config = config_generator.get_module_conf()
 
-    num_output_ports = dfp_deployment_module_config.get("num_output_ports")
-
     #                                     +--------------------------------------+
     #                                     |  control_message_kafka_source_stage  |
     #                                     +--------------------------------------+
