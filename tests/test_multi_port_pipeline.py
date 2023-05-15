@@ -29,7 +29,7 @@ from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.parametrize("source_count, expected_count", [(1, 1), (2, 2), (3, 3)])
-def test_multi_inputport_pipeline(config, dataset_cudf: DatasetManager, source_count, expected_count):
+def test_multi_port_pipeline(config, dataset_cudf: DatasetManager, source_count, expected_count):
 
     filter_probs_df = dataset_cudf["filter_probs.csv"]
 
