@@ -82,7 +82,7 @@ fi
 
 if [[ "${SKIP_PYLINT}" != "" ]]; then
    echo -e "\n\n>>>> SKIPPED: pylint check\n\n"
-elif [ "${PYLIN_RETVAL}" != "0" ]; then
+elif [ "${PYLINT_RETVAL}" != "0" ]; then
    echo -e "\n\n>>>> FAILED: pylint style check; begin output\n\n"
    echo -e "${PYLINT_OUTPUT}"
    echo -e "\n\n>>>> FAILED: pylint style check; end output\n\n"
