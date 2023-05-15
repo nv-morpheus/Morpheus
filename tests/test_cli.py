@@ -971,7 +971,6 @@ class TestCLI:
         assert process_nlp._vocab_hash_file == vocab_file_local
 
     # pylint: disable=unused-argument
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
@@ -1016,7 +1015,6 @@ class TestCLI:
         assert config.fil.feature_columns == test_columns
 
     # pylint: disable=unused-argument
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
