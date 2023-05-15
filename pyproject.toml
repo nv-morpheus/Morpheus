@@ -19,7 +19,8 @@ markers = [
    "use_cudf: Test supports cuDF datasets",
    "use_pandas: Test supports Pandas datasets",
    "replace_callback: Replaces the results_callback in cli",
-   "reload_modules: Reloads a set of python modules after running the current test"
+   "reload_modules: Reloads a set of python modules after running the current test",
+   "import_mod: Import python modules not currently in the Python search path by file name",
 ]
 
 filterwarnings = [

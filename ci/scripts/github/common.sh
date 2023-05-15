@@ -60,6 +60,11 @@ export SCCACHE_REGION="us-east-2"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
+export CONDA_ENV_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+export CONDA_EXAMPLES_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
+export CONDA_DOCS_YML=${MORPHEUS_ROOT}/docs/conda_docs.yml
+export PIP_REQUIREMENTS=${MORPHEUS_ROOT}/docker/conda/environments/requirements.txt
+
 export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_CUDA_ARCHITECTURES=60;70;75;80 -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_PYTHON_BUILD_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
 
 export FETCH_STATUS=0
@@ -67,19 +72,38 @@ export FETCH_STATUS=0
 print_env_vars
 
 function update_conda_env() {
-    rapids-logger "Checking for updates to conda env"
-
     # Deactivate the environment first before updating
     conda deactivate
 
-    # Update the packages with --prune to remove any extra packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+    ENV_YAML=${CONDA_ENV_YML}
+    if [[ "${MERGE_EXAMPLES_YAML}" == "1" || "${MERGE_DOCS_YAML}" == "1" ]]; then
+        # Merge the dev, docs and examples envs, otherwise --prune will remove the examples packages
+        ENV_YAML=${condatmpdir}/merged_env.yml
+        YAMLS="${CONDA_ENV_YML}"
+        if [[ "${MERGE_EXAMPLES_YAML}" == "1" ]]; then
+            YAMLS="${YAMLS} ${CONDA_EXAMPLES_YML}"
+        fi
+        if [[ "${MERGE_DOCS_YAML}" == "1" ]]; then
+            YAMLS="${YAMLS} ${CONDA_DOCS_YML}"
+        fi
+
+        # Conda is going to expect a requirements.txt file to be in the same directory as the env yaml
+        cp ${PIP_REQUIREMENTS} ${condatmpdir}/requirements.txt
+
+        rapids-logger "Merging conda envs: ${YAMLS}"
+        conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}
+    fi
+
+    rapids-logger "Checking for updates to conda env"
+
+    # Update the packages
+    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
 
     # Finally, reactivate
     conda activate morpheus
 
     rapids-logger "Final Conda Environment"
-    conda list
+    show_conda_info
 }
 
 function fetch_base_branch() {
@@ -98,36 +122,6 @@ function fetch_base_branch() {
     # the checkout it isn't recognized by git without the origin/ prefix
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
     rapids-logger "Base branch: ${BASE_BRANCH}"
-}
-
-function fetch_s3() {
-    ENDPOINT=$1
-    DESTINATION=$2
-    if [[ "${USE_S3_CURL}" == "1" ]]; then
-        curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
-        FETCH_STATUS=$?
-    else
-        aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" "${DESTINATION}"
-        FETCH_STATUS=$?
-    fi
-}
-
-function restore_conda_env() {
-
-    rapids-logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-    fetch_s3 "${ARTIFACT_ENDPOINT}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-    fetch_s3 "${ARTIFACT_ENDPOINT}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
-
-    rapids-logger "Extracting"
-    mkdir -p /opt/conda/envs/morpheus
-
-    # We are using the --no-same-owner flag since user id & group id's are inconsistent between nodes in our CI pool
-    tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-    tar xf "${WORKSPACE_TMP}/wheel.tar.bz" --no-same-owner --directory ${MORPHEUS_ROOT}
-
-    rapids-logger "Setting conda env"
-    conda activate morpheus
-    conda-unpack
 }
 
 function show_conda_info() {

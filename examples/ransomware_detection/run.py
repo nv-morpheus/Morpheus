@@ -36,7 +36,7 @@ from stages.preprocessing import PreprocessingRWStage
 
 @click.command()
 @click.option('--debug', default=False)
-@click.option('--use_cpp', default=False)
+@click.option('--use_cpp', default=False, help="Enable C++ execution for this pipeline, currently this is unsupported.")
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
@@ -147,7 +147,10 @@ def run_pipeline(debug,
     cols_interested_plugins = rwd_conf['raw_columns']
 
     # Feature columns used by the model.
-    feature_columns = rwd_conf['model_features']
+    model_features = rwd_conf['model_features']
+
+    # Features to include in the DF, superset of model_features along with a few that the model doesn't receive
+    feature_columns = model_features + rwd_conf['features']
 
     # File extensions.
     file_extns = rwd_conf['file_extensions']
@@ -185,8 +188,7 @@ def run_pipeline(debug,
 
     # Add preprocessing stage.
     # This stage generates snapshot sequences using sliding window for each pid_process.
-    pipeline.add_stage(PreprocessingRWStage(config, feature_columns=feature_columns[:-1],
-                                            sliding_window=sliding_window))
+    pipeline.add_stage(PreprocessingRWStage(config, feature_columns=model_features, sliding_window=sliding_window))
 
     # Add a monitor stage
     # This stage logs the metrics (msg/sec) from the above stage.
