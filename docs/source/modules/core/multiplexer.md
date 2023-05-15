@@ -23,15 +23,13 @@ The multiplexer receives data packets from one or more input ports and interleav
 
 | Parameter                 | Type      | Description                                                                                               | Example Value | Default Value |
 |---------------------------|-----------|-----------------------------------------------------------------------------------------------------------|---------------|---------------|
-| `num_input_ports_to_merge`| integer   | Number of nodes stream data to be combined                                                      | `3`        | `2`        |
-| `stop_after_secs`         | integer   | Time in seconds to halt the process                     | `100`          | `-1`          |
-| `streaming`         | boolean   | Execution in streaming mode is indicated by this flag                     | `True`          | `False`          |
+| `input_ports`| list[string]   | Input ports data streams to be combined                                                      | `["intput_1", "input_2"]`        | `None`        |
+| `c`         | string   | Output port where the combined streams to be passed                     | `output`          | `None`          |
 
 ### Example JSON Configuration
 
 ```json
 {
-  "num_input_ports_to_merge": 3,
-  "stop_after_secs": -1,
-  "streaming": true
+  "input_ports": ["intput_1", "input_2"],
+  "output_port": "output"
 }

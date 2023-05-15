@@ -18,47 +18,40 @@ from mrc.core import operators as ops
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.utils.module_ids import FROM_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(TO_CONTROL_MESSAGE, MORPHEUS_MODULE_NAMESPACE)
-def to_control_message(builder: mrc.Builder):
+@register_module(FROM_CONTROL_MESSAGE, MORPHEUS_MODULE_NAMESPACE)
+def from_control_message(builder: mrc.Builder):
     """
-    This module converts MessageMeta to a ControlMessage.
+    This module converts ControlMessage to a MessageMeta.
 
     Parameters
     ----------
     builder : mrc.Builder
         An mrc Builder object.
-
-    Notes
-    -----
-        Configurable Parameters:
-            - control_message_conf (dict): Control message configuration;
-            Example: `{"meta_data": {"data_type": "streaming"}, "tasks": [{"type": "inference", "properties": {}}]}`;
-            Default: `{}`.
     """
 
-    config = builder.get_current_module_config()
+    def control_message_to_meta(x: ControlMessage) -> MessageMeta:
+        if not isinstance(x, ControlMessage):
+            raise TypeError(f"Expected 'x' to be of type ControlMessage, but instead got {type(x).__name__}.")
 
-    control_message_conf = config.get("control_message_conf", {})
+        df = x.payload()
+        if df is None:
+            logger.debug("ControlMessage does not contain a payload, it cannot be converted to a MessageMeta object."
+                         " Skipping conversion process")
+            return
 
-    if not isinstance(control_message_conf, dict):
-        raise TypeError(
-            f"Expected dictionary type for 'control_message_conf' but recieved: {type(control_message_conf)}")
+        message_meta = MessageMeta(df=df)
+        return message_meta
 
-    def meta_to_control_message(x: MessageMeta) -> ControlMessage:
-        # Set control message configuration
-        control_message = ControlMessage(control_message_conf)
-        control_message.payload(x)
-
-        return control_message
-
-    node = builder.make_node(TO_CONTROL_MESSAGE, ops.map(meta_to_control_message))
+    node = builder.make_node(FROM_CONTROL_MESSAGE,
+                             ops.map(control_message_to_meta),
+                             ops.filter(lambda x: x is not None))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

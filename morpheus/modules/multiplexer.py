@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import logging
-import queue
 import time
+import typing
 
 import mrc
+from mrc.core import operators as ops
 
+from morpheus.common import FiberQueue
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import MULTIPLEXER
 from morpheus.utils.module_utils import register_module
@@ -38,62 +40,37 @@ def multiplexer(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - num_input_ports_to_merge (int): Number of nodes stream data to be combined; Example: `3`;
-            Default: `2`
-            - stop_after_secs (int): Time in seconds to halt the process; Example: `10`;
-            Default: -1 (runs indefinitely).
-            - streaming (bool): Execution in streaming mode is indicated by this flag; Example: `True`;
-            Default: False
+            - input_ports (list(str)): Input ports data streams to be combined; Example: `["intput_1", "input_2"]`;
+            Default: None
+            - output_port (str): Output port where the combined streams to be passed; Example: `"output"`;
+            Default: None
     """
 
     config = builder.get_current_module_config()
 
-    num_input_ports_to_merge = config.get("num_input_ports_to_merge", 2)
-    streaming = config.get("streaming", False)
-    stop_after_secs = config.get("stop_after_secs", -1)
+    input_ports = config.get("input_ports", None)
+    output_port = config.get("output_port", None)
 
-    if num_input_ports_to_merge <= 0:
-        raise ValueError("The value for the 'num_input_ports_to_merge' must be > 0")
-
-    q = queue.Queue()
+    if not input_ports:
+        raise ValueError("The 'input_ports' parameter must be set with at least one value.")
+    if not output_port:
+        raise ValueError("The 'output_port' parameter must be set.")
 
     def on_next(data):
-        nonlocal q
-        q.put(data)
+        return data
 
-    def on_error():
-        pass
+    # Make an output node.
+    output_node = builder.make_node(output_port, ops.map(on_next))
 
-    def on_complete():
-        pass
+    # Loop through the provided input ports, creating a node for each one and directing the data streams
+    # of all input ports to a single output node.
+    for input_port in input_ports:
+        # Make an input node.
+        input_node = builder.make_node(input_port, ops.map(on_next))
+        # Make an edge betweeen input node and an output node.
+        builder.make_edge(input_node, output_node)
+        # Register an input port for a module.
+        builder.register_module_input(input_port, input_node)
 
-    def read_from_q():
-        nonlocal q
-        start_time = time.monotonic()  # Get the start time in monotonic seconds
-        while True:
-            try:
-                # Try to get the next item from the queue, waiting for up to 1 second
-                yield q.get(block=True, timeout=1.0)
-            except queue.Empty:
-                # If the queue is empty and we're not in streaming mode, wait a short amount of time and break the loop
-                if not streaming:
-                    time.sleep(0.01)
-                    break
-
-            # Calculate the elapsed time in monotonic seconds
-            elapsed_time = time.monotonic() - start_time
-
-            # If we've been running for longer than the stop_after_secs value (if it's set), break the loop
-            if stop_after_secs > 0 and elapsed_time >= stop_after_secs:
-                break
-
-    for i in range(num_input_ports_to_merge):
-        in_port = f"input-{i}"
-        in_node = builder.make_sink(in_port, on_next, on_error, on_complete)
-        # Register input port for a module.
-        builder.register_module_input(in_port, in_node)
-
-    out_node = builder.make_source("output", read_from_q)
-
-    # Register output port for a module.
-    builder.register_module_output("output", out_node)
+    # Register an output port for a module.
+    builder.register_module_output(output_port, output_node)

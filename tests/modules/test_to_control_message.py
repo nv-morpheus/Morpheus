@@ -17,27 +17,23 @@
 import mrc
 import pytest
 
-import cudf
-
-import morpheus.messages as messages
+import morpheus.loaders  # noqa: F401
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
 import morpheus.modules  # noqa: F401
-from morpheus.messages import ControlMessage
-
-PACKET_COUNT = 5
-
-
-def on_next(data):
-    pass
-
-
-def on_error():
-    pass
+from morpheus.pipeline.pipeline import Pipeline
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
+from utils.dataset_manager import DatasetManager
 
 
-def on_complete():
-    pass
+@pytest.fixture(scope="module")
+def filter_probs_df(dataset_cudf: DatasetManager):
+    filter_probs_df = dataset_cudf["filter_probs.csv"]
+    yield filter_probs_df
 
 
 def test_contains_namespace():
@@ -70,95 +66,36 @@ def test_get_module():
     module_instance = fn_constructor("ToControlMessageTest", config)  # noqa: F841 -- we don't need to use it
 
 
-def test_get_module_with_bad_config():
+@pytest.mark.use_cpp
+@pytest.mark.parametrize("dataframes, expected_count", [([filter_probs_df], 1),
+                                                        ([filter_probs_df, filter_probs_df], 2)])
+def test_to_control_message_module(config, dataframes, expected_count):
 
-    def init_wrapper(builder: mrc.Builder):
+    pipe = Pipeline(config)
 
-        def gen_data():
-            for i in range(PACKET_COUNT):
-                yield i
+    # Create the stages
+    source_stage = pipe.add_stage(InMemorySourceStage(config, dataframes))
 
-        source = builder.make_source("source", gen_data)
+    to_cm_module_config = {
+        "module_id": TO_CONTROL_MESSAGE,
+        "module_name": "to_control_message",
+        "namespace": MORPHEUS_MODULE_NAMESPACE,
+        "meta_data": {
+            "data_type": "streaming"
+        },
+        "tasks": [{
+            "type": "inference", "properties": {}
+        }]
+    }
 
-        config = "test"
-        to_control_message = builder.load_module("ToControlMessage", "morpheus", "ToControlMessageTest", config)
+    to_control_message_stage = pipe.add_stage(
+        LinearModulesStage(config, to_cm_module_config, input_port_name="input", output_port_name="output"))
 
-        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+    sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
-        builder.make_edge(source, to_control_message.input_port("input"))
-        builder.make_edge(to_control_message.output_port("output"), sink)
+    pipe.add_edge(source_stage, to_control_message_stage)
+    pipe.add_edge(to_control_message_stage, sink_stage)
 
-    pipeline = mrc.Pipeline()
-    pipeline.make_segment("main", init_wrapper)
+    pipe.run()
 
-    options = mrc.Options()
-    options.topology.user_cpuset = "0-1"
-
-    executor = mrc.Executor(options)
-    executor.register_pipeline(pipeline)
-
-    # This should fail, because no valid module config is specified
-    with pytest.raises(TypeError):
-        executor.start()
-        executor.join()
-
-
-def test_to_control_message_module():
-    packets_received = 0
-    registry = mrc.ModuleRegistry
-    fn_constructor = registry.get_module_constructor("Multiplexer", "morpheus")
-    assert fn_constructor is not None
-
-    def init_wrapper(builder: mrc.Builder):
-
-        df = cudf.DataFrame({
-            'col1': [1, 2, 3, 4, 5],
-            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
-            'col3': ['a', 'b', 'c', 'd', 'e'],
-            'col4': [True, False, True, False, True]
-        })
-
-        def gen_data():
-            global PACKET_COUNT
-
-            meta = messages.MessageMeta(df)
-
-            for i in range(PACKET_COUNT):
-                yield meta
-
-        def _on_next(control_msg: ControlMessage):
-            nonlocal packets_received
-            packets_received += 1
-            assert (control_msg.payload().df == df)
-
-        source = builder.make_source("source", gen_data)
-
-        config = {"meta_data": {"data_type": "streaming"}, "tasks": [{"type": "inference", "properties": {}}]}
-        to_control_message = builder.load_module("ToControlMessage", "morpheus", "ToControlMessageTest", config)
-
-        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
-
-        builder.make_edge(source, to_control_message.input_port("input"))
-        builder.make_edge(to_control_message.output_port("output"), sink)
-
-    pipeline = mrc.Pipeline()
-    pipeline.make_segment("main", init_wrapper)
-
-    options = mrc.Options()
-
-    options.topology.user_cpuset = "0-1"
-
-    executor = mrc.Executor(options)
-    executor.register_pipeline(pipeline)
-    executor.start()
-    executor.join()
-    # We have 2 sources that are generating packets.
-    assert packets_received == PACKET_COUNT
-
-
-if (__name__ == "__main__"):
-    test_contains_namespace()
-    test_is_version_compatible()
-    test_get_module()
-    test_get_module_with_bad_config()
-    test_to_control_message_module()
+    assert len(sink_stage.get_messages()) == expected_count

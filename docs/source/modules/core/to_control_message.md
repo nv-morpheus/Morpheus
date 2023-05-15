@@ -39,3 +39,4 @@ This module converts `MessageMeta` to a `ControlMessage`.
     }
   ]
 }
+```
