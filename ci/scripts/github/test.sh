@@ -21,9 +21,9 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
-aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/cpp_tests.tar.bz" "${WORKSPACE_TMP}/cpp_tests.tar.bz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/morhpeus_libs.tar.bz" "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
+download_artifact "wheel.tar.bz"
+download_artifact "cpp_tests.tar.bz"
+download_artifact "morhpeus_libs.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 tar xf "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
@@ -69,7 +69,7 @@ done
 rapids-logger "Running Python tests"
 set +e
 
-python -I -m pytest --run_slow --run_kafka \
+python -I -m pytest --run_slow --run_kafka --fail_missing \
        --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
@@ -86,6 +86,6 @@ cd $(dirname ${REPORTS_DIR})
 tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp ${WORKSPACE_TMP}/test_reports.tar.bz "${ARTIFACT_URL}/test_reports.tar.bz"
+upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
 
 exit ${TEST_RESULTS}

@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-breathe==4.34.0
-exhale==0.3.6
-ipython
-myst-parser==0.17.2
-nbsphinx
-sphinx
-sphinx_rtd_theme
+export WORKSPACE_TMP="$(pwd)/ws_tmp"
+mkdir -p ${WORKSPACE_TMP}
+git clone ${GIT_URL} Morpheus
+cd Morpheus/
+git checkout ${GIT_BRANCH}
+git pull
+
+export MORPHEUS_ROOT=$(pwd)
+export WORKSPACE=${MORPHEUS_ROOT}
+export LOCAL_CI=1
+unset CMAKE_CUDA_COMPILER_LAUNCHER
+unset CMAKE_CXX_COMPILER_LAUNCHER
+unset CMAKE_C_COMPILER_LAUNCHER
+
+if [[ "${STAGE}" != "bash" ]]; then
+    ${MORPHEUS_ROOT}/ci/scripts/github/${STAGE}.sh
+fi

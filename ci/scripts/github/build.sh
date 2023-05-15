@@ -28,20 +28,26 @@ cmake --version
 ninja --version
 sccache --version
 
-rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
 
-cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
-    -DCCACHE_PROGRAM_PATH=$(which sccache) \
-    -DMORPHEUS_PYTHON_BUILD_WHEEL=ON \
-    -DMORPHEUS_PYTHON_BUILD_STUBS=OFF \
-    -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
+CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
+if [[ "${LOCAL_CI}" == "" ]]; then
+    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
+fi
+
+rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
+cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL}
 
-rapids-logger "sccache usage for morpheus build:"
-sccache --show-stats
+if [[ "${LOCAL_CI}" == "" ]]; then
+    rapids-logger "sccache usage for morpheus build:"
+    sccache --show-stats
+fi
 
 rapids-logger "Archiving results"
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
@@ -54,9 +60,9 @@ CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec r
 tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${CPP_TESTS[@]}"
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${ARTIFACT_URL}/morhpeus_libs.tar.bz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${ARTIFACT_URL}/cpp_tests.tar.bz"
+upload_artifact "${WORKSPACE_TMP}/wheel.tar.bz"
+upload_artifact "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
+upload_artifact "${WORKSPACE_TMP}/cpp_tests.tar.bz"
 
 rapids-logger "Success"
 exit 0

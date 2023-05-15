@@ -20,7 +20,7 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
-aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+download_artifact "wheel.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
@@ -31,9 +31,6 @@ cd ${MORPHEUS_ROOT}
 
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
-
-rapids-logger "Installing Documentation dependencies"
-mamba env update -f ${MORPHEUS_ROOT}/docs/conda_docs.yml
 
 git submodule update --init --recursive
 
@@ -47,7 +44,7 @@ rapids-logger "Archiving the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
+upload_artifact "${WORKSPACE_TMP}/docs.tar.bz"
 
 rapids-logger "Success"
 exit 0
