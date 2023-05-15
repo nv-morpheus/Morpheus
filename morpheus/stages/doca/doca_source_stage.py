@@ -65,26 +65,15 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         c: Config,
         nic_pci_address: str,
         gpu_pci_address: str,
-        source_ip_filter: str = "",
     ):
 
         super().__init__(c)
 
         self._batch_size = c.pipeline_batch_size
-
-        # self._filter_null = filter_null
-        # self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
-
         self._input_count = None
         self._max_concurrent = c.num_threads
-
-        # # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
-        # # is good for interleaving source stages.
-        # self._iterative = iterative
-
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
-        self._source_ip_filter = source_ip_filter
 
     @property
     def name(self) -> str:
@@ -105,30 +94,10 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
             out_stream = _doca.DocaSourceStage(builder,
                                                self.unique_name,
                                                self._nic_pci_address,
-                                               self._gpu_pci_address,
-                                               self._source_ip_filter)
+                                               self._gpu_pci_address)
         else:
             raise NotImplementedError("Does not support Python nodes")
 
         out_type = MessageMeta
 
         return out_stream, out_type
-
-    # def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-    #     out_stream = out_pair[0]
-    #     out_type = out_pair[1]
-
-    #     # Convert our list of dataframes into the desired type. Flatten if necessary
-    #     if (typing_utils.issubtype(out_type, typing.List)):
-
-    #         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-    #             obs.pipe(ops.flatten()).subscribe(sub)
-
-    #         flattened = builder.make_node_full(self.unique_name + "-post", node_fn)
-    #         builder.make_edge(out_stream, flattened)
-    #         out_stream = flattened
-    #         out_type = typing.get_args(out_type)[0]
-
-    #     return super()._post_build_single(builder, (out_stream, out_type))
