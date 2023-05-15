@@ -56,8 +56,8 @@ def test_constructor(config, unregistered_module_conf):
 
     mod_stage = MultiPortModulesStage(config,
                                       module_conf=unregistered_module_conf,
-                                      input_ports_key="input_ports",
-                                      output_ports_key="output_ports")
+                                      input_ports=unregistered_module_conf["input_ports"],
+                                      output_ports=unregistered_module_conf["output_ports"])
 
     assert mod_stage.name == "test_multi_port_module"
 
@@ -86,8 +86,8 @@ def test_with_unregistred_module(config, input_ports, output_ports, unregistered
 
     mod_stage = MultiPortModulesStage(config,
                                       module_conf=unregistered_module_conf,
-                                      input_ports_key="input_ports",
-                                      output_ports_key="output_ports")
+                                      input_ports=unregistered_module_conf["input_ports"],
+                                      output_ports=unregistered_module_conf["output_ports"])
 
     # Raises error as test module doesn't exist in the namespace 'test_morpheus_modules'
     with pytest.raises(ValueError):
@@ -103,8 +103,8 @@ def test_empty_ports(config, unregistered_module_conf, input_ports, output_ports
     with pytest.raises(ValueError):
         MultiPortModulesStage(config,
                               module_conf=unregistered_module_conf,
-                              input_ports_key="input_ports",
-                              output_ports_key="output_ports")
+                              input_ports=unregistered_module_conf["input_ports"],
+                              output_ports=unregistered_module_conf["output_ports"])
 
 
 @pytest.mark.parametrize("input_ports,output_ports,expected_count",
@@ -124,8 +124,8 @@ def test_registered_module(config, registered_module_conf, input_ports, output_p
 
     mod_stage = MultiPortModulesStage(config,
                                       module_conf=registered_module_conf,
-                                      input_ports_key="input_ports",
-                                      output_ports_key="output_ports")
+                                      input_ports=registered_module_conf["input_ports"],
+                                      output_ports=registered_module_conf["output_ports"])
 
     mod_stage._build(mock_segment, mock_input_stream)
 

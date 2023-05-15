@@ -35,10 +35,10 @@ class MultiPortModulesStage(Stage):
         Pipeline configuration instance.
     module_config : typing.Dict
         Module configuration.
-   input_ports_key : str
-        Key within the module configuration dictionary that contains the input ports information for the module.
-    output_ports_key : str
-        key within the module configuration dictionary that contains the output ports information for the module.
+   input_ports : typing.List[str]
+        Input ports used for the registered module.
+    output_ports : typing.List[str]
+        Output ports used for the registered module.
     input_type : default `typing.Any`
         The stage acceptable input type.
     output_type : default `typing.Any`
@@ -49,8 +49,8 @@ class MultiPortModulesStage(Stage):
     def __init__(self,
                  c: Config,
                  module_conf: typing.Dict[str, any],
-                 input_ports_key: str,
-                 output_ports_key: str,
+                 input_ports: typing.List[str],
+                 output_ports: typing.List[str],
                  input_type=typing.Any,
                  output_type=typing.Any):
 
@@ -60,23 +60,10 @@ class MultiPortModulesStage(Stage):
         self._input_type = input_type
         self._ouput_type = output_type
 
-        keys_to_validate = [input_ports_key, output_ports_key]
-
-        if all(key in module_conf and module_conf[key] for key in keys_to_validate):
-            input_ports_value = module_conf.get(input_ports_key)
-            output_ports_value = module_conf.get(output_ports_key)
-
-            if isinstance(input_ports_value, str):
-                input_ports_value = [input_ports_value]
-            if isinstance(output_ports_value, str):
-                output_ports_value = [output_ports_value]
-
-            self._in_ports = input_ports_value
-            self._out_ports = output_ports_value
-        else:
-            raise ValueError(
-                "Provided `input_ports_key` or `output_ports_key` either not available or empty in the module configuration."
-            )
+        if not (input_ports and output_ports):
+            raise ValueError("Module input and output ports must not be empty.")
+        self._in_ports = input_ports
+        self._out_ports = output_ports
 
         self._num_in_ports = len(self._in_ports)
         self._num_out_ports = len(self._out_ports)

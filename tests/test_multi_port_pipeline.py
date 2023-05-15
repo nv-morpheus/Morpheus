@@ -49,10 +49,7 @@ def test_multi_inputport_pipeline(config, dataset_cudf: DatasetManager, source_c
     }
 
     mux_stage = pipe.add_stage(
-        MultiPortModulesStage(config,
-                              multiplexer_module_conf,
-                              input_ports_key="input_ports",
-                              output_ports_key="output_port"))
+        MultiPortModulesStage(config, multiplexer_module_conf, input_ports=input_ports, output_ports=["output"]))
 
     for x in range(source_count):
         source_stage = pipe.add_stage(InMemorySourceStage(config, [filter_probs_df]))
