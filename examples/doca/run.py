@@ -71,30 +71,12 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-@click.option(
-    "--source_ip_filter",
-    default="",
-    help="Source IP Address to filter packets by",
-)
-@click.option(
-    "--elastic_hosts",
-    default='localhost',
-    help="Address of elasticsearch nodes",
-)
-@click.option(
-    "--elastic_ports",
-    default='9200',
-    help="Address of elasticsearch nodes",
-)
 def run_pipeline(num_threads,
                  pipeline_batch_size,
                  model_max_batch_size,
                  model_fea_length,
                  nic_addr,
-                 gpu_addr,
-                 source_ip_filter,
-                 elastic_hosts,
-                 elastic_ports):
+                 gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -128,73 +110,41 @@ def run_pipeline(num_threads,
     pipeline = LinearPipeline(config)
 
     # add doca source stage
-    pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, source_ip_filter))
-    # pipeline.set_source(FileSourceStage(config, filename='.tmp/doca_test-in.csv', repeat=1))
+    pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr))
     pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
-
-    # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
-    # pipeline.add_stage(MonitorStage(config, description="File writer"))
 
     # add deserialize stage
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
-    # pipeline.add_stage(SerializeStage(config))
-    # pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
-    # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
-    # pipeline.add_stage(MonitorStage(config, description="File writer"))
+    # add preprocessing stage
+    pipeline.add_stage(
+        PreprocessNLPStage(
+            config,
+            vocab_hash_file=
+            '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+            do_lower_case=True,
+            truncation=True,
+            add_special_tokens=False,
+            column='data'))
 
-    if True:
+    pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
-        # add preprocessing stage
-        pipeline.add_stage(
-            PreprocessNLPStage(
-                config,
-                vocab_hash_file=
-                '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
-                do_lower_case=True,
-                truncation=True,
-                add_special_tokens=False,
-                column='data'))
+    # add inference stage
+    pipeline.add_stage(
+        TritonInferenceStage(
+            config,
+            # model_name="sid-minibert-trt",
+            model_name="sid-minibert-onnx",
+            server_url="localhost:8000",
+            force_convert_inputs=True,
+            use_shared_memory=True))
 
-        # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
+    pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 
-        # add inference stage
-        pipeline.add_stage(
-            TritonInferenceStage(
-                config,
-                # model_name="sid-minibert-trt",
-                model_name="sid-minibert-onnx",
-                server_url="localhost:8000",
-                force_convert_inputs=True,
-                use_shared_memory=True))
-
-        pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
-
-        # add class stage
-        pipeline.add_stage(AddClassificationsStage(config))
-        pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))
-
-    if True:
-        # add serialization stage
-        pipeline.add_stage(SerializeStage(config))
-        pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
-
-        #pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
-        #pipeline.add_stage(MonitorStage(config, description="File writer"))
-
-        pipeline.add_stage(
-            WriteToElasticsearchStage(config,
-                                      elastic_index='morpheus-sid-index',
-                                      elastic_hosts=elastic_hosts,
-                                      elastic_ports=elastic_ports,
-                                      elastic_user="elastic",
-                                      elastic_password="changeme",
-                                      elastic_cacrt="",
-                                      elastic_scheme="http",
-                                      num_threads=1))
-
-        pipeline.add_stage(MonitorStage(config, description="Elasticsearch index rate", unit='pkts'))
+    # add class stage
+    pipeline.add_stage(AddClassificationsStage(config))
+    pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()
