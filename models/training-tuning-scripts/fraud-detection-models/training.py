@@ -167,7 +167,7 @@ def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_s
     generator = HinSAGENodeGenerator(S, batch_size, num_samples, head_node_type="transaction")
     test_gen_not_shuffled = generator.flow(inductive_node_identifiers, shuffle=False)
 
-    inductive_emb = trained_model.predict(test_gen_not_shuffled, verbose=1)
+    inductive_emb = np.concatenate([trained_model.predict(row[0], verbose=1) for row in test_gen_not_shuffled])
     inductive_emb = pd.DataFrame(inductive_emb, index=inductive_node_identifiers)
 
     return inductive_emb

@@ -45,6 +45,7 @@ RUN apt update && \
 COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
+    /opt/conda/bin/mamba install -n morpheus -c conda-forge "conda-merge>=0.2" && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
     rm -rf /tmp/conda
@@ -68,25 +69,33 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-
 # ============ test ==================
 FROM base as test
 
 # Add any test only dependencies here.
 
 ARG PROJ_NAME
+ARG CUDA_SHORT_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        nodejs \
-        npm \
-        openjdk-11-jdk && \
+        openjdk-11-jre-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
+
+# Install extra deps needed for gnn_fraud_detection_pipeline & ransomware_detection examples
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml && \
+    conda clean -afy && \
+    source activate ${PROJ_NAME} && \
+    pip install --ignore-requires-python stellargraph==1.2.1 && \
+    rm -rf /tmp/conda
+
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server@0.9 && \
+RUN source activate ${PROJ_NAME} && \
+    npm install -g camouflage-server@0.9 && \
     npm cache clean --force
 
 # Install pytest-kafka

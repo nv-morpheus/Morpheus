@@ -69,7 +69,7 @@ done
 rapids-logger "Running Python tests"
 set +e
 
-python -I -m pytest --run_slow --run_kafka \
+python -I -m pytest --run_slow --run_kafka --fail_missing \
        --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
