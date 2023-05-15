@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""To File Sink Module."""
 
 import logging
 import os
@@ -54,7 +55,6 @@ def write_to_file(builder: mrc.Builder):
             - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
             - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
     """
-
     config = builder.get_current_module_config()
 
     output_file = config.get("filename", None)
