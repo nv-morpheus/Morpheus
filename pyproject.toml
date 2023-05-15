@@ -446,6 +446,7 @@ disable = [
   "too-many-arguments",
   "too-many-branches",
   "too-many-instance-attributes",
+  "too-many-locals",
   "too-many-nested-blocks",
   "unnecessary-lambda",
   "unnecessary-pass",
