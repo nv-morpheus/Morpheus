@@ -25,45 +25,51 @@
 
 namespace morpheus {
 
-struct doca_error : public std::runtime_error {
-  doca_error(std::string const& message) : std::runtime_error(message) {}
+struct doca_error : public std::runtime_error
+{
+    doca_error(std::string const& message) : std::runtime_error(message) {}
 };
 
-struct rte_error : public std::runtime_error {
-  rte_error(std::string const& message) : std::runtime_error(message) {}
+struct rte_error : public std::runtime_error
+{
+    rte_error(std::string const& message) : std::runtime_error(message) {}
 };
 
 namespace detail {
 
 inline void throw_doca_error(doca_error_t error, const char* file, unsigned int line)
 {
-  throw morpheus::doca_error(std::string{"DOCA error encountered at: " + std::string{file} + ":" +
-                                     std::to_string(line) + ": " + std::to_string(error) + " " +
-                                     std::string(doca_get_error_string(error))});
+    throw morpheus::doca_error(std::string{"DOCA error encountered at: " + std::string{file} + ":" +
+                                           std::to_string(line) + ": " + std::to_string(error) + " " +
+                                           std::string(doca_get_error_string(error))});
 }
 
 inline void throw_rte_error(int error, const char* file, unsigned int line)
 {
-  throw morpheus::rte_error(std::string{"RTE error encountered at: " + std::string{file} + ":" +
-                                     std::to_string(line) + ": " + std::to_string(error)});
+    throw morpheus::rte_error(std::string{"RTE error encountered at: " + std::string{file} + ":" +
+                                          std::to_string(line) + ": " + std::to_string(error)});
 }
 
-}
+}  // namespace detail
 
-}
+}  // namespace morpheus
 
-#define DOCA_TRY(call)                                                \
-  do {                                                                \
-    doca_error_t const status = (call);                               \
-    if (DOCA_SUCCESS != status) {                                     \
-      morpheus::detail::throw_doca_error(status, __FILE__, __LINE__); \
-    }                                                                 \
-  } while (0);
+#define DOCA_TRY(call)                                                      \
+    do                                                                      \
+    {                                                                       \
+        doca_error_t const status = (call);                                 \
+        if (DOCA_SUCCESS != status)                                         \
+        {                                                                   \
+            morpheus::detail::throw_doca_error(status, __FILE__, __LINE__); \
+        }                                                                   \
+    } while (0);
 
-#define RTE_TRY(call)                                                 \
-  do {                                                                \
-    int const status = (call);                                        \
-    if (status < 0) {                                                 \
-      morpheus::detail::throw_rte_error(status, __FILE__, __LINE__);  \
-    }                                                                 \
-  } while (0);
+#define RTE_TRY(call)                                                      \
+    do                                                                     \
+    {                                                                      \
+        int const status = (call);                                         \
+        if (status < 0)                                                    \
+        {                                                                  \
+            morpheus::detail::throw_rte_error(status, __FILE__, __LINE__); \
+        }                                                                  \
+    } while (0);

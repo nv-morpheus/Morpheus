@@ -17,11 +17,9 @@
 
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <morpheus/doca/doca_rx_pipe.hpp>
-
-#include <netinet/in.h>
-
 #include <glog/logging.h>
+#include <morpheus/doca/doca_rx_pipe.hpp>
+#include <netinet/in.h>
 
 namespace morpheus::doca {
 
@@ -76,40 +74,48 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     //
 
     uint32_t priority_high = 1;
-	uint32_t priority_low = 3;
+    uint32_t priority_low  = 3;
 
-	doca_flow_match root_match_mask = {0};
-	doca_flow_monitor root_monitor = {};
-	root_monitor.flags = DOCA_FLOW_MONITOR_COUNT;
+    doca_flow_match root_match_mask = {0};
+    doca_flow_monitor root_monitor  = {};
+    root_monitor.flags              = DOCA_FLOW_MONITOR_COUNT;
 
-	doca_flow_pipe_cfg root_pipe_cfg = {};
-    root_pipe_cfg.attr.name = "ROOT_PIPE";
-    root_pipe_cfg.attr.is_root = true;
-    root_pipe_cfg.attr.type = DOCA_FLOW_PIPE_CONTROL;
-    root_pipe_cfg.monitor = &root_monitor;
-    root_pipe_cfg.match_mask = &root_match_mask;
-    root_pipe_cfg.port = context->flow_port();
+    doca_flow_pipe_cfg root_pipe_cfg = {};
+    root_pipe_cfg.attr.name          = "ROOT_PIPE";
+    root_pipe_cfg.attr.is_root       = true;
+    root_pipe_cfg.attr.type          = DOCA_FLOW_PIPE_CONTROL;
+    root_pipe_cfg.monitor            = &root_monitor;
+    root_pipe_cfg.match_mask         = &root_match_mask;
+    root_pipe_cfg.port               = context->flow_port();
 
-	DOCA_TRY(doca_flow_pipe_create(&root_pipe_cfg, nullptr, nullptr, &m_root_pipe));
+    DOCA_TRY(doca_flow_pipe_create(&root_pipe_cfg, nullptr, nullptr, &m_root_pipe));
 
     struct doca_flow_match tcp_match_gpu = {};
-    tcp_match_gpu.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-    tcp_match_gpu.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TCP;
+    tcp_match_gpu.outer.l3_type          = DOCA_FLOW_L3_TYPE_IP4;
+    tcp_match_gpu.outer.l4_type_ext      = DOCA_FLOW_L4_TYPE_EXT_TCP;
 
     struct doca_flow_fwd tcp_fwd_gpu = {};
-    tcp_fwd_gpu.type = DOCA_FLOW_FWD_PIPE;
-    tcp_fwd_gpu.next_pipe = m_pipe;
+    tcp_fwd_gpu.type                 = DOCA_FLOW_FWD_PIPE;
+    tcp_fwd_gpu.next_pipe            = m_pipe;
 
     doca_flow_pipe_entry* root_tcp_entry_gpu;
 
-    DOCA_TRY(doca_flow_pipe_control_add_entry(0, priority_low, m_root_pipe, &tcp_match_gpu, nullptr, nullptr, nullptr, nullptr,
-                            &tcp_fwd_gpu, &root_tcp_entry_gpu));
+    DOCA_TRY(doca_flow_pipe_control_add_entry(0,
+                                              priority_low,
+                                              m_root_pipe,
+                                              &tcp_match_gpu,
+                                              nullptr,
+                                              nullptr,
+                                              nullptr,
+                                              nullptr,
+                                              &tcp_fwd_gpu,
+                                              &root_tcp_entry_gpu));
 
-	DOCA_TRY(doca_flow_entries_process(context->flow_port(), 0, 0, 0));
+    DOCA_TRY(doca_flow_entries_process(context->flow_port(), 0, 0, 0));
 
-	// DOCA_LOG_DBG("Created Pipe %s", pipe_cfg.attr.name);
+    // DOCA_LOG_DBG("Created Pipe %s", pipe_cfg.attr.name);
 
-	// return DOCA_SUCCESS;
+    // return DOCA_SUCCESS;
 }
 
 DocaRxPipe::~DocaRxPipe()

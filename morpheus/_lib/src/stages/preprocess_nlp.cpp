@@ -33,18 +33,18 @@
 #include "morpheus/types.hpp"  // for TensorIndex, TensorMap
 #include "morpheus/utilities/matx_util.hpp"
 
-#include <cudf/column/column.hpp>                // for column, column::contents
+#include <cudf/column/column.hpp>  // for column, column::contents
+#include <cudf/column/column_factories.hpp>
+#include <cudf/filling.hpp>
+#include <cudf/reshape.hpp>
+#include <cudf/scalar/scalar_factories.hpp>
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
-#include <cudf/column/column_factories.hpp>
-#include <cudf/scalar/scalar_factories.hpp>
 #include <cudf/unary.hpp>
-#include <cudf/filling.hpp>
-#include <cudf/reshape.hpp>
 #include <mrc/segment/builder.hpp>
-#include <nvtext/subword_tokenize.hpp>
 #include <nvtext/normalize.hpp>
+#include <nvtext/subword_tokenize.hpp>
 #include <pymrc/node.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
 
@@ -90,8 +90,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
                 // Convert to string view
-                auto meta = x->get_meta(this->m_column);
-                auto col = meta.get_column(0);
+                auto meta       = x->get_meta(this->m_column);
+                auto col        = meta.get_column(0);
                 auto string_col = cudf::strings_column_view{col};
 
                 // Create the hashed vocab
@@ -99,7 +99,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                     nvtext::load_vocabulary_file(this->m_vocab_hash_file);
 
                 // remove leading and trailing whitespace
-                auto normalized_col = nvtext::normalize_spaces(string_col);
+                auto normalized_col      = nvtext::normalize_spaces(string_col);
                 auto normalized_col_view = cudf::strings_column_view{normalized_col->view()};
 
                 // Perform the tokenizer
@@ -108,38 +108,34 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 if (normalized_col_view.chars_size() > 0)
                 {
                     token_results = nvtext::subword_tokenize(normalized_col_view,
-                                                            *vocab,
-                                                            this->m_sequence_length,
-                                                            stride,
-                                                            this->m_do_lower_case,
-                                                            this->m_truncation,
-                                                            normalized_col_view.size() * 2);
+                                                             *vocab,
+                                                             this->m_sequence_length,
+                                                             stride,
+                                                             this->m_do_lower_case,
+                                                             this->m_truncation,
+                                                             normalized_col_view.size() * 2);
                 }
                 else
                 {
-                    // workaround for a situation where the input strings contain either no characters or only whitespace
-                    auto zero     = cudf::numeric_scalar<uint32_t>(0, true, rmm::cuda_stream_default);
-                    auto ids      = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
-                    auto mask     = cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
-                    auto metadata = [&](){
-                        auto iota     = cudf::sequence(normalized_col_view.size(), zero);
-                        auto zeroes   = cudf::make_column_from_scalar(zero, normalized_col_view.size());
+                    // workaround for a situation where the input strings contain either no characters or only
+                    // whitespace
+                    auto zero = cudf::numeric_scalar<uint32_t>(0, true, rmm::cuda_stream_default);
+                    auto ids =
+                        cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto mask =
+                        cudf::make_column_from_scalar(zero, this->m_sequence_length * normalized_col_view.size());
+                    auto metadata = [&]() {
+                        auto iota   = cudf::sequence(normalized_col_view.size(), zero);
+                        auto zeroes = cudf::make_column_from_scalar(zero, normalized_col_view.size());
                         return cudf::interleave_columns(cudf::table_view{
-                            std::vector<cudf::column_view>{
-                                iota->view(),
-                                zeroes->view(),
-                                zeroes->view()
-                            }
-                        });
+                            std::vector<cudf::column_view>{iota->view(), zeroes->view(), zeroes->view()}});
                     }();
 
-                    token_results = nvtext::tokenizer_result{
-                        static_cast<uint32_t>(normalized_col_view.size()),
-                        this->m_sequence_length,
-                        std::move(ids),
-                        std::move(mask),
-                        std::move(metadata)
-                    };
+                    token_results = nvtext::tokenizer_result{static_cast<uint32_t>(normalized_col_view.size()),
+                                                             this->m_sequence_length,
+                                                             std::move(ids),
+                                                             std::move(mask),
+                                                             std::move(metadata)};
                 }
 
                 // Build the results

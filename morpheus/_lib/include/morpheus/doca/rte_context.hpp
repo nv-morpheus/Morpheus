@@ -23,7 +23,7 @@ namespace doca {
 
 struct RTEContext
 {
-public:
+  public:
     RTEContext();
     ~RTEContext();
 };

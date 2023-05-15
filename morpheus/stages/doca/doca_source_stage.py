@@ -32,9 +32,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-doca",
-                modes=[PipelineModes.NLP],
-                ignore_args=["cudf_kwargs"])
+@register_stage("from-doca", modes=[PipelineModes.NLP], ignore_args=["cudf_kwargs"])
 class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
@@ -62,12 +60,13 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
-    def __init__(self,
-                 c: Config,
-                 nic_pci_address: str,
-                 gpu_pci_address: str,
-                 source_ip_filter: str = "",
-                 ):
+    def __init__(
+        self,
+        c: Config,
+        nic_pci_address: str,
+        gpu_pci_address: str,
+        source_ip_filter: str = "",
+    ):
 
         super().__init__(c)
 
@@ -103,13 +102,11 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         if self._build_cpp_node():
             import morpheus._lib.doca as _doca
-            out_stream = _doca.DocaSourceStage(
-                builder,
-                self.unique_name,
-                self._nic_pci_address,
-                self._gpu_pci_address,
-                self._source_ip_filter
-            )
+            out_stream = _doca.DocaSourceStage(builder,
+                                               self.unique_name,
+                                               self._nic_pci_address,
+                                               self._gpu_pci_address,
+                                               self._source_ip_filter)
         else:
             raise NotImplementedError("Does not support Python nodes")
 

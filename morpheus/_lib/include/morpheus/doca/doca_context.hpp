@@ -19,12 +19,11 @@
 
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <morpheus/doca/error.hpp>
-#include <morpheus/doca/rte_context.hpp>
-
 #include <doca_eth_rxq.h>
 #include <doca_flow.h>
 #include <doca_gpunetio.h>
+#include <morpheus/doca/error.hpp>
+#include <morpheus/doca/rte_context.hpp>
 
 #include <memory>
 #include <string>

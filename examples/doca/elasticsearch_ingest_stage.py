@@ -22,7 +22,10 @@ from ssl import create_default_context
 import mrc
 import mrc.core.operators as ops
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk, parallel_bulk
+from elasticsearch.helpers import parallel_bulk
+from elasticsearch.helpers import streaming_bulk
+from pyarrow.lib import ArrowException
+
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -30,9 +33,8 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
-from pyarrow.lib import ArrowException
-
 logger = logging.getLogger(f"morpheus.{__name__}")
+
 
 @register_stage("to-elasticsearch")
 class WriteToElasticsearchStage(SinglePortStage):
@@ -69,13 +71,10 @@ class WriteToElasticsearchStage(SinglePortStage):
 
     def _build_hosts(self, elastic_hosts, elastic_ports, elastic_scheme):
 
-        return [
-            {
-                'host': host,
-                'port': int(port),
-                'scheme': elastic_scheme
-            } for host, port in zip(elastic_hosts.split(','), elastic_ports.split(','))
-        ]
+        return [{
+            'host': host, 'port': int(port), 'scheme': elastic_scheme
+        } for host,
+                port in zip(elastic_hosts.split(','), elastic_ports.split(','))]
 
     def supports_cpp_node(self):
         return False
@@ -99,14 +98,14 @@ class WriteToElasticsearchStage(SinglePortStage):
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             def on_data(message: MessageMeta):
-            
+
                 try:
                     records = serializers.df_to_json(message.df, strip_newlines=True)
                 except ArrowException as e:
                     return message
-                
-                actions = [{"_index": self._index, "_source": record} for record in records]                      
-                
+
+                actions = [{"_index": self._index, "_source": record} for record in records]
+
                 for okay, info in streaming_bulk(self._es,
                                                  actions=actions,
                                                  raise_on_exception=False,):
@@ -114,7 +113,7 @@ class WriteToElasticsearchStage(SinglePortStage):
                     if not okay:
                         logger.error("Error writing to ElasticSearch: %s", str(info))
                         sub.on_error(info)
-                        
+
                 return message
 
             obs.pipe(ops.map(on_data)).subscribe(sub)
@@ -125,7 +124,7 @@ class WriteToElasticsearchStage(SinglePortStage):
         node.launch_options.pe_count = 1
         # threads per core
         node.launch_options.engines_per_pe = self._num_threads
-        
+
         builder.make_edge(input_stream[0], node)
 
         return node, MessageMeta

@@ -16,24 +16,23 @@ import logging
 import os
 
 import click
+from elasticsearch_ingest_stage import WriteToElasticsearchStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.utils.logger import configure_logging
-
-from elasticsearch_ingest_stage import WriteToElasticsearchStage
 
 
 @click.command()
@@ -87,17 +86,15 @@ from elasticsearch_ingest_stage import WriteToElasticsearchStage
     default='9200',
     help="Address of elasticsearch nodes",
 )
-def run_pipeline(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_fea_length,
-    nic_addr,
-    gpu_addr,
-    source_ip_filter,
-    elastic_hosts,
-    elastic_ports
-):
+def run_pipeline(num_threads,
+                 pipeline_batch_size,
+                 model_max_batch_size,
+                 model_fea_length,
+                 nic_addr,
+                 gpu_addr,
+                 source_ip_filter,
+                 elastic_hosts,
+                 elastic_ports):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -113,8 +110,18 @@ def run_pipeline(
     config.feature_length = model_fea_length
     config.mode = PipelineModes.NLP
 
-    config.class_labels = ['address', 'bank_acct', 'credit_card', 'email', 'govt_id',
-                           'name', 'password', 'phone_num', 'secret_keys', 'user']
+    config.class_labels = [
+        'address',
+        'bank_acct',
+        'credit_card',
+        'email',
+        'govt_id',
+        'name',
+        'password',
+        'phone_num',
+        'secret_keys',
+        'user'
+    ]
 
     config.edge_buffer_size = 128
 
@@ -132,7 +139,6 @@ def run_pipeline(
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))
 
-
     # pipeline.add_stage(SerializeStage(config))
     # pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))
     # pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
@@ -144,13 +150,12 @@ def run_pipeline(
         pipeline.add_stage(
             PreprocessNLPStage(
                 config,
-                vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+                vocab_hash_file=
+                '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
                 do_lower_case=True,
                 truncation=True,
                 add_special_tokens=False,
-                column='data'
-                )
-            )
+                column='data'))
 
         # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
@@ -162,9 +167,7 @@ def run_pipeline(
                 model_name="sid-minibert-onnx",
                 server_url="localhost:8000",
                 force_convert_inputs=True,
-                use_shared_memory=True
-                )
-            )
+                use_shared_memory=True))
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))
 
@@ -181,28 +184,24 @@ def run_pipeline(
         #pipeline.add_stage(MonitorStage(config, description="File writer"))
 
         pipeline.add_stage(
-            WriteToElasticsearchStage(
-                config,
-                elastic_index='morpheus-sid-index',
-                elastic_hosts=elastic_hosts,
-                elastic_ports=elastic_ports,
-                elastic_user="elastic",
-                elastic_password="changeme",
-                elastic_cacrt="",
-                elastic_scheme="http",
-                num_threads=1
-                )
-            )
+            WriteToElasticsearchStage(config,
+                                      elastic_index='morpheus-sid-index',
+                                      elastic_hosts=elastic_hosts,
+                                      elastic_ports=elastic_ports,
+                                      elastic_user="elastic",
+                                      elastic_password="changeme",
+                                      elastic_cacrt="",
+                                      elastic_scheme="http",
+                                      num_threads=1))
 
-        pipeline.add_stage(
-            MonitorStage(config, description="Elasticsearch index rate", unit='pkts')
-        )
+        pipeline.add_stage(MonitorStage(config, description="Elasticsearch index rate", unit='pkts'))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()
 
     # Run the pipeline
     pipeline.run()
+
 
 if __name__ == "__main__":
     run_pipeline()

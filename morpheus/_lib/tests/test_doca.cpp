@@ -16,33 +16,33 @@
  */
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
+
 #include "morpheus/doca/doca_context.hpp"
 
+#include <doca_argp.h>
+#include <doca_flow.h>
+#include <doca_gpunetio.h>
+#include <doca_version.h>
 #include <gtest/gtest.h>
+#include <rte_eal.h>
 
 #include <cstddef>
 #include <string>
 #include <vector>
 
-#include <rte_eal.h>
-#include <doca_version.h>
-#include <doca_argp.h>
-#include <doca_gpunetio.h>
-#include <doca_flow.h>
-
 std::shared_ptr<morpheus::doca::doca_context> _context;
 
 class TestDoca : public ::testing::Test
 {
-protected:
-  void SetUp() override {
-    // const std::lock_guard<std::mutex> lock(g_i_mutex);
-    if (_context == nullptr) {
-      _context = std::make_shared<morpheus::doca::doca_context>("a3:00.0", "a6:00.0");
+  protected:
+    void SetUp() override
+    {
+        // const std::lock_guard<std::mutex> lock(g_i_mutex);
+        if (_context == nullptr)
+        {
+            _context = std::make_shared<morpheus::doca::doca_context>("a3:00.0", "a6:00.0");
+        }
     }
-  }
 };
 
-TEST_F(TestDoca, SetupAndTeardown)
-{
-}
+TEST_F(TestDoca, SetupAndTeardown) {}

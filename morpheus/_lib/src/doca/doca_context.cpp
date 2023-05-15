@@ -17,11 +17,6 @@
 
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <morpheus/doca/common.hpp>
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/error.hpp>
-#include <morpheus/utilities/error.hpp>
-
 #include <cuda_runtime.h>
 #include <doca_argp.h>
 #include <doca_dpdk.h>
@@ -32,6 +27,10 @@
 #include <doca_types.h>
 #include <doca_version.h>
 #include <glog/logging.h>
+#include <morpheus/doca/common.hpp>
+#include <morpheus/doca/doca_context.hpp>
+#include <morpheus/doca/error.hpp>
+#include <morpheus/utilities/error.hpp>
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 
@@ -138,11 +137,11 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     rte_eth_dev_info dev_info  = {0};
     rte_eth_conf eth_conf      = {
              .rxmode =
-            {
+                 {
                      .mtu = 2048, /* Not really used, just to initialize DPDK */
             },
              .txmode =
-            {
+                 {
                      .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
             },
     };

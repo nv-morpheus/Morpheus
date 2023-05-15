@@ -18,19 +18,20 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
-from abc import ABC, abstractmethod
-from typing import Iterator, Union
 import json
 #import logging
 import socket
 import ssl
+from abc import ABC
+from abc import abstractmethod
+from typing import Iterator
+from typing import Union
 
-from requests.auth import HTTPBasicAuth
 #import pylogbeat
 import requests
+from requests.auth import HTTPBasicAuth
 
 #from logstash_async.utils import ichunked
-
 
 #logger = logging.getLogger(__name__)
 
@@ -57,13 +58,12 @@ class Transport(ABC):
     """
 
     def __init__(
-            self,
-            host: str,
-            port: int,
-            timeout: Union[None, float],
-            #ssl_enable: bool,
-            #ssl_verify: Union[bool, str],
-            #use_logging: bool,
+        self,
+        host: str,
+        port: int,
+        timeout: Union[None, float],  #ssl_enable: bool,
+  #ssl_verify: Union[bool, str],
+  #use_logging: bool,
     ):
         self._host = host
         self._port = port
@@ -241,8 +241,7 @@ class HttpTransport(Transport):
             #ssl_enable: bool = True,
             #ssl_verify: Union[bool, str] = True,
             #use_logging: bool = False,
-            **kwargs
-    ):
+            **kwargs):
         super().__init__(host, port, timeout, ssl_enable, ssl_verify, use_logging)
         self._username = kwargs.get('username', None)
         self._password = kwargs.get('password', None)

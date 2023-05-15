@@ -19,6 +19,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+
 #include <stdexcept>
 #include <string>
 
@@ -35,26 +36,28 @@ namespace morpheus {
  * This exception should not be thrown directly and is instead thrown by the
  * MORPHEUS_EXPECTS macro.
  */
-struct logic_error : public std::logic_error {
-  logic_error(char const* const message) : std::logic_error(message) {}
+struct logic_error : public std::logic_error
+{
+    logic_error(char const* const message) : std::logic_error(message) {}
 
-  logic_error(std::string const& message) : std::logic_error(message) {}
+    logic_error(std::string const& message) : std::logic_error(message) {}
 
-  // TODO Add an error code member? This would be useful for translating an
-  // exception to an error code in a pure-C API
+    // TODO Add an error code member? This would be useful for translating an
+    // exception to an error code in a pure-C API
 };
 /**
  * @brief Exception thrown when a CUDA error is encountered.
  */
-struct cuda_error : public std::runtime_error {
-  cuda_error(std::string const& message) : std::runtime_error(message) {}
+struct cuda_error : public std::runtime_error
+{
+    cuda_error(std::string const& message) : std::runtime_error(message) {}
 };
 /** @} */
 
 }  // namespace morpheus
 
 #define STRINGIFY_DETAIL(x) #x
-#define MORPHEUS_STRINGIFY(x)   STRINGIFY_DETAIL(x)
+#define MORPHEUS_STRINGIFY(x) STRINGIFY_DETAIL(x)
 
 /**
  * @addtogroup utility_error
@@ -76,10 +79,10 @@ struct cuda_error : public std::runtime_error {
  * expected to be true
  * @throw morpheus::logic_error if the condition evaluates to false.
  */
-#define MORPHEUS_EXPECTS(cond, reason)                                  \
-  (!!(cond)) ? static_cast<void>(0)                                 \
-             : throw morpheus::logic_error("Morpheus failure at: " __FILE__ \
-                                       ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
+#define MORPHEUS_EXPECTS(cond, reason) \
+    (!!(cond))                         \
+        ? static_cast<void>(0)         \
+        : throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
 
 /**
  * @brief Indicates that an erroneous code path has been taken.
@@ -95,16 +98,16 @@ struct cuda_error : public std::runtime_error {
  * @param[in] reason String literal description of the reason
  */
 #define MORPHEUS_FAIL(reason) \
-  throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
+    throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
 
 namespace morpheus {
 namespace detail {
 
 inline void throw_cuda_error(cudaError_t error, const char* file, unsigned int line)
 {
-  throw morpheus::cuda_error(std::string{"CUDA error encountered at: " + std::string{file} + ":" +
-                                     std::to_string(line) + ": " + std::to_string(error) + " " +
-                                     cudaGetErrorName(error) + " " + cudaGetErrorString(error)});
+    throw morpheus::cuda_error(std::string{"CUDA error encountered at: " + std::string{file} + ":" +
+                                           std::to_string(line) + ": " + std::to_string(error) + " " +
+                                           cudaGetErrorName(error) + " " + cudaGetErrorString(error)});
 }
 }  // namespace detail
 }  // namespace morpheus
@@ -116,14 +119,16 @@ inline void throw_cuda_error(cudaError_t error, const char* file, unsigned int l
  * cudaSuccess, invokes cudaGetLastError() to clear the error and throws an
  * exception detailing the CUDA error that occurred
  */
-#define CUDA_TRY(call)                                            \
-  do {                                                            \
-    cudaError_t const status = (call);                            \
-    if (cudaSuccess != status) {                                  \
-      cudaGetLastError();                                         \
-      morpheus::detail::throw_cuda_error(status, __FILE__, __LINE__); \
-    }                                                             \
-  } while (0);
+#define CUDA_TRY(call)                                                      \
+    do                                                                      \
+    {                                                                       \
+        cudaError_t const status = (call);                                  \
+        if (cudaSuccess != status)                                          \
+        {                                                                   \
+            cudaGetLastError();                                             \
+            morpheus::detail::throw_cuda_error(status, __FILE__, __LINE__); \
+        }                                                                   \
+    } while (0);
 
 /**
  * @brief Debug macro to check for CUDA errors
@@ -138,9 +143,10 @@ inline void throw_cuda_error(cudaError_t error, const char* file, unsigned int l
  * be used after any asynchronous CUDA call, e.g., cudaMemcpyAsync, or an
  * asynchronous kernel launch.
  */
-#define CHECK_CUDA(stream)                   \
-  do {                                       \
-    CUDA_TRY(cudaStreamSynchronize(stream)); \
-    CUDA_TRY(cudaPeekAtLastError());         \
-  } while (0);
+#define CHECK_CUDA(stream)                       \
+    do                                           \
+    {                                            \
+        CUDA_TRY(cudaStreamSynchronize(stream)); \
+        CUDA_TRY(cudaPeekAtLastError());         \
+    } while (0);
 /** @} */

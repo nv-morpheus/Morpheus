@@ -22,7 +22,6 @@
 #include <morpheus/doca/doca_rx_queue.hpp>
 #include <morpheus/doca/doca_semaphore.hpp>
 #include <morpheus/messages/meta.hpp>
-
 #include <pymrc/node.hpp>
 
 #include <memory>

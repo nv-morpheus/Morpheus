@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
+import socket
+import sys
 import time
 import typing
-import socket
-import json
-import sys
 
-from transports import TcpTransport
 import mrc
 from mrc.core import operators as ops
+from transports import TcpTransport
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -50,13 +50,10 @@ class WriteToLogStashStage(SinglePortStage):
 
     def __init__(self, c: Config, host: str, port: int, timeout: int = 10):
         super().__init__(c)
-        
+
         self._timeout = timeout
-                
-        self._transport = TcpTransport(
-            host=host, 
-            port=port,
-            timeout=10000)
+
+        self._transport = TcpTransport(host=host, port=port, timeout=10000)
 
     @property
     def name(self) -> str:
@@ -83,12 +80,12 @@ class WriteToLogStashStage(SinglePortStage):
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             def on_data(x: MessageMeta):
-            
+
                 records = serializers.df_to_json(x.df, strip_newlines=True)
-                
+
                 for m in records:
                     self._transport.send([m])
-  
+
                 return x
 
             obs.pipe(ops.map(on_data)).subscribe(sub)
@@ -102,4 +99,3 @@ class WriteToLogStashStage(SinglePortStage):
         builder.make_edge(stream, node)
 
         return node, input_stream[1]
-

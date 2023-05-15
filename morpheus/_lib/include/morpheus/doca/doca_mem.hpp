@@ -17,10 +17,9 @@
 
 #pragma once
 
+#include <doca_gpunetio.h>
 #include <morpheus/doca/doca_context.hpp>
 #include <morpheus/doca/error.hpp>
-
-#include <doca_gpunetio.h>
 
 #include <memory>
 

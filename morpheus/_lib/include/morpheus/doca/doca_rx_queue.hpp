@@ -17,11 +17,10 @@
 
 #pragma once
 
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/doca_mem.hpp>
-
 #include <doca_eth_rxq.h>
 #include <doca_gpunetio.h>
+#include <morpheus/doca/doca_context.hpp>
+#include <morpheus/doca/doca_mem.hpp>
 
 #include <memory>
 

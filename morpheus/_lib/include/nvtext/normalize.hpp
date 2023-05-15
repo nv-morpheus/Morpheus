@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #pragma once
 
 #include <cudf/column/column.hpp>
@@ -44,7 +44,7 @@ namespace nvtext {
  * @return New strings columns of normalized strings.
  */
 std::unique_ptr<cudf::column> normalize_spaces(
-  cudf::strings_column_view const& strings,
-  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+    cudf::strings_column_view const& strings,
+    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-} // namespace nvtext
+}  // namespace nvtext

@@ -48,6 +48,7 @@ def df_to_csv(df: cudf.DataFrame,
 
     return results
 
+
 def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True) -> typing.List[str]:
     """
     Serializes a DataFrame into JSON and returns the serialized output seperated by lines.
