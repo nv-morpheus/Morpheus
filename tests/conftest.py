@@ -26,7 +26,6 @@ import warnings
 from collections import namedtuple
 from functools import partial
 
-import mrc
 import pytest
 import requests
 

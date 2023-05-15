@@ -30,7 +30,7 @@ from morpheus.utils.module_ids import MULTIPLEXER
 @pytest.fixture(scope="function")
 def unregistered_module_conf():
     unregistered_module_conf = {
-        "module_id": "TestModule",
+        "module_id": "TestMultiPortModule",
         "module_name": "test_multi_port_module",
         "namespace": "test_morpheus_modules",
         "input_ports": ["input_1", "input_2"],
@@ -71,7 +71,7 @@ def test_constructor(config, unregistered_module_conf):
 
 
 @pytest.mark.parametrize("input_ports,output_ports", [(["input_1", "input_2"], ["output"]), (["input_1"], ["output"])])
-def test_with_unregistred_module(config, input_ports, output_ports, unregistered_module_conf):
+def test_unregistred_module(config, input_ports, output_ports, unregistered_module_conf):
 
     unregistered_module_conf["input_ports"] = input_ports
     unregistered_module_conf["output_ports"] = output_ports
