@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Serialization methods."""
 
 import typing
 from io import IOBase
@@ -45,7 +46,6 @@ def df_to_stream_csv(df: typing.Union[pd.DataFrame, cudf.DataFrame],
     include_index_col: bool, optional
         Write out the index as a column, by default True.
     """
-
     df.to_csv(stream, header=include_header, index=include_index_col)
 
     return stream
@@ -64,7 +64,6 @@ def df_to_stream_json(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream: IO
     include_index_col: bool, optional
         Write out the index as a column, by default True.
     """
-
     df.to_json(stream, orient="records", lines=True, index=include_index_col)
 
     return stream
@@ -81,7 +80,6 @@ def df_to_stream_parquet(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream:
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
     """
-
     df.to_parquet(stream)
 
     return stream
@@ -110,7 +108,6 @@ def df_to_csv(df: cudf.DataFrame,
     typing.List[str]
         List of strings for each line
     """
-
     str_buf = StringIO()
 
     df_to_stream_csv(df=df, stream=str_buf, include_header=include_header, include_index_col=include_index_col)
@@ -210,7 +207,6 @@ def write_df_to_file(df: typing.Union[pd.DataFrame, cudf.DataFrame],
         Additional arguments forwarded to the underlying serialization function. Where the underlying serialization
         function is one of `write_df_to_file_cpp`, `df_to_stream_csv`, or `df_to_stream_json`.
     """
-
     if (CppConfig.get_should_use_cpp() and isinstance(df, cudf.DataFrame)):
         # Use the C++ implementation
         write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)

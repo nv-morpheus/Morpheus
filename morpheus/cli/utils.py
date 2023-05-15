@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Misc. utilities for the CLI"""
 
 import logging
 import os
@@ -37,6 +38,7 @@ PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
 
 def str_to_file_type(file_type_str: str):
+    """Converts a string to a FileType enum member"""
     # Delay FileTypes since this will import ._lib
     from morpheus.common import FileTypes
     file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}
@@ -58,9 +60,7 @@ def is_pybind_enum(cls: typing.Any):
 
 
 def without_empty_args(f):
-    """
-    Removes keyword arguments that have a None value
-    """
+    """Removes keyword arguments that have a None value"""
 
     def new_func(*args, **kwargs):
         kwargs = _without_empty_args(kwargs)
@@ -70,9 +70,7 @@ def without_empty_args(f):
 
 
 def show_defaults(f):
-    """
-    Ensures the click.Context has `show_defaults` set to True. (Seems like a bug currently)
-    """
+    """Ensures the click.Context has `show_defaults` set to True. (Seems like a bug currently)"""
 
     def new_func(*args, **kwargs):
         ctx: click.Context = click.globals.get_current_context()
@@ -93,11 +91,10 @@ def _apply_to_config(config: ConfigBase, **kwargs):
 
 
 def prepare_command(parse_config: bool = False):
+    """Decorator ensuring that a click.Context object is passed as the first argument to the decorated function"""
 
     def inner_prepare_command(f):
-        """
-        Preparse command for use. Combines @without_empty_args, @show_defaults and @click.pass_context
-        """
+        """Preparse command for use. Combines @without_empty_args, @show_defaults and @click.pass_context"""
 
         def new_func(*args, **kwargs):
             ctx: click.Context = click.globals.get_current_context()
@@ -121,7 +118,8 @@ def prepare_command(parse_config: bool = False):
     return inner_prepare_command
 
 
-def get_config_from_ctx(ctx) -> Config:
+def get_config_from_ctx(ctx: click.Context) -> Config:
+    """Returns the config from a click context"""
     ctx_dict = ctx.ensure_object(dict)
 
     if "config" not in ctx_dict:
@@ -130,7 +128,8 @@ def get_config_from_ctx(ctx) -> Config:
     return ctx_dict["config"]
 
 
-def get_pipeline_from_ctx(ctx) -> "LinearPipeline":
+def get_pipeline_from_ctx(ctx: click.Context) -> "LinearPipeline":
+    """Returns the pipeline from a click context"""
     ctx_dict = ctx.ensure_object(dict)
 
     assert "pipeline" in ctx_dict, "Inconsistent configuration. Pipeline accessed before created"
@@ -145,17 +144,12 @@ if ("NOTSET" in morpheus_log_levels):
 
 
 def get_log_levels():
-    """
-    Returns a list of all available logging levels in string format
-    """
+    """Returns a list of all available logging levels in string format"""
     return morpheus_log_levels
 
 
 def parse_log_level(ctx, param, value):
-    """
-    Click callback that parses a command line value into a logging level
-    """
-
+    """Click callback that parses a command line value into a logging level"""
     x = logging._nameToLevel.get(value.upper(), None)
     if x is None:
         raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
@@ -163,26 +157,26 @@ def parse_log_level(ctx, param, value):
 
 
 def is_enum(enum_class: typing.Type):
+    """Returns True if the given class is an enum."""
     return issubclass(enum_class, Enum) or is_pybind_enum(enum_class)
 
 
 def get_enum_members(enum_class: typing.Type):
-
-    assert is_enum(enum_class), \
-            "Must pass a class that derives from Enum or a C++ enum exposed to Python"
+    """Returns a dict of enum members for the given enum."""
+    assert is_enum(enum_class), "Must pass a class that derives from Enum or a C++ enum exposed to Python"
 
     return dict(enum_class.__members__)
 
 
 def get_enum_keys(enum_class: typing.Type):
-
+    """Returns a list of keys for the given enum."""
     enum_map = get_enum_members(enum_class)
 
     return list(enum_map.keys())
 
 
 def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
-
+    """Parses a string into an enum value."""
     enum_map = get_enum_members(enum_class)
 
     if not case_sensitive:
@@ -196,11 +190,16 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
 
 
 def load_labels_file(labels_file: str) -> typing.List[str]:
+    """Returns a list of labels from the given file, where each line is a label."""
     with open(labels_file, "r", encoding='UTF-8') as lf:
         return [x.strip() for x in lf.readlines()]
 
 
 def get_package_relative_file(filename: str):
+    """
+    If `filename` is a relative path, and does not exist, attempt to locate the file relative to the directory of the
+    `morpheus` package, if it exists return the abolute path of the file found. Otherwise returns `filename` unchanged.
+    """
     # First check if the path is relative
     if (not os.path.isabs(filename)):
 
@@ -237,7 +236,7 @@ class MorpheusRelativePath(click.Path):
                 value: typing.Any,
                 param: typing.Optional["click.Parameter"],
                 ctx: typing.Optional["click.Context"]) -> typing.Any:
-
+        """Wrapper around `get_package_relative_file` for `click.Path`."""
         package_relative = get_package_relative_file(value)
 
         if (package_relative != value):

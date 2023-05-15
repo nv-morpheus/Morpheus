@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Contains configuration objects used to run pipeline and utilities.
-"""
+"""Contains configuration objects used to run pipeline and utilities."""
 
 import dataclasses
 import json
@@ -130,9 +128,7 @@ class ConfigAutoEncoder(ConfigBase):
 
 @dataclasses.dataclass
 class ConfigFIL(ConfigBase):
-    """
-    Config specific to running with a FIL model
-    """
+    """Config specific to running with a FIL model."""
     feature_columns: typing.List[str] = None
 
 
@@ -159,16 +155,12 @@ class CppConfig:
 
     @staticmethod
     def get_should_use_cpp() -> bool:
-        """
-        Gets the global option for whether to use C++ node and message types or otherwise prefer Python.
-        """
+        """Gets the global option for whether to use C++ node and message types or otherwise prefer Python."""
         return CppConfig.__use_cpp and CppConfig.__allow_cpp
 
     @staticmethod
     def set_should_use_cpp(value: bool):
-        """
-        Sets the global option for whether to use C++ node and message types or otherwise prefer Python.
-        """
+        """Sets the global option for whether to use C++ node and message types or otherwise prefer Python."""
         CppConfig.__use_cpp = value
 
 
@@ -206,8 +198,8 @@ class Config(ConfigBase):
         Config for autoencoder.
     log_config_file : str
         File corresponding to this Config.
-
     """
+
     # Whether in Debug mode.
     debug: bool = False
     log_level: int = logging.WARN
