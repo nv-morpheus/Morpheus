@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Methods to add morpheus auto completion to shells"""
 
 import os
 import subprocess
@@ -51,7 +52,6 @@ def install_code(append=False, shell=None, path=None):
     Write shell auto completion code to the shell startup script `path`. If `append` is `True` the code will be appended
     to the file, when `False` the file will be overwritten. Currently only bash is supported.
     """
-
     shell, path, code = get_code(shell, path)
 
     output_lines = []

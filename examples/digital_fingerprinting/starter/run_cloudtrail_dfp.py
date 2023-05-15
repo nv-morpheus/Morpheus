@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Executes a pipeline that trains an autoencoder and then uses it to detect anomalies in the same data."""
 
 import logging
 import os
@@ -96,7 +97,7 @@ def run_pipeline(num_threads,
                  pretrained_filename,
                  models_output_filename,
                  output_file):
-
+    """Configure and run the pipeline."""
     configure_logging(log_level=logging.DEBUG)
 
     CppConfig.set_should_use_cpp(False)
