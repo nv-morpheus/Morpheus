@@ -86,7 +86,7 @@ dependencies:
   - rapidjson=1.1.0
   - scikit-build=0.17.1
   - scikit-learn=1.2.2
-  - sphinx>=7.0
+  - sphinx
   - sphinx_rtd_theme
   - sysroot_linux-64=2.17
   - tritonclient>=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
