@@ -26,8 +26,12 @@
 #include <cudf/table/table.hpp>
 #include <glog/logging.h>
 #include <morpheus/doca/common.hpp>
-#include <morpheus/stages/doca_source.hpp>
+#include <morpheus/doca/doca_context.hpp>
+#include <morpheus/doca/doca_rx_pipe.hpp>
+#include <morpheus/doca/doca_rx_queue.hpp>
+#include <morpheus/doca/doca_semaphore.hpp>
 #include <morpheus/stages/doca_source_kernels.hpp>
+#include <morpheus/stages/doca_source.hpp>
 #include <mrc/segment/builder.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_scalar.hpp>

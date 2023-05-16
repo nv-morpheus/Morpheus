@@ -17,16 +17,22 @@
 
 #pragma once
 
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/doca_rx_pipe.hpp>
-#include <morpheus/doca/doca_rx_queue.hpp>
-#include <morpheus/doca/doca_semaphore.hpp>
 #include <morpheus/messages/meta.hpp>
 #include <pymrc/node.hpp>
 
 #include <memory>
 
 namespace morpheus {
+
+namespace doca
+{
+
+struct DocaContext;
+struct DocaRxQueue;
+struct DocaRxPipe;
+struct DocaSemaphore;
+
+} // namepsace doca
 
 #pragma GCC visibility push(default)
 

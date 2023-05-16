@@ -19,8 +19,6 @@
 
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
-#include <morpheus/export.h>
-
 #include <doca_eth_rxq.h>
 #include <doca_flow.h>
 #include <doca_gpunetio.h>
@@ -35,7 +33,7 @@
 
 namespace morpheus::doca {
 
-struct MORPHEUS_EXPORT DocaContext
+struct DocaContext
 {
   private:
     doca_gpu* m_gpu;
