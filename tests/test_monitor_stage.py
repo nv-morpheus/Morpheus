@@ -21,6 +21,7 @@ import threading
 import typing
 from unittest import mock
 
+import fsspec
 import mrc
 import pytest
 
@@ -99,27 +100,38 @@ def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.refresh.assert_called_once()
 
 
-def test_auto_count_fn(config):
+@pytest.mark.parametrize('value,expected_fn,expected',
+                         [
+                             (None, False, None),
+                             ([], False, None),
+                             (['s'], True, 1),
+                             ('s', True, 1),
+                             ('test', True, 1),
+                             (cudf.DataFrame(), True, 0),
+                             (cudf.DataFrame(range(12), columns=["test"]), True, 12),
+                             (MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))), True, 12),
+                             ({}, True, 0),
+                             (tuple(), True, 0),
+                             (set(), True, 0),
+                             (fsspec.open_files(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')), True, 1),
+                         ])
+def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: typing.Union[int, None]):
     m = MonitorStage(config, log_level=logging.WARNING)
 
-    assert m._mc.auto_count_fn(None) is None
-    assert m._mc.auto_count_fn([]) is None
+    auto_fn = m._mc.auto_count_fn(value)
+    if expected_fn:
+        assert callable(auto_fn)
+        assert auto_fn(value) == expected
+    else:
+        assert auto_fn is None
 
-    # Ints not supported, lists are, but lists of unsupported are also unsupported
-    pytest.raises(NotImplementedError, m._mc.auto_count_fn, 1)
-    pytest.raises(NotImplementedError, m._mc.auto_count_fn, [1])
 
-    # Just verify that we get a valid function for each supported type
-    assert inspect.isfunction(m._mc.auto_count_fn(['s']))
-    assert inspect.isfunction(m._mc.auto_count_fn('s'))
-    assert inspect.isfunction(m._mc.auto_count_fn(cudf.DataFrame()))
-    assert inspect.isfunction(
-        m._mc.auto_count_fn(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"])))))
+@pytest.mark.parametrize('value', [1, [1], [2, 0]])
+def test_auto_count_fn_not_impl(config, value: typing.Any):
+    m = MonitorStage(config, log_level=logging.WARNING)
 
-    # Other iterables return the len function
-    assert m._mc.auto_count_fn({}) is len
-    assert m._mc.auto_count_fn(()) is len
-    assert m._mc.auto_count_fn(set()) is len
+    with pytest.raises(NotImplementedError):
+        m._mc.auto_count_fn(value)
 
 
 @mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')

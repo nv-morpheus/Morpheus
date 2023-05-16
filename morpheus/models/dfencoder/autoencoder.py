@@ -386,14 +386,14 @@ class AutoEncoder(torch.nn.Module):
 
     def _init_features(self, df=None):
         """Initializea the features of different types.
-        `df` is required if any of `preset_cats`, `preset_numerical_scaler_params`, and `binary_feature_list` are not provided 
+        `df` is required if any of `preset_cats`, `preset_numerical_scaler_params`, and `binary_feature_list` are not provided
         at model initialization.
-        
+
         Parameters
         ----------
         df : pandas.DataFrame, optional
             dataframe used to compute and extract feature information, by default None
-            
+
         Raises
         ------
         ValueError
@@ -590,7 +590,7 @@ class AutoEncoder(torch.nn.Module):
             Whether to process the df into an input tensor without swapping and include it in the returned data dict.
             Note. Training required only the swapped input tensor while validation can use both.
         include_swapped_input_by_feature_type : bool
-            Whether to process the swapped df into num/bin/cat feature tensors and include them in the returned data dict. 
+            Whether to process the swapped df into num/bin/cat feature tensors and include them in the returned data dict.
             This is useful for baseline performance evaluation for validation.
 
         Returns
@@ -855,10 +855,6 @@ class AutoEncoder(torch.nn.Module):
             baseline = self.compute_baseline_performance(val_in, val_df)
             LOG.debug(msg)
 
-            val_batches = len(val_df) // self.eval_batch_size
-            if len(val_df) % self.eval_batch_size != 0:
-                val_batches += 1
-
         n_updates = len(df) // self.batch_size
         if len(df) % self.batch_size > 0:
             n_updates += 1
@@ -883,28 +879,10 @@ class AutoEncoder(torch.nn.Module):
             if run_validation and val is not None:
                 self.eval()
                 with torch.no_grad():
-                    swapped_loss = []
-                    id_loss = []
-                    for i in range(val_batches):
-                        start = i * self.eval_batch_size
-                        stop = (i + 1) * self.eval_batch_size
-
-                        slc_in = val_in.iloc[start:stop]
-                        slc_in_tensor = self.build_input_tensor(slc_in)
-
-                        slc_out = val_df.iloc[start:stop]
-                        slc_out_tensor = self.build_input_tensor(slc_out)
-
-                        num, bin, cat = self.model(slc_in_tensor)
-                        _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out)
-                        swapped_loss.append(net_loss)
-
-                        num, bin, cat = self.model(slc_out_tensor)
-                        _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out, _id=True)
-                        id_loss.append(net_loss)
+                    mean_id_loss, mean_swapped_loss = self._validate_dataframe(orig_df=val_df, swapped_df=val_in)
 
                     # Early stopping
-                    current_net_loss = net_loss
+                    current_net_loss = mean_id_loss
                     LOG.debug('The Current Net Loss: %s', current_net_loss)
 
                     if current_net_loss > last_loss:
@@ -924,16 +902,13 @@ class AutoEncoder(torch.nn.Module):
                     self.logger.end_epoch()
 
                     if self.verbose:
-                        swapped_loss = np.array(swapped_loss).mean()
-                        id_loss = np.array(id_loss).mean()
-
                         msg = '\n'
                         msg += 'net validation loss, swapped input: \n'
-                        msg += f"{round(swapped_loss, 4)} \n\n"
+                        msg += f"{round(mean_swapped_loss, 4)} \n\n"
                         msg += 'baseline validation loss: '
                         msg += f"{round(baseline, 4)} \n\n"
                         msg += 'net validation loss, unaltered input: \n'
-                        msg += f"{round(id_loss, 4)} \n\n\n"
+                        msg += f"{round(mean_id_loss, 4)} \n\n\n"
                         LOG.debug(msg)
 
         #Getting training loss statistics
@@ -949,6 +924,53 @@ class AutoEncoder(torch.nn.Module):
             i_loss = cce_loss[:, i]
             self.feature_loss_stats[ft] = self._create_stat_dict(i_loss)
 
+    def _validate_dataframe(self, orig_df, swapped_df):
+        """Runs a validation loop on the given validation pandas DataFrame, computing and returning the average loss of
+        both the original input and the input with swapped values.
+
+        Parameters
+        ----------
+        orig_df : pandas.DataFrame, the original validation data
+        swapped_df: pandas.DataFrame, the swapped validation data
+
+        Returns
+        -------
+        Tuple[float]
+            A tuple containing two floats:
+            - mean_id_loss: the average net loss when passing the original df through the model
+            - mean_swapped_loss: the average net loss when passing the swapped df through the model
+        """
+        val_batches = len(orig_df) // self.eval_batch_size
+        if len(orig_df) % self.eval_batch_size != 0:
+            val_batches += 1
+
+        swapped_loss = []
+        id_loss = []
+        for i in range(val_batches):
+            start = i * self.eval_batch_size
+            stop = (i + 1) * self.eval_batch_size
+
+            # calculate the loss of the swapped tensor compared to the target (original) tensor
+            slc_in = swapped_df.iloc[start:stop]
+            slc_in_tensor = self.build_input_tensor(slc_in)
+
+            slc_out = orig_df.iloc[start:stop]
+            slc_out_tensor = self.build_input_tensor(slc_out)
+
+            num, bin, cat = self.model(slc_in_tensor)
+            _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out)
+            swapped_loss.append(net_loss)
+
+            # calculate the loss of the original tensor
+            num, bin, cat = self.model(slc_out_tensor)
+            _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out, _id=True)
+            id_loss.append(net_loss)
+
+        mean_swapped_loss = np.array(swapped_loss).mean()
+        mean_id_loss = np.array(id_loss).mean()
+
+        return mean_id_loss, mean_swapped_loss
+
     def _fit_distributed(
         self,
         train_data,
@@ -960,12 +982,12 @@ class AutoEncoder(torch.nn.Module):
         use_val_for_loss_stats=False,
     ):
         """Fit the model in the distributed fashion with early stopping based on validation loss.
-        If run_validation is True, the val_dataset will be used for validation during training and early stopping 
+        If run_validation is True, the val_dataset will be used for validation during training and early stopping
         will be applied based on patience argument.
 
         Parameters
         ----------
-        train_data : pandas.DataFrame or torch.utils.data.Dataset or torch.utils.data.DataLoader 
+        train_data : pandas.DataFrame or torch.utils.data.Dataset or torch.utils.data.DataLoader
             data object of training data
         rank : int
             the rank of the current process
@@ -980,7 +1002,7 @@ class AutoEncoder(torch.nn.Module):
         use_val_for_loss_stats : bool, optional
             whether to populate loss stats in the main process (rank 0) for z-score calculation using the validation set.
             If set to False, loss stats would be populated using the train_dataloader, which can be slow due to data size.
-            By default False, but using the validation set to populate loss stats is strongly recommended (for both efficiency 
+            By default False, but using the validation set to populate loss stats is strongly recommended (for both efficiency
             and model efficacy).
 
         Raises
@@ -1096,7 +1118,7 @@ class AutoEncoder(torch.nn.Module):
             self._populate_loss_stats_from_dataset(dataset_for_loss_stats)
 
     def _fit_batch(self, input_swapped, num_target, bin_target, cat_target, **kwargs):
-        """Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets, performs 
+        """Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets, performs
         backpropagation, updates the model parameters, and returns the net loss.
 
         Parameters
@@ -1108,7 +1130,7 @@ class AutoEncoder(torch.nn.Module):
         bin_target : torch.Tensor
             tensor of shape (batch_size, binary feature count) with binary targets
         cat_target : List[torch.Tensor]
-            list of size (categorical feature count), each entry is a 1-d tensor of shape (batch_size) containing the categorical 
+            list of size (categorical feature count), each entry is a 1-d tensor of shape (batch_size) containing the categorical
             targets
 
         Returns

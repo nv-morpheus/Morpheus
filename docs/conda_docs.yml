@@ -21,5 +21,10 @@ dependencies:
     - pip
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
-        # Ensure all runtime requirements are installed using the requirements file
-        - --requirement requirements.txt
+        - breathe==4.34.0
+        - exhale==0.3.6
+        - ipython
+        - myst-parser==0.17.2
+        - nbsphinx
+        - sphinx
+        - sphinx_rtd_theme

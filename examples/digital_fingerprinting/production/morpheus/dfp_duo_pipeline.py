@@ -111,7 +111,7 @@ from morpheus.utils.logger import configure_logging
               type=int,
               default=0,
               show_envvar=True,
-              help="Minimum time step, in milliseconds, between object logs.")
+              help="Samples the input data files allowing only one file per bin defined by `sample_rate_s`.")
 @click.option(
     "--input_file",
     "-f",
@@ -248,8 +248,8 @@ def run_pipeline(train_users,
     # Batch files into buckets by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
         DFPFileBatcherStage(config,
-                            period="D",
-                            sampling_rate_s=sample_rate_s,
+                            period=None,
+                            sampling=f"{sample_rate_s}S" if sample_rate_s > 0 else None,
                             date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex),
                             start_time=start_time,
                             end_time=end_time))

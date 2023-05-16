@@ -294,7 +294,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
                      cols_include: typing.List[str],
                      cols_exclude: typing.List[str],
                      plugins_include: typing.List[str],
-                     encoding: str) -> pd.DataFrame:
+                     encoding: str) -> typing.Dict[str, pd.DataFrame]:
         """
         Load plugin files into a dataframe, then segment the dataframe by source.
 
