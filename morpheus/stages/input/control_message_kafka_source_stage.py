@@ -45,7 +45,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topic : typing.List[str], default = ["test_pcap"]
+    input_topic : typing.List[str], default = ["test_cm"]
         Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
         repeat the same option multiple times.
     group_id : str
