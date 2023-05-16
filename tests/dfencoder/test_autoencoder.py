@@ -16,6 +16,7 @@
 
 import os
 import typing
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -59,18 +60,20 @@ def train_ae():
     """
     Construct an AutoEncoder instance with the same values used by `train_ae_stage`
     """
-    yield autoencoder.AutoEncoder(encoder_layers=[512, 500],
-                                  decoder_layers=[512],
-                                  activation='relu',
-                                  swap_p=0.2,
-                                  lr=0.01,
-                                  lr_decay=.99,
-                                  batch_size=512,
-                                  verbose=False,
-                                  optimizer='sgd',
-                                  scaler='standard',
-                                  min_cats=1,
-                                  progress_bar=False)
+    yield autoencoder.AutoEncoder(
+        encoder_layers=[512, 500],
+        decoder_layers=[512],
+        activation='relu',
+        swap_p=0.2,
+        lr=0.01,
+        lr_decay=.99,
+        batch_size=512,
+        verbose=False,
+        optimizer='sgd',
+        scaler='standard',
+        min_cats=1,
+        progress_bar=False,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -278,6 +281,70 @@ def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFr
     assert isinstance(train_ae.lr_decay, torch.optim.lr_scheduler.ExponentialLR)
     assert train_ae.lr_decay.gamma == 0.99
     train_ae.optim is train_ae.lr_decay.optimizer
+
+
+def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
+    train_data = train_df.sample(frac=0.7, random_state=1)
+    validation_data = train_df.drop(train_data.index)
+
+    epochs = 10
+
+    # Test normal training loop with no early stopping
+    ae = autoencoder.AutoEncoder(patience=5)
+    ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+    # assert that training runs through all epoches
+    assert ae.logger.n_epochs == epochs
+
+    class MockHelper:
+        """A helper class for mocking the `_validate_dataframe` method in the `AutoEncoder` class."""
+
+        def __init__(self, orig_losses, swapped_loss=1.0):
+            """ Initialization.
+
+            Parameters:
+            -----------
+            orig_losses : list
+                A list of original validation losses to be returned by the mocked `_validate_dataframe` method.
+            swapped_loss : float, optional (default=1.0)
+                A fixed loss value to be returned by the mocked `_validate_dataframe` method as the `swapped_loss`.
+                Fixed as it's unrelated to the early-stopping functionality being tested here.
+            """
+            self.swapped_loss = swapped_loss
+            self.orig_losses = orig_losses
+            # counter to keep track of the number of times the mocked `_validate_dataframe` method has been called
+            self.count = 0
+
+        def mocked_validate_dataframe(self, *args, **kwargs):
+            """
+            A mocked version of the `_validate_dataframe` method in the `AutoEncoder` class for testing early stopping.
+
+            Returns:
+            --------
+            tuple of (float, float)
+                A tuple of original validation loss and swapped loss values for each epoch.
+            """
+            orig_loss = self.orig_losses[self.count]
+            self.count += 1
+            return orig_loss, self.swapped_loss
+
+    # Test early stopping
+    orig_losses = [0.1, 0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+
+    ae = autoencoder.AutoEncoder(
+        patience=3)  # should stop at epoch 3 as the first 3 losses are monotonically increasing
+    mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
+    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
+        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+        # assert that training early-stops at epoch 3
+        assert ae.logger.n_epochs == 3
+
+    ae = autoencoder.AutoEncoder(
+        patience=5)  # should stop at epoch 9 as losses from epoch 5-9 are monotonically increasing
+    mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
+    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
+        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+        # assert that training early-stops at epoch 3
+        assert ae.logger.n_epochs == 9
 
 
 @pytest.mark.usefixtures("manual_seed")

@@ -24,7 +24,9 @@ import pandas as pd
 import cudf as cdf  # rename to avoid clash with property method
 
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.utils import compare_df
 from utils import TEST_DIRS
+from utils import assert_results
 
 
 class DatasetManager(object):
@@ -180,19 +182,47 @@ class DatasetManager(object):
         # Return a new dataframe where we replace some index values with others
         return cls.replace_index(df, replace_dict)
 
-    @staticmethod
-    def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any) -> bool:
+    def value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
+        if (isinstance(val, cdf.DataFrame) or isinstance(val, cdf.Series)):
+            return val.to_pandas()
+
+        if assert_is_pandas:
+            assert isinstance(val, (pd.DataFrame, pd.Series)), type(val)
+
+        return val
+
+    @classmethod
+    def assert_df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
         """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
 
         # Comparisons work better in cudf so convert everything to that
-        if (isinstance(df_to_check, cdf.DataFrame) or isinstance(df_to_check, cdf.Series)):
-            df_to_check = df_to_check.to_pandas()
+        df_to_check = cls.value_as_pandas(df_to_check)
 
-        if (isinstance(val_to_check, cdf.DataFrame) or isinstance(val_to_check, cdf.Series)):
-            val_to_check = val_to_check.to_pandas()
-        elif (isinstance(val_to_check, cp.ndarray)):
+        if (isinstance(val_to_check, cp.ndarray)):
             val_to_check = val_to_check.get()
+        else:
+            val_to_check = cls.value_as_pandas(val_to_check, assert_is_pandas=False)
 
         bool_df = df_to_check == val_to_check
 
-        return bool(bool_df.all(axis=None))
+        assert bool(bool_df.all(axis=None))
+
+    @classmethod
+    def compare_df(cls,
+                   dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
+                   dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
+                   **compare_args):
+        """
+        Wrapper for morpheus.utils.compare_df.compare_df
+        """
+        return compare_df.compare_df(cls.value_as_pandas(dfa), cls.value_as_pandas(dfb), **compare_args)
+
+    @classmethod
+    def assert_compare_df(cls,
+                          dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
+                          dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
+                          **compare_args):
+        """
+        Convenience method for calling compare_df and asserting that the results are the same
+        """
+        assert_results(cls.compare_df(dfa, dfb, **compare_args))
