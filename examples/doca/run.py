@@ -16,7 +16,6 @@ import logging
 import os
 
 import click
-from elasticsearch_ingest_stage import WriteToElasticsearchStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig

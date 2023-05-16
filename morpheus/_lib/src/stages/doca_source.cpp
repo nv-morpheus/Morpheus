@@ -76,6 +76,10 @@ DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
         throw std::runtime_error("source ip filter invalid");
     }
 
+    if (source_ip != 0) {
+        throw std::runtime_error("source ip filter not implemented");
+    }
+
     m_context = std::make_shared<morpheus::doca::DocaContext>(nic_pci_address, gpu_pci_address);
 
     m_rxq       = std::make_shared<morpheus::doca::DocaRxQueue>(m_context);

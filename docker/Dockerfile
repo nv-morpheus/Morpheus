@@ -209,8 +209,7 @@ RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         apt-get update && \
         apt-get install -y libjson-c-dev meson cmake pkg-config && \
         apt-get install -y ./docker/deb/mlnx-dpdk*.deb && \
-        apt-get install -y ./docker/deb/*doca*.deb && \
-        echo hey; \
+        apt-get install -y ./docker/deb/*doca*.deb; \
     fi
 
 # Build and install md, bsd, and gdrcopy libs

@@ -71,8 +71,6 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     DOCA_TRY(doca_flow_pipe_add_entry(0, m_pipe, nullptr, nullptr, nullptr, nullptr, 0, nullptr, &placeholder_entry));
     DOCA_TRY(doca_flow_entries_process(context->flow_port(), 0, 0, 0));
 
-    //
-
     uint32_t priority_high = 1;
     uint32_t priority_low  = 3;
 
@@ -112,10 +110,6 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
                                               &root_tcp_entry_gpu));
 
     DOCA_TRY(doca_flow_entries_process(context->flow_port(), 0, 0, 0));
-
-    // DOCA_LOG_DBG("Created Pipe %s", pipe_cfg.attr.name);
-
-    // return DOCA_SUCCESS;
 }
 
 DocaRxPipe::~DocaRxPipe()

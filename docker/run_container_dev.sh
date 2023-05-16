@@ -40,8 +40,6 @@ echo -e "${g}Launching ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}...${x}"
 set -x
 docker run \
     -v /dev/hugepages:/dev/hugepages \
-    -v /usr/src/nvidia-515.65.01/build:/usr/src/nvidia-515.65.01/build \
-    -v /lib/modules/5.4.0-128-generic/:/lib/modules/5.4.0-128-generic/ \
     --privileged \
     --rm \
     -ti \

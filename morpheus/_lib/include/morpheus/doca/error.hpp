@@ -20,6 +20,7 @@
 #define DOCA_ALLOW_EXPERIMENTAL_API
 
 #include <doca_error.h>
+#include <morpheus/utilities/string_util.hpp>
 
 #include <stdexcept>
 
@@ -39,15 +40,13 @@ namespace detail {
 
 inline void throw_doca_error(doca_error_t error, const char* file, unsigned int line)
 {
-    throw morpheus::doca_error(std::string{"DOCA error encountered at: " + std::string{file} + ":" +
-                                           std::to_string(line) + ": " + std::to_string(error) + " " +
-                                           std::string(doca_get_error_string(error))});
+    throw morpheus::doca_error(MORPHEUS_CONCAT_STR("DOCA error encountered at: " << file << ":" << line << ": " << error << " " << doca_get_error_string(error)));
 }
 
 inline void throw_rte_error(int error, const char* file, unsigned int line)
 {
-    throw morpheus::rte_error(std::string{"RTE error encountered at: " + std::string{file} + ":" +
-                                          std::to_string(line) + ": " + std::to_string(error)});
+
+    throw morpheus::rte_error(MORPHEUS_CONCAT_STR("RTE error encountered at: " << file << ":" << line << ": " << error));
 }
 
 }  // namespace detail
