@@ -30,11 +30,11 @@ option(MORPHEUS_PYTHON_BUILD_STUBS "Whether or not to generated .pyi stub files 
 option(MORPHEUS_PYTHON_BUILD_WHEEL "Whether or not to build the morpheus .whl file" OFF)
 option(MORPHEUS_PYTHON_INPLACE_BUILD "Whether or not to copy built python modules back to the source tree for debug purposes." OFF)
 option(MORPHEUS_PYTHON_PERFORM_INSTALL "Whether or not to automatically `pip install` any built python library. WARNING: This may overwrite any existing installation of the same name." OFF)
+option(MORPHEUS_SUPPORT_DOCA "Whether or not to build doca-related elements of morpheus" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg. Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
 option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
-option(MORPHEUS_SUPPORT_DOCA "Whether or not to build doca-related elements of morpheus" OFF)
 
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
