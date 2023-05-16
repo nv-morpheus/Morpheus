@@ -106,13 +106,7 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
               default="localhost:9092",
               required=True,
               help=("Comma-separated list of bootstrap servers."))
-@click.option(
-    '--input_topic',
-    type=str,
-    default="test_cm",
-    multiple=True,
-    help=
-    "Name of the Kafka topic from which messages will be consumed. To consume from multiple topics, repeat the option.")
+@click.option('--input_topic', type=str, default="test_cm", multiple=True, help="Topic(s) to consume message(s) from.")
 @click.option('--group_id', type=str, default="morpheus", required=True, help="")
 @click.option('--poll_interval',
               type=str,

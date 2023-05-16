@@ -14,9 +14,10 @@
 
 import logging
 import time
+import typing
 from enum import Enum
 from io import StringIO
-import typing
+
 import confluent_kafka as ck
 import mrc
 import pandas as pd

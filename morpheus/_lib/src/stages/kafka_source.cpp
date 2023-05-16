@@ -613,7 +613,7 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init1(
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init_with_single_topic(
     mrc::segment::Builder& builder,
     const std::string& name,
     TensorIndex max_batch_size,
@@ -638,7 +638,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     return stage;
 }
 
-std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init2(
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init_with_multiple_topics(
     mrc::segment::Builder& builder,
     const std::string& name,
     TensorIndex max_batch_size,

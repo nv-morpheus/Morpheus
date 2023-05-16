@@ -198,16 +198,17 @@ struct KafkaSourceStageInterfaceProxy
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init1(mrc::segment::Builder& builder,
-                                                                         const std::string& name,
-                                                                         TensorIndex max_batch_size,
-                                                                         std::string topic,
-                                                                         uint32_t batch_timeout_ms,
-                                                                         std::map<std::string, std::string> config,
-                                                                         bool disable_commit,
-                                                                         bool disable_pre_filtering,
-                                                                         TensorIndex stop_after = 0,
-                                                                         bool async_commits     = true);
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_single_topic(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        TensorIndex max_batch_size,
+        std::string topic,
+        uint32_t batch_timeout_ms,
+        std::map<std::string, std::string> config,
+        bool disable_commit,
+        bool disable_pre_filtering,
+        TensorIndex stop_after = 0,
+        bool async_commits     = true);
 
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
@@ -226,16 +227,17 @@ struct KafkaSourceStageInterfaceProxy
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init2(mrc::segment::Builder& builder,
-                                                                         const std::string& name,
-                                                                         TensorIndex max_batch_size,
-                                                                         std::vector<std::string> topics,
-                                                                         uint32_t batch_timeout_ms,
-                                                                         std::map<std::string, std::string> config,
-                                                                         bool disable_commit,
-                                                                         bool disable_pre_filtering,
-                                                                         TensorIndex stop_after = 0,
-                                                                         bool async_commits     = true);
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_multiple_topics(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        TensorIndex max_batch_size,
+        std::vector<std::string> topics,
+        uint32_t batch_timeout_ms,
+        std::map<std::string, std::string> config,
+        bool disable_commit,
+        bool disable_pre_filtering,
+        TensorIndex stop_after = 0,
+        bool async_commits     = true);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
