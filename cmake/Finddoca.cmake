@@ -57,7 +57,7 @@ if (DOCA_FOUND)
         )
     endforeach()
 
-    add_library(doca INTERFACE)
+    add_library(doca INTERFACE IMPORTED)
     add_library(doca::doca ALIAS doca)
     target_link_libraries(doca
         INTERFACE
