@@ -44,13 +44,6 @@ target_link_libraries(test_libmorpheus
     pybind11::embed
 )
 
-target_include_directories(test_libmorpheus
-    PUBLIC
-      /opt/mellanox/doca/include/
-      /opt/mellanox/dpdk/include/dpdk
-      /opt/mellanox/dpdk/include/x86_64-linux-gnu/dpdk
-)
-
 add_test(
   NAME test_libmorpheus
   COMMAND $<TARGET_FILE:test_libmorpheus>

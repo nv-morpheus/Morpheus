@@ -121,8 +121,6 @@ doca_error_t open_doca_device_with_pci(const doca_pci_bdf* value, jobs_check_t f
         }
     }
 
-    // DOCA_LOG_WARN("Matching device not found");
-
     doca_devinfo_list_destroy(dev_list);
 
     return DOCA_ERROR_NOT_FOUND;
