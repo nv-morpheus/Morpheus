@@ -80,7 +80,7 @@ verbose = 2
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list = ["mrc", "morpheus._lib"]
+extension-pkg-allow-list = ["mrc", "morpheus._lib", "morpheus._lib.stages"]
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
@@ -434,7 +434,7 @@ disable = [
   "bad-inline-option",
   "deprecated-pragma",
   "file-ignored",
-  "import-outside-toplevel",
+  "import-outside-toplevel", # Allow lazy imports inside of methods
   "locally-disabled",
   "missing-class-docstring",
   "missing-function-docstring",
@@ -443,15 +443,15 @@ disable = [
   "raw-checker-failed",
   "superfluous-parens",
   "suppressed-message",
-  "too-many-arguments",
+  "too-many-arguments", # Disable all of the "too-many-*" checks, as they are too strict for our codebase
   "too-many-branches",
   "too-many-instance-attributes",
   "too-many-lines",
   "too-many-locals",
   "too-many-nested-blocks",
   "too-many-statements",
-  "unnecessary-lambda",
-  "unnecessary-pass",
+  "unnecessary-lambda", # We pass lambdas around a lot, so this is not useful
+  "unnecessary-pass", # Allow empty classes/methods with only a `pass` statement in the body
   "use-symbolic-message-instead",
   "useless-suppression",
   "wrong-import-order", # pylint mistakenly thinks that the test utils are third party, and we have isort for this

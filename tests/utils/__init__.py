@@ -49,6 +49,7 @@ def write_data_to_kafka(bootstrap_servers: str,
     Writes `data` into a given Kafka topic, emitting one message for each line int he file. Returning the number of
     messages written
     """
+    # pylint: disable=import-error
     from kafka import KafkaProducer
     num_records = 0
     producer = KafkaProducer(bootstrap_servers=bootstrap_servers, client_id=client_id)
