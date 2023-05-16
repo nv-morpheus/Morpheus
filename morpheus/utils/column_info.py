@@ -311,12 +311,27 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     return input_schema.row_filter(df_in)
 
 
-def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
-                      input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
-                ) -> pd.DataFrame:
+def process_dataframe(
+    df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+) -> pd.DataFrame:
     """
     Applies column transformations as defined by `input_schema`
     """
+
+    # TODO(Devin) : Remove once https://github.com/rapidsai/cudf/pull/13315 is merged
+    # Skips the correct processing path and falls back to the old method for now.
+    if (isinstance(input_schema, DataFrameInputSchema)):
+        # Step 1 is to normalize any columns
+        df_processed = _normalize_dataframe(df_in, input_schema)
+
+        # Step 2 is to process columns
+        df_processed = _process_columns(df_processed, input_schema)
+
+        # Step 3 is to run the row filter if needed
+        df_processed = _filter_rows(df_processed, input_schema)
+
+        return df_processed
 
     from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
 

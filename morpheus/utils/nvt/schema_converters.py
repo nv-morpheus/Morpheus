@@ -166,9 +166,8 @@ def nvt_string_cat_col(column_selector: ColumnSelector,
 
 
 @sync_df_as_pandas
-def increment_column(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, input_column, period: str = 'D') -> \
-        typing.Union[
-            pd.DataFrame, cudf.DataFrame]:
+def increment_column(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, input_column, period: str = 'D') \
+        -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     period_index = pd.to_datetime(df[input_column]).dt.to_period(period)
     groupby_col = df.groupby([output_column, period_index]).cumcount()
 
@@ -316,10 +315,11 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema, v
     """
     Converts an `input_schema` to a `nvt.Workflow` object
 
-    First we aggregate all preprocessing steps, which we assume are independent of each other and can be run in parallel.
+    First we aggregate all preprocessing steps, which we assume are independent of each other and can be run in
+    parallel.
 
-    Next we aggregate all column operations, which we assume are independent of each other and can be run in parallel and
-    pass them the updated schema from the preprocessing steps.
+    Next we aggregate all column operations, which we assume are independent of each other and can be run in parallel
+    and pass them the updated schema from the preprocessing steps.
     """
 
     if (input_schema is None or len(input_schema.column_info) == 0):

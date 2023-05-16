@@ -34,7 +34,6 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
 from morpheus.utils.column_info import process_dataframe
-from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
 from utils import TEST_DIRS
 
 

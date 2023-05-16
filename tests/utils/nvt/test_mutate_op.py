@@ -15,11 +15,9 @@
 import numpy as np
 import pandas as pd
 from merlin.core.dispatch import DataFrameType
-from merlin.core.dispatch import annotate
 from merlin.schema import ColumnSchema
 from merlin.schema import Schema
 from nvtabular.ops.operator import ColumnSelector
-from nvtabular.ops.operator import Operator
 
 from morpheus.utils.nvt import MutateOp
 

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import networkx as nx
 import nvtabular as nvt
 import pandas as pd
 import pytest
@@ -31,7 +30,6 @@ from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
 from morpheus.utils.nvt.schema_converters import bfs_traversal_with_op_map
 from morpheus.utils.nvt.schema_converters import build_nx_dependency_graph
 from morpheus.utils.nvt.schema_converters import coalesce_leaf_nodes
-from morpheus.utils.nvt.schema_converters import coalesce_ops
 from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
 from morpheus.utils.nvt.schema_converters import get_ci_column_selector
 from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
@@ -60,7 +58,8 @@ source_column_info = [
 def create_test_dataframe():
     return pd.DataFrame({
         "access_device": [
-            '{"browser": "Firefox", "os": "Linux", "location": {"city": "San Francisco", "state": "CA", "country": "USA"}}'
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}'
         ],
         "user.name": ["Jane Smith"],
         "application": ['{"name": "AnotherApp"}'],
@@ -111,12 +110,15 @@ def test_json_flatten_info_init():
 
 def test_json_flatten_info_init_missing_input_col_names():
     with pytest.raises(TypeError):
-        ci = JSONFlattenInfo(name="json_info", dtype="str", output_col_names=["json_output_col1", "json_output_col2"])
+        ci = JSONFlattenInfo(
+            name="json_info",
+            dtype="str",  # noqa F841
+            output_col_names=["json_output_col1", "json_output_col2"])
 
 
 def test_json_flatten_info_init_missing_output_col_names():
     with pytest.raises(TypeError):
-        ci = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", "json_col2.b"])
+        ci = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", "json_col2.b"])  # noqa F841
 
 
 def test_get_ci_column_selector_rename_column():
@@ -536,13 +538,14 @@ def test_input_schema_conversion_with_functional_filter():
     # Create a DataFrameInputSchema instance with the example schema provided
     example_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                           column_info=source_column_info,
-                                          row_filter=lambda df: df[df["result"] == True])
+                                          row_filter=lambda df: df[df["result"] == True])  # noqa E712
 
     # Create a test dataframe with data according to the schema
     test_df = pd.DataFrame({
         "access_device": [
             '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
-            '{"browser": "Firefox", "os": "Linux", "location": {"city": "San Francisco", "state": "CA", "country": "USA"}}'
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}'
         ],
         "user.name": ["John Doe", "Jane Smith"],
         "application": ['{"name": "TestApp"}', '{"name": "AnotherApp"}'],
