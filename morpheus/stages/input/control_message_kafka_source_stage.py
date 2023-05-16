@@ -15,6 +15,7 @@
 import json
 import logging
 import time
+import typing
 
 import confluent_kafka as ck
 import mrc
@@ -44,9 +45,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topics : str
+    input_topic : typing.List[str], default = ["test_pcap"]
         Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
-        list the topic names separated by comma (,).
+        repeat the same option multiple times.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     client_id : str, default = None
@@ -71,7 +72,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topics: str = "test_cm",
+                 input_topic: typing.List[str] = ["test_cm"],
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -95,7 +96,11 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        self._topics = list(input_topics.split(","))
+        if isinstance(input_topic, str):
+            input_topic = list(input_topic)
+
+        # Remove duplicate topics if there are any.
+        self._topics = list(set(input_topic))
 
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit

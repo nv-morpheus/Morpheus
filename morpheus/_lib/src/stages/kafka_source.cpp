@@ -262,6 +262,25 @@ class KafkaRebalancer : public RdKafka::RebalanceCb
 // Component public implementations
 // ************ KafkaStage ************************* //
 KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
+                                   std::string topic,
+                                   uint32_t batch_timeout_ms,
+                                   std::map<std::string, std::string> config,
+                                   bool disable_commit,
+                                   bool disable_pre_filtering,
+                                   TensorIndex stop_after,
+                                   bool async_commits) :
+  PythonSource(build()),
+  m_max_batch_size(max_batch_size),
+  m_topics(std::vector<std::string>{std::move(topic)}),
+  m_batch_timeout_ms(batch_timeout_ms),
+  m_config(std::move(config)),
+  m_disable_commit(disable_commit),
+  m_disable_pre_filtering(disable_pre_filtering),
+  m_stop_after{stop_after},
+  m_async_commits(async_commits)
+{}
+
+KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    std::vector<std::string> topics,
                                    uint32_t batch_timeout_ms,
                                    std::map<std::string, std::string> config,
@@ -594,7 +613,32 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init1(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    TensorIndex max_batch_size,
+    std::string topic,
+    uint32_t batch_timeout_ms,
+    std::map<std::string, std::string> config,
+    bool disable_commit,
+    bool disable_pre_filtering,
+    TensorIndex stop_after,
+    bool async_commits)
+{
+    auto stage = builder.construct_object<KafkaSourceStage>(name,
+                                                            max_batch_size,
+                                                            topic,
+                                                            batch_timeout_ms,
+                                                            config,
+                                                            disable_commit,
+                                                            disable_pre_filtering,
+                                                            stop_after,
+                                                            async_commits);
+
+    return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init2(
     mrc::segment::Builder& builder,
     const std::string& name,
     TensorIndex max_batch_size,

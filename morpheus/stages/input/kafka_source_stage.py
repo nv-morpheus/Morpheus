@@ -16,7 +16,7 @@ import logging
 import time
 from enum import Enum
 from io import StringIO
-
+import typing
 import confluent_kafka as ck
 import mrc
 import pandas as pd
@@ -54,9 +54,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topics : str
+    input_topic : typing.List[str], default = ["test_pcap"]
         Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
-        list the topic names separated by comma (,).
+        repeat the same option multiple times.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     client_id : str, default = None
@@ -81,7 +81,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topics: str = "test_pcap",
+                 input_topic: typing.List[str] = ["test_pcap"],
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -104,10 +104,11 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        # Convert input_topics string to list and remove duplicates
-        unique_topics = set(input_topics.split(","))
-        # Convert back to a list
-        self._topics = list(unique_topics)
+        if isinstance(input_topic, str):
+            input_topic = list(input_topic)
+
+        # Remove duplicate topics if there are any.
+        self._topics = list(set(input_topic))
         self._max_batch_size = c.pipeline_batch_size
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit

@@ -107,12 +107,12 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
               required=True,
               help=("Comma-separated list of bootstrap servers."))
 @click.option(
-    '--input_topics',
+    '--input_topic',
     type=str,
     default="test_cm",
-    required=True,
-    help="Name of the Kafka topic from which messages will be consumed. To consume from multiple topics, list the "
-    "topic names separated by comma (,).")
+    multiple=True,
+    help=
+    "Name of the Kafka topic from which messages will be consumed. To consume from multiple topics, repeat the option.")
 @click.option('--group_id', type=str, default="morpheus", required=True, help="")
 @click.option('--poll_interval',
               type=str,
@@ -265,7 +265,7 @@ def run_pipeline(source: str,
     source_stage = pipeline.add_stage(
         ControlMessageKafkaSourceStage(config,
                                        bootstrap_servers=kwargs["bootstrap_servers"],
-                                       input_topics=kwargs["input_topics"],
+                                       input_topic=list(kwargs["input_topic"]),
                                        group_id=kwargs["group_id"],
                                        poll_interval=kwargs["poll_interval"],
                                        disable_commit=kwargs["disable_commit"],

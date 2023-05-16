@@ -142,7 +142,7 @@ We could also easily swap out the source or sink stages in the above example wit
 
 ```bash
 morpheus --log_level=DEBUG run pipeline-nlp \
-  from-kafka --input_topics test_pcap --bootstrap_servers localhost:9092 \
+  from-kafka --input_topic test_pcap --bootstrap_servers localhost:9092 \
   deserialize \
   serialize \
   to-file --filename .tmp/temp_out.json

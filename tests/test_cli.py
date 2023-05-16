@@ -76,7 +76,7 @@ FILE_SRC_ARGS = [
 INF_TRITON_ARGS = ['inf-triton', '--model_name=test-model', '--server_url=test:123', '--force_convert_inputs=True']
 
 KAFKA_BOOTS = ['--bootstrap_servers', 'kserv1:123,kserv2:321']
-FROM_KAFKA_ARGS = ['from-kafka', '--input_topics', 'test_topic'] + KAFKA_BOOTS
+FROM_KAFKA_ARGS = ['from-kafka', '--input_topic', 'test_topic'] + KAFKA_BOOTS
 TO_KAFKA_ARGS = ['to-kafka', '--output_topic', 'test_topic'] + KAFKA_BOOTS
 
 

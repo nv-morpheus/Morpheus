@@ -64,6 +64,30 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @brief Construct a new Kafka Source Stage object
      *
      * @param max_batch_size : The maximum batch size for the messages batch.
+     * @param topic : Input kafka topic.
+     * @param batch_timeout_ms : Frequency of the poll in ms.
+     * @param config : Kafka consumer configuration.
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
+     * This is only useful for debugging, allowing the user to process the same messages multiple times
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages.
+     * This is only useful when inputs are known to be valid json.
+     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
+     * Useful for testing. Disabled if `0`
+     * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     */
+    KafkaSourceStage(TensorIndex max_batch_size,
+                     std::string topic,
+                     uint32_t batch_timeout_ms,
+                     std::map<std::string, std::string> config,
+                     bool disable_commit        = false,
+                     bool disable_pre_filtering = false,
+                     TensorIndex stop_after     = 0,
+                     bool async_commits         = true);
+
+    /**
+     * @brief Construct a new Kafka Source Stage object
+     *
+     * @param max_batch_size : The maximum batch size for the messages batch.
      * @param topics : Input kafka topics.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
@@ -163,6 +187,34 @@ struct KafkaSourceStageInterfaceProxy
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param max_batch_size : The maximum batch size for the messages batch.
+     * @param topic : Input kafka topic.
+     * @param batch_timeout_ms : Frequency of the poll in ms.
+     * @param config : Kafka consumer configuration.
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
+     * This is only useful for debugging, allowing the user to process the same messages multiple times
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages.
+     * This is only useful when inputs are known to be valid json.
+     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
+     * Useful for testing. Disabled if `0`
+     * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     */
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init1(mrc::segment::Builder& builder,
+                                                                         const std::string& name,
+                                                                         TensorIndex max_batch_size,
+                                                                         std::string topic,
+                                                                         uint32_t batch_timeout_ms,
+                                                                         std::map<std::string, std::string> config,
+                                                                         bool disable_commit,
+                                                                         bool disable_pre_filtering,
+                                                                         TensorIndex stop_after = 0,
+                                                                         bool async_commits     = true);
+
+    /**
+     * @brief Create and initialize a KafkaSourceStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param max_batch_size : The maximum batch size for the messages batch.
      * @param topics : Input kafka topics.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
@@ -174,16 +226,16 @@ struct KafkaSourceStageInterfaceProxy
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder& builder,
-                                                                        const std::string& name,
-                                                                        TensorIndex max_batch_size,
-                                                                        std::vector<std::string> topics,
-                                                                        uint32_t batch_timeout_ms,
-                                                                        std::map<std::string, std::string> config,
-                                                                        bool disable_commit,
-                                                                        bool disable_pre_filtering,
-                                                                        TensorIndex stop_after = 0,
-                                                                        bool async_commits     = true);
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init2(mrc::segment::Builder& builder,
+                                                                         const std::string& name,
+                                                                         TensorIndex max_batch_size,
+                                                                         std::vector<std::string> topics,
+                                                                         uint32_t batch_timeout_ms,
+                                                                         std::map<std::string, std::string> config,
+                                                                         bool disable_commit,
+                                                                         bool disable_pre_filtering,
+                                                                         TensorIndex stop_after = 0,
+                                                                         bool async_commits     = true);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

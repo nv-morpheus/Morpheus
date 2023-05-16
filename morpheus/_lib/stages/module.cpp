@@ -137,7 +137,18 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<KafkaSourceStage>>>(
         _module, "KafkaSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&KafkaSourceStageInterfaceProxy::init),
+        .def(py::init<>(&KafkaSourceStageInterfaceProxy::init1),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("max_batch_size"),
+             py::arg("topic"),
+             py::arg("batch_timeout_ms"),
+             py::arg("config"),
+             py::arg("disable_commits")       = false,
+             py::arg("disable_pre_filtering") = false,
+             py::arg("stop_after")            = 0,
+             py::arg("async_commits")         = true)
+        .def(py::init<>(&KafkaSourceStageInterfaceProxy::init2),
              py::arg("builder"),
              py::arg("name"),
              py::arg("max_batch_size"),

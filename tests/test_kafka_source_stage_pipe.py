@@ -48,7 +48,7 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=kafka_topics.input_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          client_id='morpheus_kafka_source_stage_pipe',
@@ -68,7 +68,7 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
     topic_1 = "morpheus_input_topic_1"
     topic_2 = "morpheus_input_topic_2"
 
-    input_topics = f"{topic_1},{topic_2}"
+    input_topics = [topic_1, topic_2]
 
     # Fill our topic_1 and topic_2 with the input data
     topic_1_records = write_file_to_kafka(kafka_bootstrap_servers, topic_1, input_file)
@@ -80,7 +80,7 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=input_topics,
+                         input_topic=input_topics,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          client_id='test_multi_topic_kafka_source_stage_pipe',
@@ -168,7 +168,7 @@ def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=kafka_topics.input_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          group_id='morpheus',
@@ -205,7 +205,7 @@ def test_kafka_source_batch_pipe(config,
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=kafka_topics.input_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          client_id='morpheus_kafka_source_stage_pipe',

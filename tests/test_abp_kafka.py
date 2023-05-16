@@ -109,7 +109,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=kafka_topics.input_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          stop_after=num_records,
@@ -176,7 +176,7 @@ def test_abp_cpp(config: Config,
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=kafka_bootstrap_servers,
-                         input_topics=kafka_topics.input_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
                          stop_after=num_records))

@@ -95,7 +95,7 @@ pipeline = Pipeline(config)
 source_stage = pipeline.add_stage(
     ControlMessageKafkaSourceStage(config,
                                    bootstrap_servers=kwargs["bootstrap_servers"],
-                                   input_topics=kwargs["input_topics"],
+                                   input_topic=kwargs["input_topic"],
                                    group_id=kwargs["group_id"],
                                    poll_interval=kwargs["poll_interval"],
                                    disable_commit=kwargs["disable_commit"],
