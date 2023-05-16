@@ -32,3 +32,4 @@ dependencies:
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - tensorflow==2.12.0
+        - wrapt==1.14.1 # newer versions cause an error loading the keras model for the gnn fraud detection example
