@@ -106,8 +106,6 @@ COPY --from=condaforge/mambaforge:latest /opt/conda /opt/conda
 
 ENV PATH="${PATH}:/opt/conda/bin"
 
-# RUN export PATH=/opt/conda/bin:$PATH
-
 # Install mamba to speed the solve up
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\

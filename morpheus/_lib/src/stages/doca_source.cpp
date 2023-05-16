@@ -164,8 +164,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
             auto payload_size_total = payload_size_total_d.value(rmm::cuda_stream_default);
 
-            // LOG(INFO) << "packet_count(" << packet_count << ") payload_size_total(" << payload_size_total << ")";
-
             // gather payload data
 
             auto payload_col = doca::gather_payload(packet_count, payload_buffer_d.data(), payload_sizes_d.data());

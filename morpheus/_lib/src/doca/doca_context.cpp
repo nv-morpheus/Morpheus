@@ -159,11 +159,10 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     RTE_TRY(rte_eth_dev_configure(port_id, rxq_num, rxq_num, &eth_conf));
 
     mp = rte_pktmbuf_pool_create("TEST", 8192, 0, 0, MAX_PKT_SIZE, rte_eth_dev_socket_id(port_id));
+
     if (mp == nullptr)
     {
-        // DOCA_LOG_ERR("Failed rte_pktmbuf_pool_create with: %s", rte_strerror(-ret));
-        throw std::exception();
-        // return nullptr;
+        MORPHEUS_FAIL("rte_pktmbuf_pool_create failed with " + std::to_string(rte_strerror(-ret)));
     }
 
     tx_conf = dev_info.default_txconf;

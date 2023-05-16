@@ -132,7 +132,6 @@ get_payload_size(ipv4_hdr& packet_l3, tcp_hdr& packet_l4)
 {
   auto packet_size       = get_packet_size(packet_l3);
   auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
-  // auto ip_header_length  = sizeof(ipv4_hdr);
   auto tcp_header_length = static_cast<int32_t>(packet_l4.dt_off >> 4) * sizeof(int32_t);
   auto payload_size      = packet_size - ip_header_length - tcp_header_length;
 
@@ -185,9 +184,6 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
   out[15] = to_hex_16(mac_5 / 16);
   out[16] = to_hex_16(mac_5 % 16);
 }
-
-// what if I had receive, gather, and release kernels?
-// what if I abstracted away the GPUNetIO aspects by making these calls templated?
 
 __device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
 {
@@ -360,10 +356,6 @@ __global__ void _packet_receive_kernel(
     src_port_out[packet_idx] = BYTE_SWAP16(hdr->l4_hdr.src_port);
     dst_port_out[packet_idx] = BYTE_SWAP16(hdr->l4_hdr.dst_port);
 
-    // // packet size
-    // auto packet_size = get_packet_size(hdr->l3_hdr);
-    // data_size_out[packet_idx] = packet_size;
-
     // tcp flags
     tcp_flags_out[packet_idx] = static_cast<int32_t> (hdr->l4_hdr.tcp_flags);
 
@@ -387,20 +379,11 @@ __global__ void _packet_receive_kernel(
 
   __syncthreads();
 
-  if (threadIdx.x == 0){
-    // printf("==================================================\n");
-    // printf("REC. sizes: %6i, flags: %6i\n", payload_size_total, packet_count);
+  if (threadIdx.x == 0)
+  {
     *packet_count_out = packet_count;
     *payload_size_total_out = payload_size_total;
   }
-
-  // if (threadIdx.x == 0)
-  // {
-  //   if (DOCA_GPUNETIO_VOLATILE(packet_count_received) > PACKETS_PER_BLOCK)
-  //   {
-  //     printf("WARNING: GPUNetIO Received too many packets. Asked for %i, got %i. Packets will be dropped.\n", PACKETS_PER_BLOCK, DOCA_GPUNETIO_VOLATILE(packet_count_received));
-  //   }
-  // }
 
   if (threadIdx.x == 0)
   {
@@ -467,8 +450,6 @@ __global__ void _packet_gather_kernel(
     auto payload_size = payload_sizes[packet_idx];
     auto packet_idx_out = payload_capture[i];
 
-    // payload_offsets_out[packet_idx_out] = payload_offsets[i];
-
     for (auto j = 0; j < payload_size; j++)
     {
       auto value = payload_buffer[packet_idx * MAX_PKT_SIZE + j];
@@ -524,7 +505,6 @@ std::unique_ptr<cudf::column> integers_to_mac(
   auto offsets_transformer = [] __device__(auto item) -> cudf::size_type { return item;};
   auto offsets_transformer_itr = thrust::make_transform_iterator(const_17_itr, offsets_transformer);
 
-  // TODO: determine if this new bytes value is the same as the one we used to calculate below
   auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
     offsets_transformer_itr,
     offsets_transformer_itr + strings_count,
