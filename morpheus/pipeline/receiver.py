@@ -15,6 +15,7 @@
 import logging
 import typing
 
+import mrc
 import typing_utils
 
 import morpheus.pipeline as _pipeline
@@ -80,7 +81,7 @@ class Receiver():
     def in_type(self):
         return self._input_type
 
-    def get_input_pair(self) -> StreamPair:
+    def get_input_pair(self, builder: mrc.Builder) -> StreamPair:
         """
         Returns the input `StreamPair` which is a tuple consisting of the parent node and the parent node's output type.
         """
@@ -99,17 +100,15 @@ class Receiver():
                 self._is_linked = True
             else:
                 # We have multiple senders. Create a dummy stream to connect all senders
+                self._input_stream = builder.make_node_component(
+                    self.parent.unique_name + f"-reciever[{self.port_number}]", mrc.core.operators.map(lambda x: x))
+
                 if (self.is_complete):
                     # Connect all streams now
-                    # self._input_stream = streamz.Stream(upstreams=[x.out_stream for x in self._input_senders],
-                    #                                     asynchronous=True,
-                    #                                     loop=IOLoop.current())
-                    raise NotImplementedError("Still using streamz")
+                    for input_sender in self._input_senders:
+                        builder.make_edge(input_sender.out_stream, self._input_stream)
+
                     self._is_linked = True
-                else:
-                    # Create a dummy stream that needs to be linked later
-                    # self._input_stream = streamz.Stream(asynchronous=True, loop=IOLoop.current())
-                    raise NotImplementedError("Still using streamz")
 
                 # Now determine the output type from what we have
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
@@ -123,7 +122,7 @@ class Receiver():
 
         return (self._input_stream, self._input_type)
 
-    def link(self):
+    def link(self, builder: mrc.Builder):
         """
         The linking phase determines the final type of the `Receiver` and connects all underlying stages.
 
@@ -146,6 +145,6 @@ class Receiver():
                 "Invalid linking phase. Input port type does not match predicted type determined during build phase")
 
         for out_stream in [x.out_stream for x in self._input_senders]:
-            out_stream.connect(self._input_stream)
+            builder.make_edge(out_stream, self._input_stream)
 
         self._is_linked = True
