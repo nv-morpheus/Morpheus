@@ -322,38 +322,6 @@ CMD [ "morpheus" ]
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
-# Copy the source
-# COPY . ./
-
-# Install node
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
-COPY --from=node /usr/local/include/node /usr/local/include/node
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
-# Install yarn
-COPY --from=node /opt/yarn-v*/bin/* /usr/local/bin/
-COPY --from=node /opt/yarn-v*/lib/* /usr/local/lib/
-# Copy entrypoint
-COPY --from=node /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-# Install npm
-RUN bash -c 'echo -e "\
-    fund=false\n\
-    audit=false\n\
-    save-prefix=\n\
-    --omit=optional\n\
-    save-exact=true\n\
-    package-lock=false\n\
-    update-notifier=false\n\
-    scripts-prepend-node-path=true\n\
-    registry=https://registry.npmjs.org/\n\
-    " | tee /root/.npmrc >/dev/null' \
-     && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-     && ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-     && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
-     # Smoke tests
-     && echo "node version: $(node --version)" \
-     && echo " npm version: $(npm --version)" \
-     && echo "yarn version: $(yarn --version)"
 
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
