@@ -106,7 +106,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             self._consumer_params['client.id'] = client_id
 
         if isinstance(input_topic, str):
-            input_topic = list(input_topic)
+            input_topic = [input_topic]
 
         # Remove duplicate topics if there are any.
         self._topics = list(set(input_topic))
