@@ -89,56 +89,6 @@ def test_constructor(config: Config):
     assert not stage._filter_null
     assert stage._parser_kwargs == {'test': 'this'}
     assert stage._cache_dir.startswith('/test/path/cache')
-    assert stage._dask_cluster is None
-
-
-@pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type,use_processes', [("dask", True), ("dask_thread", False)])
-@mock.patch('dask.config')
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
-def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
-                          mock_dask_config: mock.MagicMock,
-                          config: Config,
-                          dl_type: str,
-                          use_processes: bool):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-    mock_dask_cluster.return_value = mock_dask_cluster
-
-    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
-    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
-    assert stage._get_dask_cluster() is mock_dask_cluster
-
-    mock_dask_config.set.assert_called_once()
-    mock_dask_cluster.assert_called_once_with(start=True, processes=use_processes)
-
-
-@mock.patch('dask.config')
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
-def test_close_dask_cluster(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, config: Config):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-    mock_dask_cluster.return_value = mock_dask_cluster
-    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
-    assert stage._get_dask_cluster() is mock_dask_cluster
-
-    mock_dask_config.set.assert_called_once()
-
-    mock_dask_cluster.close.assert_not_called()
-    stage._close_dask_cluster()
-    mock_dask_cluster.close.assert_called_once()
-
-
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
-def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Config):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-    mock_dask_cluster.return_value = mock_dask_cluster
-    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
-
-    # Method is a no-op when Dask is not used
-    assert stage._dask_cluster is None
-    stage._close_dask_cluster()
-
-    mock_dask_cluster.assert_not_called()
-    mock_dask_cluster.close.assert_not_called()
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -146,8 +96,8 @@ def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, config: Conf
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
-@mock.patch('dfp.stages.dfp_file_to_df.Client')
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dask.distributed.Client')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.MagicMock,
                                                           mock_dask_cluster: mock.MagicMock,
@@ -242,8 +192,8 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
-@mock.patch('dfp.stages.dfp_file_to_df.Client')
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dask.distributed.Client')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
@@ -310,8 +260,8 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
-@mock.patch('dfp.stages.dfp_file_to_df.Client')
-@mock.patch('dfp.stages.dfp_file_to_df.LocalCluster')
+@mock.patch('dask.distributed.Client')
+@mock.patch('dask.distributed.LocalCluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,

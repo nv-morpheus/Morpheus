@@ -95,42 +95,6 @@ def file_to_df(builder: mrc.Builder):
     except Exception:
         raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
 
-    def get_dask_cluster():
-
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not downloader.download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-        return dask_cluster
-
-    def get_dask_client(dask_cluster):
-
-        from dask.distributed import Client
-
-        logger.debug("Creating dask client...")
-        dask_client = Client(dask_cluster)
-        logger.debug("Creating dask client %s ... Done.", dask_client)
-
-        return dask_client
-
-    def close_dask_cluster():
-        if (dask_cluster is not None):
-            logger.debug("Stopping dask cluster...")
-            dask_cluster.close()
-
-            logger.debug("Stopping dask cluster... Done.")
-
     def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                    file_type: FileTypes,
                                    filter_null: bool,
@@ -201,7 +165,7 @@ def file_to_df(builder: mrc.Builder):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = downloader.download(download_buckets, download_method_func, partial(get_dask_client, dask_cluster))
+            dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False
@@ -251,10 +215,7 @@ def file_to_df(builder: mrc.Builder):
             raise
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(close_dask_cluster)).subscribe(sub)
-
-    if (downloader.download_method.startswith("dask")):
-        dask_cluster = get_dask_cluster()
+        obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(downloader.close)).subscribe(sub)
 
     node = builder.make_node(FILE_TO_DF, mrc.core.operators.build(node_fn))
 

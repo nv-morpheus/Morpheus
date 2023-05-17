@@ -39,46 +39,6 @@ from morpheus.utils.loader_utils import register_loader
 
 logger = logging.getLogger(__name__)
 
-dask_cluster = None
-
-
-def get_dask_cluster(download_method: str):
-    global dask_cluster
-
-    if dask_cluster is None:
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Dask cluster doesn't exist. Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-    return dask_cluster
-
-
-def get_dask_client(download_method: str):
-    from dask.distributed import Client
-    dask_client = Client(get_dask_cluster(download_method))
-    logger.debug("Creating dask client %s ... Done.", dask_client)
-
-    return dask_client
-
-
-def close_dask_cluster():
-    if (dask_cluster is not None):
-        logger.debug("Stopping dask cluster...")
-        dask_cluster.close()
-
-        logger.debug("Stopping dask cluster... Done.")
-
 
 @register_loader(FILE_TO_DF_LOADER)
 def file_to_df_loader(control_message: ControlMessage, task: dict):
@@ -210,9 +170,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = downloader.download(download_buckets,
-                                      download_method_func,
-                                      partial(get_dask_client, downloader.download_method))
+            dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False

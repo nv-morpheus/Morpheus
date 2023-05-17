@@ -25,10 +25,6 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-import dask
-from dask.distributed import Client
-from dask.distributed import LocalCluster
-
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
@@ -92,7 +88,6 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         self._parser_kwargs = {} if parser_kwargs is None else parser_kwargs
         self._cache_dir = os.path.join(cache_dir, "file_cache")
 
-        self._dask_cluster: Client = None
         self._downloader = Downloader()
 
     @property
@@ -104,34 +99,6 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         return (typing.Any, )
-
-    def _get_dask_cluster(self):
-
-        if (self._dask_cluster is None):
-            logger.debug("Creating dask cluster...")
-
-            # Up the heartbeat interval which can get violated with long download times
-            dask.config.set({"distributed.client.heartbeat": "30s"})
-
-            self._dask_cluster = LocalCluster(start=True,
-                                              processes=not self._downloader.download_method == "dask_thread")
-
-            logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
-
-        return self._dask_cluster
-
-    def _close_dask_cluster(self):
-        if (self._dask_cluster is not None):
-            logger.debug("Stopping dask cluster...")
-
-            self._dask_cluster.close()
-
-            self._dask_cluster = None
-
-            logger.debug("Stopping dask cluster... Done.")
-
-    def _get_dask_client(self) -> Client:
-        return Client(self._get_dask_cluster())
 
     def _get_or_create_dataframe_from_s3_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
@@ -172,7 +139,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = self._downloader.download(download_buckets, download_method, get_dask_client_fn=self._get_dask_client)
+            dfs = self._downloader.download(download_buckets, download_method)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False
@@ -226,7 +193,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name,
                                    ops.map(self.convert_to_dataframe),
-                                   ops.on_completed(self._close_dask_cluster))
+                                   ops.on_completed(self._downloader.close))
         builder.make_edge(input_stream[0], stream)
 
         return stream, pd.DataFrame
