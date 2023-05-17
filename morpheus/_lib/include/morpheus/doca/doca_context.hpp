@@ -33,6 +33,9 @@
 
 namespace morpheus::doca {
 
+/**
+ * @brief Manages the lifetime of DOCA as it relates to GPUNetIO
+ */
 struct DocaContext
 {
   private:

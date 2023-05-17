@@ -24,6 +24,17 @@
 
 namespace morpheus::doca {
 
+/**
+ * @brief Creates and manages the lifetime of a GPUNetIO Receive Pipe for a given GPUNetIO Receive Queue.
+ *
+ * Pipes are used to filter and/or forward packets to other Pipes or Receive Queues. A Root Pipe
+ * is the primary Pipe where packets come in, and can then be forwarded to other Pipes. This is how
+ * TCP/UDP as well as other types of filtering is done with GPUNetIO. Eventually packets will be
+ * placed in a Receive Queue at which point they can be read using a Semaphore.
+ *
+ * In this implementation, a single Root Pipe is connected to a single TCP-filtering Pipe which is
+ * then connected to the given Receive Queue.
+ */
 struct DocaRxPipe
 {
   private:

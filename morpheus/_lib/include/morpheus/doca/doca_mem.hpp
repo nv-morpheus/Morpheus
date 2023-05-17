@@ -27,6 +27,9 @@
 
 namespace morpheus::doca {
 
+/**
+ * @brief A piece of memory aligned to GPU page size managed by DOCA, optionally addressable from both host and device.
+ */
 template <typename T>
 struct DocaMem
 {

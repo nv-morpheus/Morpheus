@@ -26,6 +26,11 @@
 
 namespace morpheus::doca {
 
+/**
+ * @brief Creates and manages the lifetime of a GPUNetIO Receive Queue.
+ *
+ * A Receive Queue is used to buffer packets received from a GPUNetIO Pipe.
+ */
 struct DocaRxQueue
 {
   private:

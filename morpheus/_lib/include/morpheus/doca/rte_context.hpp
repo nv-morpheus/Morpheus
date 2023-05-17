@@ -17,10 +17,13 @@
 
 #pragma once
 
-namespace morpheus {
+namespace morpheus::doca {
 
-namespace doca {
-
+/**
+ * @brief Initializes and manages the lifetime of a DPDK session.
+ *
+ * Must be initialized on a process' primary/root/starting thread.
+ */
 struct RTEContext
 {
   public:
@@ -28,5 +31,4 @@ struct RTEContext
     ~RTEContext();
 };
 
-}  // namespace doca
 }  // namespace morpheus
