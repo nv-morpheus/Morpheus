@@ -29,6 +29,7 @@ dependencies:
     - dask==2023.1.1
     - distributed==2023.1.1
     - pip
+    - wrapt=1.14.1 # newer versions cause an error loading the keras model for the gnn fraud detection example
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - tensorflow==2.12.0
