@@ -62,7 +62,8 @@ def test_constructor(config: Config):
     assert stage._end_time == datetime(2005, 10, 11, 4, 34, 21)
 
 
-def test_constructor_error(config: Config):
+def test_constructor_both_sample_args_error(config: Config):
+    """Test that an error is raised if both sampling and sampling_rate_s are specified"""
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
     with pytest.raises(AssertionError):
