@@ -101,8 +101,8 @@ class Downloader:
             logger.debug("Stopping dask cluster... Done.")
 
     def download(self,
-                 download_buckets: typing.Iterable[fsspec.core.OpenFiles],
-                 download_fn: typing.Callable[[fsspec.core.OpenFiles], pd.DataFrame]) -> typing.List[pd.DataFrame]:
+                 download_buckets: fsspec.core.OpenFiles,
+                 download_fn: typing.Callable[[fsspec.core.OpenFile], pd.DataFrame]) -> typing.List[pd.DataFrame]:
         """
         Download the files in `download_buckets` using the method specified in the constructor.
         If dask or dask_thread is used, the `get_dask_client_fn` function is used to create a dask client, otherwise
