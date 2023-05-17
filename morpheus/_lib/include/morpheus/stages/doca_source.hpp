@@ -24,15 +24,14 @@
 
 namespace morpheus {
 
-namespace doca
-{
+namespace doca {
 
 struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
 
-} // namepsace doca
+}  // namespace doca
 
 #pragma GCC visibility push(default)
 
@@ -48,8 +47,7 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    DocaSourceStage(std::string const& nic_pci_address,
-                    std::string const& gpu_pci_address);
+    DocaSourceStage(std::string const& nic_pci_address, std::string const& gpu_pci_address);
 
   private:
     subscriber_fn_t build();

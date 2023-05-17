@@ -91,10 +91,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         if self._build_cpp_node():
             import morpheus._lib.doca as _doca
-            out_stream = _doca.DocaSourceStage(builder,
-                                               self.unique_name,
-                                               self._nic_pci_address,
-                                               self._gpu_pci_address)
+            out_stream = _doca.DocaSourceStage(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address)
         else:
             raise NotImplementedError("Does not support Python nodes")
 

@@ -30,8 +30,8 @@
 #include <morpheus/doca/doca_rx_pipe.hpp>
 #include <morpheus/doca/doca_rx_queue.hpp>
 #include <morpheus/doca/doca_semaphore.hpp>
-#include <morpheus/stages/doca_source_kernels.hpp>
 #include <morpheus/stages/doca_source.hpp>
+#include <morpheus/stages/doca_source_kernels.hpp>
 #include <mrc/segment/builder.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_scalar.hpp>
@@ -68,8 +68,7 @@ std::optional<uint32_t> ip_to_int(std::string const& ip_address)
 
 namespace morpheus {
 
-DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
-                                 std::string const& gpu_pci_address) :
+DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address, std::string const& gpu_pci_address) :
   PythonSource(build())
 {
     m_context = std::make_shared<morpheus::doca::DocaContext>(nic_pci_address, gpu_pci_address);

@@ -31,4 +31,4 @@ struct RTEContext
     ~RTEContext();
 };
 
-}  // namespace morpheus
+}  // namespace morpheus::doca

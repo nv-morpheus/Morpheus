@@ -23,8 +23,7 @@
 
 namespace morpheus::doca {
 
-DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
-                       std::shared_ptr<DocaRxQueue> rxq) :
+DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq) :
   m_context(context),
   m_rxq(rxq),
   m_pipe(nullptr)

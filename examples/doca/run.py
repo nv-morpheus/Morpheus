@@ -70,12 +70,7 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(num_threads,
-                 pipeline_batch_size,
-                 model_max_batch_size,
-                 model_fea_length,
-                 nic_addr,
-                 gpu_addr):
+def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -120,8 +115,7 @@ def run_pipeline(num_threads,
     pipeline.add_stage(
         PreprocessNLPStage(
             config,
-            vocab_hash_file=
-            '/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
+            vocab_hash_file='/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt',
             do_lower_case=True,
             truncation=True,
             add_special_tokens=False,
