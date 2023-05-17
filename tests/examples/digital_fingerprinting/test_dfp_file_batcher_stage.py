@@ -46,20 +46,17 @@ def test_constructor(config: Config):
     assert stage._start_time == datetime(1999, 1, 1)
     assert stage._end_time == datetime(2005, 10, 11, 4, 34, 21)
 
-    # Test deprecated usage
-    stage = DFPFileBatcherStage(config,
-                                date_conversion_func,
-                                'Y',
-                                sampling_rate_s=55,
-                                start_time=datetime(1999, 1, 1),
-                                end_time=datetime(2005, 10, 11, 4, 34, 21))
+
+def test_constructor_deprecated_args(config: Config):
+    """Test that the deprecated sampling_rate_s arg is still supported"""
+
+    from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
+
+    with pytest.deprecated_call():
+        stage = DFPFileBatcherStage(config, lambda x: x, sampling_rate_s=55)
 
     assert isinstance(stage, SinglePortStage)
-    assert stage._date_conversion_func is date_conversion_func
     assert stage._sampling == "55S"
-    assert stage._period == 'Y'
-    assert stage._start_time == datetime(1999, 1, 1)
-    assert stage._end_time == datetime(2005, 10, 11, 4, 34, 21)
 
 
 def test_constructor_both_sample_args_error(config: Config):
