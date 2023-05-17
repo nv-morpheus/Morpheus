@@ -36,6 +36,11 @@ struct DocaSemaphore;
 
 #pragma GCC visibility push(default)
 
+/**
+ * @brief Receives a firehose of raw packets from a GPUNetIO-enabled device.
+ *
+ * Tested only on ConnectX 6-Dx with a single GPU on the same NUMA node running firmware 24.35.2000
+ */
 class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
