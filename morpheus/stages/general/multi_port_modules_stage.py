@@ -35,7 +35,7 @@ class MultiPortModulesStage(Stage):
         Pipeline configuration instance.
     module_config : typing.Dict
         Module configuration.
-   input_ports : typing.List[str]
+    input_ports : typing.List[str]
         Input ports used for the registered module.
     output_ports : typing.List[str]
         Output ports used for the registered module.
