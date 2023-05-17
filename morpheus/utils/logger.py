@@ -112,7 +112,7 @@ def _configure_from_log_level(log_level: int):
     morpheus_logger = logging.getLogger("morpheus")
 
     # Set the level here
-    set_log_level(log_level=log_level)
+    set_log_level(log_level=logging.DEBUG)
 
     # Dont propagate upstream
     morpheus_logger.propagate = False
@@ -131,7 +131,7 @@ def _configure_from_log_level(log_level: int):
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
     # Now we build all of the handlers for the queue listener
-    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
+    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=200, maxBytes=100000000)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(
         logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
@@ -175,7 +175,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
     """
 
     # Start by initializing MRC logging
-    mrc.logging.init_logging("morpheus")
+    mrc.logging.init_logging("morpheus", py_level=logging.DEBUG)
 
     if (log_config_file is not None):
         # Configure using log file

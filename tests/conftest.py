@@ -640,7 +640,7 @@ def configure_tests_logging(pytestconfig: pytest.Config):
 
     from morpheus.utils.logger import configure_logging
 
-    log_level = logging.WARNING
+    log_level = logging.DEBUG
 
     # Check if a debugger is attached. If so, choose DEBUG for the logging level. Otherwise, only WARN
     trace_func = sys.gettrace()
@@ -657,18 +657,18 @@ def configure_tests_logging(pytestconfig: pytest.Config):
     if (config_log_level is not None):
         log_level = logging.getLevelName(config_log_level)
 
-    configure_logging(log_level=log_level)
+    configure_logging(log_level=logging.DEBUG)
 
 
 def _wrap_set_log_level(log_level: int):
     from morpheus.utils.logger import set_log_level
 
     # Save the previous logging level
-    old_level = set_log_level(log_level)
+    old_level = set_log_level(logging.DEBUG)
 
     yield
 
-    set_log_level(old_level)
+    set_log_level(logging.DEBUG)
 
 
 @pytest.fixture(scope="session")
