@@ -18,13 +18,11 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import morpheus.modules  # noqa: F401
+import tests.modules.multiplexer  # noqa: F401
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_ids import MULTIPLEXER
 from utils.dataset_manager import DatasetManager
 
 
@@ -41,8 +39,8 @@ def test_multi_port_pipeline(config, dataset_cudf: DatasetManager, source_count,
         input_ports.append(input_port)
 
     multiplexer_module_conf = {
-        "module_id": MULTIPLEXER,
-        "namespace": MORPHEUS_MODULE_NAMESPACE,
+        "module_id": "multiplexer",
+        "namespace": "morpheus_test",
         "module_name": "multiplexer",
         "input_ports": input_ports,
         "output_port": "output"

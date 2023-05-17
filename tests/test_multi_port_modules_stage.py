@@ -21,10 +21,8 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import morpheus.modules  # noqa: F401
+import tests.modules.multiplexer  # noqa: F401
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_ids import MULTIPLEXER
 
 
 @pytest.fixture(scope="function")
@@ -42,8 +40,8 @@ def unregistered_module_conf():
 @pytest.fixture(scope="function")
 def registered_module_conf():
     registered_module_conf = {
-        "module_id": MULTIPLEXER,
-        "namespace": MORPHEUS_MODULE_NAMESPACE,
+        "module_id": "multiplexer",
+        "namespace": "morpheus_test",
         "module_name": "multiplexer",
         "input_ports": ["input_1", "input_2"],
         "output_port": "output"

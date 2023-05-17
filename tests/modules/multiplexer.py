@@ -17,14 +17,12 @@ import logging
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_ids import MULTIPLEXER
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(MULTIPLEXER, MORPHEUS_MODULE_NAMESPACE)
+@register_module("multiplexer", "morpheus_test")
 def multiplexer(builder: mrc.Builder):
     """
     The multiplexer receives data packets from one or more input ports and interleaves them into a single output.
