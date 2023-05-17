@@ -66,9 +66,9 @@ def example_dir():
     yield os.path.join(TEST_DIRS.examples_dir, 'digital_fingerprinting/production/morpheus')
 
 
-# Some of the code inside ransomware_detection performs imports in the form of:
-#    from common....
-# For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
+# Some of the code inside the production DFP example performs imports in the form of:
+#    from ..utils.model_cache import ModelCache
+# For this reason we need to ensure that the digital_fingerprinting/production/morpheus dir is in sys.path
 @pytest.fixture(autouse=True)
 def dfp_prod_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
     sys.path.append(example_dir)
