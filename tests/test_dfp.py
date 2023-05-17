@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 from unittest import mock
 
+import cupy as cp
 import numpy as np
 import pandas as pd
 import pytest
@@ -51,6 +53,7 @@ from utils import calc_error_val
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_roleg(mock_ae, config, tmp_path):
+    print("********** Running DFP ROLEG test", flush=True)
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_exp_results.csv'))
@@ -81,11 +84,12 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    print(train_data_glob)
+    print(train_data_glob, flush=True)
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
 
+    print("Defining Pipeline", flush=True)
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
     pipe.add_stage(
@@ -106,7 +110,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+    #pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(
         ValidationStage(config,
                         val_file_name=val_file_name,
@@ -117,7 +121,9 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
+    print("Running Pipeline", flush=True)
     pipe.run()
+    print("Post checks", flush=True)
 
     mock_ae.fit.assert_called_once()
     mock_ae.build_input_tensor.assert_called_once()
@@ -134,6 +140,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123(mock_ae, config, tmp_path):
+    print("********** Running DFP user123 test", flush=True)
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_exp_results.csv'))
@@ -215,6 +222,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
+    print("********** Running multi segment DFP user123 test", flush=True)
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
     exp_results = pd.read_csv(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_exp_results.csv'))
