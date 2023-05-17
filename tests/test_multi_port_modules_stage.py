@@ -105,9 +105,8 @@ def test_empty_ports(config, unregistered_module_conf, input_ports, output_ports
                               output_ports=unregistered_module_conf["output_ports"])
 
 
-@pytest.mark.parametrize("input_ports,output_ports,expected_count",
-                         [(["input_1", "input_2"], ["output"], 2), (["input_1"], ["output"], 1),
-                          (["input_1", "input_2"], ["output_1", "output_2"], 2)])
+@pytest.mark.parametrize("input_ports,output_ports,expected_count", [(["input_1", "input_2"], ["output"], 2),
+                                                                     (["input_1"], ["output"], 1)])
 def test_registered_module(config, registered_module_conf, input_ports, output_ports, expected_count):
     registered_module_conf["input_ports"] = input_ports
     registered_module_conf["output_ports"] = output_ports
@@ -118,6 +117,9 @@ def test_registered_module(config, registered_module_conf, input_ports, output_p
     mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
+    mock_module.input_ids.return_value = registered_module_conf["input_ports"]
+    mock_module.output_ids.return_value = [registered_module_conf["output_port"]]
+
     mock_segment.make_node.return_value = mock_node
 
     mod_stage = MultiPortModulesStage(config,
@@ -129,3 +131,28 @@ def test_registered_module(config, registered_module_conf, input_ports, output_p
 
     mock_segment.load_module.assert_called_once()
     assert mock_segment.make_edge.call_count == expected_count
+
+
+@pytest.mark.parametrize("input_ports, output_ports",
+                         [(["input_1", "input_3"], ["output"]), (["input_1", "input_2"], ["output_0"]),
+                          (["input_1", "input_2", "input_3"], ["output"]),
+                          (["input_1", "input_2"], ["output", "output_2"])])
+def test_incorrect_ports(config, registered_module_conf, input_ports, output_ports):
+    # This test checks for both incorrect input/output ports as well as too many input/output ports.
+    mock_node = mock.MagicMock()
+    mock_segment = mock.MagicMock()
+    mock_module = mock.MagicMock()
+    mock_input_stream = mock.MagicMock()
+
+    mock_segment.load_module.return_value = mock_module
+    mock_segment.make_node.return_value = mock_node
+    mock_module.input_ids.return_value = registered_module_conf["input_ports"]
+    mock_module.output_ids.return_value = [registered_module_conf["output_port"]]
+
+    mod_stage = MultiPortModulesStage(config,
+                                      module_conf=registered_module_conf,
+                                      input_ports=input_ports,
+                                      output_ports=output_ports)
+
+    with pytest.raises(ValueError):
+        mod_stage._build(mock_segment, mock_input_stream)

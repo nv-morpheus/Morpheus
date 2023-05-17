@@ -96,10 +96,25 @@ class MultiPortModulesStage(Stage):
         """
         return (typing.Any, )
 
+    def _validate_ports(self, module) -> None:
+
+        input_ids = module.input_ids()
+        output_ids = module.output_ids()
+
+        if sorted(self._in_ports) != sorted(input_ids):
+            raise ValueError(f"Provided input ports do not match module input ports. Module: {input_ids}, "
+                             f"Provided: {self._in_ports}.")
+
+        if sorted(self._out_ports) != sorted(output_ids):
+            raise ValueError(f"Provided output ports do not match module output ports. Module: {output_ids}, "
+                             f"Provided: {self._out_ports}.")
+
     def _build(self, builder: mrc.Builder, in_port_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
+
+        self._validate_ports(module)
 
         # Make an edges with input ports
         for index in range(self._num_in_ports):
