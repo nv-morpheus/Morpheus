@@ -17,9 +17,11 @@
 import os
 from unittest import mock
 
+import fsspec
 import pytest
 
 from morpheus.utils.downloader import Downloader
+from utils import TEST_DIRS
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -90,7 +92,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
 
 @mock.patch('dask.distributed.LocalCluster')
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])
-def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
+def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
 
@@ -99,3 +101,67 @@ def test_close_dask_cluster_noop(mock_dask_cluster: mock.MagicMock, dl_method: s
 
     mock_dask_cluster.assert_not_called()
     mock_dask_cluster.close.assert_not_called()
+
+
+@pytest.mark.usefixtures("restore_environ")
+@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@mock.patch('multiprocessing.get_context')
+@mock.patch('dask.config')
+@mock.patch('dask.distributed.Client')
+@mock.patch('dask.distributed.LocalCluster')
+def test_download(mock_dask_cluster: mock.MagicMock,
+                  mock_dask_client: mock.MagicMock,
+                  mock_dask_config: mock.MagicMock,
+                  mock_mp_gc: mock.MagicMock,
+                  dl_method: str):
+    mock_dask_cluster.return_value = mock_dask_cluster
+    mock_dask_client.return_value = mock_dask_client
+    mock_dask_client.__enter__.return_value = mock_dask_client
+    mock_dask_client.__exit__.return_value = False
+
+    mock_mp_gc.return_value = mock_mp_gc
+    mock_mp_pool = mock.MagicMock()
+    mock_mp_gc.Pool.return_value = mock_mp_pool
+    mock_mp_pool.return_value = mock_mp_pool
+    mock_mp_pool.__enter__.return_value = mock_mp_pool
+    mock_mp_pool.__exit__.return_value = False
+
+    input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield/snapshot-1/*.json')
+    download_buckets = fsspec.open_files(input_glob)
+    num_buckets = len(download_buckets)
+    assert num_buckets > 0
+
+    download_fn = mock.MagicMock()
+    returnd_df = mock.MagicMock()
+    if dl_method.startswith('dask'):
+        mock_dask_client.gather.return_value = [returnd_df for _ in range(num_buckets)]
+    elif dl_method in ("multiprocess", "multiprocessing"):
+        mock_mp_pool.map.return_value = [returnd_df for _ in range(num_buckets)]
+    else:
+        download_fn.return_value = returnd_df
+
+    downloader = Downloader(download_method=dl_method)
+
+    results = downloader.download(download_buckets, download_fn)
+    assert results == [returnd_df for _ in range(num_buckets)]
+
+    if dl_method in ("multiprocess", "multiprocessing"):
+        mock_mp_gc.assert_called_once()
+        mock_mp_pool.map.assert_called_once()
+    else:
+        mock_mp_gc.assert_not_called()
+        mock_mp_pool.map.assert_not_called()
+
+    if dl_method == "single_thread":
+        download_fn.assert_has_calls([mock.call(bucket) for bucket in download_buckets])
+    else:
+        download_fn.assert_not_called()
+
+    if dl_method.startswith('dask'):
+        mock_dask_client.assert_called_once_with(mock_dask_cluster)
+        mock_dask_client.map.assert_called_once()
+        mock_dask_client.gather.assert_called_once()
+    else:
+        mock_dask_cluster.assert_not_called()
+        mock_dask_client.assert_not_called()
+        mock_dask_config.assert_not_called()
