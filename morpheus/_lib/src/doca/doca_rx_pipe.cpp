@@ -24,8 +24,7 @@
 namespace morpheus::doca {
 
 DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
-                       std::shared_ptr<DocaRxQueue> rxq,
-                       uint32_t source_ip_filter) :
+                       std::shared_ptr<DocaRxQueue> rxq) :
   m_context(context),
   m_rxq(rxq),
   m_pipe(nullptr)
@@ -38,10 +37,6 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context,
     match.outer.l3_type        = DOCA_FLOW_L3_TYPE_IP4;
     match.outer.ip4.next_proto = IPPROTO_TCP;
     match.outer.l4_type_ext    = DOCA_FLOW_L4_TYPE_EXT_TCP;
-    // match.outer.ip4.src_ip = 0xffffffff;
-    // match.outer.ip4.dst_ip = 0xffffffff;
-    // match.outer.tcp.l4_port.src_port = 0xffff;
-    // match.outer.tcp.l4_port.dst_port = 0xffff;
 
     doca_flow_fwd fwd{};
     fwd.type            = DOCA_FLOW_FWD_RSS;

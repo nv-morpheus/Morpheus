@@ -38,8 +38,7 @@ PYBIND11_MODULE(doca, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("nic_pci_address"),
-             py::arg("gpu_pci_address"),
-             py::arg("source_ip_filter") = "");
+             py::arg("gpu_pci_address"));
 }
 
 }  // namespace morpheus

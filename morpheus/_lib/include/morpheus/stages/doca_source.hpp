@@ -49,8 +49,7 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::subscriber_fn_t;
 
     DocaSourceStage(std::string const& nic_pci_address,
-                    std::string const& gpu_pci_address,
-                    std::string const& source_ip_filter);
+                    std::string const& gpu_pci_address);
 
   private:
     subscriber_fn_t build();
@@ -73,8 +72,7 @@ struct DocaSourceStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(mrc::segment::Builder& builder,
                                                                        std::string const& name,
                                                                        std::string const& nic_pci_address,
-                                                                       std::string const& gpu_pci_address,
-                                                                       std::string const& source_ip_filter);
+                                                                       std::string const& gpu_pci_address);
 };
 
 #pragma GCC visibility pop

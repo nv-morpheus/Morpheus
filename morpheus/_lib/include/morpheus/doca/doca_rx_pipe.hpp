@@ -44,7 +44,7 @@ struct DocaRxPipe
     doca_flow_pipe* m_root_pipe;
 
   public:
-    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq, uint32_t source_ip_filter);
+    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq);
     ~DocaRxPipe();
 };
 

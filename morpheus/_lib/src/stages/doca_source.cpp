@@ -69,26 +69,14 @@ std::optional<uint32_t> ip_to_int(std::string const& ip_address)
 namespace morpheus {
 
 DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address,
-                                 std::string const& gpu_pci_address,
-                                 std::string const& source_ip_filter) :
+                                 std::string const& gpu_pci_address) :
   PythonSource(build())
 {
-    auto source_ip = ip_to_int(source_ip_filter);
-
-    if (source_ip == std::nullopt)
-    {
-        throw std::runtime_error("source ip filter invalid");
-    }
-
-    if (source_ip != 0) {
-        throw std::runtime_error("source ip filter not implemented");
-    }
-
     m_context = std::make_shared<morpheus::doca::DocaContext>(nic_pci_address, gpu_pci_address);
 
     m_rxq       = std::make_shared<morpheus::doca::DocaRxQueue>(m_context);
     m_semaphore = std::make_shared<morpheus::doca::DocaSemaphore>(m_context, 1024);
-    m_rxpipe    = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq, source_ip.value());
+    m_rxpipe    = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
@@ -243,10 +231,9 @@ std::shared_ptr<mrc::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceP
     mrc::segment::Builder& builder,
     std::string const& name,
     std::string const& nic_pci_address,
-    std::string const& gpu_pci_address,
-    std::string const& source_ip_filter)
+    std::string const& gpu_pci_address)
 {
-    return builder.construct_object<DocaSourceStage>(name, nic_pci_address, gpu_pci_address, source_ip_filter);
+    return builder.construct_object<DocaSourceStage>(name, nic_pci_address, gpu_pci_address);
 }
 
 }  // namespace morpheus
