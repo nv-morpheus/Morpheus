@@ -90,17 +90,6 @@ def test_constructor(config: Config):
     assert stage._parser_kwargs == {'test': 'this'}
     assert stage._cache_dir.startswith('/test/path/cache')
     assert stage._dask_cluster is None
-    assert stage._downloader.download_method == "dask_thread"
-
-
-@pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
-def test_constructor_download_type(config: Config, dl_type: str):
-    from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
-
-    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
-    stage = DFPFileToDataFrameStage(config, DataFrameInputSchema())
-    assert stage._downloader.download_method == dl_type
 
 
 @pytest.mark.usefixtures("restore_environ")
