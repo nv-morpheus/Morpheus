@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Morpheus pipeline module for fetching files and emitting them as DataFrames."""
 
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import pickle
 import time
@@ -34,6 +34,7 @@ from morpheus.cli.utils import str_to_file_type
 from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -79,8 +80,7 @@ def file_to_df(builder: mrc.Builder):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    downloader = Downloader()
 
     if (cache_dir is None):
         cache_dir = "./.cache"
@@ -95,42 +95,6 @@ def file_to_df(builder: mrc.Builder):
         file_type = str_to_file_type(file_type.lower())
     except Exception:
         raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
-
-    def get_dask_cluster():
-
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-        return dask_cluster
-
-    def get_dask_client(dask_cluster):
-
-        from dask.distributed import Client
-
-        logger.debug("Creating dask client...")
-        dask_client = Client(dask_cluster)
-        logger.debug("Creating dask client %s ... Done.", dask_client)
-
-        return dask_client
-
-    def close_dask_cluster():
-        if (dask_cluster is not None):
-            logger.debug("Stopping dask cluster...")
-            dask_cluster.close()
-
-            logger.debug("Stopping dask cluster... Done.")
 
     def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                    file_type: FileTypes,
@@ -202,24 +166,7 @@ def file_to_df(builder: mrc.Builder):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (download_method.startswith("dask")):
-                # Create the client each time to ensure all connections to the cluster are
-                # closed (they can time out)
-                with get_dask_client(dask_cluster) as client:
-                    dfs = client.map(download_method_func, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (download_method == "multiprocessing"):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method_func, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method_func(s3_object))
-
+            dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False
@@ -269,10 +216,7 @@ def file_to_df(builder: mrc.Builder):
             raise
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(close_dask_cluster)).subscribe(sub)
-
-    if (download_method.startswith("dask")):
-        dask_cluster = get_dask_cluster()
+        obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(downloader.close)).subscribe(sub)
 
     node = builder.make_node(FILE_TO_DF, mrc.core.operators.build(node_fn))
 
