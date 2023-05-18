@@ -14,11 +14,9 @@
 # limitations under the License.
 
 import logging
-import os
 
 import cupy
 import torch
-import torch.nn as nn
 from dataloader import DataLoader
 from dataset import Dataset
 from torch.optim import AdamW
@@ -125,9 +123,9 @@ class SequenceClassifier:
         :type test_data: cudf.Series
         :param labels: labels for each element in test_data
         :type labels: cudf.Series
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
-            than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it
-            will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence
+            is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is
+            longer than max_seq_len it will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -175,7 +173,9 @@ class SequenceClassifier:
 
         :param input_data: input text data for prediction
         :type input_data: cudf.Series
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence
+            is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is
+            longer than max_seq_len it will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -187,7 +187,8 @@ class SequenceClassifier:
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
-        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> emails_train, emails_test, labels_train, labels_test =
+                train_test_split(train_emails_df, 'label', train_size=0.8)
         >>> sc.train_model(emails_train, labels_train)
         >>> predictions = sc.predict(emails_test)
         """
