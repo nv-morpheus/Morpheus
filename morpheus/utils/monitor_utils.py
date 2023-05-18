@@ -16,6 +16,7 @@ import logging
 import typing
 from functools import reduce
 
+import fsspec
 from tqdm import TMonitor
 from tqdm import TqdmSynchronisationWarning
 from tqdm import tqdm
@@ -315,7 +316,7 @@ class MonitorController:
         elif (isinstance(x, list)):
             item_count_fn = self.auto_count_fn(x[0])
             return lambda y: reduce(lambda sum, z, item_count_fn=item_count_fn: sum + item_count_fn(z), y, 0)
-        elif (isinstance(x, str)):
+        elif (isinstance(x, (str, fsspec.core.OpenFile))):
             return lambda y: 1
         elif (hasattr(x, "__len__")):
             return len  # Return len directly (same as `lambda y: len(y)`)
