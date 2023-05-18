@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Stage for converting fsspec file objects to a DataFrame."""
 
 import hashlib
 import json
@@ -71,6 +72,28 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
 
 
 class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
+    """
+    Stage for converting fsspec file objects to a DataFrame, pre-processing the DataFrame according to `schema`, and
+    caching fetched file objects. The file objects are fetched in parallel using `morpheus.utils.downloader.Downloader`,
+    which supports multiple download methods indicated by the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable.
+
+    Refer to `morpheus.utils.downloader.Downloader` for more information on the supported download methods.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    schema : `morpheus.utils.column_info.DataFrameInputSchema`
+        Input schema for the DataFrame.
+    filter_null : bool, optional
+        Whether to filter null values from the DataFrame.
+    file_type : `morpheus.common.FileTypes`, optional
+        File type of the input files. If `FileTypes.Auto`, the file type will be inferred from the file extension.
+    parser_kwargs : dict, optional
+        Keyword arguments to pass to the DataFrame parser.
+    cache_dir : str, optional
+        Directory to use for caching.
+    """
 
     def __init__(self,
                  c: Config,
@@ -92,12 +115,15 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-s3-to-df"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted input types."""
         return (typing.Any, )
 
     def _get_or_create_dataframe_from_s3_batch(
@@ -169,6 +195,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         return (output_df, False)
 
     def convert_to_dataframe(self, s3_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
+        """Converts a batch of S3 objects to a DataFrame."""
         if (not s3_object_batch):
             return None
 
