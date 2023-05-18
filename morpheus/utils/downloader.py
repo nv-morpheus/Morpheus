@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Downloader utility class for fetching files, potentially from a remote file service, using a variety of methods defined
+by the `DownloadMethods` enum.
+"""
 
 import logging
 import multiprocessing as mp
@@ -77,6 +81,7 @@ class Downloader:
 
     @property
     def download_method(self) -> str:
+        """Return the download method."""
         return self._download_method
 
     def get_dask_cluster(self):
@@ -114,6 +119,7 @@ class Downloader:
         return dask.distributed.Client(self.get_dask_cluster())
 
     def close(self):
+        """Close the dask cluster if it exists."""
         if (self._dask_cluster is not None):
             logger.debug("Stopping dask cluster...")
 

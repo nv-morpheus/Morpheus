@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module utilities for Morpheus."""
 
 import functools
 import logging
@@ -220,6 +221,7 @@ def to_period_approximation(data_df: DataFrameType, period: str):
 
 
 def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):
+    """This function returns the module configuration with the overrides."""
     sub_config = config.get(module_id, None)
 
     try:

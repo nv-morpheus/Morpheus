@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Write to file stage."""
 
 import os
 import typing
@@ -85,6 +86,7 @@ class WriteToFileStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Returns the name of this stage."""
         return "to-file"
 
     def accepted_types(self) -> typing.Tuple:
@@ -100,6 +102,7 @@ class WriteToFileStage(SinglePortStage):
         return (MessageMeta, )
 
     def supports_cpp_node(self):
+        """Indicates whether this stage supports a C++ node."""
         return True
 
     def _convert_to_strings(self, df: DataFrameType):

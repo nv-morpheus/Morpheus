@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Output stage that collects received messages and compares the concatinated dataframe of all messages against a known
+expected dataframe.
+"""
 
 import copy
 import typing
@@ -83,9 +87,11 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     @property
     def name(self) -> str:
+        """Name of the stage."""
         return "compare"
 
     def supports_cpp_node(self) -> bool:
+        """Indicates whether this stage supports a C++ node."""
         return False
 
     def get_results(self, clear=True) -> dict:
