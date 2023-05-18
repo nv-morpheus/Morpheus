@@ -16,12 +16,24 @@ import logging
 import multiprocessing as mp
 import os
 import typing
+from enum import Enum
 
 import fsspec
 import pandas as pd
 
-VALID_VALUES = frozenset(["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 logger = logging.getLogger(__name__)
+
+
+class DownloadMethods(str, Enum):
+    """Valid download methods for the `Downloader` class."""
+    SINGLE_THREAD = "single_thread"
+    MULTIPROCESS = "multiprocess"
+    MULTIPROCESSING = "multiprocessing"
+    DASK = "dask"
+    DASK_THREAD = "dask_thread"
+
+
+DOWNLOAD_METHODS_MAP = {dl.value: dl for dl in DownloadMethods}
 
 
 class Downloader:
@@ -38,20 +50,30 @@ class Downloader:
 
     Parameters
     ----------
-    download_method : str, optional, default = "dask_thread"
+    download_method : typing.Union[DownloadMethods, str], optional, default = DownloadMethods.DASK_THREAD
         The download method to use, if the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable is set, it takes
         presedence.
     dask_heartbeat_interval : str, optional, default = "30s"
         The heartbeat interval to use when using dask or dask_thread.
     """
 
-    def __init__(self, download_method: str = "dask_thread", dask_heartbeat_interval: str = "30s"):
+    def __init__(self,
+                 download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
+                 dask_heartbeat_interval: str = "30s"):
         self._dask_cluster = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
-        self._download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
 
-        if self._download_method not in VALID_VALUES:
-            raise ValueError(f"Invalid download method: {self._download_method}. Valid values are: {VALID_VALUES}")
+        download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
+
+        if isinstance(download_method, str):
+            try:
+                download_method = DOWNLOAD_METHODS_MAP[download_method.lower()]
+            except KeyError as exc:
+                raise ValueError(
+                    f"Invalid download method: {download_method}. Valid values are: {DOWNLOAD_METHODS_MAP.keys()}"
+                ) from exc
+
+        self._download_method = download_method
 
     @property
     def download_method(self) -> str:
@@ -73,7 +95,8 @@ class Downloader:
             # Up the heartbeat interval which can get violated with long download times
             dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
 
-            self._dask_cluster = dask.distributed.LocalCluster(start=True, processes=self.download_method != "dask_thread")
+            self._dask_cluster = dask.distributed.LocalCluster(start=True,
+                                                               processes=self.download_method != "dask_thread")
 
             logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
 

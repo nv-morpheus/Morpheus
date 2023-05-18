@@ -20,7 +20,9 @@ from unittest import mock
 import fsspec
 import pytest
 
+from morpheus.utils.downloader import DOWNLOAD_METHODS_MAP
 from morpheus.utils.downloader import Downloader
+from morpheus.utils.downloader import DownloadMethods
 from utils import TEST_DIRS
 
 
@@ -36,14 +38,22 @@ def test_constructor_download_type(use_env: bool, dl_method: str):
         kwargs['download_method'] = dl_method
 
     downloader = Downloader(**kwargs)
+    assert downloader.download_method == DOWNLOAD_METHODS_MAP[dl_method]
+
+
+@pytest.mark.parametrize('dl_method', list(DownloadMethods))
+def test_constructor_enum_vals(dl_method: DownloadMethods):
+    downloader = Downloader(download_method=dl_method)
     assert downloader.download_method == dl_method
 
 
 @pytest.mark.usefixtures("restore_environ")
-def test_constructor_env_wins():
+@pytest.mark.parametrize('dl_method',
+                         [DownloadMethods.SINGLE_THREAD, DownloadMethods.DASK, DownloadMethods.DASK_THREAD])
+def test_constructor_env_wins(dl_method: DownloadMethods):
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = "multiprocessing"
     downloader = Downloader(download_method="single_thread")
-    assert downloader.download_method == "multiprocessing"
+    assert downloader.download_method == DownloadMethods.MULTIPROCESSING
 
 
 @pytest.mark.usefixtures("restore_environ")
