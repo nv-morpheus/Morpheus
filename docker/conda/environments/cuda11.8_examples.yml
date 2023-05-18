@@ -24,11 +24,17 @@ channels:
     - nvidia
     - conda-forge
 dependencies:
+    - boto3=1.24.59
     - chardet=5.0.0
     - cuml=23.02
     - dask==2023.1.1
+    - dill=0.3.6
     - distributed==2023.1.1
+    - mlflow>1.29.0,<2
+    - papermill=2.3.4
+    - s3fs==2022.8.2
     - pip
+    - wrapt=1.14.1 # ver 1.15 breaks the keras model used by the gnn_fraud_detection_pipeline
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - tensorflow==2.12.0
