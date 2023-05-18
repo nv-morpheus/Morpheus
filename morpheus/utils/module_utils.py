@@ -22,6 +22,8 @@ import pandas as pd
 
 import cudf
 
+from morpheus.utils.type_aliases import DataFrameType
+
 logger = logging.getLogger(__name__)
 
 registry = mrc.ModuleRegistry
@@ -184,13 +186,13 @@ period_to_strptime = {
 }
 
 
-def to_period_approximation(data_df: typing.Union[cudf.DataFrame, pd.DataFrame], period: str):
+def to_period_approximation(data_df: DataFrameType, period: str):
     """
     This function converts a cudf dataframe to a period approximation.
 
     Parameters
     ----------
-    data_df : cudf.DataFrame or pd.DataFrame
+    data_df : DataFrameType
         Input cudf/pandas dataframe.
     period : str
         Period.

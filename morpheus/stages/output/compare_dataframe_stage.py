@@ -15,8 +15,6 @@
 import copy
 import typing
 
-import pandas as pd
-
 import cudf
 
 from morpheus.config import Config
@@ -24,6 +22,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
 from morpheus.utils import concat_df
+from morpheus.utils.type_aliases import DataFrameType
 
 
 class CompareDataFrameStage(InMemorySinkStage):
@@ -37,7 +36,7 @@ class CompareDataFrameStage(InMemorySinkStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    compare_df : typing.Union[pd.DataFrame, cudf.DataFrame, str]
+    compare_df : typing.Union[DataFrameType, str]
         Dataframe to compare against the aggregate DataFrame composed from the received messages. When `compare_df` is
         a string it is assumed to be a file path.
     include : typing.List[str], optional
@@ -58,7 +57,7 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     def __init__(self,
                  c: Config,
-                 compare_df: typing.Union[pd.DataFrame, cudf.DataFrame, str],
+                 compare_df: typing.Union[DataFrameType, str],
                  include: typing.List[str] = None,
                  exclude: typing.List[str] = None,
                  index_col: str = None,
