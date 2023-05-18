@@ -22,11 +22,12 @@ python root-cause-bert.py \
 import argparse
 import time
 
-import cudf
 import pandas as pd
-from binary_sequence_classifier import BinarySequenceClassifier
+from sequence_classifier import SequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
+
+import cudf
 
 from morpheus.utils.seed import manual_seed
 
@@ -62,9 +63,9 @@ def train(trainingdata, unseenerrors):
 
     dflogs = cudf.DataFrame.from_pandas(dflogs)
 
-    seq_classifier = BinarySequenceClassifier()
-
-    seq_classifier.init_model('bert-base-uncased')
+    seq_classifier = SequenceClassifier("bert-base-uncased",
+                                        hash_file="../../../morpheus/data/bert-base-uncased-hash.txt",
+                                        num_labels=2)
 
     manual_seed(random_seed)
     seq_classifier.train_model(X_train['log'], y_train, batch_size=128, epochs=1, learning_rate=3.6e-04)
@@ -75,9 +76,9 @@ def train(trainingdata, unseenerrors):
 
     print(seq_classifier.evaluate_model(X_test['log'], y_test))
 
-    test_preds = seq_classifier.predict(X_test['log'], batch_size=128, threshold=0.5)
+    test_preds = seq_classifier.predict(X_test['log'], batch_size=128)
 
-    tests = test_preds[0].to_numpy()
+    tests = test_preds.to_numpy()
 
     true_labels = X_test['label']
 

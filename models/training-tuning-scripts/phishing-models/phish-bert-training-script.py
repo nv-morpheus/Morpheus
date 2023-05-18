@@ -19,8 +19,8 @@ python phish-bert-training-script.py
 import os.path
 import zipfile
 
-import binary_sequence_classifier
 import requests
+from sequence_classifier import SequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 
@@ -55,8 +55,9 @@ def main():
     X_train, y_train, X_test, y_test = preprocessing()
 
     print("Model Loading...")
-    seq_classifier = binary_sequence_classifier.BinarySequenceClassifier()
-    seq_classifier.init_model("bert-base-uncased")
+    seq_classifier = SequenceClassifier("bert-base-uncased",
+                                        hash_file="../../../morpheus/data/bert-base-uncased-hash.txt",
+                                        num_labels=2)
 
     print("Model Training...")
     seq_classifier.train_model(X_train, y_train, epochs=2)
@@ -67,7 +68,7 @@ def main():
     print("Model Evaluation")
     print("Accuracy:")
     print(seq_classifier.evaluate_model(X_test, y_test))
-    test_preds = seq_classifier.predict(X_test, batch_size=128)[0].to_numpy()
+    test_preds = seq_classifier.predict(X_test, batch_size=128).to_numpy()
     true_labels = y_test.to_numpy()
     print("F1 Score:")
     print(f1_score(true_labels, test_preds))

@@ -16,17 +16,10 @@
 Example Usage:
 python phish-bert-inference-script.py \
     --validationdata ../../datasets/validation-data/phishing-email-validation-data.jsonlines \
-    --model ../../phishing-models/phishing-bert-20221115.onnx \
-    --vocab ../../training-tuning-scripts/phishing-models/resources/bert-base-uncased-hash.txt \
+    --model ../../phishing-models/phishing-bert-20230517.onnx \
+    --vocab ../../../morpheus/data/bert-base-uncased-hash.txt \
     --output phishing-email-validation-output.jsonlines
 """
-
-###########################################################################################
-# cudf imports moved before torch import to avoid the following error:
-# ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
-import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
-###########################################################################################
 
 import argparse
 import json
@@ -35,6 +28,14 @@ import numpy as np
 import onnxruntime
 import torch
 from scipy.special import expit
+
+###########################################################################################
+# cudf imports moved before torch import to avoid the following error:
+# ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
+import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
+
+###########################################################################################
 
 
 def infer(validationdata, vocab, model, output):
