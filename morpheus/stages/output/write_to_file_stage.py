@@ -11,16 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""To File Sink Stage."""
+"""Write to file stage."""
 
 import os
 import typing
 
 import mrc
 import mrc.core.operators as ops
-import pandas as pd
-
-import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -31,6 +28,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.type_aliases import DataFrameType
 
 
 @register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
@@ -88,7 +86,7 @@ class WriteToFileStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        """Unique name of the stage."""
+        """Returns the name of this stage."""
         return "to-file"
 
     def accepted_types(self) -> typing.Tuple:
@@ -104,10 +102,10 @@ class WriteToFileStage(SinglePortStage):
         return (MessageMeta, )
 
     def supports_cpp_node(self):
-        """Indicate that this stage supports a C++ node."""
+        """Indicates whether this stage supports a C++ node."""
         return True
 
-    def _convert_to_strings(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
+    def _convert_to_strings(self, df: DataFrameType):
         if (self._file_type == FileTypes.JSON):
             output_strs = serializers.df_to_json(df, include_index_col=self._include_index_col)
         elif (self._file_type == FileTypes.CSV):

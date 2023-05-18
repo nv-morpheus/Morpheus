@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Groups incoming DataFrame objects into batches based on a time period."""
 
 import logging
 import typing
@@ -33,11 +34,44 @@ TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])
 
 
 class DFPFileBatcherStage(SinglePortStage):
+    """
+    This stage groups data in the incoming `DataFrame` in batches of a time period (per day default), and optionally
+    filtering incoming data to a specific time window.  This stage can potentially improve performance by combining
+    multiple small files into a single batch.  This stage assumes that the date of the logs can be easily inferred such
+    as encoding the creation time in the file name (for example, `AUTH_LOG-2022-08-21T22.05.23Z.json`), or using the
+    modification time as reported by the file system. The actual method for extracting the date is encoded in a
+    user-supplied `date_conversion_func` function.
+
+    Note: Setting both `sampling_rate_s` and `sampling` will result in an error.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    date_conversion_func : callable
+        A function that takes a file object and returns a `datetime` object representing the date of the file.
+    period : str, optional
+        Time period to group data by, value must be one of pandas' offset strings
+        https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
+    sampling_rate_s: int, optional
+        Deprecated consider using `sampling` instead.
+        When defined a subset of the incoming data files will be sampled, taking the first row for each
+        `sampling_rate_s` seconds.
+    start_time : datetime, optional
+        When not None incoming data files will be filtered, excluding any files created prior to `start_time`
+    end_time : datetime, optional
+        When not None incoming data files will be filtered, excluding any files created after `end_time`
+    sampling : str, float, int, optional
+        When non-None a subset of the incoming data files will be sampled.
+        When a string, the value is interpreted as a pandas frequency. The first row for each frequency will be taken.
+        When the value is between [0,1), a percentage of rows will be taken.
+        When the value is greater than 1, the value is interpreted as the random count of rows to take.
+    """
 
     def __init__(self,
                  c: Config,
-                 date_conversion_func,
-                 period="D",
+                 date_conversion_func: typing.Callable[[fsspec.core.OpenFile], datetime],
+                 period: str = "D",
                  sampling_rate_s: typing.Optional[int] = None,
                  start_time: datetime = None,
                  end_time: datetime = None,
@@ -63,16 +97,21 @@ class DFPFileBatcherStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Returns the name of the stage."""
         return "dfp-file-batcher"
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
+        """Returns whether or not this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
-    def on_data(self, file_objects: fsspec.core.OpenFiles):
-
+    def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
+        """
+        Batches incoming data according to date, period and sampling, potentially filtering data based on file dates.
+        """
         timestamps = []
         full_names = []
         file_objs = []
@@ -91,7 +130,7 @@ class DFPFileBatcherStage(SinglePortStage):
             file_objs.append(file_object)
 
         # Build the dataframe
-        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names, "objects": file_objects})
+        df = pd.DataFrame(index=pd.DatetimeIndex(timestamps), data={"filename": full_names, "objects": file_objs})
 
         # sort the incoming data by date
         df.sort_index(inplace=True)
@@ -139,4 +178,4 @@ class DFPFileBatcherStage(SinglePortStage):
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
         builder.make_edge(input_stream[0], stream)
 
-        return stream, typing.List[fsspec.core.OpenFiles]
+        return stream, typing.Tuple[fsspec.core.OpenFiles, int]

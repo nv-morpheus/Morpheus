@@ -12,13 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Serialization methods."""
+"""DataFrame serializers."""
 
 import typing
 from io import IOBase
 from io import StringIO
-
-import pandas as pd
 
 import cudf
 
@@ -26,18 +24,16 @@ from morpheus.common import FileTypes
 from morpheus.common import determine_file_type
 from morpheus.common import write_df_to_file as write_df_to_file_cpp
 from morpheus.config import CppConfig
+from morpheus.utils.type_aliases import DataFrameType
 
 
-def df_to_stream_csv(df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     stream: IOBase,
-                     include_header=False,
-                     include_index_col=True):
+def df_to_stream_csv(df: DataFrameType, stream: IOBase, include_header=False, include_index_col=True):
     """
     Serializes a DataFrame into CSV into the provided stream object.
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
@@ -51,13 +47,13 @@ def df_to_stream_csv(df: typing.Union[pd.DataFrame, cudf.DataFrame],
     return stream
 
 
-def df_to_stream_json(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream: IOBase, include_index_col=True):
+def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True):
     """
     Serializes a DataFrame into JSON into the provided stream object.
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
@@ -69,13 +65,13 @@ def df_to_stream_json(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream: IO
     return stream
 
 
-def df_to_stream_parquet(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream: IOBase):
+def df_to_stream_parquet(df: DataFrameType, stream: IOBase):
     """
     Serializes a DataFrame into Parquet format into the provided stream object.
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
@@ -85,7 +81,7 @@ def df_to_stream_parquet(df: typing.Union[pd.DataFrame, cudf.DataFrame], stream:
     return stream
 
 
-def df_to_csv(df: cudf.DataFrame,
+def df_to_csv(df: DataFrameType,
               include_header=False,
               strip_newlines=False,
               include_index_col=True) -> typing.List[str]:
@@ -94,7 +90,7 @@ def df_to_csv(df: cudf.DataFrame,
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     include_header : bool, optional
         Whether or not to include the header, by default False.
@@ -123,13 +119,13 @@ def df_to_csv(df: cudf.DataFrame,
     return results
 
 
-def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True) -> typing.List[str]:
+def df_to_json(df: DataFrameType, strip_newlines=False, include_index_col=True) -> typing.List[str]:
     """
     Serializes a DataFrame into JSON and returns the serialized output seperated by lines.
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     strip_newlines : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
@@ -157,13 +153,13 @@ def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True)
     return results
 
 
-def df_to_parquet(df: cudf.DataFrame, strip_newlines=False) -> typing.List[str]:
+def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[str]:
     """
     Serializes a DataFrame into Parquet and returns the serialized output seperated by lines.
 
     Parameters
     ----------
-    df : cudf.DataFrame
+    df : DataFrameType
         Input DataFrame to serialize.
     strip_newlines : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
@@ -187,16 +183,13 @@ def df_to_parquet(df: cudf.DataFrame, strip_newlines=False) -> typing.List[str]:
     return results
 
 
-def write_df_to_file(df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     file_name: str,
-                     file_type: FileTypes = FileTypes.Auto,
-                     **kwargs):
+def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = FileTypes.Auto, **kwargs):
     """
     Writes the provided DataFrame into the file specified using the specified format.
 
     Parameters
     ----------
-    df : typing.Union[pd.DataFrame, cudf.DataFrame]
+    df : DataFrameType
         The DataFrame to serialize
     file_name : str
         The location to store the DataFrame
