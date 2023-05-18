@@ -25,13 +25,14 @@ from morpheus.common import determine_file_type
 from morpheus.common import read_file_to_df as read_file_to_df_cpp
 from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def read_file_to_df(file_name: typing.Union[str, io.IOBase],
                     file_type: FileTypes = FileTypes.Auto,
                     parser_kwargs: dict = None,
                     filter_nulls: bool = True,
-                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> DataFrameType:
     """
     Reads a file into a dataframe and performs any of the necessary cleanup.
 
@@ -50,7 +51,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
 
     Returns
     -------
-    typing.Union[cudf.DataFrame, pandas.DataFrame]
+    DataFrameType
         A parsed DataFrame.
     """
 

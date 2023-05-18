@@ -31,11 +31,10 @@ from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
-
-DataFrameType = typing.Union[pd.DataFrame, cudf.DataFrame]
 
 
 class PreallocatorMixin(ABC):
