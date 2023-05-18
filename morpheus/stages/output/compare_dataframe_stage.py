@@ -19,6 +19,8 @@ expected dataframe.
 import copy
 import typing
 
+import pandas as pd
+
 import cudf
 
 from morpheus.config import Config
