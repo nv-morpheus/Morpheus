@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""DatasetManager class for loading and caching test datasets as DataFrames."""
 
 import logging
 import os
@@ -50,7 +49,6 @@ class DatasetManager(object):
     # Initialization is also being performed here instead of an __init__ method as an __init__ method would be re-run
     # the __init__ on the singleton instance for each cache hit.
     def __new__(cls, df_type: typing.Literal['cudf', 'pandas']):
-        """Returns the singleton instance of `DatasetManager` for the specified `df_type`."""
         try:
             return cls.__instances[df_type]
         except KeyError:
@@ -65,7 +63,6 @@ class DatasetManager(object):
         return 'cudf' if df_type == 'pandas' else 'pandas'
 
     def clear(self):
-        """Clears the cache"""
         self.__df_cache.clear()
 
     def get_df(self,
@@ -133,17 +130,14 @@ class DatasetManager(object):
 
     @property
     def cudf(self):
-        """Returns the singleton instance of `DatasetManager` for cudf DataFrames."""
         return DatasetManager(df_type='cudf')
 
     @property
     def pandas(self):
-        """Returns the singleton instance of `DatasetManager` for pandas DataFrames."""
         return DatasetManager(df_type='pandas')
 
     @property
     def default_df_type(self):
-        """Returns the default DataFrame type for this instance of `DatasetManager`."""
         return self._default_df_type
 
     @staticmethod
@@ -188,7 +182,7 @@ class DatasetManager(object):
         # Return a new dataframe where we replace some index values with others
         return cls.replace_index(df, replace_dict)
 
-    def _value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
+    def value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
         if (isinstance(val, cdf.DataFrame) or isinstance(val, cdf.Series)):
             return val.to_pandas()
 
@@ -202,12 +196,12 @@ class DatasetManager(object):
         """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
 
         # Comparisons work better in cudf so convert everything to that
-        df_to_check = cls._value_as_pandas(df_to_check)
+        df_to_check = cls.value_as_pandas(df_to_check)
 
         if (isinstance(val_to_check, cp.ndarray)):
             val_to_check = val_to_check.get()
         else:
-            val_to_check = cls._value_as_pandas(val_to_check, assert_is_pandas=False)
+            val_to_check = cls.value_as_pandas(val_to_check, assert_is_pandas=False)
 
         bool_df = df_to_check == val_to_check
 
@@ -221,7 +215,7 @@ class DatasetManager(object):
         """
         Wrapper for morpheus.utils.compare_df.compare_df
         """
-        return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
+        return compare_df.compare_df(cls.value_as_pandas(dfa), cls.value_as_pandas(dfb), **compare_args)
 
     @classmethod
     def assert_compare_df(cls,

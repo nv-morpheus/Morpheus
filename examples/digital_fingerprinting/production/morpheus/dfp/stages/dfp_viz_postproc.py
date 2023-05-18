@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""DFPVizPostprocStage performs post-processing on DFP inference output for the purposes of visualization."""
 
 import logging
 import os
@@ -63,7 +62,6 @@ class DFPVizPostprocStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        """Unique name of the stage."""
         return "dfp-viz-postproc"
 
     def accepted_types(self) -> typing.Tuple:
@@ -79,7 +77,6 @@ class DFPVizPostprocStage(SinglePortStage):
         return (MultiDFPMessage, )
 
     def supports_cpp_node(self):
-        """Whether this stage supports C++ node."""
         return False
 
     def _postprocess(self, x: MultiDFPMessage) -> pd.DataFrame:

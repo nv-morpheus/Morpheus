@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Pipeline for detecting phishing emails."""
 
 import logging
 import os
@@ -37,7 +36,6 @@ from morpheus.utils.logger import configure_logging
 
 
 def run_pipeline():
-    """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
 

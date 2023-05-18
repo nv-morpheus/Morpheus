@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Benchmark config generator for DFP."""
 
 import glob
 import json
@@ -36,13 +35,11 @@ THIS_DIR = path.dirname(path.abspath(__file__))
 
 
 def set_mlflow_tracking_uri(tracking_uri):
-    """Set mlflow tracking uri and logger level."""
     mlflow.set_tracking_uri(tracking_uri)
     logging.getLogger('mlflow').setLevel(logger.level)
 
 
 def load_json(filepath: str):
-    """Load a json file."""
     full_filepath = path.join(THIS_DIR, filepath)
     with open(full_filepath, 'r') as (f):
         json_dict = json.load(f)
@@ -50,14 +47,6 @@ def load_json(filepath: str):
 
 
 class BenchmarkConfGenerator:
-    """
-    Benchmark config generator for DFP.
-
-    Parameters
-    ----------
-    pipe_conf : typing.Dict[str, any]
-        Pipeline configuration.
-    """
 
     def __init__(self, pipe_conf: typing.Dict[(str, any)]):
         self._pipe_conf = pipe_conf
@@ -65,12 +54,10 @@ class BenchmarkConfGenerator:
 
     @property
     def pipe_config(self):
-        """Get the pipe_config."""
         return self._config
 
     @property
     def source(self):
-        """Get the source from the pipe_config."""
         return self._pipe_conf.get('source')
 
     def _get_model_name_formatter(self) -> str:
@@ -106,7 +93,6 @@ class BenchmarkConfGenerator:
         return config
 
     def get_stages_conf(self) -> typing.Dict[(str, any)]:
-        """Get the stages config."""
         stages_conf = {}
         start_stop_time = self._get_start_stop_time()
         stages_conf['start_time'] = start_stop_time[0]
@@ -123,7 +109,6 @@ class BenchmarkConfGenerator:
         return stages_conf
 
     def get_filenames(self) -> typing.List[str]:
-        """Get the filenames from the config."""
         if 'glob_path' in self._pipe_conf:
             input_glob = self._pipe_conf.get('glob_path')
             input_glob = path.join(THIS_DIR, input_glob)
@@ -144,13 +129,11 @@ class BenchmarkConfGenerator:
         return filenames
 
     def get_schema(self):
-        """Get schema."""
         schema_builder = SchemaBuilder((self.pipe_config), source=(self.source))
         schema = schema_builder.build_schema()
         return schema
 
     def get_module_conf(self):
-        """Get module configuration."""
         dfp_arg_parser = DFPArgParser(skip_user=[],
                                       only_user=[],
                                       start_time=(datetime.strptime(self._pipe_conf.get('start_time'), '%Y-%m-%d')),
