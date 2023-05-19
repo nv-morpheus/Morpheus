@@ -66,9 +66,10 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # Attempt to import the C++ stage on creation
         try:
-            import morpheus._lib.doca as _doca
+            # pylint: disable=C0415
+            from morpheus._lib.doca import DocaSourceStage as _DocaSourceStage
 
-            self._doca_source_class = _doca.DocaSourceStage
+            self._doca_source_class = _DocaSourceStage
         except ImportError as ex:
             raise NotImplementedError(("The Morpheus DOCA components could not be imported. "
                                        "Ensure the DOCA components have been built and installed. Error message: ") +

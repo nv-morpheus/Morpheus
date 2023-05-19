@@ -159,6 +159,9 @@ ARG DOCA_BUILD_ID=7930666
 ARG DOCA_VERSION=2.2.0002-1
 ARG DPDK_VERSION=22.11.0-1.4.1
 
+# Set this environment variable so it auto builds DOCA
+ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
+
 # Copy all of the optional dependency scripts
 COPY ./docker/optional_deps docker/optional_deps
 
