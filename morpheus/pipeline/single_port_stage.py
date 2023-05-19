@@ -57,8 +57,8 @@ class SinglePortStage(_pipeline.Stage):
         """
         pass
 
-    def _pre_build(self) -> typing.List[StreamPair]:
-        in_ports_pairs = super()._pre_build()
+    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
+        in_ports_pairs = super()._pre_build(builder=builder)
 
         # Check the types of all inputs
         for x in in_ports_pairs:
