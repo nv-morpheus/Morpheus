@@ -16,7 +16,6 @@
 import dataclasses
 import datetime as dt
 import logging
-import threading
 import typing
 from collections import deque
 from math import ceil
@@ -27,7 +26,6 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
@@ -345,12 +343,12 @@ class _UserTimeSeries(object):
             x.set_meta("ts_anomaly", False)
 
             # Save this message in the pending queue
-            self._pending_messages.append(x.copy_ranges([(0, x.mess_count)]))
+            self._pending_messages.append(x)
 
             new_timedata = x.get_meta(["event_dt"])
 
             # Save this message event times in the event list. Ensure the values are always sorted
-            self._timeseries_data = pd.concat([self._timeseries_data, new_timedata], copy=True).sort_index()
+            self._timeseries_data = pd.concat([self._timeseries_data, new_timedata]).sort_index()
 
             # Check to see if these are out of order. If they are, just return empty and try again next item
             if (len(
@@ -387,16 +385,13 @@ class _UserTimeSeries(object):
 
                 if (anomalies is not None):
                     if (is_complete):
-                        print(f"Found anomalies (Shutdown): {list(anomalies)}", flush=True)
+                        logger.debug("Found anomalies (Shutdown): %s", list(anomalies))
                     else:
-                        print(f"Found anomalies: {list(anomalies)}", flush=True)
+                        logger.debug("Found anomalies: %s", list(anomalies))
 
             if (action.send_message):
                 # Now send the message
                 output_messages.append(action.message)
-
-        if is_complete is None:
-            print(f"Timeseries stage shutting down _pending_messages={len(self._pending_messages)}", flush=True)
 
         return output_messages
 
@@ -458,7 +453,6 @@ class TimeSeriesStage(SinglePortStage):
         self._zscore_threshold = zscore_threshold
 
         self._timeseries_per_user: typing.Dict[str, _UserTimeSeries] = {}
-        self._needed_columns["ts_anomaly"] = TypeId.BOOL8
 
     @property
     def name(self) -> str:
@@ -504,17 +498,14 @@ class TimeSeriesStage(SinglePortStage):
             return message_list
 
         def on_completed():
-            print(f"Timeseries complete.. {threading.get_ident()} - {threading.get_native_id()}", flush=True)
+
             to_send = []
 
             for ts in self._timeseries_per_user.values():
                 message_list: typing.List[MultiResponseMessage] = ts._calc_timeseries(None, True)
 
-                to_send.extend(message_list)
+                to_send = to_send + message_list
 
-            self._timeseries_per_user.clear()
-            print(f"Timeseries completed {threading.get_ident()} - {threading.get_native_id()}", flush=True)
-            print(f"len(to_send) = {len(to_send)}", flush=True)
             return to_send if len(to_send) > 0 else None
 
         stream = builder.make_node(self.unique_name,
