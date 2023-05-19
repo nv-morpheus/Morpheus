@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Postprocessing stage for Digital Fingerprinting pipeline."""
 
 import logging
 import time
@@ -21,6 +22,7 @@ import mrc
 import numpy as np
 from mrc.core import operators as ops
 
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -30,18 +32,31 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPPostprocessingStage(SinglePortStage):
+    """
+    This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the
+    anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    """
 
     def __init__(self, c: Config):
         super().__init__(c)
+        self._needed_columns['event_time'] = TypeId.STRING
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-postproc"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted input types."""
         return (MultiAEMessage, )
 
     def _process_events(self, message: MultiAEMessage):
@@ -52,6 +67,7 @@ class DFPPostprocessingStage(SinglePortStage):
         message.set_meta(None, df)
 
     def on_data(self, message: MultiAEMessage):
+        """Process a message."""
         if (not message or message.mess_count == 0):
             return None
 
