@@ -76,10 +76,8 @@ def test_unregistred_module(config, input_ports, output_ports, unregistered_modu
 
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
-    mock_module = mock.MagicMock()
     mock_input_stream = mock.MagicMock()
 
-    mock_segment.load_module.return_value = mock_module
     mock_segment.make_node.return_value = mock_node
 
     mod_stage = MultiPortModulesStage(config,
@@ -142,7 +140,6 @@ def test_incorrect_ports(config, registered_module_conf, input_ports, output_por
     mock_node = mock.MagicMock()
     mock_segment = mock.MagicMock()
     mock_module = mock.MagicMock()
-    mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
     mock_segment.make_node.return_value = mock_node
@@ -155,4 +152,4 @@ def test_incorrect_ports(config, registered_module_conf, input_ports, output_por
                                       output_ports=output_ports)
 
     with pytest.raises(ValueError):
-        mod_stage._build(mock_segment, mock_input_stream)
+        mod_stage._validate_ports(mock_module)
