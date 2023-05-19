@@ -17,7 +17,7 @@
 
 #include "doca_source.hpp"
 
-#include <mrc/segment/builder.hpp>  // IWYU Pragma: keep
+#include <mrc/segment/builder.hpp>  // IWYU pragma: keep
 #include <mrc/segment/object.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor

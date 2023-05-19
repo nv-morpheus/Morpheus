@@ -81,7 +81,8 @@ function(morpheus_configure_libbsd)
       LOG_BUILD           TRUE
       LOG_INSTALL         TRUE
       # Add a target for configuring to allow for style checks on source code
-      STEP_TARGETS      install
+      STEP_TARGETS        install
+      DEPENDS             md::md
     )
 
     # Install only the headers
@@ -89,8 +90,6 @@ function(morpheus_configure_libbsd)
       DIRECTORY ${md_INSTALL_DIR}/include
       TYPE INCLUDE
     )
-
-    add_dependencies(bsd md::md)
 
     add_library(bsd::bsd STATIC IMPORTED GLOBAL)
     set_target_properties(bsd::bsd

@@ -38,12 +38,6 @@ RTEContext::RTEContext()
     argv.push_back(a_flag.begin());
     argv.push_back(fake_pci_address.begin());
 
-    // argv.push_back("-l");
-    // argv.push_back("0,1,2,3,4");
-
-    // argv.push_back("--log-level");
-    // argv.push_back("eal,8");
-
     RTE_TRY(rte_eal_init(argv.size(), argv.data()));
 }
 

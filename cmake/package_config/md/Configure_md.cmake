@@ -74,7 +74,7 @@ function(morpheus_configure_libmd)
       LOG_BUILD           TRUE
       LOG_INSTALL         TRUE
       # Add a target for configuring to allow for style checks on source code
-      STEP_TARGETS      install
+      STEP_TARGETS        install
     )
 
     # Install only the headers

@@ -133,14 +133,14 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
     doca_flow_port_cfg port_cfg = {0};
     doca_flow_port* df_port;
     doca_flow_cfg rxq_flow_cfg = {0};
-    rte_eth_dev_info dev_info  = {0};
+    rte_eth_dev_info dev_info  = {nullptr};
     rte_eth_conf eth_conf      = {
              .rxmode =
-            {
+                 {
                      .mtu = 2048, /* Not really used, just to initialize DPDK */
             },
              .txmode =
-            {
+                 {
                      .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM,
             },
     };
