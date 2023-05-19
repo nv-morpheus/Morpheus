@@ -38,7 +38,7 @@ struct DocaMem
     T* m_mem_cpu;
 
   public:
-    DocaMem(std::shared_ptr<DocaContext> context, size_t count, enum doca_gpu_mem_type mem_type);
+    DocaMem(std::shared_ptr<DocaContext> context, size_t count, doca_gpu_mem_type mem_type);
     ~DocaMem();
 
     T* gpu_ptr();

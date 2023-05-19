@@ -45,10 +45,12 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
+
+# Disable compile commands until after dependencies
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
 enable_testing()
 
@@ -128,6 +130,9 @@ add_custom_target(${PROJECT_NAME}_style_checks
 ##################################
 ##### Morpheus Python Setup ######
 ##################################
+
+# Re-enable compile commands
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 morpheus_utils_python_configure()
 
