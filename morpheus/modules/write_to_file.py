@@ -74,7 +74,6 @@ def write_to_file(builder: mrc.Builder):
         file_type = determine_file_type(output_file)
 
     def convert_to_strings(df: typing.Union[pd.DataFrame, cudf.DataFrame]):
-        # pylint: disable=global-statement
         nonlocal is_first
 
         if (file_type == FileTypes.JSON):
