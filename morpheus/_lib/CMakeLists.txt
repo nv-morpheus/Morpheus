@@ -26,6 +26,7 @@ morpheus_add_cython_library(
       "include"
     LINK_TARGETS
       cudf::cudf
+      pybind11::pybind11
       Python::Module
       Python::NumPy
     OUTPUT_TARGET
