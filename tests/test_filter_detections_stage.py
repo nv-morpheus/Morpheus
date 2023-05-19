@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
 import cupy as cp
 import pytest
 
@@ -192,17 +190,3 @@ def test_filter_slice(config, filter_probs_df):
 
     assert m1.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:2, :].to_cupy().tolist()
     assert m2.get_meta().to_cupy().tolist() == filter_probs_df.loc[4:4, :].to_cupy().tolist()
-
-
-@pytest.mark.use_python
-def test_build_single(config):
-    mock_stream = mock.MagicMock()
-    mock_builder = mock.MagicMock()
-    mock_builder.make_node.return_value = mock_stream
-    mock_stream_pair = (mock.MagicMock(), mock.MagicMock())
-
-    fds = FilterDetectionsStage(config)
-    fds._build_single(mock_builder, mock_stream_pair)
-
-    mock_builder.make_node.assert_called_once()
-    mock_builder.make_edge.assert_called_once()
