@@ -21,8 +21,10 @@ from morpheus.modules import file_batcher
 from morpheus.modules import file_to_df
 from morpheus.modules import filter_control_message
 from morpheus.modules import filter_detections
+from morpheus.modules import from_control_message
 from morpheus.modules import mlflow_model_writer
 from morpheus.modules import serialize
+from morpheus.modules import to_control_message
 from morpheus.modules import write_to_file
 from morpheus._lib import modules
 

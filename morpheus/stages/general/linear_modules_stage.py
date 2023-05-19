@@ -74,7 +74,7 @@ class LinearModulesStage(SinglePortStage):
         Returns input type for the current stage.
         """
 
-        return (typing.Any, )
+        return (self._input_type, )
 
     def accepted_types(self) -> typing.Tuple:
         """

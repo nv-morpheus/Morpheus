@@ -221,4 +221,4 @@ def dfp_deployment(builder: mrc.Builder):
     # Register output ports for a module.
     for i in range(num_output_ports):
         # Output ports are registered in increment order.
-        builder.register_module_output(f"output-{i}", out_streams[i])
+        builder.register_module_output(f"output_{i}", out_streams[i])
