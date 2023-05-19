@@ -189,8 +189,8 @@ def test_thread(config):
     # Create a dummy forwarding stage that allows us to save the thread id from this progress engine
     class DummyStage(SinglePortStage):
 
-        def __init__(self, c: Config):
-            super().__init__(c)
+        def __init__(self, config: Config):
+            super().__init__(config)
 
             self.thread_id = None
 

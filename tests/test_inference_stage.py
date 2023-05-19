@@ -87,7 +87,7 @@ def test_constructor(config):
 def test_stop(config):
     mock_workers = [mock.MagicMock() for _ in range(5)]
     inf_stage = InferenceStageT(config)
-    inf_stage._workers = mock_workers
+    inf_stage._workers = mock_workers  # pylint: disable=attribute-defined-outside-init
 
     inf_stage.stop()
     for worker in mock_workers:
@@ -99,7 +99,7 @@ def test_stop(config):
 def test_join(config):
     mock_workers = [mock.AsyncMock() for _ in range(5)]
     inf_stage = InferenceStageT(config)
-    inf_stage._workers = mock_workers
+    inf_stage._workers = mock_workers  # pylint: disable=attribute-defined-outside-init
 
     asyncio.run(inf_stage.join())
     for worker in mock_workers:

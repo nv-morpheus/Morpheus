@@ -445,7 +445,8 @@ disable = [
   "raw-checker-failed",
   "superfluous-parens",
   "suppressed-message",
-  "too-many-arguments", # Disable all of the "too-many-*" checks, as they are too strict for our codebase
+  "too-few-public-methods", # Disable all of the "too-*" checks, as they are too strict for our codebase
+  "too-many-arguments",
   "too-many-branches",
   "too-many-instance-attributes",
   "too-many-lines",
