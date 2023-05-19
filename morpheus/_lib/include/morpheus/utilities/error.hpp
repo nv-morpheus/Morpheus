@@ -74,17 +74,17 @@ struct CudaError : public std::runtime_error
  * @param[in] cond Expression that evaluates to true or false
  * @param[in] reason String literal description of the reason that cond is
  * expected to be true
- * @throw morpheus::logic_error if the condition evaluates to false.
+ * @throw morpheus::LogicError if the condition evaluates to false.
  */
 #define MORPHEUS_EXPECTS(cond, reason) \
     (!!(cond))                         \
         ? static_cast<void>(0)         \
-        : throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
+        : throw morpheus::LogicError("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
 
 /**
  * @brief Indicates that an erroneous code path has been taken.
  *
- * In host code, throws a `morpheus::logic_error`.
+ * In host code, throws a `morpheus::LogicError`.
  *
  *
  * Example usage:
@@ -95,7 +95,7 @@ struct CudaError : public std::runtime_error
  * @param[in] reason String literal description of the reason
  */
 #define MORPHEUS_FAIL(reason) \
-    throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
+    throw morpheus::LogicError("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
 
 namespace morpheus::detail {
 
