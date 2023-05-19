@@ -41,50 +41,50 @@ from utils import TEST_DIRS
 def test_constructor(config):
     # Intentionally not making assumptions about the defaults other than they exist
     # and still create a valid stage.
-    m = MonitorStage(config, log_level=logging.WARNING)
-    assert m.name == "monitor"
+    stage = MonitorStage(config, log_level=logging.WARNING)
+    assert stage.name == "monitor"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = m.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
     def two_x(x):
         return x * 2
 
-    m = MonitorStage(config, description="Test Description", smoothing=0.7, unit='units', determine_count_fn=two_x)
-    assert m._mc._description == "Test Description"
-    assert m._mc._smoothing == 0.7
-    assert m._mc._unit == "units"
-    assert m._mc._determine_count_fn is two_x
+    stage = MonitorStage(config, description="Test Description", smoothing=0.7, unit='units', determine_count_fn=two_x)
+    assert stage._mc._description == "Test Description"
+    assert stage._mc._smoothing == 0.7
+    assert stage._mc._unit == "units"
+    assert stage._mc._determine_count_fn is two_x
 
 
 @mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_on_start(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._mc._progress is None
+    stage = MonitorStage(config, log_level=logging.WARNING)
+    assert stage._mc._progress is None
 
-    m.on_start()
+    stage.on_start()
     mock_morph_tqdm.assert_called_once()
     mock_morph_tqdm.reset.assert_called_once()
-    assert m._mc._progress is mock_morph_tqdm
+    assert stage._mc._progress is mock_morph_tqdm
 
 
 @mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_stop(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._mc._progress is None
+    stage = MonitorStage(config, log_level=logging.WARNING)
+    assert stage._mc._progress is None
 
     # Calling on_stop is a noop if we are stopped
-    m.stop()
+    stage.stop()
     mock_morph_tqdm.assert_not_called()
 
-    m.on_start()
-    m.stop()
+    stage.on_start()
+    stage.stop()
     mock_morph_tqdm.close.assert_called_once()
 
 
@@ -92,11 +92,11 @@ def test_stop(mock_morph_tqdm, config):
 def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config, log_level=logging.WARNING)
-    assert m._mc._progress is None
+    stage = MonitorStage(config, log_level=logging.WARNING)
+    assert stage._mc._progress is None
 
-    m.on_start()
-    m._mc.refresh_progress(None)
+    stage.on_start()
+    stage._mc.refresh_progress(None)
     mock_morph_tqdm.refresh.assert_called_once()
 
 
@@ -116,9 +116,9 @@ def test_refresh(mock_morph_tqdm, config):
                              (fsspec.open_files(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')), True, 1),
                          ])
 def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: typing.Union[int, None]):
-    m = MonitorStage(config, log_level=logging.WARNING)
+    stage = MonitorStage(config, log_level=logging.WARNING)
 
-    auto_fn = m._mc.auto_count_fn(value)
+    auto_fn = stage._mc.auto_count_fn(value)
     if expected_fn:
         assert callable(auto_fn)
         assert auto_fn(value) == expected
@@ -128,25 +128,25 @@ def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: t
 
 @pytest.mark.parametrize('value', [1, [1], [2, 0]])
 def test_auto_count_fn_not_impl(config, value: typing.Any):
-    m = MonitorStage(config, log_level=logging.WARNING)
+    stage = MonitorStage(config, log_level=logging.WARNING)
 
     with pytest.raises(NotImplementedError):
-        m._mc.auto_count_fn(value)
+        stage._mc.auto_count_fn(value)
 
 
 @mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
 def test_progress_sink(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config, log_level=logging.WARNING)
-    m.on_start()
+    stage = MonitorStage(config, log_level=logging.WARNING)
+    stage.on_start()
 
-    m._mc.progress_sink(None)
-    assert m._mc._determine_count_fn is None
+    stage._mc.progress_sink(None)
+    assert stage._mc._determine_count_fn is None
     mock_morph_tqdm.update.assert_not_called()
 
-    m._mc.progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
-    assert inspect.isfunction(m._mc._determine_count_fn)
+    stage._mc.progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
+    assert inspect.isfunction(stage._mc._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)
 
 

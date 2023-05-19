@@ -18,10 +18,10 @@ from morpheus.stages.general.trigger_stage import TriggerStage
 
 
 def test_constructor(config):
-    ts = TriggerStage(config)
-    assert ts.name == "trigger"
+    stage = TriggerStage(config)
+    assert stage.name == "trigger"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = ts.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0

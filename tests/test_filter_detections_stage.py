@@ -120,7 +120,7 @@ def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
     # All values are at or below the threshold
     output_message = fds.filter_copy(mock_message)
 
-    output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
+    assert output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
 
 
 @pytest.mark.use_cudf
@@ -181,12 +181,12 @@ def test_filter_slice(config, filter_probs_df):
 
     output_messages = fds.filter_slice(mock_message)
     assert len(output_messages) == 2
-    (m1, m2) = output_messages
-    assert m1.offset == 2
-    assert m1.count == 1
+    (msg1, msg2) = output_messages  # pylint: disable=unbalanced-tuple-unpacking
+    assert msg1.offset == 2
+    assert msg1.count == 1
 
-    assert m2.offset == 4
-    assert m2.count == 1
+    assert msg2.offset == 4
+    assert msg2.count == 1
 
-    assert m1.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:2, :].to_cupy().tolist()
-    assert m2.get_meta().to_cupy().tolist() == filter_probs_df.loc[4:4, :].to_cupy().tolist()
+    assert msg1.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:2, :].to_cupy().tolist()
+    assert msg2.get_meta().to_cupy().tolist() == filter_probs_df.loc[4:4, :].to_cupy().tolist()
