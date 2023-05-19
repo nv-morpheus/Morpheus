@@ -61,3 +61,16 @@ apt-get update
 # apt-get install -y libjson-c-dev meson cmake pkg-config
 apt-get install -y ${DEB_DIR}/mlnx-dpdk*.deb
 apt-get install -y ${DEB_DIR}/*doca*.deb
+
+# Now install the gdrcopy library according to: https://github.com/NVIDIA/gdrcopy
+GDRCOPY_DIR=${WORKING_DIR}/gdrcopy
+
+if [[ ! -d "${GDRCOPY_DIR}" ]] ; then
+    git clone https://github.com/NVIDIA/gdrcopy.git ${GDRCOPY_DIR}
+    cd ${GDRCOPY_DIR}
+else
+    cd cd ${GDRCOPY_DIR}
+    git pull https://github.com/NVIDIA/gdrcopy.git
+fi
+
+make lib lib_install

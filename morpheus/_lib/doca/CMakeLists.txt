@@ -15,7 +15,6 @@
 # Need to load this first before calling find_package(doca REQUIRED)
 morpheus_configure_libmd()
 morpheus_configure_libbsd()
-morpheus_configure_gdrcopy()
 
 set(doca_ROOT "/opt/mellanox/doca")
 find_package(doca REQUIRED)
