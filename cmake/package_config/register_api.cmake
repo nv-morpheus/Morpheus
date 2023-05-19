@@ -20,7 +20,6 @@ include_guard(GLOBAL)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
 include(${CMAKE_CURRENT_LIST_DIR}/bsd/Configure_bsd.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/gdrcopy/Configure_gdrcopy.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/md/Configure_md.cmake)
 
 list(POP_BACK CMAKE_MODULE_PATH)
