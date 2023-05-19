@@ -153,9 +153,9 @@ def test_progress_sink(mock_morph_tqdm, config):
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('morpheus_log_level',
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
-@mock.patch('mrc.Builder.make_node_component')
-@mock.patch('mrc.Builder.make_edge')
-def test_log_level(mock_make_edge, mock_make_node_component, config, morpheus_log_level):
+@mock.patch('morpheus.stages.general.monitor_stage.MonitorController.sink_on_completed', autospec=True)
+@mock.patch('morpheus.stages.general.monitor_stage.MonitorController.progress_sink', autospec=True)
+def test_log_level(mock_progress_sink, mock_sink_on_completed, config, morpheus_log_level):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
@@ -168,14 +168,12 @@ def test_log_level(mock_make_edge, mock_make_node_component, config, morpheus_lo
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
-
-    ms = MonitorStage(config, log_level=monitor_stage_level)
-
-    pipe.add_stage(ms)
+    pipe.add_stage(MonitorStage(config, log_level=monitor_stage_level))
     pipe.run()
 
     expected_call_count = 1 if should_be_included else 0
-    assert mock_make_node_component.call_count == expected_call_count
+    assert mock_progress_sink.call_count == expected_call_count
+    assert mock_sink_on_completed.call_count == expected_call_count
 
 
 @pytest.mark.usefixtures("reset_loglevel")
