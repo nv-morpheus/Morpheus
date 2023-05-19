@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
-#define DOCA_ALLOW_EXPERIMENTAL_API
+#include "doca_context.hpp"
+
+#include "common.hpp"
+#include "error.hpp"
+
+#include "morpheus/utilities/error.hpp"
 
 #include <cuda_runtime.h>
 #include <doca_argp.h>
@@ -27,10 +32,6 @@
 #include <doca_types.h>
 #include <doca_version.h>
 #include <glog/logging.h>
-#include <morpheus/doca/common.hpp>
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/error.hpp>
-#include <morpheus/utilities/error.hpp>
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 
@@ -162,7 +163,7 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
 
     if (mp == nullptr)
     {
-        MORPHEUS_FAIL("rte_pktmbuf_pool_create failed.");
+        // MORPHEUS_FAIL("rte_pktmbuf_pool_create failed with " + std::to_string(rte_strerror(-ret)));
     }
 
     tx_conf = dev_info.default_txconf;

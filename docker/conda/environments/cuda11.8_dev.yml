@@ -29,7 +29,7 @@ dependencies:
     - ccache>=3.7
     - clangdev=14
     - click >=8
-    - cmake=3.24
+    - cmake=3.25
     - configargparse=1.5
     - cuda-compiler=11.8
     - cuda-nvml-dev=11.8

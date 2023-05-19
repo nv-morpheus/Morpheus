@@ -21,6 +21,20 @@ if (VERBOSE)
   morpheus_utils_print_config()
 endif()
 
+# First, load the package_config functions
+include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
+
+# if(MORPHEUS_SUPPORT_DOCA)
+
+#   morpheus_configure_libmd()
+
+#   morpheus_configure_libbsd()
+
+#   set(doca_ROOT "/opt/mellanox/doca")
+
+#   find_package(doca REQUIRED)
+# endif()
+
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
 rapids_find_package(Protobuf
   REQUIRED
@@ -83,5 +97,23 @@ morpheus_utils_configure_cudf()
 # Triton-client
 # =====
 morpheus_utils_configure_tritonclient()
+
+# # Finally, install the DOCA components if necessary
+# if(MORPHEUS_SUPPORT_DOCA)
+
+#   # libmd
+#   # Must come before bsd
+#   # =====
+#   morpheus_configure_libmd()
+
+#   # libbsd
+#   # =====
+#   morpheus_configure_libbsd()
+
+#   # gdrcopy
+#   # =====
+#   morpheus_configure_gdrcopy()
+
+# endif()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

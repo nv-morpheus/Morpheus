@@ -83,7 +83,8 @@ morpheus_add_pybind11_module(modules SOURCE_FILES modules/module.cpp)
 
 #----------morpheus._lib.doca---------
 if(MORPHEUS_SUPPORT_DOCA)
-  morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp)
+  add_subdirectory(doca)
+  # morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp)
 endif()
 
 if (MORPHEUS_BUILD_TESTS)

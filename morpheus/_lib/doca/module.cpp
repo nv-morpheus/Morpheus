@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/doca_source.hpp>
+#include "doca_source.hpp"
+
 #include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
