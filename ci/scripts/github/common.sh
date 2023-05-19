@@ -26,6 +26,7 @@ mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 cd ${MORPHEUS_ROOT}
+conda activate morpheus
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
@@ -78,7 +79,7 @@ function update_conda_env() {
     ENV_YAML=${CONDA_ENV_YML}
     if [[ "${MERGE_EXAMPLES_YAML}" == "1" || "${MERGE_DOCS_YAML}" == "1" ]]; then
         # Merge the dev, docs and examples envs, otherwise --prune will remove the examples packages
-        ENV_YAML=${condatmpdir}/merged_env.yml
+        ENV_YAML=${WORKSPACE_TMP}/merged_env.yml
         YAMLS="${CONDA_ENV_YML}"
         if [[ "${MERGE_EXAMPLES_YAML}" == "1" ]]; then
             YAMLS="${YAMLS} ${CONDA_EXAMPLES_YML}"
@@ -88,7 +89,7 @@ function update_conda_env() {
         fi
 
         # Conda is going to expect a requirements.txt file to be in the same directory as the env yaml
-        cp ${PIP_REQUIREMENTS} ${condatmpdir}/requirements.txt
+        cp ${PIP_REQUIREMENTS} ${WORKSPACE_TMP}/requirements.txt
 
         rapids-logger "Merging conda envs: ${YAMLS}"
         conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}

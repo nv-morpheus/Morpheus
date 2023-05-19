@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Methods to add morpheus auto completion to shells"""
 
 import os
 import subprocess
@@ -37,9 +38,9 @@ def get_code(shell=None, path=None) -> str:
     if (tool_name.endswith(".py")):
         tool_name = "morpheus"
 
-    tool_env_name = '_%s_COMPLETE' % tool_name.upper().replace('-', '_')
+    tool_env_name = f"_{tool_name.upper().replace('-', '_')}_COMPLETE"
 
-    response = subprocess.check_output(["{}=bash_source morpheus".format(tool_env_name)], shell=True).decode("utf-8")
+    response = subprocess.check_output([f"{tool_env_name}=bash_source morpheus"], shell=True).decode("utf-8")
 
     code = "# >>> morpheus completion >>>\n{}\n# <<< morpheus completion <<<\n".format(response.rstrip("\n"))
 
@@ -51,14 +52,13 @@ def install_code(append=False, shell=None, path=None):
     Write shell auto completion code to the shell startup script `path`. If `append` is `True` the code will be appended
     to the file, when `False` the file will be overwritten. Currently only bash is supported.
     """
-
     shell, path, code = get_code(shell, path)
 
     output_lines = []
 
     if (os.path.exists(path)):
-        with open(path, 'r') as fp:
-            input_lines = fp.readlines()
+        with open(path, 'r', encoding='UTF-8') as fh:
+            input_lines = fh.readlines()
 
             found_match = False
 
@@ -77,7 +77,7 @@ def install_code(append=False, shell=None, path=None):
     # Now append the output lines with our code
     output_lines.extend(code.splitlines(keepends=True))
 
-    with open(path, 'w') as fp:
-        fp.writelines(output_lines)
+    with open(path, 'w', encoding='UTF-8') as fh:
+        fh.writelines(output_lines)
 
     return shell, path

@@ -37,6 +37,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.utils.compare_df import compare_df
+from morpheus.utils.file_utils import load_labels_file
 from utils import TEST_DIRS
 from utils import write_file_to_kafka
 from utils.dataset_manager import DatasetManager
@@ -82,7 +83,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
 
-    def async_infer(callback=None, **k):
+    def async_infer(callback=None, **_):
         callback(mock_infer_result, None)
 
     mock_triton_client.async_infer.side_effect = async_infer
@@ -96,9 +97,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
 
@@ -133,7 +132,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
@@ -164,9 +163,7 @@ def test_abp_cpp(config: Config,
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
 
@@ -199,7 +196,7 @@ def test_abp_cpp(config: Config,
     val_df = dataset_pandas[val_file_name]
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f'{rec.value.decode("utf-8")}\n')
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
