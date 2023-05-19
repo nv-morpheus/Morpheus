@@ -23,7 +23,7 @@ from utils import TEST_DIRS
 from utils import import_or_skip
 
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
-               "development environment. See `/home/dagardner/work/morpheus/examples/ransomware_detection/README.md` "
+               "development environment. See `examples/ransomware_detection/README.md` "
                "for details on installing these additional dependencies")
 
 

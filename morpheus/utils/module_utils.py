@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module utilities for Morpheus."""
 
 import functools
 import logging
@@ -21,6 +22,8 @@ import mrc
 import pandas as pd
 
 import cudf
+
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -184,13 +187,13 @@ period_to_strptime = {
 }
 
 
-def to_period_approximation(data_df: typing.Union[cudf.DataFrame, pd.DataFrame], period: str):
+def to_period_approximation(data_df: DataFrameType, period: str):
     """
     This function converts a cudf dataframe to a period approximation.
 
     Parameters
     ----------
-    data_df : cudf.DataFrame or pd.DataFrame
+    data_df : DataFrameType
         Input cudf/pandas dataframe.
     period : str
         Period.
@@ -218,6 +221,7 @@ def to_period_approximation(data_df: typing.Union[cudf.DataFrame, pd.DataFrame],
 
 
 def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):
+    """This function returns the module configuration with the overrides."""
     sub_config = config.get(module_id, None)
 
     try:
