@@ -12,21 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""IO utilities."""
 
-import typing
-
-import pandas as pd
-
-import cudf
+from morpheus.utils.type_aliases import DataFrameType
 
 
-def filter_null_data(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
+def filter_null_data(x: DataFrameType):
     """
     Filters out null row in a dataframe's 'data' column if it exists.
 
     Parameters
     ----------
-    x : typing.Union[cudf.DataFrame, pandas.DataFrame]
+    x : DataFrameType
         The dataframe to fix.
     """
 

@@ -76,7 +76,6 @@ class CheckPreAlloc(SinglePortStage):
         return stream, input_stream[1]
 
 
-@pytest.mark.use_cudf
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
 def test_preallocation(config, filter_probs_df, probs_type):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
@@ -104,7 +103,6 @@ def test_preallocation(config, filter_probs_df, probs_type):
     assert_results(comp_stage.get_results())
 
 
-@pytest.mark.use_cudf
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
 def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     """

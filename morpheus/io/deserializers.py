@@ -12,7 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DataFrame deserializers."""
 
+import io
 import typing
 
 import pandas as pd
@@ -24,13 +26,14 @@ from morpheus.common import determine_file_type
 from morpheus.common import read_file_to_df as read_file_to_df_cpp
 from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
+from morpheus.utils.type_aliases import DataFrameType
 
 
-def read_file_to_df(file_name: str,
+def read_file_to_df(file_name: typing.Union[str, io.IOBase],
                     file_type: FileTypes = FileTypes.Auto,
                     parser_kwargs: dict = None,
                     filter_nulls: bool = True,
-                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> typing.Union[cudf.DataFrame, pd.DataFrame]:
+                    df_type: typing.Literal["cudf", "pandas"] = "pandas") -> DataFrameType:
     """
     Reads a file into a dataframe and performs any of the necessary cleanup.
 
@@ -49,7 +52,7 @@ def read_file_to_df(file_name: str,
 
     Returns
     -------
-    typing.Union[cudf.DataFrame, pandas.DataFrame]
+    DataFrameType
         A parsed DataFrame.
     """
 
@@ -66,7 +69,17 @@ def read_file_to_df(file_name: str,
     mode = file_type
 
     if (mode == FileTypes.Auto):
-        mode = determine_file_type(file_name)
+        # The DFPFileToDataFrameStage passes an instance of an fsspec file opener instead of a filename to this method.
+        # The opener objects are subclasses of io.IOBase, which avoids introducing fsspec to this part of the API
+        if (isinstance(file_name, io.IOBase)):
+            if (hasattr(file_name, 'path')):  # This attr is not in the base
+                fp = file_name.path
+            else:
+                raise ValueError("Unable to determine file type from instance of io.IOBase,"
+                                 " set `file_type` to a value other than Auto")
+        else:
+            fp = file_name
+        mode = determine_file_type(fp)
 
     # Special args for JSON
     kwargs = {}

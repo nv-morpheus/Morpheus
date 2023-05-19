@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Loader for fetching files and emitting them as DataFrames."""
 
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import pickle
 import time
@@ -34,50 +34,11 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
 
 logger = logging.getLogger(__name__)
-
-dask_cluster = None
-
-
-def get_dask_cluster(download_method: str):
-    global dask_cluster
-
-    if dask_cluster is None:
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Dask cluster doesn't exist. Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-    return dask_cluster
-
-
-def get_dask_client(dask_cluster):
-    from dask.distributed import Client
-    dask_client = Client(get_dask_cluster(dask_cluster))
-    logger.debug("Creating dask client %s ... Done.", dask_client)
-
-    return dask_client
-
-
-def close_dask_cluster():
-    if (dask_cluster is not None):
-        logger.debug("Stopping dask cluster...")
-        dask_cluster.close()
-
-        logger.debug("Stopping dask cluster... Done.")
 
 
 @register_loader(FILE_TO_DF_LOADER)
@@ -127,8 +88,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    downloader = Downloader()
 
     if (cache_dir is None):
         cache_dir = "./.cache"
@@ -211,25 +171,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (download_method.startswith("dask")):
-                # Create the client each time to ensure all connections to the cluster are
-                # closed (they can time out)
-                dask_cluster = get_dask_cluster(download_method)
-                with get_dask_client(dask_cluster) as client:
-                    dfs = client.map(download_method_func, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (download_method == "multiprocessing"):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method_func, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method_func(s3_object))
-
+            dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False

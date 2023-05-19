@@ -487,7 +487,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
@@ -621,7 +621,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
         assert from_kafka._consumer_params['auto.offset.reset'] == 'earliest'
 
         assert isinstance(deserialize, DeserializeStage)
@@ -831,7 +831,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
