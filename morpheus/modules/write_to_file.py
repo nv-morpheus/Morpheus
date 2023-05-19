@@ -33,8 +33,6 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-IS_FIRST = True
-
 
 @register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
 def write_to_file(builder: mrc.Builder):
@@ -63,6 +61,8 @@ def write_to_file(builder: mrc.Builder):
     file_type = config.get("file_type", FileTypes.Auto)
     include_index_col = config.get("include_index_col", True)
 
+    is_first = True
+
     if (os.path.exists(output_file)):
         if (overwrite):
             os.remove(output_file)
@@ -75,16 +75,16 @@ def write_to_file(builder: mrc.Builder):
 
     def convert_to_strings(df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         # pylint: disable=global-statement
-        global IS_FIRST
+        nonlocal is_first
 
         if (file_type == FileTypes.JSON):
             output_strs = serializers.df_to_json(df, include_index_col=include_index_col)
         elif (file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=IS_FIRST, include_index_col=include_index_col)
+            output_strs = serializers.df_to_csv(df, include_header=is_first, include_index_col=include_index_col)
         else:
             raise NotImplementedError(f"Unknown file type: {file_type}")
 
-        IS_FIRST = False
+        is_first = False
 
         # Remove any trailing whitespace
         if (len(output_strs[-1].strip()) == 0):

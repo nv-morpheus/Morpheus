@@ -83,8 +83,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
 
-    # pylint: disable=unused-argument
-    def async_infer(callback=None, **k):
+    def async_infer(callback=None, **_):
         callback(mock_infer_result, None)
 
     mock_triton_client.async_infer.side_effect = async_infer
