@@ -36,21 +36,18 @@ namespace morpheus {
  * This exception should not be thrown directly and is instead thrown by the
  * MORPHEUS_EXPECTS macro.
  */
-struct logic_error : public std::logic_error
+struct LogicError : public std::logic_error
 {
-    logic_error(char const* const message) : std::logic_error(message) {}
+    LogicError(char const* const message) : std::logic_error(message) {}
 
-    logic_error(std::string const& message) : std::logic_error(message) {}
-
-    // TODO Add an error code member? This would be useful for translating an
-    // exception to an error code in a pure-C API
+    LogicError(std::string const& message) : std::logic_error(message) {}
 };
 /**
  * @brief Exception thrown when a CUDA error is encountered.
  */
-struct cuda_error : public std::runtime_error
+struct CudaError : public std::runtime_error
 {
-    cuda_error(std::string const& message) : std::runtime_error(message) {}
+    CudaError(std::string const& message) : std::runtime_error(message) {}
 };
 /** @} */
 
@@ -100,17 +97,15 @@ struct cuda_error : public std::runtime_error
 #define MORPHEUS_FAIL(reason) \
     throw morpheus::logic_error("Morpheus failure at: " __FILE__ ":" MORPHEUS_STRINGIFY(__LINE__) ": " reason)
 
-namespace morpheus {
-namespace detail {
+namespace morpheus::detail {
 
 inline void throw_cuda_error(cudaError_t error, const char* file, unsigned int line)
 {
-    throw morpheus::cuda_error(std::string{"CUDA error encountered at: " + std::string{file} + ":" +
-                                           std::to_string(line) + ": " + std::to_string(error) + " " +
-                                           cudaGetErrorName(error) + " " + cudaGetErrorString(error)});
+    throw morpheus::CudaError(std::string{"CUDA error encountered at: " + std::string{file} + ":" +
+                                          std::to_string(line) + ": " + std::to_string(error) + " " +
+                                          cudaGetErrorName(error) + " " + cudaGetErrorString(error)});
 }
-}  // namespace detail
-}  // namespace morpheus
+}  // namespace morpheus::detail
 
 /**
  * @brief Error checking macro for CUDA runtime API functions.
