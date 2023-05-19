@@ -64,6 +64,17 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         super().__init__(c)
 
+        # Attempt to import the C++ stage on creation
+        try:
+            # pylint: disable=C0415
+            from morpheus._lib.doca import DocaSourceStage as _DocaSourceStage
+
+            self._doca_source_class = _DocaSourceStage
+        except ImportError as ex:
+            raise NotImplementedError(("The Morpheus DOCA components could not be imported. "
+                                       "Ensure the DOCA components have been built and installed. Error message: ") +
+                                      ex.msg) from ex
+
         self._batch_size = c.pipeline_batch_size
         self._input_count = None
         self._max_concurrent = c.num_threads
@@ -85,8 +96,10 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
-            import morpheus._lib.doca as _doca
-            out_stream = _doca.DocaSourceStage(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address)
+            out_stream = self._doca_source_class(builder,
+                                                 self.unique_name,
+                                                 self._nic_pci_address,
+                                                 self._gpu_pci_address)
         else:
             raise NotImplementedError("Does not support Python nodes")
 

@@ -35,9 +35,10 @@
 
 #include <cudf/column/column.hpp>  // for column, column::contents
 #include <cudf/column/column_factories.hpp>
+#include <cudf/column/column_view.hpp>
 #include <cudf/filling.hpp>
 #include <cudf/reshape.hpp>
-#include <cudf/scalar/scalar_factories.hpp>
+#include <cudf/scalar/scalar.hpp>
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
@@ -46,6 +47,7 @@
 #include <nvtext/normalize.hpp>
 #include <nvtext/subword_tokenize.hpp>
 #include <pymrc/node.hpp>
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
 
 #include <cstdint>

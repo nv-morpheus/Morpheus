@@ -51,8 +51,8 @@ ARG PYTHON_VER=3.10
 FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
 
 # Required arguments
+ARG PYTHON_VER
 ARG IMAGE_TYPE=base
-ARG PYTHON_VER=3.8
 ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=23.02
 ARG CONDA_CHANNEL=rapidsai
@@ -67,8 +67,13 @@ ARG TENSORRT_VERSION=8.2.1.3
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Remove the file which breaks apt caching since we will handle it ourselves. See
+# https://vsupalov.com/buildkit-cache-mount-dockerfile/
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
 # Install dependencies to build
-RUN apt-get update &&\
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt-get update &&\
     apt-get upgrade -y &&\
     apt-get install --no-install-recommends -y \
         bc \
@@ -107,7 +112,8 @@ COPY --from=condaforge/mambaforge:latest /opt/conda /opt/conda
 ENV PATH="${PATH}:/opt/conda/bin"
 
 # Install mamba to speed the solve up
-RUN conda config --set ssl_verify false &&\
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
     /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
@@ -119,13 +125,11 @@ RUN conda config --set ssl_verify false &&\
 # Create the conda environment and install all dependencies
 FROM base as conda_env
 
-ENV TINI_VERSION 0.19.0
-
 # Create a base environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge  \
-      python=${PYTHON_VER} tini=${TINI_VERSION} && \
+      python=${PYTHON_VER} && \
     # Clean and activate
     # conda clean -afy && \
     sed -i 's/conda activate base/conda activate morpheus/g' ~/.bashrc
@@ -138,7 +142,7 @@ RUN source activate morpheus &&\
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/opt/conda/envs/morpheus/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
@@ -148,81 +152,23 @@ SHELL ["/bin/bash", "-c"]
 FROM conda_env as base_extended
 
 # Add one or more optional dependencies to the base environment
-
-ARG CONDA_CHANNEL_ALIAS
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
-ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
-ARG DOCA_ARTIFACTS_HOST=""
-ARG DOCA_REPO_HOST=""
-
-# Copy the source
-COPY ./thirdparty thirdparty
-
+ARG DOCA_ARTIFACTS_HOST
+ARG DOCA_REPO_HOST
 ARG DOCA_BUILD_ID=7930666
 ARG DOCA_VERSION=2.2.0002-1
 ARG DPDK_VERSION=22.11.0-1.4.1
 
-# Latest attempted update that did not work (20.04-based)
-# ARG DOCA_BUILD_ID=7950353
-# ARG DOCA_VERSION=2.2.0002-1
-# ARG DPDK_VERSION=22.11.0-1.4.2
+# Set this environment variable so it auto builds DOCA
+ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 
-RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        mkdir -p ./docker/deb && \
-        wget -O ./docker/deb/doca-host-repo-ubuntu2204_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
-            https://${DOCA_REPO_HOST}/doca-repo-2.2.0/doca-repo-2.2.0-0.0.1-230405-143032-daily/doca-host-repo-ubuntu2204_2.2.0-0.0.1-230405-143032-daily.2.0.2004.2devflexio.23.04.0.2.3.0_amd64.deb && \
-        wget -O ./docker/deb/doca-apps-dev_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-apps_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-grpc-dev_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc-dev_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-grpc_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-libs_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-libs_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-prime-runtime_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-runtime_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-prime-sdk_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-sdk_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-prime-tools_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-tools_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/doca-samples_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-samples_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-services_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb && \
-        wget -O ./docker/deb/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb && \
-        wget -O ./docker/deb/mlnx-dpdk_${DPDK_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb ;\
-    fi
+# Copy all of the optional dependency scripts
+COPY ./docker/optional_deps docker/optional_deps
 
-RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        dpkg -i ./docker/deb/doca-host-repo*.deb;  \
-    fi
-
-RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        apt-get update && \
-        apt-get install -y libjson-c-dev meson cmake pkg-config && \
-        apt-get install -y ./docker/deb/mlnx-dpdk*.deb && \
-        apt-get install -y ./docker/deb/*doca*.deb; \
-    fi
-
-# Build and install md, bsd, and gdrcopy libs
-RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
-    if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
-        source activate base && \
-        mamba install automake cmake libtool -y && \
-        cmake -DMORPHEUS_TP_BUILD_DOCA_DEPS=ON -DMORPHEUS_TP_INSTALL_DOCA_DEPS=ON \
-          -B ./tp_build -S ./thirdparty/artifacts && \
-        cmake --build ./tp_build && \
-        mamba uninstall automake cmake libtool -y && \
-        rm -rf ./tp_build ./thirdparty;\
-    fi
+# Install DOCA (If requested)
+RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
+    --mount=type=cache,id=apt,target=/var/cache/apt \
+    ./docker/optional_deps/doca.sh /tmp/doca
 
 # ============ Stage: conda_env_dev ============
 # Create the development conda environment
@@ -252,7 +198,8 @@ ARG CONDA_CHANNEL_ALIAS
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-RUN apt update && \
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
         cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -264,7 +211,6 @@ RUN apt update && \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
-    apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the source
@@ -297,13 +243,11 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c local \
         -c rapidsai \
         -c nvidia/label/cuda-11.8.0 \
-        -c nvidia \
         -c nvidia/label/dev \
+        -c nvidia \
         -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
-    # Clean and activate
-    conda clean -afy
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
 
 # Only copy specific files/folders over that are necessary for runtime
 COPY "./docker" "./docker"
@@ -322,12 +266,12 @@ CMD [ "morpheus" ]
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
-
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt update && \
+    TZ=Etc/UTC \
     apt install --no-install-recommends -y \
         cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -336,14 +280,12 @@ RUN apt update && \
         libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        nodejs \
-        npm && \
-    apt clean && \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server
+RUN source activate morpheus &&\
+    npm install -g camouflage-server
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for

@@ -80,9 +80,14 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    # Include What You Use
    if [[ "${SKIP_IWYU}" == "" ]]; then
-      IWYU_DIRS="morpheus"
+      IWYU_MODIFIED_FILES=( "${MORPHEUS_MODIFIED_FILES[@]}" )
+
+      # Remove .h, .hpp, and .cu files from the modified list
+      shopt -s extglob
+      IWYU_MODIFIED_FILES=( "${IWYU_MODIFIED_FILES[@]/*.@(h|hpp|cu)/}" )
+
       NUM_PROC=$(get_num_proc)
-      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_DIRS} 2>&1`
+      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
       IWYU_RETVAL=$?
    fi
 else

@@ -58,14 +58,15 @@ endif()
 
 # MRC CMake path and module extensions
 set(MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/package_search"
-    )
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_search"
+  "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/package_search"
+)
 
 set(MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    )
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+)
 
 # Prepend path and prefix updates so they take priority in this scope.
 list(PREPEND CMAKE_MODULE_PATH "${MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS}")
@@ -168,14 +169,14 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
   morpheus_utils_print_all_targets()
 
   morpheus_utils_print_target_properties(
-      TARGETS
-        morpheus
-        morpheus_utils
-      WRITE_TO_FILE
+    TARGETS
+      morpheus
+      morpheus_utils
+    WRITE_TO_FILE
   )
 
   morpheus_utils_print_global_properties(
-      WRITE_TO_FILE
+    WRITE_TO_FILE
   )
 endif()
 
