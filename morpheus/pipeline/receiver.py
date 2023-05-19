@@ -101,7 +101,7 @@ class Receiver():
             else:
                 # We have multiple senders. Create a dummy stream to connect all senders
                 self._input_stream = builder.make_node_component(
-                    self.parent.unique_name + f"-reciever[{self.port_number}]", mrc.core.operators.map(lambda x: x))
+                    f"{self.parent.unique_name}-reciever[{self.port_number}]", mrc.core.operators.map(lambda x: x))
 
                 if (self.is_complete):
                     # Connect all streams now
