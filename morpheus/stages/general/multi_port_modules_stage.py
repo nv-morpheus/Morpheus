@@ -35,12 +35,10 @@ class MultiPortModulesStage(Stage):
         Pipeline configuration instance.
     module_config : typing.Dict
         Module configuration.
-    input_port_name : str
-        Name of the input port for the registered module.
-    output_port_name_prefix : str
-        Prefix name of the output ports for the registered module.
-    num_output_ports : str
-        Number of output ports for the registered module.
+    input_ports : typing.List[str]
+        Input ports used for the registered module.
+    output_ports : typing.List[str]
+        Output ports used for the registered module.
     input_type : default `typing.Any`
         The stage acceptable input type.
     output_type : default `typing.Any`
@@ -51,25 +49,26 @@ class MultiPortModulesStage(Stage):
     def __init__(self,
                  c: Config,
                  module_conf: typing.Dict[str, any],
-                 input_port_name: str,
-                 output_port_name_prefix: str,
-                 num_output_ports: int,
+                 input_ports: typing.List[str],
+                 output_ports: typing.List[str],
                  input_type=typing.Any,
                  output_type=typing.Any):
 
         super().__init__(c)
 
+        self._module_conf = module_conf
         self._input_type = input_type
         self._ouput_type = output_type
-        self._module_conf = module_conf
-        self._input_port_name = input_port_name
-        self._output_port_name_prefix = output_port_name_prefix
 
-        if num_output_ports < 1:
-            raise ValueError(f"The `output_port_count` must be >= 1, but received {num_output_ports}.")
+        if not (input_ports and output_ports):
+            raise ValueError("Module input and output ports must not be empty.")
+        self._in_ports = input_ports
+        self._out_ports = output_ports
 
-        self._create_ports(1, num_output_ports)
-        self._output_port_count = num_output_ports
+        self._num_in_ports = len(self._in_ports)
+        self._num_out_ports = len(self._out_ports)
+
+        self._create_ports(self._num_in_ports, self._num_out_ports)
 
     @property
     def name(self) -> str:
@@ -83,7 +82,7 @@ class MultiPortModulesStage(Stage):
         Returns input type for the current stage.
         """
 
-        return (typing.Any, )
+        return (self._input_type, )
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -97,26 +96,37 @@ class MultiPortModulesStage(Stage):
         """
         return (typing.Any, )
 
-    def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _validate_ports(self, module) -> None:
 
-        in_ports_len = len(in_stream_pairs)
-        if in_ports_len != 1:
-            raise ValueError(f"Only 1 input is supported, but recieved {in_ports_len}.")
+        input_ids = module.input_ids()
+        output_ids = module.output_ids()
 
-        in_stream_node = in_stream_pairs[0][0]
+        if sorted(self._in_ports) != sorted(input_ids):
+            raise ValueError(f"Provided input ports do not match module input ports. Module: {input_ids}, "
+                             f"Provided: {self._in_ports}.")
+
+        if sorted(self._out_ports) != sorted(output_ids):
+            raise ValueError(f"Provided output ports do not match module output ports. Module: {output_ids}, "
+                             f"Provided: {self._out_ports}.")
+
+    def _build(self, builder: mrc.Builder, in_port_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
-        mod_in_stream = module.input_port(self._input_port_name)
 
-        builder.make_edge(in_stream_node, mod_in_stream)
+        self._validate_ports(module)
+
+        # Make an edges with input ports
+        for index in range(self._num_in_ports):
+            in_stream_node = in_port_streams[index][0]
+            in_port = self._in_ports[index]
+            mod_in_stream = module.input_port(in_port)
+            builder.make_edge(in_stream_node, mod_in_stream)
 
         out_stream_pairs = []
 
-        count = 0
-        while (count < self._output_port_count):
-            out_port = f"{self._output_port_name_prefix}-{count}"
+        for index in range(self._num_out_ports):
+            out_port = self._out_ports[index]
             out_stream_pairs.append((module.output_port(out_port), self._ouput_type))
-            count += 1
 
         return out_stream_pairs

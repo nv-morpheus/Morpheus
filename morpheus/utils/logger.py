@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Logging utilities for Morpheus"""
 
 import json
 import logging
@@ -41,9 +42,7 @@ class TqdmLoggingHandler(logging.Handler):
         self._stderr = click.get_text_stream('stderr')
 
     def emit(self, record: logging.LogRecord):
-        """
-        Apply formatting and send output to stderr or stdout
-        """
+        """Apply formatting and send output to stderr or stdout."""
         try:
             msg = self.format(record)
 
@@ -60,10 +59,11 @@ class TqdmLoggingHandler(logging.Handler):
         # See issue 36272 https://bugs.python.org/issue36272
         except (KeyboardInterrupt, SystemExit, RecursionError):  # noqa
             raise
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.handleError(record)
 
     def _determine_color(self, levelno: int):
+        # pylint: disable=no-else-return
         if (levelno >= logging.CRITICAL):
             return {"fg": "red", "bold": True}
         elif (levelno >= logging.ERROR):
@@ -86,8 +86,8 @@ def _configure_from_log_file(log_config_file: str):
         dict_config: dict = None
 
         # Try and load from dict
-        with open(log_config_file, "r") as fp:
-            dict_config = json.load(fp)
+        with open(log_config_file, "r", encoding='UTF-8') as fh:
+            dict_config = json.load(fh)
 
         logging.config.dictConfig(dict_config)
     else:
@@ -173,7 +173,6 @@ def configure_logging(log_level: int, log_config_file: str = None):
         will be loaded via `logging.config.dictConfig()` (See `here
         <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`__). Defaults to None.
     """
-
     # Start by initializing MRC logging
     mrc.logging.init_logging("morpheus")
 
@@ -199,7 +198,6 @@ def set_log_level(log_level: int):
     int
         The previously set logging level
     """
-
     # Get the old level and return it in case the user wants that
     old_level = mrc.logging.get_level()
 
@@ -214,9 +212,7 @@ def set_log_level(log_level: int):
 
 
 def deprecated_stage_warning(logger, cls, name):
-    """
-    Log a warning about a deprecated stage
-    """
+    """Log a warning about a deprecated stage."""
     logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
                     "It has no effect and acts as a pass through stage."),
                    cls.__name__,
@@ -224,9 +220,7 @@ def deprecated_stage_warning(logger, cls, name):
 
 
 def deprecated_message_warning(logger, cls, new_cls):
-    """
-    Log a warning about a deprecated message
-    """
+    """Log a warning about a deprecated message."""
     logger.warning(
         ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
         cls.__name__,

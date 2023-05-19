@@ -588,7 +588,7 @@ def validate_4768(parsed_rec):
 
 
 def unknown_record_type(parsed_rec):
-    raise Exception("Unknown eventcode appeared")
+    raise ValueError("Unknown eventcode appeared")
 
 
 VALIDATE_DICT = {
@@ -626,7 +626,7 @@ VALIDATE_DICT = {
 def test_windows_event_parser():
     wep = WindowsEventParser()
 
-    with open(os.path.join(TEST_DIRS.tests_data_dir, 'windows_event_logs.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.tests_data_dir, 'windows_event_logs.txt'), encoding='UTF-8') as fh:
         test_logs = fh.readlines()
     test_input = cudf.Series(test_logs)
     test_output_df = wep.parse(test_input)
@@ -638,7 +638,7 @@ def test_windows_event_parser():
 
 def test2_windows_event_parser():
     wep = WindowsEventParser(interested_eventcodes=["5156"])
-    with open(os.path.join(TEST_DIRS.tests_data_dir, 'windows_event_logs.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.tests_data_dir, 'windows_event_logs.txt'), encoding='UTF-8') as fh:
         test_logs = fh.readlines()
     test_input = cudf.Series(test_logs)
     test_output_df = wep.parse(test_input)
