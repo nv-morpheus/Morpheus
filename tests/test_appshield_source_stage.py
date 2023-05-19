@@ -17,7 +17,6 @@
 import glob
 import json
 import os
-from unittest import mock
 
 import pandas as pd
 import pytest
