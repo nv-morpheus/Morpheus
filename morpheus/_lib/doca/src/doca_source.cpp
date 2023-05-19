@@ -15,6 +15,15 @@
  * limitations under the License.
  */
 
+#include "doca_source.hpp"
+
+#include "common.hpp"
+#include "doca_context.hpp"
+#include "doca_rx_pipe.hpp"
+#include "doca_rx_queue.hpp"
+#include "doca_semaphore.hpp"
+#include "doca_source_kernels.hpp"
+
 #include <cudf/column/column_factories.hpp>
 #include <cudf/column/column_view.hpp>
 #include <cudf/copying.hpp>
@@ -25,13 +34,6 @@
 #include <cudf/strings/detail/utilities.hpp>
 #include <cudf/table/table.hpp>
 #include <glog/logging.h>
-#include <morpheus/doca/common.hpp>
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/doca_rx_pipe.hpp>
-#include <morpheus/doca/doca_rx_queue.hpp>
-#include <morpheus/doca/doca_semaphore.hpp>
-#include <morpheus/stages/doca_source.hpp>
-#include <morpheus/stages/doca_source_kernels.hpp>
 #include <mrc/segment/builder.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_scalar.hpp>

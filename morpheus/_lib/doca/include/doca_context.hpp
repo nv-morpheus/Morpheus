@@ -32,8 +32,9 @@
 
 namespace morpheus::doca {
 
-#pragma GCC visibility push(default)
-
+/**
+ * @brief Manages the lifetime of DOCA as it relates to GPUNetIO
+ */
 struct DocaContext
 {
   private:
@@ -54,7 +55,5 @@ struct DocaContext
     uint16_t nic_port();
     doca_flow_port* flow_port();
 };
-
-#pragma GCC visibility pop
 
 }  // namespace morpheus::doca

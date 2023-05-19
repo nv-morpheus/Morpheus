@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include <morpheus/messages/meta.hpp>
+#include "morpheus/messages/meta.hpp"
+
 #include <pymrc/node.hpp>
 
 #include <memory>

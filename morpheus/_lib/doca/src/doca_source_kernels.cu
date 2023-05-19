@@ -450,7 +450,6 @@ __global__ void _packet_gather_kernel(
     }
 
     auto payload_size = payload_sizes[packet_idx];
-    auto packet_idx_out = payload_capture[i];
 
     for (auto j = 0; j < payload_size; j++)
     {

@@ -23,7 +23,12 @@ list(APPEND libdpdk_REQUIRED_VARS libdpdk_INCLUDE_DIR)
 find_package(bsd QUIET)
 list(APPEND doca_REQUIRED_VARS bsd_FOUND)
 
-set(CMAKE_FIND_DEBUG_MODE ON)
+# CMAKE_LIBRARY_ARCHITECTURE needs to be set for this to work correctly. Save the value so we can restore
+set(_saved_CMAKE_LIBRARY_ARCHITECTURE ${CMAKE_LIBRARY_ARCHITECTURE})
+
+if(NOT DEFINED CMAKE_LIBRARY_ARCHITECTURE)
+  set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
+endif()
 
 # Find the include path
 find_path(
@@ -56,49 +61,15 @@ macro(parse_define_string define_name file_string output_variable)
   set(${output_variable} "${CMAKE_MATCH_1}")
 endmacro()
 
-# if (DEFINED libdpdk_INCLUDE_DIR)
-
-#   message(VERBOSE "libdpdk_INCLUDE_DIR: ${libdpdk_INCLUDE_DIR}")
-
-#   find_file(libdpdk_VERSION_FILE
-#     NAMES libdpdk_version.h
-#     PATHS ${libdpdk_INCLUDE_DIR}
-#     NO_DEFAULT_PATH
-#   )
-#   mark_as_advanced(libdpdk_VERSION_FILE)
-
-#   if (DEFINED libdpdk_VERSION_FILE)
-#     message(VERBOSE "libdpdk_VERSION_FILE: ${libdpdk_VERSION_FILE}")
-
-#     file(READ ${libdpdk_VERSION_FILE} version_file_string)
-#     parse_define_string(DOCA_VER_STRING "${version_file_string}" libdpdk_FULL_VERSION)
-#     parse_define_number(DOCA_VER_MAJOR "${version_file_string}" libdpdk_MAJOR_VERSION)
-#     parse_define_number(DOCA_VER_MINOR "${version_file_string}" libdpdk_MINOR_VERSION)
-#     parse_define_number(DOCA_VER_PATCH "${version_file_string}" libdpdk_PATCH_VERSION)
-
-#     # Set the version variable
-#     set(libdpdk_VERSION "${libdpdk_FULL_VERSION}")
-
-#     message(STATUS "Detected DOCA Version ${libdpdk_VERSION}")
-
-#   endif()
-
-# endif()
-
-set(CMAKE_FIND_DEBUG_MODE OFF)
+# Restore CMAKE_LIBRARY_ARCHITECTURE now that we are done
+set(CMAKE_LIBRARY_ARCHITECTURE ${_saved_CMAKE_LIBRARY_ARCHITECTURE})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(libdpdk
   FOUND_VAR libdpdk_FOUND
   REQUIRED_VARS
     ${libdpdk_REQUIRED_VARS}
-  # VERSION_VAR libdpdk_VERSION
 )
-
-# if(libdpdk_FOUND)
-#   set(libdpdk_LIBRARIES ${libdpdk_LIBRARY})
-#   set(libdpdk_INCLUDE_DIRS ${libdpdk_INCLUDE_DIR})
-# endif()
 
 if(libdpdk_FOUND)
 
@@ -117,8 +88,6 @@ if(libdpdk_FOUND)
 
       # Add to the list of dependent targets
       list(APPEND libdpdk_child_targets libdpdk::${library_name})
-
-      message(STATUS "found ${library_name} as ${${library_name}_LIBRARY}")
     endif()
   endforeach()
 

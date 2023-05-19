@@ -23,6 +23,12 @@
 
 namespace morpheus::doca {
 
+/**
+ * @brief Creates and manages the lifetime of a GPUNetIO Semaphore.
+ *
+ * GPUNetIO Semaphores are used in a round-robin fashion to create locks over regions of Receive
+ * Queue memory so they can be read in device kernels.
+ */
 struct DocaSemaphore
 {
   private:

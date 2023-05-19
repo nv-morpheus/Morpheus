@@ -163,7 +163,7 @@ doca_flow_port* init_doca_flow(uint16_t port_id, uint8_t rxq_num)
 
     if (mp == nullptr)
     {
-        // MORPHEUS_FAIL("rte_pktmbuf_pool_create failed with " + std::to_string(rte_strerror(-ret)));
+        MORPHEUS_FAIL("rte_pktmbuf_pool_create failed.");
     }
 
     tx_conf = dev_info.default_txconf;

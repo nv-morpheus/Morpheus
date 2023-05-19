@@ -53,13 +53,11 @@ wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_I
 wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb
 wget -nc -P ${DEB_DIR} https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb
 
-cp -r ${WORKING_DIR}/ ${WORKING_DIR}2/
+# Install the doca host repo
+dpkg -i ${DEB_DIR}/doca-host-repo*.deb
 
-# # Install the doca host repo
-# dpkg -i ${DEB_DIR}/doca-host-repo*.deb
-
-# # Install all other packages
-# apt-get update
-# # apt-get install -y libjson-c-dev meson cmake pkg-config
-# apt-get install -y ${DEB_DIR}/mlnx-dpdk*.deb
-# apt-get install -y ${DEB_DIR}/*doca*.deb
+# Install all other packages
+apt-get update
+# apt-get install -y libjson-c-dev meson cmake pkg-config
+apt-get install -y ${DEB_DIR}/mlnx-dpdk*.deb
+apt-get install -y ${DEB_DIR}/*doca*.deb

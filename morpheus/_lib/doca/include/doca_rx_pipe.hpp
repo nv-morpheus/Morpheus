@@ -18,31 +18,34 @@
 #pragma once
 
 #include "doca_context.hpp"
-#include "doca_mem.hpp"
-
-#include <doca_eth_rxq.h>
-#include <doca_gpunetio.h>
+#include "doca_rx_queue.hpp"
 
 #include <memory>
 
 namespace morpheus::doca {
 
-struct DocaRxQueue
+/**
+ * @brief Creates and manages the lifetime of a GPUNetIO Receive Pipe for a given GPUNetIO Receive Queue.
+ *
+ * Pipes are used to filter and/or forward packets to other Pipes or Receive Queues. A Root Pipe
+ * is the primary Pipe where packets come in, and can then be forwarded to other Pipes. This is how
+ * TCP/UDP as well as other types of filtering is done with GPUNetIO. Eventually packets will be
+ * placed in a Receive Queue at which point they can be read using a Semaphore.
+ *
+ * In this implementation, a single Root Pipe is connected to a single TCP-filtering Pipe which is
+ * then connected to the given Receive Queue.
+ */
+struct DocaRxPipe
 {
   private:
     std::shared_ptr<DocaContext> m_context;
-    doca_gpu_eth_rxq* m_rxq_info_gpu;
-    doca_eth_rxq* m_rxq_info_cpu;
-    doca_mmap* m_packet_buffer;
-    doca_ctx* m_doca_ctx;
-    std::unique_ptr<DocaMem<void>> m_packet_mem;
+    std::shared_ptr<DocaRxQueue> m_rxq;
+    doca_flow_pipe* m_pipe;
+    doca_flow_pipe* m_root_pipe;
 
   public:
-    DocaRxQueue(std::shared_ptr<DocaContext> context);
-    ~DocaRxQueue();
-
-    doca_gpu_eth_rxq* rxq_info_gpu();
-    doca_eth_rxq* rxq_info_cpu();
+    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq);
+    ~DocaRxPipe();
 };
 
 }  // namespace morpheus::doca

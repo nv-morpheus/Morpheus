@@ -84,7 +84,8 @@ morpheus_add_pybind11_module(modules SOURCE_FILES modules/module.cpp)
 #----------morpheus._lib.doca---------
 if(MORPHEUS_SUPPORT_DOCA)
   add_subdirectory(doca)
-  # morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp)
+
+  morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp LINK_TARGETS ${PROJECT_NAME}::morpheus_doca)
 endif()
 
 if (MORPHEUS_BUILD_TESTS)

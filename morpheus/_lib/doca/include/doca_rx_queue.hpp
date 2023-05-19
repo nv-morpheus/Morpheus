@@ -18,23 +18,36 @@
 #pragma once
 
 #include "doca_context.hpp"
-#include "doca_rx_queue.hpp"
+#include "doca_mem.hpp"
+
+#include <doca_eth_rxq.h>
+#include <doca_gpunetio.h>
 
 #include <memory>
 
 namespace morpheus::doca {
 
-struct DocaRxPipe
+/**
+ * @brief Creates and manages the lifetime of a GPUNetIO Receive Queue.
+ *
+ * A Receive Queue is used to buffer packets received from a GPUNetIO Pipe.
+ */
+struct DocaRxQueue
 {
   private:
     std::shared_ptr<DocaContext> m_context;
-    std::shared_ptr<DocaRxQueue> m_rxq;
-    doca_flow_pipe* m_pipe;
-    doca_flow_pipe* m_root_pipe;
+    doca_gpu_eth_rxq* m_rxq_info_gpu;
+    doca_eth_rxq* m_rxq_info_cpu;
+    doca_mmap* m_packet_buffer;
+    doca_ctx* m_doca_ctx;
+    std::unique_ptr<DocaMem<void>> m_packet_mem;
 
   public:
-    DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq, uint32_t source_ip_filter);
-    ~DocaRxPipe();
+    DocaRxQueue(std::shared_ptr<DocaContext> context);
+    ~DocaRxQueue();
+
+    doca_gpu_eth_rxq* rxq_info_gpu();
+    doca_eth_rxq* rxq_info_cpu();
 };
 
 }  // namespace morpheus::doca

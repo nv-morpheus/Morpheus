@@ -32,7 +32,12 @@ endif()
 find_package(libdpdk QUIET)
 list(APPEND doca_REQUIRED_VARS libdpdk_FOUND)
 
-set(CMAKE_FIND_DEBUG_MODE ON)
+# CMAKE_LIBRARY_ARCHITECTURE needs to be set for this to work correctly. Save the value so we can restore
+set(_saved_CMAKE_LIBRARY_ARCHITECTURE ${CMAKE_LIBRARY_ARCHITECTURE})
+
+if(NOT DEFINED CMAKE_LIBRARY_ARCHITECTURE)
+  set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
+endif()
 
 # Find the include path
 find_path(
@@ -92,13 +97,12 @@ if (DEFINED doca_INCLUDE_DIR)
     # Set the version variable
     set(doca_VERSION "${doca_FULL_VERSION}")
 
-    message(STATUS "Detected DOCA Version ${doca_VERSION}")
-
   endif()
 
 endif()
 
-set(CMAKE_FIND_DEBUG_MODE OFF)
+# Restore CMAKE_LIBRARY_ARCHITECTURE now that we are done
+set(CMAKE_LIBRARY_ARCHITECTURE ${_saved_CMAKE_LIBRARY_ARCHITECTURE})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(doca
@@ -107,11 +111,6 @@ find_package_handle_standard_args(doca
     ${doca_REQUIRED_VARS}
   VERSION_VAR doca_VERSION
 )
-
-# if(doca_FOUND)
-#   set(doca_LIBRARIES ${doca_LIBRARY})
-#   set(doca_INCLUDE_DIRS ${doca_INCLUDE_DIR})
-# endif()
 
 if(doca_FOUND)
 
@@ -130,9 +129,6 @@ if(doca_FOUND)
 
       # Add to the list of dependent targets
       list(APPEND doca_child_targets doca::${library_name})
-
-      message(STATUS "found ${library_name} as ${${library_name}_LIBRARY}")
-
     endif()
   endforeach()
 
@@ -140,13 +136,6 @@ if(doca_FOUND)
     add_library(doca::doca INTERFACE IMPORTED GLOBAL)
     set_target_properties(doca::doca PROPERTIES
       INTERFACE_LINK_LIBRARIES "${doca_child_targets}"
-    )
-
-    morpheus_utils_print_target_properties(
-      TARGETS
-        ${doca_child_targets}
-        doca::doca
-      WRITE_TO_FILE
     )
   endif()
 endif()

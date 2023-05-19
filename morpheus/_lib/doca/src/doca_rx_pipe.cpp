@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-#define DOCA_ALLOW_EXPERIMENTAL_API
+#include "doca_rx_pipe.hpp"
 
 #include <glog/logging.h>
-#include <morpheus/doca/doca_rx_pipe.hpp>
 #include <netinet/in.h>
 
 namespace morpheus::doca {

@@ -18,34 +18,33 @@
 #pragma once
 
 #include <doca_error.h>
+#include <morpheus/utilities/string_util.hpp>
 
 #include <stdexcept>
 
 namespace morpheus {
 
-struct doca_error : public std::runtime_error
+struct DocaError : public std::runtime_error
 {
-    doca_error(std::string const& message) : std::runtime_error(message) {}
+    DocaError(std::string const& message) : std::runtime_error(message) {}
 };
 
-struct rte_error : public std::runtime_error
+struct RteError : public std::runtime_error
 {
-    rte_error(std::string const& message) : std::runtime_error(message) {}
+    RteError(std::string const& message) : std::runtime_error(message) {}
 };
 
 namespace detail {
 
 inline void throw_doca_error(doca_error_t error, const char* file, unsigned int line)
 {
-    throw morpheus::doca_error(std::string{"DOCA error encountered at: " + std::string{file} + ":" +
-                                           std::to_string(line) + ": " + std::to_string(error) + " " +
-                                           std::string(doca_get_error_string(error))});
+    throw morpheus::DocaError(MORPHEUS_CONCAT_STR(
+        "DOCA error encountered at: " << file << ":" << line << ": " << error << " " << doca_get_error_string(error)));
 }
 
 inline void throw_rte_error(int error, const char* file, unsigned int line)
 {
-    throw morpheus::rte_error(std::string{"RTE error encountered at: " + std::string{file} + ":" +
-                                          std::to_string(line) + ": " + std::to_string(error)});
+    throw morpheus::RteError(MORPHEUS_CONCAT_STR("RTE error encountered at: " << file << ":" << line << ": " << error));
 }
 
 }  // namespace detail

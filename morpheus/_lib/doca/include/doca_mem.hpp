@@ -17,13 +17,12 @@
 
 #pragma once
 
+#include "doca_context.hpp"
+#include "error.hpp"
+
 #include <doca_gpunetio.h>
-#include <morpheus/doca/doca_context.hpp>
-#include <morpheus/doca/error.hpp>
 
 #include <memory>
-
-#define DOCA_ALLOW_EXPERIMENTAL_API
 
 namespace morpheus::doca {
 

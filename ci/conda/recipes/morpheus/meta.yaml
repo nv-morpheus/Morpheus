@@ -52,7 +52,7 @@ outputs:
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
         - ccache
-        - cmake 3.25
+        - cmake 3.24
         - cuda-cudart-dev # Needed by CMake to compile a test application
         - ninja
       host:
