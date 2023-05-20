@@ -21,6 +21,9 @@ if (VERBOSE)
   morpheus_utils_print_config()
 endif()
 
+# First, load the package_config functions
+include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
+
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
 rapids_find_package(Protobuf
   REQUIRED

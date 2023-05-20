@@ -14,7 +14,6 @@
 """
 Morpheus module definitions, each module is automatically registered when imported
 """
-
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
 from morpheus.modules import file_batcher
