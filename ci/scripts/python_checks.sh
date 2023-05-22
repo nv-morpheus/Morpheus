@@ -53,8 +53,13 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
    fi
 
    if [[ "${SKIP_FLAKE}" == "" ]]; then
+      echo "Running flake8 on ${#MORPHEUS_MODIFIED_FILES[@]} files:"
       FLAKE_OUTPUT=`python3 -m flake8 --config ${PY_CFG} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       FLAKE_RETVAL=$?
+      echo "flake8 return value: ${FLAKE_RETVAL}"
+      echo "flake8 output:"
+      echo "${FLAKE_OUTPUT}"
+      echo "-------------------"
    fi
 
    if [[ "${SKIP_YAPF}" == "" ]]; then
