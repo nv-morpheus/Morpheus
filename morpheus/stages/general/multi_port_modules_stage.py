@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""MultiPortModulesStage class."""
 
 import logging
 import typing
@@ -72,9 +73,11 @@ class MultiPortModulesStage(Stage):
 
     @property
     def name(self) -> str:
+        """Returns the name of the stage."""
         return self._module_conf.get("module_name", "multi_port_module")
 
     def supports_cpp_node(self):
+        """Indicates whether the stage supports C++ node."""
         return False
 
     def input_types(self) -> typing.Tuple:
