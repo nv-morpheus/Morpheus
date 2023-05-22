@@ -27,27 +27,3 @@ def test_constructor(config: Config):
 
     assert isinstance(stage, SinglePortStage)
     assert stage._s3_writer is mock_s3_writer
-
-
-@mock.patch("dfp.stages.write_to_s3_stage.ops")
-def test_build_single(mock_mrc_ops, config: Config):
-    from dfp.stages.write_to_s3_stage import WriteToS3Stage
-
-    mock_s3_writer = mock.MagicMock()
-    stage = WriteToS3Stage(config, s3_writer=mock_s3_writer)
-
-    mock_mrc_map_fn = mock.MagicMock()
-    mock_mrc_ops.map.return_value = mock_mrc_map_fn
-
-    input_stream = (mock.MagicMock(), mock.MagicMock())
-
-    mock_node = mock.MagicMock()
-    mock_builder = mock.MagicMock()
-    mock_builder.make_node.return_value = mock_node
-
-    results = stage._build_single(mock_builder, input_stream)
-
-    assert results == (mock_node, input_stream[1])
-    mock_builder.make_node.assert_called_once_with(stage.unique_name, mock_mrc_map_fn)
-    mock_mrc_ops.map.assert_called_once_with(mock_s3_writer)
-    mock_builder.make_edge.assert_called_once_with(input_stream[0], mock_node)

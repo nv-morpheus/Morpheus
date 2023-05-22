@@ -434,16 +434,19 @@ disable = [
   "bad-inline-option",
   "deprecated-pragma",
   "file-ignored",
+  "import-error", # pylint gets confused by tests for our examples
   "import-outside-toplevel", # Allow lazy imports inside of methods
   "locally-disabled",
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
+  "no-member", # pylint isn't aware of some of our attrs issue #956
   "protected-access",
   "raw-checker-failed",
   "superfluous-parens",
   "suppressed-message",
-  "too-many-arguments", # Disable all of the "too-many-*" checks, as they are too strict for our codebase
+  "too-few-public-methods", # Disable all of the "too-*" checks, as they are too strict for our codebase
+  "too-many-arguments",
   "too-many-branches",
   "too-many-instance-attributes",
   "too-many-lines",
