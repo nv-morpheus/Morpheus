@@ -36,7 +36,7 @@ import json
 import numpy as np
 import onnxruntime
 import torch
-from scipy.special import expit
+import scipy
 
 
 def infer(
@@ -64,12 +64,11 @@ def infer(
         )
         input_ids = tokenizer_output['input_ids'].type(torch.long)
         att_masks = tokenizer_output['attention_mask'].type(torch.long)
-        # meta_data = tokenizer_output['metadata']
         del tokenizer_output
         return (input_ids, att_masks)
 
     data = []
-    with open(validationdata) as f:
+    with open(validationdata, encoding="utf-8") as f:
         for line in f:
             data.append(json.loads(line))
 
@@ -89,7 +88,7 @@ def infer(
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
 
-    probs = expit(ort_outs[0])
+    probs = scipy.special.expit(ort_outs[0])
 
     preds = (probs >= 0.5).astype(np.int_)
 

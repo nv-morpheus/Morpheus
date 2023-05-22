@@ -35,7 +35,7 @@ import json
 import numpy as np
 import onnxruntime
 import torch
-from scipy.special import expit
+import scipy
 
 
 def infer(validationdata, vocab, model, output):
@@ -58,7 +58,7 @@ def infer(validationdata, vocab, model, output):
         return input_ids, att_masks
 
     data = []
-    with open(validationdata) as f:
+    with open(validationdata, encoding="utf-8") as f:
         for line in f:
             data.append(json.loads(line))
 
@@ -76,7 +76,7 @@ def infer(validationdata, vocab, model, output):
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
     # probabilities
-    probs = expit(ort_outs[0])
+    probs = scipy.special.expit(ort_outs[0])
     # predictions using 0.5 threshold
     preds = (probs >= 0.5).astype(np.int_)
     preds = preds[:, 1].tolist()

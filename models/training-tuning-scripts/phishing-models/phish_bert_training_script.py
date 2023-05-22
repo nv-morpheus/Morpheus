@@ -34,9 +34,12 @@ def preprocessing():
 
     # download and unzip data
     if not os.path.isfile("smsspamcollection.zip"):
-        URL = "http://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
-        response = requests.get(URL)
-        open("smsspamcollection.zip", "wb").write(response.content)
+        url = "http://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
+        response = requests.get(url, timeout=30)
+
+        with open("smsspamcollection.zip", "wb") as file:
+            file.write(response.content)
+
         with zipfile.ZipFile("smsspamcollection.zip") as item:
             item.extractall()
     # read into cudf
@@ -44,15 +47,15 @@ def preprocessing():
     # convert label to binary 0 = ham, 1 = spam
     df["label"] = df["spam/ham"].str.match('spam').astype(int)
     # split into 80% training, 20% testing datasets
-    X_train, X_test, y_train, y_test = train_test_split(df["message"], df["label"], train_size=0.8, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(df["message"], df["label"], train_size=0.8, random_state=42)
 
-    return (X_train, y_train, X_test, y_test)
+    return (x_train, y_train, x_test, y_test)
 
 
 def main():
 
     print("Preprocessing...")
-    X_train, y_train, X_test, y_test = preprocessing()
+    x_train, y_train, x_test, y_test = preprocessing()
 
     print("Model Loading...")
     seq_classifier = SequenceClassifier("bert-base-uncased",
@@ -60,15 +63,15 @@ def main():
                                         num_labels=2)
 
     print("Model Training...")
-    seq_classifier.train_model(X_train, y_train, epochs=2)
+    seq_classifier.train_model(x_train, y_train, epochs=2)
 
     print("Saving Model")
     seq_classifier.save_model("./phish-bert-model")
 
     print("Model Evaluation")
     print("Accuracy:")
-    print(seq_classifier.evaluate_model(X_test, y_test))
-    test_preds = seq_classifier.predict(X_test, batch_size=128).to_numpy()
+    print(seq_classifier.evaluate_model(x_test, y_test))
+    test_preds = seq_classifier.predict(x_test, batch_size=128).to_numpy()
     true_labels = y_test.to_numpy()
     print("F1 Score:")
     print(f1_score(true_labels, test_preds))
