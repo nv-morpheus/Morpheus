@@ -42,7 +42,6 @@ def df_to_stream_csv(df: DataFrameType, stream: IOBase, include_header=False, in
     include_index_col: bool, optional
         Write out the index as a column, by default True.
     """
-
     df.to_csv(stream, header=include_header, index=include_index_col)
 
     return stream
@@ -61,7 +60,6 @@ def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True)
     include_index_col: bool, optional
         Write out the index as a column, by default True.
     """
-
     df.to_json(stream, orient="records", lines=True, index=include_index_col)
 
     return stream
@@ -78,7 +76,6 @@ def df_to_stream_parquet(df: DataFrameType, stream: IOBase):
     stream : IOBase
         The stream where the serialized DataFrame will be written to.
     """
-
     df.to_parquet(stream)
 
     return stream
@@ -107,7 +104,6 @@ def df_to_csv(df: DataFrameType,
     typing.List[str]
         List of strings for each line
     """
-
     str_buf = StringIO()
 
     df_to_stream_csv(df=df, stream=str_buf, include_header=include_header, include_index_col=include_index_col)
@@ -131,7 +127,7 @@ def df_to_json(df: DataFrameType, strip_newlines=False, include_index_col=True) 
     ----------
     df : DataFrameType
         Input DataFrame to serialize.
-    strip_newline : bool, optional
+    strip_newlines : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
     include_index_col: bool, optional
         Write out the index as a column, by default True.
@@ -200,18 +196,20 @@ def write_df_to_file(df: DataFrameType, file_name: str, file_type: FileTypes = F
     file_type : FileTypes, optional
         The type of serialization to use. By default this is `FileTypes.Auto` which will determine the type from the
         filename extension
+    **kwargs : dict
+        Additional arguments forwarded to the underlying serialization function. Where the underlying serialization
+        function is one of `write_df_to_file_cpp`, `df_to_stream_csv`, or `df_to_stream_json`.
     """
-
     if (CppConfig.get_should_use_cpp() and isinstance(df, cudf.DataFrame)):
         # Use the C++ implementation
-        return write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
+        write_df_to_file_cpp(df=df, filename=file_name, file_type=file_type, **kwargs)
 
     mode = file_type
 
     if (mode == FileTypes.Auto):
         mode = determine_file_type(file_name)
 
-    with open(file_name, mode="w") as f:
+    with open(file_name, mode="w", encoding='UTF-8') as f:
 
         if (mode == FileTypes.JSON):
             df_to_stream_json(df=df, stream=f, **kwargs)

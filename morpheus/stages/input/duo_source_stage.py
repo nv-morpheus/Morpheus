@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Sourse stage for Duo Authentication logs."""
 
 import json
 import logging
@@ -22,6 +23,7 @@ from morpheus.cli import register_stage
 from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
+DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 logger = logging.getLogger(__name__)
 
 
@@ -64,9 +66,11 @@ class DuoSourceStage(AutoencoderSourceStage):
 
     @property
     def name(self) -> str:
+        """Unique name for the stage."""
         return "from-duo"
 
     def supports_cpp_node(self):
+        """Indicate that this stages does not support a C++ node."""
         return False
 
     @staticmethod
@@ -84,7 +88,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df : `pd.DataFrame`
             Dataframe with renamed columns.
         """
-
         df.columns = df.columns.str.replace('[_,.,{,},:]', '')
         df.columns = df.columns.str.strip()
         return df
@@ -106,8 +109,6 @@ class DuoSourceStage(AutoencoderSourceStage):
         df : typing.List[pd.DataFrame]
             Dataframe with actual and derived columns.
         """
-
-        _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
         timestamp_column = "isotimestamp"
         city_column = "accessdevicelocationcity"
         state_column = "accessdevicelocationstate"
@@ -115,7 +116,7 @@ class DuoSourceStage(AutoencoderSourceStage):
 
         df['time'] = pd.to_datetime(df[timestamp_column], errors='coerce')
         df['day'] = df['time'].dt.date
-        df.fillna({'time': pd.to_datetime(_DEFAULT_DATE), 'day': pd.to_datetime(_DEFAULT_DATE).date()}, inplace=True)
+        df.fillna({'time': pd.to_datetime(DEFAULT_DATE), 'day': pd.to_datetime(DEFAULT_DATE).date()}, inplace=True)
         df.sort_values(by=['time'], inplace=True)
 
         overall_location_columns = [col for col in [city_column, state_column, country_column] if col is not None]
@@ -161,10 +162,9 @@ class DuoSourceStage(AutoencoderSourceStage):
         df_per_user  : typing.Dict[str, pd.DataFrame]
             Dataframe per userid.
         """
-
         dfs = []
         for file in x:
-            with open(file) as json_in:
+            with open(file, encoding='UTF-8') as json_in:
                 log = json.load(json_in)
             df = pd.json_normalize(log)
             df = DuoSourceStage.change_columns(df)

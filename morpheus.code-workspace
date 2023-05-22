@@ -44,7 +44,7 @@
 		],
 		"python.linting.flake8Enabled": true,
 		"python.linting.pylintArgs": [
-			"--rcfile=${workspaceFolder}/.pylintrc",
+			"--rcfile=${workspaceFolder}/pyproject.toml",
 			"--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")",
 		],
 		"python.linting.pylintEnabled": true,

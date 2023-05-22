@@ -327,6 +327,8 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                         DCHECK_EQ(stop - start, output_shape[0]);
                         DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
+                        DCHECK_NOTNULL(output_ptr);
+                        DCHECK_NOTNULL(output_tensor.data());
 
                         MRC_CHECK_CUDA(
                             cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));

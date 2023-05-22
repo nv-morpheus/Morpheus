@@ -28,6 +28,7 @@ LANG=C.UTF-8
 # Pre-populate the return values in case they are skipped
 ISORT_RETVAL=0
 FLAKE_RETVAL=0
+PYLINT_RETVAL=0
 YAPF_RETVAL=0
 
 get_modified_files ${PYTHON_FILE_REGEX} MORPHEUS_MODIFIED_FILES
@@ -41,13 +42,17 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
    done
 
    if [[ "${SKIP_ISORT}" == "" ]]; then
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesn't return the correct error codes)
       ISORT_OUTPUT=`python3 -m isort --settings-file ${PY_CFG} --filter-files --check-only  ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       ISORT_RETVAL=$?
    fi
 
+   if [[ "${SKIP_PYLINT}" == "" ]]; then
+      NUM_PROC=$(get_num_proc)
+      PYLINT_OUTPUT=`pylint -j ${NUM_PROC} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
+      PYLINT_RETVAL=$?
+   fi
+
    if [[ "${SKIP_FLAKE}" == "" ]]; then
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesn't return the correct error codes)
       FLAKE_OUTPUT=`python3 -m flake8 --config ${PY_CFG} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       FLAKE_RETVAL=$?
    fi
@@ -73,6 +78,16 @@ elif [ "${ISORT_RETVAL}" != "0" ]; then
            "   ./ci/scripts/fix_all.sh\n\n"
 else
   echo -e "\n\n>>>> PASSED: isort style check\n\n"
+fi
+
+if [[ "${SKIP_PYLINT}" != "" ]]; then
+   echo -e "\n\n>>>> SKIPPED: pylint check\n\n"
+elif [ "${PYLINT_RETVAL}" != "0" ]; then
+   echo -e "\n\n>>>> FAILED: pylint style check; begin output\n\n"
+   echo -e "${PYLINT_OUTPUT}"
+   echo -e "\n\n>>>> FAILED: pylint style check; end output\n\n"
+else
+  echo -e "\n\n>>>> PASSED: pylint style check\n\n"
 fi
 
 if [[ "${SKIP_FLAKE}" != "" ]]; then
@@ -101,7 +116,7 @@ else
   echo -e "\n\n>>>> PASSED: yapf style check\n\n"
 fi
 
-RETVALS=(${ISORT_RETVAL} ${FLAKE_RETVAL})
+RETVALS=(${ISORT_RETVAL} ${FLAKE_RETVAL} ${PYLINT_RETVAL} ${YAPF_RETVAL})
 IFS=$'\n'
 RETVAL=`echo "${RETVALS[*]}" | sort -nr | head -n1`
 

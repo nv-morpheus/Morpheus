@@ -76,7 +76,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -158,7 +158,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -239,7 +239,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")

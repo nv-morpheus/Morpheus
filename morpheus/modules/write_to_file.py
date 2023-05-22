@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""To File Sink Module."""
 
 import logging
 import os
@@ -32,8 +33,6 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-is_first = True
-
 
 @register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
 def write_to_file(builder: mrc.Builder):
@@ -54,7 +53,6 @@ def write_to_file(builder: mrc.Builder):
             - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
             - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
     """
-
     config = builder.get_current_module_config()
 
     output_file = config.get("filename", None)
@@ -63,26 +61,27 @@ def write_to_file(builder: mrc.Builder):
     file_type = config.get("file_type", FileTypes.Auto)
     include_index_col = config.get("include_index_col", True)
 
+    is_first = True
+
     if (os.path.exists(output_file)):
         if (overwrite):
             os.remove(output_file)
         else:
             raise FileExistsError(
-                "Cannot output classifications to '{}'. File exists and overwrite = False".format(output_file))
+                f"Cannot output classifications to '{output_file}'. File exists and overwrite = False")
 
     if (file_type == FileTypes.Auto):
         file_type = determine_file_type(output_file)
 
     def convert_to_strings(df: typing.Union[pd.DataFrame, cudf.DataFrame]):
-
-        global is_first
+        nonlocal is_first
 
         if (file_type == FileTypes.JSON):
             output_strs = serializers.df_to_json(df, include_index_col=include_index_col)
         elif (file_type == FileTypes.CSV):
             output_strs = serializers.df_to_csv(df, include_header=is_first, include_index_col=include_index_col)
         else:
-            raise NotImplementedError("Unknown file type: {}".format(file_type))
+            raise NotImplementedError(f"Unknown file type: {file_type}")
 
         is_first = False
 
@@ -100,9 +99,9 @@ def write_to_file(builder: mrc.Builder):
         os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
 
         # Open up the file handle
-        with open(output_file, "a") as out_file:
+        with open(output_file, "a", encoding='UTF-8') as out_file:
 
-            def write_to_file(x: MessageMeta):
+            def _write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)
 
                 out_file.writelines(lines)
@@ -112,7 +111,7 @@ def write_to_file(builder: mrc.Builder):
 
                 return x
 
-            obs.pipe(ops.map(write_to_file)).subscribe(sub)
+            obs.pipe(ops.map(_write_to_file)).subscribe(sub)
 
         # File should be closed by here
 

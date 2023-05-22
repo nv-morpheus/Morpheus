@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DatasetManager class for loading and caching test datasets as DataFrames."""
 
 import logging
 import os
@@ -29,7 +30,7 @@ from utils import TEST_DIRS
 from utils import assert_results
 
 
-class DatasetManager(object):
+class DatasetManager:
     """
     Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
 
@@ -49,6 +50,7 @@ class DatasetManager(object):
     # Initialization is also being performed here instead of an __init__ method as an __init__ method would be re-run
     # the __init__ on the singleton instance for each cache hit.
     def __new__(cls, df_type: typing.Literal['cudf', 'pandas']):
+        """Returns the singleton instance of `DatasetManager` for the specified `df_type`."""
         try:
             return cls.__instances[df_type]
         except KeyError:
@@ -63,6 +65,7 @@ class DatasetManager(object):
         return 'cudf' if df_type == 'pandas' else 'pandas'
 
     def clear(self):
+        """Clears the cache"""
         self.__df_cache.clear()
 
     def get_df(self,
@@ -79,7 +82,6 @@ class DatasetManager(object):
 
         Passing values to `reader_kwargs` will cause the cache to by bypassed
         """
-
         if len(reader_kwargs) and not no_cache:
             logger = logging.getLogger(f"morpheus.{__name__}")
             logger.warning("Setting specific `reader_kwargs` requires bypassing the cache. "
@@ -123,6 +125,7 @@ class DatasetManager(object):
     def __getitem__(
         self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf', 'pandas']]]
     ) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+        """Implements `__getitem__` to allow for fetching DataFrames using the `[]` operator."""
         if not isinstance(item, tuple):
             item = (item, )
 
@@ -130,23 +133,24 @@ class DatasetManager(object):
 
     @property
     def cudf(self):
+        """Returns the singleton instance of `DatasetManager` for cudf DataFrames."""
         return DatasetManager(df_type='cudf')
 
     @property
     def pandas(self):
+        """Returns the singleton instance of `DatasetManager` for pandas DataFrames."""
         return DatasetManager(df_type='pandas')
 
     @property
     def default_df_type(self):
+        """Returns the default DataFrame type for this instance of `DatasetManager`."""
         return self._default_df_type
 
     @staticmethod
     def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
                repeat_count: int = 2,
                reset_index: bool = True) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
-        """
-        Returns a DF consisting of `repeat_count` copies of the original
-        """
+        """Returns a DF consisting of `repeat_count` copies of the original."""
         if isinstance(df, pd.DataFrame):
             concat_fn = pd.concat
         else:
@@ -177,13 +181,14 @@ class DatasetManager(object):
         dup_ids = random.sample(df.index.values.tolist(), 2 * count)
 
         # Create a dictionary of old ID to new ID
-        replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+        replace_dict = dict(zip(dup_ids[:count], dup_ids[count:]))
 
         # Return a new dataframe where we replace some index values with others
         return cls.replace_index(df, replace_dict)
 
-    def value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
-        if (isinstance(val, cdf.DataFrame) or isinstance(val, cdf.Series)):
+    @staticmethod
+    def _value_as_pandas(val: typing.Union[pd.DataFrame, cdf.DataFrame, cdf.Series], assert_is_pandas=True):
+        if (isinstance(val, (cdf.DataFrame, cdf.Series))):
             return val.to_pandas()
 
         if assert_is_pandas:
@@ -194,14 +199,13 @@ class DatasetManager(object):
     @classmethod
     def assert_df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
         """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
-
         # Comparisons work better in cudf so convert everything to that
-        df_to_check = cls.value_as_pandas(df_to_check)
+        df_to_check = cls._value_as_pandas(df_to_check)
 
         if (isinstance(val_to_check, cp.ndarray)):
             val_to_check = val_to_check.get()
         else:
-            val_to_check = cls.value_as_pandas(val_to_check, assert_is_pandas=False)
+            val_to_check = cls._value_as_pandas(val_to_check, assert_is_pandas=False)
 
         bool_df = df_to_check == val_to_check
 
@@ -212,17 +216,13 @@ class DatasetManager(object):
                    dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
                    dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                    **compare_args):
-        """
-        Wrapper for morpheus.utils.compare_df.compare_df
-        """
-        return compare_df.compare_df(cls.value_as_pandas(dfa), cls.value_as_pandas(dfb), **compare_args)
+        """Wrapper for `morpheus.utils.compare_df.compare_df`."""
+        return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
 
     @classmethod
     def assert_compare_df(cls,
                           dfa: typing.Union[pd.DataFrame, cdf.DataFrame],
                           dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                           **compare_args):
-        """
-        Convenience method for calling compare_df and asserting that the results are the same
-        """
+        """Convenience method for calling `compare_df` and asserting that the results are equivalent."""
         assert_results(cls.compare_df(dfa, dfb, **compare_args))

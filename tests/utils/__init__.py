@@ -33,10 +33,8 @@ Results = collections.namedtuple('Results', ['total_rows', 'diff_rows', 'error_p
 
 
 def calc_error_val(results_file):
-    """
-    Based on the calc_error_val function in val-utils.sh
-    """
-    with open(results_file) as fh:
+    """Based on the `calc_error_val` function in `val-utils.sh`."""
+    with open(results_file, encoding='UTF-8') as fh:
         results = json.load(fh)
 
     total_rows = results['total_rows']
@@ -52,6 +50,7 @@ def write_data_to_kafka(bootstrap_servers: str,
     Writes `data` into a given Kafka topic, emitting one message for each line int he file. Returning the number of
     messages written
     """
+    # pylint: disable=import-error
     from kafka import KafkaProducer
     num_records = 0
     producer = KafkaProducer(bootstrap_servers=bootstrap_servers, client_id=client_id)
@@ -77,7 +76,7 @@ def write_file_to_kafka(bootstrap_servers: str,
     Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
     Returning the number of messages written
     """
-    with open(input_file) as fh:
+    with open(input_file, encoding='UTF-8') as fh:
         data = [line.strip() for line in fh]
 
     return write_data_to_kafka(bootstrap_servers=bootstrap_servers,
@@ -87,6 +86,11 @@ def write_file_to_kafka(bootstrap_servers: str,
 
 
 def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
+    """
+    Checks for expected columns in the dataframe which should be added by the `AddClassificationsStage` and
+    `AddScoresStage` stages, and ensuring that the values produced by the `AddClassificationsStage` are consistent
+    with the values produced by the `AddScoresStage` when the threshold is applied.
+    """
     df = read_file_to_df(file_name, df_type='pandas')
     for field_name in field_names:
         class_field = f"{class_prefix}{field_name}"
@@ -115,7 +119,6 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
     -------
     Returns none but will throw an assertion error on failure.
     """
-
     # Quick exit if the file exists
     if (os.path.exists(filename)):
         return
@@ -156,5 +159,5 @@ def import_or_skip(modname: str,
         return pytest.importorskip(modname, minversion=minversion, reason=reason)
     except pytest.skip.Exception as e:
         if fail_missing:
-            raise ImportError(e)
+            raise ImportError(e) from e
         raise

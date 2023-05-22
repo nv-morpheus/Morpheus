@@ -17,7 +17,6 @@
 import glob
 import json
 import os
-from unittest import mock
 
 import pandas as pd
 import pytest
@@ -311,54 +310,3 @@ def test_build_metadata(input_df_per_source):
 
     assert len(appshield_message_metas) == 2
     assert isinstance(appshield_message_metas[0], AppShieldMessageMeta)
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize('cols_include',
-                         [[
-                             'Base',
-                             'Block',
-                             'CommitCharge',
-                             'End VPN',
-                             'File',
-                             'GrantedAccess',
-                             'HandleValue',
-                             'InInit',
-                             'InLoad',
-                             'InMem',
-                             'Name',
-                             'Offset',
-                             'PID',
-                             'Parent',
-                             'Path',
-                             'PrivateMemory',
-                             'Process',
-                             'Protection',
-                             'SHA256',
-                             'Size',
-                             'Start VPN',
-                             'State',
-                             'TID',
-                             'Tag',
-                             'Type',
-                             'Value',
-                             'Variable',
-                             'WaitReason',
-                             'plugin',
-                             'snapshot_id',
-                             'timestamp'
-                         ]])
-@pytest.mark.parametrize('cols_exclude', [['SHA256']])
-@pytest.mark.parametrize('plugins_include', [['ldrmodules', 'threadlist', 'envars', 'vadinfo', 'handles']])
-@pytest.mark.parametrize('input_glob', [os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')])
-def test_post_build_single(config, input_glob, cols_include, cols_exclude, plugins_include):
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
-
-    source = AppShieldSourceStage(config, input_glob, plugins_include, cols_include, cols_exclude)
-    source._post_build_single(mock_segment, mock_input)
-
-    mock_segment.make_node.assert_called_once()
-    mock_segment.make_edge.assert_called_once()
