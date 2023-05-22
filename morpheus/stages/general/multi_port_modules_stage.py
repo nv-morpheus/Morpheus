@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""MultiPortModulesStage class."""
 
 import logging
 import typing
@@ -72,9 +73,11 @@ class MultiPortModulesStage(Stage):
 
     @property
     def name(self) -> str:
+        """Returns the name of the stage."""
         return self._module_conf.get("module_name", "multi_port_module")
 
     def supports_cpp_node(self):
+        """Indicates whether the stage supports C++ node."""
         return False
 
     def input_types(self) -> typing.Tuple:
@@ -109,7 +112,7 @@ class MultiPortModulesStage(Stage):
             raise ValueError(f"Provided output ports do not match module output ports. Module: {output_ids}, "
                              f"Provided: {self._out_ports}.")
 
-    def _build(self, builder: mrc.Builder, in_port_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
@@ -118,7 +121,7 @@ class MultiPortModulesStage(Stage):
 
         # Make an edges with input ports
         for index in range(self._num_in_ports):
-            in_stream_node = in_port_streams[index][0]
+            in_stream_node = in_ports_streams[index][0]
             in_port = self._in_ports[index]
             mod_in_stream = module.input_port(in_port)
             builder.make_edge(in_stream_node, mod_in_stream)
