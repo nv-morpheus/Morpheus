@@ -14,20 +14,12 @@
 # limitations under the License.
 """
 Example Usage:
-python phish-bert-inference-script.py \
+python phish_bert_inference_script.py \
     --validationdata ../../datasets/validation-data/phishing-email-validation-data.jsonlines \
     --model ../../phishing-models/phishing-bert-20230517.onnx \
     --vocab ../../../morpheus/data/bert-base-uncased-hash.txt \
     --output phishing-email-validation-output.jsonlines
 """
-
-import argparse
-import json
-
-import numpy as np
-import onnxruntime
-import torch
-from scipy.special import expit
 
 ###########################################################################################
 # cudf imports moved before torch import to avoid the following error:
@@ -37,10 +29,16 @@ from cudf.core.subword_tokenizer import SubwordTokenizer
 
 ###########################################################################################
 
+import argparse
+import json
+
+import numpy as np
+import onnxruntime
+import torch
+from scipy.special import expit
+
 
 def infer(validationdata, vocab, model, output):
-
-    MODEL_FILE = model
 
     def bert_uncased_tokenize(strings, max_seq_len):
         """
@@ -72,7 +70,7 @@ def infer(validationdata, vocab, model, output):
     input_ids = input_ids.detach().cpu().numpy()
     att_masks = att_masks.detach().cpu().numpy()
     print("Running Inference")
-    ort_session = onnxruntime.InferenceSession(MODEL_FILE)
+    ort_session = onnxruntime.InferenceSession(model)
 
     # compute ONNX Runtime output prediction
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}

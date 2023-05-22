@@ -15,19 +15,12 @@
 """
 Example Usage:
 python \
-root-cause-inference.py \
+root_cause_inference.py \
     --validationdata ../../datasets/validation-data/root-cause-validation-data-input.jsonlines \
     --model ../../root-cause-models/root-cause-binary-bert-20230517.onnx \
     --vocab ../../../morpheus/data/bert-base-uncased-hash.txt \
     --output root-cause-validation-output.jsonlines
 """
-
-import argparse
-import json
-
-import numpy as np
-import onnxruntime
-from scipy.special import expit
 
 ###########################################################################################
 # cudf imports moved before torch import to avoid the following error:
@@ -37,6 +30,14 @@ from cudf.core.subword_tokenizer import SubwordTokenizer
 
 ###########################################################################################
 
+import argparse
+import json
+
+import numpy as np
+import onnxruntime
+import torch
+from scipy.special import expit
+
 
 def infer(
     validationdata,
@@ -44,8 +45,6 @@ def infer(
     model,
     output,
 ):
-
-    MODEL_FILE = model
 
     def bert_uncased_tokenize(strings, max_seq_len):
         """
@@ -63,8 +62,8 @@ def infer(
             add_special_tokens=False,
             return_tensors='pt',
         )
-        input_ids = tokenizer_output['input_ids']
-        att_masks = tokenizer_output['attention_mask']
+        input_ids = tokenizer_output['input_ids'].type(torch.long)
+        att_masks = tokenizer_output['attention_mask'].type(torch.long)
         # meta_data = tokenizer_output['metadata']
         del tokenizer_output
         return (input_ids, att_masks)
@@ -83,7 +82,7 @@ def infer(
     input_ids = input_ids.detach().cpu().numpy()
     att_masks = att_masks.detach().cpu().numpy()
     print('Running Inference')
-    ort_session = onnxruntime.InferenceSession(MODEL_FILE)
+    ort_session = onnxruntime.InferenceSession(model)
 
     # compute ONNX Runtime output prediction
 

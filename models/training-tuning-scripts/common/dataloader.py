@@ -17,7 +17,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class DataLoader(object):
+class DataLoader():
     """Wrapper class is used to return dataframe partitions based on batchsize."""
 
     def __init__(self, dataset, batchsize=1000):

@@ -14,7 +14,7 @@
 # limitations under the License.
 """
 Example Usage:
-python phish-bert-training-script.py
+python phish_bert_training_script.py
 """
 import os.path
 import zipfile

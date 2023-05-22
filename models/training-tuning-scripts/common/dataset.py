@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-class Dataset(object):
+class Dataset():
 
     def __init__(self, df):
         self._df = df.reset_index(drop=True)

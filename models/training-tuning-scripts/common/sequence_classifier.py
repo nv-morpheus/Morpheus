@@ -75,8 +75,8 @@ class SequenceClassifier:
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
-        :param epoch: epoch, default is 5
-        :type epoch: int
+        :param epochs: epoch, default is 5
+        :type epochs: int
 
         Examples
         --------
@@ -113,7 +113,7 @@ class SequenceClassifier:
                 nb_tr_examples += b_input_ids.size(0)
                 nb_tr_steps += 1
 
-            print("Train loss: {}".format(tr_loss / nb_tr_steps))
+            print(f"Train loss: {tr_loss / nb_tr_steps}")
 
     def evaluate_model(self, test_data, labels, max_seq_len=128, batch_size=32):
         """
@@ -179,10 +179,8 @@ class SequenceClassifier:
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
-        :param threshold: results with probabilities higher than this will be labeled as positive
-        :type threshold: float
-        :return: predictions, probabilities: predictions are labels (0 or 1) based on minimum threshold
-        :rtype: cudf.Series, cudf.Series
+        :return: predictions: predictions are labels (0 or 1) based on minimum threshold
+        :rtype: cudf.Series
 
         Examples
         --------
