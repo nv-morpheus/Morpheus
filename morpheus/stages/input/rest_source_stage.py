@@ -1,0 +1,102 @@
+# Copyright (c) 2023, NVIDIA CORPORATION.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import logging
+import queue
+import time
+import typing
+
+import mrc
+from mrc.core import operators as ops
+
+import cudf
+
+from morpheus.config import Config
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils import rest_server
+from morpheus.utils.atomic_integer import AtomicInteger
+
+logger = logging.getLogger(__name__)
+
+
+class RestSourceStage(PreallocatorMixin, SingleOutputSource):
+    """
+    Source stage that listens for incoming REST requests on a specified endpoint.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    """
+
+    def __init__(self, c: Config, sleep_time: float = 0.1):
+        super().__init__(c)
+        self._sleep_time = sleep_time
+        (self._server_proc, self._queue) = rest_server.start_rest_server()
+        self._is_running = AtomicInteger(0)
+
+    @property
+    def name(self) -> str:
+        return "from-rest"
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
+        self._is_running.value = 1
+        self._server_proc.start()
+
+        processing = True
+        while (processing):
+            # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
+            # It is important that any messages we received that are in the queue are processed before we shutdown since
+            # we already returned an OK response to the client.
+            try:
+                data = self._queue.get_nowait()
+            except queue.Empty:
+                if self._is_running.value == 0:
+                    processing = False
+                else:
+                    time.sleep(self._sleep_time)
+            except ValueError as e:
+                logger.error(f"Queue closed unexpectedly: {e}")
+                processing = False
+
+            try:
+                df = cudf.read_json(data, lines=True)
+            except Exception as e:
+                logger.error(f"Failed to convert request data to DataFrame: {e}")
+
+            yield MessageMeta(df)
+
+        self._queue.close()
+
+    def _stop(self):
+        self._server_proc.terminate()
+        self._server_proc.join()
+        self._is_running.value = 0
+
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+        node = builder.make_source(self.unique_name, self._generate_frames())
+        return node, MessageMeta
+
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
+        src_node = out_pair[0]
+        post_node = builder.make_node(self.unique_name + "-post", ops.on_completed(self._stop))
+        builder.make_edge(src_node, post_node)
+
+        return super()._post_build_single(builder, (post_node, out_pair[1]))

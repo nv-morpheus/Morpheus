@@ -24,17 +24,16 @@ from flask import request
 from flask.typing import ResponseReturnValue
 from flask.views import View
 
-from morpheus.utils.logger import LEVEL_TO_NAME_MAP
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_OPTIONS = {
     'bind': '127.0.0.1:8080',
-    'workers': 1,
-    'timeout': 0,
     'keepalive': 0,
+    'loglevel': 'WARNING',
+    'proc_name': 'morpheus_rest_server',
+    'timeout': 0,
     'worker_class': 'sync',
-    'proc_name': 'morpheus_rest_server'
+    'workers': 1
 }
 
 
@@ -95,11 +94,6 @@ def start_rest_server(options: dict = None) -> typing.Tuple[mp.Process, mp.Queue
     Starts a REST server.
     """
     server_options = DEFAULT_OPTIONS.copy()
-    try:
-        server_options['loglevel'] = LEVEL_TO_NAME_MAP[logger.getEffectiveLevel()]
-    except KeyError:
-        server_options['loglevel'] = 'INFO'
-
     server_options.update(options or {})
     queue = mp.Queue()
 
