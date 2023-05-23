@@ -19,8 +19,14 @@
 
 #include "morpheus/objects/dtype.hpp"
 
+#include <fmt/args.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <gtest/gtest.h>  // for EXPECT_EQ
 
+#include <cstddef>
+#include <map>
+#include <string>
 #include <vector>
 // work-around for known iwyu issue
 // https://github.com/include-what-you-use/include-what-you-use/issues/908
@@ -55,4 +61,23 @@ TEST_F(TestTypeUtils, DTypeCopy)
 
     morpheus::DType d5{d1};
     morpheus::DType d6{d2};
+}
+
+TEST_F(TestTypeUtils, fmt)
+{
+    std::string src = "Hello, {name}! The answer is {number}. Goodbye, {name}.";
+    std::string s =
+        fmt::format(fmt::runtime(src), fmt::arg("name", "World"), fmt::arg("unused", "value"), fmt::arg("number", 42));
+
+    EXPECT_EQ(s, "Hello, World! The answer is 42. Goodbye, World.");
+
+    std::map<std::string, std::string> m{{"name", "World"}, {"number", "42"}, {"unused", "value"}};
+    auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
+    for (const auto& p : m)
+    {
+        store.push_back(fmt::arg(p.first.c_str(), p.second));
+    }
+
+    std::string s2 = fmt::vformat(src, fmt::basic_format_args(store));
+    EXPECT_EQ(s2, "Hello, World! The answer is 42. Goodbye, World.");
 }
