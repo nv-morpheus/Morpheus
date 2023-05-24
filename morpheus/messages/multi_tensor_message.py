@@ -26,7 +26,7 @@ Self = typing.TypeVar("Self", bound="MultiTensorMessage")
 
 
 @dataclasses.dataclass
-class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
+class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessage
     """
     This class contains several inference responses as well as the cooresponding message metadata.
 

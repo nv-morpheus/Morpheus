@@ -29,63 +29,43 @@ from morpheus.messages.memory import response_memory
 from morpheus.messages.memory import tensor_memory
 
 
-def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, *args: tuple, **kwargs):
+def check_message(python_type: type, *args: tuple, **kwargs):
     instance = python_type(*args, **kwargs)
-
-    # Check that the C++ type is set in the class
-    expected_cpp_class = None if no_cpp_class else cpp_type
-    assert python_type._cpp_class is expected_cpp_class
-
     # Check that the isinstance to Python type works
     assert isinstance(instance, python_type)
-
-    # Check that the instantiated class is the right type
-    expected_class = cpp_type if should_be_cpp and cpp_type is not None else python_type
-    assert instance.__class__ is expected_class
+    assert instance.__class__ is python_type
 
 
-def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
+def check_all_messages():
 
     df = cudf.DataFrame(range(1), columns="test")
 
-    check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, *(df, ))
+    check_message(messages.MessageMeta, *(df, ))
 
     # UserMessageMeta doesn't contain a C++ impl, so we should
     # always received the python impl
-    check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, *(None, None))
+    check_message(messages.UserMessageMeta, *(None, None))
 
     check_message(messages.MultiMessage,
-                  _messages.MultiMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   **{"meta": messages.MessageMeta(df)})
 
-    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, **{"count": 1})
-    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, **{"count": 1})
+    check_message(tensor_memory.TensorMemory, **{"count": 1})
+    check_message(messages.InferenceMemory, **{"count": 1})
 
     cp_array = cp.zeros((1, 2))
 
     check_message(messages.InferenceMemoryNLP,
-                  _messages.InferenceMemoryNLP,
-                  should_be_cpp,
-                  no_cpp_class,
                   **{
                       "count": 1, "input_ids": cp_array, "input_mask": cp_array, "seq_ids": cp_array
                   })
 
     check_message(messages.InferenceMemoryFIL,
-                  _messages.InferenceMemoryFIL,
-                  should_be_cpp,
-                  no_cpp_class,
                   **{
                       "count": 1, "input__0": cp_array, "seq_ids": cp_array
                   })
 
     # No C++ impl, should always get the Python class
     check_message(messages.InferenceMemoryAE,
-                  None,
-                  should_be_cpp,
-                  no_cpp_class,
                   **{
                       "count": 1, "input": cp_array, "seq_ids": cp_array
                   })
@@ -99,68 +79,44 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     }
 
     check_message(messages.MultiTensorMessage,
-                  _messages.MultiTensorMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   meta=messages.MessageMeta(df),
                   memory=tensor_memory.TensorMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(messages.MultiInferenceMessage,
-                  _messages.MultiInferenceMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   meta=messages.MessageMeta(df),
                   memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(
         messages.MultiInferenceNLPMessage,
-        _messages.MultiInferenceNLPMessage,
-        should_be_cpp,
-        no_cpp_class,
         meta=messages.MessageMeta(df),
         memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
     )
 
     check_message(messages.MultiInferenceFILMessage,
-                  _messages.MultiInferenceFILMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   meta=messages.MessageMeta(df),
                   memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
 
-    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, **{"count": 1})
+    check_message(messages.ResponseMemory, **{"count": 1})
 
     check_message(messages.ResponseMemoryProbs,
-                  _messages.ResponseMemoryProbs,
-                  should_be_cpp,
-                  no_cpp_class,
                   **{
                       "count": 1, "probs": cp_array
                   })
 
     # No C++ impl
-    check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, **{"count": 1, "probs": cp_array})
+    check_message(messages.ResponseMemoryAE, **{"count": 1, "probs": cp_array})
 
     check_message(messages.MultiResponseMessage,
-                  _messages.MultiResponseMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   meta=messages.MessageMeta(df),
                   memory=response_memory.ResponseMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(messages.MultiResponseProbsMessage,
-                  _messages.MultiResponseProbsMessage,
-                  should_be_cpp,
-                  no_cpp_class,
                   meta=messages.MessageMeta(df),
                   memory=response_memory.ResponseMemoryProbs(count=1, probs=multi_tensor_message_tensors["probs"]))
 
     # No C++ impl
     check_message(
         messages.MultiResponseAEMessage,
-        None,
-        should_be_cpp,
-        no_cpp_class,
         meta=messages.MessageMeta(df),
         memory=response_memory.ResponseMemoryAE(count=1, probs=multi_tensor_message_tensors["probs"]),
         user_id="",
@@ -168,7 +124,7 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
 
 def test_constructor_cpp(config):
-    check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
+    check_all_messages()
 
 
 @pytest.mark.reload_modules(morpheus.config)
@@ -181,4 +137,4 @@ def test_constructor_env(config):
     importlib.reload(morpheus.config)
 
     # Check all messages. Should be False regardless due to the environment variable
-    check_all_messages(False, False)
+    check_all_messages()

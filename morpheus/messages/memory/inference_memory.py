@@ -23,7 +23,7 @@ from morpheus.messages.memory.tensor_memory import TensorMemory
 
 
 @dataclasses.dataclass(init=False)
-class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
+class InferenceMemory(TensorMemory): # , cpp_class=_messages.InferenceMemory
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic tensor data in cupy arrays.
@@ -65,7 +65,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
 
 
 @dataclasses.dataclass(init=False)
-class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP):
+class InferenceMemoryNLP(InferenceMemory): # , cpp_class=_messages.InferenceMemoryNLP
     """
     This is a container class for data that needs to be submitted to the inference server for NLP category
     usecases.
@@ -93,7 +93,7 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
 
 
 @dataclasses.dataclass(init=False)
-class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL):
+class InferenceMemoryFIL(InferenceMemory): # , cpp_class=_messages.InferenceMemoryFIL
     """
     This is a container class for data that needs to be submitted to the inference server for FIL category
     usecases.
@@ -117,7 +117,7 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
 
 
 @dataclasses.dataclass(init=False)
-class InferenceMemoryAE(InferenceMemory, cpp_class=None):
+class InferenceMemoryAE(InferenceMemory): # , cpp_class=None
     """
     This is a container class for data that needs to be submitted to the inference server for auto encoder usecases.
 

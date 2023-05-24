@@ -23,7 +23,7 @@ from morpheus.messages.message_base import MessageData
 
 
 @dataclasses.dataclass(init=False)
-class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
+class TensorMemory(MessageData): # , cpp_class=_messages.TensorMemory
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic tensor data in cupy arrays.

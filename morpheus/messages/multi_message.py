@@ -32,7 +32,7 @@ Self = typing.TypeVar("Self", bound="MultiMessage")
 
 
 @dataclasses.dataclass
-class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
+class MultiMessage(MessageData): # , cpp_class=_messages.MultiMessage
     """
     This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
     holds a reference to a batched metadata object and stores the offset and count into that batch.

@@ -155,6 +155,7 @@ class CppConfig:
 
     @staticmethod
     def get_should_use_cpp() -> bool:
+        # return False
         """Gets the global option for whether to use C++ node and message types or otherwise prefer Python."""
         return CppConfig.__use_cpp and CppConfig.__allow_cpp
 

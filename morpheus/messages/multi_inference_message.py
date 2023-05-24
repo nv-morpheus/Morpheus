@@ -23,7 +23,7 @@ from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
 @dataclasses.dataclass
-class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferenceMessage):
+class MultiInferenceMessage(MultiTensorMessage): # , cpp_class=_messages.MultiInferenceMessage
     """
     This is a container class that holds the InferenceMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiTensorMessage` class to add additional data for inferencing.
@@ -88,7 +88,7 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
 
 
 @dataclasses.dataclass
-class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceNLPMessage):
+class MultiInferenceNLPMessage(MultiInferenceMessage): # , cpp_class=_messages.MultiInferenceNLPMessage
     """
     A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
     proper inputs are set and eases debugging.
@@ -157,7 +157,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
 
 @dataclasses.dataclass
-class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceFILMessage):
+class MultiInferenceFILMessage(MultiInferenceMessage): # , cpp_class=_messages.MultiInferenceFILMessage
     """
     A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
     proper inputs are set and eases debugging.

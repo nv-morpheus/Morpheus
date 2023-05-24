@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponseMessage):
+class MultiResponseMessage(MultiTensorMessage): # , cpp_class=_messages.MultiResponseMessage
     """
     This class contains several inference responses as well as the cooresponding message metadata.
     """
@@ -117,7 +117,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
 
 
 @dataclasses.dataclass
-class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiResponseProbsMessage):
+class MultiResponseProbsMessage(MultiResponseMessage): # , cpp_class=_messages.MultiResponseProbsMessage
     """
     A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
     array. Helps ensure the proper outputs are set and eases debugging.
@@ -127,7 +127,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
     def __new__(cls, *args, **kwargs):
         morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)
-        return super(MultiResponseMessage, cls).__new__(cls, *args, **kwargs)
+        return super(MultiResponseMessage, cls).__new__(cls)
 
     def __init__(self,
                  *,
@@ -165,7 +165,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
 
 @dataclasses.dataclass
-class MultiResponseAEMessage(MultiResponseMessage, cpp_class=None):
+class MultiResponseAEMessage(MultiResponseMessage): # , cpp_class=None
     """
     A stronger typed version of `MultiResponseProbsMessage` that is used for inference workloads that return a
     probability array. Helps ensure the proper outputs are set and eases debugging.

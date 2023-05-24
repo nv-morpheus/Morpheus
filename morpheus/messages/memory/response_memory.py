@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
+class ResponseMemory(TensorMemory): # , cpp_class=_messages.ResponseMemory
     """Output memory block holding the results of inference."""
 
     def __new__(cls, *args, **kwargs):
         morpheus_logger.deprecated_message_warning(logger, cls, TensorMemory)
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
     def get_output(self, name: str):
         """
@@ -76,7 +76,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProbs):
+class ResponseMemoryProbs(ResponseMemory): # , cpp_class=_messages.ResponseMemoryProbs
     """
     Subclass of `ResponseMemory` containng an output tensor named 'probs'.
 
@@ -92,7 +92,7 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemory, cpp_class=None):
+class ResponseMemoryAE(ResponseMemory): # , cpp_class=None
     """
     Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
 

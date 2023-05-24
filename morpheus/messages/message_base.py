@@ -56,7 +56,7 @@ class MessageImpl(abc.ABCMeta):
         return result
 
 
-class MessageBase(metaclass=MessageImpl):
+class MessageBase:
     """
     Base class for all messages. Returns a C++ implementation if `CppConfig.get_should_use_cpp()` is `True` and the
     class has an associated C++ implementation (`cpp_class`), returns the Python implementation for all others.
