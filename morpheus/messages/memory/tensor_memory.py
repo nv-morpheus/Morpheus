@@ -84,6 +84,6 @@ class TensorMemory(_messages.TensorMemory, MessageData):
             If tensor name does not exist in the container.
         """
         try:
-            return self._tensors[name]
+            return self.get_tensor(name)
         except KeyError:
             raise AttributeError

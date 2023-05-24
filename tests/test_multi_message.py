@@ -37,7 +37,7 @@ from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_inference_message import MultiInferenceNLPMessage
-from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.multi_message import MultiMessage, from_message
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
@@ -485,38 +485,38 @@ def test_from_message(filter_probs_df: cudf.DataFrame):
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=10)
 
     # Once for the base multi-message class
-    multi2 = MultiMessage.from_message(multi)
+    multi2 = from_message(MultiMessage, multi)
     assert multi2.meta is multi.meta
     assert multi2.mess_offset == multi.mess_offset
     assert multi2.mess_count == multi.mess_count
 
-    multi2 = MultiMessage.from_message(multi, mess_offset=5)
+    multi2 = from_message(MultiMessage, multi, mess_offset=5)
     assert multi2.meta is multi.meta
     assert multi2.mess_offset == 5
     assert multi2.mess_count == multi.mess_count
 
-    multi2 = MultiMessage.from_message(multi, mess_count=7)
+    multi2 = from_message(MultiMessage, multi, mess_count=7)
     assert multi2.meta is multi.meta
     assert multi2.mess_offset == multi.mess_offset
     assert multi2.mess_count == 7
 
-    multi2 = MultiMessage.from_message(multi, mess_offset=6, mess_count=9)
+    multi2 = from_message(MultiMessage, multi, mess_offset=6, mess_count=9)
     assert multi2.meta is multi.meta
     assert multi2.mess_offset == 6
     assert multi2.mess_count == 9
 
     meta2 = MessageMeta(filter_probs_df[7:14])
-    multi2 = MultiMessage.from_message(multi, meta=meta2)
+    multi2 = from_message(MultiMessage, multi, meta=meta2)
     assert multi2.meta is meta2
     assert multi2.mess_offset == 0
     assert multi2.mess_count == meta2.count
 
-    multi2 = MultiMessage.from_message(multi, meta=meta2, mess_offset=4)
+    multi2 = from_message(MultiMessage, multi, meta=meta2, mess_offset=4)
     assert multi2.meta is meta2
     assert multi2.mess_offset == 4
     assert multi2.mess_count == meta2.count - 4
 
-    multi2 = MultiMessage.from_message(multi, meta=meta2, mess_count=4)
+    multi2 = from_message(MultiMessage, multi, meta=meta2, mess_count=4)
     assert multi2.meta is meta2
     assert multi2.mess_offset == 0
     assert multi2.mess_count == 4
@@ -526,76 +526,76 @@ def test_from_message(filter_probs_df: cudf.DataFrame):
     multi_tensor = MultiTensorMessage(meta=meta, mess_offset=3, mess_count=10, memory=memory, offset=5, count=10)
 
     # Create from a base class
-    multi3: MultiTensorMessage = MultiTensorMessage.from_message(multi, memory=memory)
+    multi3: MultiTensorMessage = from_message(MultiTensorMessage, multi, memory=memory)
     assert multi3.memory is memory
     assert multi3.offset == 0
     assert multi3.count == memory.count
 
     # Create from existing instance
-    multi3 = MultiTensorMessage.from_message(multi_tensor)
+    multi3 = from_message(MultiTensorMessage, multi_tensor)
     assert multi3.memory is memory
     assert multi3.offset == multi_tensor.offset
     assert multi3.count == multi_tensor.count
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, offset=5)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, offset=5)
     assert multi3.memory is memory
     assert multi3.offset == 5
     assert multi3.count == multi_tensor.count
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, count=12)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, count=12)
     assert multi3.memory is memory
     assert multi3.offset == multi_tensor.offset
     assert multi3.count == 12
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, offset=7, count=11)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, offset=7, count=11)
     assert multi3.memory is memory
     assert multi3.offset == 7
     assert multi3.count == 11
 
     memory3 = TensorMemory(count=20)
-    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, memory=memory3)
     assert multi3.memory is memory3
     assert multi3.offset == 0
     assert multi3.count == memory3.count
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3, offset=2)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, memory=memory3, offset=2)
     assert multi3.memory is memory3
     assert multi3.offset == 2
     assert multi3.count == memory3.count - 2
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3, count=14)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, memory=memory3, count=14)
     assert multi3.memory is memory3
     assert multi3.offset == 0
     assert multi3.count == 14
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3, offset=4, count=13)
+    multi3 = from_message(MultiTensorMessage, multi_tensor, memory=memory3, offset=4, count=13)
     assert multi3.memory is memory3
     assert multi3.offset == 4
     assert multi3.count == 13
 
     # Test missing memory
     with pytest.raises(AttributeError):
-        MultiTensorMessage.from_message(multi)
+        from_message(MultiTensorMessage, multi)
 
     # Finally, test a class with extra arguments
-    multi4 = MultiAEMessage.from_message(multi, model=None, train_scores_mean=0.0, train_scores_std=1.0)
+    multi4 = from_message(MultiAEMessage, multi, model=None, train_scores_mean=0.0, train_scores_std=1.0)
     assert multi4.meta is meta
     assert multi4.mess_offset == multi.mess_offset
     assert multi4.mess_count == multi.mess_count
 
-    multi5 = MultiAEMessage.from_message(multi4)
+    multi5 = from_message(MultiAEMessage, multi4)
     assert multi5.model is multi4.model
     assert multi5.train_scores_mean == multi4.train_scores_mean
     assert multi5.train_scores_std == multi4.train_scores_std
 
-    multi5 = MultiAEMessage.from_message(multi4, train_scores_mean=7.0)
+    multi5 = from_message(MultiAEMessage, multi4, train_scores_mean=7.0)
     assert multi5.model is multi4.model
     assert multi5.train_scores_mean == 7.0
     assert multi5.train_scores_std == multi4.train_scores_std
 
     # Test missing other options
     with pytest.raises(AttributeError):
-        MultiAEMessage.from_message(multi)
+        from_message(MultiAEMessage, multi)
 
 
 def test_tensor_constructor(filter_probs_df: cudf.DataFrame):

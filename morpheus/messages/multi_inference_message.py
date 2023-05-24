@@ -37,10 +37,10 @@ class MultiInferenceMessage(_messages.MultiInferenceMessage):
 
     def __init__(self,
                  *,
-                 meta: MessageMeta,
+                 meta: _messages.MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 memory: TensorMemory = None,
+                 memory: _messages.TensorMemory = None,
                  offset: int = 0,
                  count: int = -1):
 
@@ -80,13 +80,13 @@ class MultiInferenceMessage(_messages.MultiInferenceMessage):
 
 
 @dataclasses.dataclass
-class MultiInferenceNLPMessage(MultiInferenceMessage): # , cpp_class=_messages.MultiInferenceNLPMessage
+class MultiInferenceNLPMessage(_messages.MultiInferenceNLPMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
     proper inputs are set and eases debugging.
     """
 
-    required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
+    # required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
 
     def __init__(self,
                  *,
@@ -104,58 +104,15 @@ class MultiInferenceNLPMessage(MultiInferenceMessage): # , cpp_class=_messages.M
                          offset=offset,
                          count=count)
 
-    @property
-    def input_ids(self):
-        """
-        Returns token-ids for each string padded with 0s to max_length.
-
-        Returns
-        -------
-        cupy.ndarray
-            The token-ids for each string padded with 0s to max_length.
-
-        """
-
-        return self._get_tensor_prop("input_ids")
-
-    @property
-    def input_mask(self):
-        """
-        Returns mask for token-ids result where corresponding positions identify valid token-id values.
-
-        Returns
-        -------
-        cupy.ndarray
-            The mask for token-ids result where corresponding positions identify valid token-id values.
-
-        """
-
-        return self._get_tensor_prop("input_mask")
-
-    @property
-    def seq_ids(self):
-        """
-        Returns sequence ids, which are used to keep track of which inference requests belong to each message.
-
-        Returns
-        -------
-        cupy.ndarray
-            Ids used to index from an inference input to a message. Necessary since there can be more
-            inference inputs than messages (i.e., if some messages get broken into multiple inference requests).
-
-        """
-
-        return self._get_tensor_prop("seq_ids")
-
 
 @dataclasses.dataclass
-class MultiInferenceFILMessage(MultiInferenceMessage): # , cpp_class=_messages.MultiInferenceFILMessage
+class MultiInferenceFILMessage(_messages.MultiInferenceFILMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
     proper inputs are set and eases debugging.
     """
 
-    required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
+    # required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
 
     def __init__(self,
                  *,
@@ -172,31 +129,3 @@ class MultiInferenceFILMessage(MultiInferenceMessage): # , cpp_class=_messages.M
                          memory=memory,
                          offset=offset,
                          count=count)
-
-    @property
-    def input__0(self):
-        """
-        Input to FIL model inference.
-
-        Returns
-        -------
-        cupy.ndarray
-            Input data.
-
-        """
-
-        return self._get_tensor_prop("input__0")
-
-    @property
-    def seq_ids(self):
-        """
-        Returns sequence ids, which are used to keep track of messages in a multi-threaded environment.
-
-        Returns
-        -------
-        cupy.ndarray
-            Sequence ids.
-
-        """
-
-        return self._get_tensor_prop("seq_ids")

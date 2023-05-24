@@ -143,8 +143,6 @@ class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
         Messages count.
 
     """
-    meta: MessageMeta = dataclasses.field(repr=False)
-
     def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
 
         if meta is None:
@@ -159,10 +157,6 @@ class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
             raise ValueError("Invalid message offset value")
         if mess_count <= 0 or (mess_offset + mess_count > meta.count):
             raise ValueError("Invalid message count value")
-
-        # self.meta = meta
-        # self.mess_offset = mess_offset
-        # self.mess_count = mess_count
 
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 

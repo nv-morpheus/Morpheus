@@ -261,7 +261,9 @@ class LogParsingInferenceStage(InferenceStage):
                 memory.confidences[idx, :] = cp.maximum(memory.confidences[idx, :], res.confidences[i, :])
                 memory.labels[idx, :] = cp.maximum(memory.labels[idx, :], res.labels[i, :])
 
-        return MultiPostprocLogParsingMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+        from morpheus.messages.multi_message import from_message
+
+        return from_message(MultiPostprocLogParsingMessage, inf, memory=memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
