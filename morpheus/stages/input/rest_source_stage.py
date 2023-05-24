@@ -22,6 +22,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -33,6 +34,7 @@ from morpheus.utils.atomic_integer import AtomicInteger
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-rest")
 class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that listens for incoming REST requests on a specified endpoint.
@@ -61,10 +63,12 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._server_proc.start()
 
         processing = True
-        while (processing):
+        while (processing and self._server_proc.is_alive()):
             # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
             # It is important that any messages we received that are in the queue are processed before we shutdown since
             # we already returned an OK response to the client.
+            df = None
+            data = None
             try:
                 data = self._queue.get_nowait()
             except queue.Empty:
@@ -76,18 +80,23 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                 logger.error(f"Queue closed unexpectedly: {e}")
                 processing = False
 
-            try:
-                df = cudf.read_json(data, lines=True)
-            except Exception as e:
-                logger.error(f"Failed to convert request data to DataFrame: {e}")
+            if data is not None:
+                try:
+                    df = cudf.read_json(data, lines=True)
+                except Exception as e:
+                    print(data)
+                    logger.error(f"Failed to convert request data to DataFrame: {e}")
 
-            yield MessageMeta(df)
+            if df is not None:
+                yield MessageMeta(df)
 
+        logger.debug("Stopping REST server ...")
+        self._server_proc.terminate()
+        self._server_proc.join()
+        logger.debug("REST server stopped")
         self._queue.close()
 
     def _stop(self):
-        self._server_proc.terminate()
-        self._server_proc.join()
         self._is_running.value = 0
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:

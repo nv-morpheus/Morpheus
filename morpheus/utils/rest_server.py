@@ -29,8 +29,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_OPTIONS = {
     'bind': '127.0.0.1:8080',
     'keepalive': 0,
-    'loglevel': 'WARNING',
+    'loglevel': 'DEBUG',  # TODO adjust this
+    'preload_app': True,
     'proc_name': 'morpheus_rest_server',
+    'reuse_port': True,
     'timeout': 0,
     'worker_class': 'sync',
     'workers': 1
@@ -40,7 +42,8 @@ DEFAULT_OPTIONS = {
 class MorpheusRestView(View):
     init_every_request = False
 
-    def __init__(self, queue: mp.Queue, success_status=201, queue_timeout=30):
+    def __init__(self, logger: logging.Logger, queue: mp.Queue, success_status=201, queue_timeout=30):
+        self._logger = logger
         self._queue = queue
         self._queue_timeout = queue_timeout
         self._success_status = success_status
@@ -53,7 +56,9 @@ class MorpheusRestView(View):
         """
         if request.is_json and request.content_length is not None and request.content_length > 0:
             try:
-                self._queue.put(request.data, block=True, timeout=self._queue_timeout)
+                self._logger.debug("Received request with content length %s", request.content_length)
+                data = request.data.decode("utf-8")
+                self._queue.put(data, block=True, timeout=self._queue_timeout)
                 return "", self._success_status
             except queue.Full:
                 return "Request queue is full", 503
@@ -66,7 +71,7 @@ class MorpheusRestView(View):
 class MorpheusRestServer(gunicorn.app.base.BaseApplication):
 
     def __init__(self, app: typing.Callable, options: dict):
-        print(options)
+        logger.debug("Starting gunicorn server with options: %s", options)
         self.application = app
         self.options = options
         super().__init__()
@@ -82,9 +87,10 @@ class MorpheusRestServer(gunicorn.app.base.BaseApplication):
 
 def _start_rest_server(options: dict, queue: mp.Queue):
     app = Flask('morpheus_rest_server')
+    app.logger.setLevel(logging.DEBUG)
     app.add_url_rule('/submit',
                      methods=["POST", "PUT"],
-                     view_func=MorpheusRestView.as_view('request_handler', queue=queue))
+                     view_func=MorpheusRestView.as_view('request_handler', logger=app.logger, queue=queue))
     server = MorpheusRestServer(app, options)
     server.run()
 
