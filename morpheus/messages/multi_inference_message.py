@@ -19,11 +19,10 @@ import typing
 import morpheus._lib.messages as _messages
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
 @dataclasses.dataclass
-class MultiInferenceMessage(MultiTensorMessage): # , cpp_class=_messages.MultiInferenceMessage
+class MultiInferenceMessage(_messages.MultiInferenceMessage):
     """
     This is a container class that holds the InferenceMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiTensorMessage` class to add additional data for inferencing.
@@ -65,26 +64,19 @@ class MultiInferenceMessage(MultiTensorMessage): # , cpp_class=_messages.MultiIn
         """
         return self.tensors
 
-    def get_input(self, name: str):
+    @property
+    def tensors(self):
         """
-        Get input stored in the InferenceMemory container. Alias for `MultiInferenceMessage.get_tensor`.
-
-        Parameters
-        ----------
-        name : str
-            Input key name.
+        Get tensors stored in the TensorMemory container sliced according to `offset` and `count`.
 
         Returns
         -------
         cupy.ndarray
-            Inference input.
+            Inference tensors.
 
-        Raises
-        ------
-        KeyError
-            When no matching input tensor exists.
         """
-        return self.get_tensor(name)
+        tensors = self.memory.get_tensors()
+        return {key: self.get_tensor(key) for key in tensors.keys()}
 
 
 @dataclasses.dataclass

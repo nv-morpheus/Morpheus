@@ -24,7 +24,7 @@ from morpheus.messages.data_class_prop import DataClassProp
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryLogParsing(ResponseMemory, cpp_class=None):
+class ResponseMemoryLogParsing(ResponseMemory): # , cpp_class=None
 
     confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop,
                                                                  ResponseMemory.set_output)
@@ -35,7 +35,7 @@ class ResponseMemoryLogParsing(ResponseMemory, cpp_class=None):
 
 
 @dataclasses.dataclass
-class MultiResponseLogParsingMessage(MultiResponseMessage, cpp_class=None):
+class MultiResponseLogParsingMessage(MultiResponseMessage): # , cpp_class=None
     """
     A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
     array. Helps ensure the proper outputs are set and eases debugging.

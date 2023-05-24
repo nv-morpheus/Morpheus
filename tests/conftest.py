@@ -204,8 +204,12 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
 
         use_cpp = item.get_closest_marker("use_cpp")
         use_pandas = item.get_closest_marker("use_pandas")
+        use_python = item.get_closest_marker("use_python")
 
         if (use_cpp and use_pandas):
+            return False
+
+        if (use_python and use_pandas):
             return False
 
         return True

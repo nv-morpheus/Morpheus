@@ -28,8 +28,104 @@ from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
 
 # Needed to provide the return type of `@classmethod`
-Self = typing.TypeVar("Self", bound="MultiMessage")
+Self = typing.TypeVar("Self", bound="_messages.MultiMessage")
 
+def from_message(cls: typing.Type[Self],
+                 message: "MultiMessage",
+                 *,
+                 meta: MessageMeta = None,
+                 mess_offset: int = -1,
+                 mess_count: int = -1,
+                 **kwargs) -> Self:
+    """
+    Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+    very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
+
+    When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+    `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+    whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+    `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
+
+    Parameters
+    ----------
+    cls : typing.Type[Self]
+        The class to create
+    message : MultiMessage
+        An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+        be pulled from `message` or proveded in `kwargs`
+    meta : MessageMeta, optional
+        A new `MessageMeta` to use, by default None
+    mess_offset : int, optional
+        A new `mess_offset` to use, by default -1
+    mess_count : int, optional
+        A new `mess_count` to use, by default -1
+
+    Returns
+    -------
+    Self
+        A new instance of type `cls`
+
+    Raises
+    ------
+    ValueError
+        If the incoming `message` is None
+    AttributeError
+        If some required arguments were not supplied by `kwargs` and could not be pulled from `message`
+    """
+
+    if (message is None):
+        raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+    if (mess_offset == -1):
+        if (meta is not None):
+            mess_offset = 0
+        else:
+            mess_offset = message.mess_offset
+
+    if (mess_count == -1):
+        if (meta is not None):
+            # Subtract offset here so we dont go over the end
+            mess_count = meta.count - mess_offset
+        else:
+            mess_count = message.mess_count
+
+    # Do meta last
+    if meta is None:
+        meta = message.meta
+
+    # Update the kwargs
+    kwargs.update({
+        "meta": meta,
+        "mess_offset": mess_offset,
+        "mess_count": mess_count,
+    })
+
+    signature = inspect.signature(cls.__init__)
+
+    for p_name, param in signature.parameters.items():
+
+        if (p_name == "self"):
+            # Skip self until this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+            # After that, switch to using inspect.signature(cls)
+            continue
+
+        # Skip if its already defined
+        if (p_name in kwargs):
+            continue
+
+        if (not hasattr(message, p_name)):
+            # Check for a default
+            if (param.default == inspect.Parameter.empty):
+                raise AttributeError(
+                    f"Cannot create message of type {cls}, from {message}. Missing property '{p_name}'")
+
+            # Otherwise, we can ignore
+            continue
+
+        kwargs[p_name] = getattr(message, p_name)
+
+    # Create a new instance using the kwargs
+    return cls(**kwargs)
 
 @dataclasses.dataclass
 class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
@@ -80,6 +176,22 @@ class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
             raise ValueError(f"Class `{cls}` is improperly configured. "
                              f"All derived classes of `MultiMessage` must define an `__init__` function which "
                              f"calls `super().__init__(*args, **kwargs)`.")
+
+    def _calc_message_slice_bounds(self, start: int, stop: int):
+
+        # Start must be between [0, mess_count)
+        if (start < 0 or start >= self.mess_count):
+            raise IndexError("Invalid message `start` argument")
+
+        # Stop must be between (start, mess_count]
+        if (stop <= start or stop > self.mess_count):
+            raise IndexError("Invalid message `stop` argument")
+
+        # Calculate the new offset and count
+        offset = self.mess_offset + start
+        count = stop - start
+
+        return offset, count
 
     @property
     def id_col(self):
@@ -162,101 +274,3 @@ class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
             mask = self._ranges_to_mask(df, ranges=ranges)
 
         return df.loc[mask, :]
-
-    @classmethod
-    def from_message(cls: typing.Type[Self],
-                     message: "MultiMessage",
-                     *,
-                     meta: MessageMeta = None,
-                     mess_offset: int = -1,
-                     mess_count: int = -1,
-                     **kwargs) -> Self:
-        """
-        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
-        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
-
-        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
-        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
-        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
-        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
-
-        Parameters
-        ----------
-        cls : typing.Type[Self]
-            The class to create
-        message : MultiMessage
-            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
-            be pulled from `message` or proveded in `kwargs`
-        meta : MessageMeta, optional
-            A new `MessageMeta` to use, by default None
-        mess_offset : int, optional
-            A new `mess_offset` to use, by default -1
-        mess_count : int, optional
-            A new `mess_count` to use, by default -1
-
-        Returns
-        -------
-        Self
-            A new instance of type `cls`
-
-        Raises
-        ------
-        ValueError
-            If the incoming `message` is None
-        AttributeError
-            If some required arguments were not supplied by `kwargs` and could not be pulled from `message`
-        """
-
-        if (message is None):
-            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
-
-        if (mess_offset == -1):
-            if (meta is not None):
-                mess_offset = 0
-            else:
-                mess_offset = message.mess_offset
-
-        if (mess_count == -1):
-            if (meta is not None):
-                # Subtract offset here so we dont go over the end
-                mess_count = meta.count - mess_offset
-            else:
-                mess_count = message.mess_count
-
-        # Do meta last
-        if meta is None:
-            meta = message.meta
-
-        # Update the kwargs
-        kwargs.update({
-            "meta": meta,
-            "mess_offset": mess_offset,
-            "mess_count": mess_count,
-        })
-
-        signature = inspect.signature(cls.__init__)
-
-        for p_name, param in signature.parameters.items():
-
-            if (p_name == "self"):
-                # Skip self until this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
-                # After that, switch to using inspect.signature(cls)
-                continue
-
-            # Skip if its already defined
-            if (p_name in kwargs):
-                continue
-
-            if (not hasattr(message, p_name)):
-                # Check for a default
-                if (param.default == inspect.Parameter.empty):
-                    raise AttributeError(
-                        f"Cannot create message of type {cls}, from {message}. Missing property '{p_name}'")
-
-                # Otherwise, we can ignore
-                continue
-
-            kwargs[p_name] = getattr(message, p_name)
-
-        # Create a new instance using the kwargs
-        return cls(**kwargs)

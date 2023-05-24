@@ -22,6 +22,7 @@ import typing_utils
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
@@ -107,9 +108,9 @@ class FilterDetectionsStage(SinglePortStage):
 
         """
         if self._filter_source == FilterSource.TENSOR:
-            return (MultiResponseMessage, )
+            return (_messages.MultiResponseMessage, )
         else:
-            return (MultiMessage, )
+            return (_messages.MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default

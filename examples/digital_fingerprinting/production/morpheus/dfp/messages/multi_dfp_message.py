@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(init=False)
-class DFPMessageMeta(MessageMeta, cpp_class=None):
+class DFPMessageMeta(MessageMeta): # , cpp_class=None
     """
     This class extends MessageMeta to also hold userid corresponding to batched metadata.
 

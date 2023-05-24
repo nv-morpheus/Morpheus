@@ -404,4 +404,6 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
             "count": count,
         })
 
-        return super().from_message(message, **kwargs)
+        from morpheus.messages.multi_message import from_message
+
+        return from_message(cls, message, **kwargs)

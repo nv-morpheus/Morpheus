@@ -18,8 +18,8 @@ import pandas as pd
 
 import cudf
 
+import morpheus._lib.messages as _messages
 from morpheus.messages import MessageBase
-from morpheus.messages import MultiMessage
 
 
 def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
@@ -38,7 +38,7 @@ def concat_dataframes(messages: typing.List[MessageBase]) -> pd.DataFrame:
 
     all_meta = []
     for x in messages:
-        if isinstance(x, MultiMessage):
+        if isinstance(x, _messages.MultiMessage):
             df = x.get_meta()
         else:
             df = x.df
