@@ -21,6 +21,7 @@ import mrc
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
+import morpheus._lib.messages as _messages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -76,7 +77,7 @@ class SerializeStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiMessage, )
+        return (_messages.MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default

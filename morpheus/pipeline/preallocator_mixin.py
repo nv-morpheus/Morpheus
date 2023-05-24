@@ -25,6 +25,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+import morpheus._lib.messages as _messages
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
@@ -94,7 +95,7 @@ class PreallocatorMixin(ABC):
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
 
-            if issubclass(out_type, (MessageMeta, MultiMessage)):
+            if issubclass(out_type, (_messages.MessageMeta, _messages.MultiMessage)):
                 # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
                 if CppConfig.get_should_use_cpp():
                     import morpheus._lib.stages as _stages

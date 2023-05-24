@@ -20,20 +20,16 @@ import typing
 import morpheus._lib.messages as _messages
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.utils import logger as morpheus_logger
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(MultiTensorMessage): # , cpp_class=_messages.MultiResponseMessage
+class MultiResponseMessage(_messages.MultiResponseMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
     """
-
-    probs_tensor_name: typing.ClassVar[str] = "probs"
-    """Name of the tensor that holds output probabilities"""
 
     def __init__(self,
                  *,
@@ -49,12 +45,10 @@ class MultiResponseMessage(MultiTensorMessage): # , cpp_class=_messages.MultiRes
         if probs_tensor_name is None:
             raise ValueError("Cannot use None for `probs_tensor_name`")
 
-        self.probs_tensor_name = probs_tensor_name
-
-        # Add the tensor name to the required list
-        if (self.probs_tensor_name not in self.required_tensors):
-            # Make sure to set a new variable here instead of append otherwise you change all classes
-            self.required_tensors = self.required_tensors + [self.probs_tensor_name]
+        # # Add the tensor name to the required list
+        # if (self.probs_tensor_name not in self.required_tensors):
+        #     # Make sure to set a new variable here instead of append otherwise you change all classes
+        #     self.required_tensors = self.required_tensors + [self.probs_tensor_name]
 
         super().__init__(meta=meta,
                          mess_offset=mess_offset,
@@ -62,58 +56,110 @@ class MultiResponseMessage(MultiTensorMessage): # , cpp_class=_messages.MultiRes
                          memory=memory,
                          offset=offset,
                          count=count,
-                         id_tensor_name=id_tensor_name)
+                         id_tensor_name=id_tensor_name,
+                         probs_tensor_name=probs_tensor_name)
 
-    @property
-    def outputs(self):
+    Self = typing.TypeVar("Self", bound="MultiResponseMessage")
+
+    @classmethod
+    def from_message(cls: typing.Type[Self],
+                     message: "MultiResponseMessage",
+                     *,
+                     meta: MessageMeta = None,
+                     mess_offset: int = -1,
+                     mess_count: int = -1,
+                     **kwargs) -> Self:
+
+        import inspect
         """
-        Get outputs stored in the TensorMemory container. Alias for `MultiResponseMessage.tensors`.
+        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
 
-        Returns
-        -------
-        cupy.ndarray
-            Inference outputs.
-
-        """
-        return self.tensors
-
-    def get_output(self, name: str):
-        """
-        Get output stored in the TensorMemory container. Alias for `MultiResponseMessage.get_tensor`.
+        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
 
         Parameters
         ----------
-        name : str
-            Output key name.
+        cls : typing.Type[Self]
+            The class to create
+        message : MultiMessage
+            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+            be pulled from `message` or proveded in `kwargs`
+        meta : MessageMeta, optional
+            A new `MessageMeta` to use, by default None
+        mess_offset : int, optional
+            A new `mess_offset` to use, by default -1
+        mess_count : int, optional
+            A new `mess_count` to use, by default -1
 
         Returns
         -------
-        cupy.ndarray
-            Inference output.
-
-        """
-        return self.get_tensor(name)
-
-    def get_probs_tensor(self):
-        """
-        Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
-
-        Returns
-        -------
-        cupy.ndarray
-            The probabilities tensor
+        Self
+            A new instance of type `cls`
 
         Raises
         ------
-        KeyError
-            If `self.probs_tensor_name` is not found in the tensors
+        ValueError
+            If the incoming `message` is None
+        AttributeError
+            If some required arguments were not supplied by `kwargs` and could not be pulled from `message`
         """
 
-        try:
-            return self.get_tensor(self.probs_tensor_name)
-        except KeyError as exc:
-            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.probs_tensor_name}' "
-                           "does not exist in the memory object") from exc
+        if (message is None):
+            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+        if (mess_offset == -1):
+            if (meta is not None):
+                mess_offset = 0
+            else:
+                mess_offset = message.mess_offset
+
+        if (mess_count == -1):
+            if (meta is not None):
+                # Subtract offset here so we dont go over the end
+                mess_count = meta.count - mess_offset
+            else:
+                mess_count = message.mess_count
+
+        # Do meta last
+        if meta is None:
+            meta = message.meta
+
+        # Update the kwargs
+        kwargs.update({
+            "meta": meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+        })
+
+        signature = inspect.signature(cls.__init__)
+
+        for p_name, param in signature.parameters.items():
+
+            if (p_name == "self"):
+                # Skip self until this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+                # After that, switch to using inspect.signature(cls)
+                continue
+
+            # Skip if its already defined
+            if (p_name in kwargs):
+                continue
+
+            if (not hasattr(message, p_name)):
+                # Check for a default
+                if (param.default == inspect.Parameter.empty):
+                    raise AttributeError(
+                        f"Cannot create message of type {cls}, from {message}. Missing property '{p_name}'")
+
+                # Otherwise, we can ignore
+                continue
+
+            kwargs[p_name] = getattr(message, p_name)
+
+        # Create a new instance using the kwargs
+        return cls(**kwargs)
 
 
 @dataclasses.dataclass
