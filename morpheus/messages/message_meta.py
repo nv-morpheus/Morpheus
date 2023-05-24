@@ -68,7 +68,7 @@ class MutableTableCtxMgr:
 
 
 @dataclasses.dataclass(init=False)
-class MessageMeta(_messages.MessageMeta): # , cpp_class=_messages.MessageMeta
+class MessageMeta(_messages.MessageMeta):
     """
     This is a container class to hold batch deserialized messages metadata.
 
@@ -118,7 +118,7 @@ class MessageMeta(_messages.MessageMeta): # , cpp_class=_messages.MessageMeta
 
 
 @dataclasses.dataclass(init=False)
-class UserMessageMeta(MessageMeta): # , cpp_class=None
+class UserMessageMeta(MessageMeta):
     """
     This class extends MessageMeta to also hold userid corresponding to batched metadata.
 
@@ -138,7 +138,7 @@ class UserMessageMeta(MessageMeta): # , cpp_class=None
 
 
 @dataclasses.dataclass(init=False)
-class AppShieldMessageMeta(MessageMeta): # , cpp_class=None
+class AppShieldMessageMeta(MessageMeta):
     """
     This class extends MessageMeta to also hold source corresponding to batched metadata.
 

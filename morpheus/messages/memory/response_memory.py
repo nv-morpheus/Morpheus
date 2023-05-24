@@ -36,7 +36,7 @@ class ResponseMemory(_messages.ResponseMemory):
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryProbs(ResponseMemory): # , cpp_class=_messages.ResponseMemoryProbs
+class ResponseMemoryProbs(_messages.ResponseMemoryProbs):
     """
     Subclass of `ResponseMemory` containng an output tensor named 'probs'.
 
@@ -52,7 +52,7 @@ class ResponseMemoryProbs(ResponseMemory): # , cpp_class=_messages.ResponseMemor
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemory): # , cpp_class=None
+class ResponseMemoryAE(ResponseMemory):
     """
     Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
 

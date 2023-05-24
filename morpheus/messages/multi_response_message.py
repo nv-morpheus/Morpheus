@@ -62,7 +62,7 @@ class MultiResponseMessage(_messages.MultiResponseMessage):
 
 
 @dataclasses.dataclass
-class MultiResponseProbsMessage(MultiResponseMessage): # , cpp_class=_messages.MultiResponseProbsMessage
+class MultiResponseProbsMessage(_messages.MultiResponseProbsMessage):
     """
     A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
     array. Helps ensure the proper outputs are set and eases debugging.
@@ -110,7 +110,7 @@ class MultiResponseProbsMessage(MultiResponseMessage): # , cpp_class=_messages.M
 
 
 @dataclasses.dataclass
-class MultiResponseAEMessage(MultiResponseMessage): # , cpp_class=None
+class MultiResponseAEMessage(MultiResponseMessage):
     """
     A stronger typed version of `MultiResponseProbsMessage` that is used for inference workloads that return a
     probability array. Helps ensure the proper outputs are set and eases debugging.

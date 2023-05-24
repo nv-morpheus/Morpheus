@@ -128,7 +128,7 @@ def from_message(cls: typing.Type[Self],
     return cls(**kwargs)
 
 @dataclasses.dataclass
-class MultiMessage(_messages.MultiMessage, MessageData): # , cpp_class=
+class MultiMessage(_messages.MultiMessage, MessageData):
     """
     This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
     holds a reference to a batched metadata object and stores the offset and count into that batch.

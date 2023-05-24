@@ -41,6 +41,7 @@ def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test
         tensors[tensor_name] = cp.asarray(host_data)
 
     memory = messages_mod.PostprocMemoryLogParsing(count=5, **tensors)
+    raise RuntimeError("need to fix the next call, which dumps core")
     return messages_mod.MultiPostprocLogParsingMessage(meta=meta,
                                                        mess_offset=0,
                                                        mess_count=count,
