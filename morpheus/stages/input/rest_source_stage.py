@@ -46,6 +46,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     """
 
     # TODO add configs, and pass-thru for both gunicorn and flask configs
+    # TODO add parser kwargs to pass to cudf.read_json
     def __init__(self, c: Config, sleep_time: float = 0.1):
         super().__init__(c)
         self._sleep_time = sleep_time
