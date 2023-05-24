@@ -16,7 +16,6 @@ import logging
 import multiprocessing as mp
 import queue
 import typing
-from functools import partial
 
 import gunicorn.app.base
 from flask import Flask
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_OPTIONS = {
     'bind': '127.0.0.1:8080',
     'keepalive': 0,
-    'loglevel': 'DEBUG',  # TODO adjust this
+    'loglevel': 'WARNING',
     'preload_app': True,
     'proc_name': 'morpheus_rest_server',
     'reuse_port': True,
@@ -54,6 +53,8 @@ class MorpheusRestView(View):
         Note this does not perform any validation on the request pyaload, it is possible that incoming data
         which would later fail to be processed by Morpheus is accepted by this endpoint.
         """
+
+        # This should work the same for both POST, PUT & PATCH
         if request.is_json and request.content_length is not None and request.content_length > 0:
             try:
                 self._logger.debug("Received request with content length %s", request.content_length)
@@ -87,6 +88,8 @@ class MorpheusRestServer(gunicorn.app.base.BaseApplication):
 
 def _start_rest_server(options: dict, queue: mp.Queue):
     app = Flask('morpheus_rest_server')
+
+    # TODO make this configurable
     app.logger.setLevel(logging.DEBUG)
     app.add_url_rule('/submit',
                      methods=["POST", "PUT"],
@@ -95,10 +98,16 @@ def _start_rest_server(options: dict, queue: mp.Queue):
     server.run()
 
 
+# TODO: Currently `options` configures the gunicorn server, we need a second config to configure Flask specifically the
+# endpoint(s) and supported methods.
 def start_rest_server(options: dict = None) -> typing.Tuple[mp.Process, mp.Queue]:
     """
     Starts a REST server.
     """
+
+    # gunicorn is opinionated and doesn't really support being embedded in another app, so we need to start it in a
+    # separate process.
+    # TODO: Although gunicorn is a good choice we should look into cherrypy and other options.
     server_options = DEFAULT_OPTIONS.copy()
     server_options.update(options or {})
     queue = mp.Queue()

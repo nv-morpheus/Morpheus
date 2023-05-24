@@ -45,6 +45,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         Pipeline configuration instance.
     """
 
+    # TODO add configs, and pass-thru for both gunicorn and flask configs
     def __init__(self, c: Config, sleep_time: float = 0.1):
         super().__init__(c)
         self._sleep_time = sleep_time
@@ -56,14 +57,14 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         return "from-rest"
 
     def supports_cpp_node(self) -> bool:
-        return False
+        return False  # TODO Add C++ impl
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         self._is_running.value = 1
         self._server_proc.start()
 
         processing = True
-        while (processing and self._server_proc.is_alive()):
+        while (processing):
             # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
             # It is important that any messages we received that are in the queue are processed before we shutdown since
             # we already returned an OK response to the client.
@@ -72,7 +73,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             try:
                 data = self._queue.get_nowait()
             except queue.Empty:
-                if self._is_running.value == 0:
+                if (self._is_running.value == 0 or not self._server_proc.is_alive()):
                     processing = False
                 else:
                     time.sleep(self._sleep_time)
@@ -90,13 +91,13 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             if df is not None:
                 yield MessageMeta(df)
 
+        self._queue.close()
+
+    def _stop(self):
         logger.debug("Stopping REST server ...")
         self._server_proc.terminate()
         self._server_proc.join()
         logger.debug("REST server stopped")
-        self._queue.close()
-
-    def _stop(self):
         self._is_running.value = 0
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -105,6 +106,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         src_node = out_pair[0]
+        # TODO: This doesn't work its called when the source exits, not when the pipeline is shutting down
         post_node = builder.make_node(self.unique_name + "-post", ops.on_completed(self._stop))
         builder.make_edge(src_node, post_node)
 
