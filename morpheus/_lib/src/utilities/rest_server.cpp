@@ -45,6 +45,10 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
     // loosely based on
     // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/sync/http_server_sync.cpp
 
+    // TODO Look into :
+    // * https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/fast/http_server_fast.cpp
+    // * https://www.boost.org/doc/libs/1_74_0/libs/beast/example/advanced/server/advanced_server.cpp
+
     auto const address = net::ip::make_address(bind_address);
     net::io_context ioc{1};  // TODO concurrency
     tcp::acceptor acceptor{ioc, {address, port}};
@@ -73,6 +77,10 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
         if (req.target() == endpoint && (req.method() == http::verb::post || req.method() == http::verb::put))
         {
             std::string body{req.body()};
+
+            // TODO: Consider parsing to a cudf table here and then passing that to the queue
+            // that would allow us to return an error code if the parsing fails, and parsing would be
+            // performed in the worker thread instead of the stage's thread
             queue->push(std::move(body));
             res.result(http::status::created);  // TODO make this a config option
             res.set(http::field::content_type, "text/plain");
