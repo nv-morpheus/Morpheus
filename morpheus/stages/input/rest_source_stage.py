@@ -49,8 +49,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     # TODO add parser kwargs to pass to cudf.read_json
     def __init__(self, c: Config, sleep_time: float = 0.1):
         super().__init__(c)
+        self._server_proc = None
+        self._queue = None
         self._sleep_time = sleep_time
-        (self._server_proc, self._queue) = rest_server.start_rest_server()
         self._is_running = AtomicInteger(0)
 
     @property
@@ -58,10 +59,11 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         return "from-rest"
 
     def supports_cpp_node(self) -> bool:
-        return False  # TODO Add C++ impl
+        return True
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         self._is_running.value = 1
+        (self._server_proc, self._queue) = rest_server.start_rest_server()
         self._server_proc.start()
 
         processing = True
@@ -95,14 +97,21 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._queue.close()
 
     def _stop(self):
-        logger.debug("Stopping REST server ...")
-        self._server_proc.terminate()
-        self._server_proc.join()
-        logger.debug("REST server stopped")
+        if self._server_proc is not None:
+            logger.debug("Stopping REST server ...")
+            self._server_proc.terminate()
+            self._server_proc.join()
+            logger.debug("REST server stopped")
+
         self._is_running.value = 0
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self._generate_frames())
+        if self._build_cpp_node():
+            import morpheus._lib.stages as _stages
+            node = _stages.RestSourceStage(builder, self.unique_name, sleep_time=self._sleep_time)
+        else:
+            node = builder.make_source(self.unique_name, self._generate_frames())
+
         return node, MessageMeta
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:

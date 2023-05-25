@@ -32,6 +32,7 @@
 #include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
+#include "morpheus/stages/rest_source.hpp"
 #include "morpheus/stages/serialize.hpp"
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/stages/write_to_file.hpp"
@@ -201,6 +202,18 @@ PYBIND11_MODULE(stages, _module)
              py::arg("add_special_token"),
              py::arg("stride"),
              py::arg("column"));
+
+    py::class_<mrc::segment::Object<RestSourceStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RestSourceStage>>>(
+        _module, "RestSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&RestSourceStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("bind_address") = "127.0.0.1",
+             py::arg("port")         = 8080,
+             py::arg("endpoint")     = "/",
+             py::arg("sleep_time")   = 0.1f);
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,
