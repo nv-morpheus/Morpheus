@@ -56,7 +56,8 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
                     unsigned short port      = 8080,
                     std::string endpoint     = "/",
                     // TODO: add http methods
-                    float sleep_time = 0.1f);
+                    float sleep_time = 0.1f,
+                    bool lines       = false);
 
     ~RestSourceStage() override = default;
 
@@ -64,10 +65,7 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     subscriber_fn_t build();
     void source_generator(rxcpp::subscriber<source_type_t> subscriber);
 
-    // these should be in the server not the stage
-    std::string m_bind_address;
-    unsigned short m_port;
-    std::string m_endpoint;
+    bool m_lines;
     std::chrono::duration<float> m_sleep_time;
     std::unique_ptr<RestServer> m_server;
     std::shared_ptr<RequestQueue> m_queue;
@@ -84,7 +82,8 @@ struct RestSourceStageInterfaceProxy
                                                                        std::string bind_address,
                                                                        unsigned short port,
                                                                        std::string endpoint,
-                                                                       float sleep_time);
+                                                                       float sleep_time,
+                                                                       bool lines);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

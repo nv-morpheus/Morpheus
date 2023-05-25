@@ -47,17 +47,13 @@
 namespace morpheus {
 // Component public implementations
 // ************ RestSourceStage ************* //
-RestSourceStage::RestSourceStage(std::string bind_address,
-                                 unsigned short port,
-                                 std::string endpoint,
-                                 float sleep_time) :
+RestSourceStage::RestSourceStage(
+    std::string bind_address, unsigned short port, std::string endpoint, float sleep_time, bool lines) :
   PythonSource(build()),
-  m_bind_address{std::move(bind_address)},
-  m_port{port},
-  m_endpoint{std::move(endpoint)},
   m_sleep_time{sleep_time},
-  m_server{std::make_unique<RestServer>(m_bind_address, m_port, m_endpoint)},
-  m_queue{m_server->get_queue()}
+  m_server{std::make_unique<RestServer>(std::move(bind_address), port, std::move(endpoint))},
+  m_queue{m_server->get_queue()},
+  m_lines{lines}
 {}
 
 RestSourceStage::subscriber_fn_t RestSourceStage::build()
@@ -87,13 +83,13 @@ void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source
             try
             {
                 cudf::io::source_info source{payload.c_str(), payload.size()};
-                auto options = cudf::io::json_reader_options::builder(source).lines(true);
+                auto options = cudf::io::json_reader_options::builder(source).lines(m_lines);
                 auto table   = cudf::io::read_json(options.build());
                 auto message = MessageMeta::create_from_cpp(std::move(table), 0);
                 subscriber.on_next(std::move(message));
             } catch (const std::exception& e)
             {
-                LOG(ERROR) << "Error occurred converting REST payload to Dataframe: " << e.what() << "\n" << payload;
+                LOG(ERROR) << "Error occurred converting REST payload to Dataframe: " << e.what();
             }
         }
         else
@@ -111,9 +107,10 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     std::string bind_address,
     unsigned short port,
     std::string endpoint,
-    float sleep_time)
+    float sleep_time,
+    bool lines)
 {
     return builder.construct_object<RestSourceStage>(
-        name, std::move(bind_address), port, std::move(endpoint), sleep_time);
+        name, std::move(bind_address), port, std::move(endpoint), sleep_time, lines);
 }
 }  // namespace morpheus

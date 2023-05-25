@@ -43,16 +43,20 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
+
+    lines : bool, default False
+        If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
+        expect each request to be a JSON object per line.
     """
 
     # TODO add configs, and pass-thru for both gunicorn and flask configs
-    # TODO add parser kwargs to pass to cudf.read_json
-    def __init__(self, c: Config, sleep_time: float = 0.1):
+    def __init__(self, c: Config, sleep_time: float = 0.1, lines: bool = False):
         super().__init__(c)
         self._server_proc = None
         self._queue = None
         self._sleep_time = sleep_time
         self._is_running = AtomicInteger(0)
+        self._lines = lines
 
     @property
     def name(self) -> str:
@@ -86,7 +90,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
             if data is not None:
                 try:
-                    df = cudf.read_json(data, lines=True)
+                    df = cudf.read_json(data, lines=self._lines)
                 except Exception as e:
                     print(data)
                     logger.error(f"Failed to convert request data to DataFrame: {e}")
@@ -108,7 +112,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            node = _stages.RestSourceStage(builder, self.unique_name, sleep_time=self._sleep_time)
+            node = _stages.RestSourceStage(builder, self.unique_name, sleep_time=self._sleep_time, lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 
