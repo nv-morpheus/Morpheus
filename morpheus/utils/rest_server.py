@@ -54,7 +54,7 @@ class MorpheusRestView(View):
         which would later fail to be processed by Morpheus is accepted by this endpoint.
         """
 
-        # This should work the same for both POST, PUT & PATCH
+        # This should work the same for both POST & PUT
         if request.is_json and request.content_length is not None and request.content_length > 0:
             try:
                 self._logger.debug("Received request with content length %s", request.content_length)

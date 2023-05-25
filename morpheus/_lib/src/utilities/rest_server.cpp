@@ -15,11 +15,20 @@
  * limitations under the License.
  */
 
+// TODO:
+// use fiber buffer chann between server & source
+// source passes a lambda to server, and capures the fiber buffer chan
+// If fiber buffer chan is full, return 503
+// Use an async listener
+
+// add /health & /info endpoints
+
 #include "morpheus/utilities/rest_server.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/beast/http/verb.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/config.hpp>
 #include <glog/logging.h>  // for CHECK and LOG
@@ -40,7 +49,8 @@ std::atomic<bool> g_is_running{false};
 void listener(std::shared_ptr<morpheus::RequestQueue> queue,
               const std::string& bind_address,
               unsigned short port,
-              const std::string& endpoint)
+              const std::string& endpoint,
+              http::verb method)
 {
     // loosely based on
     // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/sync/http_server_sync.cpp
@@ -74,7 +84,7 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
         }
 
         DLOG(INFO) << "Received request: " << req.method() << " : " << req.target();
-        if (req.target() == endpoint && (req.method() == http::verb::post || req.method() == http::verb::put))
+        if (req.target() == endpoint && (req.method() == method))
         {
             std::string body{req.body()};
 
@@ -130,12 +140,18 @@ bool RequestQueue::pop(std::string& request)
     return true;
 }
 
-RestServer::RestServer(std::string bind_address, unsigned short port, std::string endpoint) :
+RestServer::RestServer(std::string bind_address, unsigned short port, std::string endpoint, std::string method) :
   m_bind_address(std::move(bind_address)),
   m_port(port),
   m_endpoint(std::move(endpoint)),
+  m_method(http::string_to_verb(method)),
   m_queue(std::make_shared<RequestQueue>())
-{}
+{
+    if (m_method != http::verb::post && m_method != http::verb::put)
+    {
+        throw std::runtime_error("Invalid method: " + method);
+    }
+}
 
 void RestServer::start()
 {
@@ -143,9 +159,9 @@ void RestServer::start()
 
     try
     {
-        g_is_running = true;
-        m_listener_thread =
-            std::make_unique<std::thread>([this]() { listener(m_queue, m_bind_address, m_port, m_endpoint); });
+        g_is_running      = true;
+        m_listener_thread = std::make_unique<std::thread>(
+            [this]() { listener(m_queue, m_bind_address, m_port, m_endpoint, m_method); });
     } catch (const std::exception& e)
     {
         g_is_running = false;

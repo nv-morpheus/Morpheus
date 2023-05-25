@@ -112,6 +112,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
+
+            # TODO: C++ service wants an IP not a name to bind to. Either convert our name to an IP, or
+            # update the C++ service to accept a name.
             node = _stages.RestSourceStage(builder, self.unique_name, sleep_time=self._sleep_time, lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())

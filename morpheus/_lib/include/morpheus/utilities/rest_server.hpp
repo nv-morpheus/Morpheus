@@ -17,13 +17,21 @@
 
 #pragma once
 
-#include <boost/lockfree/queue.hpp>
-
 #include <memory>  // for shared_ptr, unique_ptr
 #include <mutex>   // for mutex
 #include <queue>   // for queue
 #include <string>  // for string
 #include <thread>  // for thread
+#include <vector>
+
+// forward declare boost::beast::http::verb
+namespace boost {
+namespace beast {
+namespace http {
+enum class verb;
+}  // namespace http
+}  // namespace beast
+}  // namespace boost
 
 namespace morpheus {
 
@@ -44,7 +52,10 @@ class RequestQueue
 class RestServer
 {
   public:
-    RestServer(std::string bind_address = "127.0.0.1", unsigned short port = 8080, std::string endpoint = "/");
+    RestServer(std::string bind_address = "127.0.0.1",
+               unsigned short port      = 8080,
+               std::string endpoint     = "/",
+               std::string method       = "POST");
     ~RestServer();
     void start();
     void stop();
@@ -55,6 +66,7 @@ class RestServer
     std::string m_bind_address;
     unsigned short m_port;
     std::string m_endpoint;
+    boost::beast::http::verb m_method;
     std::unique_ptr<std::thread> m_listener_thread;
     std::shared_ptr<RequestQueue> m_queue;
 };

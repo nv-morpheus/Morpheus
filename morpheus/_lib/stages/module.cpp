@@ -213,6 +213,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("bind_address") = "127.0.0.1",
              py::arg("port")         = 8080,
              py::arg("endpoint")     = "/",
+             py::arg("method")       = "POST",
              py::arg("sleep_time")   = 0.1f,
              py::arg("lines")        = false);
 

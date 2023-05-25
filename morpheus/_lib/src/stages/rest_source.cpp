@@ -37,6 +37,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
+#include <pybind11/stl.h>       // for cast<vector>
 
 #include <functional>
 #include <memory>
@@ -47,11 +48,15 @@
 namespace morpheus {
 // Component public implementations
 // ************ RestSourceStage ************* //
-RestSourceStage::RestSourceStage(
-    std::string bind_address, unsigned short port, std::string endpoint, float sleep_time, bool lines) :
+RestSourceStage::RestSourceStage(std::string bind_address,
+                                 unsigned short port,
+                                 std::string endpoint,
+                                 std::string method,
+                                 float sleep_time,
+                                 bool lines) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
-  m_server{std::make_unique<RestServer>(std::move(bind_address), port, std::move(endpoint))},
+  m_server{std::make_unique<RestServer>(std::move(bind_address), port, std::move(endpoint), std::move(method))},
   m_queue{m_server->get_queue()},
   m_lines{lines}
 {}
@@ -107,10 +112,12 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     std::string bind_address,
     unsigned short port,
     std::string endpoint,
+    std::string method,
     float sleep_time,
     bool lines)
 {
     return builder.construct_object<RestSourceStage>(
-        name, std::move(bind_address), port, std::move(endpoint), sleep_time, lines);
+
+        name, std::move(bind_address), port, std::move(endpoint), std::move(method), sleep_time, lines);
 }
 }  // namespace morpheus

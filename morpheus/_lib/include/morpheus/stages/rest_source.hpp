@@ -20,7 +20,6 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/rest_server.hpp"
 
-#include <boost/lockfree/queue.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
 #include <mrc/node/source_properties.hpp>
@@ -32,6 +31,7 @@
 #include <chrono>  // for duration
 #include <memory>  // for shared_ptr
 #include <string>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -55,9 +55,9 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     RestSourceStage(std::string bind_address = "127.0.0.1",
                     unsigned short port      = 8080,
                     std::string endpoint     = "/",
-                    // TODO: add http methods
-                    float sleep_time = 0.1f,
-                    bool lines       = false);
+                    std::string method       = "POST",
+                    float sleep_time         = 0.1f,
+                    bool lines               = false);
 
     ~RestSourceStage() override = default;
 
@@ -82,6 +82,7 @@ struct RestSourceStageInterfaceProxy
                                                                        std::string bind_address,
                                                                        unsigned short port,
                                                                        std::string endpoint,
+                                                                       std::string method,
                                                                        float sleep_time,
                                                                        bool lines);
 };
