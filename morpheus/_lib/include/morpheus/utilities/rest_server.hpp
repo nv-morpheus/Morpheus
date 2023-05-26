@@ -17,9 +17,10 @@
 
 #pragma once
 
+#include <boost/fiber/buffered_channel.hpp>
+#include <boost/fiber/channel_op_status.hpp>
+
 #include <memory>  // for shared_ptr, unique_ptr
-#include <mutex>   // for mutex
-#include <queue>   // for queue
 #include <string>  // for string
 #include <thread>  // for thread
 #include <vector>
@@ -35,19 +36,7 @@ enum class verb;
 
 namespace morpheus {
 
-// TODO: look into alternatives like MRC's stream_buffer
-class RequestQueue
-{
-  public:
-    RequestQueue()  = default;
-    ~RequestQueue() = default;
-    void push(std::string&& request);
-    bool pop(std::string& request);
-
-  private:
-    std::queue<std::string> m_queue;
-    std::mutex m_mutex;
-};
+using RequestQueue = boost::fibers::buffered_channel<std::string>;
 
 class RestServer
 {

@@ -20,6 +20,8 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/rest_server.hpp"
 
+#include <boost/fiber/buffered_channel.hpp>
+#include <boost/fiber/channel_op_status.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
 #include <mrc/node/source_properties.hpp>
@@ -52,14 +54,16 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    RestSourceStage(std::string bind_address = "127.0.0.1",
-                    unsigned short port      = 8080,
-                    std::string endpoint     = "/",
-                    std::string method       = "POST",
-                    float sleep_time         = 0.1f,
-                    bool lines               = false);
+    RestSourceStage(std::string bind_address   = "127.0.0.1",
+                    unsigned short port        = 8080,
+                    std::string endpoint       = "/",
+                    std::string method         = "POST",
+                    float sleep_time           = 0.1f,
+                    bool lines                 = false,
+                    std::size_t max_queue_size = 1024);
 
-    ~RestSourceStage() override = default;
+    ~RestSourceStage() override = default;  // todo add close method, close the queue and stop the server in meth, and
+                                            // then call close from destructor
 
   private:
     subscriber_fn_t build();
@@ -84,7 +88,8 @@ struct RestSourceStageInterfaceProxy
                                                                        std::string endpoint,
                                                                        std::string method,
                                                                        float sleep_time,
-                                                                       bool lines);
+                                                                       bool lines,
+                                                                       std::size_t max_queue_size = 1024);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

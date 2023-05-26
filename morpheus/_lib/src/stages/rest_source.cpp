@@ -53,7 +53,8 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  std::string endpoint,
                                  std::string method,
                                  float sleep_time,
-                                 bool lines) :
+                                 bool lines,
+                                 std::size_t max_queue_size) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
   m_server{std::make_unique<RestServer>(std::move(bind_address), port, std::move(endpoint), std::move(method))},
@@ -83,7 +84,7 @@ void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source
     while (subscriber.is_subscribed() && m_server->is_running())
     {
         std::string payload;
-        if (m_queue->pop(payload))
+        if (m_queue->pop(payload) == boost::fibers::channel_op_status::success)
         {
             try
             {
@@ -114,10 +115,11 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     std::string endpoint,
     std::string method,
     float sleep_time,
-    bool lines)
+    bool lines,
+    std::size_t max_queue_size)
 {
     return builder.construct_object<RestSourceStage>(
 
-        name, std::move(bind_address), port, std::move(endpoint), std::move(method), sleep_time, lines);
+        name, std::move(bind_address), port, std::move(endpoint), std::move(method), sleep_time, lines, max_queue_size);
 }
 }  // namespace morpheus

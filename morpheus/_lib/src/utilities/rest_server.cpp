@@ -122,30 +122,13 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
 }  // namespace
 
 namespace morpheus {
-void RequestQueue::push(std::string&& request)
-{
-    const std::lock_guard<std::mutex> lock{m_mutex};
-    m_queue.push(std::move(request));
-}
-
-bool RequestQueue::pop(std::string& request)
-{
-    const std::lock_guard<std::mutex> lock{m_mutex};
-    if (m_queue.empty())
-    {
-        return false;
-    }
-    request = std::move(m_queue.front());
-    m_queue.pop();
-    return true;
-}
 
 RestServer::RestServer(std::string bind_address, unsigned short port, std::string endpoint, std::string method) :
   m_bind_address(std::move(bind_address)),
   m_port(port),
   m_endpoint(std::move(endpoint)),
   m_method(http::string_to_verb(method)),
-  m_queue(std::make_shared<RequestQueue>())
+  m_queue(std::make_shared<RequestQueue>(1024))
 {
     if (m_method != http::verb::post && m_method != http::verb::put)
     {
