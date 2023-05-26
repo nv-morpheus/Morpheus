@@ -17,13 +17,11 @@
 
 #pragma once
 
-#include <boost/fiber/buffered_channel.hpp>
-#include <boost/fiber/channel_op_status.hpp>
-
-#include <memory>  // for shared_ptr, unique_ptr
-#include <string>  // for string
-#include <thread>  // for thread
-#include <vector>
+#include <functional>  // for function
+#include <memory>      // for unique_ptr
+#include <string>      // for string
+#include <thread>      // for thread
+#include <utility>     // for pair & move
 
 // forward declare boost::beast::http::verb
 namespace boost {
@@ -36,12 +34,16 @@ enum class verb;
 
 namespace morpheus {
 
-using RequestQueue = boost::fibers::buffered_channel<std::string>;
+using parse_status_t = std::pair<unsigned /*http status code*/, std::string /* http status message*/>;
+
+// function that receives the post body and returns a status code and message
+using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
 class RestServer
 {
   public:
-    RestServer(std::string bind_address = "127.0.0.1",
+    RestServer(payload_parse_fn_t payload_parse_fn,
+               std::string bind_address = "127.0.0.1",
                unsigned short port      = 8080,
                std::string endpoint     = "/",
                std::string method       = "POST");
@@ -49,7 +51,6 @@ class RestServer
     void start();
     void stop();
     bool is_running() const;
-    std::shared_ptr<RequestQueue> get_queue() const;
 
   private:
     std::string m_bind_address;
@@ -57,7 +58,7 @@ class RestServer
     std::string m_endpoint;
     boost::beast::http::verb m_method;
     std::unique_ptr<std::thread> m_listener_thread;
-    std::shared_ptr<RequestQueue> m_queue;
+    payload_parse_fn_t m_payload_parse_fn;
 };
 
 }  // namespace morpheus

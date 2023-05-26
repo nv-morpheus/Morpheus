@@ -34,9 +34,6 @@
 #include <glog/logging.h>  // for CHECK and LOG
 
 #include <atomic>  // for atomic
-#include <memory>
-#include <string>
-#include <utility>  // for move
 
 namespace {
 namespace beast = boost::beast;          // from <boost/beast.hpp>
@@ -46,12 +43,13 @@ using tcp       = boost::asio::ip::tcp;  // from <boost/asio/ip/tcp.hppe>
 
 std::atomic<bool> g_is_running{false};
 
-void listener(std::shared_ptr<morpheus::RequestQueue> queue,
+void listener(morpheus::payload_parse_fn_t* payload_parse_fn,
               const std::string& bind_address,
               unsigned short port,
               const std::string& endpoint,
               http::verb method)
 {
+    DCHECK_NOTNULL(payload_parse_fn);
     // loosely based on
     // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/sync/http_server_sync.cpp
 
@@ -84,29 +82,26 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
         }
 
         DLOG(INFO) << "Received request: " << req.method() << " : " << req.target();
+
         if (req.target() == endpoint && (req.method() == method))
         {
             std::string body{req.body()};
+            auto parse_status = (*payload_parse_fn)(body);
 
-            // TODO: Consider parsing to a cudf table here and then passing that to the queue
-            // that would allow us to return an error code if the parsing fails, and parsing would be
-            // performed in the worker thread instead of the stage's thread
-            queue->push(std::move(body));
-            res.result(http::status::created);  // TODO make this a config option
-            res.set(http::field::content_type, "text/plain");
-            res.body() = "";
-            res.prepare_payload();
+            res.result(parse_status.first);
+            res.body() = parse_status.second;
         }
         else
         {
             res.result(http::status::not_found);
             res.set(http::field::content_type, "text/plain");
             res.body() = "not found";
-            res.prepare_payload();
         }
 
         try
         {
+            res.set(http::field::content_type, "text/plain");
+            res.prepare_payload();
             http::write(socket, res);
         } catch (const std::exception& e)
         {
@@ -123,12 +118,16 @@ void listener(std::shared_ptr<morpheus::RequestQueue> queue,
 
 namespace morpheus {
 
-RestServer::RestServer(std::string bind_address, unsigned short port, std::string endpoint, std::string method) :
+RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
+                       std::string bind_address,
+                       unsigned short port,
+                       std::string endpoint,
+                       std::string method) :
+  m_payload_parse_fn(std::move(payload_parse_fn)),
   m_bind_address(std::move(bind_address)),
   m_port(port),
   m_endpoint(std::move(endpoint)),
-  m_method(http::string_to_verb(method)),
-  m_queue(std::make_shared<RequestQueue>(1024))
+  m_method(http::string_to_verb(method))
 {
     if (m_method != http::verb::post && m_method != http::verb::put)
     {
@@ -144,7 +143,7 @@ void RestServer::start()
     {
         g_is_running      = true;
         m_listener_thread = std::make_unique<std::thread>(
-            [this]() { listener(m_queue, m_bind_address, m_port, m_endpoint, m_method); });
+            [this]() { listener(&m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method); });
     } catch (const std::exception& e)
     {
         g_is_running = false;
@@ -164,11 +163,6 @@ void RestServer::stop()
 bool RestServer::is_running() const
 {
     return g_is_running;
-}
-
-std::shared_ptr<RequestQueue> RestServer::get_queue() const
-{
-    return m_queue;
 }
 
 RestServer::~RestServer()
