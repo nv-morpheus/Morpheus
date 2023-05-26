@@ -17,25 +17,24 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/utilities/rest_server.hpp"
+#include "morpheus/messages/meta.hpp"          // for MessageMeta
+#include "morpheus/utilities/rest_server.hpp"  // for RestServer
 
-#include <boost/fiber/buffered_channel.hpp>
-#include <boost/fiber/channel_op_status.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
+#include <boost/fiber/buffered_channel.hpp>  // for buffered_channel
+#include <cudf/io/types.hpp>                 // for table_with_metadata
+#include <mrc/segment/builder.hpp>           // for segment::Builder
+#include <mrc/segment/object.hpp>            // for segment::Object
+#include <pymrc/node.hpp>                    // for PythonSource
+#include <rxcpp/rx.hpp>                      // for subscriber
 
 #include <chrono>  // for duration
-#include <memory>  // for shared_ptr
-#include <string>
-#include <vector>
+#include <memory>  // for shared_ptr & unique_ptr
+#include <string>  // for string & to_string
 
 namespace morpheus {
+using table_t         = std::unique_ptr<cudf::io::table_with_metadata>;
+using request_queue_t = boost::fibers::buffered_channel<table_t>;
+
 /****** Component public implementations *******************/
 /****** RestSourceStage*************************************/
 
@@ -61,9 +60,9 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
                     float sleep_time           = 0.1f,
                     bool lines                 = false,
                     std::size_t max_queue_size = 1024);
+    ~RestSourceStage() override;
 
-    ~RestSourceStage() override = default;  // todo add close method, close the queue and stop the server in meth, and
-                                            // then call close from destructor
+    void close();
 
   private:
     subscriber_fn_t build();
@@ -72,7 +71,7 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     bool m_lines;
     std::chrono::duration<float> m_sleep_time;
     std::unique_ptr<RestServer> m_server;
-    std::shared_ptr<RequestQueue> m_queue;
+    request_queue_t m_queue;
 };
 
 /****** RestSourceStageInterfaceProxy***********************/

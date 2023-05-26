@@ -17,33 +17,15 @@
 
 #include "morpheus/stages/rest_source.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/source_properties.hpp"
-#include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
-#include "pymrc/node.hpp"
+#include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
+#include <cudf/io/json.hpp>                   // for json_reader_options & read_json
+#include <glog/logging.h>                     // for CHECK & LOG
 
-#include "morpheus/io/deserializers.hpp"
-#include "morpheus/objects/table_info.hpp"
-#include "morpheus/utilities/cudf_util.hpp"
-
-#include <boost/lockfree/queue.hpp>
-#include <cudf/io/json.hpp>
-#include <cudf/table/table.hpp>
-#include <cudf/types.hpp>
-#include <glog/logging.h>
-#include <mrc/segment/builder.hpp>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>  // for str_attr_accessor
-#include <pybind11/pytypes.h>   // for pybind11::int_
-#include <pybind11/stl.h>       // for cast<vector>
-
-#include <functional>
-#include <memory>
-#include <sstream>
-#include <thread>  // for std::this_thread::sleep_for
-#include <utility>
+#include <exception>  // for std::exception
+#include <sstream>    // needed by GLOG
+#include <stdexcept>  // for std::runtime_error
+#include <thread>     // for std::this_thread::sleep_for
+#include <utility>    // for std::move & std::make_pair
 
 namespace morpheus {
 // Component public implementations
@@ -57,10 +39,59 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  std::size_t max_queue_size) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
-  m_server{std::make_unique<RestServer>(std::move(bind_address), port, std::move(endpoint), std::move(method))},
-  m_queue{m_server->get_queue()},
+  m_queue{max_queue_size},
   m_lines{lines}
-{}
+{
+    payload_parse_fn_t parser = [this](const std::string& payload) {
+        std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
+        try
+        {
+            cudf::io::source_info source{payload.c_str(), payload.size()};
+            auto options = cudf::io::json_reader_options::builder(source).lines(m_lines);
+            table        = std::make_unique<cudf::io::table_with_metadata>(cudf::io::read_json(options.build()));
+        } catch (const std::exception& e)
+        {
+            std::string error_msg = "Error occurred converting REST payload to Dataframe";
+            LOG(ERROR) << error_msg << ": " << e.what();
+            return std::make_pair(400, error_msg);
+        }
+
+        try
+        {
+            DCHECK_NOTNULL(table);
+            auto queue_status = m_queue.try_push(std::move(table));
+
+            if (queue_status == boost::fibers::channel_op_status::success)
+            {
+                return std::make_pair(201, std::string());
+            }
+
+            std::string error_msg = "REST payload queue is ";
+            switch (queue_status)
+            {
+            case boost::fibers::channel_op_status::full:
+                error_msg += "full";
+                break;
+
+            case boost::fibers::channel_op_status::closed:
+                error_msg += "closed";
+                break;
+            default:
+                error_msg += "in an unknown state";
+                break;
+            }
+
+            return std::make_pair(503, std::move(error_msg));
+        } catch (const std::exception& e)
+        {
+            std::string error_msg = "Error occurred while pushing payload to queue";
+            LOG(ERROR) << error_msg << ": " << e.what();
+            return std::make_pair(500, error_msg);
+        }
+    };
+    m_server = std::make_unique<RestServer>(
+        std::move(parser), std::move(bind_address), port, std::move(endpoint), std::move(method));
+}
 
 RestSourceStage::subscriber_fn_t RestSourceStage::build()
 {
@@ -81,29 +112,62 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
 
 void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source_type_t> subscriber)
 {
-    while (subscriber.is_subscribed() && m_server->is_running())
+    // only if the server is running when the queue is empty, allowing all queued messages to be processed prior to
+    // shutting down
+    bool server_running = true;
+    bool queue_closed   = false;
+    while (subscriber.is_subscribed() && server_running && !queue_closed)
     {
-        std::string payload;
-        if (m_queue->pop(payload) == boost::fibers::channel_op_status::success)
+        table_t table_ptr{nullptr};
+        auto queue_status = m_queue.try_pop(table_ptr);
+        if (queue_status == boost::fibers::channel_op_status::success)
         {
+            DCHECK_NOTNULL(table_ptr);
             try
             {
-                cudf::io::source_info source{payload.c_str(), payload.size()};
-                auto options = cudf::io::json_reader_options::builder(source).lines(m_lines);
-                auto table   = cudf::io::read_json(options.build());
-                auto message = MessageMeta::create_from_cpp(std::move(table), 0);
+                auto message = MessageMeta::create_from_cpp(std::move(*table_ptr), 0);
                 subscriber.on_next(std::move(message));
             } catch (const std::exception& e)
             {
                 LOG(ERROR) << "Error occurred converting REST payload to Dataframe: " << e.what();
             }
         }
+        else if (queue_status == boost::fibers::channel_op_status::empty)
+        {
+            // if the queue is empty, maybe it's because our server is not running
+            server_running = m_server->is_running();
+
+            if (server_running)
+            {
+                // Sleep when there are no messages
+                std::this_thread::sleep_for(m_sleep_time);
+            }
+        }
+        else if (queue_status == boost::fibers::channel_op_status::closed)
+        {
+            queue_closed = true;
+        }
         else
         {
-            // Sleep when there are no messages
-            std::this_thread::sleep_for(m_sleep_time);
+            std::string error_msg{"Unknown queue status: " + std::to_string(static_cast<int>(queue_status))};
+            LOG(ERROR) << error_msg;
+            throw std::runtime_error(error_msg);
         }
     }
+}
+
+void RestSourceStage::close()
+{
+    if (m_server)
+    {
+        m_server->stop();  // this is a no-op if the server is not running
+    }
+    m_queue.close();
+}
+
+RestSourceStage::~RestSourceStage()
+{
+    close();
 }
 
 // ************ RestSourceStageInterfaceProxy ************ //
