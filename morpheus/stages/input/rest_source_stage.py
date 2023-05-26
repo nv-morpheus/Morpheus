@@ -41,22 +41,47 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
-
+    bind_address : str, default "127.0.0.1"
+        The address to bind the REST server to.
+    port : int, default 8080
+        The port to bind the REST server to.
+    endpoint : str, default "/"
+        The endpoint to listen for requests on.
+    method : str, default "POST"
+        HTTP method to listen for. Valid values are "POST" and "PUT".
+    sleep_time : float, default 0.1
+        Amount of time in seconds to sleep if the request queue is empty.
     lines : bool, default False
         If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
         expect each request to be a JSON object per line.
+    max_queue_size : int, default None
+        Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
+        used.
     """
 
-    # TODO add configs, and pass-thru for both gunicorn and flask configs
-    def __init__(self, c: Config, sleep_time: float = 0.1, lines: bool = False):
-        super().__init__(c)
+    def __init__(self,
+                 config: Config,
+                 bind_address: str = "127.0.0.1",
+                 port: int = 8080,
+                 endpoint: str = "/",
+                 method: str = "POST",
+                 sleep_time: float = 0.1,
+                 lines: bool = False,
+                 max_queue_size: int = None):
+        super().__init__(config)
+        self._bind_address = bind_address
+        self._port = port
+        self._endpoint = endpoint
+        self._method = method
+        self._sleep_time = sleep_time
+        self._lines = lines
+        self._max_queue_size = max_queue_size or config.edge_buffer_size
+
+        self._is_running = AtomicInteger(0)
         self._server_proc = None
         self._queue = None
-        self._sleep_time = sleep_time
-        self._is_running = AtomicInteger(0)
-        self._lines = lines
 
     @property
     def name(self) -> str:
@@ -112,19 +137,27 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-
-            # TODO: C++ service wants an IP not a name to bind to. Either convert our name to an IP, or
-            # update the C++ service to accept a name.
-            node = _stages.RestSourceStage(builder, self.unique_name, sleep_time=self._sleep_time, lines=self._lines)
+            node = _stages.RestSourceStage(builder,
+                                           self.unique_name,
+                                           bind_address=self._bind_address,
+                                           port=self._port,
+                                           endpoint=self._endpoint,
+                                           method=self._method,
+                                           sleep_time=self._sleep_time,
+                                           lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 
         return node, MessageMeta
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-        src_node = out_pair[0]
-        # TODO: This doesn't work its called when the source exits, not when the pipeline is shutting down
-        post_node = builder.make_node(self.unique_name + "-post", ops.on_completed(self._stop))
-        builder.make_edge(src_node, post_node)
 
-        return super()._post_build_single(builder, (post_node, out_pair[1]))
+        if self._build_cpp_node():
+            out_node = out_pair[0]
+        else:
+            src_node = out_pair[0]
+            # TODO: This doesn't work its called when the source exits, not when the pipeline is shutting down
+            out_node = builder.make_node(self.unique_name + "-post", ops.on_completed(self._stop))
+            builder.make_edge(src_node, out_node)
+
+        return super()._post_build_single(builder, (out_node, out_pair[1]))

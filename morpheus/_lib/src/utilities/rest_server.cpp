@@ -32,8 +32,11 @@
 #include <boost/beast/version.hpp>
 #include <boost/config.hpp>
 #include <glog/logging.h>  // for CHECK and LOG
+#include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
 
 #include <atomic>  // for atomic
+#include <memory>
 
 namespace {
 namespace beast = boost::beast;          // from <boost/beast.hpp>
@@ -94,12 +97,12 @@ void listener(morpheus::payload_parse_fn_t* payload_parse_fn,
         else
         {
             res.result(http::status::not_found);
-            res.set(http::field::content_type, "text/plain");
             res.body() = "not found";
         }
 
         try
         {
+            DLOG(INFO) << "Response: " << res.result_int() << " : " << res.body();
             res.set(http::field::content_type, "text/plain");
             res.prepare_payload();
             http::write(socket, res);
@@ -175,4 +178,39 @@ RestServer::~RestServer()
         LOG(ERROR) << "Caught exception while stopping rest server: " << e.what();
     }
 }
+
+/****** RestServerInterfaceProxy *************************/
+std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py_parse_fn,
+                                                           std::string bind_address,
+                                                           unsigned short port,
+                                                           std::string endpoint,
+                                                           std::string method)
+{
+    payload_parse_fn_t payload_parse_fn = [py_parse_fn = std::move(py_parse_fn)](const std::string& payload) {
+        pybind11::gil_scoped_acquire gil;
+        auto py_payload = pybind11::str(payload);
+        auto py_result  = py_parse_fn(py_payload);
+        auto result     = pybind11::cast<parse_status_t>(py_result);
+        return result;
+    };
+
+    return std::make_shared<RestServer>(
+        std::move(payload_parse_fn), std::move(bind_address), port, std::move(endpoint), std::move(method));
+}
+
+void RestServerInterfaceProxy::start(RestServer& self)
+{
+    self.start();
+}
+
+void RestServerInterfaceProxy::stop(RestServer& self)
+{
+    self.stop();
+}
+
+bool RestServerInterfaceProxy::is_running(const RestServer& self)
+{
+    return self.is_running();
+}
+
 }  // namespace morpheus

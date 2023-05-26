@@ -18,6 +18,7 @@ Module for common utilities and classes in the Morpheus library.
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
+from morpheus._lib.common import RestServer
 from morpheus._lib.common import Tensor
 from morpheus._lib.common import TypeId
 from morpheus._lib.common import determine_file_type
@@ -31,6 +32,7 @@ __all__ = [
     "FileTypes",
     "FilterSource",
     "read_file_to_df",
+    "RestServer",
     "Tensor",
     "typeid_to_numpy_str",
     "TypeId",

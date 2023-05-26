@@ -17,8 +17,10 @@
 
 #pragma once
 
+#include <pybind11/pytypes.h>  // for pybind11::function
+
 #include <functional>  // for function
-#include <memory>      // for unique_ptr
+#include <memory>      // for shared_ptr & unique_ptr
 #include <string>      // for string
 #include <thread>      // for thread
 #include <utility>     // for pair & move
@@ -33,12 +35,41 @@ enum class verb;
 }  // namespace boost
 
 namespace morpheus {
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 
+#pragma GCC visibility push(default)
+/**
+ * @brief A pair of unsigned and string, where the unsigned is the HTTP status code and the string
+ *        is the HTTP status message.
+ */
 using parse_status_t = std::pair<unsigned /*http status code*/, std::string /* http status message*/>;
 
-// function that receives the post body and returns a status code and message
+/**
+ * @brief A function that receives the post body and returns a status code and message.
+ *
+ * @details The function is expected to return a pair of unsigned and string, where the unsigned is
+ *          the HTTP status code and the string is the HTTP status message.
+ */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
+/**
+ * @brief A simple REST server that listens for POST requests on a given endpoint.
+ *
+ * @details The server is started in a separate thread and will call the provided payload_parse_fn_t
+ *          function when a POST request is received. The payload_parse_fn_t function is expected to
+ *          return a pair of unsigned and string, where the unsigned is the HTTP status code and the
+ *          string is the HTTP status message.
+ *
+ * @param payload_parse_fn The function that will be called when a POST request is received.
+ * @param bind_address The address to bind the server to.
+ * @param port The port to bind the server to.
+ * @param endpoint The endpoint to listen for POST requests on.
+ * @param method The HTTP method to listen for.
+ */
 class RestServer
 {
   public:
@@ -61,4 +92,19 @@ class RestServer
     payload_parse_fn_t m_payload_parse_fn;
 };
 
+/****** RestServerInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct RestServerInterfaceProxy
+{
+    static std::shared_ptr<RestServer> init(pybind11::function py_parse_fn,
+                                            std::string bind_address,
+                                            unsigned short port,
+                                            std::string endpoint,
+                                            std::string method);
+    static void start(RestServer& self);
+    static void stop(RestServer& self);
+    static bool is_running(const RestServer& self);
+};
 }  // namespace morpheus
