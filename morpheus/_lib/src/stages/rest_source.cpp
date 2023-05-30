@@ -22,6 +22,7 @@
 #include <glog/logging.h>                     // for CHECK & LOG
 
 #include <exception>  // for std::exception
+#include <ratio>
 #include <sstream>    // needed by GLOG
 #include <stdexcept>  // for std::runtime_error
 #include <thread>     // for std::this_thread::sleep_for
@@ -35,10 +36,12 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  std::string endpoint,
                                  std::string method,
                                  float sleep_time,
-                                 bool lines,
-                                 std::size_t max_queue_size) :
+                                 long queue_timeout,
+                                 std::size_t max_queue_size,
+                                 bool lines) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
+  m_queue_timeout{queue_timeout},
   m_queue{max_queue_size},
   m_lines{lines}
 {
@@ -59,7 +62,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
         try
         {
             DCHECK_NOTNULL(table);
-            auto queue_status = m_queue.try_push(std::move(table));
+            auto queue_status = m_queue.push_wait_for(std::move(table), m_queue_timeout);
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
@@ -70,15 +73,19 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             switch (queue_status)
             {
             case boost::fibers::channel_op_status::full:
+            case boost::fibers::channel_op_status::timeout: {
                 error_msg += "full";
                 break;
+            }
 
-            case boost::fibers::channel_op_status::closed:
+            case boost::fibers::channel_op_status::closed: {
                 error_msg += "closed";
                 break;
-            default:
+            }
+            default: {
                 error_msg += "in an unknown state";
                 break;
+            }
             }
 
             return std::make_pair(503, std::move(error_msg));
@@ -179,11 +186,20 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     std::string endpoint,
     std::string method,
     float sleep_time,
-    bool lines,
-    std::size_t max_queue_size)
+    long queue_timeout,
+    std::size_t max_queue_size,
+    bool lines)
 {
     return builder.construct_object<RestSourceStage>(
 
-        name, std::move(bind_address), port, std::move(endpoint), std::move(method), sleep_time, lines, max_queue_size);
+        name,
+        std::move(bind_address),
+        port,
+        std::move(endpoint),
+        std::move(method),
+        sleep_time,
+        queue_timeout,
+        max_queue_size,
+        lines);
 }
 }  // namespace morpheus

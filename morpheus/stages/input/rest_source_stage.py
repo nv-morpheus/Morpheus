@@ -52,14 +52,14 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         HTTP method to listen for. Valid values are "POST" and "PUT".
     sleep_time : float, default 0.1
         Amount of time in seconds to sleep if the request queue is empty.
-    lines : bool, default False
-        If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
-        expect each request to be a JSON object per line.
+    queue_timeout : int, default 5
+        Maximum amount of time in seconds to wait for a request to be added to the queue before rejecting requests.
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
-    queue_timeout : float, default 5.0
-        Maximum amount of time in seconds to wait for a request to be added to the queue before rejecting requests.
+    lines : bool, default False
+        If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
+        expect each request to be a JSON object per line.
     """
 
     def __init__(self,
@@ -69,18 +69,18 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  endpoint: str = "/message",
                  method: str = "POST",
                  sleep_time: float = 0.1,
-                 lines: bool = False,
+                 queue_timeout: int = 5,
                  max_queue_size: int = None,
-                 queue_timeout: float = 5.0):
+                 lines: bool = False):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
         self._endpoint = endpoint
         self._method = method
         self._sleep_time = sleep_time
-        self._lines = lines
-        self._max_queue_size = max_queue_size or config.edge_buffer_size
         self._queue_timeout = queue_timeout
+        self._max_queue_size = max_queue_size or config.edge_buffer_size
+        self._lines = lines
 
         # This is only used when C++ mode is disabled
         self._queue = None
@@ -160,6 +160,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            endpoint=self._endpoint,
                                            method=self._method,
                                            sleep_time=self._sleep_time,
+                                           queue_timeout=self._queue_timeout,
+                                           max_queue_size=self._max_queue_size,
                                            lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())

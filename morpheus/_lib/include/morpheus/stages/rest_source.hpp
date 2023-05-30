@@ -29,6 +29,7 @@
 
 #include <chrono>  // for duration
 #include <memory>  // for shared_ptr & unique_ptr
+#include <ratio>   // for std::milli
 #include <string>  // for string & to_string
 
 namespace morpheus {
@@ -58,8 +59,9 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
                     std::string endpoint       = "/message",
                     std::string method         = "POST",
                     float sleep_time           = 0.1f,
-                    bool lines                 = false,
-                    std::size_t max_queue_size = 1024);
+                    long queue_timeout         = 5,
+                    std::size_t max_queue_size = 1024,
+                    bool lines                 = false);
     ~RestSourceStage() override;
 
     void close();
@@ -69,7 +71,8 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     void source_generator(rxcpp::subscriber<source_type_t> subscriber);
 
     bool m_lines;
-    std::chrono::duration<float> m_sleep_time;
+    std::chrono::duration<float, std::milli> m_sleep_time;
+    std::chrono::duration<long> m_queue_timeout;
     std::unique_ptr<RestServer> m_server;
     request_queue_t m_queue;
 };
@@ -87,8 +90,9 @@ struct RestSourceStageInterfaceProxy
                                                                        std::string endpoint,
                                                                        std::string method,
                                                                        float sleep_time,
-                                                                       bool lines,
-                                                                       std::size_t max_queue_size = 1024);
+                                                                       long queue_timeout,
+                                                                       std::size_t max_queue_size,
+                                                                       bool lines);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
