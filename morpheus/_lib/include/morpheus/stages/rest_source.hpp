@@ -55,7 +55,7 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
 
     RestSourceStage(std::string bind_address   = "127.0.0.1",
                     unsigned short port        = 8080,
-                    std::string endpoint       = "/",
+                    std::string endpoint       = "/message",
                     std::string method         = "POST",
                     float sleep_time           = 0.1f,
                     bool lines                 = false,

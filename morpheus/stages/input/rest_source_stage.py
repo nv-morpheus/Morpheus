@@ -66,7 +66,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  config: Config,
                  bind_address: str = "127.0.0.1",
                  port: int = 8080,
-                 endpoint: str = "/",
+                 endpoint: str = "/message",
                  method: str = "POST",
                  sleep_time: float = 0.1,
                  lines: bool = False,

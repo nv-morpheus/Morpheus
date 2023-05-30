@@ -16,11 +16,7 @@
  */
 
 // TODO:
-// use fiber buffer chann between server & source
-// source passes a lambda to server, and capures the fiber buffer chan
-// If fiber buffer chan is full, return 503
 // Use an async listener
-
 // add /health & /info endpoints
 
 #include "morpheus/utilities/rest_server.hpp"

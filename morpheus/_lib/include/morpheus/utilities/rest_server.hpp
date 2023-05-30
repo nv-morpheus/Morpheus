@@ -76,7 +76,7 @@ class RestServer
     RestServer(payload_parse_fn_t payload_parse_fn,
                std::string bind_address = "127.0.0.1",
                unsigned short port      = 8080,
-               std::string endpoint     = "/",
+               std::string endpoint     = "/message",
                std::string method       = "POST");
     ~RestServer();
     void start();

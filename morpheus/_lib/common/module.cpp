@@ -123,7 +123,7 @@ PYBIND11_MODULE(common, _module)
              py::arg("parse_fn"),
              py::arg("bind_address") = "127.0.0.1",
              py::arg("port")         = 8080,
-             py::arg("endpoint")     = "/",
+             py::arg("endpoint")     = "/message",
              py::arg("method")       = "POST")
         .def("start", &RestServerInterfaceProxy::start)
         .def("stop", &RestServerInterfaceProxy::stop)
