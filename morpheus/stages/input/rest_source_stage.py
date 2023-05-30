@@ -28,8 +28,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils import rest_server
-from morpheus.utils.atomic_integer import AtomicInteger
+from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +58,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
+    queue_timeout : float, default 5.0
+        Maximum amount of time in seconds to wait for a request to be added to the queue before rejecting requests.
     """
 
     def __init__(self,
@@ -69,7 +70,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  method: str = "POST",
                  sleep_time: float = 0.1,
                  lines: bool = False,
-                 max_queue_size: int = None):
+                 max_queue_size: int = None,
+                 queue_timeout: float = 5.0):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -78,9 +80,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._sleep_time = sleep_time
         self._lines = lines
         self._max_queue_size = max_queue_size or config.edge_buffer_size
+        self._queue_timeout = queue_timeout
 
-        self._is_running = AtomicInteger(0)
-        self._server_proc = None
+        # This is only used when C++ mode is disabled
         self._queue = None
 
     @property
@@ -90,10 +92,37 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return True
 
+    def _parse_payload(self, payload: str) -> typing.Tuple[int, str]:
+        try:
+            df = cudf.read_json(payload, lines=self._lines)
+        except Exception as e:
+            err_msg = "Error occurred converting REST payload to Dataframe"
+            logger.error(f"{err_msg}: {e}")
+            return (400, err_msg)
+
+        try:
+            self._queue.put(df, block=True, timeout=self._queue_timeout)
+            return (201, "")
+        except (queue.Full, Closed) as e:
+            err_msg = "REST payload queue is "
+            if isinstance(e, queue.Full):
+                err_msg += "full"
+            else:
+                err_msg += "closed"
+            logger.error(err_msg)
+            return (503, err_msg)
+        except Exception as e:
+            err_msg = "Error occurred while pushing payload to queue"
+            logger.error(f"{err_msg}: {e}")
+            return (500, err_msg)
+
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
-        self._is_running.value = 1
-        (self._server_proc, self._queue) = rest_server.start_rest_server()
-        self._server_proc.start()
+        from morpheus.common import FiberQueue
+        from morpheus.common import RestServer
+
+        self._queue = FiberQueue(self._max_queue_size)
+        rest_server = RestServer(self._parse_payload, self._bind_address, self._port, self._endpoint, self._method)
+        rest_server.start()
 
         processing = True
         while (processing):
@@ -101,38 +130,25 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             # It is important that any messages we received that are in the queue are processed before we shutdown since
             # we already returned an OK response to the client.
             df = None
-            data = None
             try:
-                data = self._queue.get_nowait()
+                df = self._queue.get()
             except queue.Empty:
-                if (self._is_running.value == 0 or not self._server_proc.is_alive()):
+                if (not rest_server.is_running()):
                     processing = False
                 else:
+                    logger.debug("Queue empty, sleeping ...")
                     time.sleep(self._sleep_time)
-            except ValueError as e:
-                logger.error(f"Queue closed unexpectedly: {e}")
+            except Closed:
+                logger.error("Queue closed unexpectedly, shutting down")
                 processing = False
-
-            if data is not None:
-                try:
-                    df = cudf.read_json(data, lines=self._lines)
-                except Exception as e:
-                    print(data)
-                    logger.error(f"Failed to convert request data to DataFrame: {e}")
 
             if df is not None:
                 yield MessageMeta(df)
 
+        logger.debug("Stopping REST server ...")
+        rest_server.stop()
+        logger.debug("REST server stopped")
         self._queue.close()
-
-    def _stop(self):
-        if self._server_proc is not None:
-            logger.debug("Stopping REST server ...")
-            self._server_proc.terminate()
-            self._server_proc.join()
-            logger.debug("REST server stopped")
-
-        self._is_running.value = 0
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
@@ -149,15 +165,3 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             node = builder.make_source(self.unique_name, self._generate_frames())
 
         return node, MessageMeta
-
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        if self._build_cpp_node():
-            out_node = out_pair[0]
-        else:
-            src_node = out_pair[0]
-            # TODO: This doesn't work its called when the source exits, not when the pipeline is shutting down
-            out_node = builder.make_node(self.unique_name + "-post", ops.on_completed(self._stop))
-            builder.make_edge(src_node, out_node)
-
-        return super()._post_build_single(builder, (out_node, out_pair[1]))
