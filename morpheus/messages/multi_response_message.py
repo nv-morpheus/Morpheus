@@ -21,7 +21,6 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils import logger as morpheus_logger
-from morpheus.messages.multi_message import from_message
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +70,8 @@ class MultiResponseProbsMessage(_messages.MultiResponseProbsMessage):
     required_tensors: typing.ClassVar[typing.List[str]] = ["probs"]
 
     def __new__(cls, *args, **kwargs):
-        morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)
-        return super(MultiResponseMessage, cls).__new__(cls)
+        morpheus_logger.deprecated_message_warning(logger, cls, _messages.MultiResponseMessage)
+        return super(_messages.MultiResponseMessage, cls).__new__(cls)
 
     def __init__(self,
                  *,

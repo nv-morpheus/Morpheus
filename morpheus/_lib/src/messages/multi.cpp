@@ -241,6 +241,49 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<M
     return std::make_shared<MultiMessage>(std::move(meta), mess_offset, mess_count);
 }
 
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::from_message(pybind11::object message,
+                                                                       pybind11::object meta,
+                                                                       int mess_offset,
+                                                                       int mess_count,
+                                                                       const pybind11::kwargs& kwargs)
+{
+    if (message.is_none())
+    {
+        throw std::invalid_argument("message must not be none");
+    }
+
+    if (mess_offset == -1)
+    {
+        if (meta.is_none())
+        {
+            mess_offset = message.attr("mess_offset").cast<int32_t>();
+        }
+        else
+        {
+            mess_offset = 0;
+        }
+    }
+
+    if (mess_count == -1)
+    {
+        if (meta.is_none())
+        {
+            mess_count = message.attr("mess_count").cast<int32_t>();
+        }
+        else
+        {
+            mess_count = meta.attr("count").cast<int32_t>() - mess_offset;
+        }
+    }
+
+    if (meta.is_none())
+    {
+        meta = message.attr("meta");
+    }
+
+    return MultiMessageInterfaceProxy::init(meta.cast<std::shared_ptr<MessageMeta>>(), mess_offset, mess_count);
+}
+
 std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage& self)
 {
     return self.meta;
@@ -463,4 +506,43 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(MultiMessa
 
     return self.copy_ranges(ranges, num_rows);
 }
+
+pybind11::object MultiMessageInterfaceProxy::id_col(MultiMessage& self)
+{
+    return MultiMessageInterfaceProxy::get_meta(self, "ID");
+}
+pybind11::object MultiMessageInterfaceProxy::id(MultiMessage& self)
+{
+    return MultiMessageInterfaceProxy::get_meta_list(self, pybind11::str("ID"));
+}
+pybind11::object MultiMessageInterfaceProxy::timestamp(MultiMessage& self)
+{
+    return MultiMessageInterfaceProxy::get_meta_list(self, pybind11::str("timestamp"));
+}
+pybind11::object MultiMessageInterfaceProxy::copy_meta_ranges(MultiMessage& self,
+                                                              pybind11::list ranges,
+                                                              pybind11::object mask)
+{
+    auto df = MultiMessageInterfaceProxy::get_meta(self);
+
+    if (mask.is_none())
+    {
+        mask = [&]() {
+            auto cudf     = py::module_::import("cudf");
+            auto mod_name = pybind11::isinstance(df, cudf.attr("Dataframe")) ? "cupy" : "numpy";
+            return py::module_::import(mod_name).attr("zeroes")(pybind11::len(df), pybind11::bool_().get_type());
+        }();
+
+        for (auto range : ranges)
+        {
+            auto start     = range[pybind11::int_(0)].cast<int32_t>();
+            auto stop      = range[pybind11::int_(1)].cast<int32_t>();
+            auto my_slice  = pybind11::slice(start, stop, 1);
+            mask[my_slice] = true;
+        }
+    }
+
+    return df.attr("loc")[mask, pybind11::slice()];
+}
+
 }  // namespace morpheus

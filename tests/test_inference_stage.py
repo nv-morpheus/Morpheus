@@ -27,7 +27,6 @@ from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_message import from_message
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from utils.inference_worker import IW
@@ -188,7 +187,7 @@ def test_convert_one_response():
     inf = _mk_message(mess_count=4, count=4)
     res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
 
-    mpm = InferenceStageT._convert_one_response(from_message(MultiResponseMessage, inf, memory=mem), inf, res)
+    mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
     assert mpm.mess_count == 4

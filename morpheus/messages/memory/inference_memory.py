@@ -75,7 +75,7 @@ class InferenceMemoryFIL(_messages.InferenceMemoryFIL):
                                                              InferenceMemory.set_input)
 
     def __init__(self, *, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count=count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
+        super().__init__(count=count, input__0=input__0, seq_ids=seq_ids)
 
 
 @dataclasses.dataclass(init=False)

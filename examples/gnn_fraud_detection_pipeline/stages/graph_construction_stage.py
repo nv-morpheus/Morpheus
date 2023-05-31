@@ -123,8 +123,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         graph_data = cudf.concat([self._training_data, message.get_meta(self._column_names)])
         graph_data = graph_data.set_index(graph_data['index'])
         graph = FraudGraphConstructionStage._build_graph_features(graph_data.to_pandas())
-        from morpheus.messages.multi_message import from_message
-        return from_message(FraudGraphMultiMessage, message, graph=graph)
+        return FraudGraphMultiMessage.from_message(message, graph=graph)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, ops.map(self._process_message))

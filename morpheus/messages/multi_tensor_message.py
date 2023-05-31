@@ -26,7 +26,7 @@ Self = typing.TypeVar("Self", bound="MultiTensorMessage")
 
 
 @dataclasses.dataclass
-class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessage
+class MultiTensorMessage(_messages.MultiTensorMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
 
@@ -39,10 +39,6 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
     count : int
         Number of rows in the `TensorMemory` block.
     """
-
-    memory: TensorMemory = dataclasses.field(repr=False)
-    offset: int
-    count: int
 
     required_tensors: typing.ClassVar[typing.List[str]] = []
     """The tensor names that are required for instantiation"""
@@ -72,13 +68,16 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
         if count <= 0 or (offset + count > memory.count):
             raise ValueError("Invalid count value")
 
-        self.memory = memory
-        self.offset = offset
-        self.count = count
-        self.id_tensor_name = id_tensor_name
-
         # Call the base class last because the properties need to be initialized first
-        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+        super().__init__(
+            meta=meta,
+            mess_offset=mess_offset,
+            mess_count=mess_count,
+            memory=memory,
+            offset=offset,
+            count=count,
+            id_tensor_name=id_tensor_name)
+
 
         if (self.count < self.mess_count):
             raise ValueError("Invalid count value. Must have a count greater than or equal to mess_count")
@@ -169,44 +168,6 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
         count = stop - start
 
         return offset, count
-
-    def get_tensor(self, name: str):
-        """
-        Get tensor stored in the TensorMemory container.
-
-        Parameters
-        ----------
-        name : str
-            tensor key name.
-
-        Returns
-        -------
-        cupy.ndarray
-            Inference tensor.
-
-        """
-        return self.memory.get_tensor(name)[self.offset:self.offset + self.count, :]
-
-    def get_id_tensor(self):
-        """
-        Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
-
-        Returns
-        -------
-        cupy.ndarray
-            Array containing the ID information
-
-        Raises
-        ------
-        KeyError
-            If `self.id_tensor_name` is not found in the tensors
-        """
-
-        try:
-            return self.get_tensor(self.id_tensor_name)
-        except KeyError as exc:
-            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.id_tensor_name}' "
-                           "does not exist in the memory object") from exc
 
     def _get_tensor_prop(self, name: str):
         """
@@ -378,17 +339,10 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
             raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
 
         if (offset == -1):
-            if (memory is not None):
-                offset = 0
-            else:
-                offset = message.offset
+            offset = message.offset if memory is None else 0
 
         if (count == -1):
-            if (memory is not None):
-                # Subtract offset here so we dont go over the end
-                count = memory.count - offset
-            else:
-                count = message.count
+            count = message.count if memory is None else memory.count - offset
 
         # Do meta last
         if memory is None:
@@ -404,6 +358,4 @@ class MultiTensorMessage(MultiMessage): # , cpp_class=_messages.MultiTensorMessa
             "count": count,
         })
 
-        from morpheus.messages.multi_message import from_message
-
-        return from_message(cls, message, **kwargs)
+        return MultiMessage.from_message(cls, message, **kwargs)

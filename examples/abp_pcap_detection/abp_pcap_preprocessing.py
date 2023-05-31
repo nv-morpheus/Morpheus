@@ -186,9 +186,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seq_ids)
 
-        from morpheus.messages.multi_message import from_message
-
-        infer_message = from_message(MultiInferenceFILMessage, x, memory=memory)
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 

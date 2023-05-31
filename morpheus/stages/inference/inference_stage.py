@@ -83,9 +83,7 @@ class InferenceWorker:
 
         memory = TensorMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
 
-        from morpheus.messages.multi_message import from_message
-
-        output_message = from_message(MultiResponseMessage, x, memory=memory)
+        output_message = MultiResponseMessage.from_message(x, memory=memory)
 
         return output_message
 
@@ -383,9 +381,7 @@ class InferenceStage(MultiMessageStage):
 
         memory = TensorMemory(count=total_mess_count, tensors={'probs': probs})
 
-        from morpheus.messages.multi_message import from_message
-
-        return from_message(MultiResponseMessage, in_message[0], mess_count=saved_count, memory=memory)
+        return MultiResponseMessage.from_message(in_message[0], mess_count=saved_count, memory=memory)
 
     @staticmethod
     def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage, res: TensorMemory):
@@ -416,6 +412,4 @@ class InferenceStage(MultiMessageStage):
             for i, idx in enumerate(mess_ids):
                 probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
-        from morpheus.messages.multi_message import from_message
-
-        return from_message(MultiResponseMessage, inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+        return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)

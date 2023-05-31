@@ -23,6 +23,7 @@
 #include "morpheus/types.hpp"  // for TensorIndex
 
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
@@ -332,6 +333,15 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
+    static std::shared_ptr<MultiMessage> from_message(pybind11::object message,
+                                                      pybind11::object meta,
+                                                      int mess_offset,
+                                                      int mess_count,
+                                                      const pybind11::kwargs& kwargs);
+
+    /**
+     * TODO(Documentation)
+     */
     static std::shared_ptr<MultiMessage> init(std::shared_ptr<MessageMeta> meta,
                                               TensorIndex mess_offset,
                                               TensorIndex mess_count);
@@ -384,6 +394,11 @@ struct MultiMessageInterfaceProxy
     static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage& self,
                                                      const std::vector<RangeType>& ranges,
                                                      pybind11::object num_selected_rows);
+
+    static pybind11::object id_col(MultiMessage& self);
+    static pybind11::object id(MultiMessage& self);
+    static pybind11::object timestamp(MultiMessage& self);
+    static pybind11::object copy_meta_ranges(MultiMessage& self, pybind11::list ranges, pybind11::object);
 };
 
 #pragma GCC visibility pop

@@ -92,9 +92,7 @@ class ConvMsg(SinglePortStage):
 
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
 
-        from morpheus.messages.multi_message import from_message
-
-        return from_message(MultiResponseMessage, m, memory=memory)
+        return MultiResponseMessage.from_message(m, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name, ops.map(self._conv_message))

@@ -238,6 +238,13 @@ PYBIND11_MODULE(messages, _module)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
+        .def_static(
+            "from_message",
+            &MultiMessageInterfaceProxy::from_message,
+            py::arg("message"),
+            py::arg("meta") = pybind11::none(),
+            py::arg("mess_offset") = -1,
+            py::arg("mess_count")  = -1)
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
              py::kw_only(),
              py::arg("meta"),

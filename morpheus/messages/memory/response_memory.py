@@ -48,7 +48,7 @@ class ResponseMemoryProbs(_messages.ResponseMemoryProbs):
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop, ResponseMemory.set_output)
 
     def __init__(self, *, count: int, probs: cp.ndarray):
-        super().__init__(count=count, tensors={'probs': probs})
+        super().__init__(count=count, probs=probs)
 
 
 @dataclasses.dataclass(init=False)
