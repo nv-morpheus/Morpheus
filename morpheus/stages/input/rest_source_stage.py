@@ -126,7 +126,12 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         from morpheus.common import RestServer
 
         self._queue = FiberQueue(self._max_queue_size)
-        rest_server = RestServer(self._parse_payload, self._bind_address, self._port, self._endpoint, self._method)
+        rest_server = RestServer(parse_fn=self._parse_payload,
+                                 bind_address=self._bind_address,
+                                 port=self._port,
+                                 endpoint=self._endpoint,
+                                 method=self._method,
+                                 num_threads=self._num_server_threads)
         rest_server.start()
 
         processing = True
@@ -167,6 +172,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            sleep_time=self._sleep_time,
                                            queue_timeout=self._queue_timeout,
                                            max_queue_size=self._max_queue_size,
+                                           num_server_threads=self._num_server_threads,
                                            lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())

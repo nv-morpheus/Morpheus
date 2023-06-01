@@ -98,7 +98,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
         }
     };
     m_server = std::make_unique<RestServer>(
-        std::move(parser), std::move(bind_address), port, std::move(endpoint), std::move(method));
+        std::move(parser), std::move(bind_address), port, std::move(endpoint), std::move(method), num_server_threads);
 }
 
 RestSourceStage::subscriber_fn_t RestSourceStage::build()

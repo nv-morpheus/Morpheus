@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include <boost/asio.hpp>  // for io_context
-#include <boost/asio/io_context.hpp>
+#include <boost/asio.hpp>      // for io_context
 #include <pybind11/pytypes.h>  // for pybind11::function
 
 #include <functional>  // for function

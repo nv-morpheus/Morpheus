@@ -20,18 +20,14 @@
 
 #include "morpheus/utilities/rest_server.hpp"
 
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/http/verb.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/config.hpp>
-#include <glog/logging.h>  // for CHECK and LOG
+#include <boost/asio/ip/tcp.hpp>  // for acceptor, endpoint, socket,
+#include <boost/beast/core.hpp>   // for bind_front_handler, error_code, flat_buffer, tcp_stream
+#include <boost/beast/http.hpp>   // for read_async, request, response, verb, write_async
+#include <glog/logging.h>         // for CHECK and LOG
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
 #include <atomic>  // for atomic
-#include <memory>
 
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp
@@ -46,7 +42,6 @@ using namespace std::literals::chrono_literals;
 
 std::atomic<bool> g_is_running{false};
 
-// std::make_shared<Session>(std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method)->run();
 class Session : public std::enable_shared_from_this<Session>
 {
   public:
@@ -177,7 +172,7 @@ class Listener : public std::enable_shared_from_this<Listener>
              http::verb method) :
       m_io_context{std::move(io_context)},
       m_tcp_endpoint{net::ip::make_address(bind_address), port},
-      m_acceptor{net::make_strand(*m_io_context), m_tcp_endpoint},
+      m_acceptor{net::make_strand(*m_io_context)},
       m_payload_parse_fn{std::move(payload_parse_fn)},
       m_url_endpoint{endpoint},
       m_method{method}
@@ -248,18 +243,21 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
     {
         throw std::runtime_error("Invalid method: " + method);
     }
+
+    if (m_num_threads == 0)
+    {
+        throw std::runtime_error("num_threads must be greater than 0");
+    }
 }
 
 void RestServer::start_listener()
 {
-    DCHECK(!g_is_running) << "RestServer is already running";
     DCHECK(m_io_context == nullptr) << "start_listener expects m_io_context to be null";
 
     // This function will block until the io context is shutdown, and should be called from the first worker thread
     DCHECK(m_listener_threads.size() == 1 && m_listener_threads[0].get_id() == std::this_thread::get_id())
         << "start_listener must be called from the first thread in m_listener_threads";
 
-    g_is_running = true;
     m_io_context = std::make_shared<net::io_context>(m_num_threads);
     auto ioc     = m_io_context;  // ensure each thread gets its own copy including this one
 
@@ -279,6 +277,9 @@ void RestServer::start()
 
     try
     {
+        DLOG(INFO) << "Starting RestServer on " << m_bind_address << ":" << m_port << " with " << m_num_threads
+                   << " threads";
+        g_is_running = true;
         m_listener_threads.reserve(m_num_threads);
         m_listener_threads.emplace_back(std::thread(&RestServer::start_listener, this));
     } catch (const std::exception& e)
