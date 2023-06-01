@@ -38,6 +38,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  float sleep_time,
                                  long queue_timeout,
                                  std::size_t max_queue_size,
+                                 unsigned short num_server_threads,
                                  bool lines) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
@@ -188,6 +189,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     float sleep_time,
     long queue_timeout,
     std::size_t max_queue_size,
+    unsigned short num_server_threads,
     bool lines)
 {
     return builder.construct_object<RestSourceStage>(
@@ -200,6 +202,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
         sleep_time,
         queue_timeout,
         max_queue_size,
+        num_server_threads,
         lines);
 }
 }  // namespace morpheus

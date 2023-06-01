@@ -210,14 +210,15 @@ PYBIND11_MODULE(stages, _module)
         .def(py::init<>(&RestSourceStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("bind_address")   = "127.0.0.1",
-             py::arg("port")           = 8080,
-             py::arg("endpoint")       = "/message",
-             py::arg("method")         = "POST",
-             py::arg("sleep_time")     = 0.1f,
-             py::arg("queue_timeout")  = 5,
-             py::arg("max_queue_size") = 1024,
-             py::arg("lines")          = false);
+             py::arg("bind_address")       = "127.0.0.1",
+             py::arg("port")               = 8080,
+             py::arg("endpoint")           = "/message",
+             py::arg("method")             = "POST",
+             py::arg("sleep_time")         = 0.1f,
+             py::arg("queue_timeout")      = 5,
+             py::arg("max_queue_size")     = 1024,
+             py::arg("num_server_threads") = 1,
+             py::arg("lines")              = false);
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,

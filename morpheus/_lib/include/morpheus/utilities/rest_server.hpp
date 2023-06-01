@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <boost/asio.hpp>  // for io_context
+#include <boost/asio/io_context.hpp>
 #include <pybind11/pytypes.h>  // for pybind11::function
 
 #include <functional>  // for function
@@ -24,6 +26,7 @@
 #include <string>      // for string
 #include <thread>      // for thread
 #include <utility>     // for pair & move
+#include <vector>      // for vector
 
 // forward declare boost::beast::http::verb
 namespace boost {
@@ -69,27 +72,33 @@ using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* po
  * @param port The port to bind the server to.
  * @param endpoint The endpoint to listen for POST requests on.
  * @param method The HTTP method to listen for.
+ * @param num_threads The number of threads to use for the server.
  */
 class RestServer
 {
   public:
     RestServer(payload_parse_fn_t payload_parse_fn,
-               std::string bind_address = "127.0.0.1",
-               unsigned short port      = 8080,
-               std::string endpoint     = "/message",
-               std::string method       = "POST");
+               std::string bind_address   = "127.0.0.1",
+               unsigned short port        = 8080,
+               std::string endpoint       = "/message",
+               std::string method         = "POST",
+               unsigned short num_threads = 1);
     ~RestServer();
     void start();
     void stop();
     bool is_running() const;
 
   private:
+    void start_listener();
+
     std::string m_bind_address;
     unsigned short m_port;
     std::string m_endpoint;
     boost::beast::http::verb m_method;
-    std::unique_ptr<std::thread> m_listener_thread;
-    payload_parse_fn_t m_payload_parse_fn;
+    unsigned short m_num_threads;
+    std::vector<std::thread> m_listener_threads;
+    std::shared_ptr<boost::asio::io_context> m_io_context;
+    std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
 };
 
 /****** RestServerInterfaceProxy *************************/
@@ -102,7 +111,8 @@ struct RestServerInterfaceProxy
                                             std::string bind_address,
                                             unsigned short port,
                                             std::string endpoint,
-                                            std::string method);
+                                            std::string method,
+                                            unsigned short num_threads);
     static void start(RestServer& self);
     static void stop(RestServer& self);
     static bool is_running(const RestServer& self);

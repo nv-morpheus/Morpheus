@@ -54,14 +54,15 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    RestSourceStage(std::string bind_address   = "127.0.0.1",
-                    unsigned short port        = 8080,
-                    std::string endpoint       = "/message",
-                    std::string method         = "POST",
-                    float sleep_time           = 0.1f,
-                    long queue_timeout         = 5,
-                    std::size_t max_queue_size = 1024,
-                    bool lines                 = false);
+    RestSourceStage(std::string bind_address          = "127.0.0.1",
+                    unsigned short port               = 8080,
+                    std::string endpoint              = "/message",
+                    std::string method                = "POST",
+                    float sleep_time                  = 0.1f,
+                    long queue_timeout                = 5,
+                    std::size_t max_queue_size        = 1024,
+                    unsigned short num_server_threads = 1,
+                    bool lines                        = false);
     ~RestSourceStage() override;
 
     void close();
@@ -92,6 +93,7 @@ struct RestSourceStageInterfaceProxy
                                                                        float sleep_time,
                                                                        long queue_timeout,
                                                                        std::size_t max_queue_size,
+                                                                       unsigned short num_server_threads,
                                                                        bool lines);
 };
 #pragma GCC visibility pop

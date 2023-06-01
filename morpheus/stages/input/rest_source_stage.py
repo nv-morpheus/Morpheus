@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import queue
 import time
 import typing
@@ -57,6 +58,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
+    num_server_threads : int, default None
+        Number of threads to use for the REST server. If `None` then `os.cpu_count()` will be used.
     lines : bool, default False
         If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
         expect each request to be a JSON object per line.
@@ -71,6 +74,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  sleep_time: float = 0.1,
                  queue_timeout: int = 5,
                  max_queue_size: int = None,
+                 num_server_threads: int = None,
                  lines: bool = False):
         super().__init__(config)
         self._bind_address = bind_address
@@ -80,6 +84,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._sleep_time = sleep_time
         self._queue_timeout = queue_timeout
         self._max_queue_size = max_queue_size or config.edge_buffer_size
+        self._num_server_threads = num_server_threads or os.cpu_count()
         self._lines = lines
 
         # This is only used when C++ mode is disabled

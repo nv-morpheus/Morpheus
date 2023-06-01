@@ -35,6 +35,7 @@
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/json.hpp>
 #include <pybind11/attr.h>
+#include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
@@ -124,7 +125,8 @@ PYBIND11_MODULE(common, _module)
              py::arg("bind_address") = "127.0.0.1",
              py::arg("port")         = 8080,
              py::arg("endpoint")     = "/message",
-             py::arg("method")       = "POST")
+             py::arg("method")       = "POST",
+             py::arg("num_threads")  = 1)
         .def("start", &RestServerInterfaceProxy::start)
         .def("stop", &RestServerInterfaceProxy::stop)
         .def("is_running", &RestServerInterfaceProxy::is_running);
