@@ -42,6 +42,7 @@
 #include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
+#include <memory>
 #include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <tuple>
@@ -241,17 +242,9 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<M
     return std::make_shared<MultiMessage>(std::move(meta), mess_offset, mess_count);
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::from_message(pybind11::object message,
-                                                                       pybind11::object meta,
-                                                                       int mess_offset,
-                                                                       int mess_count,
-                                                                       const pybind11::kwargs& kwargs)
+void MultiMessageInterfaceProxy::from_message_kwargs(
+    pybind11::object message, pybind11::object meta, int mess_offset, int mess_count, const pybind11::kwargs& kwargs)
 {
-    if (message.is_none())
-    {
-        throw std::invalid_argument("message must not be none");
-    }
-
     if (mess_offset == -1)
     {
         if (meta.is_none())
@@ -281,7 +274,32 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::from_message(pybind11:
         meta = message.attr("meta");
     }
 
-    return MultiMessageInterfaceProxy::init(meta.cast<std::shared_ptr<MessageMeta>>(), mess_offset, mess_count);
+    kwargs["meta"]        = meta;
+    kwargs["mess_offset"] = mess_offset;
+    kwargs["mess_count"]  = mess_count;
+}
+
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::from_message(
+    pybind11::class_<MultiMessage, std::shared_ptr<MultiMessage>> cls,
+    pybind11::object message,
+    pybind11::object meta,
+    int mess_offset,
+    int mess_count,
+    const pybind11::kwargs& kwargs)
+{
+    if (message.is_none())
+    {
+        throw std::invalid_argument("message must not be none");
+    }
+
+    MultiMessageInterfaceProxy::from_message_kwargs(message, meta, mess_offset, mess_count, kwargs);
+
+    // segfaults
+    // return cls(**kwargs).cast<std::shared_ptr<MultiMessage>>();
+
+    auto _cls = pybind11::module_::import("morpheus").attr("_lib").attr("messages").attr("MultiMessage");
+
+    return _cls(**kwargs).cast<std::shared_ptr<MultiMessage>>();
 }
 
 std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage& self)

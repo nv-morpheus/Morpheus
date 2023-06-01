@@ -141,6 +141,20 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 struct MultiTensorMessageInterfaceProxy
 {
     /**
+     * TODO(Documentation)
+     */
+    static std::shared_ptr<MultiTensorMessage> from_message(
+        pybind11::class_<MultiTensorMessage, std::shared_ptr<MultiTensorMessage>> cls,
+        pybind11::object message,
+        pybind11::object meta,
+        int mess_offset,
+        int mess_count,
+        pybind11::object memory,
+        int offset,
+        int count,
+        const pybind11::kwargs& kwargs);
+
+    /**
      * @brief Create and initialize a MultiTensorMessage, and return a shared pointer to the result
      *
      * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and

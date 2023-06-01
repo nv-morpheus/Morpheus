@@ -330,10 +330,16 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
  */
 struct MultiMessageInterfaceProxy
 {
+    static void from_message_kwargs(pybind11::object message,
+                                    pybind11::object meta,
+                                    int mess_offset,
+                                    int mess_count,
+                                    const pybind11::kwargs& kwargs);
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> from_message(pybind11::object message,
+    static std::shared_ptr<MultiMessage> from_message(pybind11::class_<MultiMessage, std::shared_ptr<MultiMessage>> cls,
+                                                      pybind11::object message,
                                                       pybind11::object meta,
                                                       int mess_offset,
                                                       int mess_count,

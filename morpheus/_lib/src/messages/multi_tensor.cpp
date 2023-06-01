@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
@@ -236,6 +237,68 @@ std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(const std::v
     auto offset_ranges = apply_offset_to_ranges(offset, ranges);
     auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
     return std::make_shared<TensorMemory>(num_selected_rows, std::move(tensors));
+}
+
+std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::from_message(
+    pybind11::class_<MultiTensorMessage, std::shared_ptr<MultiTensorMessage>> cls,
+    pybind11::object message,
+    pybind11::object meta,
+    int mess_offset,
+    int mess_count,
+    pybind11::object memory,
+    int offset,
+    int count,
+    const pybind11::kwargs& kwargs)
+{
+    if (message.is_none())
+    {
+        throw std::invalid_argument("message must not be none");
+    }
+
+    if (offset == -1)
+    {
+        if (memory.is_none())
+        {
+            offset = message.attr("offset").cast<int32_t>();
+        }
+        else
+        {
+            offset = 0;
+        }
+    }
+
+    if (count == -1)
+    {
+        if (memory.is_none())
+        {
+            count = message.attr("count").cast<int32_t>();
+        }
+        else
+        {
+            count = memory.attr("count").cast<int32_t>() - offset;
+        }
+    }
+
+    if (memory.is_none())
+    {
+        memory = message.attr("memory");
+    }
+
+    MultiMessageInterfaceProxy::from_message_kwargs(message, meta, mess_offset, mess_count, kwargs);
+
+    kwargs["meta"] = meta;
+    kwargs["mess_offset"] = mess_offset;
+    kwargs["mess_count"] = mess_count;
+    kwargs["memory"] = memory;
+    kwargs["offset"] = offset;
+    kwargs["count"] = count;
+
+    // probably segfaults
+    // cls(**kwargs).cast<std::shared_ptr<MultiTensorMessage>>();
+
+    auto _cls = pybind11::module_::import("morpheus").attr("_lib").attr("messages").attr("MultiTensorMessage");
+
+    return _cls(**kwargs).cast<std::shared_ptr<MultiTensorMessage>>();
 }
 
 /****** MultiTensorMessageInterfaceProxy *************************/
