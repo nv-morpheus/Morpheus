@@ -39,19 +39,20 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  long queue_timeout,
                                  std::size_t max_queue_size,
                                  unsigned short num_server_threads,
+                                 std::size_t max_payload_size,
+                                 std::chrono::seconds request_timeout,
                                  bool lines) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
   m_queue_timeout{queue_timeout},
-  m_queue{max_queue_size},
-  m_lines{lines}
+  m_queue{max_queue_size}
 {
-    payload_parse_fn_t parser = [this](const std::string& payload) {
+    payload_parse_fn_t parser = [this, lines](const std::string& payload) {
         std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
         try
         {
             cudf::io::source_info source{payload.c_str(), payload.size()};
-            auto options = cudf::io::json_reader_options::builder(source).lines(m_lines);
+            auto options = cudf::io::json_reader_options::builder(source).lines(lines);
             table        = std::make_unique<cudf::io::table_with_metadata>(cudf::io::read_json(options.build()));
         } catch (const std::exception& e)
         {
@@ -97,8 +98,14 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             return std::make_pair(500, error_msg);
         }
     };
-    m_server = std::make_unique<RestServer>(
-        std::move(parser), std::move(bind_address), port, std::move(endpoint), std::move(method), num_server_threads);
+    m_server = std::make_unique<RestServer>(std::move(parser),
+                                            std::move(bind_address),
+                                            port,
+                                            std::move(endpoint),
+                                            std::move(method),
+                                            num_server_threads,
+                                            max_payload_size,
+                                            request_timeout);
 }
 
 RestSourceStage::subscriber_fn_t RestSourceStage::build()
@@ -190,6 +197,8 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     long queue_timeout,
     std::size_t max_queue_size,
     unsigned short num_server_threads,
+    std::size_t max_payload_size,
+    int64_t request_timeout,
     bool lines)
 {
     return builder.construct_object<RestSourceStage>(
@@ -203,6 +212,8 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
         queue_timeout,
         max_queue_size,
         num_server_threads,
+        max_payload_size,
+        std::chrono::seconds(request_timeout),
         lines);
 }
 }  // namespace morpheus

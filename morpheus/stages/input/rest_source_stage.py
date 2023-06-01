@@ -60,6 +60,10 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         used.
     num_server_threads : int, default None
         Number of threads to use for the REST server. If `None` then `os.cpu_count()` will be used.
+    max_payload_size : int, default 10
+        The maximum size in megabytes of the payload that the server will accept in a single request.
+    request_timeout_secs : int, default 30
+        The maximum amount of time in seconds for any given request.
     lines : bool, default False
         If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
         expect each request to be a JSON object per line.
@@ -75,6 +79,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  queue_timeout: int = 5,
                  max_queue_size: int = None,
                  num_server_threads: int = None,
+                 max_payload_size: int = 10,
+                 request_timeout_secs: int = 30,
                  lines: bool = False):
         super().__init__(config)
         self._bind_address = bind_address
@@ -85,6 +91,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._queue_timeout = queue_timeout
         self._max_queue_size = max_queue_size or config.edge_buffer_size
         self._num_server_threads = num_server_threads or os.cpu_count()
+        self._max_payload_size_bytes = max_payload_size * 1024 * 1024
+        self._request_timeout_secs = request_timeout_secs
         self._lines = lines
 
         # This is only used when C++ mode is disabled
@@ -99,7 +107,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _parse_payload(self, payload: str) -> typing.Tuple[int, str]:
         try:
-            df = cudf.read_json(payload, lines=self._lines)
+            # engine='cudf' is needed when lines=False to avoid using pandas
+            df = cudf.read_json(payload, lines=self._lines, engine='cudf')
         except Exception as e:
             err_msg = "Error occurred converting REST payload to Dataframe"
             logger.error(f"{err_msg}: {e}")
@@ -131,7 +140,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                  port=self._port,
                                  endpoint=self._endpoint,
                                  method=self._method,
-                                 num_threads=self._num_server_threads)
+                                 num_threads=self._num_server_threads,
+                                 max_payload_size=self._max_payload_size_bytes,
+                                 request_timeout=self._request_timeout_secs)
         rest_server.start()
 
         processing = True
@@ -173,6 +184,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            queue_timeout=self._queue_timeout,
                                            max_queue_size=self._max_queue_size,
                                            num_server_threads=self._num_server_threads,
+                                           max_payload_size=self._max_payload_size_bytes,
+                                           request_timeout=self._request_timeout_secs,
                                            lines=self._lines)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())

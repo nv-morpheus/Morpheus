@@ -28,6 +28,7 @@
 #include <pybind11/pybind11.h>
 
 #include <atomic>  // for atomic
+#include <cstddef>
 
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp
@@ -49,11 +50,13 @@ class Session : public std::enable_shared_from_this<Session>
             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
             const std::string& url_endpoint,
             http::verb method,
-            std::chrono::seconds timeout = 30s /*TODO: expose timeout from RestServer & stage*/) :
+            std::size_t max_payload_size,
+            std::chrono::seconds timeout) :
       m_stream{std::move(socket)},
       m_payload_parse_fn{std::move(payload_parse_fn)},
       m_url_endpoint{url_endpoint},
       m_method{method},
+      m_max_payload_size{max_payload_size},
       m_timeout{timeout}
     {}
 
@@ -67,12 +70,12 @@ class Session : public std::enable_shared_from_this<Session>
   private:
     void do_read()
     {
-        m_request = {};
+        m_parser = std::make_unique<http::request_parser<http::string_body>>();
+        m_parser->body_limit(m_max_payload_size);
         m_stream.expires_after(m_timeout);
 
-        // TODO: replace with parser overload and make max payload size configurable
         http::async_read(
-            m_stream, m_buffer, m_request, beast::bind_front_handler(&Session::on_read, shared_from_this()));
+            m_stream, m_buffer, *m_parser, beast::bind_front_handler(&Session::on_read, shared_from_this()));
     }
 
     void on_read(beast::error_code ec, std::size_t bytes_transferred)
@@ -88,8 +91,8 @@ class Session : public std::enable_shared_from_this<Session>
             return;
         }
 
-        // move the request, this resets it for the next incoming request
-        handle_request(std::move(m_request));
+        // Release ownership of the parsed message and move it into the handle_request method
+        handle_request(m_parser->release());
     }
 
     void handle_request(http::request<http::string_body>&& request)
@@ -141,7 +144,9 @@ class Session : public std::enable_shared_from_this<Session>
             return do_close();
         }
 
+        m_parser.reset(nullptr);
         m_response.reset(nullptr);
+
         do_read();
     }
 
@@ -153,12 +158,15 @@ class Session : public std::enable_shared_from_this<Session>
 
     beast::tcp_stream m_stream;
     beast::flat_buffer m_buffer;
-    http::request<http::string_body> m_request;
-    std::unique_ptr<http::response<http::string_body>> m_response;
     std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
     const std::string& m_url_endpoint;
     http::verb m_method;
+    std::size_t m_max_payload_size;
     std::chrono::seconds m_timeout;
+
+    // The response, and parser are all reset for each incoming request
+    std::unique_ptr<http::request_parser<http::string_body>> m_parser;
+    std::unique_ptr<http::response<http::string_body>> m_response;
 };
 
 class Listener : public std::enable_shared_from_this<Listener>
@@ -169,13 +177,17 @@ class Listener : public std::enable_shared_from_this<Listener>
              const std::string& bind_address,
              unsigned short port,
              const std::string& endpoint,
-             http::verb method) :
+             http::verb method,
+             std::size_t max_payload_size,
+             std::chrono::seconds request_timeout) :
       m_io_context{std::move(io_context)},
       m_tcp_endpoint{net::ip::make_address(bind_address), port},
       m_acceptor{net::make_strand(*m_io_context)},
       m_payload_parse_fn{std::move(payload_parse_fn)},
       m_url_endpoint{endpoint},
-      m_method{method}
+      m_method{method},
+      m_max_payload_size{max_payload_size},
+      m_request_timeout{request_timeout}
     {
         m_acceptor.open(m_tcp_endpoint.protocol());
         m_acceptor.set_option(net::socket_base::reuse_address(true));
@@ -206,7 +218,9 @@ class Listener : public std::enable_shared_from_this<Listener>
         }
         else
         {
-            std::make_shared<Session>(std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method)->run();
+            std::make_shared<Session>(
+                std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method, m_max_payload_size, m_request_timeout)
+                ->run();
         }
 
         do_accept();
@@ -219,6 +233,8 @@ class Listener : public std::enable_shared_from_this<Listener>
     std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
     const std::string& m_url_endpoint;
     http::verb m_method;
+    std::size_t m_max_payload_size;
+    std::chrono::seconds m_request_timeout;
 };
 
 }  // namespace
@@ -230,13 +246,17 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
                        unsigned short port,
                        std::string endpoint,
                        std::string method,
-                       unsigned short num_threads) :
+                       unsigned short num_threads,
+                       std::size_t max_payload_size,
+                       std::chrono::seconds request_timeout) :
   m_payload_parse_fn(std::make_shared<payload_parse_fn_t>(std::move(payload_parse_fn))),
   m_bind_address(std::move(bind_address)),
   m_port(port),
   m_endpoint(std::move(endpoint)),
   m_method(http::string_to_verb(method)),
   m_num_threads(num_threads),
+  m_request_timeout(request_timeout),
+  m_max_payload_size(max_payload_size),
   m_io_context{nullptr}
 {
     if (m_method != http::verb::post && m_method != http::verb::put)
@@ -261,7 +281,9 @@ void RestServer::start_listener()
     m_io_context = std::make_shared<net::io_context>(m_num_threads);
     auto ioc     = m_io_context;  // ensure each thread gets its own copy including this one
 
-    std::make_shared<Listener>(ioc, m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method)->run();
+    std::make_shared<Listener>(
+        ioc, m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method, m_max_payload_size, m_request_timeout)
+        ->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
     {
@@ -325,7 +347,9 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
                                                            unsigned short port,
                                                            std::string endpoint,
                                                            std::string method,
-                                                           unsigned short num_threads)
+                                                           unsigned short num_threads,
+                                                           std::size_t max_payload_size,
+                                                           int64_t request_timeout)
 {
     payload_parse_fn_t payload_parse_fn = [py_parse_fn = std::move(py_parse_fn)](const std::string& payload) {
         pybind11::gil_scoped_acquire gil;
@@ -340,7 +364,9 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
                                         port,
                                         std::move(endpoint),
                                         std::move(method),
-                                        num_threads);
+                                        num_threads,
+                                        max_payload_size,
+                                        std::chrono::seconds(request_timeout));
 }
 
 void RestServerInterfaceProxy::start(RestServer& self)

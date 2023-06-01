@@ -20,6 +20,7 @@
 #include <boost/asio.hpp>      // for io_context
 #include <pybind11/pytypes.h>  // for pybind11::function
 
+#include <cstddef>
 #include <functional>  // for function
 #include <memory>      // for shared_ptr & unique_ptr
 #include <string>      // for string
@@ -58,13 +59,15 @@ using parse_status_t = std::pair<unsigned /*http status code*/, std::string /* h
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
+constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
+
 /**
- * @brief A simple REST server that listens for POST requests on a given endpoint.
+ * @brief A simple REST server that listens for POST or PUT requests on a given endpoint.
  *
- * @details The server is started in a separate thread and will call the provided payload_parse_fn_t
- *          function when a POST request is received. The payload_parse_fn_t function is expected to
+ * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
+ *          function when an incoming request is received. The payload_parse_fn_t function is expected to
  *          return a pair of unsigned and string, where the unsigned is the HTTP status code and the
- *          string is the HTTP status message.
+ *          string is the HTTP status message (ex: `std::make_pair(200, "OK"s)`).
  *
  * @param payload_parse_fn The function that will be called when a POST request is received.
  * @param bind_address The address to bind the server to.
@@ -72,16 +75,20 @@ using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* po
  * @param endpoint The endpoint to listen for POST requests on.
  * @param method The HTTP method to listen for.
  * @param num_threads The number of threads to use for the server.
+ * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
+ * @param request_timeout The timeout for a request.
  */
 class RestServer
 {
   public:
     RestServer(payload_parse_fn_t payload_parse_fn,
-               std::string bind_address   = "127.0.0.1",
-               unsigned short port        = 8080,
-               std::string endpoint       = "/message",
-               std::string method         = "POST",
-               unsigned short num_threads = 1);
+               std::string bind_address             = "127.0.0.1",
+               unsigned short port                  = 8080,
+               std::string endpoint                 = "/message",
+               std::string method                   = "POST",
+               unsigned short num_threads           = 1,
+               std::size_t max_payload_size         = DefaultMaxPayloadSize,
+               std::chrono::seconds request_timeout = std::chrono::seconds(30));
     ~RestServer();
     void start();
     void stop();
@@ -95,6 +102,8 @@ class RestServer
     std::string m_endpoint;
     boost::beast::http::verb m_method;
     unsigned short m_num_threads;
+    std::chrono::seconds m_request_timeout;
+    std::size_t m_max_payload_size;
     std::vector<std::thread> m_listener_threads;
     std::shared_ptr<boost::asio::io_context> m_io_context;
     std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
@@ -111,7 +120,9 @@ struct RestServerInterfaceProxy
                                             unsigned short port,
                                             std::string endpoint,
                                             std::string method,
-                                            unsigned short num_threads);
+                                            unsigned short num_threads,
+                                            std::size_t max_payload_size,
+                                            int64_t request_timeout);
     static void start(RestServer& self);
     static void stop(RestServer& self);
     static bool is_running(const RestServer& self);

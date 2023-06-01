@@ -122,11 +122,13 @@ PYBIND11_MODULE(common, _module)
     py::class_<RestServer, std::shared_ptr<RestServer>>(_module, "RestServer")
         .def(py::init<>(&RestServerInterfaceProxy::init),
              py::arg("parse_fn"),
-             py::arg("bind_address") = "127.0.0.1",
-             py::arg("port")         = 8080,
-             py::arg("endpoint")     = "/message",
-             py::arg("method")       = "POST",
-             py::arg("num_threads")  = 1)
+             py::arg("bind_address")     = "127.0.0.1",
+             py::arg("port")             = 8080,
+             py::arg("endpoint")         = "/message",
+             py::arg("method")           = "POST",
+             py::arg("num_threads")      = 1,
+             py::arg("max_payload_size") = DefaultMaxPayloadSize,
+             py::arg("request_timeout")  = 30)
         .def("start", &RestServerInterfaceProxy::start)
         .def("stop", &RestServerInterfaceProxy::stop)
         .def("is_running", &RestServerInterfaceProxy::is_running);
