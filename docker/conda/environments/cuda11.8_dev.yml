@@ -91,7 +91,6 @@ dependencies:
     - sysroot_linux-64=2.17
     - tqdm=4
     - typing_utils=0.1
-    - urllib3=1.26
     - watchdog=2.1
     - yapf=0.32.0
     ####### Morpheus Pip Dependencies (keep sorted!) #######
