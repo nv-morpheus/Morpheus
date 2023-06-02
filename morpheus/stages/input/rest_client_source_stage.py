@@ -32,10 +32,10 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {"Content-Type": "application/json"}
-DEFAULT_RETRY_STATUS = (429, 500, 502, 503, 504)
+DEFAULT_RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
 
 
-@register_stage("from-rest-client")
+@register_stage("from-rest-client", ignore_args=["query_params", "headers", "**request_kwargs"])
 class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
@@ -62,19 +62,19 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         If the server sets a `Retry-After` header, then that value will take precedence over `error_sleep_time`.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
-    accept_status_codes: tuple, default (200, )
-        Tuple of status codes to accept. If the response status code is not in this tuple, then the request will be
+    accept_status_codes : typing.List[int], optional,  multiple = True
+        List of status codes to accept. If the response status code is not in this tuple, then the request will be
         considered an error
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
-        `retry_status` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
+        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
         a `ValueError`.
-    retry_status: typing.List[int], optional, default=None
-        List of status codes to retry if the request fails. If `None`, then the `DEFAULT_RETRY_STATUS` list of status
-        codes is used. Raises a `ValueError` if there is any ovwerlap between `accept_status_codes` and `retry_status`.
-        Setting this to an empty list disables this feature, and retries will only be performed for network errors.
-        If the client receives a status code not in `accept_status_codes` or `retry_status`, then the error will be
-        considered to be fatal.
+    retry_status_codes: typing.List[int], optional, multiple = True
+        List of status codes to retry if the request fails. If `None`, then the `DEFAULT_RETRY_STATUS_CODES` list
+        of status codes is used. Raises a `ValueError` if there is any ovwerlap between `accept_status_codes` and
+        `retry_status_codes`. Setting this to an empty list disables this feature, and retries will only be performed
+        for network errors. If the client receives a status code not in `accept_status_codes` or `retry_status_codes`,
+        then the error will be considered to be fatal.
     lines : bool, default False
         If False, the response payloads are expected to be a JSON array of objects. If True, the payloads are expected
         to contain a JSON objects separated by end-of-line characters.
@@ -91,9 +91,9 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  sleep_time: float = 0.1,
                  error_sleep_time: float = 0.1,
                  request_timeout_secs: int = 30,
-                 accept_status_codes: typing.Tuple[int] = (200, ),
+                 accept_status_codes: typing.List[int] = (200, ),
                  max_retries: int = 10,
-                 retry_status: typing.Tuple[int] = None,
+                 retry_status_codes: typing.List[int] = DEFAULT_RETRY_STATUS_CODES,
                  lines: bool = False,
                  **request_kwargs):
         super().__init__(config)
@@ -121,20 +121,16 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             raise ValueError("error_sleep_time must be >= 0")
 
         self._request_timeout_secs = request_timeout_secs
-        self._accept_status_codes = accept_status_codes
-
         if max_retries >= 0:
             self._max_retries = max_retries
         else:
             raise ValueError("max_retries must be >= 0")
 
-        if retry_status is None:
-            retry_status = DEFAULT_RETRY_STATUS
+        if len(set(accept_status_codes) & set(retry_status_codes)) > 0:
+            raise ValueError("accept_status_codes and retry_status_codes must not overlap")
 
-        if len(set(accept_status_codes) & set(retry_status)) > 0:
-            raise ValueError("accept_status_codes and retry_status must not overlap")
-
-        self._retry_status = retry_status
+        self._accept_status_codes = tuple(accept_status_codes)
+        self._retry_status_codes = tuple(retry_status_codes)
 
         self._lines = lines
         self._requst_kwargs = request_kwargs
@@ -155,7 +151,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                               respect_retry_after_header=True,
                               raise_on_redirect=True,
                               raise_on_status=True,
-                              status_forcelist=self._retry_status)
+                              status_forcelist=self._retry_status_codes)
                 retry_adapter = requests.adapters.HTTPAdapter(max_retries=retry)
                 http_session.mount(self._url, retry_adapter)
 
