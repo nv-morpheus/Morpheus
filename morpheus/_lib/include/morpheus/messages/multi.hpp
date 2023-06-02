@@ -232,6 +232,15 @@ class DerivedMultiMessage<DerivedT>
     }
 };
 
+class MultiMessageBase{
+    /**
+     * @brief Default copy constructor
+     */
+    MultiMessageBase(const MultiMessageBase& other) = default;
+
+    MultiMessageBase() = default;
+};
+
 /**
  * @brief  This class holds data for multiple messages (rows in a DataFrame) at a time. To avoid copying data for
  slicing operations, it holds a reference to a batched metadata object and stores the offset and count into that batch.
@@ -338,7 +347,7 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> from_message(pybind11::class_<MultiMessage, std::shared_ptr<MultiMessage>> cls,
+    static pybind11::object from_message(pybind11::type cls,
                                                       pybind11::object message,
                                                       pybind11::object meta,
                                                       int mess_offset,

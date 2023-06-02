@@ -227,8 +227,11 @@ PYBIND11_MODULE(messages, _module)
         .def("__setattr__", &MutableTableCtxMgr::throw_usage_error)
         .def("__setitem__", &MutableTableCtxMgr::throw_usage_error);
 
+    py::options push_options;
+
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(_module, "MessageMeta")
-        .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
+        .def(py::init<>(&MessageMetaInterfaceProxy::init_python),
+             py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
@@ -237,27 +240,32 @@ PYBIND11_MODULE(messages, _module)
         .def("ensure_sliceable_index", &MessageMetaInterfaceProxy::ensure_sliceable_index)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
-    auto multi_message_cls = py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage");
-    multi_message_cls
-        .def_static(
-            "from_message",
-            [&](pybind11::object message,
-                pybind11::object meta,
-                int mess_offset,
-                int mess_count,
-                const pybind11::kwargs& kwargs) {
-                return MultiMessageInterfaceProxy::from_message(
-                    multi_message_cls, message, meta, mess_offset, mess_count, kwargs);
-            },
-            py::arg("message"),
-            py::arg("meta")        = pybind11::none(),
-            py::arg("mess_offset") = -1,
-            py::arg("mess_count")  = -1)
+    push_options.disable_function_signatures();
+    push_options.enable_user_defined_docstrings();
+
+    py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
+        .def_property_readonly_static("from_message",
+                                      [](pybind11::object self) {
+                                          return py::cpp_function(
+                                              [cls = pybind11::type(self)](pybind11::object message,
+                                                                           pybind11::object meta,
+                                                                           int mess_offset,
+                                                                           int mess_count,
+                                                                           const pybind11::kwargs& kwargs) {
+                                                  return MultiMessageInterfaceProxy::from_message(
+                                                      cls, message, meta, mess_offset, mess_count, kwargs);
+                                              },
+                                              py::arg("message"),
+                                              py::arg("meta")        = pybind11::none(),
+                                              py::arg("mess_offset") = -1,
+                                              py::arg("mess_count")  = -1);
+                                      })
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
              py::kw_only(),
              py::arg("meta"),
              py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1)
+             py::arg("mess_count")  = -1,
+             "__init__(self, meta, mess_offset, mess_count)\n--\n\n")
         .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
@@ -283,29 +291,30 @@ PYBIND11_MODULE(messages, _module)
              py::return_value_policy::move)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
-    auto multi_tensor_message_cls = py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(
-        _module, "MultiTensorMessage");
-    multi_tensor_message_cls
-        // .def_static(
-        //     "from_message",
-        //     [&](pybind11::object message,
-        //         pybind11::object meta,
-        //         int mess_offset,
-        //         int mess_count,
-        //         pybind11::object memory,
-        //         int offset,
-        //         int count,
-        //         const pybind11::kwargs& kwargs) {
-        //         return MultiTensorMessageInterfaceProxy::from_message(
-        //             multi_tensor_message_cls, message, meta, mess_offset, mess_count, memory, offset, count, kwargs);
-        //     },
-        //     py::arg("message"),
-        //     py::arg("meta")        = pybind11::none(),
-        //     py::arg("mess_offset") = -1,
-        //     py::arg("mess_count")  = -1,
-        //     py::arg("memory") = pybind11::none(),
-        //     py::arg("offset") = -1,
-        //     py::arg("count")  = -1)
+    py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(_module, "MultiTensorMessage")
+        .def_property_readonly_static(
+            "from_message",
+            [](pybind11::object self) {
+                return py::cpp_function(
+                    [cls = pybind11::type(self)](pybind11::object message,
+                                                 pybind11::object meta,
+                                                 int mess_offset,
+                                                 int mess_count,
+                                                 pybind11::object memory,
+                                                 int offset,
+                                                 int count,
+                                                 const pybind11::kwargs& kwargs) {
+                        return MultiTensorMessageInterfaceProxy::from_message(
+                            cls, message, meta, mess_offset, mess_count, memory, offset, count, kwargs);
+                    },
+                    py::arg("message"),
+                    py::arg("meta")        = pybind11::none(),
+                    py::arg("mess_offset") = -1,
+                    py::arg("mess_count")  = -1,
+                    py::arg("memory")      = pybind11::none(),
+                    py::arg("offset")      = -1,
+                    py::arg("count")       = -1);
+            })
         .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
              py::kw_only(),
              py::arg("meta"),

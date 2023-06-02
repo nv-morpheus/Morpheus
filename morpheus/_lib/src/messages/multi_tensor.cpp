@@ -25,9 +25,11 @@
 
 #include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
-#include <pybind11/pytypes.h>    // for key_error
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>  // for key_error
 
 #include <cstdint>
+#include <memory>
 #include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <utility>    // for move
@@ -239,16 +241,15 @@ std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(const std::v
     return std::make_shared<TensorMemory>(num_selected_rows, std::move(tensors));
 }
 
-std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::from_message(
-    pybind11::class_<MultiTensorMessage, std::shared_ptr<MultiTensorMessage>> cls,
-    pybind11::object message,
-    pybind11::object meta,
-    int mess_offset,
-    int mess_count,
-    pybind11::object memory,
-    int offset,
-    int count,
-    const pybind11::kwargs& kwargs)
+pybind11::object MultiTensorMessageInterfaceProxy::from_message(pybind11::type cls,
+                                                                                   pybind11::object message,
+                                                                                   pybind11::object meta,
+                                                                                   int mess_offset,
+                                                                                   int mess_count,
+                                                                                   pybind11::object memory,
+                                                                                   int offset,
+                                                                                   int count,
+                                                                                   const pybind11::kwargs& kwargs)
 {
     if (message.is_none())
     {
@@ -284,21 +285,11 @@ std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::from_messa
         memory = message.attr("memory");
     }
 
-    MultiMessageInterfaceProxy::from_message_kwargs(message, meta, mess_offset, mess_count, kwargs);
-
-    kwargs["meta"] = meta;
-    kwargs["mess_offset"] = mess_offset;
-    kwargs["mess_count"] = mess_count;
     kwargs["memory"] = memory;
     kwargs["offset"] = offset;
-    kwargs["count"] = count;
+    kwargs["count"]  = count;
 
-    // probably segfaults
-    // cls(**kwargs).cast<std::shared_ptr<MultiTensorMessage>>();
-
-    auto _cls = pybind11::module_::import("morpheus").attr("_lib").attr("messages").attr("MultiTensorMessage");
-
-    return _cls(**kwargs).cast<std::shared_ptr<MultiTensorMessage>>();
+    return MultiMessageInterfaceProxy::from_message(cls, message, meta, mess_offset, mess_count, kwargs);
 }
 
 /****** MultiTensorMessageInterfaceProxy *************************/

@@ -578,24 +578,29 @@ def test_from_message(filter_probs_df: cudf.DataFrame):
         MultiTensorMessage.from_message(multi)
 
     # Finally, test a class with extra arguments
-    multi4 = from_message(MultiAEMessage, multi, model=None, train_scores_mean=0.0, train_scores_std=1.0)
+    multi4 = MultiAEMessage.from_message(multi, model=None, train_scores_mean=0.0, train_scores_std=1.0)
+
+    assert isinstance(multi4, MultiAEMessage)
     assert multi4.meta is meta
     assert multi4.mess_offset == multi.mess_offset
     assert multi4.mess_count == multi.mess_count
+    assert multi4.model == None
 
-    multi5 = from_message(MultiAEMessage, multi4)
+    multi5 = MultiAEMessage.from_message(multi4)
+    assert isinstance(multi5, MultiAEMessage)
     assert multi5.model is multi4.model
     assert multi5.train_scores_mean == multi4.train_scores_mean
     assert multi5.train_scores_std == multi4.train_scores_std
 
-    multi5 = from_message(MultiAEMessage, multi4, train_scores_mean=7.0)
-    assert multi5.model is multi4.model
-    assert multi5.train_scores_mean == 7.0
-    assert multi5.train_scores_std == multi4.train_scores_std
+    multi6 = MultiAEMessage.from_message(multi4, train_scores_mean=7.0)
+    assert isinstance(multi6, MultiAEMessage)
+    assert multi6.model is multi4.model
+    assert multi6.train_scores_mean == 7.0
+    assert multi6.train_scores_std == multi4.train_scores_std
 
     # Test missing other options
     with pytest.raises(AttributeError):
-        from_message(MultiAEMessage, multi)
+        MultiAEMessage.from_message(multi)
 
 
 def test_tensor_constructor(filter_probs_df: cudf.DataFrame):

@@ -143,8 +143,8 @@ struct MultiTensorMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiTensorMessage> from_message(
-        pybind11::class_<MultiTensorMessage, std::shared_ptr<MultiTensorMessage>> cls,
+    static pybind11::object from_message(
+        pybind11::type cls,
         pybind11::object message,
         pybind11::object meta,
         int mess_offset,

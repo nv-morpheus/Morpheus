@@ -45,6 +45,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>  // for runtime_error
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -242,9 +243,18 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<M
     return std::make_shared<MultiMessage>(std::move(meta), mess_offset, mess_count);
 }
 
-void MultiMessageInterfaceProxy::from_message_kwargs(
-    pybind11::object message, pybind11::object meta, int mess_offset, int mess_count, const pybind11::kwargs& kwargs)
+pybind11::object MultiMessageInterfaceProxy::from_message(pybind11::type cls,
+                                                          pybind11::object message,
+                                                          pybind11::object meta,
+                                                          int mess_offset,
+                                                          int mess_count,
+                                                          const pybind11::kwargs& kwargs)
 {
+    if (message.is_none())
+    {
+        throw std::invalid_argument("message must not be none");
+    }
+
     if (mess_offset == -1)
     {
         if (meta.is_none())
@@ -277,29 +287,43 @@ void MultiMessageInterfaceProxy::from_message_kwargs(
     kwargs["meta"]        = meta;
     kwargs["mess_offset"] = mess_offset;
     kwargs["mess_count"]  = mess_count;
-}
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::from_message(
-    pybind11::class_<MultiMessage, std::shared_ptr<MultiMessage>> cls,
-    pybind11::object message,
-    pybind11::object meta,
-    int mess_offset,
-    int mess_count,
-    const pybind11::kwargs& kwargs)
-{
-    if (message.is_none())
+    auto class_name = cls.attr("__name__").cast<std::string>();
+    auto inspect = pybind11::module_::import("inspect");
+    auto signature = inspect.attr("signature")(cls.attr("__init__"));
+
+    for (auto param : signature.attr("parameters").attr("values")())
     {
-        throw std::invalid_argument("message must not be none");
+        auto name = param.attr("name");
+
+        if (name.cast<std::string>() == "self")
+        {
+            continue;
+        }
+
+        if (kwargs.contains(name))
+        {
+            continue;
+        }
+
+        if (not pybind11::hasattr(message, name))
+        {
+            if (param.attr("default").equal(inspect.attr("Parameter").attr("empty")))
+            {
+                throw pybind11::attribute_error("Cannot create message of type " + class_name + ", from " +
+                                                message.attr("__class__").attr("__name__").cast<std::string>() +
+                                                ". Missing property '" + name.cast<std::string>() + "'");
+            }
+
+            continue;
+        }
+
+        kwargs[name] = getattr(message, name);
     }
 
-    MultiMessageInterfaceProxy::from_message_kwargs(message, meta, mess_offset, mess_count, kwargs);
+    auto new_message = cls(**kwargs);
 
-    // segfaults
-    // return cls(**kwargs).cast<std::shared_ptr<MultiMessage>>();
-
-    auto _cls = pybind11::module_::import("morpheus").attr("_lib").attr("messages").attr("MultiMessage");
-
-    return _cls(**kwargs).cast<std::shared_ptr<MultiMessage>>();
+    return new_message;
 }
 
 std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage& self)
