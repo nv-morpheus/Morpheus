@@ -132,43 +132,6 @@ class MultiTensorMessage(_messages.MultiTensorMessage):
                                    f"[{last_element}], must not extend beyond last message, "
                                    f"[{self.mess_offset + self.mess_count - 1}]")
 
-    def _calc_message_slice_bounds(self, start: int, stop: int):
-
-        mess_start = start
-        mess_stop = stop
-
-        if (self.count != self.mess_count):
-
-            if (not self.memory.has_tensor(self.id_tensor_name)):
-                raise RuntimeError(
-                    f"The tensor memory object is missing the required ID tensor '{self.id_tensor_name}' "
-                    f"this tensor is required to make slices of MultiTensorMessages")
-
-            id_tensor = self.get_tensor(self.id_tensor_name)
-
-            # Now determine the new mess_start and mess_stop
-            mess_start = id_tensor[start, 0].item() - self.mess_offset
-            mess_stop = id_tensor[stop - 1, 0].item() + 1 - self.mess_offset
-
-        # Return the base calculation now
-        return super()._calc_message_slice_bounds(start=mess_start, stop=mess_stop)
-
-    def _calc_memory_slice_bounds(self, start: int, stop: int):
-
-        # Start must be between [0, mess_count)
-        if (start < 0 or start >= self.count):
-            raise IndexError("Invalid memory `start` argument")
-
-        # Stop must be between (start, mess_count]
-        if (stop <= start or stop > self.count):
-            raise IndexError("Invalid memory `stop` argument")
-
-        # Calculate the new offset and count
-        offset = self.offset + start
-        count = stop - start
-
-        return offset, count
-
     def _get_tensor_prop(self, name: str):
         """
         This method is intended to be used by propery methods in subclasses
@@ -246,38 +209,3 @@ class MultiTensorMessage(_messages.MultiTensorMessage):
                                  memory=mem,
                                  offset=0,
                                  count=sliced_count)
-
-    def get_slice(self, start, stop):
-        """
-        Perform a slice of the current message from `start`:`stop` (excluding `stop`)
-
-        For example to slice from rows 1-3 use `m.get_slice(1, 4)`. The returned `MultiTensorMessage` will contain
-        references to the same underlying Dataframe and tensor tensors, and this calling this method is reletively low
-        cost compared to `MultiTensorMessage.copy_ranges`
-
-        Parameters
-        ----------
-        start : int
-            Starting row of the slice
-
-        stop : int
-            Stop of the slice
-
-        -------
-        `MultiTensorMessage`
-        """
-
-        # Calc the offset and count. This checks the bounds for us
-        mess_offset, mess_count = self._calc_message_slice_bounds(start=start, stop=stop)
-        offset, count = self._calc_memory_slice_bounds(start=start, stop=stop)
-
-        kwargs = {
-            "meta": self.meta,
-            "mess_offset": mess_offset,
-            "mess_count": mess_count,
-            "memory": self.memory,
-            "offset": offset,
-            "count": count,
-        }
-
-        return self.from_message(self, **kwargs)

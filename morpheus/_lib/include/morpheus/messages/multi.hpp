@@ -404,7 +404,7 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, TensorIndex start, TensorIndex stop);
+    static pybind11::object get_slice(MultiMessage& self, TensorIndex start, TensorIndex stop);
 
     static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage& self,
                                                      const std::vector<RangeType>& ranges,

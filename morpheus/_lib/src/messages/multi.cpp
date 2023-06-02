@@ -289,8 +289,8 @@ pybind11::object MultiMessageInterfaceProxy::from_message(pybind11::type cls,
     kwargs["mess_count"]  = mess_count;
 
     auto class_name = cls.attr("__name__").cast<std::string>();
-    auto inspect = pybind11::module_::import("inspect");
-    auto signature = inspect.attr("signature")(cls.attr("__init__"));
+    auto inspect    = pybind11::module_::import("inspect");
+    auto signature  = inspect.attr("signature")(cls.attr("__init__"));
 
     for (auto param : signature.attr("parameters").attr("values")())
     {
@@ -505,9 +505,7 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
     mutable_info.return_obj(std::move(df));
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self,
-                                                                    TensorIndex start,
-                                                                    TensorIndex stop)
+pybind11::object MultiMessageInterfaceProxy::get_slice(MultiMessage& self, TensorIndex start, TensorIndex stop)
 {
     if (start < 0)
     {
@@ -521,9 +519,17 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage
 
     // Need to drop the GIL before calling any methods on the C++ object
     pybind11::gil_scoped_release no_gil;
+    auto message_sliced = self.get_slice(start, stop);
+    pybind11::gil_scoped_acquire gil;
 
-    // Returns shared_ptr
-    return self.get_slice(start, stop);
+    auto message = py::cast(self);
+
+    return MultiMessageInterfaceProxy::from_message(message.attr("__class__"),
+                                                    message,
+                                                    message.attr("meta"),
+                                                    message_sliced->mess_offset,
+                                                    message_sliced->mess_count,
+                                                    {});
 }
 
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(MultiMessage& self,
