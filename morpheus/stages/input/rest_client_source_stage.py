@@ -109,6 +109,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         while (num_errors < self._max_errors):
             has_error = False  # Set true on a raised exception or non-accepted status code
             should_sleep = False  # Set true if the response payload is empty or an error is received
+            retry_after = None  # Set to a number of seconds to sleep if the server sent us a retry hint
             payload = None
             try:
                 response = requests.request(self._method,
@@ -123,6 +124,14 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                 else:
                     logger.error("Received unexpected status code %d: %s", response.status_code, response.text)
                     has_error = True
+
+                    # often set for 429 and 503 responses, for other statuses it simply won't be set
+                    if 'Retry-After' in response.headers:
+                        try:
+                            retry_after = int(response.headers['Retry-After'])
+                        except Exception as e:
+                            logger.error("Error occurred parsing Retry-After header: %s", e)
+                            retry_after = None
 
             except requests.exceptions.RequestException:
                 logger.error("Error occurred requesting data from %s", self._url)
@@ -147,7 +156,10 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                 num_errors += 1
                 if num_errors < self._max_errors:
                     should_sleep = True
-                    sleep_time *= 2
+                    if retry_after is not None:
+                        sleep_time = retry_after
+                    else:
+                        sleep_time = (2**(num_errors - 1)) * self._sleep_time
 
             if should_sleep:
                 logger.debug("Sleeping for %s seconds before retrying", sleep_time)
