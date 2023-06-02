@@ -54,10 +54,12 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     method : str, default "GET"
         HTTP method to use.
     sleep_time : float, default 0.1
-        Amount of time in seconds to sleep if the client receives an empty response or receives an error.
-        In the case of an error, an exponential backoff is used starting at `sleep_time`.
+        Amount of time in seconds to sleep between successive requests. Setting this to 0 disables this feature.
+    error_sleep_time : float, default 0.1
+        Amount of time in seconds to sleep after the client receives an error.
+        The client will perform an exponential backoff starting at `error_sleep_time`.
         Setting this to 0 causes the client to poll the remote server as fast as possible.
-        If the server sets a `Retry-After` header, then that value will take precedence over `sleep_time`.
+        If the server sets a `Retry-After` header, then that value will take precedence over `error_sleep_time`.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
     accept_status_codes: tuple, default (200, )
@@ -87,6 +89,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  headers: dict = None,
                  method: str = "GET",
                  sleep_time: float = 0.1,
+                 error_sleep_time: float = 0.1,
                  request_timeout_secs: int = 30,
                  accept_status_codes: typing.Tuple[int] = (200, ),
                  max_retries: int = 10,
@@ -111,6 +114,11 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             self._sleep_time = sleep_time
         else:
             raise ValueError("sleep_time must be >= 0")
+
+        if error_sleep_time >= 0:
+            self._error_sleep_time = error_sleep_time
+        else:
+            raise ValueError("error_sleep_time must be >= 0")
 
         self._request_timeout_secs = request_timeout_secs
         self._accept_status_codes = accept_status_codes
@@ -143,7 +151,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             if self._max_retries > 0:
                 # https://urllib3.readthedocs.io/en/1.26.15/reference/urllib3.util.html#urllib3.util.Retry
                 retry = Retry(total=self._max_retries,
-                              backoff_factor=self._sleep_time,
+                              backoff_factor=self._error_sleep_time,
                               respect_retry_after_header=True,
                               raise_on_redirect=True,
                               raise_on_status=True,
@@ -155,6 +163,10 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             while (not fatal_error):
                 payload = None
                 try:
+                    # Known issue: https://github.com/urllib3/urllib3/issues/2751
+                    # If the connection to remote goes down during the request (not before), then an exception will be
+                    # raised immediately bypassing the retry logic.
+                    # TODO: Revert back to home-grown retry logic.
                     response = http_session.request(self._method,
                                                     self._url,
                                                     params=self._query_params_fn(),
@@ -180,16 +192,14 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                     except Exception as e:
                         logger.error("Error occurred converting response payload to Dataframe: %s", e)
 
-                if df is not None:
-                    if len(df):
-                        yield MessageMeta(df)
+                if df is not None and len(df):
+                    yield MessageMeta(df)
 
-                if not fatal_error and (df is None or len(df) == 0):
+                if not fatal_error:
                     # We didn't encounter an error, however the server didn't have any new data for us
-                    logger.debug("Sleeping for %s seconds before retrying", self._sleep_time)
+                    logger.debug("Sleeping for %s seconds before polling again", self._sleep_time)
                     time.sleep(self._sleep_time)
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self._generate_frames())
-
         return node, MessageMeta
