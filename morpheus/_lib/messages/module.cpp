@@ -230,8 +230,7 @@ PYBIND11_MODULE(messages, _module)
     py::options push_options;
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(_module, "MessageMeta")
-        .def(py::init<>(&MessageMetaInterfaceProxy::init_python),
-             py::arg("df"))
+        .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
@@ -328,7 +327,8 @@ PYBIND11_MODULE(messages, _module)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
         .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor)
-        .def("get_id_tensor", &MultiResponseMessageInterfaceProxy::get_id_tensor);
+        .def("get_id_tensor", &MultiResponseMessageInterfaceProxy::get_id_tensor)
+        .def("get_slice", &MultiTensorMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal);
 
     py::class_<MultiInferenceMessage, MultiTensorMessage, std::shared_ptr<MultiInferenceMessage>>(
         _module, "MultiInferenceMessage")
@@ -383,7 +383,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("offset")            = 0,
              py::arg("count")             = -1,
              py::arg("id_tensor_name")    = "seq_ids",
-             py::arg("probs_tensor_name") = "probs")
+             py::arg("probs_tensor_name") = "probs",
+             "__init__(meta, mess_offset, mess_count, memory, offset, count, id_tensor_name, probs_tensor_name)\n--\n\n")
         .def_property("probs_tensor_name",
                       &MultiResponseMessageInterfaceProxy::probs_tensor_name_getter,
                       &MultiResponseMessageInterfaceProxy::probs_tensor_name_setter)

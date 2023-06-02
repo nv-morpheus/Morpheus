@@ -143,16 +143,15 @@ struct MultiTensorMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static pybind11::object from_message(
-        pybind11::type cls,
-        pybind11::object message,
-        pybind11::object meta,
-        int mess_offset,
-        int mess_count,
-        pybind11::object memory,
-        int offset,
-        int count,
-        const pybind11::kwargs& kwargs);
+    static pybind11::object from_message(pybind11::type cls,
+                                         pybind11::object message,
+                                         pybind11::object meta,
+                                         int mess_offset,
+                                         int mess_count,
+                                         pybind11::object memory,
+                                         int offset,
+                                         int count,
+                                         const pybind11::kwargs& kwargs);
 
     /**
      * @brief Create and initialize a MultiTensorMessage, and return a shared pointer to the result
@@ -241,6 +240,36 @@ struct MultiTensorMessageInterfaceProxy
      * @throws pybind11::attribute_error When no matching tensor exists.
      */
     static pybind11::object get_tensor_property(MultiTensorMessage& self, const std::string name);
+
+    static pybind11::object get_slice(MultiTensorMessage& self, TensorIndex start, TensorIndex stop)
+    {
+        if (start < 0)
+        {
+            throw std::out_of_range("Invalid message `start` argument");
+        }
+
+        if (stop < 0)
+        {
+            throw std::out_of_range("Invalid message `stop` argument");
+        }
+
+        // Need to drop the GIL before calling any methods on the C++ object
+        pybind11::gil_scoped_release no_gil;
+        auto message_sliced = self.get_slice(start, stop);
+        pybind11::gil_scoped_acquire gil;
+
+        auto message = pybind11::cast(self);
+
+        return MultiTensorMessageInterfaceProxy::from_message(message.attr("__class__"),
+                                                              pybind11::cast(message_sliced),
+                                                              pybind11::cast(message_sliced->meta),
+                                                              message_sliced->mess_offset,
+                                                              message_sliced->mess_count,
+                                                              pybind11::cast(message_sliced->memory),
+                                                              message_sliced->offset,
+                                                              message_sliced->count,
+                                                              {});
+    }
 };
 
 #pragma GCC visibility pop

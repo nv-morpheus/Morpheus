@@ -20,7 +20,7 @@ import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.memory.tensor_memory import TensorMemory, get_tensor_prop
 from morpheus.utils import logger as morpheus_logger
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class ResponseMemoryProbs(_messages.ResponseMemoryProbs):
     probs : cupy.ndarray
         Probabilities tensor
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop, ResponseMemory.set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop, ResponseMemory.set_output)
 
     def __init__(self, *, count: int, probs: cp.ndarray):
         super().__init__(count=count, probs=probs)
@@ -68,7 +68,7 @@ class ResponseMemoryAE(ResponseMemory):
         Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop, ResponseMemory.set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop, ResponseMemory.set_output)
     user_id = ""
     explain_df = None
 

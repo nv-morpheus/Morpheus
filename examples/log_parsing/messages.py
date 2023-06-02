@@ -21,15 +21,15 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.memory.tensor_memory import get_tensor_prop
 
 
 @dataclasses.dataclass(init=False)
 class ResponseMemoryLogParsing(ResponseMemory):
 
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                                  ResponseMemory.set_output)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop, ResponseMemory.set_output)
+    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop, ResponseMemory.set_output)
 
     def __init__(self, *, count: int, confidences: cp.ndarray, labels: cp.ndarray):
         super().__init__(count=count, tensors={'confidences': confidences, 'labels': labels})
@@ -120,13 +120,13 @@ class PostprocMemoryLogParsing(InferenceMemory):
 
     """
 
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                                  InferenceMemory.set_input)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                                 InferenceMemory.set_input)
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                                InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                              InferenceMemory.set_input)
 
     def __init__(self,

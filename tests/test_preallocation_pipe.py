@@ -22,7 +22,6 @@ from mrc.core import operators as ops
 
 import cudf
 
-import morpheus._lib.messages as _messages
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import MessageMeta
@@ -57,7 +56,7 @@ class CheckPreAlloc(SinglePortStage):
         return "check-prealloc"
 
     def accepted_types(self):
-        return (_messages.MultiMessage, )
+        return (MultiMessage, )
 
     def supports_cpp_node(self):
         return False

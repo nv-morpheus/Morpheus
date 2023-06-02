@@ -53,7 +53,7 @@ class PreallocatorMixin(ABC):
     def set_needed_columns(self, needed_columns: OrderedDict):
         """
         Sets the columns needed to perform preallocation. This should only be called by the Pipeline at build time.
-        The needed_columns shoudl contain the entire set of columns needed by any other stage in this segment.
+        The needed_columns should contain the entire set of columns needed by any other stage in this segment.
         """
         self._needed_columns = needed_columns
 

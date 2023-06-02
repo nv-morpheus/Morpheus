@@ -24,7 +24,6 @@ from morpheus.utils import logger as morpheus_logger
 
 logger = logging.getLogger(__name__)
 
-
 @dataclasses.dataclass
 class MultiResponseMessage(_messages.MultiResponseMessage):
     """
@@ -104,8 +103,7 @@ class MultiResponseProbsMessage(_messages.MultiResponseProbsMessage):
             probabilities
 
         """
-
-        return self._get_tensor_prop("probs")
+        return self.get_tensor("probs")
 
 
 @dataclasses.dataclass

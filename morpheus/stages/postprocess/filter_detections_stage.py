@@ -187,7 +187,7 @@ class FilterDetectionsStage(SinglePortStage):
             for pair in true_pairs:
                 pair = tuple(pair.tolist())
                 if ((pair[1] - pair[0]) > 0):
-                    output_list.append(x.get_slice(*pair))
+                    output_list.append(x.get_slice(pair[0], pair[1]))
 
         return output_list
 

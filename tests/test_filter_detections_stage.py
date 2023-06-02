@@ -147,6 +147,8 @@ def test_filter_slice(config, filter_probs_df):
     output_messages = fds.filter_slice(mock_message)
     assert len(output_messages) == 1
     output_message = output_messages[0]
+    assert output_message.offset == 1
+    assert output_message.count == 1
     assert output_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[1:1, :].to_cupy().tolist()
 
     # Two adjacent rows have a value above the threashold

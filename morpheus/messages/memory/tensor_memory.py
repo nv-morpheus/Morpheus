@@ -21,69 +21,28 @@ import cupy as cp
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 
+TensorMemory = _messages.TensorMemory
 
-@dataclasses.dataclass(init=False)
-class TensorMemory(_messages.TensorMemory, MessageData):
+def get_tensor_prop(self, name: str):
     """
-    This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
+    This method is intended to be used by propery methods in subclasses
 
     Parameters
     ----------
-    count : int
-        Length of each tensor contained in `tensors`.
-    tensors : typing.Dict[str, cupy.ndarray]
-        Collection of tensors uniquely identified by a name.
+    name : str
+        Tensor key name.
 
+    Returns
+    -------
+    cupy.ndarray
+        Tensor.
+
+    Raises
+    ------
+    AttributeError
+        If tensor name does not exist in the container.
     """
-
-    def __init__(self, *, count: int = None, tensors: typing.Dict[str, cp.ndarray] = None):
-
-        if tensors is None:
-            tensors = {}
-
-        super().__init__(count=count, tensors=tensors)
-
-        self._check_tensors(tensors)
-
-    def _check_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
-        for tensor in tensors.values():
-            self._check_tensor(tensor)
-
-    def _check_tensor(self, tensor: cp.ndarray):
-        if (tensor.shape[0] != self.count):
-            class_name = type(self).__name__
-            raise ValueError(
-                f"The number rows in tensor {tensor.shape[0]} does not match {class_name}.count of {self.count}")
-
-    def __getattr__(self, name: str) -> typing.Any:
-        if ("tensors" in self.__dict__ and self.has_tensor(name)):
-            return self.get_tensor(name)
-
-        if hasattr(super(), "__getattr__"):
-            return super().__getattr__(name)
+    try:
+        return self.get_tensor(name)
+    except KeyError:
         raise AttributeError
-
-    def _get_tensor_prop(self, name: str):
-        """
-        This method is intended to be used by propery methods in subclasses
-
-        Parameters
-        ----------
-        name : str
-            Tensor key name.
-
-        Returns
-        -------
-        cupy.ndarray
-            Tensor.
-
-        Raises
-        ------
-        AttributeError
-            If tensor name does not exist in the container.
-        """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError

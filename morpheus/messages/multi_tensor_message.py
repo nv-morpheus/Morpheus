@@ -108,7 +108,7 @@ class MultiTensorMessage(_messages.MultiTensorMessage):
 
     def __getattr__(self, name: str) -> typing.Any:
         if ("memory" in self.__dict__ and self.memory.has_tensor(name)):
-            return self._get_tensor_prop(name)
+            return self.get_tensor(name)
 
         if hasattr(super(), "__getattr__"):
             return super().__getattr__(name)
@@ -131,30 +131,6 @@ class MultiTensorMessage(_messages.MultiTensorMessage):
                 raise RuntimeError(f"Inconsistent ID column. Last element in '{self.id_tensor_name}' tensor, "
                                    f"[{last_element}], must not extend beyond last message, "
                                    f"[{self.mess_offset + self.mess_count - 1}]")
-
-    def _get_tensor_prop(self, name: str):
-        """
-        This method is intended to be used by propery methods in subclasses
-
-        Parameters
-        ----------
-        name : str
-            Tensor key name.
-
-        Returns
-        -------
-        cupy.ndarray
-            Tensor.
-
-        Raises
-        ------
-        AttributeError
-            If tensor name does not exist in the container.
-        """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError(f'No attribute named "{name}" exists')
 
     def copy_tensor_ranges(self, ranges, mask=None):
         """

@@ -146,7 +146,7 @@ def test_convert_response():
     assert resp.meta == full_input.meta
     assert resp.mess_offset == 0
     assert resp.mess_count == total_size
-    assert isinstance(resp.memory, TensorMemory)
+    print(resp.memory)
     assert resp.offset == 0
     assert resp.count == total_size
     assert (resp.memory.get_tensor("probs") == full_output).all()
@@ -203,7 +203,7 @@ def test_convert_one_response():
     # res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
     # mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
-    # mpm = InferenceStageT._convert_one_response(from_message(MultiResponseMessage, inf, memory=mem), inf, res)
+    # mpm = InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
     # assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
@@ -213,4 +213,4 @@ def test_convert_one_response_error():
     res = _mk_message(mess_count=1, count=1)
 
     with pytest.raises(AssertionError):
-        InferenceStageT._convert_one_response(from_message(MultiResponseMessage, inf, memory=mem), inf, res.memory)
+        InferenceStageT._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res.memory)

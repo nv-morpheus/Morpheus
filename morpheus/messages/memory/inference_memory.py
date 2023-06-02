@@ -19,7 +19,7 @@ import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.memory.tensor_memory import get_tensor_prop
 
 
 @dataclasses.dataclass(init=False)
@@ -69,9 +69,9 @@ class InferenceMemoryFIL(_messages.InferenceMemoryFIL):
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                               InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                              InferenceMemory.set_input)
 
     def __init__(self, *, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
@@ -92,8 +92,8 @@ class InferenceMemoryAE(InferenceMemory):
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
     """
 
-    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(TensorMemory._get_tensor_prop,
+    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_tensor_prop,
                                                              InferenceMemory.set_input)
 
     def __init__(self, *, count: int, input: cp.ndarray, seq_ids: cp.ndarray):
