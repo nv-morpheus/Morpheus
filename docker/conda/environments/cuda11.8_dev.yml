@@ -83,6 +83,7 @@ dependencies:
     - python-graphviz
     - python=3.10
     - rapidjson=1.1.0
+    - requests=2.28
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
     - sphinx
