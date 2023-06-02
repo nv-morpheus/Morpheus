@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import logging
-import os
-import queue
 import time
 import typing
 
@@ -29,7 +27,6 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +87,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
             self._query_params_fn = lambda: query_params
 
-        self._headers = headers or DEFAULT_HEADERS
+        self._headers = headers or DEFAULT_HEADERS.copy()
         self._method = method
         self._sleep_time = sleep_time
         self._request_timeout_secs = request_timeout_secs
@@ -104,13 +101,6 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def supports_cpp_node(self) -> bool:
         return False
-
-    def _parse_payload(self, payload: str) -> typing.Tuple[int, str]:
-        try:
-            # engine='cudf' is needed when lines=False to avoid using pandas
-            df = cudf.read_json(payload, lines=self._lines, engine='cudf')
-        except Exception as e:
-            logger.error(f"Error occurred converting response payload to Dataframe: {e}")
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         sleep_time = self._sleep_time  # TODO: increase sleep time on error
@@ -131,11 +121,11 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                 if response.status_code in self._accept_status_codes:
                     payload = response.content
                 else:
-                    logger.error(f"Received unexpected status code {response.status_code} : {response.text}")
+                    logger.error("Received unexpected status code %d: %s", response.status_code, response.text)
                     has_error = True
 
             except requests.exceptions.RequestException:
-                logger.error(f"Error occurred requesting data from {self._url}")
+                logger.error("Error occurred requesting data from %s", self._url)
                 has_error = True
 
             df = None
@@ -143,7 +133,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                 try:
                     df = cudf.read_json(payload, lines=self._lines, engine='cudf')
                 except Exception as e:
-                    logger.error(f"Error occurred converting response payload to Dataframe: {e}")
+                    logger.error("Error occurred converting response payload to Dataframe: %s", e)
                     has_error = True
 
             if not has_error:
