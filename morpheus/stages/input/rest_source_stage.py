@@ -19,7 +19,6 @@ import time
 import typing
 
 import mrc
-from mrc.core import operators as ops
 
 import cudf
 
@@ -37,7 +36,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-rest")
 class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     """
-    Source stage that listens for incoming REST requests on a specified endpoint.
+    Source stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint.
 
     Parameters
     ----------
