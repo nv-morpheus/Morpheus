@@ -18,6 +18,7 @@ import typing
 
 import mrc
 import requests
+from urllib3.util import Retry
 
 import cudf
 
@@ -31,6 +32,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {"Content-Type": "application/json"}
+DEFAULT_RETRY_STATUS = (429, 500, 502, 503, 504)
 
 
 @register_stage("from-rest-client")
@@ -53,14 +55,27 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         HTTP method to use.
     sleep_time : float, default 0.1
         Amount of time in seconds to sleep if the client receives an empty response or receives an error.
+        In the case of an error, an exponential backoff is used starting at `sleep_time`.
+        Setting this to 0 causes the client to poll the remote server as fast as possible.
+        If the server sets a `Retry-After` header, then that value will take precedence over `sleep_time`.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
-    lines : bool, default False
-        If False, the response payloads are expected to be a JSON array of objects. If True, the payloads are expected
-        to contain a JSON objects separated by end-of-line characters.
     accept_status_codes: tuple, default (200, )
         Tuple of status codes to accept. If the response status code is not in this tuple, then the request will be
         considered an error
+    max_retries : int, default 10
+        Maximum number of times to retry the request fails, receives a redirect or returns a status in the
+        `retry_status` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
+        a `ValueError`.
+    retry_status: typing.List[int], optional, default=None
+        List of status codes to retry if the request fails. If `None`, then the `DEFAULT_RETRY_STATUS` list of status
+        codes is used. Raises a `ValueError` if there is any ovwerlap between `accept_status_codes` and `retry_status`.
+        Setting this to an empty list disables this feature, and retries will only be performed for network errors.
+        If the client receives a status code not in `accept_status_codes` or `retry_status`, then the error will be
+        considered to be fatal.
+    lines : bool, default False
+        If False, the response payloads are expected to be a JSON array of objects. If True, the payloads are expected
+        to contain a JSON objects separated by end-of-line characters.
     **request_kwargs : dict
         Additional arguments to pass to the `requests.request` function.
     """
@@ -74,6 +89,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  sleep_time: float = 0.1,
                  request_timeout_secs: int = 30,
                  accept_status_codes: typing.Tuple[int] = (200, ),
+                 max_retries: int = 10,
+                 retry_status: typing.Tuple[int] = None,
                  lines: bool = False,
                  **request_kwargs):
         super().__init__(config)
@@ -89,9 +106,28 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._headers = headers or DEFAULT_HEADERS.copy()
         self._method = method
-        self._sleep_time = sleep_time
+
+        if sleep_time >= 0:
+            self._sleep_time = sleep_time
+        else:
+            raise ValueError("sleep_time must be >= 0")
+
         self._request_timeout_secs = request_timeout_secs
         self._accept_status_codes = accept_status_codes
+
+        if max_retries >= 0:
+            self._max_retries = max_retries
+        else:
+            raise ValueError("max_retries must be >= 0")
+
+        if retry_status is None:
+            retry_status = DEFAULT_RETRY_STATUS
+
+        if len(set(accept_status_codes) & set(retry_status)) > 0:
+            raise ValueError("accept_status_codes and retry_status must not overlap")
+
+        self._retry_status = retry_status
+
         self._lines = lines
         self._requst_kwargs = request_kwargs
 
@@ -103,67 +139,55 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         return False
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
-        sleep_time = self._sleep_time  # TODO: increase sleep time on error
-        num_errors = 0  # Number of consequtive errors received, any successful responses resets this number
+        with requests.Session() as http_session:
+            if self._max_retries > 0:
+                # https://urllib3.readthedocs.io/en/1.26.15/reference/urllib3.util.html#urllib3.util.Retry
+                retry = Retry(total=self._max_retries,
+                              backoff_factor=self._sleep_time,
+                              respect_retry_after_header=True,
+                              raise_on_redirect=True,
+                              raise_on_status=True,
+                              status_forcelist=self._retry_status)
+                retry_adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+                http_session.mount(self._url, retry_adapter)
 
-        while (num_errors < self._max_errors):
-            has_error = False  # Set true on a raised exception or non-accepted status code
-            should_sleep = False  # Set true if the response payload is empty or an error is received
-            retry_after = None  # Set to a number of seconds to sleep if the server sent us a retry hint
-            payload = None
-            try:
-                response = requests.request(self._method,
-                                            self._url,
-                                            params=self._query_params_fn(),
-                                            headers=self._headers,
-                                            timeout=self._request_timeout_secs,
-                                            **self._requst_kwargs)
-                # TODO: handle 3xx redirects & check if the server sent us a retry hint
-                if response.status_code in self._accept_status_codes:
-                    payload = response.content
-                else:
-                    logger.error("Received unexpected status code %d: %s", response.status_code, response.text)
-                    has_error = True
-
-                    # often set for 429 and 503 responses, for other statuses it simply won't be set
-                    if 'Retry-After' in response.headers:
-                        try:
-                            retry_after = int(response.headers['Retry-After'])
-                        except Exception as e:
-                            logger.error("Error occurred parsing Retry-After header: %s", e)
-                            retry_after = None
-
-            except requests.exceptions.RequestException:
-                logger.error("Error occurred requesting data from %s", self._url)
-                has_error = True
-
-            df = None
-            if not has_error:
+            fatal_error = False
+            while (not fatal_error):
+                payload = None
                 try:
-                    df = cudf.read_json(payload, lines=self._lines, engine='cudf')
-                except Exception as e:
-                    logger.error("Error occurred converting response payload to Dataframe: %s", e)
-                    has_error = True
+                    response = http_session.request(self._method,
+                                                    self._url,
+                                                    params=self._query_params_fn(),
+                                                    headers=self._headers,
+                                                    timeout=self._request_timeout_secs,
+                                                    **self._requst_kwargs)
 
-            if not has_error:
-                num_errors = 0
-                sleep_time = self._sleep_time
-                if len(df):
-                    yield MessageMeta(df)
-                else:
-                    should_sleep = True
-            else:
-                num_errors += 1
-                if num_errors < self._max_errors:
-                    should_sleep = True
-                    if retry_after is not None:
-                        sleep_time = retry_after
+                    if response.status_code in self._accept_status_codes:
+                        payload = response.content
                     else:
-                        sleep_time = (2**(num_errors - 1)) * self._sleep_time
+                        logger.error("Received unexpected status code %d: %s", response.status_code, response.text)
+                        fatal_error = True
 
-            if should_sleep:
-                logger.debug("Sleeping for %s seconds before retrying", sleep_time)
-                time.sleep(sleep_time)
+                except requests.exceptions.RequestException:
+                    logger.error("Error occurred requesting data from %s", self._url)
+                    fatal_error = True
+
+                df = None
+                if not fatal_error and len(payload) > 2:
+                    # Work-around for https://github.com/rapidsai/cudf/issues/5712
+                    try:
+                        df = cudf.read_json(payload, lines=self._lines, engine='cudf')
+                    except Exception as e:
+                        logger.error("Error occurred converting response payload to Dataframe: %s", e)
+
+                if df is not None:
+                    if len(df):
+                        yield MessageMeta(df)
+
+                if not fatal_error and (df is None or len(df) == 0):
+                    # We didn't encounter an error, however the server didn't have any new data for us
+                    logger.debug("Sleeping for %s seconds before retrying", self._sleep_time)
+                    time.sleep(self._sleep_time)
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self._generate_frames())
