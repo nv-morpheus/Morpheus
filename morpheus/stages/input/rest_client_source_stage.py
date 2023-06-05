@@ -28,10 +28,9 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils import requests_wrapper
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_HEADERS = {"Content-Type": "application/json"}
 
 
 @register_stage("from-rest-client", ignore_args=["query_params", "headers", "**request_kwargs"])
@@ -58,7 +57,11 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Amount of time in seconds to sleep after the client receives an error.
         The client will perform an exponential backoff starting at `error_sleep_time`.
         Setting this to 0 causes the client to poll the remote server as fast as possible.
-        If the server sets a `Retry-After` header, then that value will take precedence over `error_sleep_time`.
+        If the server sets a `Retry-After` header and `respect_retry_after_header` is `True`, then that value will take
+        precedence over `error_sleep_time`.
+    respect_retry_after_header: bool, default True
+        If True, the client will respect the `Retry-After` header if it is set by the server. If False, the client will
+        perform an exponential backoff starting at `error_sleep_time`.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
     accept_status_codes : typing.List[int], optional,  multiple = True
@@ -83,6 +86,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  method: str = "GET",
                  sleep_time: float = 0.1,
                  error_sleep_time: float = 0.1,
+                 respect_retry_after_header: bool = True,
                  request_timeout_secs: int = 30,
                  accept_status_codes: typing.List[int] = (200, ),
                  max_retries: int = 10,
@@ -104,13 +108,15 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         if callable(query_params):
             self._query_params_fn = query_params
+            self._query_params = None
         else:
+            self._query_params_fn = None
             if query_params is None:
                 query_params = {}
 
-            self._query_params_fn = lambda: query_params
+            self._query_params = {}
 
-        self._headers = headers or DEFAULT_HEADERS.copy()
+        self._headers = headers or requests_wrapper.DEFAULT_HEADERS.copy()
         self._method = method
 
         if sleep_time >= 0:
@@ -122,6 +128,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             self._error_sleep_time = error_sleep_time
         else:
             raise ValueError("error_sleep_time must be >= 0")
+
+        self._respect_retry_after_header = respect_retry_after_header
 
         self._request_timeout_secs = request_timeout_secs
         if max_retries >= 0:
@@ -141,87 +149,46 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
+    def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:
+        """
+        Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.
+        """
+        payload = response.content
+        if len(payload) > 2:  # work-around for https://github.com/rapidsai/cudf/issues/5712
+            return cudf.read_json(payload, lines=self._lines, engine='cudf')
+        else:
+            return None
+
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
-        # Manully implementing retry logic, urllib3 includes retry logic, however there is a known issue preventing us
-        # from using it: https://github.com/urllib3/urllib3/issues/2751
-
-        num_errors = 0  # Number of consequtive errors received, any successful responses resets this number
-
-        # Not using session as a context manager, allowing us to reconstruct it on a connection error
+        # The http_session variable is an in/out argument for the requests_retry_wrapper.request function and will be
+        # initialized on the first call
         http_session = None
-        while (num_errors <= self._max_retries):
-            if http_session is None:
-                http_session = requests.Session()
 
-            has_error = False  # Set true on a raised exception or non-accepted status code
-            retry_after = None  # Set to a number of seconds to sleep if the server sent us a retry hint
-            payload = None
-            try:
-                response = http_session.request(self._method,
-                                                self._url,
-                                                params=self._query_params_fn(),
-                                                headers=self._headers,
-                                                timeout=self._request_timeout_secs,
-                                                **self._requst_kwargs)
-                if response.status_code in self._accept_status_codes:
-                    payload = response.content
-                else:
-                    logger.error("Received unexpected status code %d: %s", response.status_code, response.text)
-                    has_error = True
+        request_args = {
+            'method': self._method, 'url': self._url, 'headers': self._headers, 'timeout': self._request_timeout_secs
+        }
 
-                    # often set for 429 and 503 responses, for other statuses it simply won't be set
-                    if 'Retry-After' in response.headers:
-                        try:
-                            retry_after = int(response.headers['Retry-After'])
-                        except Exception as e:
-                            logger.error("Error occurred parsing Retry-After header: %s", e)
-                            retry_after = None
+        if self._query_params is not None:
+            request_args['params'] = self._query_params
 
-            except requests.exceptions.RequestException as e:
-                logger.error("Error occurred requesting data from %s: %s", self._url, e)
-                try:
-                    http_session.close()
-                except:
-                    pass
+        request_args.update(self._requst_kwargs)
 
-                http_session = None
-                has_error = True
+        while True:
+            if self._query_params_fn is not None:
+                request_args['params'] = self._query_params_fn()
 
-            df = None
-            if not has_error and len(payload) > 2:
-                try:
-                    df = cudf.read_json(payload, lines=self._lines, engine='cudf')
-                except Exception as e:
-                    logger.error("Error occurred converting response payload to Dataframe: %s", e)
-                    has_error = True
+            (http_session, df) = requests_wrapper.request(request_args,
+                                                          requests_session=http_session,
+                                                          max_retries=self._max_retries,
+                                                          sleep_time=self._error_sleep_time,
+                                                          accept_status_codes=self._accept_status_codes,
+                                                          on_success_fn=self._parse_response)
 
-            if not has_error:
-                # Reset retry logic
-                num_errors = 0
+            # Even if we didn't receive any errors, the server may not have had any data for us.
+            if df is not None and len(df):
+                yield MessageMeta(df)
 
-                # Even if we didn't receive any errors, we may not have received any data
-                if df is not None and len(df):
-                    yield MessageMeta(df)
-            else:
-                num_errors += 1
-
-            if num_errors <= self._max_retries:
-                # Only sleep if we aren't exiting
-                if not has_error:
-                    sleep_time = self._sleep_time
-                else:
-                    # Respect the Retry-After header if it was set
-                    if retry_after is not None:
-                        sleep_time = retry_after
-                    else:
-                        sleep_time = (2**(num_errors - 1)) * self._error_sleep_time
-
-                    # Only log when we are sleeping due to an error
-                    logger.debug("Sleeping for %s seconds before polling again", sleep_time)
-
-                time.sleep(sleep_time)
-            else:
-                raise RuntimeError("Max number of retries reached, exiting")
+            time.sleep(self._sleep_time)
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self._generate_frames())
