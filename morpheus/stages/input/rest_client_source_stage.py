@@ -18,6 +18,7 @@ import typing
 
 import mrc
 import requests
+import urllib3
 
 import cudf
 
@@ -88,6 +89,17 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  lines: bool = False,
                  **request_kwargs):
         super().__init__(config)
+
+        parsed_url = urllib3.util.parse_url(url)
+        if parsed_url.scheme is None or parsed_url.host is None:
+            url_ = f"http://{url}"
+            parsed_url = urllib3.util.parse_url(url_)
+            if parsed_url.scheme is not None and parsed_url.host is not None:
+                url = url_
+                logger.warning(f"No protocol scheme provided in URL, using: {url}")
+            else:
+                raise ValueError(f"Invalid URL: {url}")
+
         self._url = url
 
         if callable(query_params):
@@ -165,8 +177,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                             logger.error("Error occurred parsing Retry-After header: %s", e)
                             retry_after = None
 
-            except requests.exceptions.RequestException:
-                logger.error("Error occurred requesting data from %s", self._url)
+            except requests.exceptions.RequestException as e:
+                logger.error("Error occurred requesting data from %s: %s", self._url, e)
                 try:
                     http_session.close()
                 except:
@@ -204,8 +216,12 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                     else:
                         sleep_time = (2**(num_errors - 1)) * self._error_sleep_time
 
-                logger.debug("Sleeping for %s seconds before polling again", self._sleep_time)
+                    # Only log when we are sleeping due to an error
+                    logger.debug("Sleeping for %s seconds before polling again", sleep_time)
+
                 time.sleep(sleep_time)
+            else:
+                raise RuntimeError("Max number of retries reached, exiting")
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self._generate_frames())
