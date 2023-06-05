@@ -23,7 +23,18 @@ import pytest
 from morpheus.utils.downloader import DOWNLOAD_METHODS_MAP
 from morpheus.utils.downloader import Downloader
 from morpheus.utils.downloader import DownloadMethods
+from utils import import_or_skip
 from utils import TEST_DIRS
+
+
+@pytest.fixture(autouse=True, scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason="Downloader requires dask and dask.distributed",
+                         fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("restore_environ")
