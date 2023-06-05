@@ -63,7 +63,7 @@ def test_constructor_enum_vals(dl_method: DownloadMethods):
                          [DownloadMethods.SINGLE_THREAD, DownloadMethods.DASK, DownloadMethods.DASK_THREAD])
 def test_constructor_env_wins(dl_method: DownloadMethods):
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = "multiprocessing"
-    downloader = Downloader(download_method="single_thread")
+    downloader = Downloader(download_method=dl_method)
     assert downloader.download_method == DownloadMethods.MULTIPROCESSING
 
 
