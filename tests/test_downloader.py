@@ -23,8 +23,8 @@ import pytest
 from morpheus.utils.downloader import DOWNLOAD_METHODS_MAP
 from morpheus.utils.downloader import Downloader
 from morpheus.utils.downloader import DownloadMethods
-from utils import import_or_skip
 from utils import TEST_DIRS
+from utils import import_or_skip
 
 
 @pytest.fixture(autouse=True, scope='session')
