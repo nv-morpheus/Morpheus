@@ -284,6 +284,7 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
+# Pin to v0.9 until #967 is resolved
 RUN source activate morpheus && \
     npm install -g camouflage-server@0.9 && \
     npm cache clean --force
