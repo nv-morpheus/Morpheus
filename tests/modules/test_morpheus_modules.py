@@ -245,7 +245,6 @@ def test_payload_loader_module():
 
     assert (packets_received == packet_count)
 
-
 def test_file_loader_module():
     global packets_received
     packets_received = 0
@@ -345,6 +344,73 @@ def test_file_loader_module():
     for f in files:
         os.remove(f[0])
 
+def test_rest_loader_module():
+    global packets_received
+    packets_received = 0
+
+    df = cudf.DataFrame(
+        {
+            'col1': [1, 2, 3, 4, 5],
+            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+            'col3': ['a', 'b', 'c', 'd', 'e'],
+            'col4': [True, False, True, False, True]
+        },
+        columns=['col1', 'col2', 'col3', 'col4'])
+
+    def init_wrapper(builder: mrc.Builder):
+
+        def gen_data():
+            global packet_count
+
+            config = {
+                "tasks": [{
+                    "type": "load",
+                    "properties": {
+                    "loader_id": "rest", "strategy": "aggregate", "queries": [{
+                    "endpoint": "0.0.0.0",
+                        }]
+                    }
+                }]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
+
+        def _on_next(control_msg):
+            global packets_received
+            packets_received += 1
+            print("_on_next")
+            print(control_msg.payload().df)
+            print(df)
+            assert (control_msg.payload().df == df)
+
+        registry = mrc.ModuleRegistry
+
+        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+        assert fn_constructor is not None
+
+        source = builder.make_source("source", gen_data)
+
+        config = {"loaders": [{"id": "rest", "properties": {"prop1": "something", "prop2": "something else"}}]}
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
+
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+    assert (packets_received == 1)
+
 
 if (__name__ == "__main__"):
     test_contains_namespace()
@@ -352,3 +418,4 @@ if (__name__ == "__main__"):
     test_get_module()
     test_payload_loader_module()
     test_file_loader_module()
+    test_rest_loader_module()

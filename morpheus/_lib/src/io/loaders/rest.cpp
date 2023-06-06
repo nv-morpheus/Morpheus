@@ -53,7 +53,7 @@ void get_data_from_endpoint(const std::string& host,
         net::io_context ioc;
         tcp::resolver resolver(ioc);
         beast::tcp_stream stream(ioc);
-        auto const results = resolver.resolve(host, "80");
+        auto const results = resolver.resolve(host, "8081");
         stream.connect(results);
         http::request<http::string_body> req{http::verb::get, target + params, 11};
         req.set(http::field::host, host);
@@ -83,26 +83,25 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
     py::module_ mod_cudf;
     py::object dataframe;
     std::string strategy;
+    // TODO(Devin) : error checking + improve robustness
+    if (!task["queries"].is_array() or task.empty())
+    {
+        throw std::runtime_error("'REST Loader' control message specified no queries to load");
+    }
+
+    strategy = task.value("strategy", "aggregate");
+    if (strategy != "aggregate")
+    {
+        throw std::runtime_error("Only 'aggregate' strategy is currently supported");
+    }
+
     // Aggregate dataframes for each file
     {
         py::gil_scoped_acquire gil;
 
         auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
         mod_cudf           = cache_handle.get_module("cudf");
-
-        // TODO(Devin) : error checking + improve robustness
-        if (!task["queries"].is_array() or task.empty())
-        {
-            throw std::runtime_error("'REST Loader' control message specified no queries to load");
-        }
-
-        strategy = task.value("strategy", "aggregate");
-        if (strategy != "aggregate")
-        {
-            throw std::runtime_error("Only 'aggregate' strategy is currently supported");
-        }
-
-        dataframe = py::none();
+        dataframe          = py::none();
     }  // Release GIL
 
     auto queries = task["queries"];
@@ -114,37 +113,64 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         {
             continue;
         }
-        auto params = query["params"];
         http::response<http::dynamic_body> response;
-        for (auto& param : params)
+        response.clear();
+        get_data_from_endpoint(endpoint, "/", "", response);
         {
-            std::string param_str("?");
-            for (auto& param_kv : param.items())
+            py::gil_scoped_acquire gil;
+            auto current_df         = mod_cudf.attr("DataFrame")();
+            
+            std::string df_json_str = beast::buffers_to_string(response.body().data());
+            std::cout << "content: " << df_json_str << std::endl;
+            std::cout << "test1" << std::endl;
+            current_df              = mod_cudf.attr("read_json")(py::str(df_json_str));
+            std::cout << "test2" << std::endl;
+            if (dataframe.is_none())
             {
-                param_str += (std::string)param_kv.key() + "=" + (std::string)param_kv.value() + "&";
+                dataframe = current_df;
+                continue;
             }
-            param_str.pop_back();
-            response.clear();
-            get_data_from_endpoint(endpoint, "/", param_str, response);
+            if (strategy == "aggregate")
             {
-                py::gil_scoped_acquire gil;
-                auto current_df = mod_cudf.attr("DataFrame")();
-                current_df = mod_cudf.attr("read_json")(beast::buffers_to_string(response.body().data()));
-                if (dataframe.is_none())
-                {
-                    dataframe = current_df;
-                    continue;
-                }
-                if (strategy == "aggregate") {
-                    py::list args;
-                    args.attr("append")(dataframe);
-                    args.attr("append")(current_df);
-                    dataframe = mod_cudf.attr("concat")(args);
-                }
+                py::list args;
+                args.attr("append")(dataframe);
+                args.attr("append")(current_df);
+                dataframe = mod_cudf.attr("concat")(args);
             }
-        }
-    }
+        }  // Release GIL
 
+        // Params in REST call not supported yet
+        
+        // auto params = query["params"];
+        // for (auto& param : params)
+        // {
+        //     std::string param_str("?");
+        //     for (auto& param_kv : param.items())
+        //     {
+        //         param_str += (std::string)param_kv.key() + "=" + (std::string)param_kv.value() + "&";
+        //     }
+        //     param_str.pop_back();
+        //     response.clear();
+        //     get_data_from_endpoint(endpoint, "/", param_str, response);
+        //     {
+        //         py::gil_scoped_acquire gil;
+        //         auto current_df = mod_cudf.attr("DataFrame")();
+        //         current_df = mod_cudf.attr("read_json")(beast::buffers_to_string(response.body().data()));
+        //         if (dataframe.is_none())
+        //         {
+        //             dataframe = current_df;
+        //             continue;
+        //         }
+        //         if (strategy == "aggregate") {
+        //             py::list args;
+        //             args.attr("append")(dataframe);
+        //             args.attr("append")(current_df);
+        //             dataframe = mod_cudf.attr("concat")(args);
+        //         }
+        //     } // Release GIL
+        // }
+    }
+    
     message->payload(MessageMeta::create_from_python(std::move(dataframe)));
     return message;
 }
