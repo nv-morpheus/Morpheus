@@ -17,10 +17,9 @@ import time
 import typing
 
 import requests
+import urllib3
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_HEADERS = {"Content-Type": "application/json"}
 
 
 def request(
@@ -89,3 +88,21 @@ def request(
                          e)
             logger.debug("Sleeping for %s seconds before retrying request again", sleep_time)
             time.sleep(sleep_time_)
+
+
+def verify_url(url: str) -> str:
+    """
+    Verifies that `url` contains a protocol scheme and a host and returns the url.
+    If no protocol scheme is provided, `http` is used.
+    """
+    parsed_url = urllib3.util.parse_url(url)
+    if parsed_url.scheme is None or parsed_url.host is None:
+        url = f"http://{url}"
+
+        parsed_url = urllib3.util.parse_url(url)
+        if parsed_url.scheme is None or parsed_url.host is None:
+            raise ValueError(f"Invalid URL: {url}")
+        else:
+            logger.warning("No protocol scheme provided in URL, using: %s", url)
+
+    return url

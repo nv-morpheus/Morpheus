@@ -18,7 +18,6 @@ import typing
 
 import mrc
 import requests
-import urllib3
 
 import cudf
 
@@ -43,12 +42,13 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     config : `morpheus.config.Config`
         Pipeline configuration instance.
     url : str
-        Remote URL to poll for data, ex `https://catalog.ngc.nvidia.com/api/collections`.
+        Remote URL to poll for data, ex `https://catalog.ngc.nvidia.com/api/collections`. This should include protocol
+        prefix (ex. "http://", "https://") and port if necessary. If the protocol is omitted, `http://` will be used.
     query_params : dict, callable, default None
         Query parameters to pass to the remote URL. Can either be a dictionary of key-value pairs or a callable that
         returns a dictionary of key-value pairs. If a callable is provided, it will be called with no arguments.
     headers: dict, default None
-        Headers sent with the request. If `None` then `{"Content-Type": "application/json"}` will be used.
+        Headers sent with the request.
     method : str, default "GET"
         HTTP method to use.
     sleep_time : float, default 0.1
@@ -96,30 +96,17 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  lines: bool = False,
                  **request_kwargs):
         super().__init__(config)
-
-        parsed_url = urllib3.util.parse_url(url)
-        if parsed_url.scheme is None or parsed_url.host is None:
-            url_ = f"http://{url}"
-            parsed_url = urllib3.util.parse_url(url_)
-            if parsed_url.scheme is not None and parsed_url.host is not None:
-                url = url_
-                logger.warning(f"No protocol scheme provided in URL, using: {url}")
-            else:
-                raise ValueError(f"Invalid URL: {url}")
-
-        self._url = url
+        self._url = http_utils.verify_url(url)
 
         if callable(query_params):
             self._query_params_fn = query_params
             self._query_params = None
         else:
             self._query_params_fn = None
-            if query_params is None:
-                query_params = {}
+            self._query_params = query_params
 
-            self._query_params = {}
+        self._headers = headers
 
-        self._headers = headers or http_utils.DEFAULT_HEADERS.copy()
         self._method = method
 
         if sleep_time >= 0:
@@ -172,11 +159,14 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         http_session = None
 
         request_args = {
-            'method': self._method, 'url': self._url, 'headers': self._headers, 'timeout': self._request_timeout_secs
-        }
+            'method': self._method,
+            'url': self._url,
+            'headers': self._headers,
+            'timeout': self._request_timeout_secs,
 
-        if self._query_params is not None:
-            request_args['params'] = self._query_params
+            # when self._query_params_fn this will be overwritten on each iteration
+            'params': self._query_params
+        }
 
         request_args.update(self._requst_kwargs)
 
@@ -188,6 +178,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                                                     requests_session=http_session,
                                                     max_retries=self._max_retries,
                                                     sleep_time=self._error_sleep_time,
+                                                    respect_retry_after_header=self._respect_retry_after_header,
                                                     accept_status_codes=self._accept_status_codes,
                                                     on_success_fn=self._parse_response)
 
