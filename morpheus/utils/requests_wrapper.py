@@ -28,7 +28,7 @@ def request(
     requests_session: typing.Optional[requests.Session] = None,
     max_retries: int = 10,
     sleep_time: float = 0.1,
-    accept_status_codes: typing.Tuple[int, ...] = (200, ),
+    accept_status_codes: typing.Iterable[int] = (200, ),
     respect_retry_after_header: bool = True,
     on_success_fn: typing.Optional[typing.Callable] = None
 ) -> typing.Tuple[requests.Session, typing.Union[requests.Response, typing.Any]]:
@@ -83,4 +83,9 @@ def request(
             else:
                 sleep_time_ = (2**(try_count - 1)) * sleep_time
 
+            logger.error("Error occurred performing %s request to %s: %s",
+                         request_kwargs['method'],
+                         request_kwargs['url'],
+                         e)
+            logger.debug("Sleeping for %s seconds before retrying request again", sleep_time)
             time.sleep(sleep_time_)
