@@ -19,11 +19,13 @@ find_package(pybind11 REQUIRED)
 
 # Keep all source files sorted
 add_executable(test_libmorpheus
+
   # test_cuda.cu
   io/test_data_loader.cpp
   io/test_data_loader_registry.cpp
   io/test_loaders.cpp
   messages/test_control_message.cpp
+  messages/test_sliced_message_meta.cpp
   modules/test_data_loader_module.cpp
   test_deserializers.cpp
   test_dev_mem_info.cpp
@@ -38,10 +40,10 @@ add_executable(test_libmorpheus
 
 target_link_libraries(test_libmorpheus
   PRIVATE
-    GTest::gtest
-    matx::matx
-    morpheus
-    pybind11::embed
+  GTest::gtest
+  matx::matx
+  morpheus
+  pybind11::embed
 )
 
 add_test(
@@ -51,15 +53,15 @@ add_test(
 
 set_target_properties(test_libmorpheus
   PROPERTIES
-    INSTALL_RPATH "$ORIGIN/.."
+  INSTALL_RPATH "$ORIGIN/.."
 )
 
 install(
-    TARGETS
-      test_libmorpheus
-    RUNTIME DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-    COMPONENT Wheel
+  TARGETS
+  test_libmorpheus
+  RUNTIME DESTINATION
+  "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+  COMPONENT Wheel
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
