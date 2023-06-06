@@ -19,10 +19,10 @@
 
 #include "morpheus/io/deserializers.hpp"     // for load_table_from_file, prepare_df_index
 #include "morpheus/messages/meta.hpp"        // for MessageMeta and SlicedMessageMeta
+#include "morpheus/objects/table_info.hpp"   // for TableInfo
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 
 #include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 
