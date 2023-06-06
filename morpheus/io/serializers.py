@@ -47,7 +47,7 @@ def df_to_stream_csv(df: DataFrameType, stream: IOBase, include_header=False, in
     return stream
 
 
-def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True):
+def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True, lines=True):
     """
     Serializes a DataFrame into JSON into the provided stream object.
 
@@ -59,8 +59,10 @@ def df_to_stream_json(df: DataFrameType, stream: IOBase, include_index_col=True)
         The stream where the serialized DataFrame will be written to.
     include_index_col: bool, optional
         Write out the index as a column, by default True.
+    lines : bool, optional
+        Write out the JSON in lines format, by default True.
     """
-    df.to_json(stream, orient="records", lines=True, index=include_index_col)
+    df.to_json(stream, orient="records", lines=lines, index=include_index_col)
 
     return stream
 
