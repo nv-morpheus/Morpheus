@@ -61,8 +61,6 @@ void get_data_from_endpoint(const std::string& host,
         http::write(stream, req);
         beast::flat_buffer buffer;
         http::read(stream, buffer, res);
-        // std::cout << res.result_int() << std::endl;
-        // std::cout << beast::buffers_to_string(res.body().data()) << std::endl;
         beast::error_code ec;
         stream.socket().shutdown(tcp::socket::shutdown_both, ec);
         if (ec && ec != beast::errc::not_connected)
@@ -122,9 +120,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             
             std::string df_json_str = beast::buffers_to_string(response.body().data());
             std::cout << "content: " << df_json_str << std::endl;
-            std::cout << "test1" << std::endl;
             current_df              = mod_cudf.attr("read_json")(py::str(df_json_str));
-            std::cout << "test2" << std::endl;
             if (dataframe.is_none())
             {
                 dataframe = current_df;
@@ -140,7 +136,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         }  // Release GIL
 
         // Params in REST call not supported yet
-        
+
         // auto params = query["params"];
         // for (auto& param : params)
         // {
