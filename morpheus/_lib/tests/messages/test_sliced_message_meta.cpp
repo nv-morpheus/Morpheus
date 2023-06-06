@@ -64,7 +64,13 @@ TEST_F(TestSlicedMessageMeta, TestCount)
     SlicedMessageMeta sliced_meta(meta, 5, 15);
     EXPECT_EQ(sliced_meta.count(), 10);
 
+    // Ensure the count value matches the table info
+    pybind11::gil_scoped_release no_gil;
+    EXPECT_EQ(sliced_meta.get_info().num_rows(), sliced_meta.count());
+
     // ensure count is correct when using a pointer to the parent class which is the way Python will use it
-    auto p_sliced_meta = std::make_shared<MessageMeta>(sliced_meta);
-    EXPECT_EQ(p_sliced_meta->count(), 10);
+    auto p_sliced_meta = std::make_shared<SlicedMessageMeta>(meta, 5, 15);
+    auto p_meta        = std::dynamic_pointer_cast<MessageMeta>(p_sliced_meta);
+    EXPECT_EQ(p_meta->count(), 10);
+    EXPECT_EQ(p_meta->get_info().num_rows(), p_meta->count());
 }
