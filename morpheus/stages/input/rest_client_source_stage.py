@@ -28,7 +28,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils import requests_wrapper
+from morpheus.utils import http_utils
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
             self._query_params = {}
 
-        self._headers = headers or requests_wrapper.DEFAULT_HEADERS.copy()
+        self._headers = headers or http_utils.DEFAULT_HEADERS.copy()
         self._method = method
 
         if sleep_time >= 0:
@@ -184,12 +184,12 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             if self._query_params_fn is not None:
                 request_args['params'] = self._query_params_fn()
 
-            (http_session, df) = requests_wrapper.request(request_args,
-                                                          requests_session=http_session,
-                                                          max_retries=self._max_retries,
-                                                          sleep_time=self._error_sleep_time,
-                                                          accept_status_codes=self._accept_status_codes,
-                                                          on_success_fn=self._parse_response)
+            (http_session, df) = http_utils.request(request_args,
+                                                    requests_session=http_session,
+                                                    max_retries=self._max_retries,
+                                                    sleep_time=self._error_sleep_time,
+                                                    accept_status_codes=self._accept_status_codes,
+                                                    on_success_fn=self._parse_response)
 
             # Even if we didn't receive any errors, the server may not have had any data for us.
             if df is not None and len(df):
