@@ -284,8 +284,10 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
-RUN source activate morpheus &&\
-    npm install -g camouflage-server
+# Pin to v0.9 until #967 is resolved
+RUN source activate morpheus && \
+    npm install -g camouflage-server@0.9 && \
+    npm cache clean --force
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
