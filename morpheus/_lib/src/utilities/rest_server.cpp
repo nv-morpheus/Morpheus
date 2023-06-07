@@ -98,6 +98,7 @@ class Session : public std::enable_shared_from_this<Session>
         if (request.target() == m_url_endpoint && (request.method() == m_method))
         {
             std::string body{request.body()};
+            // TODO: Add support for returning a content type
             auto parse_status = (*m_payload_parse_fn)(body);
 
             m_response->result(parse_status.first);

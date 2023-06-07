@@ -46,6 +46,7 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+// TODO: Make this a tuple allowing a content type to be specified.
 /**
  * @brief A pair of unsigned and string, where the unsigned is the HTTP status code and the string
  *        is the HTTP status message.
