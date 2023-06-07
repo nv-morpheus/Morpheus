@@ -37,7 +37,7 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("rest-server-sink", ignore_args=["df_serializer"])
+@register_stage("to-rest-server", ignore_args=["df_serializer_fn"])
 class RestServerSinkStage(SinglePortStage):
     """
     Write all messages to a REST endpoint.
@@ -124,7 +124,7 @@ class RestServerSinkStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "rest-server-sink"
+        return "to-rest-server"
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -188,7 +188,7 @@ class RestServerSinkStage(SinglePortStage):
         """
         slice_start = 0
         while (slice_start < len(df)):
-            slice_end = min(slice_start + self._max_rows_per_payload, len(df))
+            slice_end = min(slice_start + self._max_rows_per_response, len(df))
             df_slice = df.iloc[slice_start:slice_end]
 
             yield df_slice

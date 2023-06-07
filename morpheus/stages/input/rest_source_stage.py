@@ -33,6 +33,8 @@ from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_METHODS = ("POST", "PUT")
+
 
 @register_stage("from-rest")
 class RestSourceStage(PreallocatorMixin, SingleOutputSource):
@@ -97,6 +99,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # This is only used when C++ mode is disabled
         self._queue = None
+
+        if method not in SUPPORTED_METHODS:
+            raise ValueError(f"Unsupported method: {method}")
 
     @property
     def name(self) -> str:

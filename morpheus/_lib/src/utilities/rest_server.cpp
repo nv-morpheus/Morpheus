@@ -256,7 +256,7 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_max_payload_size(max_payload_size),
   m_io_context{nullptr}
 {
-    if (m_method != http::verb::post && m_method != http::verb::put)
+    if (m_method == http::verb::unknown)
     {
         throw std::runtime_error("Invalid method: " + method);
     }
