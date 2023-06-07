@@ -27,9 +27,6 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
-#include <atomic>  // for atomic
-#include <cstddef>
-
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/advanced/server/advanced_server.cpp
@@ -40,8 +37,6 @@ namespace http  = beast::http;           // from <boost/beast/http.hpp>
 namespace net   = boost::asio;           // from <boost/asio.hpp>
 using tcp       = boost::asio::ip::tcp;  // from <boost/asio/ip/tcp.hppe>
 using namespace std::literals::chrono_literals;
-
-std::atomic<bool> g_is_running{false};
 
 class Session : public std::enable_shared_from_this<Session>
 {
@@ -295,13 +290,13 @@ void RestServer::start_listener()
 
 void RestServer::start()
 {
-    CHECK(!g_is_running) << "RestServer is already running";
+    CHECK(!m_is_running) << "RestServer is already running";
 
     try
     {
         DLOG(INFO) << "Starting RestServer on " << m_bind_address << ":" << m_port << " with " << m_num_threads
                    << " threads";
-        g_is_running = true;
+        m_is_running = true;
         m_listener_threads.reserve(m_num_threads);
         m_listener_threads.emplace_back(std::thread(&RestServer::start_listener, this));
     } catch (const std::exception& e)
@@ -313,7 +308,7 @@ void RestServer::start()
 
 void RestServer::stop()
 {
-    g_is_running = false;
+    m_is_running = false;
     if (m_io_context)
     {
         m_io_context->stop();
@@ -327,7 +322,7 @@ void RestServer::stop()
 
 bool RestServer::is_running() const
 {
-    return g_is_running;
+    return m_is_running;
 }
 
 RestServer::~RestServer()

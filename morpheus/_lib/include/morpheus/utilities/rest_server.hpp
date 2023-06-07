@@ -20,7 +20,8 @@
 #include <boost/asio.hpp>      // for io_context
 #include <pybind11/pytypes.h>  // for pybind11::function
 
-#include <cstddef>
+#include <atomic>      // for atomic
+#include <cstddef>     // for size_t
 #include <functional>  // for function
 #include <memory>      // for shared_ptr & unique_ptr
 #include <string>      // for string
@@ -107,6 +108,7 @@ class RestServer
     std::vector<std::thread> m_listener_threads;
     std::shared_ptr<boost::asio::io_context> m_io_context;
     std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
+    std::atomic<bool> m_is_running{false};
 };
 
 /****** RestServerInterfaceProxy *************************/
