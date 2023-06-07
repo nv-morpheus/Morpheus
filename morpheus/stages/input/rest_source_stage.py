@@ -28,6 +28,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
@@ -111,11 +112,11 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         except Exception as e:
             err_msg = "Error occurred converting REST payload to Dataframe"
             logger.error(f"{err_msg}: {e}")
-            return (400, err_msg)
+            return (400, MimeTypes.TEXT.value, err_msg)
 
         try:
             self._queue.put(df, block=True, timeout=self._queue_timeout)
-            return (201, "")
+            return (201, MimeTypes.TEXT.value, "")
         except (queue.Full, Closed) as e:
             err_msg = "REST payload queue is "
             if isinstance(e, queue.Full):
@@ -123,11 +124,11 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             else:
                 err_msg += "closed"
             logger.error(err_msg)
-            return (503, err_msg)
+            return (503, MimeTypes.TEXT.value, err_msg)
         except Exception as e:
             err_msg = "Error occurred while pushing payload to queue"
             logger.error(f"{err_msg}: {e}")
-            return (500, err_msg)
+            return (500, MimeTypes.TEXT.value, err_msg)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue

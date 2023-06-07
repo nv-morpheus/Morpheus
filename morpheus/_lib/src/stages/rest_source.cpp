@@ -58,7 +58,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
         {
             std::string error_msg = "Error occurred converting REST payload to Dataframe";
             LOG(ERROR) << error_msg << ": " << e.what();
-            return std::make_pair(400, error_msg);
+            return std::make_tuple(400, "text/plain", error_msg);
         }
 
         try
@@ -68,7 +68,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
-                return std::make_pair(201, std::string());
+                return std::make_tuple(201, "text/plain", std::string());
             }
 
             std::string error_msg = "REST payload queue is ";
@@ -90,12 +90,12 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             }
             }
 
-            return std::make_pair(503, std::move(error_msg));
+            return std::make_tuple(503, "text/plain", std::move(error_msg));
         } catch (const std::exception& e)
         {
             std::string error_msg = "Error occurred while pushing payload to queue";
             LOG(ERROR) << error_msg << ": " << e.what();
-            return std::make_pair(500, error_msg);
+            return std::make_tuple(500, "text/plain", error_msg);
         }
     };
     m_server = std::make_unique<RestServer>(std::move(parser),

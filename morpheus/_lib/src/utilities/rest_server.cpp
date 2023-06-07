@@ -101,19 +101,20 @@ class Session : public std::enable_shared_from_this<Session>
             // TODO: Add support for returning a content type
             auto parse_status = (*m_payload_parse_fn)(body);
 
-            m_response->result(parse_status.first);
-            m_response->body() = parse_status.second;
+            m_response->result(std::get<0>(parse_status));
+            m_response->set(http::field::content_type, std::get<1>(parse_status));
+            m_response->body() = std::get<2>(parse_status);
         }
         else
         {
             m_response->result(http::status::not_found);
+            m_response->set(http::field::content_type, "text/plain");
             m_response->body() = "not found";
         }
 
         try
         {
             DLOG(INFO) << "Response: " << m_response->result_int() << " : " << m_response->body();
-            m_response->set(http::field::content_type, "text/plain");
             m_response->keep_alive(request.keep_alive());
             m_response->prepare_payload();
 

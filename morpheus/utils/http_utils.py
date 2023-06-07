@@ -15,11 +15,18 @@
 import logging
 import time
 import typing
+from enum import Enum
 
 import requests
 import urllib3
 
 logger = logging.getLogger(__name__)
+
+
+class MimeTypes(Enum):
+    """Not a complete list of mime types, just the ones we use."""
+    TEXT = "text/plain"
+    JSON = "application/json"
 
 
 def request(

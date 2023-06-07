@@ -26,6 +26,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils import http_utils
+from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
@@ -151,9 +152,9 @@ class WriteToRestStage(SinglePortStage):
 
         if headers is None:
             if lines:
-                headers = {"Content-Type": "text/plain"}
+                headers = {"Content-Type": MimeTypes.TEXT.value}
             else:
-                headers = {"Content-Type": "application/json"}
+                headers = {"Content-Type": MimeTypes.JSON.value}
 
         self._headers = headers
 

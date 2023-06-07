@@ -26,7 +26,8 @@
 #include <memory>      // for shared_ptr & unique_ptr
 #include <string>      // for string
 #include <thread>      // for thread
-#include <utility>     // for pair & move
+#include <tuple>       // for make_tuple, tuple
+#include <utility>     // for move
 #include <vector>      // for vector
 
 // forward declare boost::beast::http::verb
@@ -48,16 +49,17 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 // TODO: Make this a tuple allowing a content type to be specified.
 /**
- * @brief A pair of unsigned and string, where the unsigned is the HTTP status code and the string
- *        is the HTTP status message.
+ * @brief A tuple consisting of the HTTP status code, mime type to be used for the Content-Type header, and the body of
+ * the response.
  */
-using parse_status_t = std::pair<unsigned /*http status code*/, std::string /* http status message*/>;
+using parse_status_t = std::
+    tuple<unsigned /*http status code*/, std::string /* Content-Type of response */, std::string /* response body */>;
 
 /**
- * @brief A function that receives the post body and returns a status code and message.
+ * @brief A function that receives the post body and returns an HTTP status code, Content-Type string and body.
  *
- * @details The function is expected to return a pair of unsigned and string, where the unsigned is
- *          the HTTP status code and the string is the HTTP status message.
+ * @details The function is expected to return a tuple conforming to `parse_status_t` consisting of the HTTP status
+ * code, mime type value for the Content-Type header and the body of the response.
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
@@ -68,8 +70,7 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  *
  * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
  *          function when an incoming request is received. The payload_parse_fn_t function is expected to
- *          return a pair of unsigned and string, where the unsigned is the HTTP status code and the
- *          string is the HTTP status message (ex: `std::make_pair(200, "OK"s)`).
+ *          return a tuple conforming to `parse_status_t` (ex: `std::make_tuple(200, "text/plain"s, "OK"s)`).
  *
  * @param payload_parse_fn The function that will be called when a POST request is received.
  * @param bind_address The address to bind the server to.
