@@ -30,6 +30,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -101,6 +102,12 @@ class RestServerSinkStage(SinglePortStage):
         self._overflow_pct = overflow_pct
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
+
+        if self._lines:
+            self._content_type = MimeTypes.TEXT.value
+        else:
+            self._content_type = MimeTypes.JSON.value
+
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
 
         from morpheus.common import FiberQueue
@@ -157,18 +164,18 @@ class RestServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
-            return (200, self._df_serializer_fn(df))
+            return (200, self._content_type, self._df_serializer_fn(df))
 
         except queue.Empty:
-            return (204, "No messages available")
+            return (204, MimeTypes.TEXT.value, "No messages available")
         except Closed:
             err_msg = "DF queue is closed"
             logger.error(err_msg)
-            return (503, err_msg)
+            return (503, MimeTypes.TEXT.value, err_msg)
         except Exception as e:
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
-            return (500, err_msg)
+            return (500, MimeTypes.TEXT.value, err_msg)
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """
