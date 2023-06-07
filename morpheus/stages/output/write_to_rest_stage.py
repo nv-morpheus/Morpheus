@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 @register_stage("to-rest", ignore_args=["query_params", "headers", "df_to_request_kwargs_fn", "**request_kwargs"])
 class WriteToRestStage(SinglePortStage):
     """
-    Write all messages to a Kafka cluster.
+    Write all messages to a REST endpoint.
 
     Parameters
     ----------
