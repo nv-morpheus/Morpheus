@@ -17,6 +17,7 @@
 
 #include "morpheus/io/loaders/rest.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -74,6 +75,33 @@ void get_data_from_endpoint(const std::string& host,
     }
 }
 
+void create_dataframe_from_http_response(http::response<http::dynamic_body>& response, py::object& dataframe, py::module_& mod_cudf, const std::string& strategy) {
+        
+        std::string df_json_str = beast::buffers_to_string(response.body().data());
+        boost::algorithm::trim(df_json_str);
+
+        // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
+        // The workaround here is to add square brackets if the original data is not represented as an array.
+        // Submitted an issue to cudf: https://github.com/rapidsai/cudf/issues/13527.
+        if (!(df_json_str.front() == '[' && df_json_str.back() == ']')) {
+            df_json_str = "[" + df_json_str + "]";
+        }
+        std::cout << "content: " << df_json_str << std::endl;
+        auto current_df         = mod_cudf.attr("DataFrame")();
+        current_df = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
+        if (dataframe.is_none())
+        {
+            dataframe = current_df;
+        }
+        else if (strategy == "aggregate")
+        {
+            py::list args;
+            args.attr("append")(dataframe);
+            args.attr("append")(current_df);
+            dataframe = mod_cudf.attr("concat")(args);
+        }
+}
+
 std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     VLOG(30) << "Called RESTDataLoader::load()";
@@ -107,44 +135,26 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         {
             continue;
         }
-        http::response<http::dynamic_body> response;
-        response.clear();
-        get_data_from_endpoint(endpoint, "/", "", response);
-        auto current_df         = mod_cudf.attr("DataFrame")();
-            
-        std::string df_json_str = beast::buffers_to_string(response.body().data());
-        std::cout << "content: " << df_json_str << std::endl;
-        py::str _temp_str(df_json_str);
-        py::str cudf_fixed = py::str("[") + _temp_str + py::str("]");
-        py::str engine("cudf");
-        current_df              = mod_cudf.attr("read_json")(cudf_fixed, engine);
-        if (dataframe.is_none())
-        {
-            dataframe = current_df;
-            continue;
+        nlohmann::json params = query.value("params", nlohmann::json());
+        if (params.empty()) {
+            http::response<http::dynamic_body> response;
+            get_data_from_endpoint(endpoint, "/", "", response);
+            create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
-        if (strategy == "aggregate")
-        {
-            py::list args;
-            args.attr("append")(dataframe);
-            args.attr("append")(current_df);
-            dataframe = mod_cudf.attr("concat")(args);
+        else {
+            for (auto& param : params)
+            {
+                std::string param_str("?");
+                for (auto& param_kv : param.items())
+                {
+                    param_str += (std::string)param_kv.key() + "=" + (std::string)param_kv.value() + "&";
+                }
+                param_str.pop_back();
+                http::response<http::dynamic_body> response;
+                get_data_from_endpoint(endpoint, "/", param_str, response);
+                create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
+            }
         }
-
-        // Params in REST call not supported yet
-
-        // auto params = query["params"];
-        // for (auto& param : params)
-        // {
-        //     std::string param_str("?");
-        //     for (auto& param_kv : param.items())
-        //     {
-        //         param_str += (std::string)param_kv.key() + "=" + (std::string)param_kv.value() + "&";
-        //     }
-        //     param_str.pop_back();
-        //     response.clear();
-        //     get_data_from_endpoint(endpoint, "/", param_str, response);
-        // }
     }
 
     message->payload(MessageMeta::create_from_python(std::move(dataframe)));

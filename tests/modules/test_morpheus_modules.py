@@ -368,6 +368,18 @@ def test_rest_loader_module():
                     "properties": {
                     "loader_id": "rest", "strategy": "aggregate", "queries": [{
                     "endpoint": "0.0.0.0",
+                    "params": [
+                        {"param1": "false", "param2": "true"},
+                        {"param1": "true", "param2": "false"},
+                        {"something1": "something2"},
+                    ]
+                        },                                                     {
+                    "endpoint": "0.0.0.0",
+                    "params": [
+                        {"something1": "something2"},
+                        {"param1": "true", "param2": "true"},
+                        {"param1": "false", "param2": "false"},
+                    ]
                         }]
                     }
                 }]
@@ -378,9 +390,8 @@ def test_rest_loader_module():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            print("_on_next")
+            print("cm.payload().df")
             print(control_msg.payload().df)
-            print(df)
             # assert (control_msg.payload().df == df)
 
         registry = mrc.ModuleRegistry

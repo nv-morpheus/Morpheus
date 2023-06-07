@@ -33,10 +33,7 @@ namespace morpheus {
 class RESTDataLoader : public Loader
 {
   public:
-    // ~RESTDataLoader() = default;
-    ~RESTDataLoader() {
-      std::cout << "~RESTDataLoader" << std::endl;
-    }
+    ~RESTDataLoader() = default;
 
     RESTDataLoader() = default;
     RESTDataLoader(nlohmann::json config);
