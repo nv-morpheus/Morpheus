@@ -17,7 +17,6 @@ import typing
 from io import StringIO
 
 import mrc
-import requests
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
@@ -27,6 +26,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils import http_utils
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +47,18 @@ class WriteToRestStage(SinglePortStage):
             "https://nvcr.io/"
             "http://localhost:8080/base/path"
     endpoint : str
-        Endpoint to which messages will be sent. This will be appended to `base_url` and may include a query string and
-        named format strings. Named format strings will be replaced with the corresponding column value from the first
-        row of the incoming dataframe, if no such column exists a `ValueError` will be raised.
+        Endpoint to which messages will be sent. This will be appended to `base_url` and may include a query string.
+
+        When `static_endpoint` is `False` this may contain named format strings which will be replaced with the
+        corresponding column value from the first row of the incoming dataframe, if no such column exists a `ValueError`
+         will be raised.
         examples:
             "api/v1/endpoint"
             "api/v1/endpoint?time={timestamp}&id={id}"
             "/{model_name}/{user}?time={timestamp}"
+    static_endpoint : bool, default True
+        Setting this to `True` indicates that the value of `endpoint` does not change between requests, and can be an
+        optimization.
     method : str, optional
         HTTP method to use when sending messages, by default "POST". Currently only "POST", "PUT" and "PATCH" are
         supported.
@@ -65,15 +70,23 @@ class WriteToRestStage(SinglePortStage):
     accept_status_codes :  typing.List[int][int], optional,  multiple = True
         List of acceptable status codes, by default (200, 201, 202).
 
-    <Probably need some timeout and retry type args here>
+    max_rows_per_payload : int, optional
+        Maximum number of rows to include in a single payload, by default 10000.
+        Setting this to 1 will send each row as a separate request.
+    lines : bool, default False
+        If False, dataframes will be serialized to a JSON array of objects. If True, then the dataframes will be
+        serialized to a string JSON objects separated by end-of-line characters.
+    **request_kwargs : dict
+        Additional arguments to pass to the `requests.request` function.
     """
 
     def __init__(self,
                  c: Config,
                  base_url: str,
                  endpoint: str,
+                 static_endpoint: bool = True,
                  headers: dict = None,
-                 query_params: typing.Union[dict, typing.Callable] = None,
+                 query_params: dict = None,
                  method: str = "POST",
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
@@ -84,19 +97,18 @@ class WriteToRestStage(SinglePortStage):
                      202,
                  ),
                  max_retries: int = 10,
+                 max_rows_per_payload: int = 10000,
                  lines: bool = False,
-                 static_endpoint: bool = True,
+                 df_to_request_kwargs_fn: typing.Callable[[DataFrameType], dict] = None,
                  **request_kwargs):
         super().__init__(c)
         self._base_url = http_utils.verify_url(base_url)
-        self._endpoint = endpoint
 
-        if callable(query_params):
-            self._query_params_fn = query_params
-            self._query_params = None
-        else:
-            self._query_params_fn = None
-            self._query_params = query_params
+        if (callable(endpoint) and static_endpoint):
+            raise ValueError("endpoint must be a string when static_endpoint is True")
+
+        self._endpoint = endpoint
+        self._query_params = query_params
 
         if headers is None:
             if lines:
@@ -123,7 +135,9 @@ class WriteToRestStage(SinglePortStage):
 
         self._accept_status_codes = tuple(accept_status_codes)
         self._static_endpoint = static_endpoint
+        self._max_rows_per_payload = max_rows_per_payload
         self._lines = lines
+        self._df_to_request_kwargs_fn = df_to_request_kwargs_fn
         self._requst_kwargs = request_kwargs
         self._http_session = None
 
@@ -146,69 +160,70 @@ class WriteToRestStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def msg_to_url(self, x: MessageMeta) -> str:
+    def _df_to_url(self, df: DataFrameType) -> str:
         """
-        Convert a message to a URL.
+        Convert a Dataframe to a URL. Only called when self._static_endpoint is False.
 
         Parameters
         ----------
-        x : `morpheus.messages.MessageMeta`
-            Message to convert.
+        df : DataFrameType
+            DataFrame to infer enpoint from.
 
         Returns
         -------
         str
             URL.
-
         """
-        if self._static_endpoint:
-            endpoint = self._endpoint
-        else:
-            endpoint = self._endpoint.format(**x.df.iloc[0].to_dict())
-
+        endpoint = self._endpoint.format(df.iloc[0].to_dict())
         return f"{self._base_url}{endpoint}"
 
-    def msg_to_payloads(self, msg: MessageMeta) -> typing.List[StringIO]:
+    def _df_to_payload(self, df: DataFrameType) -> StringIO:
+        str_buf = StringIO()
+        serializers.df_to_stream_json(df=df, stream=str_buf, lines=self._lines)
+        str_buf.seek(0)
+        return str_buf
+
+    def _chunk_requests(self, df: DataFrameType) -> typing.Iterable[dict]:
         """
-        Convert a message to a payload.
+        Convert a Dataframe to a series of urls and payloads with no more than `self._max_rows_per_payload`.
 
         Parameters
         ----------
-        msg : `morpheus.messages.MessageMeta`
-            Message to convert.
-
-        Returns
-        -------
-        StringIO
-            Payload.
-
+        df : DataFrameType
+            DataFrame to chunk, and convert to urls and payloads.
         """
-        str_buf = StringIO()
-        serializers.df_to_stream_json(df=msg.df, stream=str_buf, lines=self._lines)
-        str_buf.seek(0)
+        slice_start = 0
+        while (slice_start < len(df)):
+            slice_end = min(slice_start + self._max_rows_per_payload, len(df))
+            df_slice = df.iloc[slice_start:slice_end]
 
-        # TODO apply chunking based on byte size of str_buf
-        return [str_buf]
+            if self._df_to_request_kwargs_fn is not None:
+                yield self._df_to_request_kwargs_fn(df_slice)
+            else:
+                chunk = {'payload': self.df_to_payload(df_slice)}
+                if not self._static_endpoint:
+                    chunk['url'] = self.df_to_url(df_slice)
+
+                yield chunk
+
+            slice_start = slice_end
 
     def _process_message(self, msg: MessageMeta) -> MessageMeta:
-        url = self.msg_to_url(msg)
-        payloads = self.msg_to_payloads(msg)
 
         request_args = {
             'method': self._method,
-            'url': url,
             'headers': self._headers,
             'timeout': self._request_timeout_secs,
             'params': self._query_params
         }
 
-        if self._query_params_fn is not None:
-            request_args['params'] = self._query_params_fn()
+        if self._static_endpoint:
+            request_args['url'] = f"{self._base_url}{self._endpoint}"
 
         request_args.update(self._requst_kwargs)
 
-        for payload in payloads:
-            request_args['data'] = payload
+        for chunk in self._chunk_requests(msg.df):
+            request_args.update(chunk)
             http_utils.request(request_args,
                                requests_session=self._http_session,
                                max_retries=self._max_retries,
