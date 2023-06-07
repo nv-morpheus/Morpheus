@@ -78,30 +78,26 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
+    // Aggregate dataframes for each file
+    py::gil_scoped_acquire gil;
     py::module_ mod_cudf;
-    py::object dataframe;
-    std::string strategy;
+
+    auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
+    mod_cudf           = cache_handle.get_module("cudf");
+
     // TODO(Devin) : error checking + improve robustness
     if (!task["queries"].is_array() or task.empty())
     {
         throw std::runtime_error("'REST Loader' control message specified no queries to load");
     }
 
-    strategy = task.value("strategy", "aggregate");
+    std::string strategy = task.value("strategy", "aggregate");
     if (strategy != "aggregate")
     {
         throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
-    // Aggregate dataframes for each file
-    {
-        py::gil_scoped_acquire gil;
-
-        auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
-        mod_cudf           = cache_handle.get_module("cudf");
-        dataframe          = py::none();
-    }  // Release GIL
-
+    py::object dataframe = py::none();
     auto queries = task["queries"];
     // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& query : queries)
@@ -114,26 +110,23 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         http::response<http::dynamic_body> response;
         response.clear();
         get_data_from_endpoint(endpoint, "/", "", response);
-        {
-            py::gil_scoped_acquire gil;
-            auto current_df         = mod_cudf.attr("DataFrame")();
+        auto current_df         = mod_cudf.attr("DataFrame")();
             
-            std::string df_json_str = beast::buffers_to_string(response.body().data());
-            std::cout << "content: " << df_json_str << std::endl;
-            current_df              = mod_cudf.attr("read_json")(py::str(df_json_str));
-            if (dataframe.is_none())
-            {
-                dataframe = current_df;
-                continue;
-            }
-            if (strategy == "aggregate")
-            {
-                py::list args;
-                args.attr("append")(dataframe);
-                args.attr("append")(current_df);
-                dataframe = mod_cudf.attr("concat")(args);
-            }
-        }  // Release GIL
+        std::string df_json_str = beast::buffers_to_string(response.body().data());
+        std::cout << "content: " << df_json_str << std::endl;
+        current_df              = mod_cudf.attr("read_json")(py::str(df_json_str));
+        if (dataframe.is_none())
+        {
+            dataframe = current_df;
+            continue;
+        }
+        if (strategy == "aggregate")
+        {
+            py::list args;
+            args.attr("append")(dataframe);
+            args.attr("append")(current_df);
+            dataframe = mod_cudf.attr("concat")(args);
+        }
 
         // Params in REST call not supported yet
 
@@ -148,26 +141,11 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         //     param_str.pop_back();
         //     response.clear();
         //     get_data_from_endpoint(endpoint, "/", param_str, response);
-        //     {
-        //         py::gil_scoped_acquire gil;
-        //         auto current_df = mod_cudf.attr("DataFrame")();
-        //         current_df = mod_cudf.attr("read_json")(beast::buffers_to_string(response.body().data()));
-        //         if (dataframe.is_none())
-        //         {
-        //             dataframe = current_df;
-        //             continue;
-        //         }
-        //         if (strategy == "aggregate") {
-        //             py::list args;
-        //             args.attr("append")(dataframe);
-        //             args.attr("append")(current_df);
-        //             dataframe = mod_cudf.attr("concat")(args);
-        //         }
-        //     } // Release GIL
         // }
     }
-    
+
     message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    // py::gil_scoped_release release;
     return message;
 }
 }  // namespace morpheus
