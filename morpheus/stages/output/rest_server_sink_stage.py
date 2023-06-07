@@ -14,11 +14,15 @@
 
 import logging
 import os
+import queue
 import typing
 from io import StringIO
 
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
+
+import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -26,7 +30,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils import http_utils
+from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
@@ -49,6 +53,9 @@ class RestServerSinkStage(SinglePortStage):
         The endpoint to listen for requests on.
     method : str, default "GET"
         HTTP method to listen for.
+    queue_timeout : int, default 5
+        Maximum amount of time in seconds to block on a queue put or get request. Must be smaller than
+        `request_timeout_secs`.
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used. Once the queue is full, the incoming edge buffer will begin to fill up.
@@ -56,6 +63,13 @@ class RestServerSinkStage(SinglePortStage):
         Number of threads to use for the REST server. If `None` then `os.cpu_count()` will be used.
     max_rows_per_response : int, optional
         Maximum number of rows to include in a single response, by default 10000.
+    overflow_pct: float, optional
+        The stage stores incoming dataframes in a queue. If the received dataframes are smaller than
+        `max_rows_per_response * overflow_pct`, then additional dataframes are popped off of the queue.
+        Setting a higher number (0.9 or 1) can potentially improve performance by allowing as many dataframes to be
+        concatinated as possible into a single response, but with the possibility of returning a response containing
+        more than `max_rows_per_response` rows. Setting a lower number (0.5 or 0.75) decreases the chance, and a value
+        of `0` prevents this possibility entirely.
     request_timeout_secs : int, default 30
         The maximum amount of time in seconds for any given request.
     lines : bool, default False
@@ -66,20 +80,25 @@ class RestServerSinkStage(SinglePortStage):
         Optional custom dataframe serializer function.
     """
 
-    def __init__(self,
-                 config: Config,
-                 bind_address: str = "127.0.0.1",
-                 port: int = 8080,
-                 endpoint: str = "/message",
-                 method: str = "GET",
-                 max_queue_size: int = None,
-                 num_server_threads: int = None,
-                 max_rows_per_response: int = 10000,
-                 request_timeout_secs: int = 30,
-                 lines: bool = False,
-                 df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
+    def __init__(
+            self,
+            config: Config,
+            bind_address: str = "127.0.0.1",
+            port: int = 8080,
+            endpoint: str = "/message",
+            method: str = "GET",
+            queue_timeout: int = 5,
+            max_queue_size: int = None,
+            num_server_threads: int = None,
+            max_rows_per_response: int = 10000,
+            overflow_pct: float = 0.75,  # TODO: find a better name for this
+            request_timeout_secs: int = 30,
+            lines: bool = False,
+            df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
         super().__init__(config)
+        self._queue_timeout = queue_timeout
         self._max_rows_per_response = max_rows_per_response
+        self._overflow_pct = overflow_pct
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
@@ -88,7 +107,7 @@ class RestServerSinkStage(SinglePortStage):
         from morpheus.common import RestServer
 
         self._queue = FiberQueue(max_queue_size or config.edge_buffer_size)
-        self._server = RestServer(parse_fn=self._parse_payload,
+        self._server = RestServer(parse_fn=self._request_handler,
                                   bind_address=bind_address,
                                   port=port,
                                   endpoint=endpoint,
@@ -124,6 +143,33 @@ class RestServerSinkStage(SinglePortStage):
         str_buf.seek(0)
         return str_buf.read()
 
+    def _request_handler(self, _: str) -> typing.Tuple[int, str]:
+        try:
+            num_rows = 0
+            data_frames = []
+            while (num_rows == 0 or num_rows < (self._max_rows_per_response * self._overflow_pct)):
+                df = self._queue.get(timeout=self._queue_timeout)
+                num_rows += len(df)
+                data_frames.append(df)
+
+            df = data_frames[0]
+            if len(data_frames) > 1:
+                cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
+                df = cat_fn(data_frames)
+
+            return (200, self._df_serializer_fn(df))
+
+        except queue.Empty:
+            return (204, "No messages available")
+        except Closed:
+            err_msg = "DF queue is closed"
+            logger.error(err_msg)
+            return (503, err_msg)
+        except Exception as e:
+            err_msg = "Unknown error processing request"
+            logger.error(f"{err_msg}: %s", e)
+            return (500, err_msg)
+
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """
         Partition a dataframe into slices no larger than `self._max_rows_per_response`.
@@ -143,11 +189,10 @@ class RestServerSinkStage(SinglePortStage):
             slice_start = slice_end
 
     def _process_message(self, msg: MessageMeta) -> MessageMeta:
-
         # In order to conform to the `self._max_rows_per_response` argument we need to slice up the dataframe here
         # because our queue isn't a deque.
         for df_slice in self._partition_df(msg.df):
-            self._queue.put(df_slice)
+            self._queue.put(df_slice, timeout=self._queue_timeout)
 
         return msg
 
