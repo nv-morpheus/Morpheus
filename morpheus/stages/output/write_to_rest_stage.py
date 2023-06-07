@@ -48,10 +48,22 @@ class WriteToRestStage(SinglePortStage):
             "http://localhost:8080/base/path"
     endpoint : str
         Endpoint to which messages will be sent. This will be appended to `base_url` and may include a query string.
+        The primary difference between `endpoint` and `base_url` is that `endpoint` may contain named format strings,
+        when `static_endpoint` is `False`, and thus could potentially be different for each request.
 
-        When `static_endpoint` is `False` this may contain named format strings which will be replaced with the
-        corresponding column value from the first row of the incoming dataframe, if no such column exists a `ValueError`
-         will be raised.
+        Format strings which will be replaced with the corresponding column value from the first row of the incoming
+        dataframe, if no such column exists a `ValueError` will be raised. When `endpoint` contains query a query string
+        this has the potential of allowing for the values of the query string to be different for each request. When
+        `query_params` is not `None` the values in `query_params` will be appended to the query string. This could
+        potentially result in duplicate keys in the query string, some servers support this transforming duplicate keys
+        into an array of values (ex "?t=1&t=2" => "t=[1,2]"), others do not.
+
+        Note: When `max_rows_per_payload=1`, this has the effect of producing a separate request for each row in the
+        dataframe potentially using a unique endpoint for each request.
+
+        If additional customizations are required, `df_to_request_kwargs_fn` can be used to perform additional
+        customizations of the request.
+
         examples:
             "api/v1/endpoint"
             "api/v1/endpoint?time={timestamp}&id={id}"
@@ -59,25 +71,52 @@ class WriteToRestStage(SinglePortStage):
     static_endpoint : bool, default True
         Setting this to `True` indicates that the value of `endpoint` does not change between requests, and can be an
         optimization.
-    method : str, optional
-        HTTP method to use when sending messages, by default "POST". Currently only "POST", "PUT" and "PATCH" are
-        supported.
     headers : dict, optional
         Optional set of headers to include in the request.
         If `None` the header value will be inferred based on `lines`.
             * `{"Content-Type": "text/plain"}` when `lines` is `True`
             * `{"Content-Type": "application/json"}` when `lines` is `False`
+    query_params : dict, optional
+        Optional set of query parameters to include in the request.
+    method : str, optional
+        HTTP method to use when sending messages, by default "POST". Currently only "POST", "PUT" and "PATCH" are
+        supported.
+    error_sleep_time : float, optional
+        Amount of time in seconds to sleep after the client receives an error.
+        The client will perform an exponential backoff starting at `error_sleep_time`.
+        Setting this to 0 causes the client to retry the request as fast as possible.
+        If the server sets a `Retry-After` header and `respect_retry_after_header` is `True`, then that value will take
+        precedence over `error_sleep_time`.
+    respect_retry_after_header : bool, optional
+        If True, the client will respect the `Retry-After` header if it is set by the server. If False, the client will
+        perform an exponential backoff starting at `error_sleep_time`.
+    request_timeout_secs : int, optional
+        Number of seconds to wait for the server to send data before giving up and raising an exception.
     accept_status_codes :  typing.List[int][int], optional,  multiple = True
         List of acceptable status codes, by default (200, 201, 202).
-
+    max_retries : int, default 10
+        Maximum number of times to retry the request fails, receives a redirect or returns a status in the
+        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
+        a `ValueError`.
     max_rows_per_payload : int, optional
         Maximum number of rows to include in a single payload, by default 10000.
         Setting this to 1 will send each row as a separate request.
     lines : bool, default False
         If False, dataframes will be serialized to a JSON array of objects. If True, then the dataframes will be
         serialized to a string JSON objects separated by end-of-line characters.
+    df_to_request_kwargs_fn: typing.Callable[[DataFrameType], dict], optional
+        Optional function to perform additional customizations of the request. This function will be called for each
+        DataFrame (according to `max_rows_per_payload`) before the request is sent. The function should return a dict
+        containing any keyword argument expected by the `requests.Session.request` function:
+        https://requests.readthedocs.io/en/v2.9.1/api/#requests.Session.request
+
+        Specifically, this function is responsible for serializing the DataFrame to either a POST/PUT body or a query
+        string. This method has the potential of returning a value for `url` overriding the value of `endpoint` and
+        `base_url`, even when `static_endpoint` is True.
     **request_kwargs : dict
-        Additional arguments to pass to the `requests.request` function.
+        Additional arguments to pass to the `requests.Session.request` function. These values will are potentially
+        overridden by the results of `df_to_request_kwargs_fn` if it is not `None`, otherwise the value of `data` will
+        be overwritten, as will `url` when `static_endpoint` is False.
     """
 
     def __init__(self,

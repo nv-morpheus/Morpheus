@@ -56,12 +56,14 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     error_sleep_time : float, default 0.1
         Amount of time in seconds to sleep after the client receives an error.
         The client will perform an exponential backoff starting at `error_sleep_time`.
-        Setting this to 0 causes the client to poll the remote server as fast as possible.
+        Setting this to 0 causes the client to retry the request as fast as possible.
         If the server sets a `Retry-After` header and `respect_retry_after_header` is `True`, then that value will take
         precedence over `error_sleep_time`.
     respect_retry_after_header: bool, default True
         If True, the client will respect the `Retry-After` header if it is set by the server. If False, the client will
         perform an exponential backoff starting at `error_sleep_time`.
+    request_timeout_secs : int, optional
+        Number of seconds to wait for the server to send data before giving up and raising an exception.
     max_errors : int, default 10
         Maximum number of consequtive errors to receive before raising an error.
     accept_status_codes : typing.List[int], optional,  multiple = True
