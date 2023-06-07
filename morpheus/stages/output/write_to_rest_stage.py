@@ -31,7 +31,7 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-rest", ignore_args=["query_params", "headers", "**request_kwargs"])
+@register_stage("to-rest", ignore_args=["query_params", "headers", "df_to_request_kwargs_fn", "**request_kwargs"])
 class WriteToRestStage(SinglePortStage):
     """
     Write all messages to a Kafka cluster.
@@ -200,9 +200,9 @@ class WriteToRestStage(SinglePortStage):
             if self._df_to_request_kwargs_fn is not None:
                 yield self._df_to_request_kwargs_fn(df_slice)
             else:
-                chunk = {'payload': self.df_to_payload(df_slice)}
+                chunk = {'data': self._df_to_payload(df_slice)}
                 if not self._static_endpoint:
-                    chunk['url'] = self.df_to_url(df_slice)
+                    chunk['url'] = self._df_to_url(df_slice)
 
                 yield chunk
 
