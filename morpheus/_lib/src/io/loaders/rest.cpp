@@ -114,7 +114,10 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             
         std::string df_json_str = beast::buffers_to_string(response.body().data());
         std::cout << "content: " << df_json_str << std::endl;
-        current_df              = mod_cudf.attr("read_json")(py::str(df_json_str));
+        py::str _temp_str(df_json_str);
+        py::str cudf_fixed = py::str("[") + _temp_str + py::str("]");
+        py::str engine("cudf");
+        current_df              = mod_cudf.attr("read_json")(cudf_fixed, engine);
         if (dataframe.is_none())
         {
             dataframe = current_df;
