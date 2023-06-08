@@ -31,9 +31,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.http_utils import MimeTypes
-from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
@@ -107,13 +105,11 @@ class RestServerSinkStage(SinglePortStage):
 
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
 
-        from morpheus.common import FiberQueue
         from morpheus.common import RestServer
 
         # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
         # attempting to perform a read. We'll keep track of the size ourselves.
-        self._queue_size = AtomicInteger(0)
-        self._queue = FiberQueue(max_queue_size or config.edge_buffer_size)
+        self._queue = queue.Queue(maxsize=max_queue_size or config.edge_buffer_size)
         self._server = RestServer(parse_fn=self._request_handler,
                                   bind_address=bind_address,
                                   port=port,
@@ -158,16 +154,11 @@ class RestServerSinkStage(SinglePortStage):
         data_frames = []
         try:
             while (num_rows == 0 or num_rows < (self._max_rows_per_response * self._overflow_pct)):
-                df = self._queue.get(block=False)
-                self._queue_size.dec()
+                df = self._queue.get_nowait()
                 num_rows += len(df)
                 data_frames.append(df)
         except queue.Empty:
             pass
-        except Closed:
-            err_msg = "DF queue is closed"
-            logger.error(err_msg)
-            return (503, MimeTypes.TEXT.value, err_msg)
         except Exception as e:
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
@@ -178,6 +169,10 @@ class RestServerSinkStage(SinglePortStage):
             if len(data_frames) > 1:
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
+
+            for _ in range(len(data_frames)):
+                self._queue.task_done()
+
             return (200, self._content_type, self._df_serializer_fn(df))
         else:
             return (204, MimeTypes.TEXT.value, "No messages available")
@@ -204,22 +199,18 @@ class RestServerSinkStage(SinglePortStage):
         # In order to conform to the `self._max_rows_per_response` argument we need to slice up the dataframe here
         # because our queue isn't a deque.
         for df_slice in self._partition_df(msg.df):
-            try:
-                # We want to block, such that if the queue is full, we want our edgebuffer to start filling up.
-                self._queue_size.inc()
-                self._queue.put(df_slice, block=True)
-            except Closed:
-                logger.error("DF queue is closed")
-                self._queue_size.dec()
-                raise
+            # We want to block, such that if the queue is full, we want our edgebuffer to start filling up.
+            self._queue.put(df_slice, block=True)
 
         return msg
 
     def _block_until_empty(self):
-        while self._queue_size.value > 0:
-            time.sleep(1)
-
+        logger.debug("Waiting for queue to empty")
+        self._queue.join()
+        time.sleep(1)  # TODO: race condition, need some sort of on req callback, and only call task_done() there
+        logger.debug("stopping server")
         self._server.stop()
+        logger.debug("stopped")
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name,
