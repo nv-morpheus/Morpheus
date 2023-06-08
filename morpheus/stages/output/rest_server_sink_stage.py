@@ -15,6 +15,7 @@
 import logging
 import os
 import queue
+import time
 import typing
 from io import StringIO
 
@@ -30,6 +31,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 from morpheus.utils.type_aliases import DataFrameType
@@ -54,9 +56,6 @@ class RestServerSinkStage(SinglePortStage):
         The endpoint to listen for requests on.
     method : str, default "GET"
         HTTP method to listen for.
-    queue_timeout : int, default 5
-        Maximum amount of time in seconds to block on a queue put or get request. Must be smaller than
-        `request_timeout_secs`.
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used. Once the queue is full, the incoming edge buffer will begin to fill up.
@@ -88,7 +87,6 @@ class RestServerSinkStage(SinglePortStage):
             port: int = 8080,
             endpoint: str = "/message",
             method: str = "GET",
-            queue_timeout: int = 5,
             max_queue_size: int = None,
             num_server_threads: int = None,
             max_rows_per_response: int = 10000,
@@ -97,7 +95,6 @@ class RestServerSinkStage(SinglePortStage):
             lines: bool = False,
             df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
         super().__init__(config)
-        self._queue_timeout = queue_timeout
         self._max_rows_per_response = max_rows_per_response
         self._overflow_pct = overflow_pct
         self._request_timeout_secs = request_timeout_secs
@@ -113,6 +110,9 @@ class RestServerSinkStage(SinglePortStage):
         from morpheus.common import FiberQueue
         from morpheus.common import RestServer
 
+        # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
+        # attempting to perform a read. We'll keep track of the size ourselves.
+        self._queue_size = AtomicInteger(0)
         self._queue = FiberQueue(max_queue_size or config.edge_buffer_size)
         self._server = RestServer(parse_fn=self._request_handler,
                                   bind_address=bind_address,
@@ -121,6 +121,7 @@ class RestServerSinkStage(SinglePortStage):
                                   method=method,
                                   num_threads=num_server_threads or os.cpu_count(),
                                   request_timeout=request_timeout_secs)
+        self._server.start()
 
     @property
     def name(self) -> str:
@@ -151,23 +152,18 @@ class RestServerSinkStage(SinglePortStage):
         return str_buf.read()
 
     def _request_handler(self, _: str) -> typing.Tuple[int, str]:
+        # TODO: If this takes longer than `request_timeout_secs` then the request will be terminated, and the messages
+        # will be lost
+        num_rows = 0
+        data_frames = []
         try:
-            num_rows = 0
-            data_frames = []
             while (num_rows == 0 or num_rows < (self._max_rows_per_response * self._overflow_pct)):
-                df = self._queue.get(timeout=self._queue_timeout)
+                df = self._queue.get(block=False)
+                self._queue_size.dec()
                 num_rows += len(df)
                 data_frames.append(df)
-
-            df = data_frames[0]
-            if len(data_frames) > 1:
-                cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
-                df = cat_fn(data_frames)
-
-            return (200, self._content_type, self._df_serializer_fn(df))
-
         except queue.Empty:
-            return (204, MimeTypes.TEXT.value, "No messages available")
+            pass
         except Closed:
             err_msg = "DF queue is closed"
             logger.error(err_msg)
@@ -176,6 +172,15 @@ class RestServerSinkStage(SinglePortStage):
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
             return (500, MimeTypes.TEXT.value, err_msg)
+
+        if (len(data_frames) > 0):
+            df = data_frames[0]
+            if len(data_frames) > 1:
+                cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
+                df = cat_fn(data_frames)
+            return (200, self._content_type, self._df_serializer_fn(df))
+        else:
+            return (204, MimeTypes.TEXT.value, "No messages available")
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """
@@ -199,12 +204,27 @@ class RestServerSinkStage(SinglePortStage):
         # In order to conform to the `self._max_rows_per_response` argument we need to slice up the dataframe here
         # because our queue isn't a deque.
         for df_slice in self._partition_df(msg.df):
-            self._queue.put(df_slice, timeout=self._queue_timeout)
+            try:
+                # We want to block, such that if the queue is full, we want our edgebuffer to start filling up.
+                self._queue_size.inc()
+                self._queue.put(df_slice, block=True)
+            except Closed:
+                logger.error("DF queue is closed")
+                self._queue_size.dec()
+                raise
 
         return msg
 
+    def _block_until_empty(self):
+        while self._queue_size.value > 0:
+            time.sleep(1)
+
+        self._server.stop()
+
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, ops.map(self._process_message))
+        node = builder.make_node(self.unique_name,
+                                 ops.map(self._process_message),
+                                 ops.on_completed(self._block_until_empty))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
