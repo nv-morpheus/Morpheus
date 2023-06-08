@@ -170,6 +170,8 @@ class RestServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
+            # TODO: Move to a callback so that we only call task_done once the response has been sent, potentially
+            # allowing us to re-queue the message in the event of a network error
             for _ in range(len(data_frames)):
                 self._queue.task_done()
 

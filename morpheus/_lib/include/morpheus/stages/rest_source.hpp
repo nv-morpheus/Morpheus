@@ -27,10 +27,12 @@
 #include <pymrc/node.hpp>                    // for PythonSource
 #include <rxcpp/rx.hpp>                      // for subscriber
 
-#include <chrono>  // for duration
-#include <memory>  // for shared_ptr & unique_ptr
-#include <ratio>   // for std::milli
-#include <string>  // for string & to_string
+#include <chrono>   // for duration
+#include <cstddef>  // for size_t
+#include <cstdint>  // for int64_t
+#include <memory>   // for shared_ptr & unique_ptr
+#include <ratio>    // for std::milli
+#include <string>   // for string & to_string
 
 namespace morpheus {
 using table_t         = std::unique_ptr<cudf::io::table_with_metadata>;

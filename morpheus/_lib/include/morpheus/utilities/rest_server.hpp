@@ -17,17 +17,18 @@
 
 #pragma once
 
-#include <boost/asio.hpp>      // for io_context
-#include <pybind11/pytypes.h>  // for pybind11::function
+#include <boost/asio/io_context.hpp>  // for io_context
+#include <pybind11/pytypes.h>         // for pybind11::function
 
 #include <atomic>      // for atomic
+#include <chrono>      // for seconds
 #include <cstddef>     // for size_t
+#include <cstdint>     // for int64_t
 #include <functional>  // for function
 #include <memory>      // for shared_ptr & unique_ptr
 #include <string>      // for string
 #include <thread>      // for thread
 #include <tuple>       // for make_tuple, tuple
-#include <utility>     // for move
 #include <vector>      // for vector
 
 // forward declare boost::beast::http::verb

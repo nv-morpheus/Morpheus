@@ -19,12 +19,15 @@
 
 #include "morpheus/utilities/rest_server.hpp"
 
+#include <boost/asio.hpp>         // for dispatch
 #include <boost/asio/ip/tcp.hpp>  // for acceptor, endpoint, socket,
 #include <boost/beast/core.hpp>   // for bind_front_handler, error_code, flat_buffer, tcp_stream
 #include <boost/beast/http.hpp>   // for read_async, request, response, verb, write_async
 #include <glog/logging.h>         // for CHECK and LOG
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+
+#include <utility>  // for move
 
 // loosely based on the following examples:
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/http/server/async/http_server_async.cpp

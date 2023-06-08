@@ -22,11 +22,11 @@
 #include <glog/logging.h>                     // for CHECK & LOG
 
 #include <exception>  // for std::exception
-#include <ratio>
 #include <sstream>    // needed by GLOG
 #include <stdexcept>  // for std::runtime_error
 #include <thread>     // for std::this_thread::sleep_for
-#include <utility>    // for std::move & std::make_pair
+#include <tuple>      // for make_tuple
+#include <utility>    // for std::move
 
 namespace morpheus {
 // Component public implementations
