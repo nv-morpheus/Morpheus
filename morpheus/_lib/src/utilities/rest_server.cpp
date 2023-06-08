@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-// TODO:
-// add /health & /info endpoints
+// TODO(dagardner): add /health & /info endpoints
 
 #include "morpheus/utilities/rest_server.hpp"
 
@@ -32,10 +31,12 @@
 // https://www.boost.org/doc/libs/1_74_0/libs/beast/example/advanced/server/advanced_server.cpp
 
 namespace {
-namespace beast = boost::beast;          // from <boost/beast.hpp>
-namespace http  = beast::http;           // from <boost/beast/http.hpp>
-namespace net   = boost::asio;           // from <boost/asio.hpp>
-using tcp       = boost::asio::ip::tcp;  // from <boost/asio/ip/tcp.hppe>
+namespace beast = boost::beast;  // from <boost/beast.hpp>
+namespace http  = beast::http;   // from <boost/beast/http.hpp>
+namespace net   = boost::asio;   // from <boost/asio.hpp>
+
+// from <boost/asio/ip/tcp.hpp>
+using tcp = boost::asio::ip::tcp;  // NOLINT(readability-identifier-naming)
 using namespace std::literals::chrono_literals;
 
 class Session : public std::enable_shared_from_this<Session>
@@ -98,7 +99,6 @@ class Session : public std::enable_shared_from_this<Session>
         if (request.target() == m_url_endpoint && (request.method() == m_method))
         {
             std::string body{request.body()};
-            // TODO: Add support for returning a content type
             auto parse_status = (*m_payload_parse_fn)(body);
 
             m_response->result(std::get<0>(parse_status));

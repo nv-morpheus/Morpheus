@@ -31,13 +31,9 @@
 #include <vector>      // for vector
 
 // forward declare boost::beast::http::verb
-namespace boost {
-namespace beast {
-namespace http {
-enum class verb;
-}  // namespace http
-}  // namespace beast
-}  // namespace boost
+namespace boost::beast::http {
+enum class verb;  // NOLINT(readability-identifier-naming)
+}  // namespace boost::beast::http
 
 namespace morpheus {
 /**
@@ -47,7 +43,6 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
-// TODO: Make this a tuple allowing a content type to be specified.
 /**
  * @brief A tuple consisting of the HTTP status code, mime type to be used for the Content-Type header, and the body of
  * the response.
