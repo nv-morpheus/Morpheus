@@ -121,6 +121,19 @@ from morpheus.utils.logger import configure_logging
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option('--watch_inputs',
+              type=bool,
+              is_flag=True,
+              default=False,
+              help=("Instructs this stage to not close down once all files have been read. Instead it will read all "
+                    "files that match the 'input_file' pattern, and then continue to watch for additional files "
+                    "matching the pattern. Any new files that are added will then be processed. This assumes that the "
+                    "At least one path specified with --input_file contains a wildcard."))
+@click.option("--watch_interval",
+              type=int,
+              default=1,
+              help=("Amount of time, in seconds, to wait between checks for new files. "
+                    "Only used if --watch_inputs is set."))
 @click.option('--tracking_uri',
               type=str,
               default="http://mlflow:5000",
@@ -248,7 +261,11 @@ def run_pipeline(train_users,
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    pipeline.set_source(
+        MultiFileSource(config,
+                        filenames=list(kwargs["input_file"]),
+                        watch=kwargs["watch_inputs"],
+                        watch_interval=kwargs["watch_interval"]))
 
     # Batch files into buckets by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
