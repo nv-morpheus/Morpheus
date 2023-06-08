@@ -373,7 +373,19 @@ def test_rest_loader_module():
                     ],
                     "content_type": "text/plain",
                     "body": "456"
-                        }]
+                        },
+                    {
+                    "endpoint": "0.0.0.0",
+                    "x-headers": {
+                        "X-Header1": "x_header1",
+                        },
+                    },
+                    {
+                    "endpoint": "0.0.0.0",
+                    "x-headers": {
+                        "X-Header2": "x_header2",
+                        },
+                    }]
                     }
                 }]
             }
