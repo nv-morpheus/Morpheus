@@ -64,6 +64,7 @@ add_library(morpheus
   src/stages/kafka_source.cpp
   src/stages/preprocess_fil.cpp
   src/stages/preprocess_nlp.cpp
+  src/stages/rest_source.cpp
   src/stages/serialize.cpp
   src/stages/triton_inference.cpp
   src/stages/write_to_file.cpp
@@ -71,6 +72,7 @@ add_library(morpheus
   src/utilities/cupy_util.cpp
   src/utilities/matx_util.cu
   src/utilities/python_util.cpp
+  src/utilities/rest_server.cpp
   src/utilities/string_util.cpp
   src/utilities/table_util.cpp
   src/utilities/tensor_util.cpp
