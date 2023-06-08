@@ -367,10 +367,8 @@ def test_rest_loader_module():
                     "type": "load",
                     "properties": {
                     "loader_id": "rest", "strategy": "aggregate", "queries": [{
-                    "endpoint": "0.0.0.0",
+                    "endpoint": "0.0.0.0/?param1=false&param2=true",
                     "params": [
-                        {"param1": "false", "param2": "true"},
-                        {"param1": "true", "param2": "false"},
                         {"something1": "something2"},
                     ]
                         },                                                     {

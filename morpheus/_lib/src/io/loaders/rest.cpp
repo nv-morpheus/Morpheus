@@ -44,11 +44,34 @@ using tcp = net::ip::tcp;
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
-void get_data_from_endpoint(const std::string& host,
-                            const std::string& target,
+void get_data_from_endpoint(const std::string& method,
+                            const std::string& endpoint,
                             const std::string& params,
+                            const std::string& content_type,
+                            const std::string& body,
                             http::response<http::dynamic_body>& res)
 {
+    py::module_ urllib = py::module::import("urllib.parse");
+    std::string ep(endpoint);
+    py::object ep_pystr = py::str(ep);
+    // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced by ‘//’. 
+    // Otherwise the input is presumed to be a relative URL and thus to start with a path component.
+    // https://docs.python.org/3/library/urllib.parse.html
+    if (ep_pystr.attr("find")("//").cast<int>() == -1) {
+        ep = "//" + ep;
+    } 
+    py::object result = urllib.attr("urlparse")(ep);
+    std::string host = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+    std::string target = result.attr("path").is_none() ? "" : result.attr("path").cast<std::string>();
+    if (target.empty()) {
+        target = "/";
+    }
+    std::string query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
+    if (!params.empty()) {
+        query = params;
+    }
+    std::cout << "host: " << host << " target: " << target << " query: " << query << std::endl;
+
     try
     {
         net::io_context ioc;
@@ -56,7 +79,7 @@ void get_data_from_endpoint(const std::string& host,
         beast::tcp_stream stream(ioc);
         auto const results = resolver.resolve(host, "8081");
         stream.connect(results);
-        http::request<http::string_body> req{http::verb::get, target + params, 11};
+        http::request<http::string_body> req{http::verb::get, target + query, 11};
         req.set(http::field::host, host);
         req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
         http::write(stream, req);
@@ -138,7 +161,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         nlohmann::json params = query.value("params", nlohmann::json());
         if (params.empty()) {
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(endpoint, "/", "", response);
+            get_data_from_endpoint("GET", endpoint, "", "", "", response);
             create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
         else {
@@ -151,7 +174,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 }
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
-                get_data_from_endpoint(endpoint, "/", param_str, response);
+                get_data_from_endpoint("GET", endpoint, param_str, "", "", response);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             }
         }
