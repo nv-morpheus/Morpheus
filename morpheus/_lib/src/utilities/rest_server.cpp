@@ -114,7 +114,7 @@ class Session : public std::enable_shared_from_this<Session>
 
         try
         {
-            DLOG(INFO) << "Response: " << m_response->result_int() << " : " << m_response->body();
+            DLOG(INFO) << "Response: " << m_response->result_int();
             m_response->keep_alive(request.keep_alive());
             m_response->prepare_payload();
 
