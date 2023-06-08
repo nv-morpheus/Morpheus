@@ -51,11 +51,11 @@ class MessageMeta
 {
   public:
     /**
-     * @brief Get the py table object
+     * @brief Get the row count of the underlying DataFrame
      *
-     * @return pybind11::object
+     * @return TensorIndex
      */
-    TensorIndex count() const;
+    virtual TensorIndex count() const;
 
     /**
      * @brief Get the info object
@@ -131,6 +131,8 @@ class SlicedMessageMeta : public MessageMeta
                       TensorIndex start                = 0,
                       TensorIndex stop                 = -1,
                       std::vector<std::string> columns = {});
+
+    TensorIndex count() const override;
 
     TableInfo get_info() const override;
 
