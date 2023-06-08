@@ -13,24 +13,24 @@
 # =============================================================================
 list(APPEND CMAKE_MESSAGE_CONTEXT "_lib")
 
-########### morpheus ###########
+# ########## morpheus ###########
 
-#----------cudf_helpers---------
+# ----------cudf_helpers---------
 # This had to be inlined from cudf_helpers.cmake file because of scikit-build changes in
 # https://github.com/scikit-build/scikit-build/pull/871
 morpheus_add_cython_library(
     cudf_helpers
     PYX_FILE
-      "cudf_helpers.pyx"
+  "cudf_helpers.pyx"
     INCLUDE_DIRS
-      "include"
+  "include"
     LINK_TARGETS
-      cudf::cudf
-      pybind11::pybind11
-      Python::Module
-      Python::NumPy
+  cudf::cudf
+  pybind11::pybind11
+  Python::Module
+  Python::NumPy
     OUTPUT_TARGET
-      cudf_helpers_target
+  cudf_helpers_target
 )
 
 execute_process(
@@ -57,39 +57,39 @@ target_compile_options(${cudf_helpers_target} PRIVATE -Wno-volatile)
 set_target_properties(
   ${cudf_helpers_target}
     PROPERTIES
-      CXX_CLANG_TIDY ""
-      C_INCLUDE_WHAT_YOU_USE ""
-      CXX_INCLUDE_WHAT_YOU_USE ""
-      EXPORT_COMPILE_COMMANDS OFF
+  CXX_CLANG_TIDY ""
+  C_INCLUDE_WHAT_YOU_USE ""
+  CXX_INCLUDE_WHAT_YOU_USE ""
+  EXPORT_COMPILE_COMMANDS OFF
 )
 
-#----------lib_morpheus---------
+# ----------lib_morpheus---------
 include(cmake/libmorpheus.cmake)
 
-########### py_morpheus ########
+# ########## py_morpheus ########
 # Set the default link targets to avoid repeating this
 morpheus_utils_python_package_set_default_link_targets(morpheus)
 
 # #----------morpheus._lib.common---------
 morpheus_add_pybind11_module(common SOURCE_FILES common/module.cpp)
 
-#----------morpheus._lib.stages---------
+# ----------morpheus._lib.stages---------
 morpheus_add_pybind11_module(stages SOURCE_FILES stages/module.cpp)
 
-#----------morpheus._lib.messages---------
+# ----------morpheus._lib.messages---------
 morpheus_add_pybind11_module(messages SOURCE_FILES messages/module.cpp)
 
-#----------morpheus._lib.modules---------
+# ----------morpheus._lib.modules---------
 morpheus_add_pybind11_module(modules SOURCE_FILES modules/module.cpp)
 
-#----------morpheus._lib.doca---------
+# ----------morpheus._lib.doca---------
 if(MORPHEUS_SUPPORT_DOCA)
   add_subdirectory(doca)
 
   morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp LINK_TARGETS ${PROJECT_NAME}::morpheus_doca)
 endif()
 
-if (MORPHEUS_BUILD_TESTS)
+if(MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
