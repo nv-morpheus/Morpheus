@@ -37,9 +37,9 @@
 namespace py = pybind11;
 
 namespace beast = boost::beast;
-namespace http = beast::http;
-namespace net = boost::asio;
-using tcp = net::ip::tcp;
+namespace http  = beast::http;
+namespace net   = boost::asio;
+using tcp       = net::ip::tcp;
 
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
@@ -54,23 +54,28 @@ void get_data_from_endpoint(const std::string& method,
     py::module_ urllib = py::module::import("urllib.parse");
     std::string ep(endpoint);
     py::object ep_pystr = py::str(ep);
-    // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced by ‘//’. 
-    // Otherwise the input is presumed to be a relative URL and thus to start with a path component.
-    // https://docs.python.org/3/library/urllib.parse.html
-    if (ep_pystr.attr("find")("//").cast<int>() == -1) {
+
+    // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced
+    // by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component. ref:
+    // https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if endpoint does not
+    // already include one
+    if (ep_pystr.attr("find")("//").cast<int>() == -1)
+    {
         ep = "//" + ep;
-    } 
-    py::object result = urllib.attr("urlparse")(ep);
-    std::string host = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+    }
+
+    py::object result  = urllib.attr("urlparse")(ep);
+    std::string host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
     std::string target = result.attr("path").is_none() ? "" : result.attr("path").cast<std::string>();
-    if (target.empty()) {
+    if (target.empty())
+    {
         target = "/";
     }
     std::string query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
-    if (!params.empty()) {
+    if (!params.empty())
+    {
         query = params;
     }
-    std::cout << "host: " << host << " target: " << target << " query: " << query << std::endl;
 
     try
     {
@@ -79,9 +84,24 @@ void get_data_from_endpoint(const std::string& method,
         beast::tcp_stream stream(ioc);
         auto const results = resolver.resolve(host, "8081");
         stream.connect(results);
-        http::request<http::string_body> req{http::verb::get, target + query, 11};
+        http::verb verb;
+        if (method == "GET")
+        {
+            verb = http::verb::get;
+        }
+        else if (method == "POST")
+        {
+            verb = http::verb::post;
+        }
+        http::request<http::string_body> req{verb, target + query, 11};
         req.set(http::field::host, host);
         req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+        if (method == "POST")
+        {
+            req.set(http::field::content_type, content_type);
+            req.body() = body;
+            req.prepare_payload();
+        }
         http::write(stream, req);
         beast::flat_buffer buffer;
         http::read(stream, buffer, res);
@@ -98,31 +118,35 @@ void get_data_from_endpoint(const std::string& method,
     }
 }
 
-void create_dataframe_from_http_response(http::response<http::dynamic_body>& response, py::object& dataframe, py::module_& mod_cudf, const std::string& strategy) {
-        
-        std::string df_json_str = beast::buffers_to_string(response.body().data());
-        boost::algorithm::trim(df_json_str);
+void create_dataframe_from_http_response(http::response<http::dynamic_body>& response,
+                                         py::object& dataframe,
+                                         py::module_& mod_cudf,
+                                         const std::string& strategy)
+{
+    std::string df_json_str = beast::buffers_to_string(response.body().data());
+    boost::algorithm::trim(df_json_str);
 
-        // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
-        // The workaround here is to add square brackets if the original data is not represented as an array.
-        // Submitted an issue to cudf: https://github.com/rapidsai/cudf/issues/13527.
-        if (!(df_json_str.front() == '[' && df_json_str.back() == ']')) {
-            df_json_str = "[" + df_json_str + "]";
-        }
-        std::cout << "content: " << df_json_str << std::endl;
-        auto current_df         = mod_cudf.attr("DataFrame")();
-        current_df = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
-        if (dataframe.is_none())
-        {
-            dataframe = current_df;
-        }
-        else if (strategy == "aggregate")
-        {
-            py::list args;
-            args.attr("append")(dataframe);
-            args.attr("append")(current_df);
-            dataframe = mod_cudf.attr("concat")(args);
-        }
+    // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
+    // The workaround here is to add square brackets if the original data is not represented as an array.
+    // Submitted an issue to cudf: https://github.com/rapidsai/cudf/issues/13527.
+    if (!(df_json_str.front() == '[' && df_json_str.back() == ']'))
+    {
+        df_json_str = "[" + df_json_str + "]";
+    }
+    std::cout << "content: " << df_json_str << std::endl;
+    auto current_df = mod_cudf.attr("DataFrame")();
+    current_df      = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
+    if (dataframe.is_none())
+    {
+        dataframe = current_df;
+    }
+    else if (strategy == "aggregate")
+    {
+        py::list args;
+        args.attr("append")(dataframe);
+        args.attr("append")(current_df);
+        dataframe = mod_cudf.attr("concat")(args);
+    }
 }
 
 std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
@@ -149,22 +173,29 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
     }
 
     py::object dataframe = py::none();
-    auto queries = task["queries"];
+    auto queries         = task["queries"];
     // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& query : queries)
     {
+        std::string method = query.value("method", "GET");
+        std::transform(method.begin(), method.end(), method.begin(), ::toupper);
         std::string endpoint = query.value("endpoint", "");
         if (endpoint.empty())
         {
             continue;
         }
-        nlohmann::json params = query.value("params", nlohmann::json());
-        if (params.empty()) {
+        std::string content_type = query.value("content_type", "");
+        std::string body         = query.value("body", "");
+        nlohmann::json params    = query.value("params", nlohmann::json());
+        if (params.empty())
+        {
+            std::string param_str("");
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint("GET", endpoint, "", "", "", response);
+            get_data_from_endpoint(method, endpoint, param_str, content_type, body, response);
             create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
-        else {
+        else
+        {
             for (auto& param : params)
             {
                 std::string param_str("?");
@@ -174,7 +205,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 }
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
-                get_data_from_endpoint("GET", endpoint, param_str, "", "", response);
+                get_data_from_endpoint(method, endpoint, param_str, content_type, body, response);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             }
         }

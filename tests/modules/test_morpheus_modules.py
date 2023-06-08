@@ -348,15 +348,6 @@ def test_rest_loader_module():
     global packets_received
     packets_received = 0
 
-    df = cudf.DataFrame(
-        {
-            'col1': [1, 2, 3, 4, 5],
-            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
-            'col3': ['a', 'b', 'c', 'd', 'e'],
-            'col4': [True, False, True, False, True]
-        },
-        columns=['col1', 'col2', 'col3', 'col4'])
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -367,17 +358,21 @@ def test_rest_loader_module():
                     "type": "load",
                     "properties": {
                     "loader_id": "rest", "strategy": "aggregate", "queries": [{
+                    "method": "GET",
                     "endpoint": "0.0.0.0/?param1=false&param2=true",
                     "params": [
+                        {"param1": "true"},
+                        {"param1": "false", "param2": "true"},
                         {"something1": "something2"},
-                    ]
+                    ],
                         },                                                     {
+                    "method": "POST",
                     "endpoint": "0.0.0.0",
                     "params": [
                         {"something1": "something2"},
-                        {"param1": "true", "param2": "true"},
-                        {"param1": "false", "param2": "false"},
-                    ]
+                    ],
+                    "content_type": "text/plain",
+                    "body": "456"
                         }]
                     }
                 }]
@@ -422,9 +417,9 @@ def test_rest_loader_module():
 
 
 if (__name__ == "__main__"):
-    test_contains_namespace()
-    test_is_version_compatible()
-    test_get_module()
-    test_payload_loader_module()
-    test_file_loader_module()
+    # test_contains_namespace()
+    # test_is_version_compatible()
+    # test_get_module()
+    # test_payload_loader_module()
+    # test_file_loader_module()
     test_rest_loader_module()
