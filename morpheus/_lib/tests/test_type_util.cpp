@@ -19,14 +19,8 @@
 
 #include "morpheus/objects/dtype.hpp"
 
-#include <fmt/args.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
 #include <gtest/gtest.h>  // for EXPECT_EQ
 
-#include <cstddef>
-#include <map>
-#include <string>
 #include <vector>
 // work-around for known iwyu issue
 // https://github.com/include-what-you-use/include-what-you-use/issues/908
