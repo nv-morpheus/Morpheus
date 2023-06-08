@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,24 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-class Dataset(object):
-
-    def __init__(self, df):
-        self._df = df.reset_index(drop=True)
-        self._dataset_len = self._df.shape[0]
-
-    @property
-    def length(self):
-        """
-        Returns dataframe length
-        """
-        return self._dataset_len
-
-    @property
-    def data(self):
-        """
-        Retruns dataframe
-        """
-        return self._df
+"""
+Common tools and utilities for model training and tuning.
+"""

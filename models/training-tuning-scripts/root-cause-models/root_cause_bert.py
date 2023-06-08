@@ -14,20 +14,19 @@
 # limitations under the License.
 """
 Example Usage:
-python root-cause-bert.py \
+python root_cause_bert.py \
 --trainingdata ../../datasets/training-data/root-cause-training-data.csv \
 --unseenerrors ../../datasets/training-data/root-cause-unseen-errors.csv
 """
 
 import argparse
 import time
-
 import cudf
 import pandas as pd
-from binary_sequence_classifier import BinarySequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 
+from common.sequence_classifier import SequenceClassifier
 from morpheus.utils.seed import manual_seed
 
 
@@ -44,17 +43,17 @@ def train(trainingdata, unseenerrors):
 
     dfnewerror = pd.read_csv(unseenerrors, header=None, names=['label', 'log'])
 
-    (X_train, X_test, y_train, y_test) = train_test_split(dflogs, dflogs.label, random_state=random_seed)
+    (x_train, x_test, y_train, y_test) = train_test_split(dflogs, dflogs.label, random_state=random_seed)
 
-    X_train.reset_index(drop=True, inplace=True)
+    x_train.reset_index(drop=True, inplace=True)
 
     y_train.reset_index(drop=True, inplace=True)
 
-    X_test = pd.concat([X_test, dfnewerror])
+    x_test = pd.concat([x_test, dfnewerror])
 
     y_test = pd.concat([y_test, dfnewerror['label']])
 
-    X_test.reset_index(drop=True, inplace=True)
+    x_test.reset_index(drop=True, inplace=True)
 
     y_test.reset_index(drop=True, inplace=True)
 
@@ -62,24 +61,24 @@ def train(trainingdata, unseenerrors):
 
     dflogs = cudf.DataFrame.from_pandas(dflogs)
 
-    seq_classifier = BinarySequenceClassifier()
-
-    seq_classifier.init_model('bert-base-uncased')
+    seq_classifier = SequenceClassifier("bert-base-uncased",
+                                        hash_file="../../../morpheus/data/bert-base-uncased-hash.txt",
+                                        num_labels=2)
 
     manual_seed(random_seed)
-    seq_classifier.train_model(X_train['log'], y_train, batch_size=128, epochs=1, learning_rate=3.6e-04)
+    seq_classifier.train_model(x_train['log'], y_train, batch_size=128, epochs=1, learning_rate=3.6e-04)
 
     timestr = time.strftime('%Y%m%d-%H%M%S')
 
     seq_classifier.save_model(timestr)
 
-    print(seq_classifier.evaluate_model(X_test['log'], y_test))
+    print(seq_classifier.evaluate_model(x_test['log'], y_test))
 
-    test_preds = seq_classifier.predict(X_test['log'], batch_size=128, threshold=0.5)
+    test_preds = seq_classifier.predict(x_test['log'], batch_size=128)
 
-    tests = test_preds[0].to_numpy()
+    tests = test_preds.to_numpy()
 
-    true_labels = X_test['label']
+    true_labels = x_test['label']
 
     print(f1_score(true_labels, tests))
 
