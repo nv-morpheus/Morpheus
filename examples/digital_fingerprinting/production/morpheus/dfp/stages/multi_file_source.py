@@ -43,10 +43,10 @@ class MultiFileSource(SingleOutputSource):
         https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files
     watch : bool, default = False
         When True, will check `filenames` for new files and emit them as they appear. This assumes that at least one of
-        the files in `filenames` contains a wildecard character.
+        the paths in `filenames` contains a wildecard character.
     watch_interval : float, default = 1.0
-        When watch is True, this is the time in seconds between polling the input directory for new files. Ignored when
-        watch is False.
+        When `watch` is True, this is the time in seconds between polling the paths in `filenames` for new files. Ignored when
+        `watch` is False.
     """
 
     def __init__(

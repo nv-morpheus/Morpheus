@@ -127,13 +127,11 @@ from morpheus.utils.logger import configure_logging
               type=bool,
               is_flag=True,
               default=False,
-              help=("Instructs this stage to not close down once all files have been read. Instead it will read all "
-                    "files that match the 'input_file' pattern, and then continue to watch for additional files "
-                    "matching the pattern. Any new files that are added will then be processed. This assumes that the "
-                    "At least one path specified with --input_file contains a wildcard."))
+              help=("Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. "
+                    "This assumes that the at least one paths contains a wildcard."))
 @click.option("--watch_interval",
-              type=int,
-              default=1,
+              type=float,
+              default=1.0,
               help=("Amount of time, in seconds, to wait between checks for new files. "
                     "Only used if --watch_inputs is set."))
 @click.option('--tracking_uri',
