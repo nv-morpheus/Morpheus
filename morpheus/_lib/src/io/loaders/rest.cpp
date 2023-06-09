@@ -49,6 +49,8 @@ void get_data_from_endpoint(const std::string& method,
                             const std::string& params,
                             const std::string& content_type,
                             const std::string& body,
+                            const std::unordered_map<std::string, std::string>& x_headers_map,
+                            int max_retry,
                             http::response<http::dynamic_body>& res)
 {
     py::module_ urllib = py::module::import("urllib.parse");
@@ -77,13 +79,13 @@ void get_data_from_endpoint(const std::string& method,
         query = params;
     }
 
+    net::io_context ioc;
+    tcp::resolver resolver(ioc);
+    beast::tcp_stream stream(ioc);
     try
     {
-        net::io_context ioc;
-        tcp::resolver resolver(ioc);
-        beast::tcp_stream stream(ioc);
         auto const results = resolver.resolve(host, "8081");
-        stream.connect(results);
+        
         http::verb verb;
         if (method == "GET")
         {
@@ -102,20 +104,40 @@ void get_data_from_endpoint(const std::string& method,
             req.body() = body;
             req.prepare_payload();
         }
-        http::write(stream, req);
-        beast::flat_buffer buffer;
-        http::read(stream, buffer, res);
-        beast::error_code ec;
-        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-        if (ec && ec != beast::errc::not_connected)
-        {
-            throw beast::system_error{ec};
+
+        for (auto& x_header : x_headers_map) {
+            req.insert(x_header.first, x_header.second);
         }
+
+        int interval_milliseconds = 1000;
+        while (max_retry-- > 0) {
+            std::cout << "max_retry: " << max_retry << std::endl; 
+            stream.connect(results);
+            http::write(stream, req);
+            beast::flat_buffer buffer;
+            http::read(stream, buffer, res);
+            beast::error_code ec;
+            stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+            if (ec && ec != beast::errc::not_connected)
+            {
+                throw beast::system_error{ec};
+            }
+            int status = res.result_int();
+            // 503 Service Unavailable 504 Gateway Timeout
+            if (status != 503 && status != 504) {
+                break;
+            }
+            std::cout << "interval: " << interval_milliseconds << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(interval_milliseconds));
+            interval_milliseconds *= 2;
+        }
+       
     } catch (std::exception const& e)
     {
         // TODO: VLOG here?
         std::cerr << "Error: " << e.what() << std::endl;
     }
+
 }
 
 void create_dataframe_from_http_response(http::response<http::dynamic_body>& response,
@@ -172,6 +194,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
+    auto conf = this->config();
+    int max_retry = conf.value("max_retry", 3);
+
     py::object dataframe = py::none();
     auto queries         = task["queries"];
     // TODO(Devin) : Migrate this to use the cudf::io interface
@@ -186,12 +211,17 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         }
         std::string content_type = query.value("content_type", "");
         std::string body         = query.value("body", "");
+        nlohmann::json x_headers = query.value("x-headers", nlohmann::json());
+        std::unordered_map<std::string, std::string> x_headers_map;
+        for (auto& x_header_kv : x_headers.items()) {
+            x_headers_map.insert(std::make_pair((std::string)x_header_kv.key(), (std::string)x_header_kv.value()));
+        }
         nlohmann::json params    = query.value("params", nlohmann::json());
         if (params.empty())
         {
             std::string param_str("");
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(method, endpoint, param_str, content_type, body, response);
+            get_data_from_endpoint(method, endpoint, param_str, content_type, body, x_headers_map, max_retry, response);
             create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
         else
@@ -205,7 +235,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 }
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
-                get_data_from_endpoint(method, endpoint, param_str, content_type, body, response);
+                get_data_from_endpoint(method, endpoint, param_str, content_type, body, x_headers_map, max_retry, response);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             }
         }
