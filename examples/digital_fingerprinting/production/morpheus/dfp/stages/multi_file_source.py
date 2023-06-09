@@ -45,8 +45,8 @@ class MultiFileSource(SingleOutputSource):
         When True, will check `filenames` for new files and emit them as they appear. This assumes that at least one of
         the paths in `filenames` contains a wildecard character.
     watch_interval : float, default = 1.0
-        When `watch` is True, this is the time in seconds between polling the paths in `filenames` for new files. Ignored when
-        `watch` is False.
+        When `watch` is True, this is the time in seconds between polling the paths in `filenames` for new files.
+        Ignored when `watch` is False.
     """
 
     def __init__(
