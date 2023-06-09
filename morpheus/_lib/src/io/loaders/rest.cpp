@@ -44,23 +44,24 @@ using tcp       = net::ip::tcp;
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
-void get_data_from_endpoint(const std::string& method,
+void get_data_from_endpoint(http::response<http::dynamic_body>& response,
+                            const std::string& method,
                             const std::string& endpoint,
                             const std::string& params,
                             const std::string& content_type,
                             const std::string& body,
-                            const std::unordered_map<std::string, std::string>& x_headers_map,
-                            int max_retry,
-                            http::response<http::dynamic_body>& res)
+                            const std::unordered_map<std::string, std::string>& x_headers,
+                            int max_retry)
 {
+    py::gil_scoped_acquire gil;
     py::module_ urllib = py::module::import("urllib.parse");
     std::string ep(endpoint);
     py::object ep_pystr = py::str(ep);
 
     // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced
     // by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component. ref:
-    // https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if endpoint does not
-    // already include one
+    // https://docs.python.org/3/library/urllib.parse.html
+    // Workaround here is to prepend "//" if endpoint does not already include one
     if (ep_pystr.attr("find")("//").cast<int>() == -1)
     {
         ep = "//" + ep;
@@ -74,18 +75,20 @@ void get_data_from_endpoint(const std::string& method,
         target = "/";
     }
     std::string query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
+    // if params exists, overrides query part included in endpoint
     if (!params.empty())
     {
         query = params;
     }
+    py::gil_scoped_release release;
 
     net::io_context ioc;
     tcp::resolver resolver(ioc);
     beast::tcp_stream stream(ioc);
     try
     {
-        auto const results = resolver.resolve(host, "8081");
-        
+        // 8081 for testing; should be 80 for HTTP
+        auto const endpoint_results = resolver.resolve(host, "8081");
         http::verb verb;
         if (method == "GET")
         {
@@ -95,49 +98,48 @@ void get_data_from_endpoint(const std::string& method,
         {
             verb = http::verb::post;
         }
-        http::request<http::string_body> req{verb, target + query, 11};
-        req.set(http::field::host, host);
-        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+        http::request<http::string_body> request{verb, target + query, 11};
+        request.set(http::field::host, host);
+        request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
         if (method == "POST")
         {
-            req.set(http::field::content_type, content_type);
-            req.body() = body;
-            req.prepare_payload();
+            request.set(http::field::content_type, content_type);
+            request.body() = body;
+            request.prepare_payload();
         }
-
-        for (auto& x_header : x_headers_map) {
-            req.insert(x_header.first, x_header.second);
+        for (auto& x_header : x_headers)
+        {
+            request.insert(x_header.first, x_header.second);
         }
 
         int interval_milliseconds = 1000;
-        while (max_retry-- > 0) {
-            std::cout << "max_retry: " << max_retry << std::endl; 
-            stream.connect(results);
-            http::write(stream, req);
+        while (max_retry-- > 0)
+        {
+            stream.connect(endpoint_results);
+            http::write(stream, request);
             beast::flat_buffer buffer;
-            http::read(stream, buffer, res);
+            http::read(stream, buffer, response);
             beast::error_code ec;
             stream.socket().shutdown(tcp::socket::shutdown_both, ec);
             if (ec && ec != beast::errc::not_connected)
             {
                 throw beast::system_error{ec};
             }
-            int status = res.result_int();
-            // 503 Service Unavailable 504 Gateway Timeout
-            if (status != 503 && status != 504) {
+            int status = response.result_int();
+            // 503 Service Unavailable / 504 Gateway Timeout
+            if (status != 503 && status != 504)
+            {
                 break;
             }
-            std::cout << "interval: " << interval_milliseconds << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(interval_milliseconds));
             interval_milliseconds *= 2;
         }
-       
+
     } catch (std::exception const& e)
     {
-        // TODO: VLOG here?
-        std::cerr << "Error: " << e.what() << std::endl;
+        // TODO: need VLOG here?
+        // std::cerr << "Error: " << e.what() << std::endl;
     }
-
 }
 
 void create_dataframe_from_http_response(http::response<http::dynamic_body>& response,
@@ -155,7 +157,8 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
     {
         df_json_str = "[" + df_json_str + "]";
     }
-    std::cout << "content: " << df_json_str << std::endl;
+
+    py::gil_scoped_acquire gil;
     auto current_df = mod_cudf.attr("DataFrame")();
     current_df      = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
     if (dataframe.is_none())
@@ -178,9 +181,11 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
     // Aggregate dataframes for each file
     py::gil_scoped_acquire gil;
     py::module_ mod_cudf;
+    py::object dataframe = py::none();
 
     auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
     mod_cudf           = cache_handle.get_module("cudf");
+    py::gil_scoped_release release;
 
     // TODO(Devin) : error checking + improve robustness
     if (!task["queries"].is_array() or task.empty())
@@ -194,11 +199,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
-    auto conf = this->config();
+    auto conf     = this->config();
     int max_retry = conf.value("max_retry", 3);
-
-    py::object dataframe = py::none();
-    auto queries         = task["queries"];
+    auto queries  = task["queries"];
     // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& query : queries)
     {
@@ -213,15 +216,16 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         std::string body         = query.value("body", "");
         nlohmann::json x_headers = query.value("x-headers", nlohmann::json());
         std::unordered_map<std::string, std::string> x_headers_map;
-        for (auto& x_header_kv : x_headers.items()) {
+        for (auto& x_header_kv : x_headers.items())
+        {
             x_headers_map.insert(std::make_pair((std::string)x_header_kv.key(), (std::string)x_header_kv.value()));
         }
-        nlohmann::json params    = query.value("params", nlohmann::json());
+        nlohmann::json params = query.value("params", nlohmann::json());
         if (params.empty())
         {
             std::string param_str("");
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(method, endpoint, param_str, content_type, body, x_headers_map, max_retry, response);
+            get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers_map, max_retry);
             create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
         else
@@ -235,14 +239,15 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 }
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
-                get_data_from_endpoint(method, endpoint, param_str, content_type, body, x_headers_map, max_retry, response);
+                get_data_from_endpoint(
+                    response, method, endpoint, param_str, content_type, body, x_headers_map, max_retry);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             }
         }
     }
 
+    py::gil_scoped_acquire gil_2;
     message->payload(MessageMeta::create_from_python(std::move(dataframe)));
-    // py::gil_scoped_release release;
     return message;
 }
 }  // namespace morpheus
