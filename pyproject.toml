@@ -627,7 +627,14 @@ missing-member-max-choices = 1
 mixin-class-rgx = ".*[Mm]ixin"
 
 # List of decorators that change the signature of a decorated function.
-# signature-mutators =
+signature-mutators = [
+  'click.decorators.option',
+  'click.decorators.argument',
+  'click.decorators.version_option',
+  'click.decorators.help_option',
+  'click.decorators.pass_context',
+  'click.decorators.confirmation_option',
+]
 
 [tool.pylint.variables]
 # List of additional names supposed to be defined in builtins. Remember that you
