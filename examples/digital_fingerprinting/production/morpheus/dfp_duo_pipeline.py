@@ -179,7 +179,7 @@ def run_pipeline(train_users,
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    logger = logging.getLogger("morpheus.{}".format(__name__))
+    logger = logging.getLogger("morpheus.{__name__}")
 
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
