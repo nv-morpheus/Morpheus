@@ -25,7 +25,7 @@ from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class MultiFileSource(SingleOutputSource):
@@ -125,10 +125,10 @@ class MultiFileSource(SingleOutputSource):
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
+
+        if self._watch:
+            out_stream = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
         else:
-            if self._watch:
-                out_stream = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
-            else:
-                out_stream = builder.make_source(self.unique_name, self._generate_frames_fsspec())
+            out_stream = builder.make_source(self.unique_name, self._generate_frames_fsspec())
 
         return out_stream, fsspec.core.OpenFiles

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DFP training & inference pipelines for Azure Active Directory logs."""
 
 import functools
 import logging
@@ -147,8 +148,9 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  **kwargs):
+    """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
-    include_generic = train_users == "all" or train_users == "generic"
+    include_generic = train_users in ("all", "generic")
 
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
@@ -176,7 +178,7 @@ def run_pipeline(train_users,
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    logger = logging.getLogger("morpheus.{}".format(__name__))
+    logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
