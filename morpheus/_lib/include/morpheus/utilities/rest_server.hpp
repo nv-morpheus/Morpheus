@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <boost/asio/io_context.hpp>  // for io_context
-#include <pybind11/pytypes.h>         // for pybind11::function
+#include <boost/asio/io_context.hpp>    // for io_context
+#include <boost/system/error_code.hpp>  // for error_code
+#include <pybind11/pytypes.h>           // for pybind11::function
 
 #include <atomic>      // for atomic
 #include <chrono>      // for seconds
@@ -44,18 +45,22 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
+
 /**
  * @brief A tuple consisting of the HTTP status code, mime type to be used for the Content-Type header, and the body of
  * the response.
  */
-using parse_status_t = std::
-    tuple<unsigned /*http status code*/, std::string /* Content-Type of response */, std::string /* response body */>;
+using parse_status_t = std::tuple<unsigned /*http status code*/,
+                                  std::string /* Content-Type of response */,
+                                  std::string /* response body */,
+                                  on_complete_cb_fn_t /* optional callback function, ignored if null */>;
 
 /**
  * @brief A function that receives the post body and returns an HTTP status code, Content-Type string and body.
  *
  * @details The function is expected to return a tuple conforming to `parse_status_t` consisting of the HTTP status
- * code, mime type value for the Content-Type header and the body of the response.
+ * code, mime type value for the Content-Type header, body of the response and optionally a callback function.
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
@@ -126,5 +131,6 @@ struct RestServerInterfaceProxy
     static void start(RestServer& self);
     static void stop(RestServer& self);
     static bool is_running(const RestServer& self);
+    static on_complete_cb_fn_t make_on_complete_wrapper(pybind11::function py_on_complete_fn);
 };
 }  // namespace morpheus

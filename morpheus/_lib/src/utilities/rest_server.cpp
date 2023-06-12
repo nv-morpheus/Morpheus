@@ -27,6 +27,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
+#include <thread>
 #include <utility>  // for move
 
 // loosely based on the following examples:
@@ -56,7 +57,8 @@ class Session : public std::enable_shared_from_this<Session>
       m_url_endpoint{url_endpoint},
       m_method{method},
       m_max_payload_size{max_payload_size},
-      m_timeout{timeout}
+      m_timeout{timeout},
+      m_on_complete_cb{nullptr}
     {}
 
     ~Session() = default;
@@ -107,6 +109,7 @@ class Session : public std::enable_shared_from_this<Session>
             m_response->result(std::get<0>(parse_status));
             m_response->set(http::field::content_type, std::get<1>(parse_status));
             m_response->body() = std::get<2>(parse_status);
+            m_on_complete_cb   = std::get<3>(parse_status);
         }
         else
         {
@@ -147,6 +150,22 @@ class Session : public std::enable_shared_from_this<Session>
         m_parser.reset(nullptr);
         m_response.reset(nullptr);
 
+        if (m_on_complete_cb)
+        {
+            try
+            {
+                std::thread([cb = std::move(this->m_on_complete_cb), ec]() { cb(ec); }).detach();
+            } catch (const std::exception& e)
+            {
+                LOG(ERROR) << "Caught exception while calling on_complete callback: " << e.what();
+            } catch (...)
+            {
+                LOG(ERROR) << "Caught unknown exception while calling on_complete callback";
+            }
+
+            m_on_complete_cb = nullptr;
+        }
+
         do_read();
     }
 
@@ -167,6 +186,7 @@ class Session : public std::enable_shared_from_this<Session>
     // The response, and parser are all reset for each incoming request
     std::unique_ptr<http::request_parser<http::string_body>> m_parser;
     std::unique_ptr<http::response<http::string_body>> m_response;
+    morpheus::on_complete_cb_fn_t m_on_complete_cb;
 };
 
 class Listener : public std::enable_shared_from_this<Listener>
@@ -257,7 +277,8 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_num_threads(num_threads),
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
-  m_io_context{nullptr}
+  m_io_context{nullptr},
+  m_is_running{false}
 {
     if (m_method == http::verb::unknown)
     {
@@ -354,9 +375,17 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
     payload_parse_fn_t payload_parse_fn = [py_parse_fn = std::move(py_parse_fn)](const std::string& payload) {
         pybind11::gil_scoped_acquire gil;
         auto py_payload = pybind11::str(payload);
-        auto py_result  = py_parse_fn(py_payload);
-        auto result     = pybind11::cast<parse_status_t>(py_result);
-        return result;
+        auto py_result  = pybind11::tuple(py_parse_fn(py_payload));
+        on_complete_cb_fn_t cb_fn{nullptr};
+        if (!py_result[3].is_none())
+        {
+            cb_fn = make_on_complete_wrapper(py_result[3]);
+        }
+
+        return std::make_tuple(pybind11::cast<unsigned>(py_result[0]),
+                               pybind11::cast<std::string>(py_result[1]),
+                               pybind11::cast<std::string>(py_result[2]),
+                               std::move(cb_fn));
     };
 
     return std::make_shared<RestServer>(std::move(payload_parse_fn),
@@ -382,6 +411,25 @@ void RestServerInterfaceProxy::stop(RestServer& self)
 bool RestServerInterfaceProxy::is_running(const RestServer& self)
 {
     return self.is_running();
+}
+
+on_complete_cb_fn_t RestServerInterfaceProxy::make_on_complete_wrapper(pybind11::function py_on_complete_fn)
+{
+    return [py_cb_fn = std::move(py_on_complete_fn)](const beast::error_code& ec) {
+        pybind11::gil_scoped_acquire gil;
+        pybind11::print("on_complete_cb_fn_t lambda called");
+        pybind11::bool_ has_error = false;
+        pybind11::str error_msg;
+        if (ec)
+        {
+            has_error = true;
+            error_msg = ec.message();
+        }
+
+        pybind11::print("calling py_cb_fn");
+        py_cb_fn(has_error, error_msg);
+        pybind11::print("py_cb_fn lambda returned");
+    };
 }
 
 }  // namespace morpheus

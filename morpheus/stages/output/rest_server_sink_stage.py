@@ -17,6 +17,7 @@ import os
 import queue
 import time
 import typing
+from functools import partial
 from io import StringIO
 
 import mrc
@@ -147,6 +148,25 @@ class RestServerSinkStage(SinglePortStage):
         str_buf.seek(0)
         return str_buf.read()
 
+    def _request_callback(self, has_error: bool, error_msg: str) -> None:
+        import traceback
+        print("request_callback", flush=True)
+        try:
+            if has_error:
+                logger.error(error_msg)
+
+                # If the client failed to read the response, then we need to put the dataframe back into the queue
+                #self._queue.put(df)
+
+            # Even in the event of an error, we need to mark the tasks as done.
+            #for _ in range(num_tasks):
+            self._queue.task_done()
+        except Exception as e:
+            traceback.print_exc()
+            print(e, flush=True)
+
+        print("request_callback done", flush=True)
+
     def _request_handler(self, _: str) -> typing.Tuple[int, str]:
         # TODO: If this takes longer than `request_timeout_secs` then the request will be terminated, and the messages
         # will be lost
@@ -162,7 +182,7 @@ class RestServerSinkStage(SinglePortStage):
         except Exception as e:
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
-            return (500, MimeTypes.TEXT.value, err_msg)
+            return (500, MimeTypes.TEXT.value, err_msg, None)
 
         if (len(data_frames) > 0):
             df = data_frames[0]
@@ -170,14 +190,12 @@ class RestServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
-            # TODO: Move to a callback so that we only call task_done once the response has been sent, potentially
-            # allowing us to re-queue the message in the event of a network error
-            for _ in range(len(data_frames)):
-                self._queue.task_done()
+            def cb(has_error: bool, error_msg: str) -> None:
+                print(f"request_callback: {has_error} {error_msg}", flush=True)
 
-            return (200, self._content_type, self._df_serializer_fn(df))
+            return (200, self._content_type, self._df_serializer_fn(df), cb)
         else:
-            return (204, MimeTypes.TEXT.value, "No messages available")
+            return (204, MimeTypes.TEXT.value, "No messages available", None)
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """
