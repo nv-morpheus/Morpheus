@@ -357,7 +357,9 @@ def test_rest_loader_module():
                 "tasks": [{
                     "type": "load",
                     "properties": {
-                    "loader_id": "rest", "strategy": "aggregate", "queries": [{
+                    "loader_id": "rest", 
+                    "strategy": "aggregate", 
+                    "queries": [{
                     "method": "GET",
                     "endpoint": "0.0.0.0/?param1=false&param2=true",
                     "params": [
@@ -365,7 +367,8 @@ def test_rest_loader_module():
                         {"param1": "false", "param2": "true"},
                         {"something1": "something2"},
                     ],
-                        },                                                     {
+                    },                                                     
+                    {
                     "method": "POST",
                     "endpoint": "0.0.0.0",
                     "params": [
@@ -373,7 +376,7 @@ def test_rest_loader_module():
                     ],
                     "content_type": "text/plain",
                     "body": "456"
-                        },
+                    },
                     {
                     "endpoint": "0.0.0.0",
                     "x-headers": {
@@ -429,9 +432,9 @@ def test_rest_loader_module():
 
 
 if (__name__ == "__main__"):
-    # test_contains_namespace()
-    # test_is_version_compatible()
-    # test_get_module()
-    # test_payload_loader_module()
-    # test_file_loader_module()
+    test_contains_namespace()
+    test_is_version_compatible()
+    test_get_module()
+    test_payload_loader_module()
+    test_file_loader_module()
     test_rest_loader_module()

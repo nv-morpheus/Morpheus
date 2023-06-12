@@ -59,8 +59,8 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
     py::object ep_pystr = py::str(ep);
 
     // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced
-    // by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component. ref:
-    // https://docs.python.org/3/library/urllib.parse.html
+    // by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component. 
+    // ref: https://docs.python.org/3/library/urllib.parse.html
     // Workaround here is to prepend "//" if endpoint does not already include one
     if (ep_pystr.attr("find")("//").cast<int>() == -1)
     {
@@ -80,7 +80,7 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
     {
         query = params;
     }
-    py::gil_scoped_release release;
+    py::gil_scoped_release gil_release;
 
     net::io_context ioc;
     tcp::resolver resolver(ioc);
@@ -138,7 +138,7 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
     } catch (std::exception const& e)
     {
         // TODO: need VLOG here?
-        // std::cerr << "Error: " << e.what() << std::endl;
+        std::cout << "Error: " << e.what() << std::endl;
     }
 }
 
