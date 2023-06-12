@@ -131,6 +131,5 @@ struct RestServerInterfaceProxy
     static void start(RestServer& self);
     static void stop(RestServer& self);
     static bool is_running(const RestServer& self);
-    static on_complete_cb_fn_t make_on_complete_wrapper(pybind11::function py_on_complete_fn);
 };
 }  // namespace morpheus

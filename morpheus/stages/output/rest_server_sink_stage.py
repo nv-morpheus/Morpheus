@@ -148,7 +148,7 @@ class RestServerSinkStage(SinglePortStage):
         str_buf.seek(0)
         return str_buf.read()
 
-    def _request_callback(self, has_error: bool, error_msg: str) -> None:
+    def _request_callback(self, df: DataFrameType, num_tasks: int, has_error: bool, error_msg: str) -> None:
         import traceback
         print("request_callback", flush=True)
         try:
@@ -156,11 +156,11 @@ class RestServerSinkStage(SinglePortStage):
                 logger.error(error_msg)
 
                 # If the client failed to read the response, then we need to put the dataframe back into the queue
-                #self._queue.put(df)
+                self._queue.put(df)
 
             # Even in the event of an error, we need to mark the tasks as done.
-            #for _ in range(num_tasks):
-            self._queue.task_done()
+            for _ in range(num_tasks):
+                self._queue.task_done()
         except Exception as e:
             traceback.print_exc()
             print(e, flush=True)
@@ -190,12 +190,12 @@ class RestServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
-            def cb(has_error: bool, error_msg: str) -> None:
-                print(f"request_callback: {has_error} {error_msg}", flush=True)
-
-            return (200, self._content_type, self._df_serializer_fn(df), cb)
+            return (200,
+                    self._content_type,
+                    self._df_serializer_fn(df),
+                    partial(self._request_callback, df, len(data_frames)))
         else:
-            return (204, MimeTypes.TEXT.value, "No messages available", None)
+            return (204, MimeTypes.TEXT.value, "", None)
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """

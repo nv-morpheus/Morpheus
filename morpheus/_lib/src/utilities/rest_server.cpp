@@ -19,6 +19,8 @@
 
 #include "morpheus/utilities/rest_server.hpp"
 
+#include "pymrc/utilities/function_wrappers.hpp"
+
 #include <boost/asio.hpp>         // for dispatch
 #include <boost/asio/ip/tcp.hpp>  // for acceptor, endpoint, socket,
 #include <boost/beast/core.hpp>   // for bind_front_handler, error_code, flat_buffer, tcp_stream
@@ -26,7 +28,10 @@
 #include <glog/logging.h>         // for CHECK and LOG
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 
+#include <iostream>
+#include <memory>
 #include <thread>
 #include <utility>  // for move
 
@@ -154,7 +159,7 @@ class Session : public std::enable_shared_from_this<Session>
         {
             try
             {
-                std::thread([cb = std::move(this->m_on_complete_cb), ec]() { cb(ec); }).detach();
+                m_on_complete_cb(ec);
             } catch (const std::exception& e)
             {
                 LOG(ERROR) << "Caught exception while calling on_complete callback: " << e.what();
@@ -379,7 +384,28 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
         on_complete_cb_fn_t cb_fn{nullptr};
         if (!py_result[3].is_none())
         {
-            cb_fn = make_on_complete_wrapper(py_result[3]);
+            auto py_cb_fn     = py_result[3].cast<pybind11::function>();
+            auto cb_fn_holder = mrc::pymrc::PyFuncWrapper(std::move(py_cb_fn));
+
+            cb_fn = [py_cb_fn = std::move(cb_fn_holder)](const beast::error_code& ec) {
+                std::cerr << "acquiring gil" << std::endl << std::flush;
+                {
+                    pybind11::gil_scoped_acquire gil;
+                    pybind11::print("on_complete_cb_fn_t lambda called");
+                    pybind11::bool_ has_error = false;
+                    pybind11::str error_msg   = "";
+                    if (ec)
+                    {
+                        has_error = true;
+                        error_msg = ec.message();
+                    }
+
+                    pybind11::print("calling py_cb_fn");
+                    py_cb_fn.operator()<void, pybind11::bool_, pybind11::str>(has_error, error_msg);
+                    pybind11::print("py_cb_fn returned");
+                }
+                std::cerr << "gil released" << std::endl << std::flush;
+            };
         }
 
         return std::make_tuple(pybind11::cast<unsigned>(py_result[0]),
@@ -411,25 +437,6 @@ void RestServerInterfaceProxy::stop(RestServer& self)
 bool RestServerInterfaceProxy::is_running(const RestServer& self)
 {
     return self.is_running();
-}
-
-on_complete_cb_fn_t RestServerInterfaceProxy::make_on_complete_wrapper(pybind11::function py_on_complete_fn)
-{
-    return [py_cb_fn = std::move(py_on_complete_fn)](const beast::error_code& ec) {
-        pybind11::gil_scoped_acquire gil;
-        pybind11::print("on_complete_cb_fn_t lambda called");
-        pybind11::bool_ has_error = false;
-        pybind11::str error_msg;
-        if (ec)
-        {
-            has_error = true;
-            error_msg = ec.message();
-        }
-
-        pybind11::print("calling py_cb_fn");
-        py_cb_fn(has_error, error_msg);
-        pybind11::print("py_cb_fn lambda returned");
-    };
 }
 
 }  // namespace morpheus
