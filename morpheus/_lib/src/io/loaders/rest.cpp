@@ -41,6 +41,8 @@ namespace http  = beast::http;
 namespace net   = boost::asio;
 using tcp       = net::ip::tcp;
 
+#define PORT "80"
+
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
@@ -87,8 +89,7 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
     beast::tcp_stream stream(ioc);
     try
     {
-        // 8081 for testing; should be 80 for HTTP
-        auto const endpoint_results = resolver.resolve(host, "8081");
+        auto const endpoint_results = resolver.resolve(host, PORT);
         http::verb verb;
         if (method == "GET")
         {

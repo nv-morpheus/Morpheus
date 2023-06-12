@@ -437,4 +437,6 @@ if (__name__ == "__main__"):
     test_get_module()
     test_payload_loader_module()
     test_file_loader_module()
-    test_rest_loader_module()
+    
+    # Flask service needed for testing RESTDataloader
+    # test_rest_loader_module()
