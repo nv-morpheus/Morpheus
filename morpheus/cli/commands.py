@@ -113,6 +113,8 @@ class PluginGroup(AliasedGroup):
 
         duplicate_commands = command_list.intersection(plugin_command_list)
 
+        # The COMP_WORDS environment variable is set by click using the auto-complete feature, which may cause this
+        # metho to be called multiple times.
         if (len(duplicate_commands) > 0 and 'COMP_WORDS' not in os.environ):
             raise RuntimeError(f"Plugins registered the following duplicate commands: {', '.join(duplicate_commands)}")
 
