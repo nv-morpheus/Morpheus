@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""File source stage."""
 
 import logging
 import pathlib
 import typing
 
 import mrc
-import typing_utils
-from mrc.core import operators as ops
 
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
@@ -86,6 +85,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
+        """Return the name of the stage"""
         return "from-file"
 
     @property
@@ -93,7 +93,8 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
+        """Indicates whether or not this stage supports a C++ node"""
         return True
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -108,7 +109,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return out_stream, out_type
 
-    def _generate_frames(self):
+    def _generate_frames(self) -> typing.Iterable[MessageMeta]:
 
         df = read_file_to_df(
             self._filename,
