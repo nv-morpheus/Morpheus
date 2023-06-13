@@ -96,22 +96,23 @@ class PluginGroup(AliasedGroup):
         self._plugin_manager = PluginManager.get()
 
     def list_commands(self, ctx: click.Context) -> typing.List[str]:
-
         # Get the list of commands from the base
-        command_list = super().list_commands(ctx)
+        command_list = set(super().list_commands(ctx))
 
         # Extend it with any plugins
         registered_stages = self._plugin_manager.get_registered_stages()
 
         plugin_command_list = registered_stages.get_registered_names(self._pipeline_mode)
 
-        duplicate_commands = [x for x in plugin_command_list if x in command_list]
+        duplicate_commands = command_list.intersection(plugin_command_list)
 
-        if (len(duplicate_commands) > 0):
+        # When using click's auto-complete functionality we can potentially get duplicate commands because this method
+        # may be called multiple times. We can detect this by checking if the COMP_WORDS environment variable is set.
+        if (len(duplicate_commands) > 0 and 'COMP_WORDS' not in os.environ):
             raise RuntimeError("Plugins registered the following duplicate commands: {}".format(
                 ", ".join(duplicate_commands)))
 
-        command_list.extend(plugin_command_list)
+        command_list.update(plugin_command_list)
 
         command_list = sorted(command_list)
 
