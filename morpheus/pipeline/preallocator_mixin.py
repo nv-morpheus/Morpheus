@@ -89,7 +89,6 @@ class PreallocatorMixin(ABC):
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         (out_stream, out_type) = out_pair
         pretty_type = pretty_print_type_name(out_type)
-        logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_type))
 
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
