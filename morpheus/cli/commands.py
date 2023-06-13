@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Pipeline and tool subcommands for the Morpheus CLI."""
 
 import functools
 import logging
@@ -64,14 +65,17 @@ logger = logging.getLogger("morpheus.cli")
 # `modes` is a tuple so it can be cached for LRU to work
 @functools.lru_cache(maxsize=None)
 def add_command(name: str, stage_module: str, modes: typing.Tuple[PipelineModes, ...] = None):
+    """Add a stage to the global registry."""
 
     GlobalStageRegistry.get().add_stage_info(
         LazyStageInfo(name=name, stage_qualified_name=stage_module, modes=list(modes)))
 
 
 class AliasedGroup(click.Group):
+    """A click group that supports aliases."""
 
     def get_command(self, ctx, cmd_name):
+        """Resolve aliases before calling the base method."""
         try:
             cmd_name = ALIASES[cmd_name]
         except KeyError:
@@ -80,6 +84,7 @@ class AliasedGroup(click.Group):
 
 
 class PluginGroup(AliasedGroup):
+    """Click group that loads subcommands from plugins."""
 
     def __init__(
         self,
@@ -96,6 +101,7 @@ class PluginGroup(AliasedGroup):
         self._plugin_manager = PluginManager.get()
 
     def list_commands(self, ctx: click.Context) -> typing.List[str]:
+        """Get the list of commands."""
 
         # Get the list of commands from the base
         command_list = super().list_commands(ctx)
@@ -117,6 +123,7 @@ class PluginGroup(AliasedGroup):
         return command_list
 
     def get_command(self, ctx, cmd_name):
+        """Get the command."""
 
         # Check if the command is already loaded
         if (cmd_name not in self.commands):
@@ -161,6 +168,7 @@ def cli(ctx: click.Context,
         log_config_file: str = DEFAULT_CONFIG.log_config_file,
         plugins: typing.List[str] = None,
         **kwargs):
+    """Main entry point function for the CLI."""
 
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below
@@ -184,7 +192,7 @@ def cli(ctx: click.Context,
 @cli.group(short_help="Run a utility tool", no_args_is_help=True)
 @prepare_command()
 def tools(ctx: click.Context, **kwargs):
-
+    """Tools subcommand"""
     pass
 
 
@@ -196,7 +204,7 @@ def tools(ctx: click.Context, **kwargs):
 @click.option('--max_workspace_size', type=int, default=16000)
 @prepare_command()
 def onnx_to_trt(ctx: click.Context, **kwargs):
-
+    """Converts an ONNX model to a TRT engine"""
     logger.info("Generating onnx file")
 
     # Convert batches to a list
@@ -215,6 +223,7 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
 
 @tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus", no_args_is_help=True)
 def autocomplete(**kwargs):
+    """Utility for installing/updating/removing shell completion for Morpheus"""
     pass
 
 
@@ -276,7 +285,7 @@ def install(**kwargs):
                     "Only use as a last resort if bugs are encountered"))
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
-
+    """Run subcommand, used for running a pipeline"""
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
     CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
 
@@ -313,11 +322,9 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -380,11 +387,9 @@ def pipeline_fil(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -464,11 +469,9 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -542,11 +545,9 @@ def pipeline_other(ctx: click.Context, **kwargs):
     output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
     the following stages could be used
 
-    \b
     pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
     --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
 
-    \b
     Pipelines must follow a few rules:
     1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
     2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
@@ -585,6 +586,7 @@ def pipeline_other(ctx: click.Context, **kwargs):
 @pipeline_other.result_callback()
 @click.pass_context
 def post_pipeline(ctx: click.Context, *args, **kwargs):
+    """Executes the pipeline"""
 
     config = get_config_from_ctx(ctx)
 
