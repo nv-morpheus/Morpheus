@@ -388,23 +388,16 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
             auto cb_fn_holder = mrc::pymrc::PyFuncWrapper(std::move(py_cb_fn));
 
             cb_fn = [py_cb_fn = std::move(cb_fn_holder)](const beast::error_code& ec) {
-                std::cerr << "acquiring gil" << std::endl << std::flush;
+                pybind11::gil_scoped_acquire gil;
+                pybind11::bool_ has_error = false;
+                pybind11::str error_msg;
+                if (ec)
                 {
-                    pybind11::gil_scoped_acquire gil;
-                    pybind11::print("on_complete_cb_fn_t lambda called");
-                    pybind11::bool_ has_error = false;
-                    pybind11::str error_msg   = "";
-                    if (ec)
-                    {
-                        has_error = true;
-                        error_msg = ec.message();
-                    }
-
-                    pybind11::print("calling py_cb_fn");
-                    py_cb_fn.operator()<void, pybind11::bool_, pybind11::str>(has_error, error_msg);
-                    pybind11::print("py_cb_fn returned");
+                    has_error = true;
+                    error_msg = ec.message();
                 }
-                std::cerr << "gil released" << std::endl << std::flush;
+
+                py_cb_fn.operator()<void, pybind11::bool_, pybind11::str>(has_error, error_msg);
             };
         }
 

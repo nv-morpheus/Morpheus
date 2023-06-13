@@ -149,8 +149,6 @@ class RestServerSinkStage(SinglePortStage):
         return str_buf.read()
 
     def _request_callback(self, df: DataFrameType, num_tasks: int, has_error: bool, error_msg: str) -> None:
-        import traceback
-        print("request_callback", flush=True)
         try:
             if has_error:
                 logger.error(error_msg)
@@ -162,10 +160,7 @@ class RestServerSinkStage(SinglePortStage):
             for _ in range(num_tasks):
                 self._queue.task_done()
         except Exception as e:
-            traceback.print_exc()
-            print(e, flush=True)
-
-        print("request_callback done", flush=True)
+            logger.error("Unknown error in request callback: %s", e)
 
     def _request_handler(self, _: str) -> typing.Tuple[int, str]:
         # TODO: If this takes longer than `request_timeout_secs` then the request will be terminated, and the messages
