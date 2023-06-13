@@ -108,20 +108,6 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return out_stream, out_type
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-        out_type = out_pair[1]
-
-        # Convert our list of dataframes into the desired type. Flatten if necessary
-        if (typing_utils.issubtype(out_type, typing.List)):
-            flattened = builder.make_node(self.unique_name + "-post", ops.flatten())
-            builder.make_edge(out_stream, flattened)
-            out_stream = flattened
-            out_type = typing.get_args(out_type)[0]
-
-        return super()._post_build_single(builder, (out_stream, out_type))
-
     def _generate_frames(self):
 
         df = read_file_to_df(
