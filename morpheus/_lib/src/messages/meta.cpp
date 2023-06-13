@@ -26,6 +26,7 @@
 #include <cudf/io/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pyerrors.h>  // for PyExc_DeprecationWarning
 #include <warnings.h>  // for PyErr_WarnEx
@@ -121,6 +122,15 @@ std::optional<std::string> MessageMeta::ensure_sliceable_index()
 /********** MessageMetaInterfaceProxy **********/
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
+    // ensure we have a cudf DF and not a pandas DF
+    auto isinstance  = py::module_::import("builtins").attr("isinstance");
+    auto cudf_df_cls = py::module_::import("cudf").attr("DataFrame");
+    if (!isinstance(data_frame, cudf_df_cls).cast<bool>())
+    {
+        LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
+        data_frame = cudf_df_cls(std::move(data_frame));
+    }
+
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 

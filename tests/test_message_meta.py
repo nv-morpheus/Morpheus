@@ -22,6 +22,7 @@ import pytest
 
 import cudf
 
+from morpheus._lib.messages import MessageMeta as MessageMetaCpp
 from morpheus.messages.message_meta import MessageMeta
 from utils.dataset_manager import DatasetManager
 
@@ -137,3 +138,17 @@ def test_copy_dataframe(df: cudf.DataFrame):
     cdf = meta.copy_dataframe()
     cdf['v2'].iloc[3] = 47
     DatasetManager.assert_df_equal(meta.copy_dataframe(), df), "Should be identical"
+
+
+@pytest.mark.use_cpp
+def test_pandas_df_cpp(dataset_pandas: DatasetManager):
+    """
+    Test for issue #821, calling the `df` property returns an empty cudf dataframe.
+    """
+    df = dataset_pandas["filter_probs.csv"]
+    assert isinstance(df, pd.DataFrame)
+
+    meta = MessageMeta(df)
+    assert isinstance(meta, MessageMetaCpp)
+    assert isinstance(meta.df, cudf.DataFrame)
+    DatasetManager.assert_compare_df(meta.df, df)
