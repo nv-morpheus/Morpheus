@@ -427,14 +427,15 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               required=True,
-              default=None,
+              default="data/columns_ae.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read column features."))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
-                    "A label file is a simple text file where each line corresponds to a label. "))
+                    "A label file is a simple text file where each line corresponds to a label. "
+                    "If unspecified, only a single output label is created for FIL"))
 @click.option('--userid_column_name',
               type=str,
               default="userIdentityaccountId",
@@ -491,14 +492,19 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     config.ae.userid_column_name = kwargs["userid_column_name"]
     config.ae.feature_scaler = kwargs["feature_scaler"]
     config.ae.use_generic_model = kwargs["use_generic_model"]
-    config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
-    logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
+
+    if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
+        config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
+        logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
+    else:
+        # Use a default single label
+        config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
         config.class_labels = load_labels_file(kwargs["labels_file"])
         logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use default labels
+        # Use a default single label
         config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("userid_filter" in kwargs):
