@@ -368,7 +368,6 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified the value specified by the --label flag will be used."))
 @click.option('--columns_file',
-              default="data/columns_fil.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read column features."))
 @click.option('--viz_file',
@@ -413,8 +412,6 @@ def pipeline_fil(ctx: click.Context, **kwargs):
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         config.fil.feature_columns = load_labels_file(kwargs["columns_file"])
         logger.debug("Loaded columns. Current columns: [%s]", str(config.fil.feature_columns))
-    else:
-        raise ValueError('Unable to find columns file')
 
     from morpheus.pipeline import LinearPipeline
 

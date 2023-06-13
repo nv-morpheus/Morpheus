@@ -349,8 +349,9 @@ class TestCLI:
         """
         Creates a pipeline roughly matching that of the abp validation test
         """
-        args = (GENERAL_ARGS + ['pipeline-fil'] + FILE_SRC_ARGS + ['deserialize', 'preprocess'] + INF_TRITON_ARGS +
-                MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+        args = (GENERAL_ARGS + ['pipeline-fil', '--columns_file=data/columns_fil.txt'] + FILE_SRC_ARGS +
+                ['deserialize', 'preprocess'] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -419,23 +420,24 @@ class TestCLI:
         with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
-        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file] + FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
-            'deserialize',
-            'filter',
-            'dropna',
-            '--column',
-            'xyz',
-            'preprocess',
-            'add-scores',
-            'unittest-conv-msg',
-            'inf-identity',
-            'inf-pytorch',
-            '--model_filename',
-            tmp_model,
-            'mlflow-drift',
-            '--tracking_uri',
-            mlflow_uri
-        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
+        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file, '--columns_file=data/columns_fil.txt'] +
+                FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
+                    'deserialize',
+                    'filter',
+                    'dropna',
+                    '--column',
+                    'xyz',
+                    'preprocess',
+                    'add-scores',
+                    'unittest-conv-msg',
+                    'inf-identity',
+                    'inf-pytorch',
+                    '--model_filename',
+                    tmp_model,
+                    'mlflow-drift',
+                    '--tracking_uri',
+                    mlflow_uri
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
                 TO_KAFKA_ARGS)
 
         obj = {}
