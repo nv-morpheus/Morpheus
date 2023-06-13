@@ -109,11 +109,11 @@ class MultiFileSource(SingleOutputSource):
             # need to re-ingest that new file.
             files_seen = file_set
 
-            pre_yield_time = time.time()
+            pre_yield_time = time.monotonic()
             if len(filtered_files) > 0:
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
-            post_yield_time = time.time()
+            post_yield_time = time.monotonic()
 
             # because yielding to the output channel can block, we should only sleep when yielding didn't take longer
             # than the watch interval
