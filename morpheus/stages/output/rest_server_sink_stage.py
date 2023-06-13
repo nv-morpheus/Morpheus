@@ -163,8 +163,6 @@ class RestServerSinkStage(SinglePortStage):
             logger.error("Unknown error in request callback: %s", e)
 
     def _request_handler(self, _: str) -> typing.Tuple[int, str]:
-        # TODO: If this takes longer than `request_timeout_secs` then the request will be terminated, and the messages
-        # will be lost
         num_rows = 0
         data_frames = []
         try:
@@ -222,7 +220,6 @@ class RestServerSinkStage(SinglePortStage):
     def _block_until_empty(self):
         logger.debug("Waiting for queue to empty")
         self._queue.join()
-        time.sleep(1)  # TODO: race condition, need some sort of on req callback, and only call task_done() there
         logger.debug("stopping server")
         self._server.stop()
         logger.debug("stopped")
