@@ -108,8 +108,7 @@ class PluginGroup(AliasedGroup):
         duplicate_commands = [x for x in plugin_command_list if x in command_list]
 
         if (len(duplicate_commands) > 0):
-            raise RuntimeError("Plugins registered the following duplicate commands: {}".format(
-                ", ".join(duplicate_commands)))
+            raise RuntimeError(f"Plugins registered the following duplicate commands: {', '.join(duplicate_commands)}")
 
         command_list.extend(plugin_command_list)
 
@@ -205,9 +204,9 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
 
     c = ConfigOnnxToTRT()
 
-    for param in kwargs:
+    for (param, val) in kwargs.items():
         if hasattr(c, param):
-            setattr(c, param, kwargs[param])
+            setattr(c, param, val)
 
     from morpheus.utils.onnx_to_trt import gen_engine
 
@@ -229,7 +228,7 @@ def show(shell):
     from morpheus.cli import click_completion_tools
     shell, path, code = click_completion_tools.get_code(shell=shell)
 
-    click.secho("To add %s completion, write the following code to '%s':\n" % (shell, path), fg="blue")
+    click.secho(f"To add {shell} completion, write the following code to '{path}':\n", fg="blue")
     click.echo(code)
 
 
@@ -247,7 +246,7 @@ def install(**kwargs):
     from morpheus.cli import click_completion_tools
     shell, path = click_completion_tools.install_code(**kwargs)
 
-    click.echo('%s completion installed in %s' % (shell, path))
+    click.echo(f'{shell} completion installed in {path}')
 
 
 @cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup)
@@ -602,7 +601,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
     # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
     if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
         pipeline.visualize(kwargs["viz_file"], rankdir="LR")
-        click.secho("Pipeline visualization saved to {}".format(kwargs["viz_file"]), fg="yellow")
+        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
 
 
 # Manually create the subcommands for each command (necessary since commands can be used on multiple groups)
