@@ -636,7 +636,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
         --use_cpp=True \
-        pipeline-fil --columns_file=data/columns_fil.txt \
+        pipeline-fil \
           from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
@@ -661,7 +661,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
         --use_cpp=True \
-        pipeline-fil --columns_file=data/columns_fil.txt \
+        pipeline-fil \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
