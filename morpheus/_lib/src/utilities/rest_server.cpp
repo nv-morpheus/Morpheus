@@ -19,7 +19,7 @@
 
 #include "morpheus/utilities/rest_server.hpp"
 
-#include "pymrc/utilities/function_wrappers.hpp"
+#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
 #include <boost/asio.hpp>         // for dispatch
 #include <boost/asio/ip/tcp.hpp>  // for acceptor, endpoint, socket,
@@ -30,9 +30,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
-#include <iostream>
-#include <memory>
-#include <thread>
 #include <utility>  // for move
 
 // loosely based on the following examples:
