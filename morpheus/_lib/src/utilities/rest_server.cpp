@@ -368,7 +368,10 @@ RestServer::~RestServer()
 }
 
 /****** RestServerInterfaceProxy *************************/
-std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py_parse_fn,
+using mrc::pymrc::PyFuncWrapper;
+namespace py = pybind11;
+
+std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse_fn,
                                                            std::string bind_address,
                                                            unsigned short port,
                                                            std::string endpoint,
@@ -377,33 +380,34 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
                                                            std::size_t max_payload_size,
                                                            int64_t request_timeout)
 {
-    payload_parse_fn_t payload_parse_fn = [py_parse_fn = std::move(py_parse_fn)](const std::string& payload) {
-        pybind11::gil_scoped_acquire gil;
-        auto py_payload = pybind11::str(payload);
-        auto py_result  = pybind11::tuple(py_parse_fn(py_payload));
+    auto wrapped_parse_fn               = PyFuncWrapper(std::move(py_parse_fn));
+    payload_parse_fn_t payload_parse_fn = [wrapped_parse_fn = std::move(wrapped_parse_fn)](const std::string& payload) {
+        py::gil_scoped_acquire gil;
+        auto py_payload = py::str(payload);
+        auto py_result  = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
         on_complete_cb_fn_t cb_fn{nullptr};
         if (!py_result[3].is_none())
         {
-            auto py_cb_fn     = py_result[3].cast<pybind11::function>();
-            auto cb_fn_holder = mrc::pymrc::PyFuncWrapper(std::move(py_cb_fn));
+            auto py_cb_fn      = py_result[3].cast<py::function>();
+            auto wrapped_cb_fn = PyFuncWrapper(std::move(py_cb_fn));
 
-            cb_fn = [py_cb_fn = std::move(cb_fn_holder)](const beast::error_code& ec) {
-                pybind11::gil_scoped_acquire gil;
-                pybind11::bool_ has_error = false;
-                pybind11::str error_msg;
+            cb_fn = [wrapped_cb_fn = std::move(wrapped_cb_fn)](const beast::error_code& ec) {
+                py::gil_scoped_acquire gil;
+                py::bool_ has_error = false;
+                py::str error_msg;
                 if (ec)
                 {
                     has_error = true;
                     error_msg = ec.message();
                 }
 
-                py_cb_fn.operator()<void, pybind11::bool_, pybind11::str>(has_error, error_msg);
+                wrapped_cb_fn.operator()<void, py::bool_, py::str>(has_error, error_msg);
             };
         }
 
-        return std::make_tuple(pybind11::cast<unsigned>(py_result[0]),
-                               pybind11::cast<std::string>(py_result[1]),
-                               pybind11::cast<std::string>(py_result[2]),
+        return std::make_tuple(py::cast<unsigned>(py_result[0]),
+                               py::cast<std::string>(py_result[1]),
+                               py::cast<std::string>(py_result[2]),
                                std::move(cb_fn));
     };
 
