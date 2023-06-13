@@ -19,6 +19,8 @@
 
 #include "morpheus/utilities/rest_server.hpp"
 
+#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
+
 #include <boost/asio.hpp>         // for dispatch
 #include <boost/asio/ip/tcp.hpp>  // for acceptor, endpoint, socket,
 #include <boost/beast/core.hpp>   // for bind_front_handler, error_code, flat_buffer, tcp_stream
@@ -26,6 +28,7 @@
 #include <glog/logging.h>         // for CHECK and LOG
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 
 #include <utility>  // for move
 
@@ -56,7 +59,8 @@ class Session : public std::enable_shared_from_this<Session>
       m_url_endpoint{url_endpoint},
       m_method{method},
       m_max_payload_size{max_payload_size},
-      m_timeout{timeout}
+      m_timeout{timeout},
+      m_on_complete_cb{nullptr}
     {}
 
     ~Session() = default;
@@ -107,6 +111,7 @@ class Session : public std::enable_shared_from_this<Session>
             m_response->result(std::get<0>(parse_status));
             m_response->set(http::field::content_type, std::get<1>(parse_status));
             m_response->body() = std::get<2>(parse_status);
+            m_on_complete_cb   = std::get<3>(parse_status);
         }
         else
         {
@@ -147,6 +152,22 @@ class Session : public std::enable_shared_from_this<Session>
         m_parser.reset(nullptr);
         m_response.reset(nullptr);
 
+        if (m_on_complete_cb)
+        {
+            try
+            {
+                m_on_complete_cb(ec);
+            } catch (const std::exception& e)
+            {
+                LOG(ERROR) << "Caught exception while calling on_complete callback: " << e.what();
+            } catch (...)
+            {
+                LOG(ERROR) << "Caught unknown exception while calling on_complete callback";
+            }
+
+            m_on_complete_cb = nullptr;
+        }
+
         do_read();
     }
 
@@ -167,6 +188,7 @@ class Session : public std::enable_shared_from_this<Session>
     // The response, and parser are all reset for each incoming request
     std::unique_ptr<http::request_parser<http::string_body>> m_parser;
     std::unique_ptr<http::response<http::string_body>> m_response;
+    morpheus::on_complete_cb_fn_t m_on_complete_cb;
 };
 
 class Listener : public std::enable_shared_from_this<Listener>
@@ -257,7 +279,8 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_num_threads(num_threads),
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
-  m_io_context{nullptr}
+  m_io_context{nullptr},
+  m_is_running{false}
 {
     if (m_method == http::verb::unknown)
     {
@@ -342,7 +365,10 @@ RestServer::~RestServer()
 }
 
 /****** RestServerInterfaceProxy *************************/
-std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py_parse_fn,
+using mrc::pymrc::PyFuncWrapper;
+namespace py = pybind11;
+
+std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse_fn,
                                                            std::string bind_address,
                                                            unsigned short port,
                                                            std::string endpoint,
@@ -351,12 +377,35 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(pybind11::function py
                                                            std::size_t max_payload_size,
                                                            int64_t request_timeout)
 {
-    payload_parse_fn_t payload_parse_fn = [py_parse_fn = std::move(py_parse_fn)](const std::string& payload) {
-        pybind11::gil_scoped_acquire gil;
-        auto py_payload = pybind11::str(payload);
-        auto py_result  = py_parse_fn(py_payload);
-        auto result     = pybind11::cast<parse_status_t>(py_result);
-        return result;
+    auto wrapped_parse_fn               = PyFuncWrapper(std::move(py_parse_fn));
+    payload_parse_fn_t payload_parse_fn = [wrapped_parse_fn = std::move(wrapped_parse_fn)](const std::string& payload) {
+        py::gil_scoped_acquire gil;
+        auto py_payload = py::str(payload);
+        auto py_result  = wrapped_parse_fn.operator()<py::tuple, py::str>(py_payload);
+        on_complete_cb_fn_t cb_fn{nullptr};
+        if (!py_result[3].is_none())
+        {
+            auto py_cb_fn      = py_result[3].cast<py::function>();
+            auto wrapped_cb_fn = PyFuncWrapper(std::move(py_cb_fn));
+
+            cb_fn = [wrapped_cb_fn = std::move(wrapped_cb_fn)](const beast::error_code& ec) {
+                py::gil_scoped_acquire gil;
+                py::bool_ has_error = false;
+                py::str error_msg;
+                if (ec)
+                {
+                    has_error = true;
+                    error_msg = ec.message();
+                }
+
+                wrapped_cb_fn.operator()<void, py::bool_, py::str>(has_error, error_msg);
+            };
+        }
+
+        return std::make_tuple(py::cast<unsigned>(py_result[0]),
+                               py::cast<std::string>(py_result[1]),
+                               py::cast<std::string>(py_result[2]),
+                               std::move(cb_fn));
     };
 
     return std::make_shared<RestServer>(std::move(payload_parse_fn),
