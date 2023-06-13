@@ -93,7 +93,15 @@ class MultiFileSource(SingleOutputSource):
 
     def _polling_generate_frames_fsspec(self) -> typing.Iterable[fsspec.core.OpenFiles]:
         files_seen = set()
+        curr_time = time.monotonic()
+        next_update_epoch = curr_time
+
         while (True):
+            # Before doing any work, find the next update epoch after the current time
+            while (next_update_epoch <= curr_time):
+                # Only ever add `self._watch_interval` to next_update_epoch so all updates are at repeating intervals
+                next_update_epoch += self._watch_interval
+
             file_set = set()
             filtered_files = []
 
@@ -109,17 +117,17 @@ class MultiFileSource(SingleOutputSource):
             # need to re-ingest that new file.
             files_seen = file_set
 
-            pre_yield_time = time.monotonic()
             if len(filtered_files) > 0:
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
-            post_yield_time = time.monotonic()
+            curr_time = time.monotonic()
 
-            # because yielding to the output channel can block, we should only sleep when yielding didn't take longer
-            # than the watch interval
-            yield_time = post_yield_time - pre_yield_time
-            if yield_time < self._watch_interval:
-                time.sleep(self._watch_interval - yield_time)
+            # If we spent more than `self._watch_interval` doing work and/or yielding to the output channel blocked,
+            # then we should only sleep for the remaining time until the next update epoch.
+            sleep_duration = next_update_epoch - curr_time
+            if (sleep_duration > 0):
+                time.sleep(sleep_duration)
+                curr_time = time.monotonic()
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
