@@ -22,12 +22,5 @@ sudo apt update
 # Install openjdk
 sudo apt install -y openjdk-11-jdk
 
-# Clone the repo into home and run setup.py develop
-
-if [[ ! -d ~/pytest-kafka ]]; then
-    git clone https://gitlab.com/karolinepauls/pytest-kafka.git ~/pytest-kafka
-fi;
-
-cd ~/pytest-kafka
-
-python setup.py develop
+# Download kafka
+python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py
