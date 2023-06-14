@@ -40,13 +40,12 @@ def from_control_message(builder: mrc.Builder):
         if not isinstance(x, ControlMessage):
             raise TypeError(f"Expected 'x' to be of type ControlMessage, but instead got {type(x).__name__}.")
 
-        df = x.payload()
-        if df is None:
+        message_meta = x.payload()
+        if message_meta is None:
             logger.debug("ControlMessage does not contain a payload, it cannot be converted to a MessageMeta object."
                          " Skipping conversion process")
             return
 
-        message_meta = MessageMeta(df=df)
         return message_meta
 
     node = builder.make_node(FROM_CONTROL_MESSAGE,
