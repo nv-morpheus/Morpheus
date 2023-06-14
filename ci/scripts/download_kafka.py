@@ -13,15 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Download Kafka for testing."""
 
 import os
 
 import pytest_kafka
 from pytest_kafka.install import set_up_kafka
 
+
 def main():
+    """Main function."""
     pytest_kafka_dir = os.path.dirname(pytest_kafka.__file__)
     set_up_kafka(extract_location=pytest_kafka_dir)
+
 
 if __name__ == '__main__':
     main()
