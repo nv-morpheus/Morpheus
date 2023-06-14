@@ -157,20 +157,12 @@ def test_preallocation_error(config, filter_probs_df):
     mem_sink = pipe.add_stage(InMemorySinkStage(config))
 
     assert len(mem_src.get_needed_columns()) == 0
-    assert len(add_scores.get_needed_columns()) > 0
+    assert len(add_scores.get_needed_columns()) == 4
     add_scores._needed_columns = {}
     assert len(add_scores.get_needed_columns()) == 0
 
-    try:
+    with pytest.raises(RuntimeError, match=".*needed_columns.*"):
         pipe.run()
-    except Exception as e:
-        assert isinstance(e, RuntimeError)
-
-        # Ensure the error mentioned populating the needed_columns and using a stage with the PreallocatorMixin
-        # Without depending on a specific string
-        assert "frogs" in str(e)
-        assert "PreallocatorMixin" in str(e)
-        assert "needed_columns" in str(e)
 
     assert len(mem_src.get_needed_columns()) == 0
     assert len(mem_sink.get_messages()) == 0
