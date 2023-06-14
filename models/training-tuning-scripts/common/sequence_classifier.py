@@ -14,39 +14,43 @@
 # limitations under the License.
 
 import logging
-import os
-from abc import ABC
-from abc import abstractmethod
-
-import cupy
-import torch
-from dataloader import DataLoader
-from dataset import Dataset
-from torch.optim import AdamW
-from torch.utils.dlpack import to_dlpack
-from tqdm import trange
 
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
+import cupy
+
+import torch
+from torch.optim import AdamW
+from torch.utils.dlpack import to_dlpack
+from tqdm import trange
+from transformers import AutoModelForSequenceClassification
+
+from .dataloader import DataLoader
+from .dataset import Dataset
 
 log = logging.getLogger(__name__)
 
 
-class SequenceClassifier(ABC):
+class SequenceClassifier:
     """
     Sequence Classifier using BERT. This class provides methods for training/loading BERT models, evaluation and
     prediction.
     """
 
-    def __init__(self):
-        self._device = None
-        self._model = None
-        self._optimizer = None
-        self._hashpath = self._get_hash_table_path()
+    def __init__(self, model_or_path: str, hash_file: str, do_lower: bool = True, num_labels: int = 2):
 
-    @abstractmethod
-    def predict(self, input_data, max_seq_len=128, batch_size=32, threshold=0.5):
-        pass
+        self._optimizer = None
+
+        self._model = AutoModelForSequenceClassification.from_pretrained(model_or_path, num_labels=num_labels)
+
+        if torch.cuda.is_available():
+            self._device = torch.device("cuda")
+            self._model = self._model.cuda()
+            # self._model = nn.DataParallel(self._model)
+        else:
+            self._device = torch.device("cpu")
+
+        self._tokenizer = SubwordTokenizer(hash_file, do_lower_case=do_lower)
 
     def train_model(
         self,
@@ -72,8 +76,8 @@ class SequenceClassifier(ABC):
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
-        :param epoch: epoch, default is 5
-        :type epoch: int
+        :param epochs: epoch, default is 5
+        :type epochs: int
 
         Examples
         --------
@@ -92,7 +96,6 @@ class SequenceClassifier(ABC):
 
         self._config_optimizer(learning_rate)
         self._model.train()  # Enable training mode
-        self._tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=True)
 
         for _ in trange(epochs, desc="Epoch"):
             tr_loss = 0  # Tracking variables
@@ -100,7 +103,7 @@ class SequenceClassifier(ABC):
             for df in train_dataloader.get_chunks():
                 b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
 
-                b_labels = torch.tensor(df["label"].to_numpy())
+                b_labels = torch.tensor(df["label"].to_numpy()).cuda()
                 self._optimizer.zero_grad()  # Clear out the gradients
                 loss = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask,
                                    labels=b_labels)[0]  # forwardpass
@@ -111,7 +114,7 @@ class SequenceClassifier(ABC):
                 nb_tr_examples += b_input_ids.size(0)
                 nb_tr_steps += 1
 
-            print("Train loss: {}".format(tr_loss / nb_tr_steps))
+            print(f"Train loss: {tr_loss / nb_tr_steps}")
 
     def evaluate_model(self, test_data, labels, max_seq_len=128, batch_size=32):
         """
@@ -121,9 +124,9 @@ class SequenceClassifier(ABC):
         :type test_data: cudf.Series
         :param labels: labels for each element in test_data
         :type labels: cudf.Series
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
-            than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it
-            will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence
+            is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is
+            longer than max_seq_len it will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -165,6 +168,52 @@ class SequenceClassifier(ABC):
 
         return float(accuracy)
 
+    def predict(self, input_data, max_seq_len=128, batch_size=32):
+        """
+        Predict the class with the trained model
+
+        :param input_data: input text data for prediction
+        :type input_data: cudf.Series
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence
+            is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is
+            longer than max_seq_len it will be truncated to max_seq_len.
+        :type max_seq_len: int
+        :param batch_size: batch size
+        :type batch_size: int
+        :return: predictions: predictions are labels (0 or 1) based on minimum threshold
+        :rtype: cudf.Series
+
+        Examples
+        --------
+        >>> from cuml.preprocessing.model_selection import train_test_split
+        >>> emails_train, emails_test, labels_train, labels_test =
+                train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> sc.train_model(emails_train, labels_train)
+        >>> predictions = sc.predict(emails_test)
+        """
+
+        predict_gdf = cudf.DataFrame()
+        predict_gdf["text"] = input_data
+
+        predict_dataset = Dataset(predict_gdf)
+        predict_dataloader = DataLoader(predict_dataset, batchsize=batch_size)
+
+        preds = cudf.Series()
+
+        self._model.eval()
+        for df in predict_dataloader.get_chunks():
+            b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
+            with torch.no_grad():
+                logits = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)[0]
+
+            logits = logits.type(torch.DoubleTensor).to(self._device)
+            logits = cupy.fromDlpack(to_dlpack(logits))
+            b_preds = cupy.argmax(logits, axis=1).flatten()
+            b_preds = cudf.Series(b_preds)
+            preds = preds.append(b_preds)
+
+        return preds
+
     def save_model(self, save_to_path="."):
         """
         Save trained model
@@ -181,7 +230,7 @@ class SequenceClassifier(ABC):
         >>> sc.save_model()
         """
 
-        self._model.module.save_pretrained(save_to_path)
+        self._model.save_pretrained(save_to_path)
 
     def save_checkpoint(self, file_path):
         """
@@ -215,10 +264,6 @@ class SequenceClassifier(ABC):
 
         model_dict = torch.load(file_path)
         self._model.module.load_state_dict(model_dict["state_dict"])
-
-    def _get_hash_table_path(self):
-        hash_table_path = "%s/resources/bert-base-uncased-hash.txt" % os.path.dirname(os.path.realpath(__file__))
-        return hash_table_path
 
     def _config_optimizer(self, learning_rate):
         param_optimizer = list(self._model.named_parameters())

@@ -220,7 +220,16 @@ git submodule update --init --recursive
    pip install -e ${MORPHEUS_ROOT}
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-1. Test the build (Note: some tests will be skipped)
+1. Test the build (Note: some tests will be skipped)\
+   Some of the tests will rely on external data sets.
+   ```bash
+   MORPHEUS_ROOT=${PWD}
+
+   git lfs install
+   git lfs update
+   ./scripts/fetch_data.py fetch all
+   ```
+   This script will fetch the data sets needed. Then run:
    ```bash
    pytest
    ```
