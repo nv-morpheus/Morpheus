@@ -53,7 +53,11 @@ def init_pytest_kafka():
         os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
         # Initialize pytest_kafka fixtures following the recomendations in:
         # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
+        KAFKA_SCRIPTS = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
+        if not os.path.exists(KAFKA_SCRIPTS):
+            # check the old location
+            KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
+
         KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
         ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
 
