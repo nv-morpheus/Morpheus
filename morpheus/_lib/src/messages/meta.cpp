@@ -36,6 +36,10 @@
 #include <ostream>    // for operator<< needed by glog
 #include <stdexcept>  // for runtime_error
 #include <utility>
+// We're already including pybind11.h and don't need to include cast.
+// For some reason IWYU also thinks we need array for the `isinsance` call.
+// IWYU pragma: no_include <pybind11/cast.h>
+// IWYU pragma: no_include <array>
 
 namespace morpheus {
 
