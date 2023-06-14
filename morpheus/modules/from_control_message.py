@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""This module converts ControlMessage to a MessageMeta."""
 import logging
 
 import mrc
@@ -44,7 +45,6 @@ def from_control_message(builder: mrc.Builder):
         if message_meta is None:
             logger.debug("ControlMessage does not contain a payload, it cannot be converted to a MessageMeta object."
                          " Skipping conversion process")
-            return
 
         return message_meta
 
