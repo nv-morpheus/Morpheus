@@ -35,13 +35,17 @@ def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test
     # we have tensor data for the first five rows
     count = 5
     tensors = {}
-    for tensor_name in ['confidences', 'input_ids', 'labels', 'seq_ids']:
+    for tensor_name in ['seq_ids']:
         tensor_file = os.path.join(log_test_data_dir, f'{tensor_name}.csv')
-        host_data = np.loadtxt(tensor_file, delimiter=',')
+        host_data = np.loadtxt(tensor_file, delimiter=',', dtype='int')
+        tensors[tensor_name] = cp.asarray(host_data)
+    
+    for tensor_name in ['confidences', 'input_ids', 'labels']:
+        tensor_file = os.path.join(log_test_data_dir, f'{tensor_name}.csv')
+        host_data = np.loadtxt(tensor_file, delimiter=',', dtype='float')
         tensors[tensor_name] = cp.asarray(host_data)
 
     memory = messages_mod.PostprocMemoryLogParsing(count=5, **tensors)
-    raise RuntimeError("need to fix the next call, which dumps core")
     return messages_mod.MultiPostprocLogParsingMessage(meta=meta,
                                                        mess_offset=0,
                                                        mess_count=count,
@@ -73,5 +77,8 @@ def test_log_parsing_post_processing_stage(config: Config,
 
     out_meta = stage._postprocess(post_proc_message)
 
+    print("df", out_meta.df)
+
     assert isinstance(out_meta, MessageMeta)
-    DatasetManager.assert_compare_df(out_meta._df, expected_df)
+
+    DatasetManager.assert_compare_df(expected_df, out_meta.df)

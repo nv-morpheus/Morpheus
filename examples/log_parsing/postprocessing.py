@@ -19,6 +19,7 @@ from collections import defaultdict
 
 import mrc
 import numpy as np
+import cudf
 import pandas as pd
 from mrc.core import operators as ops
 
@@ -114,7 +115,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
         # decode cleanup
         parsed_df = self.__decode_cleanup(parsed_df)
 
-        return MessageMeta(df=parsed_df)
+        return MessageMeta(df=cudf.DataFrame(parsed_df))
 
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)
