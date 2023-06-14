@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
 import pytest
+import cupy as cp
+import cudf
 
+from morpheus.messages import MessageMeta, MultiResponseMessage, TensorMemory
 from morpheus.config import Config
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -39,15 +40,16 @@ def test_build_output_message(config: Config):
     pq = ProducerConsumerQueue()
     iw = IW(pq)
 
-    mock_message = mock.MagicMock()
-    mock_message.meta = mock.MagicMock()
-    mock_message.meta.count = 20
-    mock_message.mess_offset = 11
-    mock_message.mess_count = 2
-    mock_message.memory = mock.MagicMock()
-    mock_message.memory.count = 30
-    mock_message.count = 10
-    mock_message.offset = 12
+    df = cudf.DataFrame(cp.zeros(20))
+    probs_array = cp.zeros(30)
+    mock_message = MultiResponseMessage(
+        meta=MessageMeta(df),
+        mess_offset=11,
+        mess_count=2,
+        memory=TensorMemory(count=30,tensors={"probs": probs_array}),
+        count=10,
+        offset=12
+    )
 
     response = iw.build_output_message(mock_message)
     assert response.count == 2
@@ -55,15 +57,16 @@ def test_build_output_message(config: Config):
     assert response.mess_count == 2
     assert response.offset == 0
 
-    mock_message = mock.MagicMock()
-    mock_message.meta = mock.MagicMock()
-    mock_message.meta.count = 20
-    mock_message.mess_offset = 11
-    mock_message.mess_count = 2
-    mock_message.memory = mock.MagicMock()
-    mock_message.memory.count = 30
-    mock_message.count = 2
-    mock_message.offset = 12
+    df = cudf.DataFrame(cp.zeros(20))
+    probs_array = cp.zeros(30)
+    mock_message = MultiResponseMessage(
+        meta=MessageMeta(df),
+        mess_offset=11,
+        mess_count=2,
+        memory=TensorMemory(count=30,tensors={"probs": probs_array}),
+        count=2,
+        offset=12
+    )
 
     response = iw.build_output_message(mock_message)
     assert response.count == 2
