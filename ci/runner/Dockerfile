@@ -99,9 +99,7 @@ RUN source activate ${PROJ_NAME} && \
     npm install -g camouflage-server@0.9 && \
     npm cache clean --force
 
-# Install pytest-kafka
-# Installing pre-release of pytest-kafka containing a fix for https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
+# Install Kafka
 RUN source activate ${PROJ_NAME} && \
-    pip install -i https://test.pypi.org/simple/ pytest-kafka==0.5.1.post116 && \
     python /tmp/scripts/download_kafka.py && \
     rm -rf /tmp/scripts
