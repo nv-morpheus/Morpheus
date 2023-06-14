@@ -264,7 +264,7 @@ PYBIND11_MODULE(messages, _module)
              py::arg("meta"),
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
-             "__init__(self, meta, mess_offset, mess_count)\n--\n\n")
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1)\n--\n\n")
         .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
@@ -322,7 +322,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("memory"),
              py::arg("offset")         = 0,
              py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
+             py::arg("id_tensor_name") = "seq_ids",
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1, memory, offset=0, count=-1, id_tensor_name=\"seq_ids\")\n--\n\n")
         .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
@@ -340,7 +341,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("memory"),
              py::arg("offset")         = 0,
              py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
+             py::arg("id_tensor_name") = "seq_ids",
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1, memory, offset=0, count=-1, id_tensor_name=\"seq_ids\")\n--\n\n")
         .def("get_input", &MultiInferenceMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
@@ -353,7 +355,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("memory"),
              py::arg("offset")         = 0,
              py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
+             py::arg("id_tensor_name") = "seq_ids",
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1, memory, offset=0, count=-1, id_tensor_name=\"seq_ids\")\n--\n\n")
         .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
         .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
         .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
@@ -368,7 +371,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("memory"),
              py::arg("offset")         = 0,
              py::arg("count")          = -1,
-             py::arg("id_tensor_name") = "seq_ids")
+             py::arg("id_tensor_name") = "seq_ids",
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1, memory, offset=0, count=-1, id_tensor_name=\"seq_ids\")\n--\n\n")
         .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
         .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
 
@@ -384,7 +388,7 @@ PYBIND11_MODULE(messages, _module)
              py::arg("count")             = -1,
              py::arg("id_tensor_name")    = "seq_ids",
              py::arg("probs_tensor_name") = "probs",
-             "__init__(meta, mess_offset, mess_count, memory, offset, count, id_tensor_name, probs_tensor_name)\n--\n\n")
+             "__init__(self, *, meta, mess_offset, mess_count, memory, offset, count, id_tensor_name, probs_tensor_name)\n--\n\n")
         .def_property("probs_tensor_name",
                       &MultiResponseMessageInterfaceProxy::probs_tensor_name_getter,
                       &MultiResponseMessageInterfaceProxy::probs_tensor_name_setter)
@@ -402,7 +406,8 @@ PYBIND11_MODULE(messages, _module)
              py::arg("offset")            = 0,
              py::arg("count")             = -1,
              py::arg("id_tensor_name")    = "seq_ids",
-             py::arg("probs_tensor_name") = "probs")
+             py::arg("probs_tensor_name") = "probs",
+             "__init__(self, *, meta, mess_offset=0, mess_count=-1, memory, offset=0, count=-1, id_tensor_name=\"seq_ids\", probs_tensor_name=\"probs\")\n--\n\n")
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
