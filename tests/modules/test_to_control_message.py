@@ -27,13 +27,6 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
-from utils.dataset_manager import DatasetManager
-
-
-@pytest.fixture(scope="module")
-def filter_probs_df(dataset_cudf: DatasetManager):
-    filter_probs_df = dataset_cudf["filter_probs.csv"]
-    yield filter_probs_df
 
 
 def test_contains_namespace():
@@ -67,9 +60,9 @@ def test_get_module():
 
 
 @pytest.mark.use_cpp
-@pytest.mark.parametrize("dataframes, expected_count", [([filter_probs_df], 1),
-                                                        ([filter_probs_df, filter_probs_df], 2)])
-def test_to_control_message_module(config, dataframes, expected_count):
+@pytest.mark.parametrize("expected_count", [1, 2])
+def test_to_control_message_module(config, filter_probs_df, expected_count):
+    dataframes = [filter_probs_df for _ in range(expected_count)]
 
     pipe = Pipeline(config)
 
