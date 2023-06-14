@@ -27,13 +27,13 @@ from morpheus.messages.message_meta import MessageMeta
 from utils.dataset_manager import DatasetManager
 
 
-@pytest.fixture(scope="function", params=["normal", "skip", "dup", "down", "updown"])
-def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip", "dup", "down", "updown"]:
+@pytest.fixture(name="index_type", scope="function", params=["normal", "skip", "dup", "down", "updown"])
+def fixture_index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip", "dup", "down", "updown"]:
     return request.param
 
 
-@pytest.fixture(scope="function")
-def df(
+@pytest.fixture(name="df", scope="function")
+def fixture_df(
     use_cpp: bool, dataset: DatasetManager,
     index_type: typing.Literal['normal', 'skip', 'dup', 'down',
                                'updown']) -> typing.Union[cudf.DataFrame, pd.DataFrame]:
@@ -70,8 +70,8 @@ def df(
     assert False, "Unknown index type"
 
 
-@pytest.fixture(scope="function")
-def is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
+@pytest.fixture(name="is_sliceable", scope="function")
+def fixture_is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
 
     return not (index_type == "dup" or index_type == "updown")
 
