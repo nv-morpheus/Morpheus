@@ -46,11 +46,7 @@ pytest_kafka_setup_error = None
 
 def init_pytest_kafka():
     """
-    pytest_kafka is currently required to be installed manually, along with a download of Kafka and a functional JDK.
     Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-
-    Issue #9 should make the instalation of Kafka simpler:
-    https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
     """
     global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
     try:
