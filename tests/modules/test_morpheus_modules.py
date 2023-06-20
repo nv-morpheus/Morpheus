@@ -720,13 +720,13 @@ def test_rest_loader_module_x_headers():
 
 
 if __name__ == "__main__":
-    # test_contains_namespace()
-    # test_is_version_compatible()
-    # test_get_module()
-    # test_payload_loader_module()
-    # test_file_loader_module()
+    test_contains_namespace()
+    test_is_version_compatible()
+    test_get_module()
+    test_payload_loader_module()
+    test_file_loader_module()
 
     # Flask service needed for testing RESTDataloader
-    test_rest_loader_module_get_with_params()
-    test_rest_loader_module_post_with_body()
-    test_rest_loader_module_x_headers()
+    # test_rest_loader_module_get_with_params()
+    # test_rest_loader_module_post_with_body()
+    # test_rest_loader_module_x_headers()
