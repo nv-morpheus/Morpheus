@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Disable pylint, it doesn't detect fixture name usage correctly and reports errors that are not errors.
-# pylint: disable=all
+# Disable redefined-outer-name, it doesn't detect fixture name usage correctly and reports errors that are not errors.
+# pylint: disable=redefined-outer-name
 
 import os
 import shutil
@@ -67,7 +67,7 @@ def test_csv(csv_data):
 
     assert storage.backing_source == 'test_data.csv'
     assert storage.num_rows == 3
-    assert storage.owner == True
+    assert storage.owner is True
 
     loaded_data = storage.load()
     pd.testing.assert_frame_equal(loaded_data, csv_data)
@@ -82,7 +82,7 @@ def test_parquet(parquet_data):
 
     assert storage.backing_source == 'test_data.parquet'
     assert storage.num_rows == 3
-    assert storage.owner == True
+    assert storage.owner is True
 
     loaded_data = storage.load()
     pd.testing.assert_frame_equal(loaded_data, parquet_data)
@@ -97,14 +97,14 @@ def test_copy_from_source(csv_file, parquet_file):
     storage_csv.store(csv_file, copy_from_source=True)
     assert storage_csv.backing_source == 'test_data_copy.csv'
     assert storage_csv.num_rows == 3
-    assert storage_csv.owner == True
+    assert storage_csv.owner is True
     assert os.path.exists('test_data_copy.csv')
 
     storage_parquet = FileSystemStorage('test_data_copy.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=True)
     assert storage_parquet.backing_source == 'test_data_copy.parquet'
     assert storage_parquet.num_rows == 3
-    assert storage_parquet.owner == True
+    assert storage_parquet.owner is True
     assert os.path.exists('test_data_copy.parquet')
 
     # Clean up
@@ -118,13 +118,13 @@ def test_no_copy_from_source(csv_file, parquet_file):
     storage_csv.store(csv_file, copy_from_source=False)
     assert storage_csv.backing_source == csv_file
     assert storage_csv.num_rows == 3
-    assert storage_csv.owner == False
+    assert storage_csv.owner is False
 
     storage_parquet = FileSystemStorage('test_data_link.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=False)
     assert storage_parquet.backing_source == parquet_file
     assert storage_parquet.num_rows == 3
-    assert storage_parquet.owner == False
+    assert storage_parquet.owner is False
 
 
 def test_invalid_file_format():

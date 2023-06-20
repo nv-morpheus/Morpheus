@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Disable redefined-outer-name, it doesn't detect fixture name usage correctly and reports errors that are not errors.
+# pylint: disable=redefined-outer-name
+
 import os
 import shutil
 import tempfile
@@ -101,7 +104,6 @@ class DataManager():
     def num_rows(self) -> int:
         """
         Get the number of rows in a source given its source ID.
-        :param source_id:
         :return:
         """
 

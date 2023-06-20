@@ -66,7 +66,10 @@ class InMemoryStorage(RecordStorageInterface):
         if self._owner:
             self._data.close()
 
-    def store(self, data_source: Union[pd.DataFrame, cudf.DataFrame, str], copy_from_source: bool = False) -> None:
+    # Disable unused argument here; it's kept for API compatibility and future extensions, but isn't currently
+    # useful for in-memory storage (which will always be copied).
+    def store(self, data_source: Union[pd.DataFrame, cudf.DataFrame, str],
+              copy_from_source: bool = True) -> None:  # pylint: disable=unused-argument
         """Store data in the buffer.
 
         Args:
@@ -77,6 +80,7 @@ class InMemoryStorage(RecordStorageInterface):
         """
 
         self._data = io.BytesIO()
+
         if isinstance(data_source, str):
             data_source = self._data_reader(data_source)
 

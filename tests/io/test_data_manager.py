@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-# Disable pylint, it doesn't detect fixture name usage correctly and reports errors that are not errors.
-# pylint: disable=all
+# Disable redefined-outer-name, it doesn't detect fixture name usage correctly and reports errors that are not errors.
+# pylint: disable=redefined-outer-name
 
 import os
 import shutil
@@ -93,7 +93,7 @@ def test_filesystem_storage_type(storage_type):
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
 def test_invalid_storage_type(storage_type):
     with pytest.raises(ValueError):
-        data_manager = DataManager(storage_type=storage_type)  # noqa
+        data_manager = DataManager(storage_type=storage_type)  # noqa pylint: disable=unused-variable
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -217,17 +217,17 @@ def test_get_num_rows(storage_type, file_format, dataframe_fixture_data):
 def test_source_property(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     data_manager = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = data_manager.store(test_cudf_dataframe)  # noqa
+    sid = data_manager.store(test_cudf_dataframe)  # noqa pylint: disable=unused-variable
     data_records = data_manager.records
 
     assert (len(data_records) == 1)
 
-    for k, v in data_records.items():
-        assert (v._storage_type == storage_type)
+    for key, value in data_records.items():  # pylint: disable=unused-variable
+        assert (value._storage_type == storage_type)
         if (storage_type == 'in_memory'):
-            assert (isinstance(v.data, pd.DataFrame))
+            assert (isinstance(value.data, pd.DataFrame))
         elif (storage_type == 'filesystem'):
-            assert (isinstance(v.data, pd.DataFrame))
+            assert (isinstance(value.data, pd.DataFrame))
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
