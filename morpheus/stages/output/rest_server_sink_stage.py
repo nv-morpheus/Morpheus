@@ -95,6 +95,11 @@ class RestServerSinkStage(SinglePortStage):
             lines: bool = False,
             df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
         super().__init__(config)
+        self._bind_address = bind_address
+        self._port = port
+        self._endpoint = endpoint
+        self._method = method
+        self._num_server_threads = num_server_threads or os.cpu_count()
         self._max_rows_per_response = max_rows_per_response
         self._overflow_pct = overflow_pct
         self._request_timeout_secs = request_timeout_secs
@@ -107,19 +112,10 @@ class RestServerSinkStage(SinglePortStage):
 
         self._df_serializer_fn = df_serializer_fn or self._default_df_serializer
 
-        from morpheus.common import RestServer
-
         # FiberQueue doesn't have a way to check the size, nor does it have a way to check if it's empty without
         # attempting to perform a read. We'll keep track of the size ourselves.
         self._queue = queue.Queue(maxsize=max_queue_size or config.edge_buffer_size)
-        self._server = RestServer(parse_fn=self._request_handler,
-                                  bind_address=bind_address,
-                                  port=port,
-                                  endpoint=endpoint,
-                                  method=method.value,
-                                  num_threads=num_server_threads or os.cpu_count(),
-                                  request_timeout=request_timeout_secs)
-        self._server.start()
+        self._server = None
 
     @property
     def name(self) -> str:
@@ -139,6 +135,17 @@ class RestServerSinkStage(SinglePortStage):
 
     def supports_cpp_node(self):
         return False
+
+    def on_start(self):
+        from morpheus.common import RestServer
+        self._server = RestServer(parse_fn=self._request_handler,
+                                  bind_address=self._bind_address,
+                                  port=self._port,
+                                  endpoint=self._endpoint,
+                                  method=self._method.value,
+                                  num_threads=self._num_server_threads,
+                                  request_timeout=self._request_timeout_secs)
+        self._server.start()
 
     def _default_df_serializer(self, df: DataFrameType) -> str:
         """
