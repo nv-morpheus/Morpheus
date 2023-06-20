@@ -145,8 +145,7 @@ class RestServerSinkStage(SinglePortStage):
         """
         str_buf = StringIO()
         serializers.df_to_stream_json(df=df, stream=str_buf, lines=self._lines)
-        str_buf.seek(0)
-        return str_buf.read()
+        return str_buf.getvalue()
 
     def _request_callback(self, df: DataFrameType, num_tasks: int, has_error: bool, error_msg: str) -> None:
         try:
