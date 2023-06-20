@@ -17,6 +17,7 @@ import os
 import queue
 import typing
 from functools import partial
+from http import HTTPStatus
 from io import StringIO
 
 import mrc
@@ -174,7 +175,7 @@ class RestServerSinkStage(SinglePortStage):
         except Exception as e:
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
-            return (500, MimeTypes.TEXT.value, err_msg, None)
+            return (HTTPStatus.INTERNAL_SERVER_ERROR.value, MimeTypes.TEXT.value, err_msg, None)
 
         if (len(data_frames) > 0):
             df = data_frames[0]
@@ -182,12 +183,12 @@ class RestServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
-            return (200,
+            return (HTTPStatus.OK.value,
                     self._content_type,
                     self._df_serializer_fn(df),
                     partial(self._request_callback, df, len(data_frames)))
         else:
-            return (204, MimeTypes.TEXT.value, "", None)
+            return (HTTPStatus.NO_CONTENT.value, MimeTypes.TEXT.value, "", None)
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """

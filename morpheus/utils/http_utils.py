@@ -16,6 +16,7 @@ import logging
 import time
 import typing
 from enum import Enum
+from http import HTTPStatus
 
 import requests
 import urllib3
@@ -42,7 +43,7 @@ def request_with_retry(
     requests_session: typing.Optional[requests.Session] = None,
     max_retries: int = 10,
     sleep_time: float = 0.1,
-    accept_status_codes: typing.Iterable[int] = (200, ),
+    accept_status_codes: typing.Iterable[HTTPStatus] = (HTTPStatus.OK, ),
     respect_retry_after_header: bool = True,
     on_success_fn: typing.Optional[typing.Callable] = None
 ) -> typing.Tuple[requests.Session, typing.Union[requests.Response, typing.Any]]:
