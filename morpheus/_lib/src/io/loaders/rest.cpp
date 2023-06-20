@@ -46,6 +46,104 @@ using tcp       = net::ip::tcp;
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
+void extract_query_fields(nlohmann::basic_json<>& query,
+                          std::string& method,
+                          std::string& endpoint,
+                          std::string& content_type,
+                          std::string& body,
+                          std::unordered_map<std::string, std::string> x_headers,
+                          nlohmann::json& params)
+{
+    method = query.value("method", "GET");
+    std::transform(method.begin(), method.end(), method.begin(), ::toupper);
+
+    endpoint = query.value("endpoint", "");
+    if (endpoint.empty())
+    {
+        throw std::runtime_error("'REST loader' receives query with empty endpoint");
+    }
+
+    content_type                  = query.value("content_type", "");
+    body                          = query.value("body", "");
+
+    nlohmann::json x_headers_json = query.value("x-headers", nlohmann::json());
+    for (auto& x_header_kv : x_headers_json.items())
+    {
+        x_headers.insert(std::make_pair((std::string)x_header_kv.key(), (std::string)x_header_kv.value()));
+    }
+
+    params = query.value("params", nlohmann::json());
+}
+
+http::verb get_http_verb(const std::string& method)
+{
+    http::verb verb;
+    if (method == "GET")
+    {
+        verb = http::verb::get;
+    }
+    else if (method == "POST")
+    {
+        verb = http::verb::post;
+    }
+    return verb;
+}
+
+http::request<http::string_body> construct_request(http::verb verb,
+                                                   const std::string& target,
+                                                   const std::string& query,
+                                                   const std::string& host,
+                                                   const std::string& method,
+                                                   const std::string& content_type,
+                                                   const std::string& body,
+                                                   const std::unordered_map<std::string, std::string>& x_headers)
+{
+    http::request<http::string_body> request{verb, target + query, 11};
+    request.set(http::field::host, host);
+    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    if (method == "POST")
+    {
+        request.set(http::field::content_type, content_type);
+        request.body() = body;
+        request.prepare_payload();
+    }
+    for (auto& x_header : x_headers)
+    {
+        request.insert(x_header.first, x_header.second);
+    }
+    return request;
+}
+
+void try_get_data(beast::tcp_stream& stream,
+                  const net::ip::basic_resolver_results<tcp>& endpoint_results,
+                  http::request<http::string_body>& request,
+                  http::response<http::dynamic_body>& response,
+                  int max_retry,
+                  int interval_milliseconds)
+{
+    while (max_retry-- > 0)
+    {
+        stream.connect(endpoint_results);
+        http::write(stream, request);
+        beast::flat_buffer buffer;
+        http::read(stream, buffer, response);
+        beast::error_code ec;
+        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+        if (ec && ec != beast::errc::not_connected)
+        {
+            throw beast::system_error{ec};
+        }
+        int status = response.result_int();
+        // 503 Service Unavailable / 504 Gateway Timeout
+        if (status != 503 && status != 504)
+        {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(interval_milliseconds));
+        interval_milliseconds *= 2;
+    }
+}
+
 void get_data_from_endpoint(http::response<http::dynamic_body>& response,
                             const std::string& method,
                             const std::string& endpoint,
@@ -96,51 +194,10 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
     try
     {
         auto const endpoint_results = resolver.resolve(host, PORT);
-        http::verb verb;
-        if (method == "GET")
-        {
-            verb = http::verb::get;
-        }
-        else if (method == "POST")
-        {
-            verb = http::verb::post;
-        }
-        http::request<http::string_body> request{verb, target + query, 11};
-        request.set(http::field::host, host);
-        request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-        if (method == "POST")
-        {
-            request.set(http::field::content_type, content_type);
-            request.body() = body;
-            request.prepare_payload();
-        }
-        for (auto& x_header : x_headers)
-        {
-            request.insert(x_header.first, x_header.second);
-        }
+        auto verb                   = get_http_verb(method);
+        auto request = construct_request(verb, target, query, host, method, content_type, body, x_headers);
 
-        int interval_milliseconds = 1000;
-        while (max_retry-- > 0)
-        {
-            stream.connect(endpoint_results);
-            http::write(stream, request);
-            beast::flat_buffer buffer;
-            http::read(stream, buffer, response);
-            beast::error_code ec;
-            stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-            if (ec && ec != beast::errc::not_connected)
-            {
-                throw beast::system_error{ec};
-            }
-            int status = response.result_int();
-            // 503 Service Unavailable / 504 Gateway Timeout
-            if (status != 503 && status != 504)
-            {
-                break;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(interval_milliseconds));
-            interval_milliseconds *= 2;
-        }
+        try_get_data(stream, endpoint_results, request, response, max_retry, 1000);
 
     } catch (std::exception const& e)
     {
@@ -188,9 +245,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 
     // Aggregate dataframes for each file
     py::gil_scoped_acquire gil;
+
     py::module_ mod_cudf;
     py::object dataframe = py::none();
-
     auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
     mod_cudf           = cache_handle.get_module("cudf");
 
@@ -213,27 +270,18 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 
     for (auto& query : queries)
     {
-        std::string method = query.value("method", "GET");
-        std::transform(method.begin(), method.end(), method.begin(), ::toupper);
-        std::string endpoint = query.value("endpoint", "");
-        if (endpoint.empty())
-        {
-            throw std::runtime_error("'REST loader' receives query with empty endpoint");
-        }
-        std::string content_type = query.value("content_type", "");
-        std::string body         = query.value("body", "");
-        nlohmann::json x_headers = query.value("x-headers", nlohmann::json());
-        std::unordered_map<std::string, std::string> x_headers_map;
-        for (auto& x_header_kv : x_headers.items())
-        {
-            x_headers_map.insert(std::make_pair((std::string)x_header_kv.key(), (std::string)x_header_kv.value()));
-        }
-        nlohmann::json params = query.value("params", nlohmann::json());
+        std::string method;
+        std::string endpoint;
+        std::string content_type;
+        std::string body;
+        std::unordered_map<std::string, std::string> x_headers;
+        nlohmann::json params;
+        extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
         if (params.empty())
         {
             std::string param_str("");
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers_map, max_retry);
+            get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
             create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
         }
         else
@@ -248,7 +296,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
                 get_data_from_endpoint(
-                    response, method, endpoint, param_str, content_type, body, x_headers_map, max_retry);
+                    response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             }
         }

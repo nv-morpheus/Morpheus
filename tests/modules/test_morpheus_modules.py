@@ -370,7 +370,7 @@ def test_rest_loader_module():
                     },                                                     
                     {
                     "method": "POST",
-                    "endpoint": "0.0.0.1",
+                    "endpoint": "0.0.0.0",
                     "params": [
                         {"something1": "something2"},
                     ],
