@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # Disable redefined-outer-name, it doesn't detect fixture name usage correctly and reports errors that are not errors.
 # pylint: disable=redefined-outer-name
 

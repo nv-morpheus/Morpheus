@@ -66,10 +66,10 @@ class InMemoryStorage(RecordStorageInterface):
         if self._owner:
             self._data.close()
 
-    # Disable unused argument here; it's kept for API compatibility and future extensions, but isn't currently
-    # useful for in-memory storage (which will always be copied).
+    # yapf: disable -- yapf wants to put 'store' on a single line, flake8 says this is an error
     def store(self, data_source: Union[pd.DataFrame, cudf.DataFrame, str],
               copy_from_source: bool = True) -> None:  # pylint: disable=unused-argument
+        # yapf: enable
         """Store data in the buffer.
 
         Args:
