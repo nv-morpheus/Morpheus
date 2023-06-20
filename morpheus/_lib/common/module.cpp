@@ -131,7 +131,9 @@ PYBIND11_MODULE(common, _module)
              py::arg("request_timeout")  = 30)
         .def("start", &RestServerInterfaceProxy::start)
         .def("stop", &RestServerInterfaceProxy::stop)
-        .def("is_running", &RestServerInterfaceProxy::is_running);
+        .def("is_running", &RestServerInterfaceProxy::is_running)
+        .def("__enter__", &RestServerInterfaceProxy::enter, py::return_value_policy::reference)
+        .def("__exit__", &RestServerInterfaceProxy::exit);
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);

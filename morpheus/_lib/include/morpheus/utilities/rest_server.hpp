@@ -131,5 +131,12 @@ struct RestServerInterfaceProxy
     static void start(RestServer& self);
     static void stop(RestServer& self);
     static bool is_running(const RestServer& self);
+
+    // Context manager methods
+    static RestServer& enter(RestServer& self);
+    static void exit(RestServer& self,
+                     const pybind11::object& type,
+                     const pybind11::object& value,
+                     const pybind11::object& traceback);
 };
 }  // namespace morpheus

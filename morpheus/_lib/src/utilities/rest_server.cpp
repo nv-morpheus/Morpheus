@@ -433,4 +433,18 @@ bool RestServerInterfaceProxy::is_running(const RestServer& self)
     return self.is_running();
 }
 
+RestServer& RestServerInterfaceProxy::enter(RestServer& self)
+{
+    self.start();
+    return self;
+}
+
+void RestServerInterfaceProxy::exit(RestServer& self,
+                                    const pybind11::object& type,
+                                    const pybind11::object& value,
+                                    const pybind11::object& traceback)
+{
+    self.stop();
+}
+
 }  // namespace morpheus

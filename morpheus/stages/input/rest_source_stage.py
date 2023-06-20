@@ -142,41 +142,39 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         from morpheus.common import RestServer
 
         self._queue = FiberQueue(self._max_queue_size)
-        rest_server = RestServer(parse_fn=self._parse_payload,
-                                 bind_address=self._bind_address,
-                                 port=self._port,
-                                 endpoint=self._endpoint,
-                                 method=self._method.value,
-                                 num_threads=self._num_server_threads,
-                                 max_payload_size=self._max_payload_size_bytes,
-                                 request_timeout=self._request_timeout_secs)
-        rest_server.start()
 
-        processing = True
-        while (processing):
-            # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
-            # It is important that any messages we received that are in the queue are processed before we shutdown since
-            # we already returned an OK response to the client.
-            df = None
-            try:
-                df = self._queue.get()
-            except queue.Empty:
-                if (not rest_server.is_running()):
-                    processing = False
-                else:
-                    logger.debug("Queue empty, sleeping ...")
-                    time.sleep(self._sleep_time)
-            except Closed:
-                logger.error("Queue closed unexpectedly, shutting down")
-                processing = False
+        try:
+            with RestServer(parse_fn=self._parse_payload,
+                            bind_address=self._bind_address,
+                            port=self._port,
+                            endpoint=self._endpoint,
+                            method=self._method.value,
+                            num_threads=self._num_server_threads,
+                            max_payload_size=self._max_payload_size_bytes,
+                            request_timeout=self._request_timeout_secs) as rest_server:
 
-            if df is not None:
-                yield MessageMeta(df)
+                processing = True
+                while (processing):
+                    # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
+                    # It is important that any messages we received that are in the queue are processed before we shutdown since
+                    # we already returned an OK response to the client.
+                    df = None
+                    try:
+                        df = self._queue.get()
+                    except queue.Empty:
+                        if (not rest_server.is_running()):
+                            processing = False
+                        else:
+                            logger.debug("Queue empty, sleeping ...")
+                            time.sleep(self._sleep_time)
+                    except Closed:
+                        logger.error("Queue closed unexpectedly, shutting down")
+                        processing = False
 
-        logger.debug("Stopping REST server ...")
-        rest_server.stop()
-        logger.debug("REST server stopped")
-        self._queue.close()
+                    if df is not None:
+                        yield MessageMeta(df)
+        finally:
+            self._queue.close()
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
