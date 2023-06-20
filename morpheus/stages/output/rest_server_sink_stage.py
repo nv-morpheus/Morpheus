@@ -15,7 +15,6 @@
 import logging
 import os
 import queue
-import time
 import typing
 from functools import partial
 from io import StringIO

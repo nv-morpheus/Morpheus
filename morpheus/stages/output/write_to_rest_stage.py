@@ -142,7 +142,7 @@ class WriteToRestStage(SinglePortStage):
                  df_to_request_kwargs_fn: typing.Callable[[DataFrameType], dict] = None,
                  **request_kwargs):
         super().__init__(c)
-        self._base_url = http_utils.verify_url(base_url)
+        self._base_url = http_utils.prepare_url(base_url)
 
         if (callable(endpoint) and static_endpoint):
             raise ValueError("endpoint must be a string when static_endpoint is True")
@@ -264,12 +264,12 @@ class WriteToRestStage(SinglePortStage):
 
         for chunk in self._chunk_requests(msg.df):
             request_args.update(chunk)
-            http_utils.request(request_args,
-                               requests_session=self._http_session,
-                               max_retries=self._max_retries,
-                               sleep_time=self._error_sleep_time,
-                               respect_retry_after_header=self._respect_retry_after_header,
-                               accept_status_codes=self._accept_status_codes)
+            http_utils.request_with_retry(request_args,
+                                          requests_session=self._http_session,
+                                          max_retries=self._max_retries,
+                                          sleep_time=self._error_sleep_time,
+                                          respect_retry_after_header=self._respect_retry_after_header,
+                                          accept_status_codes=self._accept_status_codes)
 
         return msg
 

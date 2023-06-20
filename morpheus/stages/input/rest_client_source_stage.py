@@ -98,7 +98,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  lines: bool = False,
                  **request_kwargs):
         super().__init__(config)
-        self._url = http_utils.verify_url(url)
+        self._url = http_utils.prepare_url(url)
 
         if callable(query_params):
             self._query_params_fn = query_params
@@ -176,13 +176,14 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
             if self._query_params_fn is not None:
                 request_args['params'] = self._query_params_fn()
 
-            (http_session, df) = http_utils.request(request_args,
-                                                    requests_session=http_session,
-                                                    max_retries=self._max_retries,
-                                                    sleep_time=self._error_sleep_time,
-                                                    respect_retry_after_header=self._respect_retry_after_header,
-                                                    accept_status_codes=self._accept_status_codes,
-                                                    on_success_fn=self._parse_response)
+            (http_session,
+             df) = http_utils.request_with_retry(request_args,
+                                                 requests_session=http_session,
+                                                 max_retries=self._max_retries,
+                                                 sleep_time=self._error_sleep_time,
+                                                 respect_retry_after_header=self._respect_retry_after_header,
+                                                 accept_status_codes=self._accept_status_codes,
+                                                 on_success_fn=self._parse_response)
 
             # Even if we didn't receive any errors, the server may not have had any data for us.
             if df is not None and len(df):

@@ -29,7 +29,7 @@ class MimeTypes(Enum):
     JSON = "application/json"
 
 
-def request(
+def request_with_retry(
     request_kwargs: dict,
     requests_session: typing.Optional[requests.Session] = None,
     max_retries: int = 10,
@@ -97,7 +97,7 @@ def request(
             time.sleep(sleep_time_)
 
 
-def verify_url(url: str) -> str:
+def prepare_url(url: str) -> str:
     """
     Verifies that `url` contains a protocol scheme and a host and returns the url.
     If no protocol scheme is provided, `http` is used.
