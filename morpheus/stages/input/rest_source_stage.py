@@ -143,13 +143,13 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
         with (FiberQueue(self._max_queue_size) as self._queue,
               RestServer(parse_fn=self._parse_payload,
-                        bind_address=self._bind_address,
-                        port=self._port,
-                        endpoint=self._endpoint,
-                        method=self._method.value,
-                        num_threads=self._num_server_threads,
-                        max_payload_size=self._max_payload_size_bytes,
-                        request_timeout=self._request_timeout_secs) as rest_server):
+                         bind_address=self._bind_address,
+                         port=self._port,
+                         endpoint=self._endpoint,
+                         method=self._method.value,
+                         num_threads=self._num_server_threads,
+                         max_payload_size=self._max_payload_size_bytes,
+                         request_timeout=self._request_timeout_secs) as rest_server):
 
             processing = True
             while (processing):
