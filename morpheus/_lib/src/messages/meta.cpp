@@ -195,6 +195,11 @@ SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
   m_column_names(std::move(columns))
 {}
 
+TensorIndex SlicedMessageMeta::count() const
+{
+    return m_stop - m_start;
+}
+
 TableInfo SlicedMessageMeta::get_info() const
 {
     return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);

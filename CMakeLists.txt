@@ -30,6 +30,7 @@ option(MORPHEUS_PYTHON_BUILD_STUBS "Whether or not to generated .pyi stub files 
 option(MORPHEUS_PYTHON_BUILD_WHEEL "Whether or not to build the morpheus .whl file" OFF)
 option(MORPHEUS_PYTHON_INPLACE_BUILD "Whether or not to copy built python modules back to the source tree for debug purposes." OFF)
 option(MORPHEUS_PYTHON_PERFORM_INSTALL "Whether or not to automatically `pip install` any built python library. WARNING: This may overwrite any existing installation of the same name." OFF)
+option(MORPHEUS_SUPPORT_DOCA "Whether or not to build doca-related elements of morpheus" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg. Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
@@ -44,10 +45,12 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
+
+# Disable compile commands until after dependencies
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
 enable_testing()
 
@@ -57,14 +60,15 @@ endif()
 
 # MRC CMake path and module extensions
 set(MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/package_search"
-    )
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/package_search"
+  "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/package_search"
+)
 
 set(MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    )
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+)
 
 # Prepend path and prefix updates so they take priority in this scope.
 list(PREPEND CMAKE_MODULE_PATH "${MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS}")
@@ -127,6 +131,9 @@ add_custom_target(${PROJECT_NAME}_style_checks
 ##### Morpheus Python Setup ######
 ##################################
 
+# Re-enable compile commands
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 morpheus_utils_python_configure()
 
 # Include the main morpheus code
@@ -173,7 +180,7 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
   )
 
   morpheus_utils_print_global_properties(
-      WRITE_TO_FILE
+    WRITE_TO_FILE
   )
 endif()
 

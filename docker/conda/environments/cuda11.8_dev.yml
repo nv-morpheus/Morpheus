@@ -33,7 +33,7 @@ dependencies:
     - configargparse=1.5
     - cuda-compiler=11.8
     - cuda-nvml-dev=11.8
-    - cudatoolkit=11.8
+    - cuda-toolkit=11.8
     - cudf=23.02
     - cupy=11.6.0
     - cxx-compiler
@@ -75,6 +75,7 @@ dependencies:
     - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
     - pybind11-stubgen=0.10.5
     - pydot
+    - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
     - pytest
     - pytest-benchmark>=4.0
     - pytest-cov

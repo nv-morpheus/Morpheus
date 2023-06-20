@@ -322,12 +322,12 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert self._pipeline is not None, "Must be attached to a pipeline before building!"
 
         # Pre-Build returns the input pairs for each port
-        in_ports_pairs = self._pre_build()
+        in_ports_pairs = self._pre_build(builder=builder)
 
-        out_ports_pair = self._build(builder, in_ports_pairs)
+        out_ports_pair = self._build(builder=builder, in_ports_streams=in_ports_pairs)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_pair = self._post_build(builder, out_ports_pair)
+        out_ports_pair = self._post_build(builder=builder, out_ports_pair=out_ports_pair)
 
         assert len(out_ports_pair) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
@@ -348,8 +348,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             dep.build(builder, do_propagate=do_propagate)
 
-    def _pre_build(self) -> typing.List[StreamPair]:
-        in_pairs: typing.List[StreamPair] = [x.get_input_pair() for x in self.input_ports]
+    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
+        in_pairs: typing.List[StreamPair] = [x.get_input_pair(builder=builder) for x in self.input_ports]
 
         return in_pairs
 

@@ -26,6 +26,7 @@ morpheus_add_cython_library(
       "include"
     LINK_TARGETS
       cudf::cudf
+      pybind11::pybind11
       Python::Module
       Python::NumPy
     OUTPUT_TARGET
@@ -81,6 +82,12 @@ morpheus_add_pybind11_module(messages SOURCE_FILES messages/module.cpp)
 #----------morpheus._lib.modules---------
 morpheus_add_pybind11_module(modules SOURCE_FILES modules/module.cpp)
 
+#----------morpheus._lib.doca---------
+if(MORPHEUS_SUPPORT_DOCA)
+  add_subdirectory(doca)
+
+  morpheus_add_pybind11_module(doca SOURCE_FILES doca/module.cpp LINK_TARGETS ${PROJECT_NAME}::morpheus_doca)
+endif()
 
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)

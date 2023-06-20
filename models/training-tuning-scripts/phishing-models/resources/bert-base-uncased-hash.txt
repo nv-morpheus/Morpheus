@@ -1,1 +1,0 @@
-../../../../morpheus/data/bert-base-uncased-hash.txt

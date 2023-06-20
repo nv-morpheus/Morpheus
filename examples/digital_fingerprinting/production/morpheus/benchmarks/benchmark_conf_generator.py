@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Benchmark config generator for DFP."""
 
 import glob
 import json
@@ -29,24 +30,34 @@ from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import SchemaBuilder
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 THIS_DIR = path.dirname(path.abspath(__file__))
 
 
 def set_mlflow_tracking_uri(tracking_uri):
+    """Set mlflow tracking uri and logger level."""
     mlflow.set_tracking_uri(tracking_uri)
     logging.getLogger('mlflow').setLevel(logger.level)
 
 
 def load_json(filepath: str):
+    """Load a json file."""
     full_filepath = path.join(THIS_DIR, filepath)
-    with open(full_filepath, 'r') as (f):
+    with open(full_filepath, 'r', encoding='UTF-8') as (f):
         json_dict = json.load(f)
     return json_dict
 
 
 class BenchmarkConfGenerator:
+    """
+    Benchmark config generator for DFP.
+
+    Parameters
+    ----------
+    pipe_conf : typing.Dict[str, any]
+        Pipeline configuration.
+    """
 
     def __init__(self, pipe_conf: typing.Dict[(str, any)]):
         self._pipe_conf = pipe_conf
@@ -54,18 +65,20 @@ class BenchmarkConfGenerator:
 
     @property
     def pipe_config(self):
+        """Get the pipe_config."""
         return self._config
 
     @property
     def source(self):
+        """Get the source from the pipe_config."""
         return self._pipe_conf.get('source')
 
     def _get_model_name_formatter(self) -> str:
-        model_name_formatter = 'DFP-{}-'.format(self.source) + '{user_id}'
+        model_name_formatter = f'DFP-{self.source}-' + '{user_id}'
         return model_name_formatter
 
     def _get_experiment_name_formatter(self) -> str:
-        experiment_name_formatter = 'dfp/{}/training/'.format(self.source) + '{reg_model_name}'
+        experiment_name_formatter = f'dfp/{self.source}/training/' + '{reg_model_name}'
         return experiment_name_formatter
 
     def _get_start_stop_time(self) -> typing.Tuple[(datetime, datetime)]:
@@ -93,6 +106,7 @@ class BenchmarkConfGenerator:
         return config
 
     def get_stages_conf(self) -> typing.Dict[(str, any)]:
+        """Get the stages config."""
         stages_conf = {}
         start_stop_time = self._get_start_stop_time()
         stages_conf['start_time'] = start_stop_time[0]
@@ -109,6 +123,7 @@ class BenchmarkConfGenerator:
         return stages_conf
 
     def get_filenames(self) -> typing.List[str]:
+        """Get the filenames from the config."""
         if 'glob_path' in self._pipe_conf:
             input_glob = self._pipe_conf.get('glob_path')
             input_glob = path.join(THIS_DIR, input_glob)
@@ -129,11 +144,13 @@ class BenchmarkConfGenerator:
         return filenames
 
     def get_schema(self):
+        """Get schema."""
         schema_builder = SchemaBuilder((self.pipe_config), source=(self.source))
         schema = schema_builder.build_schema()
         return schema
 
     def get_module_conf(self):
+        """Get module configuration."""
         dfp_arg_parser = DFPArgParser(skip_user=[],
                                       only_user=[],
                                       start_time=(datetime.strptime(self._pipe_conf.get('start_time'), '%Y-%m-%d')),

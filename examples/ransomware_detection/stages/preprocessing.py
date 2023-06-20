@@ -20,6 +20,7 @@ import pandas as pd
 
 from common.data_models import SnapshotData
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
@@ -32,7 +33,7 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 @register_stage("ransomware-preprocess", modes=[PipelineModes.FIL])
 class PreprocessingRWStage(PreprocessBaseStage):
     """
-    This class extends PreprocessBaseStage and process the features that aree derived from Appshield data.
+    This class extends PreprocessBaseStage and process the features that are derived from Appshield data.
     It also arranges the snapshots of Appshield data in a sequential order using provided sliding window.
 
     Parameters
@@ -58,6 +59,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         # Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
+        self._needed_columns.update({'sequence': TypeId.STRING})
 
     @property
     def name(self) -> str:
@@ -67,10 +69,12 @@ class PreprocessingRWStage(PreprocessBaseStage):
         return False
 
     def _sliding_window_offsets(self, ids: typing.List[int], ids_len: int,
-                                window: int) -> typing.List[typing.List[int]]:
+                                window: int) -> typing.List[typing.Tuple[int]]:
         """
         Create snapshot_id's sliding sequence for a given window
         """
+        assert ids_len == len(ids)
+        assert ids_len >= window
 
         sliding_window_offsets = []
 

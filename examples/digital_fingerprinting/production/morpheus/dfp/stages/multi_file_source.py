@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Source stages for reading multiple files from a list of fsspec paths."""
 
 import logging
 import typing
@@ -57,6 +58,7 @@ class MultiFileSource(SingleOutputSource):
 
     @property
     def name(self) -> str:
+        """Return the name of the stage."""
         return "from-multi-file"
 
     @property
@@ -65,9 +67,10 @@ class MultiFileSource(SingleOutputSource):
         return self._input_count
 
     def supports_cpp_node(self):
+        """Indicates whether this stage supports C++ nodes."""
         return False
 
-    def _generate_frames_fsspec(self):
+    def _generate_frames_fsspec(self) -> typing.Iterable[fsspec.core.OpenFiles]:
 
         files: fsspec.core.OpenFiles = fsspec.open_files(self._filenames)
 

@@ -25,8 +25,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils import compare_df
-from utils import assert_results
+from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -35,7 +34,7 @@ if (typing.TYPE_CHECKING):
 @pytest.mark.kafka
 @pytest.mark.use_cudf
 def test_write_to_kafka_stage_pipe(config,
-                                   filter_probs_df,
+                                   dataset_cudf: DatasetManager,
                                    kafka_bootstrap_servers: str,
                                    kafka_consumer: "KafkaConsumer",
                                    kafka_topics: typing.Tuple[str, str]) -> None:
@@ -43,6 +42,8 @@ def test_write_to_kafka_stage_pipe(config,
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution
     to ensure it works just as well with the C++ impls of the message classes.
     """
+
+    filter_probs_df = dataset_cudf['filter_probs.csv']
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
@@ -62,4 +63,4 @@ def test_write_to_kafka_stage_pipe(config,
 
     assert len(output_df) == len(filter_probs_df)
 
-    assert_results(compare_df.compare_df(filter_probs_df.to_pandas(), output_df))
+    dataset_cudf.assert_compare_df(filter_probs_df, output_df)

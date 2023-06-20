@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Inference stage for DFP."""
 
 import logging
 import time
@@ -33,6 +34,17 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPInferenceStage(SinglePortStage):
+    """
+    This stage performs inference on the input data using the model loaded from MLflow.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    model_name_formatter : str, optional
+        Format string to control the name of models stored in MLflow. Currently available field names are: `user_id`
+        and `user_md5` which is an md5 hexadecimal digest as returned by `hash.hexdigest`.
+    """
 
     def __init__(self, c: Config, model_name_formatter: str = "dfp-{user_id}"):
         super().__init__(c)
@@ -49,19 +61,26 @@ class DFPInferenceStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-inference"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted input types."""
         return (MultiDFPMessage, )
 
     def get_model(self, user: str) -> ModelCache:
-
+        """
+        Return the model for the given user. If a model doesn't exist for the given user, the model for the generic
+        user will be returned.
+        """
         return self._model_manager.load_user_model(self._client, user_id=user, fallback_user_ids=[self._fallback_user])
 
-    def on_data(self, message: MultiDFPMessage):
+    def on_data(self, message: MultiDFPMessage) -> MultiDFPMessage:
+        """Perform inference on the input data."""
         if (not message or message.mess_count == 0):
             return None
 

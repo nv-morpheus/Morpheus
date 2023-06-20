@@ -32,7 +32,7 @@ from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.stages.general.multiport_modules_stage import MultiPortModulesStage
+from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
 
 
@@ -161,8 +161,6 @@ def run_pipeline(source: str,
 
     dfp_deployment_module_config = config_generator.get_module_conf()
 
-    num_output_ports = dfp_deployment_module_config.get("num_output_ports")
-
     #                                     +--------------------------------------+
     #                                     |  control_message_file_source_stage   |
     #                                     +--------------------------------------+
@@ -192,53 +190,53 @@ def run_pipeline(source: str,
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |           preproc_module            |   |    |    |           preproc_module             |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |     dfp_rolling_window_module       |   |    |    |      dfp_rolling_window_module      |    |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |        dfp_data_prep_module         |   |    |    |         dfp_data_prep_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |        dfp_training_module          |   |    |    |         dfp_inference_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module        |    |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |       mlflow_model_writer_module    |   |    |    |        filter_detections_module      |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |          dfp_monitor_module         |   |    |    |        dfp_post_proc_module          |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |    ------------------------------------------------     |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |    ------------------------------------------------     |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |          serialize_module           |    |   |
     # |                                                         |    +-------------------------------------+    |   |
-    # |                                                         |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |                                                         |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |      write_to_file_module           |    |   |
     # |                                                         |    +-------------------------------------+    |   |
-    # |                                                         |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |                                                         |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |          dfp_monitor_module         |    |   |
     # |                                                         |    +-------------------------------------+    |   |
@@ -253,9 +251,8 @@ def run_pipeline(source: str,
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModulesStage(config,
                               dfp_deployment_module_config,
-                              input_port_name="input",
-                              output_port_name_prefix="output",
-                              num_output_ports=num_output_ports))
+                              input_ports=["input"],
+                              output_ports=["output_0", "output_1"]))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 

@@ -197,7 +197,7 @@ def test_read_cpp_compare(input_file: str):
     CppConfig.set_should_use_cpp(True)
     df_cpp = read_file_to_df(input_file, df_type='cudf')
 
-    assert DatasetManager.assert_df_equal(df_python, df_cpp)
+    DatasetManager.assert_df_equal(df_python, df_cpp)
 
 
 @pytest.mark.slow

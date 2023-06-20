@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Converts DFP inference output to CSV for the purposes of visualization."""
 
 import logging
 import os
@@ -22,10 +23,10 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+
+from ..messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Unique name of the stage."""
         return "dfp-viz-postproc"
 
     def accepted_types(self) -> typing.Tuple:
@@ -74,12 +76,13 @@ class DFPVizPostprocStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiAEMessage, )
+        return (MultiDFPMessage, )
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
-    def _postprocess(self, x: MultiAEMessage):
+    def _postprocess(self, x: MultiDFPMessage) -> pd.DataFrame:
 
         viz_pdf = pd.DataFrame()
         viz_pdf[["user", "time"]] = x.get_meta([self._user_column_name, self._timestamp_column])
@@ -91,36 +94,36 @@ class DFPVizPostprocStage(SinglePortStage):
 
         viz_pdf["anomalyScore"] = x.get_meta("mean_abs_z")
 
-        return MessageMeta(df=viz_pdf)
+        return viz_pdf
+
+    def _write_to_files(self, x: MultiDFPMessage):
+
+        df = self._postprocess(x)
+
+        unique_periods = df["period"].unique()
+
+        for period in unique_periods:
+            period_df = df[df["period"] == period]
+            period_df = period_df.drop(["period"], axis=1)
+            output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
+
+            is_first = False
+            if output_file not in self._output_filenames:
+                self._output_filenames.append(output_file)
+                is_first = True
+
+            lines = serializers.df_to_csv(period_df, include_header=is_first, include_index_col=False)
+            os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
+            with open(output_file, "a", encoding='UTF-8') as out_file:
+                out_file.writelines(lines)
+
+        return x
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
-        def write_to_files(x: MultiAEMessage):
-
-            message_meta = self._postprocess(x)
-
-            unique_periods = message_meta.df["period"].unique()
-
-            for period in unique_periods:
-                period_df = message_meta.df[message_meta.df["period"] == period]
-                period_df = period_df.drop(["period"], axis=1)
-                output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
-
-                is_first = False
-                if output_file not in self._output_filenames:
-                    self._output_filenames.append(output_file)
-                    is_first = True
-
-                lines = serializers.df_to_csv(period_df, include_header=is_first, include_index_col=False)
-                os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
-                with open(output_file, "a") as out_file:
-                    out_file.writelines(lines)
-
-            return x
-
-        dfp_viz_postproc = builder.make_node(self.unique_name, ops.map(write_to_files))
+        dfp_viz_postproc = builder.make_node(self.unique_name, ops.map(self._write_to_files))
 
         builder.make_edge(stream, dfp_viz_postproc)
         stream = dfp_viz_postproc
