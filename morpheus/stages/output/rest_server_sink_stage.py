@@ -31,6 +31,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -52,7 +53,7 @@ class RestServerSinkStage(SinglePortStage):
         The port to bind the REST server to.
     endpoint : str, default "/"
         The endpoint to listen for requests on.
-    method : str, default "GET"
+    method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
         HTTP method to listen for.
     max_queue_size : int, default None
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
@@ -84,7 +85,7 @@ class RestServerSinkStage(SinglePortStage):
             bind_address: str = "127.0.0.1",
             port: int = 8080,
             endpoint: str = "/message",
-            method: str = "GET",
+            method: HTTPMethod = HTTPMethod.GET,
             max_queue_size: int = None,
             num_server_threads: int = None,
             max_rows_per_response: int = 10000,
@@ -114,7 +115,7 @@ class RestServerSinkStage(SinglePortStage):
                                   bind_address=bind_address,
                                   port=port,
                                   endpoint=endpoint,
-                                  method=method,
+                                  method=method.value,
                                   num_threads=num_server_threads or os.cpu_count(),
                                   request_timeout=request_timeout_secs)
         self._server.start()

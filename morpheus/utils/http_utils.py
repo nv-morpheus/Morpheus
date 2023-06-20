@@ -29,6 +29,14 @@ class MimeTypes(Enum):
     JSON = "application/json"
 
 
+class HTTPMethod(Enum):
+    """Not a complete list of HTTP methods, just the ones we use."""
+    GET = "GET"
+    PATCH = "PATCH"
+    POST = "POST"
+    PUT = "PUT"
+
+
 def request_with_retry(
     request_kwargs: dict,
     requests_session: typing.Optional[requests.Session] = None,

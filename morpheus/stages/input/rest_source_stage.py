@@ -28,12 +28,13 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_METHODS = ("POST", "PUT")
+SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 
 
 @register_stage("from-rest")
@@ -51,7 +52,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         The port to bind the REST server to.
     endpoint : str, default "/"
         The endpoint to listen for requests on.
-    method : str, default "POST"
+    method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
         HTTP method to listen for. Valid values are "POST" and "PUT".
     sleep_time : float, default 0.1
         Amount of time in seconds to sleep if the request queue is empty.
@@ -76,7 +77,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  bind_address: str = "127.0.0.1",
                  port: int = 8080,
                  endpoint: str = "/message",
-                 method: str = "POST",
+                 method: HTTPMethod = HTTPMethod.POST,
                  sleep_time: float = 0.1,
                  queue_timeout: int = 5,
                  max_queue_size: int = None,
@@ -144,7 +145,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                  bind_address=self._bind_address,
                                  port=self._port,
                                  endpoint=self._endpoint,
-                                 method=self._method,
+                                 method=self._method.value,
                                  num_threads=self._num_server_threads,
                                  max_payload_size=self._max_payload_size_bytes,
                                  request_timeout=self._request_timeout_secs)
@@ -184,7 +185,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            bind_address=self._bind_address,
                                            port=self._port,
                                            endpoint=self._endpoint,
-                                           method=self._method,
+                                           method=self._method.value,
                                            sleep_time=self._sleep_time,
                                            queue_timeout=self._queue_timeout,
                                            max_queue_size=self._max_queue_size,

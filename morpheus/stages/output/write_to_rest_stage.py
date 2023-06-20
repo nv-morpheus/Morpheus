@@ -26,6 +26,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils import http_utils
+from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -79,7 +80,7 @@ class WriteToRestStage(SinglePortStage):
             * `{"Content-Type": "application/json"}` when `lines` is `False`
     query_params : dict, optional
         Optional set of query parameters to include in the request.
-    method : str, optional
+    method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
         HTTP method to use when sending messages, by default "POST". Currently only "POST", "PUT" and "PATCH" are
         supported.
     error_sleep_time : float, optional
@@ -127,7 +128,7 @@ class WriteToRestStage(SinglePortStage):
                  static_endpoint: bool = True,
                  headers: dict = None,
                  query_params: dict = None,
-                 method: str = "POST",
+                 method: HTTPMethod = HTTPMethod.POST,
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
                  request_timeout_secs: int = 30,

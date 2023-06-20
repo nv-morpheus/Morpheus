@@ -49,7 +49,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         returns a dictionary of key-value pairs. If a callable is provided, it will be called with no arguments.
     headers: dict, default None
         Headers sent with the request.
-    method : str, default "GET"
+    method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
         HTTP method to use.
     sleep_time : float, default 0.1
         Amount of time in seconds to sleep between successive requests. Setting this to 0 disables this feature.
@@ -87,7 +87,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  url: str,
                  query_params: typing.Union[dict, typing.Callable] = None,
                  headers: dict = None,
-                 method: str = "GET",
+                 method: http_utils.HTTPMethod = http_utils.HTTPMethod.GET,
                  sleep_time: float = 0.1,
                  error_sleep_time: float = 0.1,
                  respect_retry_after_header: bool = True,
