@@ -132,7 +132,8 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
       python=${PYTHON_VER} && \
     # Clean and activate
     # conda clean -afy && \
-    sed -i 's/conda activate base/conda activate morpheus/g' ~/.bashrc
+    conda init bash && \
+    echo "conda activate morpheus" >> ~/.bashrc
 
 # Set the permenant conda channes to use for morpheus
 RUN source activate morpheus &&\

@@ -97,5 +97,6 @@ dependencies:
     - pip:
         # Add additional dev dependencies here
         - docutils
+        - pytest-kafka==0.6.0
         # Ensure all runtime requirements are installed using the requirements file
         - --requirement requirements.txt
