@@ -182,4 +182,18 @@ void FiberQueueInterfaceProxy::close(morpheus::FiberQueue& self)
 {
     self.close();
 }
+
+morpheus::FiberQueue& FiberQueueInterfaceProxy::enter(morpheus::FiberQueue& self)
+{
+    return self;
+}
+
+void FiberQueueInterfaceProxy::exit(morpheus::FiberQueue& self,
+                                    const pybind11::object& type,
+                                    const pybind11::object& value,
+                                    const pybind11::object& traceback)
+{
+    self.close();
+}
+
 }  // namespace morpheus

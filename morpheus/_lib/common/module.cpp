@@ -77,7 +77,9 @@ PYBIND11_MODULE(common, _module)
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
-        .def("close", &FiberQueueInterfaceProxy::close);
+        .def("close", &FiberQueueInterfaceProxy::close)
+        .def("__enter__", &FiberQueueInterfaceProxy::enter, py::return_value_policy::reference)
+        .def("__exit__", &FiberQueueInterfaceProxy::exit);
 
     py::enum_<TypeId>(_module, "TypeId", "Supported Morpheus types")
         .value("EMPTY", TypeId::EMPTY)
