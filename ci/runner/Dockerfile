@@ -37,7 +37,7 @@ SHELL ["/bin/bash",  "-c"]
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-    libnuma1 && \
+        libnuma1 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -61,11 +61,11 @@ ARG CUDA_PKG_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-    cuda-nvtx-${CUDA_PKG_VER} \
-    libcublas-dev-${CUDA_PKG_VER} \
-    libcufft-dev-${CUDA_PKG_VER} \
-    libcurand-dev-${CUDA_PKG_VER} \
-    libcusolver-dev-${CUDA_PKG_VER} && \
+        cuda-nvtx-${CUDA_PKG_VER} \
+        libcublas-dev-${CUDA_PKG_VER} \
+        libcufft-dev-${CUDA_PKG_VER} \
+        libcurand-dev-${CUDA_PKG_VER} \
+        libcusolver-dev-${CUDA_PKG_VER} && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -80,7 +80,7 @@ ARG CUDA_SHORT_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-    openjdk-11-jre-headless && \
+        openjdk-11-jre-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
