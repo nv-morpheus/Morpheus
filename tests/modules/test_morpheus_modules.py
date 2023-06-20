@@ -370,7 +370,7 @@ def test_rest_loader_module():
                     },                                                     
                     {
                     "method": "POST",
-                    "endpoint": "0.0.0.0",
+                    "endpoint": "0.0.0.1",
                     "params": [
                         {"something1": "something2"},
                     ],
@@ -439,4 +439,4 @@ if (__name__ == "__main__"):
     test_file_loader_module()
     
     # Flask service needed for testing RESTDataloader
-    # test_rest_loader_module()
+    test_rest_loader_module()

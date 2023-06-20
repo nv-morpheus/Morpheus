@@ -41,7 +41,7 @@ namespace http  = beast::http;
 namespace net   = boost::asio;
 using tcp       = net::ip::tcp;
 
-#define PORT "80"
+#define PORT "8081"
 
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
@@ -55,34 +55,40 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
                             const std::unordered_map<std::string, std::string>& x_headers,
                             int max_retry)
 {
-    py::gil_scoped_acquire gil;
-    py::module_ urllib = py::module::import("urllib.parse");
     std::string ep(endpoint);
-    py::object ep_pystr = py::str(ep);
+    std::string query;
+    std::string host;
+    std::string target;
+    {
+        py::gil_scoped_acquire gil;
 
-    // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly introduced
-    // by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component. 
-    // ref: https://docs.python.org/3/library/urllib.parse.html
-    // Workaround here is to prepend "//" if endpoint does not already include one
-    if (ep_pystr.attr("find")("//").cast<int>() == -1)
-    {
-        ep = "//" + ep;
-    }
+        py::module_ urllib  = py::module::import("urllib.parse");
+        py::object ep_pystr = py::str(ep);
 
-    py::object result  = urllib.attr("urlparse")(ep);
-    std::string host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
-    std::string target = result.attr("path").is_none() ? "" : result.attr("path").cast<std::string>();
-    if (target.empty())
-    {
-        target = "/";
+        // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly
+        // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path
+        // component. ref: https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if
+        // endpoint does not already include one
+        if (ep_pystr.attr("find")("//").cast<int>() == -1)
+        {
+            ep = "//" + ep;
+        }
+
+        py::object result = urllib.attr("urlparse")(ep);
+        host              = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+        target            = result.attr("path").is_none() ? "" : result.attr("path").cast<std::string>();
+        if (target.empty())
+        {
+            target = "/";
+        }
+        query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
+
+        // if params exists, overrides query included in endpoint
+        if (!params.empty())
+        {
+            query = params;
+        }
     }
-    std::string query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
-    // if params exists, overrides query part included in endpoint
-    if (!params.empty())
-    {
-        query = params;
-    }
-    py::gil_scoped_release gil_release;
 
     net::io_context ioc;
     tcp::resolver resolver(ioc);
@@ -138,8 +144,7 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
 
     } catch (std::exception const& e)
     {
-        // TODO: need VLOG here?
-        std::cout << "Error: " << e.what() << std::endl;
+        VLOG(30) << "Error when calling RESTDataLoader::load(): " << e.what();
     }
 }
 
@@ -159,19 +164,21 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
         df_json_str = "[" + df_json_str + "]";
     }
 
-    py::gil_scoped_acquire gil;
-    auto current_df = mod_cudf.attr("DataFrame")();
-    current_df      = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
-    if (dataframe.is_none())
     {
-        dataframe = current_df;
-    }
-    else if (strategy == "aggregate")
-    {
-        py::list args;
-        args.attr("append")(dataframe);
-        args.attr("append")(current_df);
-        dataframe = mod_cudf.attr("concat")(args);
+        py::gil_scoped_acquire gil;
+        auto current_df = mod_cudf.attr("DataFrame")();
+        current_df      = mod_cudf.attr("read_json")(py::str(df_json_str), py::str("cudf"));
+        if (dataframe.is_none())
+        {
+            dataframe = current_df;
+        }
+        else if (strategy == "aggregate")
+        {
+            py::list args;
+            args.attr("append")(dataframe);
+            args.attr("append")(current_df);
+            dataframe = mod_cudf.attr("concat")(args);
+        }
     }
 }
 
@@ -186,9 +193,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 
     auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
     mod_cudf           = cache_handle.get_module("cudf");
-    py::gil_scoped_release release;
 
-    // TODO(Devin) : error checking + improve robustness
+    py::gil_scoped_release rel;
+
     if (!task["queries"].is_array() or task.empty())
     {
         throw std::runtime_error("'REST Loader' control message specified no queries to load");
@@ -203,7 +210,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
     auto conf     = this->config();
     int max_retry = conf.value("max_retry", 3);
     auto queries  = task["queries"];
-    // TODO(Devin) : Migrate this to use the cudf::io interface
+
     for (auto& query : queries)
     {
         std::string method = query.value("method", "GET");
@@ -211,7 +218,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         std::string endpoint = query.value("endpoint", "");
         if (endpoint.empty())
         {
-            continue;
+            throw std::runtime_error("'REST loader' receives query with empty endpoint");
         }
         std::string content_type = query.value("content_type", "");
         std::string body         = query.value("body", "");
@@ -247,8 +254,10 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         }
     }
 
-    py::gil_scoped_acquire gil_2;
-    message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    {
+        py::gil_scoped_acquire gil;
+        message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    }
     return message;
 }
 }  // namespace morpheus
