@@ -41,7 +41,7 @@ pytest_kafka_setup_error = None
 # pylint: enable=invalid-name
 
 # Don't let pylint complain about pytest fixtures
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument
 
 
 def init_pytest_kafka():
@@ -190,7 +190,7 @@ def pytest_runtest_setup(item):
             pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
 
 
-def pytest_collection_modifyitems(_: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
     To support old unittest style tests, try to determine the mark from the name
     """
@@ -225,7 +225,7 @@ def clear_handlers(logger):
 
 
 @pytest.hookimpl(trylast=True)
-def pytest_runtest_teardown(item, nextitem):  # pylint: disable=unused-argument
+def pytest_runtest_teardown(item, nextitem):
     clear_handlers(logging.getLogger("morpheus"))
     clear_handlers(logging.getLogger())
 
@@ -322,7 +322,7 @@ def df_type(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
-def config(use_cpp: bool):  # pylint: disable=unused-argument
+def config(use_cpp: bool):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -378,7 +378,7 @@ def restore_sys_path():
 
 
 @pytest.fixture(scope="function")
-def import_mod(request: pytest.FixtureRequest, restore_sys_path):  # pylint: disable=unused-argument
+def import_mod(request: pytest.FixtureRequest, restore_sys_path):
     marker = request.node.get_closest_marker("import_mod")
     if marker is not None:
         mod_paths = marker.args[0]
@@ -474,7 +474,7 @@ def reset_global_stage_registry():
 
 
 @pytest.fixture(scope="function")
-def reset_plugins(reset_plugin_manger, reset_global_stage_registry):  # pylint: disable=unused-argument
+def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
     """
     Reset both the plugin manager and the global stage gregistry.
     Some of the tests for examples import modules dynamically, which in some cases can cause register_stage to be
@@ -835,7 +835,7 @@ def dataset_cudf():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(dataset, use_cpp: bool):  # pylint: disable=unused-argument
+def filter_probs_df(dataset, use_cpp: bool):
     """
     Shortcut fixture for loading the filter_probs.csv dataset.
 
