@@ -25,3 +25,4 @@ Custom functions called "Loaders" can be utilized by the DataLoader Module to lo
 
 - [File to DataFrame Loader](./core/file_to_df_loader.md)
 - [Filesystem Spec Loader](./core/fsspec_loader.md)
+- [REST to DataFrame Loader](./core/rest_to_df_loader.md)
