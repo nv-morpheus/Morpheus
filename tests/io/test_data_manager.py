@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# Disable pylint, it doesn't detect fixture name usage correctly and reports errors that are not errors.
+# pylint: disable=all
+
 import os
 import shutil
 import tempfile
@@ -71,37 +75,37 @@ def dataframe_fixture_data():
 def test_memory_storage(storage_type, file_format, dataframe_fixture_data):
     data = dataframe_fixture_data["test_cudf_dataframe"]
 
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    assert len(dm) == 0
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    assert len(data_manager) == 0
 
-    sid = dm.store(data)
-    assert len(dm) == 1
-    assert sid in dm
+    sid = data_manager.store(data)
+    assert len(data_manager) == 1
+    assert sid in data_manager
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 def test_filesystem_storage_type(storage_type):
-    dm = DataManager(storage_type=storage_type)
-    assert (len(dm) == 0)
-    assert (dm.storage_type == storage_type)
+    data_manager = DataManager(storage_type=storage_type)
+    assert (len(data_manager) == 0)
+    assert (data_manager.storage_type == storage_type)
 
 
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
 def test_invalid_storage_type(storage_type):
     with pytest.raises(ValueError):
-        dm = DataManager(storage_type=storage_type)  # noqa
+        data_manager = DataManager(storage_type=storage_type)  # noqa
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_add_remove_source(storage_type, file_format):
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
     new_source = pd.DataFrame({'a': [9, 10], 'b': [11, 12]})
 
-    sid = dm.store(new_source)
-    assert (len(dm) == 1)
-    dm.remove(sid)
-    assert (len(dm) == 0)
+    sid = data_manager.store(new_source)
+    assert (len(data_manager) == 1)
+    data_manager.remove(sid)
+    assert (len(data_manager) == 0)
 
 
 @pytest.mark.parametrize("storage_type", ['filesystem'])
@@ -110,18 +114,18 @@ def test_filesystem_storage_files_exist(storage_type, file_format, dataframe_fix
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
 
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid1 = dm.store(test_cudf_dataframe)
-    sid2 = dm.store(test_pd_dataframe)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid1 = data_manager.store(test_cudf_dataframe)
+    sid2 = data_manager.store(test_pd_dataframe)
 
-    files = dm.manifest
+    files = data_manager.manifest
     for file_path in files.values():
         assert (os.path.exists(file_path))
 
-    dm.remove(sid1)
-    dm.remove(sid2)
+    data_manager.remove(sid1)
+    data_manager.remove(sid2)
 
-    files = dm.manifest
+    files = data_manager.manifest
     for file_path in files:
         assert (not os.path.exists(file_path))
 
@@ -131,22 +135,22 @@ def test_filesystem_storage_files_exist(storage_type, file_format, dataframe_fix
 def test_large_fileset_filesystem_storage(storage_type, file_format):
     num_dataframes = 100
     dataframes = [cudf.DataFrame({'a': [i, i + 1], 'b': [i + 2, i + 3]}) for i in range(num_dataframes)]
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
 
-    source_ids = [dm.store(df) for df in dataframes]
-    assert (len(dm) == num_dataframes)
+    source_ids = [data_manager.store(df) for df in dataframes]
+    assert (len(data_manager) == num_dataframes)
 
     for source_id in source_ids:
-        assert (source_id in dm)
+        assert (source_id in data_manager)
 
-    files = dm.manifest.values()
+    files = data_manager.manifest.values()
     for file_path in files:
         assert (os.path.exists(file_path))
 
     for source_id in source_ids:
-        dm.remove(source_id)
+        data_manager.remove(source_id)
 
-    assert (len(dm) == 0)
+    assert (len(data_manager) == 0)
 
     for file_path in files:
         assert (not os.path.exists(file_path))
@@ -157,9 +161,9 @@ def test_large_fileset_filesystem_storage(storage_type, file_format):
 def test_load_cudf_dataframe(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
 
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_cudf_dataframe)
-    loaded_df = dm.load(sid)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid = data_manager.store(test_cudf_dataframe)
+    loaded_df = data_manager.load(sid)
 
     pd.testing.assert_frame_equal(loaded_df, test_cudf_dataframe.to_pandas())
 
@@ -168,9 +172,9 @@ def test_load_cudf_dataframe(storage_type, file_format, dataframe_fixture_data):
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_load_pd_dataframe(storage_type, file_format, dataframe_fixture_data):
     test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_pd_dataframe)
-    loaded_df = dm.load(sid)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid = data_manager.store(test_pd_dataframe)
+    loaded_df = data_manager.load(sid)
 
     pd.testing.assert_frame_equal(loaded_df, test_pd_dataframe)
 
@@ -179,9 +183,9 @@ def test_load_pd_dataframe(storage_type, file_format, dataframe_fixture_data):
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_load(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_cudf_dataframe)
-    loaded_df = dm.load(sid)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid = data_manager.store(test_cudf_dataframe)
+    loaded_df = data_manager.load(sid)
 
     pd.testing.assert_frame_equal(loaded_df, test_cudf_dataframe.to_pandas())
 
@@ -189,10 +193,10 @@ def test_load(storage_type, file_format, dataframe_fixture_data):
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_load_non_existent_source_id(storage_type, file_format):
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
 
     try:
-        dm.load(uuid.uuid4())
+        data_manager.load(uuid.uuid4())
         pytest.fail('Expected KeyError to be raised. (Source ID does not exist.')
     except KeyError:
         pass
@@ -202,9 +206,9 @@ def test_load_non_existent_source_id(storage_type, file_format):
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_get_num_rows(storage_type, file_format, dataframe_fixture_data):
     test_pd_dataframe = dataframe_fixture_data["test_pd_dataframe"]
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_pd_dataframe)
-    num_rows = dm.get_record(sid).num_rows
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid = data_manager.store(test_pd_dataframe)
+    num_rows = data_manager.get_record(sid).num_rows
     assert (num_rows == len(test_pd_dataframe))
 
 
@@ -212,9 +216,9 @@ def test_get_num_rows(storage_type, file_format, dataframe_fixture_data):
 @pytest.mark.parametrize("file_format", ['parquet', 'csv'])
 def test_source_property(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_cudf_dataframe)  # noqa
-    data_records = dm.records
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
+    sid = data_manager.store(test_cudf_dataframe)  # noqa
+    data_records = data_manager.records
 
     assert (len(data_records) == 1)
 
@@ -233,13 +237,15 @@ def test_store_from_existing_file_path(storage_type, file_format, dataframe_fixt
     test_csv_filepath = dataframe_fixture_data["test_csv_filepath"]
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
 
-    dm = DataManager(storage_type=storage_type, file_format=file_format)
+    data_manager = DataManager(storage_type=storage_type, file_format=file_format)
     if (file_format == 'parquet'):
-        sid = dm.store(test_parquet_filepath)
+        sid = data_manager.store(test_parquet_filepath)
     elif (file_format == 'csv'):
-        sid = dm.store(test_csv_filepath)
+        sid = data_manager.store(test_csv_filepath)
+    else:
+        sid = None
 
-    loaded_df = dm.load(sid)
+    loaded_df = data_manager.load(sid)
     assert (loaded_df.equals(test_cudf_dataframe.to_pandas()))
 
 
