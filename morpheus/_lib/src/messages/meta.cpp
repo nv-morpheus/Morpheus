@@ -26,6 +26,7 @@
 #include <cudf/io/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pyerrors.h>  // for PyExc_DeprecationWarning
 #include <warnings.h>  // for PyErr_WarnEx
@@ -60,6 +61,10 @@ MutableTableInfo MessageMeta::get_mutable_info() const
 
 std::shared_ptr<MessageMeta> MessageMeta::create_from_python(py::object&& data_table)
 {
+    auto cudf = pybind11::module_::import("cudf");
+
+    data_table = cudf.attr("DataFrame")(data_table);
+
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
 
     return std::shared_ptr<MessageMeta>(new MessageMeta(std::move(data)));

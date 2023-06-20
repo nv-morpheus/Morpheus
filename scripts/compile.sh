@@ -26,6 +26,7 @@ echo "Runing CMake configure..."
 # CMAKE_ARGS is supplied by the conda environment
 # CMAKE_CONFIGURE_EXTRA_ARGS is supplied by the user
 cmake -B ${BUILD_DIR} -GNinja \
+   -DCMAKE_BUILD_TYPE=Debug \
    -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
    -DMORPHEUS_USE_CLANG_TIDY=OFF \
    -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \

@@ -321,9 +321,7 @@ pybind11::object MultiMessageInterfaceProxy::from_message(pybind11::type cls,
         kwargs[name] = getattr(message, name);
     }
 
-    auto new_message = cls(**kwargs);
-
-    return new_message;
+    return cls(**kwargs);
 }
 
 std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage& self)

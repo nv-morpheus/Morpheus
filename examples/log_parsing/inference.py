@@ -102,7 +102,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
             confidences=cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
             labels=cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
             input_ids=cp.zeros((x.count, x.input_ids.shape[1])),
-            seq_ids=cp.zeros((x.count, x.seq_ids.shape[1])),
+            seq_ids=cp.zeros((x.count, x.seq_ids.shape[1]), dtype="int"),
         )
 
         output_message = MultiPostprocLogParsingMessage(meta=x.meta,
