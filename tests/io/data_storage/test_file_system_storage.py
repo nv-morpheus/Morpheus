@@ -14,6 +14,8 @@
 # limitations under the License.
 
 import os
+import shutil
+import tempfile
 
 import pandas as pd
 import pytest
@@ -35,16 +37,24 @@ def parquet_data():
 
 @pytest.fixture
 def csv_file(csv_data):
-    csv_data.to_csv('test_data.csv', index=False)
-    yield 'test_data.csv'
-    os.remove('test_data.csv')
+    temp_dir = tempfile.mkdtemp()
+
+    filepath = f'{temp_dir}/test_data.csv'
+    csv_data.to_csv(filepath, index=False)
+    yield filepath
+
+    shutil.rmtree(temp_dir)
 
 
 @pytest.fixture
 def parquet_file(parquet_data):
-    parquet_data.to_parquet('test_data.parquet', index=False)
-    yield 'test_data.parquet'
-    os.remove('test_data.parquet')
+    temp_dir = tempfile.mkdtemp()
+
+    filepath = f'{temp_dir}/test_data.parquet'
+    parquet_data.to_parquet(filepath, index=False)
+    yield filepath
+
+    shutil.rmtree(temp_dir)
 
 
 # Tests
@@ -54,7 +64,7 @@ def test_csv(csv_data):
 
     assert storage.backing_source == 'test_data.csv'
     assert storage.num_rows == 3
-    assert storage.owner == True
+    assert storage.owner is True
 
     loaded_data = storage.load()
     pd.testing.assert_frame_equal(loaded_data, csv_data)
@@ -69,7 +79,7 @@ def test_parquet(parquet_data):
 
     assert storage.backing_source == 'test_data.parquet'
     assert storage.num_rows == 3
-    assert storage.owner == True
+    assert storage.owner is True
 
     loaded_data = storage.load()
     pd.testing.assert_frame_equal(loaded_data, parquet_data)
@@ -84,14 +94,14 @@ def test_copy_from_source(csv_file, parquet_file):
     storage_csv.store(csv_file, copy_from_source=True)
     assert storage_csv.backing_source == 'test_data_copy.csv'
     assert storage_csv.num_rows == 3
-    assert storage_csv.owner == True
+    assert storage_csv.owner is True
     assert os.path.exists('test_data_copy.csv')
 
     storage_parquet = FileSystemStorage('test_data_copy.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=True)
     assert storage_parquet.backing_source == 'test_data_copy.parquet'
     assert storage_parquet.num_rows == 3
-    assert storage_parquet.owner == True
+    assert storage_parquet.owner is True
     assert os.path.exists('test_data_copy.parquet')
 
     # Clean up
@@ -105,13 +115,13 @@ def test_no_copy_from_source(csv_file, parquet_file):
     storage_csv.store(csv_file, copy_from_source=False)
     assert storage_csv.backing_source == csv_file
     assert storage_csv.num_rows == 3
-    assert storage_csv.owner == False
+    assert storage_csv.owner is False
 
     storage_parquet = FileSystemStorage('test_data_link.parquet', 'parquet')
     storage_parquet.store(parquet_file, copy_from_source=False)
     assert storage_parquet.backing_source == parquet_file
     assert storage_parquet.num_rows == 3
-    assert storage_parquet.owner == False
+    assert storage_parquet.owner is False
 
 
 def test_invalid_file_format():

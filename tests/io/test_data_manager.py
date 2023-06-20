@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import os
 import shutil
 import tempfile
@@ -42,14 +41,12 @@ sources = [
 
 @pytest.fixture(scope='session')
 def dataframe_fixture_data():
-    print("Creating test data...")
     # Create temporary file paths
     temp_dir = tempfile.mkdtemp()
 
     parquet_filepath = f"{temp_dir}/test_file.parquet"
     csv_filepath = f"{temp_dir}/test_file.csv"
 
-    print(parquet_filepath)
     # Create test data
     test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
     test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
@@ -92,7 +89,7 @@ def test_filesystem_storage_type(storage_type):
 @pytest.mark.parametrize("storage_type", ['invalid', "something else invalid"])
 def test_invalid_storage_type(storage_type):
     with pytest.raises(ValueError):
-        dm = DataManager(storage_type=storage_type)
+        dm = DataManager(storage_type=storage_type)  # noqa
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
@@ -216,7 +213,7 @@ def test_get_num_rows(storage_type, file_format, dataframe_fixture_data):
 def test_source_property(storage_type, file_format, dataframe_fixture_data):
     test_cudf_dataframe = dataframe_fixture_data["test_cudf_dataframe"]
     dm = DataManager(storage_type=storage_type, file_format=file_format)
-    sid = dm.store(test_cudf_dataframe)
+    sid = dm.store(test_cudf_dataframe)  # noqa
     data_records = dm.records
 
     assert (len(data_records) == 1)
