@@ -20,7 +20,7 @@ set -e
 sudo apt update
 
 # Install openjdk
-sudo apt install -y openjdk-11-jdk
+sudo apt install -y openjdk-11-jre-headless
 
 # Download kafka
 python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py

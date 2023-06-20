@@ -20,11 +20,16 @@ import os
 import pytest_kafka
 from pytest_kafka.install import set_up_kafka
 
+DEFAULT_KAFKA_URL = 'https://downloads.apache.org/kafka/3.4.1/kafka_2.13-3.4.1.tgz'
+DEFAULT_KAFKA_TAR_ROOTDIR = 'kafka_2.13-3.4.1/'
+
 
 def main():
     """Main function."""
+    kafka_url = os.environ.get('MORPHEUS_KAFKA_URL', DEFAULT_KAFKA_URL)
+    kafka_tar_dir = os.environ.get('MORPHEUS_KAFKA_TAR_DIR', DEFAULT_KAFKA_TAR_ROOTDIR)
     pytest_kafka_dir = os.path.dirname(pytest_kafka.__file__)
-    set_up_kafka(extract_location=pytest_kafka_dir)
+    set_up_kafka(kafka_url=kafka_url, kafka_tar_rootdir=kafka_tar_dir, extract_location=pytest_kafka_dir)
 
 
 if __name__ == '__main__':
