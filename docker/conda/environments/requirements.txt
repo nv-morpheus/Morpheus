@@ -10,6 +10,8 @@ jupyterlab
 nvidia-pyindex
 # Duplicated in conda dev to ensure parity with libprotobuf
 protobuf==4.21.*
+pytest-benchmark>=4.0
+pytest-kafka==0.6.0
 torch==1.13.1+cu116
 tritonclient[all]==2.17.*
 websockets
