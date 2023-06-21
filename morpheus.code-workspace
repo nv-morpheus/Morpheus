@@ -337,7 +337,7 @@
 				"request": "launch",
 				"program": "/home/coder/.conda/envs/morpheus/bin/python",
 				"args": [
-					"-m", "pytest", "--run_slow", "tests/examples/log_parsing/test_pipe.py", "-k", "test_pipe"
+					"-m", "pytest", "--run_slow", "tests/test_dfp.py", "-k", "test_dfp_roleg"
 				],
 				"stopAtEntry": false,
 				"cwd": "${workspaceFolder}",
