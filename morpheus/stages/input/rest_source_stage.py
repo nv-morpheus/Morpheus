@@ -153,9 +153,9 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
             processing = True
             while (processing):
-                # Read as many messages as we can from the queue if it's empty check to see if we should be shutting down
-                # It is important that any messages we received that are in the queue are processed before we shutdown since
-                # we already returned an OK response to the client.
+                # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
+                # down. It is important that any messages we received that are in the queue are processed before we
+                # shutdown since we already returned an OK response to the client.
                 df = None
                 try:
                     df = self._queue.get()
