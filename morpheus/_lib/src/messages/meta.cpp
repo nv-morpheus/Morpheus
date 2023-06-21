@@ -127,12 +127,20 @@ std::optional<std::string> MessageMeta::ensure_sliceable_index()
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
     // ensure we have a cudf DF and not a pandas DF
-    auto isinstance  = py::module_::import("builtins").attr("isinstance");
     auto cudf_df_cls = py::module_::import("cudf").attr("DataFrame");
-    if (!isinstance(data_frame, cudf_df_cls).cast<bool>())
+    if (!py::isinstance(data_frame, cudf_df_cls))
     {
-        LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
-        data_frame = cudf_df_cls(std::move(data_frame));
+        // Convert to cudf if it's a Pandas DF, thrown an error otherwise
+        auto pd_df_cls = py::module_::import("pandas").attr("DataFrame");
+        if (py::isinstance(data_frame, pd_df_cls))
+        {
+            LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
+            data_frame = cudf_df_cls(std::move(data_frame));
+        }
+        else
+        {
+            throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+        }
     }
 
     return MessageMeta::create_from_python(std::move(data_frame));
