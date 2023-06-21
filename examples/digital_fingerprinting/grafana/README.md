@@ -93,7 +93,7 @@ Click on `DFP_Dashboard` in the `General` folder.
 The dashboard has the following visualization panels:
 
 - Time series of absolute `mean_abs_z` across all rows. We can observe the higher `mean_abs_z` scores for `attacktarget@domain.com` as expected.
-- Time series of z-loss per feature across all rows. We can bserve the higher z-loss scores for the `appincrement` and `logcount` features.
+- Time series of z-loss per feature across all rows. We can observe the higher z-loss scores for the `appincrement` and `logcount` features.
 - Bar gauge of maximum `mean_abs_z` per user.
 - Bar gauge of maximum z-loss per feature.
 - Table view of all rows/columns in CSV file.
