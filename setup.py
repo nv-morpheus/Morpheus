@@ -15,6 +15,9 @@
 # re-run 'versioneer.py setup' after changing this section, and commit the
 # resulting files.
 
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
+
 import os
 import sys
 
@@ -31,9 +34,6 @@ except ImportError:
     # make this work by adding this directory to the python path
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     import versioneer
-
-from setuptools import find_packages  # noqa: E402
-from setuptools import setup  # noqa: E402
 
 setup(
     name="morpheus",
