@@ -17,11 +17,14 @@
 
 #include "morpheus/io/loaders/rest.hpp"
 
+#include "morpheus/messages/control.hpp"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/system/error_code.hpp>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/cast.h>
@@ -63,8 +66,8 @@ void extract_query_fields(nlohmann::basic_json<>& query,
         throw std::runtime_error("'REST loader' receives query with empty endpoint");
     }
 
-    content_type                  = query.value("content_type", "");
-    body                          = query.value("body", "");
+    content_type = query.value("content_type", "");
+    body         = query.value("body", "");
 
     nlohmann::json x_headers_json = query.value("x-headers", nlohmann::json());
     for (auto& x_header_kv : x_headers_json.items())
@@ -85,6 +88,11 @@ http::verb get_http_verb(const std::string& method)
     else if (method == "POST")
     {
         verb = http::verb::post;
+    }
+    else
+    {
+        std::string error_msg = "'REST Loader' receives method not supported: " + method;
+        throw std::runtime_error(error_msg);
     }
     return verb;
 }
@@ -144,65 +152,69 @@ void try_get_data(beast::tcp_stream& stream,
     }
 }
 
-void get_data_from_endpoint(http::response<http::dynamic_body>& response,
-                            const std::string& method,
-                            const std::string& endpoint,
-                            const std::string& params,
-                            const std::string& content_type,
-                            const std::string& body,
-                            const std::unordered_map<std::string, std::string>& x_headers,
-                            int max_retry)
+void parse_and_format_url(
+    std::string& endpoint, std::string& params, std::string& query, std::string& host, std::string& target)
 {
-    std::string ep(endpoint);
-    std::string query;
-    std::string host;
-    std::string target;
+    py::gil_scoped_acquire gil;
+
+    py::module_ urllib  = py::module::import("urllib.parse");
+    py::object ep_pystr = py::str(endpoint);
+
+    // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly
+    // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path
+    // component. ref: https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if
+    // endpoint does not already include one
+    if (ep_pystr.attr("find")("//").cast<int>() == -1)
     {
-        py::gil_scoped_acquire gil;
-
-        py::module_ urllib  = py::module::import("urllib.parse");
-        py::object ep_pystr = py::str(ep);
-
-        // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly
-        // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path
-        // component. ref: https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if
-        // endpoint does not already include one
-        if (ep_pystr.attr("find")("//").cast<int>() == -1)
-        {
-            ep = "//" + ep;
-        }
-
-        py::object result = urllib.attr("urlparse")(ep);
-        host              = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
-        target            = result.attr("path").is_none() ? "" : result.attr("path").cast<std::string>();
-        if (target.empty())
-        {
-            target = "/";
-        }
-        query = result.attr("query").is_none() ? "" : result.attr("query").cast<std::string>();
-
-        // if params exists, overrides query included in endpoint
-        if (!params.empty())
-        {
-            query = params;
-        }
+        endpoint = "//" + endpoint;
     }
 
+    py::object result = urllib.attr("urlparse")(endpoint);
+    query             = result.attr("query").cast<std::string>();
+    host              = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+    target            = result.attr("path").cast<std::string>().empty() ? "/" : result.attr("path").cast<std::string>();
+
+    // if params exists, overrides query included in endpoint
+    if (!params.empty())
+    {
+        query = params;
+    }
+}
+
+void get_data(http::response<http::dynamic_body>& response,
+              const std::string& target,
+              const std::string& query,
+              const std::string& host,
+              const std::string& method,
+              const std::string& content_type,
+              const std::string body,
+              const std::unordered_map<std::string, std::string>& x_headers,
+              int max_retry)
+{
     net::io_context ioc;
     tcp::resolver resolver(ioc);
     beast::tcp_stream stream(ioc);
-    try
-    {
-        auto const endpoint_results = resolver.resolve(host, PORT);
-        auto verb                   = get_http_verb(method);
-        auto request = construct_request(verb, target, query, host, method, content_type, body, x_headers);
+    auto const endpoint_results = resolver.resolve(host, PORT);
+    auto verb                   = get_http_verb(method);
+    auto request                = construct_request(verb, target, query, host, method, content_type, body, x_headers);
 
-        try_get_data(stream, endpoint_results, request, response, max_retry, 1000);
+    try_get_data(stream, endpoint_results, request, response, max_retry, 1000);
+}
 
-    } catch (std::exception const& e)
-    {
-        VLOG(30) << "Error when calling RESTDataLoader::load(): " << e.what();
-    }
+void get_data_from_endpoint(http::response<http::dynamic_body>& response,
+                            std::string& method,
+                            std::string& endpoint,
+                            std::string& params,
+                            std::string& content_type,
+                            std::string& body,
+                            std::unordered_map<std::string, std::string>& x_headers,
+                            int max_retry)
+{
+    std::string query;
+    std::string host;
+    std::string target;
+    parse_and_format_url(endpoint, params, query, host, target);
+    get_data(response, target, query, host, method, content_type, body, x_headers, max_retry);
 }
 
 void create_dataframe_from_http_response(http::response<http::dynamic_body>& response,
@@ -239,34 +251,77 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
     }
 }
 
+void process_failures(const std::string& error_msg,
+                      std::shared_ptr<ControlMessage> message,
+                      bool processes_failures_as_errors)
+{
+    if (processes_failures_as_errors)
+    {
+        throw std::runtime_error(error_msg);
+    }
+    std::cout << "---------------------------------error_msg: " << error_msg << std::endl;
+    message->set_metadata("failed", "true");
+    message->set_metadata("failed reason", error_msg);
+}
+
+void process_python_failures(std::shared_ptr<ControlMessage> message, bool processes_failure_as_errors)
+{
+    // Retrieve the error message using Python C API
+    PyObject* ptype;
+    PyObject* pvalue;
+    PyObject* ptraceback;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+
+    py::handle hType(ptype);
+    py::handle hValue(pvalue);
+
+    // Convert Python objects to strings
+    py::str typeStr(hType);
+    py::str valueStr(hValue);
+
+    std::string error_msg = "Caught Python exception: " + std::string(typeStr) + ": " + std::string(valueStr);
+    process_failures(error_msg, message, processes_failure_as_errors);
+}
+
 std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
-    // Aggregate dataframes for each file
-    py::gil_scoped_acquire gil;
+    auto conf                         = this->config();
+    bool processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
+    int max_retry                     = conf.value("max_retry", 3);
 
     py::module_ mod_cudf;
-    py::object dataframe = py::none();
-    auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
-    mod_cudf           = cache_handle.get_module("cudf");
+    py::object dataframe;
+    try
+    {
+        py::gil_scoped_acquire gil;
 
-    py::gil_scoped_release rel;
+        dataframe          = py::none();
+        auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
+        mod_cudf           = cache_handle.get_module("cudf");
+    } catch (py::error_already_set& e)
+    {
+        process_python_failures(message, processes_failures_as_errors);
+        return message;
+    }
 
     if (!task["queries"].is_array() or task.empty())
     {
-        throw std::runtime_error("'REST Loader' control message specified no queries to load");
+        process_failures(
+            "'REST Loader' control message specified no queries to load", message, processes_failures_as_errors);
+        return message;
     }
 
     std::string strategy = task.value("strategy", "aggregate");
     if (strategy != "aggregate")
     {
-        throw std::runtime_error("Only 'aggregate' strategy is currently supported");
+        process_failures("Only 'aggregate' strategy is currently supported", message, processes_failures_as_errors);
+        return message;
     }
 
-    auto conf     = this->config();
-    int max_retry = conf.value("max_retry", 3);
-    auto queries  = task["queries"];
+    auto queries = task["queries"];
 
     for (auto& query : queries)
     {
@@ -276,13 +331,28 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         std::string body;
         std::unordered_map<std::string, std::string> x_headers;
         nlohmann::json params;
-        extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
+        try
+        {
+            extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
+        } catch (const std::runtime_error& e)
+        {
+            process_failures(e.what(), message, processes_failures_as_errors);
+            return message;
+        }
+
         if (params.empty())
         {
             std::string param_str("");
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
-            create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
+            try
+            {
+                get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
+                create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
+            } catch (const std::runtime_error& e)
+            {
+                process_failures(e.what(), message, processes_failures_as_errors);
+                return message;
+            }
         }
         else
         {
@@ -295,16 +365,27 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
                 }
                 param_str.pop_back();
                 http::response<http::dynamic_body> response;
-                get_data_from_endpoint(
-                    response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
-                create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
+                try
+                {
+                    get_data_from_endpoint(
+                        response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
+                    create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
+                } catch (const std::runtime_error& e)
+                {
+                    process_failures(e.what(), message, processes_failures_as_errors);
+                    return message;
+                }
             }
         }
     }
-
+    try
     {
         py::gil_scoped_acquire gil;
         message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    } catch (py::error_already_set& e)
+    {
+        process_python_failures(message, processes_failures_as_errors);
+        return message;
     }
     return message;
 }
