@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DFP training & inference pipelines for Azure Active Directory logs."""
 
 import functools
 import logging
@@ -121,6 +122,17 @@ from morpheus.utils.logger import configure_logging
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option('--watch_inputs',
+              type=bool,
+              is_flag=True,
+              default=False,
+              help=("Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. "
+                    "This assumes that the at least one paths contains a wildcard."))
+@click.option("--watch_interval",
+              type=float,
+              default=1.0,
+              help=("Amount of time, in seconds, to wait between checks for new files. "
+                    "Only used if --watch_inputs is set."))
 @click.option('--tracking_uri',
               type=str,
               default="http://mlflow:5000",
@@ -134,8 +146,9 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  **kwargs):
+    """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
-    include_generic = train_users == "all" or train_users == "generic"
+    include_generic = train_users in ("all", "generic")
 
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
@@ -163,7 +176,7 @@ def run_pipeline(train_users,
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    logger = logging.getLogger("morpheus.{}".format(__name__))
+    logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
@@ -248,7 +261,11 @@ def run_pipeline(train_users,
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    pipeline.set_source(
+        MultiFileSource(config,
+                        filenames=list(kwargs["input_file"]),
+                        watch=kwargs["watch_inputs"],
+                        watch_interval=kwargs["watch_interval"]))
 
     # Batch files into buckets by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(

@@ -26,6 +26,7 @@
 #include <cudf/io/types.hpp>
 #include <glog/logging.h>
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pyerrors.h>  // for PyExc_DeprecationWarning
 #include <warnings.h>  // for PyErr_WarnEx
@@ -35,6 +36,10 @@
 #include <ostream>    // for operator<< needed by glog
 #include <stdexcept>  // for runtime_error
 #include <utility>
+// We're already including pybind11.h and don't need to include cast.
+// For some reason IWYU also thinks we need array for the `isinsance` call.
+// IWYU pragma: no_include <pybind11/cast.h>
+// IWYU pragma: no_include <array>
 
 namespace morpheus {
 
@@ -121,6 +126,23 @@ std::optional<std::string> MessageMeta::ensure_sliceable_index()
 /********** MessageMetaInterfaceProxy **********/
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
+    // ensure we have a cudf DF and not a pandas DF
+    auto cudf_df_cls = py::module_::import("cudf").attr("DataFrame");
+    if (!py::isinstance(data_frame, cudf_df_cls))
+    {
+        // Convert to cudf if it's a Pandas DF, thrown an error otherwise
+        auto pd_df_cls = py::module_::import("pandas").attr("DataFrame");
+        if (py::isinstance(data_frame, pd_df_cls))
+        {
+            LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
+            data_frame = cudf_df_cls(std::move(data_frame));
+        }
+        else
+        {
+            throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+        }
+    }
+
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 
