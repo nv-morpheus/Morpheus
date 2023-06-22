@@ -153,7 +153,7 @@ void try_get_data(beast::tcp_stream& stream,
 }
 
 void parse_and_format_url(
-    std::string& endpoint, std::string& params, std::string& query, std::string& host, std::string& target)
+    std::string& endpoint, std::unordered_map<std::string, std::string>& params, std::string& query, std::string& host, std::string& target)
 {
     py::gil_scoped_acquire gil;
 
@@ -166,7 +166,7 @@ void parse_and_format_url(
     // endpoint does not already include one
     if (ep_pystr.attr("find")("//").cast<int>() == -1)
     {
-        endpoint = "//" + endpoint;
+        endpoint = "http://" + endpoint;
     }
 
     py::object result = urllib.attr("urlparse")(endpoint);
@@ -177,8 +177,14 @@ void parse_and_format_url(
     // if params exists, overrides query included in endpoint
     if (!params.empty())
     {
-        query = params;
+        py::dict params_pydict;
+        for (auto& param : params) {
+            params_pydict[py::str(param.first)] = param.second;
+        }
+        query = urllib.attr("urlencode")(params_pydict).cast<std::string>();
     }
+
+    query = "?" + query;
 }
 
 void get_data(http::response<http::dynamic_body>& response,
@@ -204,7 +210,7 @@ void get_data(http::response<http::dynamic_body>& response,
 void get_data_from_endpoint(http::response<http::dynamic_body>& response,
                             std::string& method,
                             std::string& endpoint,
-                            std::string& params,
+                            std::unordered_map<std::string, std::string>& params,
                             std::string& content_type,
                             std::string& body,
                             std::unordered_map<std::string, std::string>& x_headers,
@@ -339,14 +345,13 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             process_failures(e.what(), message, processes_failures_as_errors);
             return message;
         }
-
+        std::unordered_map<std::string, std::string> param_map;
         if (params.empty())
         {
-            std::string param_str("");
             http::response<http::dynamic_body> response;
             try
             {
-                get_data_from_endpoint(response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
+                get_data_from_endpoint(response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
             } catch (const std::runtime_error& e)
             {
@@ -357,18 +362,17 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         else
         {
             for (auto& param : params)
-            {
-                std::string param_str("?");
+            {   
+
                 for (auto& param_kv : param.items())
                 {
-                    param_str += (std::string)param_kv.key() + "=" + (std::string)param_kv.value() + "&";
+                    param_map.insert(std::make_pair(param_kv.key(), param_kv.value()));
                 }
-                param_str.pop_back();
                 http::response<http::dynamic_body> response;
                 try
                 {
                     get_data_from_endpoint(
-                        response, method, endpoint, param_str, content_type, body, x_headers, max_retry);
+                        response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
                     create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
                 } catch (const std::runtime_error& e)
                 {
