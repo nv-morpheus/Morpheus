@@ -466,7 +466,7 @@ def test_rest_loader_module_get_with_params():
                             "queries": [
                                 {
                                     "method": "GET",
-                                    "endpoint": "0.0.0.0",
+                                    "endpoint": "0.0.0.0/path",
                                     "params": [
                                         {"param1": "true"},
                                         {"param2": "true"},
@@ -557,7 +557,7 @@ def test_rest_loader_module_post_with_body():
                             "queries": [
                                 {
                                     "method": "POST",
-                                    "endpoint": "0.0.0.0",
+                                    "endpoint": "0.0.0.0/path",
                                     "params": [
                                         {"something1": "something2"},
                                     ],
@@ -566,7 +566,7 @@ def test_rest_loader_module_post_with_body():
                                 },
                                 {
                                     "method": "POST",
-                                    "endpoint": "0.0.0.0",
+                                    "endpoint": "0.0.0.0/path",
                                     "params": [
                                         {"something1": "something2"},
                                     ],
@@ -657,13 +657,13 @@ def test_rest_loader_module_x_headers():
                             "strategy": "aggregate",
                             "queries": [
                                 {
-                                    "endpoint": "0.0.0.0",
+                                    "endpoint": "0.0.0.0/path",
                                     "x-headers": {
                                         "X-Header1": "x_header1",
                                     },
                                 },
                                 {
-                                    "endpoint": "0.0.0.0",
+                                    "endpoint": "0.0.0.0/path",
                                     "x-headers": {
                                         "X-Header2": "x_header2",
                                     },

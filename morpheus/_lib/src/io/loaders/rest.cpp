@@ -152,39 +152,61 @@ void try_get_data(beast::tcp_stream& stream,
     }
 }
 
-void parse_and_format_url(
-    std::string& endpoint, std::unordered_map<std::string, std::string>& params, std::string& query, std::string& host, std::string& target)
+py::dict convert_raw_query_to_dict(const py::object& raw_query)
+{
+    py::dict params_dict;
+    if (py::len(raw_query) > 0)
+    {
+        py::list split_by_amp = raw_query.attr("split")("&");
+
+        for (auto& query_kv : split_by_amp)
+        {
+            py::list split_by_eq        = query_kv.attr("split")("=");
+            params_dict[split_by_eq[0]] = split_by_eq[1];
+        }
+    }
+    return params_dict;
+}
+
+void parse_and_format_url(std::string& endpoint,
+                          std::unordered_map<std::string, std::string>& params,
+                          std::string& query,
+                          std::string& host,
+                          std::string& target)
 {
     py::gil_scoped_acquire gil;
-
-    py::module_ urllib  = py::module::import("urllib.parse");
-    py::object ep_pystr = py::str(endpoint);
+    py::module_ urllib = py::module::import("urllib.parse");
 
     // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly
     // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path
     // component. ref: https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if
     // endpoint does not already include one
-    if (ep_pystr.attr("find")("//").cast<int>() == -1)
+    if (endpoint.find("//") == std::string::npos)
     {
         endpoint = "http://" + endpoint;
     }
 
     py::object result = urllib.attr("urlparse")(endpoint);
-    query             = result.attr("query").cast<std::string>();
-    host              = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
-    target            = result.attr("path").cast<std::string>().empty() ? "/" : result.attr("path").cast<std::string>();
+    py::str raw_query = result.attr("query");
+    py::dict query_pydict;
 
-    // if params exists, overrides query included in endpoint
-    if (!params.empty())
+    if (params.empty())
     {
-        py::dict params_pydict;
-        for (auto& param : params) {
-            params_pydict[py::str(param.first)] = param.second;
+        query_pydict = convert_raw_query_to_dict(py::object(result.attr("query")));
+    }
+    // if params exists, overrides query included in endpoint
+    else
+    {
+        for (auto& param : params)
+        {
+            query_pydict[py::str(param.first)] = param.second;
         }
-        query = urllib.attr("urlencode")(params_pydict).cast<std::string>();
     }
 
-    query = "?" + query;
+    query  = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
+    host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+    target = urllib.attr("quote")(result.attr("path")).cast<std::string>();
+    target = target.empty() ? "/" : target;
 }
 
 void get_data(http::response<http::dynamic_body>& response,
@@ -362,8 +384,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         else
         {
             for (auto& param : params)
-            {   
-
+            {
                 for (auto& param_kv : param.items())
                 {
                     param_map.insert(std::make_pair(param_kv.key(), param_kv.value()));
