@@ -20,6 +20,7 @@
 #include "morpheus/messages/control.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -33,6 +34,7 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utilities/object_cache.hpp>
 
+#include <cctype>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
@@ -251,7 +253,7 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
                                          const std::string& strategy)
 {
     std::string df_json_str = beast::buffers_to_string(response.body().data());
-    boost::algorithm::trim(df_json_str);
+    boost::algorithm::trim_if(df_json_str, [](char c) { return !std::isprint(c); });
 
     // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
     // The workaround here is to add square brackets if the original data is not represented as an array.
