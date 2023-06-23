@@ -82,12 +82,14 @@ target_link_libraries(morpheus
   PRIVATE
     ${cudf_helpers_target}
     matx::matx
+    
   PUBLIC
     cudf::cudf
     CUDA::nvToolsExt
     mrc::pymrc
     RDKAFKA::RDKAFKA
     TritonClient::httpclient_static
+    -Wl,--gc-sections # required to link code containing pybind11 headers
 )
 
 target_include_directories(morpheus
