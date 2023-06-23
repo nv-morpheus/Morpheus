@@ -15,6 +15,7 @@
 
 import glob
 import os
+from unittest import mock
 
 import pytest
 
@@ -31,24 +32,59 @@ def test_constructor(config: Config):
     config.pipeline_batch_size = batch_size
     config.num_threads = n_threads
     filenames = ['some/file', '/tmp/some/files-2023-*-*.csv', 's3://some/bucket/2023-*-*.csv.gz']
-    stage = MultiFileSource(config, filenames=filenames)
+    stage = MultiFileSource(config, filenames=filenames, watch=False, watch_interval=2.1)
 
     assert isinstance(stage, SingleOutputSource)
     assert stage._batch_size == batch_size
     assert stage._max_concurrent == n_threads
     assert stage._filenames == filenames
+    assert not stage._watch
+    assert stage._watch_interval == 2.1
 
 
-def test_generate_frames_fsspec(config: Config):
+def test_generate_frames_fsspec(config: Config, tmp_path: str):
     from dfp.stages.multi_file_source import MultiFileSource
 
     file_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
-    stage = MultiFileSource(config, filenames=[file_glob])
+    temp_glob = os.path.join(tmp_path, '*.json')  # this won't match anything
+    stage = MultiFileSource(config, filenames=[file_glob, temp_glob], watch=False)
 
-    specs = next(stage._generate_frames_fsspec())
+    fsspec_gen = stage._generate_frames_fsspec()
+    specs = next(fsspec_gen)
 
     files = sorted(f.path for f in specs)
     assert files == sorted(glob.glob(file_glob))
+
+    # Verify that we are not in watch mode
+    with open(os.path.join(tmp_path, 'new-file.json'), 'w', encoding='utf-8') as f:
+        f.write('{"foo": "bar"}')
+
+    with pytest.raises(StopIteration):
+        next(fsspec_gen)
+
+
+@mock.patch('time.sleep')
+def test_polling_generate_frames_fsspec(amock_time: mock.MagicMock, config: Config, tmp_path: str):
+    from dfp.stages.multi_file_source import MultiFileSource
+
+    file_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
+    temp_glob = os.path.join(tmp_path, '*.json')  # this won't match anything
+    stage = MultiFileSource(config, filenames=[file_glob, temp_glob], watch=True, watch_interval=0.2)
+
+    fsspec_gen = stage._polling_generate_frames_fsspec()
+    specs = next(fsspec_gen)
+
+    files = sorted(f.path for f in specs)
+    assert files == sorted(glob.glob(file_glob))
+
+    # Verify that we are not in watch mode
+    with open(os.path.join(tmp_path, 'new-file.json'), 'w', encoding='utf-8') as f:
+        f.write('{"foo": "bar"}')
+
+    specs = next(fsspec_gen)
+    assert len(specs) == 1
+    assert specs[0].path == os.path.join(tmp_path, 'new-file.json')
+    amock_time.assert_called_once()
 
 
 def test_generate_frames_fsspec_no_files(config: Config, tmp_path: str):
@@ -57,7 +93,7 @@ def test_generate_frames_fsspec_no_files(config: Config, tmp_path: str):
     assert os.listdir(tmp_path) == []
 
     filenames = [os.path.join(tmp_path, '*.csv')]
-    stage = MultiFileSource(config, filenames=filenames)
+    stage = MultiFileSource(config, filenames=filenames, watch=False)
 
     with pytest.raises(RuntimeError):
         next(stage._generate_frames_fsspec())

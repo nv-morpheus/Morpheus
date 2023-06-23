@@ -174,10 +174,9 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
   morpheus_utils_print_all_targets()
 
   morpheus_utils_print_target_properties(
-    TARGETS
-      morpheus
-      morpheus_utils
-    WRITE_TO_FILE
+      TARGETS
+        morpheus
+      WRITE_TO_FILE
   )
 
   morpheus_utils_print_global_properties(

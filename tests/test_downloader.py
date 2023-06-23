@@ -24,6 +24,17 @@ from morpheus.utils.downloader import DOWNLOAD_METHODS_MAP
 from morpheus.utils.downloader import Downloader
 from morpheus.utils.downloader import DownloadMethods
 from utils import TEST_DIRS
+from utils import import_or_skip
+
+
+@pytest.fixture(autouse=True, scope='session')
+def dask_distributed(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask.distributed",
+                         reason="Downloader requires dask and dask.distributed",
+                         fail_missing=fail_missing)
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -52,7 +63,7 @@ def test_constructor_enum_vals(dl_method: DownloadMethods):
                          [DownloadMethods.SINGLE_THREAD, DownloadMethods.DASK, DownloadMethods.DASK_THREAD])
 def test_constructor_env_wins(dl_method: DownloadMethods):
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = "multiprocessing"
-    downloader = Downloader(download_method="single_thread")
+    downloader = Downloader(download_method=dl_method)
     assert downloader.download_method == DownloadMethods.MULTIPROCESSING
 
 
