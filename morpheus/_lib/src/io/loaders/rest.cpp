@@ -92,7 +92,7 @@ http::verb get_http_verb(const std::string& method)
     return verb;
 }
 
-http::request<http::string_body> construct_request(http::verb verb,
+http::request<http::string_body> construct_request(const std::string& method,
                                                    const std::string& host,
                                                    const std::string& target,
                                                    const std::string& query,
@@ -100,6 +100,7 @@ http::request<http::string_body> construct_request(http::verb verb,
                                                    const std::string& body,
                                                    const nlohmann::json& x_headers)
 {
+    auto verb = get_http_verb(method);
     http::request<http::string_body> request{verb, target + query, 11};
     request.set(http::field::host, host);
     request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
@@ -116,10 +117,10 @@ http::request<http::string_body> construct_request(http::verb verb,
     return request;
 }
 
-void get_data_with_retry(http::request<http::string_body>& request,
-                         http::response<http::dynamic_body>& response,
-                         int max_retry,
-                         int retry_interval_milliseconds)
+void get_response_with_retry(http::request<http::string_body>& request,
+                             http::response<http::dynamic_body>& response,
+                             int max_retry,
+                             int retry_interval_milliseconds)
 {
     net::io_context ioc;
     tcp::resolver resolver(ioc);
@@ -139,7 +140,7 @@ void get_data_with_retry(http::request<http::string_body>& request,
             throw beast::system_error{ec};
         }
         int status = response.result_int();
-        // 503 Service Unavailable / 504 Gateway Timeout
+        // Retry only if status is 503 Service Unavailable / 504 Gateway Timeout
         if (status != 503 && status != 504)
         {
             break;
@@ -149,8 +150,9 @@ void get_data_with_retry(http::request<http::string_body>& request,
     }
 }
 
-py::dict convert_raw_query_to_dict(const py::str& raw_query)
+py::dict convert_url_query_to_dict(const py::str& raw_query)
 {
+    // Convert query string (param1=true&param2=false) into Python dict ({"param1": "true", "param2": "false"}) for encoding
     py::dict params_dict;
     if (py::len(raw_query) > 0)
     {
@@ -158,8 +160,9 @@ py::dict convert_raw_query_to_dict(const py::str& raw_query)
 
         for (auto& query_kv : split_by_amp)
         {
-            py::list split_by_eq        = query_kv.attr("split")("=");
-            if (py::len(split_by_eq) < 2) {
+            py::list split_by_eq = query_kv.attr("split")("=");
+            if (py::len(split_by_eq) < 2)
+            {
                 throw std::runtime_error("'REST Loader' failed to parse URL query: " + raw_query.cast<std::string>());
             }
             params_dict[split_by_eq[0]] = split_by_eq[1];
@@ -168,16 +171,16 @@ py::dict convert_raw_query_to_dict(const py::str& raw_query)
     return params_dict;
 }
 
-void parse_and_format_url(
+void parse_endpoint_to_url(
     std::string& endpoint, nlohmann::json& params, std::string& host, std::string& target, std::string& query)
 {
     py::gil_scoped_acquire gil;
     py::module_ urllib = py::module::import("urllib.parse");
 
     // Following the syntax specifications in RFC 1808, urlparse recognizes a netloc only if it is properly
-    // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path
-    // component. ref: https://docs.python.org/3/library/urllib.parse.html Workaround here is to prepend "//" if
-    // endpoint does not already include one
+    // introduced by ‘//’. Otherwise the input is presumed to be a relative URL and thus to start with a path component
+    // ref: https://docs.python.org/3/library/urllib.parse.html
+    // Workaround here is to prepend "http://" if endpoint does not already include one
     if (endpoint.find("//") == std::string::npos)
     {
         endpoint = "http://" + endpoint;
@@ -185,7 +188,12 @@ void parse_and_format_url(
 
     py::object result = urllib.attr("urlparse")(endpoint);
 
+    // If not present in URL:
+    //  - host: None
+    //  - path/query: Empty Python String
     host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+
+    // Encode URL target
     target = urllib.attr("quote")(result.attr("path")).cast<std::string>();
     target = target.empty() ? "/" : target;
 
@@ -193,7 +201,7 @@ void parse_and_format_url(
     py::dict query_pydict;
     if (params.empty())
     {
-        query_pydict = convert_raw_query_to_dict(raw_query);
+        query_pydict = convert_url_query_to_dict(raw_query);
     }
     // if params exists, overrides query included in endpoint
     else
@@ -203,40 +211,26 @@ void parse_and_format_url(
             query_pydict[py::str(param.key())] = py::str(param.value());
         }
     }
+    // Encode URL query
     query = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
 }
 
-void get_data(http::response<http::dynamic_body>& response,
-              const std::string& method,
-              const std::string& host,
-              const std::string& target,
-              const std::string& query,
-              const std::string& content_type,
-              const std::string& body,
-              const nlohmann::json& x_headers,
-              int max_retry,
-              int retry_interval_milliseconds)
-{
-    auto verb    = get_http_verb(method);
-    auto request = construct_request(verb, host, target, query, content_type, body, x_headers);
-    get_data_with_retry(request, response, max_retry, retry_interval_milliseconds);
-}
-
-void get_data_from_endpoint(http::response<http::dynamic_body>& response,
-                            std::string& method,
-                            std::string& endpoint,
-                            std::string& content_type,
-                            std::string& body,
-                            nlohmann::json& params,
-                            nlohmann::json& x_headers,
-                            int max_retry,
-                            int retry_interval_milliseconds)
+void get_response_from_endpoint(http::response<http::dynamic_body>& response,
+                                std::string& method,
+                                std::string& endpoint,
+                                std::string& content_type,
+                                std::string& body,
+                                nlohmann::json& params,
+                                nlohmann::json& x_headers,
+                                int max_retry,
+                                int retry_interval_milliseconds)
 {
     std::string host;
     std::string target;
     std::string query;
-    parse_and_format_url(endpoint, params, host, target, query);
-    get_data(response, method, host, target, query, content_type, body, x_headers, max_retry, retry_interval_milliseconds);
+    parse_endpoint_to_url(endpoint, params, host, target, query);
+    auto request = construct_request(method, host, target, query, content_type, body, x_headers);
+    get_response_with_retry(request, response, max_retry, retry_interval_milliseconds);
 }
 
 void create_dataframe_from_response(py::object& dataframe,
@@ -245,6 +239,7 @@ void create_dataframe_from_response(py::object& dataframe,
                                     const std::string& strategy)
 {
     std::string df_json_str = beast::buffers_to_string(response.body().data());
+    // Strip non-printable characters 
     boost::algorithm::trim_if(df_json_str, [](char c) -> bool { return !std::isprint(c); });
 
     // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
@@ -270,11 +265,15 @@ void create_dataframe_from_response(py::object& dataframe,
             args.attr("append")(current_df);
             dataframe = mod_cudf.attr("concat")(args);
         }
-    }
+    } // release GIL
 }
 
-void create_dataframe_from_query(
-    py::object& dataframe, py::module_& mod_cudf, nlohmann::json& query, int max_retry, int retry_interval_milliseconds, std::string& strategy)
+void create_dataframe_from_query(py::object& dataframe,
+                                 py::module_& mod_cudf,
+                                 nlohmann::json& query,
+                                 int max_retry,
+                                 int retry_interval_milliseconds,
+                                 std::string& strategy)
 {
     std::string method;
     std::string endpoint;
@@ -287,15 +286,16 @@ void create_dataframe_from_query(
     if (params.empty())
     {
         http::response<http::dynamic_body> response;
-        get_data_from_endpoint(response, method, endpoint, content_type, body, params, x_headers, max_retry, retry_interval_milliseconds);
+        get_response_from_endpoint(response, method, endpoint, content_type, body, params, x_headers, max_retry, retry_interval_milliseconds);
         create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
     }
     else
-    {
+    {   
+        // For each set of param, send a separate request
         for (auto& param : params)
         {
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(response, method, endpoint, content_type, body, param, x_headers, max_retry, retry_interval_milliseconds);
+            get_response_from_endpoint(response,method,endpoint,content_type,body,param,x_headers, max_retry, retry_interval_milliseconds);
             create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
         }
     }
@@ -309,7 +309,7 @@ void process_failures(const std::string& error_msg,
     {
         throw std::runtime_error(error_msg);
     }
-    std::cout << "---------------------------------error_msg: " << error_msg << std::endl;
+    std::cout << "error_msg: " << error_msg << std::endl;
     message->set_metadata("failed", "true");
     message->set_metadata("failed reason", error_msg);
 }
@@ -318,7 +318,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
-    bool processes_failures_as_errors;
+    // If set to false, any exception thrown during the task is caught and the related fields in ControlMessage are set
+    // to indicate the reason of that failure; Otherwise, the exception is thrown
+    bool processes_failures_as_errors = false;
 
     try
     {
@@ -331,7 +333,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             dataframe          = py::none();
             auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
             mod_cudf           = cache_handle.get_module("cudf");
-        }
+        }  // release GIL
 
         auto conf                    = this->config();
         processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
@@ -343,8 +345,10 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         }
 
         int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
-        if (retry_interval_milliseconds < 0) {
-            throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " + std::to_string(retry_interval_milliseconds));
+        if (retry_interval_milliseconds < 0)
+        {
+            throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " +
+                                     std::to_string(retry_interval_milliseconds));
         }
 
         if (!task["queries"].is_array() or task.empty())
@@ -367,7 +371,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         {
             py::gil_scoped_acquire gil;
             message->payload(MessageMeta::create_from_python(std::move(dataframe)));
-        }
+        }  // release GIL
     } catch (std::runtime_error& e)
     {
         process_failures(e.what(), message, processes_failures_as_errors);

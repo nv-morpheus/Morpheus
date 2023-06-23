@@ -433,6 +433,95 @@ def test_file_loader_module():
         os.remove(f[0])
 
 
+def test_rest_loader_module_get_without_params():
+    global packets_received
+    packets_received = 0
+    df1 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["GET_param1_true", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df2 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["GET_param2_true", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df = cudf.concat([df1, df2])
+
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            global packet_count
+
+            config = {
+                "tasks": [
+                    {
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "rest",
+                            "strategy": "aggregate",
+                            "queries": [
+                                {
+                                    "method": "GET",
+                                    "endpoint": "0.0.0.0/path?param1=true&param2=false",
+                                },
+                                {
+                                    "method": "GET",
+                                    "endpoint": "0.0.0.0/path?param1=false&param2=true",
+                                },
+                            ],
+                        },
+                    }
+                ]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
+
+        def _on_next(control_msg):
+            global packets_received
+            packets_received += 1
+            assert (control_msg.payload().df == df)
+
+        registry = mrc.ModuleRegistry
+
+        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+        assert fn_constructor is not None
+
+        source = builder.make_source("source", gen_data)
+
+        config = {
+            "loaders": [
+                {
+                    "id": "rest",
+                    "properties": {"prop1": "something", "prop2": "something else"},
+                }
+            ]
+        }
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module(
+            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
+        )
+
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+    assert packets_received == 1
+
 def test_rest_loader_module_get_with_params():
     global packets_received
     packets_received = 0
@@ -727,6 +816,7 @@ if __name__ == "__main__":
     # test_file_loader_module()
 
     # Flask service needed for testing RESTDataloader
+    test_rest_loader_module_get_without_params()
     test_rest_loader_module_get_with_params()
     test_rest_loader_module_post_with_body()
     test_rest_loader_module_x_headers()
