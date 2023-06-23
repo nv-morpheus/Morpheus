@@ -33,7 +33,7 @@ dependencies:
     - configargparse=1.5
     - cuda-compiler=11.8
     - cuda-nvml-dev=11.8
-    - cudatoolkit=11.8
+    - cuda-toolkit=11.8
     - cudf=23.02
     - cupy=11.6.0
     - cxx-compiler
@@ -96,5 +96,6 @@ dependencies:
     - pip:
         # Add additional dev dependencies here
         - docutils
+        - pytest-kafka==0.6.0
         # Ensure all runtime requirements are installed using the requirements file
         - --requirement requirements.txt

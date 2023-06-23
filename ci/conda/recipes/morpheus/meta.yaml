@@ -57,6 +57,7 @@ outputs:
         - ninja
       host:
         - cuda-cudart
+        - cuda-driver-dev
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -69,9 +70,6 @@ outputs:
         - rapidjson 1.1
         - scikit-build 0.17.1
         - versioneer-518
-
-        # Remove cudatoolkit once `mamba repoquery whoneeds cudatoolkit` is empty. For now, we need to specify a version
-        - cudatoolkit {{ cuda_version }}.*
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - {{ pin_compatible('cuda-cudart', min_pin='x.x', max_pin='x') }}
