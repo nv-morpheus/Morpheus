@@ -51,13 +51,13 @@ using tcp       = net::ip::tcp;
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
-void extract_query_fields(nlohmann::basic_json<>& query,
+void extract_query_fields(nlohmann::json& query,
                           std::string& method,
                           std::string& endpoint,
                           std::string& content_type,
                           std::string& body,
-                          std::unordered_map<std::string, std::string> x_headers,
-                          nlohmann::json& params)
+                          nlohmann::json& params,
+                          nlohmann::json& x_headers)
 {
     method = query.value("method", "GET");
     std::transform(method.begin(), method.end(), method.begin(), ::toupper);
@@ -70,14 +70,8 @@ void extract_query_fields(nlohmann::basic_json<>& query,
 
     content_type = query.value("content_type", "");
     body         = query.value("body", "");
-
-    nlohmann::json x_headers_json = query.value("x-headers", nlohmann::json());
-    for (auto& x_header_kv : x_headers_json.items())
-    {
-        x_headers.insert(std::make_pair((std::string)x_header_kv.key(), (std::string)x_header_kv.value()));
-    }
-
-    params = query.value("params", nlohmann::json());
+    params       = query.value("params", nlohmann::json());
+    x_headers    = query.value("x-headers", nlohmann::json());
 }
 
 http::verb get_http_verb(const std::string& method)
@@ -93,44 +87,45 @@ http::verb get_http_verb(const std::string& method)
     }
     else
     {
-        std::string error_msg = "'REST Loader' receives method not supported: " + method;
-        throw std::runtime_error(error_msg);
+        throw std::runtime_error("'REST Loader' receives method not supported: " + method);
     }
     return verb;
 }
 
 http::request<http::string_body> construct_request(http::verb verb,
+                                                   const std::string& host,
                                                    const std::string& target,
                                                    const std::string& query,
-                                                   const std::string& host,
-                                                   const std::string& method,
                                                    const std::string& content_type,
                                                    const std::string& body,
-                                                   const std::unordered_map<std::string, std::string>& x_headers)
+                                                   const nlohmann::json& x_headers)
 {
     http::request<http::string_body> request{verb, target + query, 11};
     request.set(http::field::host, host);
     request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-    if (method == "POST")
+    if (verb == http::verb::post)
     {
         request.set(http::field::content_type, content_type);
         request.body() = body;
         request.prepare_payload();
     }
-    for (auto& x_header : x_headers)
+    for (auto& x_header : x_headers.items())
     {
-        request.insert(x_header.first, x_header.second);
+        request.insert(x_header.key(), x_header.value());
     }
     return request;
 }
 
-void try_get_data(beast::tcp_stream& stream,
-                  const net::ip::basic_resolver_results<tcp>& endpoint_results,
-                  http::request<http::string_body>& request,
-                  http::response<http::dynamic_body>& response,
-                  int max_retry,
-                  int interval_milliseconds)
+void get_data_with_retry(http::request<http::string_body>& request,
+                         http::response<http::dynamic_body>& response,
+                         int max_retry,
+                         int interval_milliseconds)
 {
+    net::io_context ioc;
+    tcp::resolver resolver(ioc);
+    beast::tcp_stream stream(ioc);
+    auto const endpoint_results = resolver.resolve(std::string(request[http::field::host]), PORT);
+
     while (max_retry-- > 0)
     {
         stream.connect(endpoint_results);
@@ -164,17 +159,17 @@ py::dict convert_raw_query_to_dict(const py::str& raw_query)
         for (auto& query_kv : split_by_amp)
         {
             py::list split_by_eq        = query_kv.attr("split")("=");
+            if (py::len(split_by_eq) < 2) {
+                throw std::runtime_error("'REST Loader' failed to parse URL query: " + raw_query.cast<std::string>());
+            }
             params_dict[split_by_eq[0]] = split_by_eq[1];
         }
     }
     return params_dict;
 }
 
-void parse_and_format_url(std::string& endpoint,
-                          std::unordered_map<std::string, std::string>& params,
-                          std::string& query,
-                          std::string& host,
-                          std::string& target)
+void parse_and_format_url(
+    std::string& endpoint, nlohmann::json& params, std::string& host, std::string& target, std::string& query)
 {
     py::gil_scoped_acquire gil;
     py::module_ urllib = py::module::import("urllib.parse");
@@ -189,9 +184,13 @@ void parse_and_format_url(std::string& endpoint,
     }
 
     py::object result = urllib.attr("urlparse")(endpoint);
+
+    host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
+    target = urllib.attr("quote")(result.attr("path")).cast<std::string>();
+    target = target.empty() ? "/" : target;
+
     py::str raw_query = result.attr("query");
     py::dict query_pydict;
-
     if (params.empty())
     {
         query_pydict = convert_raw_query_to_dict(raw_query);
@@ -199,58 +198,49 @@ void parse_and_format_url(std::string& endpoint,
     // if params exists, overrides query included in endpoint
     else
     {
-        for (auto& param : params)
+        for (auto& param : params.items())
         {
-            query_pydict[py::str(param.first)] = param.second;
+            query_pydict[py::str(param.key())] = py::str(param.value());
         }
     }
-
-    query  = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
-    host   = result.attr("hostname").is_none() ? "" : result.attr("hostname").cast<std::string>();
-    target = urllib.attr("quote")(result.attr("path")).cast<std::string>();
-    target = target.empty() ? "/" : target;
+    query = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
 }
 
 void get_data(http::response<http::dynamic_body>& response,
+              const std::string& method,
+              const std::string& host,
               const std::string& target,
               const std::string& query,
-              const std::string& host,
-              const std::string& method,
               const std::string& content_type,
-              const std::string body,
-              const std::unordered_map<std::string, std::string>& x_headers,
+              const std::string& body,
+              const nlohmann::json& x_headers,
               int max_retry)
 {
-    net::io_context ioc;
-    tcp::resolver resolver(ioc);
-    beast::tcp_stream stream(ioc);
-    auto const endpoint_results = resolver.resolve(host, PORT);
-    auto verb                   = get_http_verb(method);
-    auto request                = construct_request(verb, target, query, host, method, content_type, body, x_headers);
-
-    try_get_data(stream, endpoint_results, request, response, max_retry, 1000);
+    auto verb    = get_http_verb(method);
+    auto request = construct_request(verb, host, target, query, content_type, body, x_headers);
+    get_data_with_retry(request, response, max_retry, 1000);
 }
 
 void get_data_from_endpoint(http::response<http::dynamic_body>& response,
                             std::string& method,
                             std::string& endpoint,
-                            std::unordered_map<std::string, std::string>& params,
                             std::string& content_type,
                             std::string& body,
-                            std::unordered_map<std::string, std::string>& x_headers,
+                            nlohmann::json& params,
+                            nlohmann::json& x_headers,
                             int max_retry)
 {
-    std::string query;
     std::string host;
     std::string target;
-    parse_and_format_url(endpoint, params, query, host, target);
-    get_data(response, target, query, host, method, content_type, body, x_headers, max_retry);
+    std::string query;
+    parse_and_format_url(endpoint, params, host, target, query);
+    get_data(response, method, host, target, query, content_type, body, x_headers, max_retry);
 }
 
-void create_dataframe_from_http_response(http::response<http::dynamic_body>& response,
-                                         py::object& dataframe,
-                                         py::module_& mod_cudf,
-                                         const std::string& strategy)
+void create_dataframe_from_response(py::object& dataframe,
+                                    py::module_& mod_cudf,
+                                    http::response<http::dynamic_body>& response,
+                                    const std::string& strategy)
 {
     std::string df_json_str = beast::buffers_to_string(response.body().data());
     boost::algorithm::trim_if(df_json_str, [](char c) -> bool { return !std::isprint(c); });
@@ -281,6 +271,34 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
     }
 }
 
+void create_dataframe_from_query(
+    py::object& dataframe, py::module_& mod_cudf, nlohmann::json& query, int max_retry, std::string& strategy)
+{
+    std::string method;
+    std::string endpoint;
+    std::string content_type;
+    std::string body;
+    nlohmann::json params;
+    nlohmann::json x_headers;
+    extract_query_fields(query, method, endpoint, content_type, body, params, x_headers);
+
+    if (params.empty())
+    {
+        http::response<http::dynamic_body> response;
+        get_data_from_endpoint(response, method, endpoint, content_type, body, params, x_headers, max_retry);
+        create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
+    }
+    else
+    {
+        for (auto& param : params)
+        {
+            http::response<http::dynamic_body> response;
+            get_data_from_endpoint(response, method, endpoint, content_type, body, param, x_headers, max_retry);
+            create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
+        }
+    }
+}
+
 void process_failures(const std::string& error_msg,
                       std::shared_ptr<ControlMessage> message,
                       bool processes_failures_as_errors)
@@ -298,9 +316,8 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
-    auto conf                         = this->config();
-    bool processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
-    int max_retry                     = conf.value("max_retry", 3);
+    bool processes_failures_as_errors;
+
     try
     {
         py::module_ mod_cudf;
@@ -312,6 +329,15 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             dataframe          = py::none();
             auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
             mod_cudf           = cache_handle.get_module("cudf");
+        }
+
+        auto conf                    = this->config();
+        processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
+
+        int max_retry = conf.value("max_retry", 3);
+        if (max_retry < 0)
+        {
+            throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
         }
 
         if (!task["queries"].is_array() or task.empty())
@@ -326,39 +352,9 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         }
 
         auto queries = task["queries"];
-
         for (auto& query : queries)
         {
-            std::string method;
-            std::string endpoint;
-            std::string content_type;
-            std::string body;
-            std::unordered_map<std::string, std::string> x_headers;
-            nlohmann::json params;
-
-            extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
-            if (params.empty())
-            {
-                std::unordered_map<std::string, std::string> param_map;
-                http::response<http::dynamic_body> response;
-                get_data_from_endpoint(response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
-                create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
-            }
-            else
-            {
-                for (auto& param : params)
-                {
-                    std::unordered_map<std::string, std::string> param_map;
-                    for (auto& param_kv : param.items())
-                    {
-                        param_map.insert(std::make_pair(param_kv.key(), param_kv.value()));
-                    }
-                    http::response<http::dynamic_body> response;
-                    get_data_from_endpoint(
-                        response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
-                    create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
-                }
-            }
+            create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, strategy);
         }
 
         {
