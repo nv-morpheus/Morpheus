@@ -154,7 +154,7 @@ void try_get_data(beast::tcp_stream& stream,
     }
 }
 
-py::dict convert_raw_query_to_dict(const py::object& raw_query)
+py::dict convert_raw_query_to_dict(const py::str& raw_query)
 {
     py::dict params_dict;
     if (py::len(raw_query) > 0)
@@ -194,7 +194,7 @@ void parse_and_format_url(std::string& endpoint,
 
     if (params.empty())
     {
-        query_pydict = convert_raw_query_to_dict(py::object(result.attr("query")));
+        query_pydict = convert_raw_query_to_dict(raw_query);
     }
     // if params exists, overrides query included in endpoint
     else
@@ -253,7 +253,7 @@ void create_dataframe_from_http_response(http::response<http::dynamic_body>& res
                                          const std::string& strategy)
 {
     std::string df_json_str = beast::buffers_to_string(response.body().data());
-    boost::algorithm::trim_if(df_json_str, [](char c) { return !std::isprint(c); });
+    boost::algorithm::trim_if(df_json_str, [](char c) -> bool { return !std::isprint(c); });
 
     // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
     // The workaround here is to add square brackets if the original data is not represented as an array.
@@ -294,26 +294,6 @@ void process_failures(const std::string& error_msg,
     message->set_metadata("failed reason", error_msg);
 }
 
-void process_python_failures(std::shared_ptr<ControlMessage> message, bool processes_failure_as_errors)
-{
-    // Retrieve the error message using Python C API
-    PyObject* ptype;
-    PyObject* pvalue;
-    PyObject* ptraceback;
-    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
-
-    py::handle hType(ptype);
-    py::handle hValue(pvalue);
-
-    // Convert Python objects to strings
-    py::str typeStr(hType);
-    py::str valueStr(hValue);
-
-    std::string error_msg = "Caught Python exception: " + std::string(typeStr) + ": " + std::string(valueStr);
-    process_failures(error_msg, message, processes_failure_as_errors);
-}
-
 std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     VLOG(30) << "Called RESTDataLoader::load()";
@@ -321,98 +301,73 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
     auto conf                         = this->config();
     bool processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
     int max_retry                     = conf.value("max_retry", 3);
-
-    py::module_ mod_cudf;
-    py::object dataframe;
     try
     {
-        py::gil_scoped_acquire gil;
+        py::module_ mod_cudf;
+        py::object dataframe;
 
-        dataframe          = py::none();
-        auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
-        mod_cudf           = cache_handle.get_module("cudf");
-    } catch (py::error_already_set& e)
-    {
-        process_python_failures(message, processes_failures_as_errors);
-        return message;
-    }
-
-    if (!task["queries"].is_array() or task.empty())
-    {
-        process_failures(
-            "'REST Loader' control message specified no queries to load", message, processes_failures_as_errors);
-        return message;
-    }
-
-    std::string strategy = task.value("strategy", "aggregate");
-    if (strategy != "aggregate")
-    {
-        process_failures("Only 'aggregate' strategy is currently supported", message, processes_failures_as_errors);
-        return message;
-    }
-
-    auto queries = task["queries"];
-
-    for (auto& query : queries)
-    {
-        std::string method;
-        std::string endpoint;
-        std::string content_type;
-        std::string body;
-        std::unordered_map<std::string, std::string> x_headers;
-        nlohmann::json params;
-        try
         {
-            extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
-        } catch (const std::runtime_error& e)
-        {
-            process_failures(e.what(), message, processes_failures_as_errors);
-            return message;
+            py::gil_scoped_acquire gil;
+
+            dataframe          = py::none();
+            auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
+            mod_cudf           = cache_handle.get_module("cudf");
         }
-        std::unordered_map<std::string, std::string> param_map;
-        if (params.empty())
+
+        if (!task["queries"].is_array() or task.empty())
         {
-            http::response<http::dynamic_body> response;
-            try
+            throw std::runtime_error("'REST Loader' control message specified no queries to load");
+        }
+
+        std::string strategy = task.value("strategy", "aggregate");
+        if (strategy != "aggregate")
+        {
+            throw std::runtime_error("Only 'aggregate' strategy is currently supported");
+        }
+
+        auto queries = task["queries"];
+
+        for (auto& query : queries)
+        {
+            std::string method;
+            std::string endpoint;
+            std::string content_type;
+            std::string body;
+            std::unordered_map<std::string, std::string> x_headers;
+            nlohmann::json params;
+
+            extract_query_fields(query, method, endpoint, content_type, body, x_headers, params);
+            if (params.empty())
             {
+                std::unordered_map<std::string, std::string> param_map;
+                http::response<http::dynamic_body> response;
                 get_data_from_endpoint(response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
                 create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
-            } catch (const std::runtime_error& e)
-            {
-                process_failures(e.what(), message, processes_failures_as_errors);
-                return message;
             }
-        }
-        else
-        {
-            for (auto& param : params)
+            else
             {
-                for (auto& param_kv : param.items())
+                for (auto& param : params)
                 {
-                    param_map.insert(std::make_pair(param_kv.key(), param_kv.value()));
-                }
-                http::response<http::dynamic_body> response;
-                try
-                {
+                    std::unordered_map<std::string, std::string> param_map;
+                    for (auto& param_kv : param.items())
+                    {
+                        param_map.insert(std::make_pair(param_kv.key(), param_kv.value()));
+                    }
+                    http::response<http::dynamic_body> response;
                     get_data_from_endpoint(
                         response, method, endpoint, param_map, content_type, body, x_headers, max_retry);
                     create_dataframe_from_http_response(response, dataframe, mod_cudf, strategy);
-                } catch (const std::runtime_error& e)
-                {
-                    process_failures(e.what(), message, processes_failures_as_errors);
-                    return message;
                 }
             }
         }
-    }
-    try
+
+        {
+            py::gil_scoped_acquire gil;
+            message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+        }
+    } catch (std::runtime_error& e)
     {
-        py::gil_scoped_acquire gil;
-        message->payload(MessageMeta::create_from_python(std::move(dataframe)));
-    } catch (py::error_already_set& e)
-    {
-        process_python_failures(message, processes_failures_as_errors);
-        return message;
+        process_failures(e.what(), message, processes_failures_as_errors);
     }
     return message;
 }
