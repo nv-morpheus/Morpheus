@@ -88,13 +88,15 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
       WORKING_PREFIX="${PWD}/"
       COMPILED_FILES=( $(jq -r .[].file ${BUILD_DIR}/compile_commands.json | sort -u ) )
       COMPILED_FILES=( "${COMPILED_FILES[@]/#$WORKING_PREFIX/}" )
+      COMBINED_FILES=("${COMPILED_FILES[@]}")
+      COMBINED_FILES+=("${IWYU_MODIFIED_FILES[@]}")
 
       # Find the intersection between compiled files and modified files
-      IWYU_MODIFIED_FILES=( $(printf '%s\0' "${COMPILED_FILES[@]} ${IWYU_MODIFIED_FILES[@]}" | sort -z | uniq -d -z | xargs -0n1) )
-
+      IWYU_MODIFIED_FILES=( $(printf '%s\0' "${COMBINED_FILES[@]}" | sort -z | uniq -d -z | xargs -0n1) )
       NUM_PROC=$(get_num_proc)
       IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
       IWYU_RETVAL=$?
+
    fi
 else
    echo "No modified C++ files to check"
