@@ -119,7 +119,7 @@ http::request<http::string_body> construct_request(http::verb verb,
 void get_data_with_retry(http::request<http::string_body>& request,
                          http::response<http::dynamic_body>& response,
                          int max_retry,
-                         int interval_milliseconds)
+                         int retry_interval_milliseconds)
 {
     net::io_context ioc;
     tcp::resolver resolver(ioc);
@@ -144,8 +144,8 @@ void get_data_with_retry(http::request<http::string_body>& request,
         {
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(interval_milliseconds));
-        interval_milliseconds *= 2;
+        std::this_thread::sleep_for(std::chrono::milliseconds(retry_interval_milliseconds));
+        retry_interval_milliseconds *= 2;
     }
 }
 
@@ -214,11 +214,12 @@ void get_data(http::response<http::dynamic_body>& response,
               const std::string& content_type,
               const std::string& body,
               const nlohmann::json& x_headers,
-              int max_retry)
+              int max_retry,
+              int retry_interval_milliseconds)
 {
     auto verb    = get_http_verb(method);
     auto request = construct_request(verb, host, target, query, content_type, body, x_headers);
-    get_data_with_retry(request, response, max_retry, 1000);
+    get_data_with_retry(request, response, max_retry, retry_interval_milliseconds);
 }
 
 void get_data_from_endpoint(http::response<http::dynamic_body>& response,
@@ -228,13 +229,14 @@ void get_data_from_endpoint(http::response<http::dynamic_body>& response,
                             std::string& body,
                             nlohmann::json& params,
                             nlohmann::json& x_headers,
-                            int max_retry)
+                            int max_retry,
+                            int retry_interval_milliseconds)
 {
     std::string host;
     std::string target;
     std::string query;
     parse_and_format_url(endpoint, params, host, target, query);
-    get_data(response, method, host, target, query, content_type, body, x_headers, max_retry);
+    get_data(response, method, host, target, query, content_type, body, x_headers, max_retry, retry_interval_milliseconds);
 }
 
 void create_dataframe_from_response(py::object& dataframe,
@@ -272,7 +274,7 @@ void create_dataframe_from_response(py::object& dataframe,
 }
 
 void create_dataframe_from_query(
-    py::object& dataframe, py::module_& mod_cudf, nlohmann::json& query, int max_retry, std::string& strategy)
+    py::object& dataframe, py::module_& mod_cudf, nlohmann::json& query, int max_retry, int retry_interval_milliseconds, std::string& strategy)
 {
     std::string method;
     std::string endpoint;
@@ -285,7 +287,7 @@ void create_dataframe_from_query(
     if (params.empty())
     {
         http::response<http::dynamic_body> response;
-        get_data_from_endpoint(response, method, endpoint, content_type, body, params, x_headers, max_retry);
+        get_data_from_endpoint(response, method, endpoint, content_type, body, params, x_headers, max_retry, retry_interval_milliseconds);
         create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
     }
     else
@@ -293,7 +295,7 @@ void create_dataframe_from_query(
         for (auto& param : params)
         {
             http::response<http::dynamic_body> response;
-            get_data_from_endpoint(response, method, endpoint, content_type, body, param, x_headers, max_retry);
+            get_data_from_endpoint(response, method, endpoint, content_type, body, param, x_headers, max_retry, retry_interval_milliseconds);
             create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
         }
     }
@@ -340,6 +342,11 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
         }
 
+        int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
+        if (retry_interval_milliseconds < 0) {
+            throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " + std::to_string(retry_interval_milliseconds));
+        }
+
         if (!task["queries"].is_array() or task.empty())
         {
             throw std::runtime_error("'REST Loader' control message specified no queries to load");
@@ -354,7 +361,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         auto queries = task["queries"];
         for (auto& query : queries)
         {
-            create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, strategy);
+            create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, retry_interval_milliseconds, strategy);
         }
 
         {

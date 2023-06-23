@@ -466,11 +466,11 @@ def test_rest_loader_module_get_with_params():
                             "queries": [
                                 {
                                     "method": "GET",
-                                    "endpoint": "0.0.0.0/path?param1=true&param2",
-                                    # "params": [
-                                    #     {"param1": "true"},
-                                    #     {"param2": "true"},
-                                    # ],
+                                    "endpoint": "0.0.0.0/path?param1=true&param2=false",
+                                    "params": [
+                                        {"param1": "true"},
+                                        {"param2": "true"},
+                                    ],
                                 },
                             ],
                         },
