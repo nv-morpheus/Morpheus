@@ -15,11 +15,11 @@
 # re-run 'versioneer.py setup' after changing this section, and commit the
 # resulting files.
 
-from setuptools import find_packages  # noqa: E402
-from setuptools import setup  # noqa: E402
-
 import os
 import sys
+
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
 
 # Required to install torch via setup.py
 # Note: this is order dependent
