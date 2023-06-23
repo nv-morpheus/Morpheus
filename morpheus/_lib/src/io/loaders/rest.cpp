@@ -309,7 +309,6 @@ void process_failures(const std::string& error_msg,
     {
         throw std::runtime_error(error_msg);
     }
-    std::cout << "error_msg: " << error_msg << std::endl;
     message->set_metadata("failed", "true");
     message->set_metadata("failed reason", error_msg);
 }
