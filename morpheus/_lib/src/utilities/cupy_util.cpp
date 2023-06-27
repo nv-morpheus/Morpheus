@@ -80,8 +80,11 @@ pybind11::object CupyUtil::tensor_to_cupy(const TensorObject& tensor)
 
     auto ptr    = (uintptr_t)tensor.data();
     auto nbytes = tensor.bytes();
-    auto owner  = py_tensor;
-    int dev_id  = -1;
+
+    DCHECK(nbytes > 0);
+
+    auto owner = py_tensor;
+    int dev_id = -1;
 
     pybind11::list shape_list;
     pybind11::list stride_list;

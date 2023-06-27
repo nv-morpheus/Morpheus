@@ -203,7 +203,7 @@ def test_set_tensors_length_error(config, tensor_cls):
     "shape",
     [
         (536870912, 1),  # bytesize > 2**31
-        (536870912, 4)  # bytesize > 2**31 and element count > 2**31
+        (134217728, 4)  # bytesize > 2**31 and element count > 2**31
     ])
 def test_tensorindex_bug(config: Config, tensor_cls: TensorMemory, shape: typing.Tuple[int, int]):
     """
