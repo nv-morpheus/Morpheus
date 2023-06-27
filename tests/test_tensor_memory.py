@@ -16,11 +16,13 @@
 
 import os
 import string
+import typing
 
 import cupy as cp
 import numpy as np
 import pytest
 
+from morpheus.config import Config
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
 from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
@@ -194,3 +196,21 @@ def test_set_tensors_length_error(config, tensor_cls):
 
     with pytest.raises(ValueError):
         m.set_tensors(tensors)
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+@pytest.mark.parametrize(
+    "shape",
+    [
+        (536870912, 1),  # bytesize > 2**31
+        (536870912, 4)  # bytesize > 2**31 and element count > 2**31
+    ])
+def test_tensorindex_bug(config: Config, tensor_cls: TensorMemory, shape: typing.Tuple[int, int]):
+    """
+    Test for issue #1004. We use a 32bit signed integer for shape and strides, but we shouldn't for element counts and
+    byte sizes.
+    """
+    tensors = {"a": cp.zeros(shape, dtype=np.float32)}
+
+    mem = tensor_cls(count=shape[0], tensors=tensors)
+    assert mem.get_tensor('a').shape == shape
