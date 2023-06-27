@@ -213,4 +213,6 @@ def test_tensorindex_bug(config: Config, tensor_cls: TensorMemory, shape: typing
     tensors = {"a": cp.zeros(shape, dtype=np.float32)}
 
     mem = tensor_cls(count=shape[0], tensors=tensors)
-    assert mem.get_tensor('a').shape == shape
+    tensor_a = mem.get_tensor('a')
+    assert tensor_a.shape == shape
+    assert tensor_a.nbytes == shape[0] * shape[1] * 4
