@@ -29,7 +29,7 @@
     },
     "test_cloudtrail_ae_e2e": {
         "input_glob_path": "../../models/datasets/validation-data/dfp-cloudtrail-*-input.csv",
-        "train_glob_path": "../../models/datasets/training-data/sdfp-cloudtrail-*-training-data.csv",
+        "train_glob_path": "../../models/datasets/training-data/dfp-cloudtrail-*-training-data.csv",
         "repeat": 1,
         "num_threads": 1,
         "pipeline_batch_size": 1024,
