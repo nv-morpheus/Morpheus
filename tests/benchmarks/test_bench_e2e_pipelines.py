@@ -44,8 +44,8 @@ from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
-e2e_config_file = "./e2e_test_configs.json"
-with open(e2e_config_file, 'r', encoding='UTF-8') as f:
+E2E_CONFIG_FILE = "./e2e_test_configs.json"
+with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
     E2E_TEST_CONFIGS = json.load(f)
 
 
