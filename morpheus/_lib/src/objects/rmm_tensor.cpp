@@ -84,7 +84,7 @@ DType RMMTensor::dtype() const
 
 std::size_t RMMTensor::count() const
 {
-    return TensorUtils::get_elem_count<TensorIndex, std::size_t>(m_shape);
+    return TensorUtils::get_elem_count(m_shape);
 }
 
 std::size_t RMMTensor::bytes() const

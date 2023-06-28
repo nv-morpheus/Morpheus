@@ -20,7 +20,8 @@
 #include "morpheus/export.h"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
-#include <algorithm>   // IWYU pragma: keep
+#include <algorithm>  // IWYU pragma: keep
+#include <cstddef>
 #include <functional>  // for multiplies
 #include <iosfwd>      // for ostream
 #include <numeric>     // for accumulate
@@ -115,7 +116,7 @@ struct MORPHEUS_EXPORT TensorUtils
      * @param shape
      * @return IndexT
      */
-    template <typename IndexT, typename RetTypeT = IndexT>
+    template <typename IndexT, typename RetTypeT = std::size_t>
     static inline RetTypeT get_elem_count(const std::vector<IndexT>& shape)
     {
         RetTypeT init_val{1};

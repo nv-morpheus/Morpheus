@@ -103,7 +103,7 @@ void build_output_tensors(TensorIndex count,
 
         // First dimension will always end up being the number of rows in the dataframe
         total_shape[0]  = count;
-        auto elem_count = TensorUtils::get_elem_count<TensorIndex, std::size_t>(total_shape);
+        auto elem_count = TensorUtils::get_elem_count(total_shape);
 
         // Create the output memory
         auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
