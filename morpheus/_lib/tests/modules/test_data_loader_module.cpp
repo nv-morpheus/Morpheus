@@ -28,12 +28,11 @@
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
-#include <mrc/core/executor.hpp>
-#include <mrc/engine/pipeline/ipipeline.hpp>
 #include <mrc/node/rx_sink.hpp>
 #include <mrc/node/rx_source.hpp>
 #include <mrc/options/options.hpp>
 #include <mrc/options/topology.hpp>
+#include <mrc/pipeline/executor.hpp>
 #include <mrc/pipeline/pipeline.hpp>
 #include <mrc/segment/builder.hpp>
 #include <nlohmann/json.hpp>
@@ -272,10 +271,9 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
         builder.make_edge(data_loader_module->output_port("output"), sink);
     };
 
-    std::unique_ptr<pipeline::Pipeline> m_pipeline;
-    m_pipeline = pipeline::make_pipeline();
+    auto pipeline = mrc::make_pipeline();
 
-    m_pipeline->make_segment("main", init_wrapper);
+    pipeline->make_segment("main", init_wrapper);
 
     auto options = std::make_shared<Options>();
     options->topology().user_cpuset("0-1");
@@ -283,7 +281,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
     options->engine_factories().set_default_engine_type(runnable::EngineType::Thread);
 
     Executor executor(options);
-    executor.register_pipeline(std::move(m_pipeline));
+    executor.register_pipeline(std::move(pipeline));
     executor.start();
     executor.join();
 
