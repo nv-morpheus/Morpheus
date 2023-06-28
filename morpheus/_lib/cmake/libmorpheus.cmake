@@ -89,7 +89,6 @@ target_link_libraries(morpheus
     mrc::pymrc
     RDKAFKA::RDKAFKA
     TritonClient::httpclient_static
-    -Wl,--gc-sections # required to link code containing pybind11 headers
 )
 
 target_include_directories(morpheus
@@ -141,6 +140,9 @@ target_sources(morpheus
 # once upgraded to cuda-python 12.1. Ideally, cuda-python would just load libcuda.so.1 which would take precedence over
 # libcuda.so. Relavant issue: https://github.com/NVIDIA/cuda-python/issues/17
 target_link_options(morpheus PUBLIC "-Wl,--enable-new-dtags")
+
+# # required to link code containing pybind11 headers
+# target_link_options(morpheus PUBLIC "-Wl,--gc-sections")
 
 set_target_properties(morpheus
   PROPERTIES
