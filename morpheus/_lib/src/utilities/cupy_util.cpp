@@ -34,7 +34,6 @@
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <array>    // for array
-#include <cstddef>  // for size_t
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
 #include <optional>

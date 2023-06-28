@@ -23,6 +23,7 @@
 
 #include <rmm/device_buffer.hpp>
 
+#include <cstddef>  // for size_t
 #include <cstdint>  // for uint8_t
 #include <memory>
 #include <string>
