@@ -112,15 +112,13 @@ struct MORPHEUS_EXPORT TensorUtils
      * @brief Compute the number of elements in a tensor based on the shape
      *
      * @tparam IndexT
-     * @tparam RetTypeT
      * @param shape
-     * @return IndexT
+     * @return std::size_t
      */
-    template <typename IndexT, typename RetTypeT = std::size_t>
-    static inline RetTypeT get_elem_count(const std::vector<IndexT>& shape)
+    template <typename IndexT>
+    static inline std::size_t get_elem_count(const std::vector<IndexT>& shape)
     {
-        RetTypeT init_val{1};
-        return std::accumulate(shape.begin(), shape.end(), init_val, std::multiplies<>());
+        return std::accumulate(shape.begin(), shape.end(), std::size_t{1}, std::multiplies<>());
     }
 };
 
