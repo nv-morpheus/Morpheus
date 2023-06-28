@@ -57,7 +57,7 @@ outputs:
         - ninja
       host:
         - cuda-cudart
-        - cuda-driver-dev
+        - cuda-toolkit
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
