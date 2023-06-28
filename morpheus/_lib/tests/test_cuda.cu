@@ -19,8 +19,6 @@
 
 #include <matx.h>
 
-using namespace morpheus;
-
 TEST_CLASS(Cuda);
 
 TEST_F(TestCuda, LargeShape)
