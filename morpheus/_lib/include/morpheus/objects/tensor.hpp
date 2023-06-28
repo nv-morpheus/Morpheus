@@ -52,7 +52,7 @@ class Tensor
            std::string init_typestr,
            ShapeType init_shape,
            ShapeType init_strides,
-           TensorIndex init_offset = 0);
+           std::size_t init_offset = 0);
 
     ShapeType shape;
     ShapeType strides;
@@ -66,7 +66,7 @@ class Tensor
     /**
      * TODO(Documentation)
      */
-    TensorIndex bytes_count() const;
+    std::size_t bytes_count() const;
 
     /**
      * TODO(Documentation)
@@ -85,10 +85,10 @@ class Tensor
                                DType dtype,
                                ShapeType shape,
                                ShapeType strides,
-                               TensorIndex offset = 0);
+                               std::size_t offset = 0);
 
   private:
-    TensorIndex m_offset;
+    std::size_t m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
 

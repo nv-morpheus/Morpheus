@@ -108,7 +108,7 @@ struct ITensorStorage
     virtual void* data() const = 0;
 
     // virtual const void* data() const                             = 0;
-    virtual TensorIndex bytes() const = 0;
+    virtual std::size_t bytes() const = 0;
 
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
@@ -136,7 +136,7 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual RankType rank() const = 0;
 
-    virtual TensorIndex count() const = 0;
+    virtual std::size_t count() const = 0;
 
     virtual DType dtype() const = 0;
 
@@ -200,12 +200,12 @@ struct TensorObject final
         return m_tensor->dtype();
     }
 
-    TensorIndex count() const
+    std::size_t count() const
     {
         return m_tensor->count();
     }
 
-    TensorIndex bytes() const
+    std::size_t bytes() const
     {
         return m_tensor->bytes();
     }

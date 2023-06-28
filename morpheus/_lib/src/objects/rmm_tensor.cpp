@@ -29,7 +29,7 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
 
-#include <algorithm>  // for copy, transform
+#include <algorithm>   // for copy, transform
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
@@ -42,7 +42,7 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** RMMTensor****************************************/
 RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
-                     TensorIndex offset,
+                     std::size_t offset,
                      DType dtype,
                      ShapeType shape,
                      ShapeType stride) :
@@ -82,12 +82,12 @@ DType RMMTensor::dtype() const
     return m_dtype;
 }
 
-TensorIndex RMMTensor::count() const
+std::size_t RMMTensor::count() const
 {
-    return TensorUtils::get_elem_count(m_shape);
+    return TensorUtils::get_elem_count<TensorIndex, std::size_t>(m_shape);
 }
 
-TensorIndex RMMTensor::bytes() const
+std::size_t RMMTensor::bytes() const
 {
     return count() * m_dtype.item_size();
 }
@@ -175,7 +175,7 @@ std::shared_ptr<ITensor> RMMTensor::as_type(DType new_dtype) const
     return std::make_shared<RMMTensor>(new_data_buffer, 0, new_dtype, m_shape, m_stride);
 }
 
-TensorIndex RMMTensor::offset_bytes() const
+std::size_t RMMTensor::offset_bytes() const
 {
     return m_offset * m_dtype.item_size();
 }

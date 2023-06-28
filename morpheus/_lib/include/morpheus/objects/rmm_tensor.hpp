@@ -24,6 +24,7 @@
 
 #include <rmm/device_buffer.hpp>
 
+#include <cstddef>  // for size_t
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -46,7 +47,7 @@ class RMMTensor : public ITensor
 {
   public:
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
-              TensorIndex offset,
+              std::size_t offset,
               DType dtype,
               ShapeType shape,
               ShapeType stride = {});
@@ -102,12 +103,12 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    TensorIndex bytes() const final;
+    std::size_t bytes() const final;
 
     /**
      * TODO(Documentation)
      */
-    TensorIndex count() const final;
+    std::size_t count() const final;
 
     /**
      * TODO(Documentation)
@@ -152,12 +153,12 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    TensorIndex offset_bytes() const;
+    std::size_t offset_bytes() const;
 
     // Memory info
     std::shared_ptr<MemoryDescriptor> m_mem_descriptor;
     std::shared_ptr<rmm::device_buffer> m_md;
-    TensorIndex m_offset;
+    std::size_t m_offset;
 
     // // Type info
     // std::string m_typestr;

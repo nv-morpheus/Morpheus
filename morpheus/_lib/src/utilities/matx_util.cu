@@ -24,7 +24,7 @@
 #include <mrc/cuda/sync.hpp>
 
 #include <array>
-#include <cstddef> // for size_t
+#include <cstddef>  // for size_t
 
 namespace morpheus {
 
@@ -135,9 +135,9 @@ struct MatxUtil__MatxOffsetSegIds
     {
         tensorShape_2d shape({element_count, 3});
 
-        auto input_tensor  = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), shape);
+        auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), shape);
 
-        auto col0      = input_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
+        auto col0 = input_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
 
         // Simply add the offset to the column
         (col0 = col0 + offset).run(stream.value());
@@ -184,7 +184,6 @@ struct MatxUtil__MatxLogits
  */
 struct MatxUtil__MatxTranspose
 {
-    TensorIndex element_count;
     rmm::cuda_stream_view stream;
     TensorIndex rows;
     TensorIndex cols;
@@ -260,8 +259,7 @@ struct MatxUtil__MatxThreshold
         // Output is always 1 column
         tensorShape_1d output_shape({rows});
 
-        matx::DefaultDescriptor<2> desc{{rows, cols},
-                                        {stride[0], stride[1]}};
+        matx::DefaultDescriptor<2> desc{{rows, cols}, {stride[0], stride[1]}};
 
         auto input_tensor =
             matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT*>(input_data), std::move(desc));
@@ -284,9 +282,7 @@ struct MatxUtil__MatxThreshold
     template <typename InputT>
     void threshold(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
-        matx::DefaultDescriptor<2> input_desc{
-            {rows, cols},
-            {stride[0], stride[1]}};
+        matx::DefaultDescriptor<2> input_desc{{rows, cols}, {stride[0], stride[1]}};
 
         // Input & Output have the same shape & stride. The make_tensor API requires a move for the descriptor
         // so we need to take a copy of it here.
@@ -342,11 +338,7 @@ struct MatxUtil__MatxReduceMax
             if (idx != seq_ids[start + seq_id_offset])
             {
                 DCHECK(seq_ids[start + seq_id_offset] - output_offset < num_output_rows);
-                reduce_rows(input_tensor,
-                            output_tensor,
-                            start,
-                            i,
-                            seq_ids[start + seq_id_offset] - output_offset);
+                reduce_rows(input_tensor, output_tensor, start, i, seq_ids[start + seq_id_offset] - output_offset);
                 start = i;
             }
         }
@@ -355,11 +347,7 @@ struct MatxUtil__MatxReduceMax
             << "\nstart=" << start
             << " seq_ids[start+seq_id_offset]-output_offset=" << seq_ids[start + seq_id_offset] - output_offset
             << " num_output_rows=" << num_output_rows;
-        reduce_rows(input_tensor,
-                    output_tensor,
-                    start,
-                    num_input_rows,
-                    seq_ids[start + seq_id_offset] - output_offset);
+        reduce_rows(input_tensor, output_tensor, start, num_input_rows, seq_ids[start + seq_id_offset] - output_offset);
     }
 
     template <typename InputT>
@@ -399,13 +387,17 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
     return output;
 }
 
-std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type, std::shared_ptr<MemoryDescriptor> md, TensorIndex start_idx)
+std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_count,
+                                                             TensorIndex fea_len,
+                                                             TypeId output_type,
+                                                             std::shared_ptr<MemoryDescriptor> md,
+                                                             TensorIndex start_idx)
 {
     auto output_dtype = DType(output_type);
 
     // Now create the output
-    auto output =
-        std::make_shared<rmm::device_buffer>(output_dtype.item_size() * row_count * 3, md->cuda_stream, md->memory_resource);
+    auto output = std::make_shared<rmm::device_buffer>(
+        output_dtype.item_size() * row_count * 3, md->cuda_stream, md->memory_resource);
 
     cudf::type_dispatcher(cudf::data_type{output_dtype.cudf_type_id()},
                           MatxUtil__MatxCreateSegIds{start_idx, row_count, fea_len, output->stream()},
@@ -414,8 +406,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_cou
     return output;
 }
 
-void MatxUtil::offset_seq_ids(const DevMemInfo& input, TensorIndex offset){
-
+void MatxUtil::offset_seq_ids(const DevMemInfo& input, TensorIndex offset)
+{
     cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
                           MatxUtil__MatxOffsetSegIds{offset, input.shape(0), rmm::cuda_stream_per_thread},
                           input.data());
@@ -442,7 +434,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::transpose(const DevMemInfo& input)
     auto output = input.make_new_buffer(input.bytes());
 
     cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
-                          MatxUtil__MatxTranspose{input.count(), output->stream(), input.shape(0), input.shape(1)},
+                          MatxUtil__MatxTranspose{output->stream(), input.shape(0), input.shape(1)},
                           input.data(),
                           output->data());
 
@@ -484,7 +476,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
     auto num_input_rows = input.shape(0);
     auto num_input_cols = input.shape(1);
 
-    TensorIndex output_element_count = output_shape[0] * output_shape[1];
+    std::size_t output_element_count = output_shape[0] * output_shape[1];
     std::size_t output_buff_size     = dtype.item_size() * output_element_count;
 
     DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
@@ -492,13 +484,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
 
     auto output = input.make_new_buffer(output_buff_size);
 
-    MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows,
-                                            output_shape[0],
-                                            num_input_cols,
-                                            input.stride(),
-                                            seq_ids,
-                                            seq_id_offset,
-                                            output->stream()};
+    MatxUtil__MatxReduceMax matx_reduce_max{
+        num_input_rows, output_shape[0], num_input_cols, input.stride(), seq_ids, seq_id_offset, output->stream()};
 
     cudf::type_dispatcher(cudf_type, matx_reduce_max, input.data(), output->data());
 
