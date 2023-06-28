@@ -11,7 +11,7 @@ This model shows an application of a graph neural network for fraud detection in
 3. Rafaël Van Belle, Charles Van Damme, Hendrik Tytgat, Jochen De Weerdt,Inductive Graph Representation Learning for fraud detection (https://www.sciencedirect.com/science/article/abs/pii/S0957417421017449)<br> 
 
 ## Model Architecture:
-It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
+It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.<br>
 **Architecture Type:** Graph Neural Network and Binary classification <br>
 **Network Architecture:** GraphSAGE and XGBoost <br>
 
@@ -138,8 +138,8 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
 
-## Are there explicit model and dataset restrictions?
-No
+### Are there explicit model and dataset restrictions?
+* No
 
 ### Are there access restrictions to systems, model, and data?
 * No
