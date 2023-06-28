@@ -20,11 +20,10 @@
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
+#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex, TensorSize
 
 #include <rmm/device_buffer.hpp>
 
-#include <cstddef>  // for size_t
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -47,7 +46,7 @@ class RMMTensor : public ITensor
 {
   public:
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
-              std::size_t offset,
+              TensorSize offset,
               DType dtype,
               ShapeType shape,
               ShapeType stride = {});
@@ -103,12 +102,12 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::size_t bytes() const final;
+    TensorSize bytes() const final;
 
     /**
      * TODO(Documentation)
      */
-    std::size_t count() const final;
+    TensorSize count() const final;
 
     /**
      * TODO(Documentation)
@@ -153,16 +152,14 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::size_t offset_bytes() const;
+    TensorSize offset_bytes() const;
 
     // Memory info
     std::shared_ptr<MemoryDescriptor> m_mem_descriptor;
     std::shared_ptr<rmm::device_buffer> m_md;
-    std::size_t m_offset;
+    TensorSize m_offset;
 
-    // // Type info
-    // std::string m_typestr;
-    // std::size_t m_dtype_size;
+    // Type info
     DType m_dtype;
 
     // Shape info

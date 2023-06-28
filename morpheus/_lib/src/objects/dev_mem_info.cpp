@@ -17,12 +17,10 @@
 
 #include "morpheus/objects/dev_mem_info.hpp"
 
-#include "morpheus/types.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
 #include <glog/logging.h>  // for DCHECK
 
-#include <cstddef>
 #include <cstdint>  // for uint8_t
 #include <memory>
 #include <ostream>
@@ -36,7 +34,7 @@ DevMemInfo::DevMemInfo(void* data,
                        std::shared_ptr<MemoryDescriptor> md,
                        ShapeType shape,
                        ShapeType stride,
-                       std::size_t offset_bytes) :
+                       TensorSize offset_bytes) :
   m_data(data),
   m_dtype(std::move(dtype)),
   m_md(std::move(md)),
@@ -51,7 +49,7 @@ DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,
                        ShapeType shape,
                        ShapeType stride,
-                       std::size_t offset_bytes) :
+                       TensorSize offset_bytes) :
   m_data(buffer->data()),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
@@ -63,17 +61,17 @@ DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
         << "Inconsistent dimensions, values would extend past the end of the device_buffer";
 }
 
-std::size_t DevMemInfo::bytes() const
+TensorSize DevMemInfo::bytes() const
 {
     return count() * m_dtype.item_size();
 }
 
-std::size_t DevMemInfo::count() const
+TensorSize DevMemInfo::count() const
 {
     return TensorUtils::get_elem_count(m_shape);
 }
 
-std::size_t DevMemInfo::offset_bytes() const
+TensorSize DevMemInfo::offset_bytes() const
 {
     return m_offset_bytes;
 }
@@ -113,7 +111,7 @@ std::shared_ptr<MemoryDescriptor> DevMemInfo::memory() const
     return m_md;
 }
 
-std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
+std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(TensorSize bytes) const
 {
     return std::make_unique<rmm::device_buffer>(bytes, m_md->cuda_stream, m_md->memory_resource);
 }

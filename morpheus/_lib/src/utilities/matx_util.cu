@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/types.hpp"
+#include "morpheus/types.hpp"  // For TensorIndex, TensorSize
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <boost/numeric/conversion/cast.hpp>  // for numeric_cast
@@ -33,7 +33,7 @@ using tensorShape_1d = std::array<matx::index_t, 1>;
 using tensorShape_2d = std::array<matx::index_t, 2>;
 
 // Since we are building MatX in 32bit mode, we can only support up to 2^31 in any on dimension, for count type values
-// that consider multiple dimensions we use std::size_t, while other operations such as MatxUtil__MatxCast which only
+// that consider multiple dimensions we use TensorSize, while other operations such as MatxUtil__MatxCast which only
 // opperate on a single dimension use TensorIndex.
 
 // Component-private classes.
@@ -448,9 +448,9 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::transpose(const DevMemInfo& input)
 
 std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input, double thresh_val, bool by_row)
 {
-    const auto rows         = input.shape(0);
-    const auto cols         = input.shape(1);
-    std::size_t output_size = sizeof(bool) * rows;
+    const auto rows        = input.shape(0);
+    const auto cols        = input.shape(1);
+    TensorSize output_size = sizeof(bool) * rows;
     if (!by_row)
     {
         output_size *= cols;
@@ -481,8 +481,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
     auto num_input_rows = input.shape(0);
     auto num_input_cols = input.shape(1);
 
-    std::size_t output_element_count = output_shape[0] * output_shape[1];
-    std::size_t output_buff_size     = dtype.item_size() * output_element_count;
+    TensorSize output_element_count = output_shape[0] * output_shape[1];
+    TensorSize output_buff_size     = dtype.item_size() * output_element_count;
 
     DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
     DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
