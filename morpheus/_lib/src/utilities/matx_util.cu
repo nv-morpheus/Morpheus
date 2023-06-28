@@ -18,6 +18,7 @@
 #include "morpheus/types.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
+#include <boost/numeric/conversion/cast.hpp>  // for numeric_cast
 #include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <matx.h>
@@ -30,6 +31,10 @@ namespace morpheus {
 
 using tensorShape_1d = std::array<matx::index_t, 1>;
 using tensorShape_2d = std::array<matx::index_t, 2>;
+
+// Since we are building MatX in 32bit mode, we can only support up to 2^31 in any on dimension, for count type values
+// that consider multiple dimensions we use std::size_t, while other operations such as MatxUtil__MatxCast which only
+// opperate on a single dimension use TensorIndex.
 
 // Component-private classes.
 // ************ MatxUtil__MatxCast**************//
@@ -378,7 +383,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
 
     cudf::double_type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
                                  cudf::data_type{output_dtype.cudf_type_id()},
-                                 MatxUtil__MatxCast{input.count(), output->stream()},
+                                 MatxUtil__MatxCast{boost::numeric_cast<TensorIndex>(input.count()), output->stream()},
                                  input.data(),
                                  output->data());
 
@@ -421,7 +426,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::logits(const DevMemInfo& input)
     auto output = input.make_new_buffer(input.bytes());
 
     cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
-                          MatxUtil__MatxLogits{input.count(), output->stream()},
+                          MatxUtil__MatxLogits{boost::numeric_cast<TensorIndex>(input.count()), output->stream()},
                           input.data(),
                           output->data());
 
