@@ -19,7 +19,7 @@
 
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex, TensorSize
 
 #include <rmm/device_buffer.hpp>
 
@@ -52,7 +52,7 @@ class Tensor
            std::string init_typestr,
            ShapeType init_shape,
            ShapeType init_strides,
-           TensorIndex init_offset = 0);
+           TensorSize init_offset = 0);
 
     ShapeType shape;
     ShapeType strides;
@@ -66,7 +66,7 @@ class Tensor
     /**
      * TODO(Documentation)
      */
-    TensorIndex bytes_count() const;
+    TensorSize bytes_count() const;
 
     /**
      * TODO(Documentation)
@@ -85,10 +85,10 @@ class Tensor
                                DType dtype,
                                ShapeType shape,
                                ShapeType strides,
-                               TensorIndex offset = 0);
+                               TensorSize offset = 0);
 
   private:
-    TensorIndex m_offset;
+    TensorSize m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
 
