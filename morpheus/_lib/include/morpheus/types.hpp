@@ -19,6 +19,7 @@
 
 #include <cudf/types.hpp>
 
+#include <cstddef>  // for size_t
 #include <map>
 #include <string>
 #include <utility>  // for pair
@@ -35,6 +36,7 @@ struct TensorObject;
  */
 // NOLINTBEGIN(readability-identifier-naming)
 using TensorIndex = cudf::size_type;
+using TensorSize  = std::size_t;
 using RankType    = int;
 
 using ShapeType = std::vector<TensorIndex>;
