@@ -34,7 +34,6 @@
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <array>    // for array
-#include <cstddef>  // for size_t
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
 #include <optional>
@@ -132,7 +131,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     auto dtype = DType::from_numpy(typestr);
 
     //  Get the size from the shape and dtype
-    auto size = static_cast<size_t>(TensorUtils::get_elem_count(shape)) * dtype.item_size();
+    auto size = TensorUtils::get_elem_count(shape) * dtype.item_size();
 
     // Finally, handle the stream
     auto stream_value = arr_interface["stream"].cast<std::optional<intptr_t>>();

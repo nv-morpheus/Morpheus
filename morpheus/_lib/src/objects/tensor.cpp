@@ -37,7 +37,7 @@ Tensor::Tensor(std::shared_ptr<rmm::device_buffer> buffer,
                std::string init_typestr,
                ShapeType init_shape,
                ShapeType init_strides,
-               TensorIndex init_offset) :
+               TensorSize init_offset) :
   m_device_buffer(std::move(buffer)),
   typestr(std::move(init_typestr)),
   shape(std::move(init_shape)),
@@ -50,7 +50,7 @@ void* Tensor::data() const
     return static_cast<uint8_t*>(m_device_buffer->data()) + m_offset;
 }
 
-TensorIndex Tensor::bytes_count() const
+TensorSize Tensor::bytes_count() const
 {
     // temp just return without shape, size, offset, etc
     return m_device_buffer->size();
@@ -73,7 +73,7 @@ auto Tensor::get_stream() const
 }
 
 TensorObject Tensor::create(
-    std::shared_ptr<rmm::device_buffer> buffer, DType dtype, ShapeType shape, ShapeType strides, TensorIndex offset)
+    std::shared_ptr<rmm::device_buffer> buffer, DType dtype, ShapeType shape, ShapeType strides, TensorSize offset)
 {
     auto md = std::make_shared<MemoryDescriptor>(buffer->stream(), buffer->memory_resource());
 
