@@ -79,9 +79,6 @@ pybind11::object CupyUtil::tensor_to_cupy(const TensorObject& tensor)
 
     auto ptr    = (uintptr_t)tensor.data();
     auto nbytes = tensor.bytes();
-
-    DCHECK(nbytes > 0);
-
     auto owner = py_tensor;
     int dev_id = -1;
 
