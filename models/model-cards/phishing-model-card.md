@@ -42,7 +42,7 @@
 * Linux <br>
 
 ## Model Version(s): 
-v1  <br>
+* v1  <br>
 
 # Training & Evaluation: 
 
