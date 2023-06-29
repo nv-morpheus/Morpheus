@@ -82,7 +82,7 @@ target_link_libraries(morpheus
   PRIVATE
     ${cudf_helpers_target}
     matx::matx
-    
+
   PUBLIC
     cudf::cudf
     CUDA::nvToolsExt
@@ -141,8 +141,8 @@ target_sources(morpheus
 # libcuda.so. Relavant issue: https://github.com/NVIDIA/cuda-python/issues/17
 target_link_options(morpheus PUBLIC "-Wl,--enable-new-dtags")
 
-# # required to link code containing pybind11 headers
-# target_link_options(morpheus PUBLIC "-Wl,--gc-sections")
+# required to link code containing pybind11 headers
+target_link_options(morpheus PUBLIC "-Wl,--gc-sections")
 
 set_target_properties(morpheus
   PROPERTIES
