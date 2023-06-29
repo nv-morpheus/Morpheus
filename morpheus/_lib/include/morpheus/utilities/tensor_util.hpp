@@ -112,12 +112,12 @@ struct MORPHEUS_EXPORT TensorUtils
      *
      * @tparam IndexT
      * @param shape
-     * @return IndexT
+     * @return TensorSize
      */
     template <typename IndexT>
-    static inline IndexT get_elem_count(const std::vector<IndexT>& shape)
+    static inline TensorSize get_elem_count(const std::vector<IndexT>& shape)
     {
-        return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
+        return std::accumulate(shape.begin(), shape.end(), TensorSize{1}, std::multiplies<>());
     }
 };
 
