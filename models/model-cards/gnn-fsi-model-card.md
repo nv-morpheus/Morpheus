@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Model Overview
 
 ### Description:
@@ -10,8 +27,11 @@
 
 ## Model Architecture:
 It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.<br>
-**Architecture Type:** Graph Neural Network and Binary classification <br>
-**Network Architecture:** GraphSAGE and XGBoost <br>
+**Architecture Type:** 
+* Graph Neural Network and Binary classification <br>
+
+**Network Architecture:** 
+* GraphSAGE and XGBoost <br>
 
 ## Input
 Transaction data with nodes including transaction, client, and merchant.<br>
@@ -55,14 +75,24 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 
 ## Training Dataset:
 
-**Link:** [fraud-detection-training-data.csv](models/dataset/fraud-detection-training-data.csv)  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of raw 753 synthetic labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
-**Dataset License:**  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
+**Link:**
+* [fraud-detection-training-data.csv](models/dataset/fraud-detection-training-data.csv)  <br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* A training data consists of raw 753 synthetic labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
+
+**Dataset License:**  
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Evaluation Dataset:
-**Link:**  [fraud-detection-validation-data.csv](models/dataset/fraud-detection-validation-data.csv)  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Data consists of raw 265 labeled credit card transaction synthetically created<br>
-**Dataset License:** [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
+**Link:**  
+* [fraud-detection-validation-data.csv](models/dataset/fraud-detection-validation-data.csv)  <br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* Data consists of raw 265 labeled credit card transaction synthetically created<br>
+
+**Dataset License:**
+*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 **Engine:** 
