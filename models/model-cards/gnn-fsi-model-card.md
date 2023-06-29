@@ -15,15 +15,25 @@ It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` 
 
 ## Input
 Transaction data with nodes including transaction, client, and merchant.<br>
-**Input Parameters:**  None <br>
-**Input Format:** CSV format<br>
-**Other Properties Related to Output:** None<br>
+**Input Parameters:**  
+* None <br>
+
+**Input Format:** 
+* CSV format<br>
+
+**Other Properties Related to Output:** 
+* None<br>
 
 ## Output
 An anomalous score of transactions indicates a probability score of being a fraud.<br>
-**Output Parameters:**  None <br>
-**Output Format:** CSV<br>
-**Other Properties Related to Output:** None <br> 
+**Output Parameters:**  
+* None <br>
+
+**Output Format:** 
+* CSV<br>
+
+**Other Properties Related to Output:** 
+* None <br> 
 
 ## Software Integration:
 **Runtime(s):** 
@@ -55,7 +65,9 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 **Dataset License:** [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
-**Engine:** Triton
+**Engine:** 
+* Triton <br>
+
 **Test Hardware:** <br>
 * Other   <br>
 
