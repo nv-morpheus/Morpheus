@@ -1,9 +1,7 @@
-# Fraud Detection using Graph Neural Network
-
-## Model Overview
+# Model Overview
 
 ### Description:
-This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks. <br>
+* This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks. <br>
 
 ## References(s):
 1. https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
@@ -17,12 +15,19 @@ It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` 
 
 ## Input
 Transaction data with nodes including transaction, client, and merchant.<br>
-**Input Parameters:** None <br>
+**Input Parameters:**  None <br>
+**Input Format:** CSV format<br>
+**Other Properties Related to Output:** None<br>
+
 ## Output
 An anomalous score of transactions indicates a probability score of being a fraud.<br>
-**Output Parameters:** None <br>
+**Output Parameters:**  None <br>
+**Output Format:** CSV<br>
+**Other Properties Related to Output:** None <br> 
+
 ## Software Integration:
-**Runtime(s):** Morpheus  <br>
+**Runtime(s):** 
+* Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
 * Ampere/Turing <br>
@@ -41,19 +46,20 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ## Training Dataset:
 
 **Link:** [fraud-detection-training-data.csv](models/dataset/fraud-detection-training-data.csv)  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of raw 753 labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
-**Dataset License:**  (N/A) <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of raw 753 synthetic labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
+**Dataset License:**  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Evaluation Dataset:
 **Link:**  [fraud-detection-validation-data.csv](models/dataset/fraud-detection-validation-data.csv)  <br>
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** Data consists of raw 265 labeled credit card transaction synthetically created<br>
-**Dataset License:** (N/A)<br>
+**Dataset License:** [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 **Engine:** Triton
 **Test Hardware:** <br>
-* Other (Not Listed)  <br>
+* Other   <br>
 
+# Subcards
 ## Model Card ++ Bias Subcard
 
 ### What is the gender balance of the model validation data?  
@@ -81,7 +87,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is intended to be used for fraud detection use cases.
+* This model is intended to be used for testing fraud detection use cases in morpheus pipeline using application of GNN.
 ### Fill in the blank for the model technique.
 * This model is intended for developers that want to build and/or customize fraud detection applications using graph neural network.
 
@@ -104,7 +110,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 * Area under ROC curve and Accuracy
 
 ### What are the potential known risks to users and stakeholders? 
-* Not Applicable
+* None
 
 ### What training is recommended for developers working with this model?  If none, please state "none."
 * none
@@ -125,9 +131,9 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
 ### Name applications for the model.
-* Fraud detection in credit card transaction with the defined schema.
+* Used for testing fraud detection application in Morpheus pipeline, under the defined dataset schema description.
 ### Name use case restrictions for the model.
-* Only tested for fraud detection in transactional data application
+* The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
 ### Has this been verified to have met prescribed quality standards?
 * No
 
@@ -148,21 +154,19 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 
 ## Model Card ++ Privacy Subcard
 
-
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
 
 * Neither
 
 ### Was consent obtained for any PII used?
-* Not Applicable
+* Not Applicable (Data is extracted from synthetically created credit card transaction,refer[3] for the source of data creation)
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
 
-* None of the Above
-
+* Not applicable
 
 ### How often is dataset reviewed?
-* Other: Not Applicable
+* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data
 * Yes
@@ -171,11 +175,10 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 
 ### Is data in dataset traceable?
 * No
-
 ### Scanned for malware?
-* Not applicable
+* No
 ### Are we able to identify and trace source of dataset?
-* Not applicable
+* Yes
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * Not applicable
