@@ -20,7 +20,7 @@
 #include "morpheus/export.h"
 #include "morpheus/objects/dtype.hpp"              // for DType, TypeId
 #include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
-#include "morpheus/types.hpp"                      // for ShapeType, TensorIndex
+#include "morpheus/types.hpp"                      // for ShapeType, TensorIndex, TensorSize
 
 #include <rmm/device_buffer.hpp>  // for device_buffer
 
@@ -58,7 +58,7 @@ class MORPHEUS_EXPORT DevMemInfo
                std::shared_ptr<MemoryDescriptor> md,
                ShapeType shape,
                ShapeType stride,
-               TensorIndex offset_bytes = 0);
+               TensorSize offset_bytes = 0);
 
     /**
      * @brief Construct a new DevMemInfo object from an existing `rmm::device_buffer`.
@@ -73,29 +73,29 @@ class MORPHEUS_EXPORT DevMemInfo
                DType dtype,
                ShapeType shape,
                ShapeType stride,
-               TensorIndex offset_bytes = 0);
+               TensorSize offset_bytes = 0);
     DevMemInfo(DevMemInfo&& other) = default;
 
     /**
      * @brief Return the number of bytes stored in the underlying buffer
      *
-     * @return TensorIndex
+     * @return TensorSize
      */
-    TensorIndex bytes() const;
+    TensorSize bytes() const;
 
     /**
      * @brief Return the element count stored in the underlying buffer
      *
-     * @return TensorIndex
+     * @return TensorSize
      */
-    TensorIndex count() const;
+    TensorSize count() const;
 
     /**
      * @brief Return the number of bytes offset from the head of the buffer
      *
-     * @return TensorIndex
+     * @return TensorSize
      */
-    TensorIndex offset_bytes() const;
+    TensorSize offset_bytes() const;
 
     /**
      * @brief Return the type of the data stored in the buffer
@@ -161,7 +161,7 @@ class MORPHEUS_EXPORT DevMemInfo
      * @param bytes
      * @return std::unique_ptr<rmm::device_buffer>
      */
-    std::unique_ptr<rmm::device_buffer> make_new_buffer(TensorIndex bytes) const;
+    std::unique_ptr<rmm::device_buffer> make_new_buffer(TensorSize bytes) const;
 
   private:
     // Pointer to the head of our data
@@ -175,7 +175,7 @@ class MORPHEUS_EXPORT DevMemInfo
     const ShapeType m_stride;
 
     // Offset from head of data in bytes
-    const TensorIndex m_offset_bytes;
+    const TensorSize m_offset_bytes;
 
     // Device resources used to allocate this memory
     std::shared_ptr<MemoryDescriptor> m_md;
