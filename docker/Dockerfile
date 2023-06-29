@@ -256,12 +256,6 @@ COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
 
-# remedy for CVE-2015-20107
-RUN find / -name '*mailcap*.*py*' -delete
-
-# remedy for CVE-2022-42919
-RUN find / -path '*multiprocessing/util.py' -exec sed -i 's/=\s*_platform_supports_abstract_sockets()/= False/g' {} +
-
 # Use morpheus by default
 CMD [ "morpheus" ]
 
