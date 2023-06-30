@@ -274,7 +274,7 @@ def test_payload_loader_module():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert control_msg.payload().df == df
+            assert control_msg.payload().df.equals(df)
 
         source = builder.make_source("source", gen_data)
 
@@ -386,7 +386,7 @@ def test_file_loader_module():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert control_msg.payload().df == df
+            assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
 
@@ -483,7 +483,7 @@ def test_rest_loader_module_get_without_params():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
 
@@ -521,6 +521,7 @@ def test_rest_loader_module_get_without_params():
     executor.start()
     executor.join()
     assert packets_received == 1
+
 
 def test_rest_loader_module_get_with_params():
     global packets_received
@@ -572,7 +573,7 @@ def test_rest_loader_module_get_with_params():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
 
@@ -615,7 +616,7 @@ def test_rest_loader_module_get_with_params():
 def test_rest_loader_module_post_with_body():
     global packets_received
     packets_received = 0
-    
+
     df1 = cudf.DataFrame(
         {
             "col1": [1, 2],
@@ -673,7 +674,7 @@ def test_rest_loader_module_post_with_body():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
 
@@ -716,7 +717,7 @@ def test_rest_loader_module_post_with_body():
 def test_rest_loader_module_x_headers():
     global packets_received
     packets_received = 0
-    
+
     df1 = cudf.DataFrame(
         {
             "col1": [1, 2],
@@ -768,7 +769,7 @@ def test_rest_loader_module_x_headers():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
 
@@ -809,14 +810,14 @@ def test_rest_loader_module_x_headers():
 
 
 if __name__ == "__main__":
-    # test_contains_namespace()
-    # test_is_version_compatible()
-    # test_get_module()
-    # test_payload_loader_module()
-    # test_file_loader_module()
+    test_contains_namespace()
+    test_is_version_compatible()
+    test_get_module()
+    test_payload_loader_module()
+    test_file_loader_module()
 
     # Flask service needed for testing RESTDataloader
-    test_rest_loader_module_get_without_params()
-    test_rest_loader_module_get_with_params()
-    test_rest_loader_module_post_with_body()
-    test_rest_loader_module_x_headers()
+    # test_rest_loader_module_get_without_params()
+    # test_rest_loader_module_get_with_params()
+    # test_rest_loader_module_post_with_body()
+    # test_rest_loader_module_x_headers()
