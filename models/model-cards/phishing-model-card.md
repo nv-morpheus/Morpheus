@@ -28,38 +28,60 @@ limitations under the License.
 * Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding https://arxiv.org/abs/1810.04805 <br> 
 
 ## Model Architecture: 
+
 **Architecture Type:** 
+
 * Transformers <br>
+
 **Network Architecture:** 
+
 * BERT <br>
 
 ## Input: (Enter "None" As Needed)
+
 **Input Format:** 
-* smsspamcollection.zip <br>
+
+* Evaluation script downloads the smsspamcollection.zip and extract tabular information into a dataframe <br>
+
 **Input Parameters:** 
+
 * SMS/emails <br>
+
 **Other Properties Related to Output:** 
+
 * N/A <br>
 
 ## Output: (Enter "None" As Needed)
+
 **Output Format:** 
+
 * Binary Results, Fraudulent or Benign <br>
+
 **Output Parameters:** 
+
 * N/A <br>
+
 **Other Properties Related to Output:** 
+
 * N/A <br> 
 
+
 ## Software Integration:
+
 **Runtime(s):** 
+
 * Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
+
 * Ampere/Turing <br>
 
 **Supported Operating System(s):** <br>
+
 * Linux <br>
 
 ## Model Version(s): 
+
 * v1  <br>
 
 # Training & Evaluation: 
@@ -67,24 +89,39 @@ limitations under the License.
 ## Training Dataset:
 
 **Link:**  
+
 * http://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+
 * Dataset consists of SMSs <br>
+
 **Dataset License:** 
-* N/A <br>
+
+* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
 
 ## Evaluation Dataset:
+
 **Link:** 
+
 * https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+
 * Dataset consists of SMSs <br>
+
 **Dataset License:** 
-* N/A <br>
+
+* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
 
 ## Inference:
+
 **Engine:** 
+
 * Triton <br>
+
 **Test Hardware:** <br>
+
 * Other  <br>
 
 # Subcards
@@ -105,11 +142,11 @@ limitations under the License.
 
 ### What is the language balance of the model validation data?
 
-* Not Applicable
+* English
 
 ### What is the geographic origin language balance of the model validation data?
 
-* Not Applicable
+* UK
 
 ### What is the educational background balance of the model validation data?
 
@@ -142,15 +179,15 @@ limitations under the License.
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is intended to be used for detecting malicious messages and trained with a small dataset. Other models need to be trained to cover other types of emails/messages.
+* The model is primarily designed for testing purposes and serves as a small pre-trained model specifically used to evaluate and validate the phishing detection pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 
 ### Fill in the blank for the model technique.
 
-* This model is intended for developers that want to build and/or customize phishing/spam detection models.
+* This model is designed for developers seeking to test the phishing detection pipeline with a small pre-trained model.
 
 ### Name who is intended to benefit from this model. 
 
-* This model is intended for users who use language models for phishing/spam detection
+* The intended beneficiaries of this model are developers who aim to test the performance and functionality of the phishing pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world phishing messages. 
 
 ### Describe the model output. 
 * This model output can be used as a binary result, Phishing/Spam or Benign 
@@ -171,11 +208,10 @@ limitations under the License.
 * N/A
 
 ### What training is recommended for developers working with this model?
-* None
+* Familiarity with the Morpheus SDK is recommended for developers working with this model.
 
 ### Link the relevant end user license agreement 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
-
 
 ## Model Card ++ Saftey & Security Subcard
 
@@ -186,17 +222,17 @@ limitations under the License.
 * No
 
 ### Describe physical safety impact (if present).
-* N/A
+* None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
 
 ### Name applications for the model.
 
-* Malicious message/email detection
+* The primary application for this model is testing the Morpheus phishing detection pipeline
 
 ### Name use case restrictions for the model.
-* Different models need to be trained for other types of messages/emails
+* This pretrained model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
 
 ### Has this been verified to have met prescribed quality standards?
 * No
@@ -214,7 +250,7 @@ limitations under the License.
 * No
 
 ### Are there access restrictions to systems, model, and data?
-* N/A
+* No
 
 ### Is there a digital signature?
 
@@ -233,7 +269,7 @@ limitations under the License.
 * N/A
 
 ### How often is dataset reviewed?
-* N/A
+* Unknown
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 
@@ -246,7 +282,7 @@ limitations under the License.
 * N/A
 
 ### Scanned for malware?
-* N/A
+* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A
