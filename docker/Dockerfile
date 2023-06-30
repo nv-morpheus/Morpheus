@@ -83,7 +83,6 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
-        git-lfs \
         jq \
         libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -116,9 +115,8 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base &&\
-    git lfs install
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
+    source activate base
     # conda clean -afy
 
 # ============ Stage: conda_env ============
@@ -258,9 +256,6 @@ COPY "./examples" "./examples"
 COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
-
-# remedy for CVE-2015-20107
-RUN find / -name '*mailcap*.*py*' -delete
 
 # Use morpheus by default
 CMD [ "morpheus" ]
