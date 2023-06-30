@@ -42,42 +42,54 @@ allow_local_mode = true
 
 ## Run Azure Production DFP Training and Inference Examples
 
+### Start Morpheus DFP pipeline container
+
+The following steps are taken from [Azure DFP pipeline example](../production/README.md). Run the followng commands to start the Morpheus container:
+
+Build the Morpheus container:
+
+```bash
+./docker/build_container_release.sh
+```
+
+Build `docker-compose` services:
+
+```
+cd examples/digital_fingerprinting/production
+export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
+docker-compose build
+```
+
+Create `bash` shell in `morpheus_pipeline` container:
+
+```bash
+docker-compose run morpheus_pipeline bash
+```
+
 ### Run Azure training pipeline
 
-Follow the instructions in [Azure DFP pipeline example](../production/README.md) to run training pipeline using `dfp_azure_pipeline.py`.
+Run the following in the container to train Azure models.
+
+```bash
+python dfp_azure_pipeline.py --log_level INFO --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
+```
 
 ### Run Azure inference pipeline:
 
 Run the inference pipeline with `filter_threshold=0.0`. This will disable the filtering of the inference results.
-```
-python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json" --filter_threshold=0.0 
+
+```bash
+python dfp_azure_pipeline.py --log_level INFO --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json" --filter_threshold=0.0 
 ```
 
 The inference results will be saved to `dfp_detection_azure.csv` in the directory where script was run.
 
 ## Run Grafana Docker Image
 
-Run the following commands to start Grafana:
+To start Grafana, run the following command on host in `examples/digital_fingerprinting/production`:
 
 ```
-cd examples/digital_fingerprinting
-```
-
-```
-DFP_HOME=${pwd}
-```
-
-```
-docker run \
--p 3000:3000 \
--v $DFP_HOME/grafana/config/grafana.ini:/etc/grafana/grafana.ini \
--v $DFP_HOME/grafana/config/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml \
--v $DFP_HOME/grafana/dashboards/:/var/lib/grafana/dashboards/ \
--v $DFP_HOME/grafana/datasources/:/etc/grafana/provisioning/datasources/ \
--v $DFP_HOME/production/morpheus:/workspace \
--e "GF_INSTALL_PLUGINS=marcusolsson-csv-datasource" \
---rm \
-grafana/grafana:10.0.0
+docker compose up grafana
 ```
 
 ## View DFP Dashboard
@@ -86,7 +98,7 @@ Our Grafana DFP dashboard can now be accessed via web browser at http://localhos
 
 Log in with admin/admin.
 
-Click on `DFP_Dashboard` in the `General` folder.
+Click on `DFP_Dashboard` in the `General` folder. You may need to expand the `General` folder to see the link.
 
 <img src="./img/screenshot.png">
 
