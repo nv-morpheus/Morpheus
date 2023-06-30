@@ -21,68 +21,106 @@ limitations under the License.
 # Model Overview
 
 ## Description:
+
 * Root cause analysis is a binary classifier differentiating between ordinary logs and errors/problems/root causes in the log files. <br>
 
 ## References(s):
+
 * Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding https://arxiv.org/abs/1810.04805 <br> 
 
 ## Model Architecture: 
+
 **Architecture Type:** 
+
 * Transformers <br>
+
 **Network Architecture:** 
+
 * BERT <br>
 
 ## Input: (Enter "None" As Needed)
+
 **Input Format:** 
+
 * CSV <br>
+
 **Input Parameters:** 
+
 * kern.log file contents <br>
+
 **Other Properties Related to Output:** 
+
 * N/A <br>
 
 ## Output: (Enter "None" As Needed)
+
 **Output Format:** 
+
 * Binary Results, Root Cause or Ordinary <br>
+
 **Output Parameters:** 
+
 * N/A <br>
+
 **Other Properties Related to Output:** 
+
 * N/A <br> 
 
 ## Software Integration:
+
 **Runtime(s):** 
+
 * Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
+
 * Ampere/Turing <br>
 
 **Supported Operating System(s):** <br>
+
 * Linux <br>
 
 ## Model Version(s): 
-* [v1]  <br>
+* v1  <br>
 
 # Training & Evaluation: 
 
 ## Training Dataset:
 
 **Link:** 
+
 * https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/training-data/root-cause-training-data.csv <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+
 * kern.log files from DGX machines <br>
-**Dataset License:** N/A <br>
+
+**Dataset License:** 
+
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Evaluation Dataset:
+
 **Link:** 
+
 * https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/validation-data/root-cause-validation-data-input.jsonlines  <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+
 * kern.log files from DGX machines <br>
+
 **Dataset License:** 
-* N/A <br>
+
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Inference:
+
 **Engine:** 
+
 * Triton <br>
+
 **Test Hardware:** <br>
+
 * Other  <br>
 
 # Subcards
@@ -140,15 +178,15 @@ limitations under the License.
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is an example of customized transformer-based root cause analysis. It can be further fine-tuned for specific root cause analysis or predictive maintenance needs and of your enterprise using the fine-tuning scripts in the repo. The hyper parameters can be optimised to adjust to get the best results with your dataset. The aim is to get the model to predict some false positives that could be previously unknown error types. Users can use this root cause analysis method with other log types too. If they have known failures in their logs, they can use them to train along with ordinary logs and can detect other root causes they weren't aware of before.
+* The model is primarily designed for testing purposes and serves as a small pre-trained model specifically used to evaluate and validate the Root Cause Analysis pipeline. This model is an example of customized transformer-based root cause analysis. It can be used for pipeline testing purposes. It needs to be re-trained for specific root cause analysis or predictive maintenance needs with the fine-tuning scripts in the repo. The hyperparameters can be optimised to adjust to get the best results with another dataset. The aim is to get the model to predict some false positives that could be previously unknown error types. Users can use this root cause analysis approach with other log types too. If they have known failures in their logs, they can use them to train along with ordinary logs and can detect other root causes they weren't aware of before.
 
 ### Fill in the blank for the model technique.
 
-* This model is intended for developers that want to build and/or customize root cause analysis models.
+* This model is designed for developers seeking to test the root cause analysis pipeline with a small pre-trained model trained on a very small `kern.log` file from a DGX.
 
 ### Name who is intended to benefit from this model. 
 
-* This model is intended for users who use language models for root cause analysis.
+* The intended beneficiaries of this model are developers who aim to test the functionality of the DFP pipeline using synthetic datasets
 
 ### Describe the model output. 
 * This model output can be used as a binary result, Root cause or Ordinary 
@@ -169,7 +207,7 @@ limitations under the License.
 * N/A
 
 ### What training is recommended for developers working with this model?
-* None
+* Familiarity with the Morpheus SDK is recommended for developers working with this model.
 
 ### Link the relevant end user license agreement 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
@@ -184,53 +222,63 @@ limitations under the License.
 * No
 
 ### Describe physical safety impact (if present).
-* N/A
+* None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
 
 ### Name applications for the model.
 
-* Root Cause Analysis, enabling predictive maintenance. 
+* The primary application for this model is testing the Morpheus pipeline.
 
 ### Name use case restrictions for the model.
-* Different models need to be trained for other types of logs
+
+* Different models need to be trained depending on the log types.
 
 ### Has this been verified to have met prescribed quality standards?
+
 * No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
+
 * N/A
 
 ### Technical robustness and model security validated?
+
 * No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
+
 * No
 
 ### Are there explicit model and dataset restrictions?
-* No
+
+* It is for pipeline testing purposes.
 
 ### Are there access restrictions to systems, model, and data?
-* N/A
+
+* No
 
 ### Is there a digital signature?
+
 * No
 
 ## Model Card ++ Privacy Subcard
 
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
+
 * Neither
 
 ### Was consent obtained for any PII used?
 * N/A
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
+
 * N/A
 
 ### How often is dataset reviewed?
-* N/A
+* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 
@@ -240,10 +288,10 @@ limitations under the License.
 * N/A
 
 ### Is data in dataset traceable?
-* N/A
+* Original raw logs are not saved. The small sample in the repo is saved for testing the pipeline. 
 
 ### Scanned for malware?
-* N/A
+* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A
