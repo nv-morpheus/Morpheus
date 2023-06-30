@@ -129,10 +129,9 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is designed for developers seeking to test the GNN fraud detection pipeline with a small pretrained model
+* The model is primarily designed for testing purposes and serves as a small pretrained model specifically used to evaluate and validate the GNN FSI pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
 ### Fill in the blank for the model technique.
-* This model is intended for developers that want to build and/or customize fraud detection applications using graph neural network.
-
+* This model is designed for developers seeking to test the GNN fraud detection pipeline with a small pretrained model on a synthetic dataset.
 ### Name who is intended to benefit from this model. 
 * The intended beneficiaries of this model are developers who aim to test the performance and functionality of the GNN fraud detection pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world transactions. 
 ### Describe the model output.
