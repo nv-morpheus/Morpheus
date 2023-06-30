@@ -129,13 +129,12 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is intended to be used for testing fraud detection use cases in morpheus pipeline using application of GNN.
+* This model is designed for developers seeking to test the GNN fraud detection pipeline with a small pretrained model
 ### Fill in the blank for the model technique.
 * This model is intended for developers that want to build and/or customize fraud detection applications using graph neural network.
 
 ### Name who is intended to benefit from this model. 
-* This model is intended for users that use transactional data to build fraud detection application.
-
+* The intended beneficiaries of this model are developers who aim to test the performance and functionality of the GNN fraud detection pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world transactions. 
 ### Describe the model output.
 * This model outputs fraud probability score b/n (0 & 1). 
 
@@ -155,7 +154,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 * None
 
 ### What training is recommended for developers working with this model?  If none, please state "none."
-* none
+* Familiarity with the Morpheus SDK is recommended for developers working with this model.
 ### Link the relevant end user license agreement 
 * [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/LICENSE)
 
