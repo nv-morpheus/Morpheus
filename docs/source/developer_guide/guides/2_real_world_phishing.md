@@ -16,6 +16,7 @@ limitations under the License.
 -->
 
 # Real-World Application: Phishing Detection
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_1_real_world_phishing` directory of the Morpheus repository.
 
 ## Data Preprocessing
 
@@ -648,6 +649,8 @@ Options:
 ```
 
 ## Defining a New Source Stage
+
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_2_rabbitmq` directory of the Morpheus repository.
 
 Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 

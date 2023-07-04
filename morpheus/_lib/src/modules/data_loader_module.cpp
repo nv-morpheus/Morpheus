@@ -88,7 +88,7 @@ DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _conf
     }
 }
 
-void DataLoaderModule::initialize(mrc::segment::Builder& builder)
+void DataLoaderModule::initialize(mrc::segment::IBuilder& builder)
 {
     auto loader_node = builder.make_node<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>(
         "input", rxcpp::operators::map([this](std::shared_ptr<ControlMessage> control_message) {

@@ -19,21 +19,16 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
+# pylint: disable=unused-import
 import morpheus.loaders  # noqa: F401
 import morpheus.modules  # noqa: F401
+# pylint: enable=unused-import
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
-from utils.dataset_manager import DatasetManager
-
-
-@pytest.fixture(scope="module")
-def filter_probs_df(dataset_cudf: DatasetManager):
-    filter_probs_df = dataset_cudf["filter_probs.csv"]
-    yield filter_probs_df
 
 
 def test_contains_namespace():
@@ -63,13 +58,14 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    module_instance = fn_constructor("ToControlMessageTest", config)  # noqa: F841 -- we don't need to use it
+    module_instance = fn_constructor("ToControlMessageTest", config)
+    assert isinstance(module_instance, mrc.core.segment.SegmentModule)
 
 
 @pytest.mark.use_cpp
-@pytest.mark.parametrize("dataframes, expected_count", [([filter_probs_df], 1),
-                                                        ([filter_probs_df, filter_probs_df], 2)])
-def test_to_control_message_module(config, dataframes, expected_count):
+@pytest.mark.parametrize("expected_count", [1, 2])
+def test_to_control_message_module(config, filter_probs_df, expected_count):
+    dataframes = [filter_probs_df for _ in range(expected_count)]
 
     pipe = Pipeline(config)
 

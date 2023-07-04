@@ -33,37 +33,42 @@ import requests
 KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
                                                                            'morpheus_output_topic')
 
+# pylint: disable=invalid-name
 zookeeper_proc = None
 kafka_server = None
 kafka_consumer = None
 pytest_kafka_setup_error = None
+# pylint: enable=invalid-name
+
+# Don't let pylint complain about pytest fixtures
+# pylint: disable=redefined-outer-name,unused-argument
 
 
 def init_pytest_kafka():
     """
-    pytest_kafka is currently required to be installed manually, along with a download of Kafka and a functional JDK.
     Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-
-    Issue #9 should make the instalation of Kafka simpler:
-    https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
     """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error
+    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
     try:
         import pytest_kafka
         os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
         # Initialize pytest_kafka fixtures following the recomendations in:
         # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-        KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
-        ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
+        kafka_scripts = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
+        if not os.path.exists(kafka_scripts):
+            # check the old location
+            kafka_scripts = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
 
-        for kafka_script in (KAFKA_BIN, ZOOKEEPER_BIN):
+        kafka_bin = os.path.join(kafka_scripts, 'kafka-server-start.sh')
+        zookeeper_bin = os.path.join(kafka_scripts, 'zookeeper-server-start.sh')
+
+        for kafka_script in (kafka_bin, zookeeper_bin):
             if not os.path.exists(kafka_script):
-                raise RuntimeError("Required Kafka script not found: {}".format(kafka_script))
+                raise RuntimeError(f"Required Kafka script not found: {kafka_script}")
 
         teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
+        zookeeper_proc = pytest_kafka.make_zookeeper_process(zookeeper_bin, teardown_fn=teardown_fn)
+        kafka_server = pytest_kafka.make_kafka_server(kafka_bin, 'zookeeper_proc', teardown_fn=teardown_fn)
         kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
                                                           group_id='morpheus_unittest_reader',
                                                           client_id='morpheus_unittest_reader',
@@ -76,7 +81,7 @@ def init_pytest_kafka():
         return False
 
 
-pytest_kafka_avail = init_pytest_kafka()
+PYTEST_KAFKA_AVAIL = init_pytest_kafka()
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -190,9 +195,8 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     To support old unittest style tests, try to determine the mark from the name
     """
 
-    if config.getoption("--run_kafka") and not pytest_kafka_avail:
-        raise RuntimeError(
-            "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
+    if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {pytest_kafka_setup_error}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
@@ -220,8 +224,8 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
 
 def clear_handlers(logger):
     handlers = logger.handlers.copy()
-    for h in handlers:
-        logger.removeHandler(h)
+    for handler in handlers:
+        logger.removeHandler(handler)
 
 
 @pytest.hookimpl(trylast=True)
@@ -245,12 +249,11 @@ def _set_use_cpp(request: pytest.FixtureRequest):
         use_python = request.node.get_closest_marker("use_python") is not None
 
         if (use_cpp and use_python):
-            raise RuntimeError(
-                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
-                format(request.node.nodeid))
-        else:
-            # This will default to True or follow use_cpp
-            do_use_cpp = not use_python
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to True or follow use_cpp
+        do_use_cpp = not use_python
 
     from morpheus.config import CppConfig
 
@@ -313,12 +316,11 @@ def df_type(request: pytest.FixtureRequest):
         use_cudf = request.node.get_closest_marker("use_cudf") is not None
 
         if (use_pandas and use_cudf):
-            raise RuntimeError(
-                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
-                format(request.node.nodeid))
-        else:
-            # This will default to "cudf" or follow use_pandas
-            df_type_str = "cudf" if not use_pandas else "pandas"
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to "cudf" or follow use_pandas
+        df_type_str = "cudf" if not use_pandas else "pandas"
 
     yield df_type_str
 
@@ -355,7 +357,7 @@ def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
     Used by tests that require both an input and an output topic
     """
     kafka_port = kafka_server[1]
-    yield "localhost:{}".format(kafka_port)
+    yield f"localhost:{kafka_port}"
 
 
 @pytest.fixture(scope="function")
@@ -491,22 +493,22 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
     cur_time = start_time
     end_time = start_time + timeout
 
-    url = "http://{}:{}/ping".format(host, port)
+    url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
         timeout_epoch = min(cur_time + 1.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
-            r = requests.get(url, timeout=request_timeout)
+            resp = requests.get(url, timeout=request_timeout)
 
-            if (r.status_code == 200):
-                if (r.json()['message'] == 'I am alive.'):
+            if (resp.status_code == 200):
+                if (resp.json()['message'] == 'I am alive.'):
                     return True
-                else:
-                    warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. "
-                                   "Continuing to wait. Response JSON:\n%s"),
-                                  r.json())
+
+                warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
+                               "Response JSON:\n%s"),
+                              resp.json())
 
         except Exception:
             pass
@@ -568,19 +570,22 @@ def _camouflage_is_running():
     if launch_camouflage:
         popen = None
         try:
+            # pylint: disable=subprocess-popen-preexec-fn,consider-using-with
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
                                      stderr=subprocess.DEVNULL,
                                      stdout=subprocess.DEVNULL,
                                      preexec_fn=_set_pdeathsig(signal.SIGTERM))
+            # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
             if not wait_for_camouflage(timeout=startup_timeout):
 
                 if popen.poll() is not None:
-                    raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                        popen.poll(), os.path.join(root_dir, 'camouflage.log')))
+                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                    raise RuntimeError(
+                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
 
                 raise RuntimeError("Failed to launch camouflage server")
 
@@ -593,7 +598,7 @@ def _camouflage_is_running():
             raise
         finally:
             if popen is not None:
-                logger.info("Killing camouflage with pid {}".format(popen.pid))
+                logger.info("Killing camouflage with pid %s", popen.pid)
 
                 elapsed_time = 0.0
                 sleep_time = 0.1
@@ -627,9 +632,9 @@ def launch_mock_triton(_camouflage_is_running):
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
     if _camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
-        r = requests.post("http://localhost:8000/reset", timeout=2.0)
+        resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
-        assert r.ok, "Failed to reset Camouflage server state"
+        assert resp.ok, "Failed to reset Camouflage server state"
 
     yield
 
@@ -640,8 +645,6 @@ def configure_tests_logging(pytestconfig: pytest.Config):
     Sets the base logging settings for the entire test suite to ensure logs are generated. Automatically detects if a
     debugger is attached and lowers the logging level to DEBUG.
     """
-    import sys
-
     from morpheus.utils.logger import configure_logging
 
     log_level = logging.WARNING
@@ -775,9 +778,7 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
     ...
     # This test will run once for each dataframe type, with C++ disabled both times
     @pytest.mark.use_python
-    def test something(dataset: DatasetManager):
-    ...
-    # This test will run twice with C++ mode enabled/disabled, using cudf dataframes both times
+    import sysdf dataframes both times
     @pytest.mark.use_cudf
     def test something(use_cpp: bool, dataset: DatasetManager):
     ...

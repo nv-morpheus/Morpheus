@@ -38,7 +38,7 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
     DataLoaderModule(std::string module_name, nlohmann::json _config);
 
   protected:
-    void initialize(mrc::segment::Builder& builder) override;
+    void initialize(mrc::segment::IBuilder& builder) override;
     std::string module_type_name() const override;
 
   private:

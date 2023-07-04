@@ -90,7 +90,6 @@ class PreallocatorMixin(ABC):
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         (out_stream, out_type) = out_pair
         pretty_type = pretty_print_type_name(out_type)
-        logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_type))
 
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
@@ -112,8 +111,8 @@ class PreallocatorMixin(ABC):
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 stream = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:
-                msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
-                       " isn't a supported type".format(pretty_type))
+                msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type "
+                       f"{pretty_type} isn't a supported type")
                 raise RuntimeError(msg)
 
             builder.make_edge(out_stream, stream)
