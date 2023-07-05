@@ -269,8 +269,8 @@ class Pipeline():
             # Finally, execute the link phase (only necessary for circular pipelines)
             # for s in source_and_stages:
             for stage in segment_graph.nodes():
-                for port in stage.input_ports:
-                    port.link()
+                for port in typing.cast(StreamWrapper, stage).input_ports:
+                    port.link(builder=builder)
 
             logger.info("====Building Segment Complete!====")
 

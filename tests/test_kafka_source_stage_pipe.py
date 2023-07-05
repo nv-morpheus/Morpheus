@@ -61,6 +61,38 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.kafka
+def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str) -> None:
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
+
+    topic_1 = "morpheus_input_topic_1"
+    topic_2 = "morpheus_input_topic_2"
+
+    input_topics = [topic_1, topic_2]
+
+    # Fill our topic_1 and topic_2 with the input data
+    topic_1_records = write_file_to_kafka(kafka_bootstrap_servers, topic_1, input_file)
+    topic_2_records = write_file_to_kafka(kafka_bootstrap_servers, topic_2, input_file)
+
+    num_records = topic_1_records + topic_2_records
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(
+        KafkaSourceStage(config,
+                         bootstrap_servers=kafka_bootstrap_servers,
+                         input_topic=input_topics,
+                         auto_offset_reset="earliest",
+                         poll_interval="1seconds",
+                         client_id='test_multi_topic_kafka_source_stage_pipe',
+                         stop_after=num_records))
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(SerializeStage(config))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, [input_file, input_file]))
+    pipe.run()
+
+    assert_results(comp_stage.get_results())
+
+
 class OffsetChecker(SinglePortStage):
     """
     Verifies that the kafka offsets are being updated as a way of verifying that the
@@ -70,7 +102,7 @@ class OffsetChecker(SinglePortStage):
     def __init__(self, c: Config, bootstrap_servers: str, group_id: str):
         super().__init__(c)
 
-        # importing here so that running without the --run_kafka flag won't fail due
+        # Importing here so that running without the --run_kafka flag won't fail due
         # to not having the kafka libs installed
         from kafka import KafkaAdminClient
 

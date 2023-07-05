@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Validate pipeline output for testing."""
 
 import json
 import logging
@@ -74,11 +75,13 @@ class ValidationStage(CompareDataFrameStage):
         results_file_name: str = None,
         overwrite: bool = False,
         include: typing.List[str] = None,
-        exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
+        exclude: typing.List[str] = None,
         index_col: str = None,
         abs_tol: float = 0.001,
         rel_tol: float = 0.005,
     ):
+        if exclude is None:
+            exclude = [r'^ID$', r'^_ts_']
 
         super().__init__(c,
                          compare_df=val_file_name,
@@ -94,12 +97,12 @@ class ValidationStage(CompareDataFrameStage):
             if (overwrite):
                 os.remove(self._results_file_name)
             else:
-                raise FileExistsError(
-                    "Cannot output validation results to '{}'. File exists and overwrite = False".format(
-                        self._results_file_name))
+                raise FileExistsError(f"Cannot output validation results to '{self._results_file_name}'. "
+                                      "File exists and overwrite = False")
 
     @property
     def name(self) -> str:
+        """Unique name for this stage."""
         return "validation"
 
     def accepted_types(self) -> typing.Tuple:
@@ -117,7 +120,7 @@ class ValidationStage(CompareDataFrameStage):
     def _do_comparison(self):
         results = self.get_results(clear=False)
         if (len(results) and self._results_file_name is not None):
-            with open(self._results_file_name, "w") as f:
+            with open(self._results_file_name, "w", encoding='UTF-8') as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:

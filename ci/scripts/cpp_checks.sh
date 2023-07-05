@@ -80,10 +80,23 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    # Include What You Use
    if [[ "${SKIP_IWYU}" == "" ]]; then
-      IWYU_DIRS="morpheus"
+      # Remove .h, .hpp, and .cu files from the modified list
+      shopt -s extglob
+      IWYU_MODIFIED_FILES=( "${MORPHEUS_MODIFIED_FILES[@]/*.@(h|hpp|cu)/}" )
+
+      # Get the list of compiled files relative to this directory
+      WORKING_PREFIX="${PWD}/"
+      COMPILED_FILES=( $(jq -r .[].file ${BUILD_DIR}/compile_commands.json | sort -u ) )
+      COMPILED_FILES=( "${COMPILED_FILES[@]/#$WORKING_PREFIX/}" )
+      COMBINED_FILES=("${COMPILED_FILES[@]}")
+      COMBINED_FILES+=("${IWYU_MODIFIED_FILES[@]}")
+
+      # Find the intersection between compiled files and modified files
+      IWYU_MODIFIED_FILES=( $(printf '%s\0' "${COMBINED_FILES[@]}" | sort -z | uniq -d -z | xargs -0n1) )
       NUM_PROC=$(get_num_proc)
-      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_DIRS} 2>&1`
+      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
       IWYU_RETVAL=$?
+
    fi
 else
    echo "No modified C++ files to check"

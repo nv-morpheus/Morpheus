@@ -54,6 +54,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
+from morpheus.utils.file_utils import load_labels_file
 from utils import TEST_DIRS
 from utils.stages.conv_msg import ConvMsg
 
@@ -79,6 +80,10 @@ KAFKA_BOOTS = ['--bootstrap_servers', 'kserv1:123,kserv2:321']
 FROM_KAFKA_ARGS = ['from-kafka', '--input_topic', 'test_topic'] + KAFKA_BOOTS
 TO_KAFKA_ARGS = ['to-kafka', '--output_topic', 'test_topic'] + KAFKA_BOOTS
 
+# Pylint doesn't understand how pytest fixtures work and flags fixture uasage as a redefinition of the symbol in the
+# outer scope.
+# pylint: disable=redefined-outer-name
+
 
 # Fixtures specific to the cli tests
 @pytest.fixture(scope="function")
@@ -89,7 +94,7 @@ def callback_values(request: pytest.FixtureRequest):
     without actually running it. When run the callback will update the
     `callback_values` dictionary with the context, pipeline & stages constructed.
     """
-    cv = {}
+    callback_values_ = {}
 
     marker = request.node.get_closest_marker("replace_callback")
     group_name = marker.args[0]
@@ -97,17 +102,17 @@ def callback_values(request: pytest.FixtureRequest):
 
     @group.result_callback(replace=True)
     @click.pass_context
-    def mock_post_callback(ctx, stages, *a, **k):
-        cv.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
+    def mock_post_callback(ctx, stages, *a, **k):  # pylint: disable=unused-argument
+        callback_values_.update({'ctx': ctx, 'stages': stages, 'pipe': ctx.obj["pipeline"]})
         ctx.exit(47)
 
-    return cv
+    return callback_values_
 
 
 @pytest.fixture(scope="function")
 def mlflow_uri(tmp_path):
     experiment_name = "Morpheus"
-    uri = "file://{}".format(tmp_path)
+    uri = f"file://{tmp_path}"
     mlflow.set_tracking_uri(uri)
     mlflow.create_experiment(experiment_name)
     experiment = mlflow.get_experiment_by_name(experiment_name)
@@ -124,16 +129,9 @@ def mlflow_uri(tmp_path):
 
 
 @pytest.mark.reload_modules(commands)
-@pytest.mark.usefixtures("reload_modules")
+@pytest.mark.usefixtures("chdir_tmpdir", "reload_modules")
 @pytest.mark.use_python
 class TestCLI:
-
-    def _read_data_file(self, data_file):
-        """
-        Used to read in labels and columns files
-        """
-        with open(data_file) as fh:
-            return [line.strip() for line in fh]
 
     def test_help(self):
         runner = CliRunner()
@@ -159,7 +157,6 @@ class TestCLI:
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
@@ -204,7 +201,7 @@ class TestCLI:
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
@@ -250,7 +247,7 @@ class TestCLI:
         assert to_file._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_all(self, config, callback_values, tmp_path):
+    def test_pipeline_ae_all(self, callback_values):
         """
         Attempt to add all possible stages to the pipeline_ae, even if the pipeline doesn't
         actually make sense, just test that cli could assemble it
@@ -347,14 +344,14 @@ class TestCLI:
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil(self, config, callback_values, tmp_path):
+    def test_pipeline_fil(self, config, callback_values):
         """
         Creates a pipeline roughly matching that of the abp validation test
         """
-        args = (GENERAL_ARGS + ['pipeline-fil'] + FILE_SRC_ARGS + ['deserialize', 'preprocess'] + INF_TRITON_ARGS +
-                MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+        args = (GENERAL_ARGS + ['pipeline-fil', '--columns_file=data/columns_fil.txt'] + FILE_SRC_ARGS +
+                ['deserialize', 'preprocess'] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -366,7 +363,7 @@ class TestCLI:
         assert config.mode == PipelineModes.FIL
         assert config.class_labels == ["mining"]
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
+        expected_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
         assert config.fil.feature_columns == expected_columns
 
         assert config.ae is None
@@ -416,30 +413,31 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w') as fh:
+        with open(tmp_model, 'w', encoding='UTF-8') as fh:
             pass
 
         labels_file = os.path.join(tmp_path, 'labels.txt')
-        with open(labels_file, 'w') as fh:
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
-        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file] + FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
-            'deserialize',
-            'filter',
-            'dropna',
-            '--column',
-            'xyz',
-            'preprocess',
-            'add-scores',
-            'unittest-conv-msg',
-            'inf-identity',
-            'inf-pytorch',
-            '--model_filename',
-            tmp_model,
-            'mlflow-drift',
-            '--tracking_uri',
-            mlflow_uri
-        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
+        args = (GENERAL_ARGS + ['pipeline-fil', '--labels_file', labels_file, '--columns_file=data/columns_fil.txt'] +
+                FILE_SRC_ARGS + FROM_KAFKA_ARGS + [
+                    'deserialize',
+                    'filter',
+                    'dropna',
+                    '--column',
+                    'xyz',
+                    'preprocess',
+                    'add-scores',
+                    'unittest-conv-msg',
+                    'inf-identity',
+                    'inf-pytorch',
+                    '--model_filename',
+                    tmp_model,
+                    'mlflow-drift',
+                    '--tracking_uri',
+                    mlflow_uri
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS +
                 TO_KAFKA_ARGS)
 
         obj = {}
@@ -487,7 +485,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
@@ -542,11 +540,11 @@ class TestCLI:
         Test parsing of CLI flags for C++ enum values issue #675
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w'):
+        with open(tmp_model, 'w', encoding='UTF-8'):
             pass
 
         labels_file = os.path.join(tmp_path, 'labels.txt')
-        with open(labels_file, 'w') as fh:
+        with open(labels_file, 'w', encoding='UTF-8') as fh:
             fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
         file_src_args = FILE_SRC_ARGS[:]
@@ -621,7 +619,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
         assert from_kafka._consumer_params['auto.offset.reset'] == 'earliest'
 
         assert isinstance(deserialize, DeserializeStage)
@@ -672,7 +670,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp(self, config, callback_values):
         """
         Build a pipeline roughly ressembles the phishing validation script
         """
@@ -756,7 +754,7 @@ class TestCLI:
         actually make sense, just test that cli could assemble it
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
-        with open(tmp_model, 'w'):
+        with open(tmp_model, 'w', encoding='UTF-8'):
             pass
 
         labels_file = os.path.join(TEST_DIRS.data_dir, 'labels_phishing.txt')
@@ -831,7 +829,7 @@ class TestCLI:
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
-        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._topics == ['test_topic']
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
@@ -886,7 +884,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_alias(self, config, callback_values, tmp_path):
+    def test_pipeline_alias(self, config, callback_values):  # pylint: disable=unused-argument
         """
         Verify that pipeline implies pipeline-nlp
         """
@@ -901,9 +899,8 @@ class TestCLI:
         # Ensure our config is populated correctly
         assert config.mode == PipelineModes.NLP
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp_relative_paths(self, config, callback_values, tmp_path):
+    def test_pipeline_nlp_relative_paths(self, config, callback_values):
         """
         Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
@@ -919,7 +916,7 @@ class TestCLI:
         result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
-        expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
+        expected_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
 
         # Ensure our config is populated correctly
         config = obj["config"]
@@ -927,11 +924,11 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_name
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
         """
@@ -952,7 +949,7 @@ class TestCLI:
         test_labels = ["label1", "label2", "label3"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         args = (GENERAL_ARGS + ['pipeline-nlp', f"--labels_file={labels_file}"] + FILE_SRC_ARGS +
@@ -970,13 +967,14 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_local
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
+    # pylint: disable=unused-argument
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_pipeline_fil_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_fil_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
@@ -993,14 +991,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
         test_columns = [f"column{i}" for i in range(29)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + ['pipeline-fil', f"--labels_file={labels_file}", f"--columns_file={columns_file}"] +
@@ -1018,9 +1016,9 @@ class TestCLI:
 
         assert config.fil.feature_columns == test_columns
 
-    @pytest.mark.usefixtures("chdir_tmpdir")
+    # pylint: disable=unused-argument
     @pytest.mark.replace_callback('pipeline_ae')
-    def test_pipeline_ae_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+    def test_pipeline_ae_relative_path_precedence(self, config: Config, tmp_path: str, callback_values: dict):
         """
         Ensure that relative paths are choosen over the morpheus data directory paths
         """
@@ -1037,14 +1035,14 @@ class TestCLI:
         test_labels = ["label1"]
 
         # Overwrite the copied labels
-        with open(labels_file_local, mode="w") as f:
+        with open(labels_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
         test_columns = [f"column{i}" for i in range(33)]
 
         # Overwrite the copied labels
-        with open(columns_file_local, mode="w") as f:
+        with open(columns_file_local, mode="w", encoding='UTF-8') as f:
             f.writelines("\n".join(test_columns))
 
         args = (GENERAL_ARGS + [

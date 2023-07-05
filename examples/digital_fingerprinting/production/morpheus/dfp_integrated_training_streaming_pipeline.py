@@ -32,7 +32,7 @@ from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.stages.general.multiport_modules_stage import MultiPortModulesStage
+from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.control_message_kafka_source_stage import ControlMessageKafkaSourceStage
 
 
@@ -106,7 +106,11 @@ from morpheus.stages.input.control_message_kafka_source_stage import ControlMess
               default="localhost:9092",
               required=True,
               help=("Comma-separated list of bootstrap servers."))
-@click.option('--input_topic', type=str, default="test_cm", required=True, help="Kafka topic to read from")
+@click.option('--input_topic',
+              type=str,
+              default=["test_cm"],
+              multiple=True,
+              help="Topic(s) to consume message(s) from.")
 @click.option('--group_id', type=str, default="morpheus", required=True, help="")
 @click.option('--poll_interval',
               type=str,
@@ -169,8 +173,6 @@ def run_pipeline(source: str,
 
     dfp_deployment_module_config = config_generator.get_module_conf()
 
-    num_output_ports = dfp_deployment_module_config.get("num_output_ports")
-
     #                                     +--------------------------------------+
     #                                     |  control_message_kafka_source_stage  |
     #                                     +--------------------------------------+
@@ -200,53 +202,53 @@ def run_pipeline(source: str,
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |           preproc_module            |   |    |    |           preproc_module             |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |     dfp_rolling_window_module       |   |    |    |      dfp_rolling_window_module      |    |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |        dfp_data_prep_module         |   |    |    |         dfp_data_prep_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |        dfp_training_module          |   |    |    |         dfp_inference_module         |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |         dfp_monitor_module          |   |    |    |           dfp_monitor_module        |    |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |       mlflow_model_writer_module    |   |    |    |        filter_detections_module      |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |   |                        |                       |    |                          |                    |   |
-    # |   |                        v                       |    |                          v                    |   |
+    # |   |                        |                       |    |                        |                      |   |
+    # |   |                        v                       |    |                        v                      |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
     # |   |      |          dfp_monitor_module         |   |    |    |        dfp_post_proc_module          |   |   |
     # |   |      +-------------------------------------+   |    |    + -------------------------------------+   |   |
-    # |    ------------------------------------------------     |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |    ------------------------------------------------     |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |          serialize_module           |    |   |
     # |                                                         |    +-------------------------------------+    |   |
-    # |                                                         |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |                                                         |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |      write_to_file_module           |    |   |
     # |                                                         |    +-------------------------------------+    |   |
-    # |                                                         |                     |                         |   |
-    # |                                                         |                     v                         |   |
+    # |                                                         |                        |                      |   |
+    # |                                                         |                        v                      |   |
     # |                                                         |    +-------------------------------------+    |   |
     # |                                                         |    |          dfp_monitor_module         |    |   |
     # |                                                         |    +-------------------------------------+    |   |
@@ -259,7 +261,7 @@ def run_pipeline(source: str,
     source_stage = pipeline.add_stage(
         ControlMessageKafkaSourceStage(config,
                                        bootstrap_servers=kwargs["bootstrap_servers"],
-                                       input_topic=kwargs["input_topic"],
+                                       input_topic=list(kwargs["input_topic"]),
                                        group_id=kwargs["group_id"],
                                        poll_interval=kwargs["poll_interval"],
                                        disable_commit=kwargs["disable_commit"],
@@ -268,9 +270,8 @@ def run_pipeline(source: str,
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModulesStage(config,
                               dfp_deployment_module_config,
-                              input_port_name="input",
-                              output_port_name_prefix="output",
-                              num_output_ports=num_output_ports))
+                              input_ports=["input"],
+                              output_ports=["output_0", "output_1"]))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 

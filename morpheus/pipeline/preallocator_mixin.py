@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Mixin used by stages which are emitting newly constructed DataFrame or MessageMeta instances into the segment."""
 
 import logging
 from abc import ABC
@@ -30,6 +31,7 @@ from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
@@ -54,7 +56,7 @@ class PreallocatorMixin(ABC):
         """
         self._needed_columns = needed_columns
 
-    def _preallocate_df(self, df):
+    def _preallocate_df(self, df: DataFrameType) -> DataFrameType:
         missing_columns = [col for col in self._needed_columns.keys() if col not in df.columns]
         if len(missing_columns) > 0:
             if isinstance(df, cudf.DataFrame):
@@ -72,20 +74,21 @@ class PreallocatorMixin(ABC):
                 else:
                     df[column_name] = ''
 
-    def _preallocate_meta(self, msg: MessageMeta):
+        return df
+
+    def _preallocate_meta(self, msg: MessageMeta) -> MessageMeta:
         with msg.mutable_dataframe() as df:
             self._preallocate_df(df)
 
         return msg
 
-    def _preallocate_multi(self, msg: MultiMessage):
+    def _preallocate_multi(self, msg: MultiMessage) -> MultiMessage:
         self._preallocate_meta(msg.meta)
         return msg
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         (out_stream, out_type) = out_pair
         pretty_type = pretty_print_type_name(out_type)
-        logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_type))
 
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
@@ -107,8 +110,8 @@ class PreallocatorMixin(ABC):
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 stream = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:
-                msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
-                       " isn't a supported type".format(pretty_type))
+                msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type "
+                       f"{pretty_type} isn't a supported type")
                 raise RuntimeError(msg)
 
             builder.make_edge(out_stream, stream)
