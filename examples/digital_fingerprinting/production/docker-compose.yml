@@ -136,6 +136,19 @@ services:
     cap_add:
       - sys_nice
 
+  grafana:
+    image: grafana/grafana:10.0.0
+    environment:
+      GF_INSTALL_PLUGINS: "marcusolsson-csv-datasource"
+    volumes:
+      - ./grafana/config/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/config/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
+      - ./grafana/datasources/:/etc/grafana/provisioning/datasources/
+      - ./morpheus:/workspace
+    ports:
+      - "3000:3000"
+
 networks:
   frontend:
     driver: bridge
