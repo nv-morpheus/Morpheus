@@ -44,7 +44,7 @@ def check_all_messages():
 
     # UserMessageMeta doesn't contain a C++ impl, so we should
     # always received the python impl
-    check_message(messages.UserMessageMeta, *(None, None))
+    check_message(messages.UserMessageMeta, *(df, ), user_id=0)
 
     check_message(messages.MultiMessage,
                   **{"meta": messages.MessageMeta(df)})

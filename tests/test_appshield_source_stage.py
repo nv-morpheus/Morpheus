@@ -278,32 +278,40 @@ def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns,
 @pytest.mark.parametrize(
     'input_df_per_source',
     [{
-        'appshield': [
-            pd.DataFrame({
-                'PID':
-                    pd.Series(['304', '304', '444', '350', '360', '563'], index=[0, 1, 3, 0, 1, 3]),
-                'Process':
-                    pd.Series(['smss.exe', 'smss.exe', 'csrss.exe', 'smss.exe', 'smss.exe', 'csrss.exe'],
-                              index=[0, 1, 3, 0, 1, 3]),
-                'source':
-                    pd.Series(['appshield', 'appshield', 'appshield', 'appshield', 'appshield', 'appshield'],
-                              index=[0, 1, 3, 0, 1, 3])
-            }),
-        ],
-        'appshield-v2': [
-            pd.DataFrame({
-                'PID':
-                    pd.Series(['304', '304', '444', '350', '360', '563'], index=[0, 1, 3, 0, 1, 3]),
-                'Process':
-                    pd.Series(['smss.exe', 'smss.exe', 'csrss.exe', 'smss.exe', 'smss.exe', 'csrss.exe'],
-                              index=[0, 1, 3, 0, 1, 3]),
-                'source':
-                    pd.Series([
-                        'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2'
-                    ],
-                              index=[0, 1, 3, 0, 1, 3])
-            }),
-        ]
+        'appshield': pd.DataFrame({
+            'PID':
+                pd.Series(
+                    ['304', '304', '444', '350', '360', '563'],
+                    index=[0, 1, 3, 0, 1, 3]
+                ),
+            'Process':
+                pd.Series(
+                    ['smss.exe', 'smss.exe', 'csrss.exe', 'smss.exe', 'smss.exe', 'csrss.exe'],
+                    index=[0, 1, 3, 0, 1, 3]
+                ),
+            'source':
+                pd.Series(
+                    ['appshield', 'appshield', 'appshield', 'appshield', 'appshield', 'appshield'],
+                    index=[0, 1, 3, 0, 1, 3]
+                )
+        }),
+        'appshield-v2': pd.DataFrame({
+            'PID':
+                pd.Series(
+                    ['304', '304', '444', '350', '360', '563'],
+                    index=[0, 1, 3, 0, 1, 3]
+                ),
+            'Process':
+                pd.Series(
+                    ['smss.exe', 'smss.exe', 'csrss.exe', 'smss.exe', 'smss.exe', 'csrss.exe'],
+                    index=[0, 1, 3, 0, 1, 3]
+                ),
+            'source':
+                pd.Series(
+                    ['appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2', 'appshield-v2'],
+                    index=[0, 1, 3, 0, 1, 3]
+                )
+        }),
     }])
 def test_build_metadata(input_df_per_source):
     appshield_message_metas = AppShieldSourceStage._build_metadata(input_df_per_source)
