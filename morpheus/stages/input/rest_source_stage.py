@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Source stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint."""
 
 import logging
 import os
@@ -107,9 +108,11 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
+        """Unique name of the stage."""
         return "from-rest"
 
     def supports_cpp_node(self) -> bool:
+        """Indicates whether or not this stage supports C++ nodes."""
         return True
 
     def _parse_payload(self, payload: str) -> typing.Tuple[int, str]:

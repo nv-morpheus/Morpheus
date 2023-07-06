@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Write all messages to a REST endpoint."""
 
 import logging
 import typing
@@ -185,6 +186,7 @@ class WriteToRestStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Unique name of the stage."""
         return "to-rest"
 
     def accepted_types(self) -> typing.Tuple:
@@ -200,6 +202,7 @@ class WriteToRestStage(SinglePortStage):
         return (MessageMeta, )
 
     def supports_cpp_node(self):
+        """Indicates whether this stage supports CPP nodes."""
         return False
 
     def _df_to_url(self, df: DataFrameType) -> str:

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Source stage that polls a remote HTTP server for incoming data."""
 
 import logging
 import time
@@ -138,9 +139,11 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
+        """Unique name of the stage"""
         return "from-rest-client"
 
     def supports_cpp_node(self) -> bool:
+        """Indicates whether or not this stage supports a C++ implementation"""
         return False
 
     def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:

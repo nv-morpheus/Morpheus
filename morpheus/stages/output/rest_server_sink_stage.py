@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Sink stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint."""
 
 import logging
 import os
@@ -42,7 +43,10 @@ logger = logging.getLogger(__name__)
 @register_stage("to-rest-server", ignore_args=["df_serializer_fn"])
 class RestServerSinkStage(SinglePortStage):
     """
-    Write all messages to a REST endpoint.
+    Sink stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint.
+
+    Incoming messages are queued up to `max_queue_size`, when an HTTP client makes a request messages are read from the
+    queue up to `max_rows_per_response` and returned.
 
     Parameters
     ----------
@@ -118,6 +122,7 @@ class RestServerSinkStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Unique stage name."""
         return "to-rest-server"
 
     def accepted_types(self) -> typing.Tuple:
@@ -133,9 +138,11 @@ class RestServerSinkStage(SinglePortStage):
         return (MessageMeta, )
 
     def supports_cpp_node(self):
+        """Indicates whether or not this stage supports a C++ node."""
         return False
 
     def on_start(self):
+        """Starts the REST server."""
         from morpheus.common import RestServer
         self._server = RestServer(parse_fn=self._request_handler,
                                   bind_address=self._bind_address,
