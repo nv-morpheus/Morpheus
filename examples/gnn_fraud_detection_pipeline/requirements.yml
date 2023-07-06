@@ -19,7 +19,7 @@ channels:
     - conda-forge
 dependencies:
     - chardet=5.0.0
-    - cuml=23.02
+    - cuml=23.06
     - dask==2023.1.1
     - distributed==2023.1.1
     - pip
