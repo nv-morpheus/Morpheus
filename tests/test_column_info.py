@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cudf
 import io
 import json
 import os
@@ -24,16 +25,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import cudf
-
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.schema_transforms import process_dataframe
 from utils import TEST_DIRS
 
 

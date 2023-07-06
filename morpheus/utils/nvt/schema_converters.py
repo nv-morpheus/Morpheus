@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cudf
 import dataclasses
 import typing
 from functools import partial
@@ -19,12 +20,11 @@ from functools import partial
 import networkx as nx
 import nvtabular as nvt
 import pandas as pd
+
 from merlin.dag import ColumnSelector
 from nvtabular.ops import Filter
 from nvtabular.ops import LambdaOp
 from nvtabular.ops import Rename
-
-import cudf
 
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
@@ -35,12 +35,12 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
+
 from morpheus.utils.nvt import MutateOp
 from morpheus.utils.nvt.transforms import json_flatten
 
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
-
     def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
         convert_to_cudf = False
         if type(df) == cudf.DataFrame:
@@ -185,7 +185,7 @@ def nvt_increment_column(column_selector: ColumnSelector,
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-        deps: [
+               deps: [
             LambdaOp(
                 lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
         ],
@@ -193,47 +193,48 @@ ColumnInfoProcessingMap = {
     #    LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[ColumnInfo] '{ci.name}'")],
     ColumnInfo:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(lambda selector,
-                     df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
-                     else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                            df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (
+                    ci.name in df.columns)
+            else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
         ],
     CustomColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(
                 lambda selector, df: ci.process_column_fn(df), dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
         ],
     DateTimeColumn:
         lambda ci,
-        deps: [
+               deps: [
             Rename(f=lambda name: ci.name if name == ci.input_name else name),
             LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")
         ],
     IncrementColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(
                 nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
-                     dependencies=deps,
-                     output_columns=[(ci.name, ci.groupby_column)],
-                     label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
+                dependencies=deps,
+                output_columns=[(ci.name, ci.groupby_column)],
+                label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
         ],
     RenameColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(lambda selector,
-                     df: df.rename(columns={ci.input_name: ci.name}),
+                            df: df.rename(columns={ci.input_name: ci.name}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     StringCatColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
@@ -241,16 +242,16 @@ ColumnInfoProcessingMap = {
         ],
     StringJoinColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(
                 nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
-                     dependencies=deps,
-                     output_columns=[(ci.name, ci.dtype)],
-                     label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
+                dependencies=deps,
+                output_columns=[(ci.name, ci.dtype)],
+                label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     JSONFlattenInfo:
         lambda ci,
-        deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+               deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
