@@ -18,6 +18,7 @@
 #include "morpheus/objects/fiber_queue.hpp"
 
 #include <boost/fiber/channel_op_status.hpp>
+#include <glog/logging.h>  // for LOG, FATAL
 #include <pybind11/gil.h>  // for gil_scoped_release
 #include <pybind11/pybind11.h>
 
@@ -111,6 +112,9 @@ void FiberQueueInterfaceProxy::put(morpheus::FiberQueue& self, pybind11::object 
     {
     case boost::fibers::channel_op_status::success:
         return;
+    case boost::fibers::channel_op_status::empty: {
+        LOG(FATAL) << "FiberQueue::put should never return empty.";
+    }
     case boost::fibers::channel_op_status::full:
     case boost::fibers::channel_op_status::timeout: {
         // Raise queue.Full
