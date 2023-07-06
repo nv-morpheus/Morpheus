@@ -10,6 +10,7 @@
 # stdlib
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<vector>", "public" ] },
+{ "include": [ "<bits/this_thread_sleep.h>", private, "<thread>", "public" ] },
 { "include": [ "<bits/types/siginfo_t.h>", private, "<csignal>", "public" ] },
 
 # boost
