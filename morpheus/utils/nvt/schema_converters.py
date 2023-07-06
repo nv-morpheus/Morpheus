@@ -41,6 +41,13 @@ from morpheus.utils.nvt.transforms import json_flatten
 
 
 def sync_df_as_pandas(func: typing.Callable) -> typing.Callable:
+    """
+    This function serves as a decorator that synchronizes cudf.DataFrame to pandas.DataFrame before applying the function.
+
+    :param func: The function to apply to the DataFrame
+    :return: The wrapped function
+    """
+
     def wrapper(df: typing.Union[pd.DataFrame, cudf.DataFrame], **kwargs) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
         convert_to_cudf = False
         if type(df) == cudf.DataFrame:
@@ -65,6 +72,13 @@ class JSONFlattenInfo(ColumnInfo):
 
 
 def resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
+    """
+    Resolves JSON output columns from an input schema.
+
+    :param input_schema: The input schema to resolve the JSON output columns from
+    :return: A list of tuples where each tuple is a pair of column name and its data type
+    """
+
     column_info_objects = input_schema.column_info
 
     json_output_candidates = []
@@ -86,47 +100,13 @@ def resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, s
     return output_cols
 
 
-def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> nx.DiGraph:
-    graph = nx.DiGraph()
-
-    def find_dependent_column(name, current_name):
-        for ci in column_info_objects:
-            if ci.name == current_name:
-                continue
-            if ci.name == name:
-                return ci
-            elif ci.__class__ == JSONFlattenInfo:
-                if name in [c for c, _ in ci.output_col_names]:
-                    return ci
-        return None
-
-    for col_info in column_info_objects:
-        graph.add_node(col_info.name)
-
-        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
-            # If col_info.name != col_info.input_name then we're creating a potential dependency
-            if col_info.name != col_info.input_name:
-                dep_col_info = find_dependent_column(col_info.input_name, col_info.name)
-                if dep_col_info:
-                    # This CI is dependent on the dep_col_info CI
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-        elif col_info.__class__ == StringCatColumn:
-            for input_col_name in col_info.input_columns:
-                dep_col_info = find_dependent_column(input_col_name, col_info.name)
-                if dep_col_info:
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-        elif col_info.__class__ == JSONFlattenInfo:
-            for output_col_name in [c for c, _ in col_info.output_col_names]:
-                dep_col_info = find_dependent_column(output_col_name, col_info.name)
-                if dep_col_info:
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-    return graph
-
-
 def get_ci_column_selector(ci):
+    """
+    Return a column selector based on a ColumnInfo object.
+
+    :param ci: The ColumnInfo object
+    :return: A column selector
+    """
     if (ci.__class__ == ColumnInfo):
         return ci.name
 
@@ -139,11 +119,21 @@ def get_ci_column_selector(ci):
     elif ci.__class__ == JSONFlattenInfo:
         return ci.input_col_names
 
+    elif ci.__class__ == CustomColumn:
+        return '*'
+
     else:
         raise Exception(f"Unknown ColumnInfo type: {ci.__class__}")
 
 
 def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateOp:
+    """
+    Return a JSON flatten operation from an input schema.
+
+    :param json_input_cols: A list of JSON input columns
+    :param json_output_cols: A list of JSON output columns
+    :return: A MutateOp object that represents the JSON flatten operation
+    """
     json_flatten_op = MutateOp(json_flatten, dependencies=json_input_cols, output_columns=json_output_cols)
 
     return json_flatten_op
@@ -152,6 +142,14 @@ def json_flatten_from_input_schema(json_input_cols, json_output_cols) -> MutateO
 @sync_df_as_pandas
 def string_cat_col(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column,
                    sep) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+    """
+    Concatenate the string representation of all supplied columns in a DataFrame.
+
+    :param df: The input DataFrame
+    :param output_column: The name of the output column
+    :param sep: The separator to use when concatenating the strings
+    :return: The resulting DataFrame
+    """
     cat_col = df.apply(lambda row: sep.join(row.values.astype(str)), axis=1)
 
     return pd.DataFrame({output_column: cat_col})
@@ -162,12 +160,31 @@ def nvt_string_cat_col(column_selector: ColumnSelector,
                        output_column,
                        input_columns,
                        sep: str = ', '):
+    """
+    Concatenates the string representation of the specified columns in a DataFrame.
+
+    :param column_selector: A ColumnSelector object -> unused.
+    :param df: The input DataFrame
+    :param output_column: The name of the output column
+    :param input_columns: The input columns to concatenate
+    :param sep: The separator to use when concatenating the strings
+    :return: The resulting DataFrame
+    """
     return string_cat_col(df[input_columns], output_column=output_column, sep=sep)
 
 
 @sync_df_as_pandas
 def increment_column(df: typing.Union[pd.DataFrame, cudf.DataFrame], output_column, input_column, period: str = 'D') \
         -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+    """
+    Crete an increment a column in a DataFrame.
+
+    :param df: The input DataFrame
+    :param output_column: The name of the output column
+    :param input_column: The name of the input column
+    :param period: The period to increment by
+    :return: The resulting DataFrame
+    """
     period_index = pd.to_datetime(df[input_column]).dt.to_period(period)
     groupby_col = df.groupby([output_column, period_index]).cumcount()
 
@@ -182,6 +199,7 @@ def nvt_increment_column(column_selector: ColumnSelector,
     return increment_column(column_selector, df, output_column, input_column, period)
 
 
+# Mappings from ColumnInfo types to functions that create the corresponding NVT operator
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
@@ -202,11 +220,16 @@ ColumnInfoProcessingMap = {
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
         ],
+    # TODO(Devin): Custom columns are, potentially, very inefficient, because we have to run the custom function on the
+    #   entire dataset this is because NVT requires the input column be available, but CustomColumn is a generic
+    #   transform taking df->series(ci.name)
     CustomColumn:
         lambda ci,
                deps: [
             MutateOp(
-                lambda selector, df: ci.process_column_fn(df), dependencies=deps, output_columns=[(ci.name, ci.dtype)]),
+                lambda selector, df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}), dependencies=deps,
+                output_columns=[(ci.name, ci.dtype)],
+                label=f"[CustomColumn] '{ci.name}'")
         ],
     DateTimeColumn:
         lambda ci,
@@ -255,6 +278,46 @@ ColumnInfoProcessingMap = {
 }
 
 
+def build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> nx.DiGraph:
+    graph = nx.DiGraph()
+
+    def find_dependent_column(name, current_name):
+        for ci in column_info_objects:
+            if ci.name == current_name:
+                continue
+            if ci.name == name:
+                return ci
+            elif ci.__class__ == JSONFlattenInfo:
+                if name in [c for c, _ in ci.output_col_names]:
+                    return ci
+        return None
+
+    for col_info in column_info_objects:
+        graph.add_node(col_info.name)
+
+        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+            # If col_info.name != col_info.input_name then we're creating a potential dependency
+            if col_info.name != col_info.input_name:
+                dep_col_info = find_dependent_column(col_info.input_name, col_info.name)
+                if dep_col_info:
+                    # This CI is dependent on the dep_col_info CI
+                    graph.add_edge(dep_col_info.name, col_info.name)
+
+        elif col_info.__class__ == StringCatColumn:
+            for input_col_name in col_info.input_columns:
+                dep_col_info = find_dependent_column(input_col_name, col_info.name)
+                if dep_col_info:
+                    graph.add_edge(dep_col_info.name, col_info.name)
+
+        elif col_info.__class__ == JSONFlattenInfo:
+            for output_col_name in [c for c, _ in col_info.output_col_names]:
+                dep_col_info = find_dependent_column(output_col_name, col_info.name)
+                if dep_col_info:
+                    graph.add_edge(dep_col_info.name, col_info.name)
+
+    return graph
+
+
 def bfs_traversal_with_op_map(graph, ci_map, root_nodes):
     visited = set()
     queue = [n for n in root_nodes]
@@ -267,8 +330,11 @@ def bfs_traversal_with_op_map(graph, ci_map, root_nodes):
 
             parents = [n for n in graph.predecessors(node)]
             if len(parents) == 0:
+                # We need to start an operator chain with a column selector, so root nodes need to prepend a parent
+                #   column selection operator
                 parent_input = get_ci_column_selector(ci_map[node])
             else:
+                # Not a root node, so we need to gather the parent operators, and collect them up.
                 parent_input = None
                 for parent in parents:
                     if parent_input is None:
@@ -276,13 +342,18 @@ def bfs_traversal_with_op_map(graph, ci_map, root_nodes):
                     else:
                         parent_input = parent_input + node_op_map[parent]
 
+            # Map the column info object to its NVT operator implementation
             ops = ColumnInfoProcessingMap[type(ci_map[node])](ci_map[node], deps=[])
+
+            # Chain ops together into a compound op
             node_op = parent_input
             for op in ops:
                 node_op = node_op >> op
 
+            # Set the op for this node to the compound operator
             node_op_map[node] = node_op
 
+            # Add our neighbors to the queue
             neighbors = [n for n in graph.neighbors(node)]
             for neighbor in neighbors:
                 queue.append(neighbor)
