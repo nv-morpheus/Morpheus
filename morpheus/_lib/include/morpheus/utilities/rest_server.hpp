@@ -61,6 +61,11 @@ using parse_status_t = std::tuple<unsigned /*http status code*/,
  *
  * @details The function is expected to return a tuple conforming to `parse_status_t` consisting of the HTTP status
  * code, mime type value for the Content-Type header, body of the response and optionally a callback function.
+ * If specified, the callback function which will be called once the response has been sent or failed to send, as
+ * indicated by a `boost::system::error_code` reference passed to the function.
+ *
+ * Refer to https://www.boost.org/doc/libs/1_74_0/libs/system/doc/html/system.html#ref_class_error_code for more
+ * information regarding `boost::system::error_code`.
  */
 using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* post body */)>;
 
@@ -71,7 +76,7 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  *
  * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
  *          function when an incoming request is received. The payload_parse_fn_t function is expected to
- *          return a tuple conforming to `parse_status_t` (ex: `std::make_tuple(200, "text/plain"s, "OK"s)`).
+ *          return a tuple conforming to `parse_status_t` (ex: `std::make_tuple(200, "text/plain"s, "OK"s, nullptr)`).
  *
  * @param payload_parse_fn The function that will be called when a POST request is received.
  * @param bind_address The address to bind the server to.
