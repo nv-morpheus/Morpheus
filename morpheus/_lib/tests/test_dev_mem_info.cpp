@@ -62,7 +62,7 @@ TEST_F(TestDevMemInfo, RmmBufferConstructor)
     auto buffer       = std::make_shared<rmm::device_buffer>(ByteSize, rmm::cuda_stream_legacy, mem_resource.get());
 
     // Set the offset to the second row in the buffer
-    DevMemInfo dm{buffer, Dtype, {Rows - 1, Cols}, {1, Rows}, static_cast<TensorIndex>(Dtype.item_size())};
+    DevMemInfo dm{buffer, Dtype, {Rows - 1, Cols}, {1, Rows}, Dtype.item_size()};
 
     EXPECT_EQ(dm.bytes(), (Rows - 1) * Cols * Dtype.item_size());
     EXPECT_EQ(dm.count(), (Rows - 1) * Cols);
@@ -98,7 +98,7 @@ TEST_F(TestDevMemInfo, VoidPtrConstructor)
     auto md = std::make_shared<MemoryDescriptor>(rmm::cuda_stream_legacy, mem_resource.get());
 
     // Set the offset to the second row in the buffer
-    DevMemInfo dm{buffer->data(), Dtype, md, {Rows - 1, Cols}, {1, Rows}, static_cast<TensorIndex>(Dtype.item_size())};
+    DevMemInfo dm{buffer->data(), Dtype, md, {Rows - 1, Cols}, {1, Rows}, Dtype.item_size()};
 
     EXPECT_EQ(dm.bytes(), (Rows - 1) * Cols * Dtype.item_size());
     EXPECT_EQ(dm.count(), (Rows - 1) * Cols);

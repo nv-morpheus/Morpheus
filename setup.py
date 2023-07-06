@@ -16,14 +16,24 @@
 # resulting files.
 
 import os
+import sys
+
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
 
 # Required to install torch via setup.py
 # Note: this is order dependent
 os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu116/torch_stable.html"
 
-import versioneer  # noqa: E402
-from setuptools import find_packages  # noqa: E402
-from setuptools import setup  # noqa: E402
+try:
+    import versioneer
+except ImportError:
+    # we have a versioneer.py file living in the same directory as this file, but
+    # if we're using pep 517/518 to build from pyproject.toml its not going to find it
+    # https://github.com/python-versioneer/python-versioneer/issues/193#issue-408237852
+    # make this work by adding this directory to the python path
+    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+    import versioneer
 
 setup(
     name="morpheus",
@@ -47,7 +57,6 @@ setup(
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
-        "torch==1.13.1+cu116",
         "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",

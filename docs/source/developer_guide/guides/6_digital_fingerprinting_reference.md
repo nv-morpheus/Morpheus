@@ -184,6 +184,8 @@ The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `filenames` | `List[str]` or `str` | Paths to source file to be read from |
+| `watch` | `bool` | Optional: when True will repeatedly poll `filenames` for new files. This assumes that at least one of the paths in `filenames` containes a wildcard. By default False. |
+| `watch_interval` | `float` | When `watch` is True, this is the time in seconds between polling the paths in `filenames` for new files. Ignored when `watch` is False. |
 
 
 #### File Batcher Stage (`DFPFileBatcherStage`)
