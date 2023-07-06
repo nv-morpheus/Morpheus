@@ -21,10 +21,6 @@ import sys
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
 
-# Required to install torch via setup.py
-# Note: this is order dependent
-os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu116/torch_stable.html"
-
 try:
     import versioneer
 except ImportError:
