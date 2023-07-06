@@ -21,13 +21,13 @@
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <glog/logging.h>                     // for CHECK & LOG
 
-#include <exception>  // for std::exception
-#include <sstream>    // needed by GLOG
-#include <stdexcept>  // for std::runtime_error
-#include <thread>     // for std::this_thread::sleep_for
-#include <tuple>      // for make_tuple
-#include <utility>    // for std::move
-// IWYU pragma: no_include <bits/this_thread_sleep.h>
+#include <exception>   // for std::exception
+#include <functional>  // for function
+#include <sstream>     // needed by GLOG
+#include <stdexcept>   // for std::runtime_error
+#include <thread>      // for std::this_thread::sleep_for
+#include <tuple>       // for make_tuple
+#include <utility>     // for std::move
 
 namespace morpheus {
 // Component public implementations

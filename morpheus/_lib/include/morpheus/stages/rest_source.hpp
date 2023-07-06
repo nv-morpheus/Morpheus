@@ -21,18 +21,28 @@
 #include "morpheus/utilities/rest_server.hpp"  // for RestServer
 
 #include <boost/fiber/buffered_channel.hpp>  // for buffered_channel
-#include <cudf/io/types.hpp>                 // for table_with_metadata
-#include <mrc/segment/builder.hpp>           // for segment::Builder
-#include <mrc/segment/object.hpp>            // for segment::Object
-#include <pymrc/node.hpp>                    // for PythonSource
-#include <rxcpp/rx.hpp>                      // for subscriber
+#include <boost/fiber/context.hpp>           // for context
+#include <boost/fiber/future/future.hpp>
+#include <cudf/io/types.hpp>               // for table_with_metadata
+#include <mrc/node/rx_sink_base.hpp>       // for RxSinkBase
+#include <mrc/node/rx_source_base.hpp>     // for RxSourceBase
+#include <mrc/node/source_properties.hpp>  // for channel::Status, SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>         // for segment::Builder
+#include <mrc/segment/object.hpp>          // for segment::Object
+#include <mrc/types.hpp>                   // for SegmentAddress
+#include <pymrc/node.hpp>                  // for PythonSource
+#include <rxcpp/rx.hpp>                    // for subscriber
 
 #include <chrono>   // for duration
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int64_t
-#include <memory>   // for shared_ptr & unique_ptr
-#include <ratio>    // for std::milli
-#include <string>   // for string & to_string
+#include <map>
+#include <memory>  // for shared_ptr & unique_ptr
+#include <ratio>   // for std::milli
+#include <string>  // for string & to_string
+#include <vector>
+// IWYU thinks we're using thread::operator<<
+// IWYU pragma: no_include <thread>
 
 namespace morpheus {
 using table_t         = std::unique_ptr<cudf::io::table_with_metadata>;
