@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import logging
 import typing
 
 import nvtabular as nvt
 import pandas as pd
 
+import cudf
+
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
-
 # Apply patches to NVT
 # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
 # ========================================================================
@@ -117,8 +117,8 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
 
 
 def process_dataframe(
-        df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
-        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+    df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
 ) -> pd.DataFrame:
     """
     Applies column transformations as defined by `input_schema`

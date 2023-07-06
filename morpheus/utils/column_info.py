@@ -12,22 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import dataclasses
 import logging
 import re
 import typing
+from datetime import datetime
 
 import pandas as pd
 
-from datetime import datetime
+import cudf
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 # TODO(Devin): Proxying this for backwards compatibility. Had to move the primary definition to avoid circular imports.
-def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_schema
-                      ) -> pd.DataFrame:
+def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_schema) -> pd.DataFrame:
     import morpheus.utils.schema_transforms as schema_transforms
     return schema_transforms.process_dataframe(df_in, input_schema)
 

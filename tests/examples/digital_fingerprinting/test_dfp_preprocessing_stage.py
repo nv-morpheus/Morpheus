@@ -52,15 +52,10 @@ def test_process_features(
     expected_df['v210'] = expected_df['v2'] + 10
     expected_df['v3'] = expected_df['v3'].astype(str)
 
-    try:
-        schema = DataFrameInputSchema(column_info=[
-            CustomColumn(name='v210', dtype=str, process_column_fn=lambda df: df['v2'] + 10),
-            ColumnInfo(name='v3', dtype=str)
-        ])
-    except Exception as e:
-        print(d)
-        import traceback
-        traceback.print_exc()
+    schema = DataFrameInputSchema(column_info=[
+        CustomColumn(name='v210', dtype=str, process_column_fn=lambda df: df['v2'] + 10),
+        ColumnInfo(name='v3', dtype=str)
+    ])
 
     stage = DFPPreprocessingStage(config, input_schema=schema)
     results = stage.process_features(dfp_multi_message)

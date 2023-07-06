@@ -72,6 +72,7 @@ def create_test_dataframe():
 
 
 def test_sync_df_as_pandas_pd_dataframe():
+
     @sync_df_as_pandas
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -84,6 +85,7 @@ def test_sync_df_as_pandas_pd_dataframe():
 
 
 def test_sync_df_as_pandas_cudf_dataframe():
+
     @sync_df_as_pandas
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -109,9 +111,7 @@ def test_json_flatten_info_init():
 def test_json_flatten_info_init_missing_input_col_names():
     with pytest.raises(TypeError):
         ci = JSONFlattenInfo(  # noqa F841
-            name="json_info",
-            dtype="str",
-            output_col_names=["json_output_col1", "json_output_col2"])
+            name="json_info", dtype="str", output_col_names=["json_output_col1", "json_output_col2"])
 
 
 def test_json_flatten_info_init_missing_output_col_names():
