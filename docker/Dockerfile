@@ -244,6 +244,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia/label/cuda-11.8.0 \
         -c nvidia/label/dev \
         -c nvidia \
+        -c pytorch \
         -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
