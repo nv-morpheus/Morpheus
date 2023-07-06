@@ -57,7 +57,6 @@ setup(
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
-        "torch==1.13.1+cu116",
         "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",
