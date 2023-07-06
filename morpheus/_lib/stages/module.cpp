@@ -37,6 +37,7 @@
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/rest_server.hpp"  // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"
 
 #include <boost/fiber/future/future.hpp>

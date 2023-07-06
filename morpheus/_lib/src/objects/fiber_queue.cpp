@@ -25,6 +25,7 @@
 #include <chrono>
 #include <functional>  // for ref, reference_wrapper
 #include <memory>
+#include <ostream>    // needed by GLOG
 #include <ratio>      // for ratio needed for std::chrono::duration
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <utility>

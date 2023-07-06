@@ -27,6 +27,7 @@
 #include <thread>     // for std::this_thread::sleep_for
 #include <tuple>      // for make_tuple
 #include <utility>    // for std::move
+// IWYU pragma: no_include <bits/this_thread_sleep.h>
 
 namespace morpheus {
 // Component public implementations
