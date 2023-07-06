@@ -72,8 +72,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         considered an error
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
-        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
-        a `ValueError`.
+        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will
+        raise a `ValueError`.
     stop_after: int, default = 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     lines : bool, default False
@@ -150,8 +150,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         payload = response.content
         if len(payload) > 2:  # work-around for https://github.com/rapidsai/cudf/issues/5712
             return cudf.read_json(payload, lines=self._lines, engine='cudf')
-        else:
-            return None
+
+        return None
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         # Running counter of the number of messages emitted by this source

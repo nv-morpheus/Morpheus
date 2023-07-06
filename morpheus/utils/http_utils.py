@@ -38,6 +38,9 @@ class HTTPMethod(Enum):
     PUT = "PUT"
 
 
+# pylint: disable=inconsistent-return-statements
+
+
 def request_with_retry(
     request_kwargs: dict,
     requests_session: typing.Optional[requests.Session] = None,
@@ -73,13 +76,13 @@ def request_with_retry(
             if response.status_code in accept_status_codes:
                 if on_success_fn is not None:
                     return (requests_session, on_success_fn(response))
-                else:
-                    return (requests_session, response)
-            else:
-                if respect_retry_after_header and 'Retry-After' in response.headers:
-                    retry_after_header = int(response.headers['Retry-After'])
 
-                raise RuntimeError(f"Received unexpected status code {response.status_code}: {response.text}")
+                return (requests_session, response)
+
+            if respect_retry_after_header and 'Retry-After' in response.headers:
+                retry_after_header = int(response.headers['Retry-After'])
+
+            raise RuntimeError(f"Received unexpected status code {response.status_code}: {response.text}")
         except Exception as e:
             # if we got a requests exception, close the session, so that on a retry we get a new connection
             if isinstance(e, requests.exceptions.RequestException):
@@ -118,7 +121,7 @@ def prepare_url(url: str) -> str:
         parsed_url = urllib3.util.parse_url(url)
         if parsed_url.scheme is None or parsed_url.host is None:
             raise ValueError(f"Invalid URL: {url}")
-        else:
-            logger.warning("No protocol scheme provided in URL, using: %s", url)
+
+        logger.warning("No protocol scheme provided in URL, using: %s", url)
 
     return url

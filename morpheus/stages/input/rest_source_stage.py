@@ -118,7 +118,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             df = cudf.read_json(payload, lines=self._lines, engine='cudf')
         except Exception as e:
             err_msg = "Error occurred converting REST payload to Dataframe"
-            logger.error(f"{err_msg}: {e}")
+            logger.error("%s: %s", err_msg, e)
             return (HTTPStatus.BAD_REQUEST.value, MimeTypes.TEXT.value, err_msg, None)
 
         try:
@@ -134,7 +134,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             return (HTTPStatus.SERVICE_UNAVAILABLE.value, MimeTypes.TEXT.value, err_msg, None)
         except Exception as e:
             err_msg = "Error occurred while pushing payload to queue"
-            logger.error(f"{err_msg}: {e}")
+            logger.error("%s: %s", err_msg, e)
             return (HTTPStatus.INTERNAL_SERVER_ERROR.value, MimeTypes.TEXT.value, err_msg, None)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:

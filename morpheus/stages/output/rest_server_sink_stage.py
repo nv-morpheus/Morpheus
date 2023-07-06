@@ -80,20 +80,19 @@ class RestServerSinkStage(SinglePortStage):
         Optional custom dataframe serializer function.
     """
 
-    def __init__(
-            self,
-            config: Config,
-            bind_address: str = "127.0.0.1",
-            port: int = 8080,
-            endpoint: str = "/message",
-            method: HTTPMethod = HTTPMethod.GET,
-            max_queue_size: int = None,
-            num_server_threads: int = None,
-            max_rows_per_response: int = 10000,
-            overflow_pct: float = 0.75,  # TODO: find a better name for this
-            request_timeout_secs: int = 30,
-            lines: bool = False,
-            df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
+    def __init__(self,
+                 config: Config,
+                 bind_address: str = "127.0.0.1",
+                 port: int = 8080,
+                 endpoint: str = "/message",
+                 method: HTTPMethod = HTTPMethod.GET,
+                 max_queue_size: int = None,
+                 num_server_threads: int = None,
+                 max_rows_per_response: int = 10000,
+                 overflow_pct: float = 0.75,
+                 request_timeout_secs: int = 30,
+                 lines: bool = False,
+                 df_serializer_fn: typing.Callable[[DataFrameType], str] = None):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -194,8 +193,8 @@ class RestServerSinkStage(SinglePortStage):
                     self._content_type,
                     self._df_serializer_fn(df),
                     partial(self._request_callback, df, len(data_frames)))
-        else:
-            return (HTTPStatus.NO_CONTENT.value, MimeTypes.TEXT.value, "", None)
+
+        return (HTTPStatus.NO_CONTENT.value, MimeTypes.TEXT.value, "", None)
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """

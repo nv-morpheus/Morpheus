@@ -99,8 +99,8 @@ class WriteToRestStage(SinglePortStage):
         List of acceptable status codes, by default (200, 201, 202).
     max_retries : int, default 10
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
-        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will raise
-        a `ValueError`.
+        `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will
+        raise a `ValueError`.
     max_rows_per_payload : int, optional
         Maximum number of rows to include in a single payload, by default 10000.
         Setting this to 1 will send each row as a separate request.
