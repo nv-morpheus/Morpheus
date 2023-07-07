@@ -205,7 +205,7 @@ void table_to_parquet(
     auto destination     = cudf::io::sink_info(&sink);
     auto options_builder = cudf::io::parquet_writer_options_builder(destination, tbl_view);
 
-    cudf::io::write_parquet(options_builder.build(), rmm::mr::get_current_device_resource());
+    cudf::io::write_parquet(options_builder.build());
 
     if (flush)
     {
