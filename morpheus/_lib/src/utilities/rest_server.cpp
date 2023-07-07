@@ -166,16 +166,7 @@ class Session : public std::enable_shared_from_this<Session>
         if (ec)
         {
             LOG(ERROR) << "Error writing response: " << ec.message();
-            return;
         }
-
-        if (close)
-        {
-            return do_close();
-        }
-
-        m_parser.reset(nullptr);
-        m_response.reset(nullptr);
 
         if (m_on_complete_cb)
         {
@@ -191,6 +182,14 @@ class Session : public std::enable_shared_from_this<Session>
             }
 
             m_on_complete_cb = nullptr;
+        }
+
+        m_parser.reset(nullptr);
+        m_response.reset(nullptr);
+
+        if (close)
+        {
+            return do_close();
         }
 
         do_read();
@@ -216,79 +215,6 @@ class Session : public std::enable_shared_from_this<Session>
     morpheus::on_complete_cb_fn_t m_on_complete_cb;
 };
 
-class Listener : public std::enable_shared_from_this<Listener>
-{
-  public:
-    Listener(std::shared_ptr<boost::asio::io_context> io_context,
-             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
-             const std::string& bind_address,
-             unsigned short port,
-             const std::string& endpoint,
-             http::verb method,
-             std::size_t max_payload_size,
-             std::chrono::seconds request_timeout) :
-      m_io_context{std::move(io_context)},
-      m_tcp_endpoint{net::ip::make_address(bind_address), port},
-      m_acceptor{net::make_strand(*m_io_context)},
-      m_payload_parse_fn{std::move(payload_parse_fn)},
-      m_url_endpoint{endpoint},
-      m_method{method},
-      m_max_payload_size{max_payload_size},
-      m_request_timeout{request_timeout}
-    {
-        m_acceptor.open(m_tcp_endpoint.protocol());
-        m_acceptor.set_option(net::socket_base::reuse_address(true));
-        m_acceptor.bind(m_tcp_endpoint);
-        m_acceptor.listen(net::socket_base::max_listen_connections);
-    }
-
-    ~Listener() = default;
-
-    void stop()
-    {
-        m_acceptor.close();
-    };
-
-    void run()
-    {
-        net::dispatch(m_acceptor.get_executor(),
-                      beast::bind_front_handler(&Listener::do_accept, this->shared_from_this()));
-    }
-
-  private:
-    void do_accept()
-    {
-        m_acceptor.async_accept(net::make_strand(*m_io_context),
-                                beast::bind_front_handler(&Listener::on_accept, this->shared_from_this()));
-    }
-
-    void on_accept(beast::error_code ec, tcp::socket socket)
-    {
-        if (ec)
-        {
-            LOG(ERROR) << "Error accepting connection: " << ec.message();
-        }
-        else
-        {
-            std::make_shared<Session>(
-                std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method, m_max_payload_size, m_request_timeout)
-                ->run();
-        }
-
-        do_accept();
-    }
-
-    std::shared_ptr<boost::asio::io_context> m_io_context;
-    tcp::endpoint m_tcp_endpoint;
-    tcp::acceptor m_acceptor;
-
-    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
-    const std::string& m_url_endpoint;
-    http::verb m_method;
-    std::size_t m_max_payload_size;
-    std::chrono::seconds m_request_timeout;
-};
-
 }  // namespace
 
 namespace morpheus {
@@ -310,7 +236,7 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
   m_io_context{nullptr},
-  m_is_running{false}
+  m_listener{nullptr}
 {
     if (m_method == http::verb::unknown)
     {
@@ -328,8 +254,10 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
     }
 }
 
-void RestServer::start_listener()
+void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore)
 {
+    listener_semaphore.acquire();
+
     DCHECK(m_io_context == nullptr) << "start_listener expects m_io_context to be null";
 
     // This function will block until the io context is shutdown, and should be called from the first worker thread
@@ -338,39 +266,41 @@ void RestServer::start_listener()
 
     m_io_context = std::make_shared<net::io_context>(m_num_threads);
 
-    auto listener = std::make_shared<Listener>(m_io_context,
-                                               m_payload_parse_fn,
-                                               m_bind_address,
-                                               m_port,
-                                               m_endpoint,
-                                               m_method,
-                                               m_max_payload_size,
-                                               m_request_timeout);
-    listener->run();
+    m_listener = std::make_shared<Listener>(m_io_context,
+                                            m_payload_parse_fn,
+                                            m_bind_address,
+                                            m_port,
+                                            m_endpoint,
+                                            m_method,
+                                            m_max_payload_size,
+                                            m_request_timeout);
+    m_listener->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
     {
-        auto ioc = m_io_context;  // ensure each thread gets its own copy
-        m_listener_threads.emplace_back([ioc = std::move(ioc)]() { ioc->run(); });
+        m_listener_threads.emplace_back([this]() { this->m_io_context->run(); });
     }
 
+    started_semaphore.release();
     m_io_context->run();
-
-    // io context stopped, so we can stop the listener
-    listener->stop();
 }
 
 void RestServer::start()
 {
-    CHECK(!m_is_running) << "RestServer is already running";
+    CHECK(!is_running()) << "RestServer is already running";
 
     try
     {
         DLOG(INFO) << "Starting RestServer on " << m_bind_address << ":" << m_port << " with " << m_num_threads
                    << " threads";
-        m_is_running = true;
         m_listener_threads.reserve(m_num_threads);
-        m_listener_threads.emplace_back(std::thread(&RestServer::start_listener, this));
+
+        std::binary_semaphore listener_semaphore{0};
+        std::binary_semaphore started_semaphore{0};
+        m_listener_threads.emplace_back(
+            std::thread(&RestServer::start_listener, this, std::ref(listener_semaphore), std::ref(started_semaphore)));
+        listener_semaphore.release();
+        started_semaphore.acquire();
     } catch (const std::exception& e)
     {
         LOG(ERROR) << "Caught exception while starting rest server: " << e.what();
@@ -380,10 +310,13 @@ void RestServer::start()
 
 void RestServer::stop()
 {
-    m_is_running = false;
     if (m_io_context)
     {
         m_io_context->stop();
+        while (!m_io_context->stopped())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
 
     for (auto& t : m_listener_threads)
@@ -394,19 +327,27 @@ void RestServer::stop()
     if (m_io_context)
     {
         DCHECK(m_io_context->stopped());
+        m_io_context.reset();
+    }
+
+    if (m_listener)
+    {
+        // io context stopped, so we can stop the listener
+        m_listener->stop();
+        m_listener.reset();
     }
 }
 
 bool RestServer::is_running() const
 {
-    return m_is_running;
+    return (m_io_context != nullptr && !m_io_context->stopped() && m_listener != nullptr && m_listener->is_running());
 }
 
 RestServer::~RestServer()
 {
     try
     {
-        if (m_is_running)
+        if (is_running())
         {
             stop();
         }
@@ -472,16 +413,19 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse
 
 void RestServerInterfaceProxy::start(RestServer& self)
 {
+    pybind11::gil_scoped_release release;
     self.start();
 }
 
 void RestServerInterfaceProxy::stop(RestServer& self)
 {
+    pybind11::gil_scoped_release release;
     self.stop();
 }
 
 bool RestServerInterfaceProxy::is_running(const RestServer& self)
 {
+    pybind11::gil_scoped_release release;
     return self.is_running();
 }
 
@@ -496,7 +440,71 @@ void RestServerInterfaceProxy::exit(RestServer& self,
                                     const pybind11::object& value,
                                     const pybind11::object& traceback)
 {
+    pybind11::gil_scoped_release release;
     self.stop();
+}
+
+Listener::Listener(std::shared_ptr<boost::asio::io_context> io_context,
+                   std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
+                   const std::string& bind_address,
+                   unsigned short port,
+                   const std::string& endpoint,
+                   http::verb method,
+                   std::size_t max_payload_size,
+                   std::chrono::seconds request_timeout) :
+  m_io_context{std::move(io_context)},
+  m_tcp_endpoint{net::ip::make_address(bind_address), port},
+  m_acceptor{net::make_strand(*m_io_context)},
+  m_payload_parse_fn{std::move(payload_parse_fn)},
+  m_url_endpoint{endpoint},
+  m_method{method},
+  m_max_payload_size{max_payload_size},
+  m_request_timeout{request_timeout},
+  m_is_running{false}
+{
+    m_acceptor.open(m_tcp_endpoint.protocol());
+    m_acceptor.set_option(net::socket_base::reuse_address(true));
+    m_acceptor.bind(m_tcp_endpoint);
+    m_acceptor.listen(net::socket_base::max_listen_connections);
+}
+
+void Listener::stop()
+{
+    m_acceptor.close();
+    m_is_running = false;
+}
+
+void Listener::run()
+{
+    net::dispatch(m_acceptor.get_executor(), beast::bind_front_handler(&Listener::do_accept, this->shared_from_this()));
+    m_is_running = true;
+}
+
+bool Listener::is_running() const
+{
+    return m_is_running;
+}
+
+void Listener::do_accept()
+{
+    m_acceptor.async_accept(net::make_strand(*m_io_context),
+                            beast::bind_front_handler(&Listener::on_accept, this->shared_from_this()));
+}
+
+void Listener::on_accept(beast::error_code ec, tcp::socket socket)
+{
+    if (ec)
+    {
+        LOG(ERROR) << "Error accepting connection: " << ec.message();
+    }
+    else
+    {
+        std::make_shared<Session>(
+            std::move(socket), m_payload_parse_fn, m_url_endpoint, m_method, m_max_payload_size, m_request_timeout)
+            ->run();
+    }
+
+    do_accept();
 }
 
 }  // namespace morpheus

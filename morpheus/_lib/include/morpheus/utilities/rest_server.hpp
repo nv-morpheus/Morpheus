@@ -17,7 +17,11 @@
 
 #pragma once
 
-#include <boost/asio/io_context.hpp>    // for io_context
+#include <boost/asio.hpp>             // for ip::tcp::socket, ip::tcp::acceptor
+#include <boost/asio/io_context.hpp>  // for io_context
+#include <boost/beast/core.hpp>       // for tcp_stream
+#include <boost/beast/http.hpp>
+#include <boost/beast/http/verb.hpp>    // for verb
 #include <boost/system/error_code.hpp>  // for error_code
 #include <pybind11/pytypes.h>           // for pybind11::function
 
@@ -27,15 +31,11 @@
 #include <cstdint>     // for int64_t
 #include <functional>  // for function
 #include <memory>      // for shared_ptr & unique_ptr
+#include <semaphore>   // for semaphore
 #include <string>      // for string
 #include <thread>      // for thread
 #include <tuple>       // for make_tuple, tuple
 #include <vector>      // for vector
-
-// forward declare boost::beast::http::verb
-namespace boost::beast::http {
-enum class verb;  // NOLINT(readability-identifier-naming)
-}  // namespace boost::beast::http
 
 namespace morpheus {
 /**
@@ -45,6 +45,8 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+
+class Listener;
 using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& /* error message */)>;
 
 /**
@@ -104,7 +106,7 @@ class RestServer
     bool is_running() const;
 
   private:
-    void start_listener();
+    void start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore);
 
     std::string m_bind_address;
     unsigned short m_port;
@@ -115,8 +117,9 @@ class RestServer
     std::size_t m_max_payload_size;
     std::vector<std::thread> m_listener_threads;
     std::shared_ptr<boost::asio::io_context> m_io_context;
+    std::shared_ptr<Listener> m_listener;
     std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
-    std::atomic<bool> m_is_running{false};
+    std::atomic<bool> m_is_running;
 };
 
 /****** RestServerInterfaceProxy *************************/
@@ -144,4 +147,45 @@ struct RestServerInterfaceProxy
                      const pybind11::object& value,
                      const pybind11::object& traceback);
 };
+
+namespace beast = boost::beast;  // from <boost/beast.hpp>
+namespace http  = beast::http;   // from <boost/beast/http.hpp>
+namespace net   = boost::asio;   // from <boost/asio.hpp>
+
+using tcp = boost::asio::ip::tcp;  // NOLINT(readability-identifier-naming)
+
+class Listener : public std::enable_shared_from_this<Listener>
+{
+  public:
+    Listener(std::shared_ptr<boost::asio::io_context> io_context,
+             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
+             const std::string& bind_address,
+             unsigned short port,
+             const std::string& endpoint,
+             http::verb method,
+             std::size_t max_payload_size,
+             std::chrono::seconds request_timeout);
+
+    ~Listener() = default;
+
+    void run();
+    void stop();
+    bool is_running() const;
+
+  private:
+    void do_accept();
+    void on_accept(beast::error_code ec, tcp::socket socket);
+
+    std::shared_ptr<boost::asio::io_context> m_io_context;
+    tcp::endpoint m_tcp_endpoint;
+    tcp::acceptor m_acceptor;
+
+    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
+    const std::string& m_url_endpoint;
+    http::verb m_method;
+    std::size_t m_max_payload_size;
+    std::chrono::seconds m_request_timeout;
+    std::atomic<bool> m_is_running;
+};
+
 }  // namespace morpheus
