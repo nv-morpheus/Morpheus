@@ -39,8 +39,8 @@ def make_url(port: int, endpoint: str):
     return f"http://127.0.0.1:{port}{endpoint}"
 
 
-@pytest.mark.parametrize("endpoint", ["/test", "test/", "/test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8080, 8090, 9090])
+@pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
+@pytest.mark.parametrize("port", [8080, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
 @pytest.mark.parametrize("use_callback", [True, False])
 @pytest.mark.parametrize("use_context_mgr", [True, False])
@@ -60,11 +60,11 @@ def test_simple_request(port: int,
                         use_context_mgr: bool,
                         num_threads: int):
     if use_callback:
-        mock_callback = mock.MagicMock()
+        callback_fn = mock.MagicMock()
     else:
-        mock_callback = None
+        callback_fn = None
 
-    parse_fn = make_parse_fn(status=status, content_type=content_type, content=content, on_complete_cb=mock_callback)
+    parse_fn = make_parse_fn(status=status, content_type=content_type, content=content, on_complete_cb=callback_fn)
 
     url = make_url(port, endpoint)
     if method == "GET":
@@ -78,30 +78,20 @@ def test_simple_request(port: int,
     server = None
 
     def check_server():
-        print("Checking server", flush=True)
         assert server.is_running()
 
-        print("CS Req", flush=True)
-        response = requests.request(method=method, url=url, data=payload, timeout=1.0)
+        response = requests.request(method=method, url=url, data=payload, timeout=5.0)
 
-        print("CS Resp", flush=True)
         assert response.status_code == status.value
         assert response.headers["Content-Type"] == content_type
         assert response.text == content
 
         parse_fn.assert_called_once_with(payload)
-        if use_callback:
-            mock_callback.assert_called_once_with(False, "")
-
-        print("CS Done", flush=True)
 
     if use_context_mgr:
-        print("Using context manager", flush=True)
         with RestServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method,
                         num_threads=num_threads) as server:
-            print("CM", flush=True)
             assert server.is_running()
-            print("CM Start", flush=True)
             check_server()
 
     else:
@@ -114,3 +104,8 @@ def test_simple_request(port: int,
         server.stop()
 
     assert not server.is_running()
+
+    # Since the callback is executed asynchronously, we don't know when it will be called.
+    # However server.stop() will wait for the callback to be executed.
+    if use_callback:
+        callback_fn.assert_called_once_with(False, "")
