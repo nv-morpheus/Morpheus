@@ -122,6 +122,45 @@ class RestServer
     std::atomic<bool> m_is_running;
 };
 
+/**
+ * @brief A class that listens for incoming HTTP requests.
+ *
+ * @details Constructed by the RestServer class and should not be used directly.
+ */
+class Listener : public std::enable_shared_from_this<Listener>
+{
+  public:
+    Listener(std::shared_ptr<boost::asio::io_context> io_context,
+             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
+             const std::string& bind_address,
+             unsigned short port,
+             const std::string& endpoint,
+             boost::beast::http::verb method,
+             std::size_t max_payload_size,
+             std::chrono::seconds request_timeout);
+
+    ~Listener() = default;
+
+    void run();
+    void stop();
+    bool is_running() const;
+
+  private:
+    void do_accept();
+    void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
+
+    std::shared_ptr<boost::asio::io_context> m_io_context;
+    boost::asio::ip::tcp::endpoint m_tcp_endpoint;
+    boost::asio::ip::tcp::acceptor m_acceptor;
+
+    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
+    const std::string& m_url_endpoint;
+    boost::beast::http::verb m_method;
+    std::size_t m_max_payload_size;
+    std::chrono::seconds m_request_timeout;
+    std::atomic<bool> m_is_running;
+};
+
 /****** RestServerInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -146,46 +185,6 @@ struct RestServerInterfaceProxy
                      const pybind11::object& type,
                      const pybind11::object& value,
                      const pybind11::object& traceback);
-};
-
-namespace beast = boost::beast;  // from <boost/beast.hpp>
-namespace http  = beast::http;   // from <boost/beast/http.hpp>
-namespace net   = boost::asio;   // from <boost/asio.hpp>
-
-using tcp = boost::asio::ip::tcp;  // NOLINT(readability-identifier-naming)
-
-class Listener : public std::enable_shared_from_this<Listener>
-{
-  public:
-    Listener(std::shared_ptr<boost::asio::io_context> io_context,
-             std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
-             const std::string& bind_address,
-             unsigned short port,
-             const std::string& endpoint,
-             http::verb method,
-             std::size_t max_payload_size,
-             std::chrono::seconds request_timeout);
-
-    ~Listener() = default;
-
-    void run();
-    void stop();
-    bool is_running() const;
-
-  private:
-    void do_accept();
-    void on_accept(beast::error_code ec, tcp::socket socket);
-
-    std::shared_ptr<boost::asio::io_context> m_io_context;
-    tcp::endpoint m_tcp_endpoint;
-    tcp::acceptor m_acceptor;
-
-    std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
-    const std::string& m_url_endpoint;
-    http::verb m_method;
-    std::size_t m_max_payload_size;
-    std::chrono::seconds m_request_timeout;
-    std::atomic<bool> m_is_running;
 };
 
 }  // namespace morpheus
