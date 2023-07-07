@@ -236,7 +236,8 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
   m_io_context{nullptr},
-  m_listener{nullptr}
+  m_listener{nullptr},
+  m_is_running{false}
 {
     if (m_method == http::verb::unknown)
     {
@@ -281,6 +282,7 @@ void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::
         m_listener_threads.emplace_back([this]() { this->m_io_context->run(); });
     }
 
+    m_is_running = true;
     started_semaphore.release();
     m_io_context->run();
 }
@@ -336,11 +338,13 @@ void RestServer::stop()
         m_listener->stop();
         m_listener.reset();
     }
+
+    m_is_running = false;
 }
 
 bool RestServer::is_running() const
 {
-    return (m_io_context != nullptr && !m_io_context->stopped() && m_listener != nullptr && m_listener->is_running());
+    return m_is_running;
 }
 
 RestServer::~RestServer()
