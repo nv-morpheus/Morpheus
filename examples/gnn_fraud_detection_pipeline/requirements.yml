@@ -20,8 +20,8 @@ channels:
 dependencies:
     - chardet=5.0.0
     - cuml=23.06
-    - dask==2023.1.1
-    - distributed==2023.1.1
+    - dask>=2023.1.1
+    - distributed>=2023.1.1
     - pip
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
