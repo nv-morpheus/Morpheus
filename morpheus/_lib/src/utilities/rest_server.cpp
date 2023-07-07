@@ -337,18 +337,24 @@ void RestServer::start_listener()
         << "start_listener must be called from the first thread in m_listener_threads";
 
     m_io_context = std::make_shared<net::io_context>(m_num_threads);
-    auto ioc     = m_io_context;  // ensure each thread gets its own copy including this one
 
-    auto listener = std::make_shared<Listener>(
-        ioc, m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method, m_max_payload_size, m_request_timeout);
+    auto listener = std::make_shared<Listener>(m_io_context,
+                                               m_payload_parse_fn,
+                                               m_bind_address,
+                                               m_port,
+                                               m_endpoint,
+                                               m_method,
+                                               m_max_payload_size,
+                                               m_request_timeout);
     listener->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
     {
-        m_listener_threads.emplace_back([ioc]() { ioc->run(); });
+        auto ioc = m_io_context;  // ensure each thread gets its own copy
+        m_listener_threads.emplace_back([ioc = std::move(ioc)]() { ioc->run(); });
     }
 
-    ioc->run();
+    m_io_context->run();
 
     // io context stopped, so we can stop the listener
     listener->stop();
@@ -388,7 +394,6 @@ void RestServer::stop()
     if (m_io_context)
     {
         DCHECK(m_io_context->stopped());
-        m_io_context.reset();
     }
 }
 
