@@ -109,3 +109,11 @@ def test_simple_request(port: int,
     # However server.stop() will wait for the callback to be executed.
     if use_callback:
         callback_fn.assert_called_once_with(False, "")
+
+
+def test_constructor_errors():
+    with pytest.raises(RuntimeError):
+        RestServer(parse_fn=make_parse_fn(), method="UNSUPPORTED")
+
+    with pytest.raises(RuntimeError):
+        RestServer(parse_fn=make_parse_fn(), num_threads=0)
