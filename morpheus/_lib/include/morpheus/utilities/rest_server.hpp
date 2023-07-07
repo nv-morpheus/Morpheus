@@ -17,10 +17,9 @@
 
 #pragma once
 
-#include <boost/asio.hpp>             // for ip::tcp::socket, ip::tcp::acceptor
-#include <boost/asio/io_context.hpp>  // for io_context
-#include <boost/beast/core.hpp>       // for tcp_stream
-#include <boost/beast/http.hpp>
+#include <boost/asio/io_context.hpp>    // for io_context
+#include <boost/asio/ip/tcp.hpp>        // for tcp, tcp::acceptor, tcp::endpoint, tcp::socket
+#include <boost/beast/core/error.hpp>   // for error_code
 #include <boost/beast/http/verb.hpp>    // for verb
 #include <boost/system/error_code.hpp>  // for error_code
 #include <pybind11/pytypes.h>           // for pybind11::function
