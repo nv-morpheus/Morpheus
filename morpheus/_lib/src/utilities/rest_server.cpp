@@ -244,6 +244,11 @@ class Listener : public std::enable_shared_from_this<Listener>
 
     ~Listener() = default;
 
+    void stop()
+    {
+        m_acceptor.close();
+    };
+
     void run()
     {
         net::dispatch(m_acceptor.get_executor(),
@@ -316,6 +321,11 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
     {
         throw std::runtime_error("num_threads must be greater than 0");
     }
+
+    if (m_endpoint.front() != '/')
+    {
+        m_endpoint.insert(0, 1, '/');
+    }
 }
 
 void RestServer::start_listener()
@@ -329,9 +339,9 @@ void RestServer::start_listener()
     m_io_context = std::make_shared<net::io_context>(m_num_threads);
     auto ioc     = m_io_context;  // ensure each thread gets its own copy including this one
 
-    std::make_shared<Listener>(
-        ioc, m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method, m_max_payload_size, m_request_timeout)
-        ->run();
+    auto listener = std::make_shared<Listener>(
+        ioc, m_payload_parse_fn, m_bind_address, m_port, m_endpoint, m_method, m_max_payload_size, m_request_timeout);
+    listener->run();
 
     for (auto i = 1; i < m_num_threads; ++i)
     {
@@ -339,6 +349,9 @@ void RestServer::start_listener()
     }
 
     ioc->run();
+
+    // io context stopped, so we can stop the listener
+    listener->stop();
 }
 
 void RestServer::start()
@@ -371,6 +384,12 @@ void RestServer::stop()
     {
         t.join();
     }
+
+    if (m_io_context)
+    {
+        DCHECK(m_io_context->stopped());
+        m_io_context.reset();
+    }
 }
 
 bool RestServer::is_running() const
@@ -382,7 +401,10 @@ RestServer::~RestServer()
 {
     try
     {
-        stop();
+        if (m_is_running)
+        {
+            stop();
+        }
     } catch (const std::exception& e)
     {
         LOG(ERROR) << "Caught exception while stopping rest server: " << e.what();
