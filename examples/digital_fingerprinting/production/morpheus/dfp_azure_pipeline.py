@@ -112,6 +112,11 @@ from morpheus.utils.logger import configure_logging
               default=0,
               show_envvar=True,
               help="Minimum time step, in milliseconds, between object logs.")
+@click.option("--filter_threshold",
+              type=float,
+              default=2.0,
+              show_envvar=True,
+              help="Filter out inference results below this threshold")
 @click.option(
     "--input_file",
     "-f",
@@ -145,6 +150,7 @@ def run_pipeline(train_users,
                  cache_dir,
                  log_level,
                  sample_rate_s,
+                 filter_threshold,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -332,7 +338,10 @@ def run_pipeline(train_users,
 
         # Filter for only the anomalous logs
         pipeline.add_stage(
-            FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+            FilterDetectionsStage(config,
+                                  threshold=filter_threshold,
+                                  filter_source=FilterSource.DATAFRAME,
+                                  field_name='mean_abs_z'))
         pipeline.add_stage(DFPPostprocessingStage(config))
 
         # Exclude the columns we don't want in our output
@@ -346,4 +355,5 @@ def run_pipeline(train_users,
 
 
 if __name__ == "__main__":
+    # pylint: disable=no-value-for-parameter
     run_pipeline(obj={}, auto_envvar_prefix='DFP', show_default=True, prog_name="dfp")

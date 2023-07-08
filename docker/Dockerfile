@@ -54,7 +54,7 @@ FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LI
 ARG PYTHON_VER
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=23.02
+ARG RAPIDS_VER=23.06
 ARG CONDA_CHANNEL=rapidsai
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
@@ -244,6 +244,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia/label/cuda-11.8.0 \
         -c nvidia/label/dev \
         -c nvidia \
+        -c pytorch \
         -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml

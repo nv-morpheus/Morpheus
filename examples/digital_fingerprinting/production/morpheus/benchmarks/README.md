@@ -24,7 +24,7 @@ To set up and run the benchmarks on production DFP pipeline, follow the instruct
 > **Note**: Make sure `gputil`, `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
 
 ```bash
-conda install gputil dask==2022.7.0 distributed==2022.7.0
+conda install gputil 'dask>=2023.1.1' 'distributed>=2023.1.1'
 ```
 
 ### Run E2E Benchmarks

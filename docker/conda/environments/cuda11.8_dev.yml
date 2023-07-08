@@ -19,6 +19,7 @@ channels:
   - nvidia/label/cuda-11.8.0
   - nvidia
   - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
+  - pytorch
   - conda-forge
   - numba
 dependencies:
@@ -36,7 +37,7 @@ dependencies:
     - cuda-nvml-dev=11.8
     - cuda-toolkit=11.8
     - cudf=23.06
-    - cupy=11.6.0
+    - cupy>=12.0.0
     - cxx-compiler
     - cython=0.29.24
     - datacompy=0.8
@@ -51,11 +52,11 @@ dependencies:
     - git-lfs=3.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
     - glog=0.6
-    - gmock=1.10
+    - gmock>=1.13.0
     - gputil
     - grpc-cpp>=1.43
     - grpcio
-    - gtest=1.10
+    - gtest>=1.13.0
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
@@ -84,6 +85,8 @@ dependencies:
     - python-confluent-kafka=1.7.0
     - python-graphviz
     - python=3.10
+    - pytorch=2.0.1
+    - pytorch-cuda
     - rapidjson=1.1.0
     - scikit-build=0.17.1
     - scikit-learn=1.2.2

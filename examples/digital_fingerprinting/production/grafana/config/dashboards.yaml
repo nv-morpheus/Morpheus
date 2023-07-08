@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-channels:
-    - rapidsai
-    - nvidia
-    - conda-forge
-dependencies:
-    - chardet=5.0.0
-    - cuml=23.06
-    - dask>=2023.1.1
-    - distributed>=2023.1.1
-    - pip
-    - pip:
-        # tensorflow exists in conda-forge but is tied to CUDA-11.3
-        - tensorflow==2.12.0
+apiVersion: 1
+
+providers:
+ - name: 'default'
+   orgId: 1
+   folder: ''
+   type: file
+   options:
+     path: /var/lib/grafana/dashboards
