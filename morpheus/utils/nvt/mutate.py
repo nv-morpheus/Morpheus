@@ -48,25 +48,26 @@ class MutateOp(Operator):
         name = self._func.__name__.split(".")[-1]
         if name != "<lambda>":
             return f"MutateOp: {name}"
-        else:
-            try:
-                # otherwise get the lambda source code from the inspect module if possible
-                source = getsourcelines(self.f)[0][0]
-                lambdas = [op.strip() for op in source.split(">>") if "lambda " in op]
-                if len(lambdas) == 1 and lambdas[0].count("lambda") == 1:
-                    return lambdas[0]
-            except Exception:  # pylint: disable=broad-except
-                # we can fail to load the source in distributed environments. Since the
-                # label is mainly used for diagnostics, don't worry about the error here and
-                # fallback to the default labelling
-                pass
+
+        try:
+            # otherwise get the lambda source code from the inspect module if possible
+            source = getsourcelines(self.f)[0][0]
+            lambdas = [op.strip() for op in source.split(">>") if "lambda " in op]
+            if len(lambdas) == 1 and lambdas[0].count("lambda") == 1:
+                return lambdas[0]
+        except Exception:  # pylint: disable=broad-except
+            # we can fail to load the source in distributed environments. Since the
+            # label is mainly used for diagnostics, don't worry about the error here and
+            # fallback to the default labelling
+            pass
 
         # Failed to figure out the source
         return "MutateOp"
 
+    # pylint: disable=arguments-renamed
     @annotate("MutateOp", color="darkgreen", domain="nvt_python")
-    def transform(self, column_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
-        return self._func(column_selector, df)
+    def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        return self._func(col_selector, df)
 
     def column_mapping(
         self,
