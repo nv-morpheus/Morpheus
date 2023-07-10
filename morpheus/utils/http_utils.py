@@ -125,4 +125,4 @@ def prepare_url(url: str) -> str:
 
         logger.warning("No protocol scheme provided in URL, using: %s", url)
 
-    return url
+    return parsed_url.url
