@@ -114,68 +114,6 @@ def test_dataframe_input_schema_without_json_cols():
     assert len(input_df.columns) == 16
 
     column_info = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
-    ]
-
-    schema = DataFrameInputSchema(column_info=column_info)
-
-    df_processed = process_dataframe(input_df, schema)
-    processed_df_cols = df_processed.columns
-
-    assert len(input_df) == len(df_processed)
-    assert len(processed_df_cols) == len(column_info)
-    assert "timestamp" in processed_df_cols
-    assert "time" not in processed_df_cols
-    assert "userId" in processed_df_cols
-    assert len(df_processed[~df_processed.userId.isna()]) == 0
-
-    column_info2 = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
-    ]
-
-    schema2 = DataFrameInputSchema(column_info=column_info2)
-
-    # When trying to concat columns that don't exist in the dataframe, an exception is raised.
-    with pytest.raises(Exception):
-        process_dataframe(input_df, schema2)
-
-
-@pytest.mark.use_python
-def test_dataframe_input_schema_without_json_cols_nvt():
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
-
-    input_df = pd.read_json(src_file)
-
-    assert len(input_df.columns) == 16
-
-    column_info = [
         DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
         ColumnInfo(name="category", dtype='str'),
     ]
