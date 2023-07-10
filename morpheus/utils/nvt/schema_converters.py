@@ -70,7 +70,7 @@ class JSONFlattenInfo(ColumnInfo):
     output_col_names: list
 
 
-def resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
+def resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
     """
     Resolves JSON output columns from an input schema.
 
