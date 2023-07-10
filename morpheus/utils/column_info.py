@@ -22,12 +22,14 @@ import pandas as pd
 
 import cudf
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
+
+DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 
 
 # TODO(Devin): Proxying this for backwards compatibility. Had to move the primary definition to avoid circular imports.
 def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_schema) -> pd.DataFrame:
-    import morpheus.utils.schema_transforms as schema_transforms
+    from morpheus.utils import schema_transforms
     return schema_transforms.process_dataframe(df_in, input_schema)
 
 
@@ -37,7 +39,6 @@ def create_increment_col(df, column_name: str, groupby_column="username", timest
     timestamp values in `timestamp_column` and then grouping by `groupby_column` returning incrementing values starting
     at `1`.
     """
-    DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 
     # Ensure we are pandas for this
     if (isinstance(df, cudf.DataFrame)):
@@ -63,8 +64,8 @@ def column_listjoin(df, col_name: str) -> pd.Series:
     """
     if col_name in df:
         return df[col_name].transform(lambda x: ",".join(x)).astype('string')
-    else:
-        return pd.Series(None, dtype='string')
+
+    return pd.Series(None, dtype='string')
 
 
 @dataclasses.dataclass
@@ -78,11 +79,11 @@ class ColumnInfo:
         if ((isinstance(self.dtype, str) and self.dtype.startswith("datetime"))
                 or (isinstance(self.dtype, type) and issubclass(self.dtype, datetime))):
             return "datetime64[ns]"
-        else:
-            if (isinstance(self.dtype, str)):
-                return self.dtype
-            else:
-                return self.dtype.__name__
+
+        if (isinstance(self.dtype, str)):
+            return self.dtype
+
+        return self.dtype.__name__
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
@@ -226,7 +227,7 @@ class DataFrameInputSchema:
 
         # Compile the regex
         if (input_preserve_columns is not None and len(input_preserve_columns) > 0):
-            input_preserve_columns = re.compile("({})".format("|".join(input_preserve_columns)))
+            input_preserve_columns = re.compile(f"({'|'.join(input_preserve_columns)})")
         else:
             input_preserve_columns = None
 
