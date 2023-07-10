@@ -30,7 +30,7 @@ from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
 patch_numpy_dtype_registry()
 # ========================================================================
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(__name__)
 
 
 def _process_columns(df_in, input_schema: DataFrameInputSchema):
