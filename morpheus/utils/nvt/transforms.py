@@ -20,6 +20,8 @@ import pandas as pd
 
 import cudf
 
+from morpheus.utils.nvt.decorators import sync_df_as_pandas
+
 
 def json_flatten(col_selector, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
     convert_to_cudf = False

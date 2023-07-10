@@ -27,9 +27,9 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
 from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
-from morpheus.utils.nvt.schema_converters import bfs_traversal_with_op_map
-from morpheus.utils.nvt.schema_converters import build_nx_dependency_graph
-from morpheus.utils.nvt.schema_converters import coalesce_leaf_nodes
+from morpheus.utils.nvt.schema_converters import _bfs_traversal_with_op_map
+from morpheus.utils.nvt.schema_converters import _build_nx_dependency_graph
+from morpheus.utils.nvt.schema_converters import _coalesce_leaf_nodes
 from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
 from morpheus.utils.nvt.schema_converters import get_ci_column_selector
 from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
@@ -73,7 +73,7 @@ def create_test_dataframe():
 
 def test_sync_df_as_pandas_pd_dataframe():
 
-    @sync_df_as_pandas
+    @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
         return df
@@ -86,7 +86,7 @@ def test_sync_df_as_pandas_pd_dataframe():
 
 def test_sync_df_as_pandas_cudf_dataframe():
 
-    @sync_df_as_pandas
+    @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
         return df
@@ -238,9 +238,9 @@ def test_bfs_traversal_with_op_map():
 
     column_info_objects = [ci for ci in input_schema.column_info]
     column_info_map = {ci.name: ci for ci in column_info_objects}
-    graph = build_nx_dependency_graph(column_info_objects)
+    graph = _build_nx_dependency_graph(column_info_objects)
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
-    visited, node_op_map = bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
+    visited, node_op_map = _bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
 
     # Check if all nodes have been visited
     assert len(visited) == len(column_info_map)
@@ -255,12 +255,12 @@ def test_coalesce_leaf_nodes():
 
     column_info_objects = [ci for ci in input_schema.column_info]
     column_info_map = {ci.name: ci for ci in column_info_objects}
-    graph = build_nx_dependency_graph(column_info_objects)
+    graph = _build_nx_dependency_graph(column_info_objects)
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
 
     # Call bfs_traversal_with_op_map() and coalesce_leaf_nodes()
-    _, node_op_map = bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
-    coalesced_workflow = coalesce_leaf_nodes(node_op_map, graph, [])
+    _, node_op_map = _bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
+    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, graph, [])
 
     # Check if the coalesced workflow is not None
     assert coalesced_workflow is not None
