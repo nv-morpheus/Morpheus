@@ -69,7 +69,7 @@ dependencies:
   - nodejs=18.15.0
   - numba>=0.56.2
   - numpydoc=1.4
-  - nvtabular>=23.06
+  - nvtabular=23.06
   - pandas=1.3
   - pip
   - pkg-config # for mrc cmake
