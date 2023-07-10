@@ -33,11 +33,14 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestCreateFeaturesRWStage:
 
+    @mock.patch('stages.create_features.Client')
     def test_constructor(self,
+                         mock_dask_client,
                          config: Config,
                          dask_distributed: types.ModuleType,
                          rwd_conf: dict,
                          interested_plugins: typing.List[str]):
+        mock_dask_client.return_value = mock_dask_client
         from common.data_models import FeatureConfig
         from common.feature_extractor import FeatureExtractor
         from stages.create_features import CreateFeaturesRWStage
@@ -52,7 +55,7 @@ class TestCreateFeaturesRWStage:
                                       threads_per_worker=threads_per_worker)
 
         assert isinstance(stage, MultiMessageStage)
-        assert isinstance(stage._client, dask_distributed.Client)
+        assert stage._client is mock_dask_client
         scheduler_info = stage._client.scheduler_info()
         len(scheduler_info['workers']) == n_workers
         for worker in scheduler_info['workers'].values():
