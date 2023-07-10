@@ -18,6 +18,7 @@ import json
 import os
 from unittest import mock
 
+import cudf
 import fsspec
 import pandas as pd
 import pytest
@@ -47,7 +48,7 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
     from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
     schema = DataFrameInputSchema(
-        column_info=[CustomColumn(name='data', dtype=str, process_column_fn=lambda df: df['data'].to_list()[0])])
+        column_info=[CustomColumn(name='data', dtype=str, process_column_fn=lambda df: df['data'].to_arrow().to_pylist()[0])])
     df = _single_object_to_dataframe(single_file_obj, schema, FileTypes.Auto, False, {})
 
     assert df.columns == ['data']
@@ -55,7 +56,10 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
         d = json.load(fh)
         expected_data = d['data']
 
-    df['data'].to_list() == expected_data
+    aslist = [x.tolist() for x in df['data'].to_list()] #  to_list returns a list of numpy arrays
+
+    assert(aslist == expected_data)
+
 
 
 def test_single_object_to_dataframe_timeout():
