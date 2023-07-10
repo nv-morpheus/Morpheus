@@ -92,6 +92,7 @@ outputs:
         - pluggy 1.0.*
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - python
+        - python-confluent-kafka 1.9.2
         - pytorch 2.0.1
         - pytorch-cuda
         - scikit-learn 1.2.2.*
