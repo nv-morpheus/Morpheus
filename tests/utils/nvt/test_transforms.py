@@ -16,9 +16,8 @@ import pandas as pd
 import pytest
 from nvtabular.ops.operator import ColumnSelector
 
-import cudf
-
 from morpheus.utils.nvt.transforms import json_flatten
+from morpheus.utils.type_aliases import DataFrameType
 from utils.dataset_manager import DatasetManager
 
 
@@ -37,7 +36,7 @@ def df_fixture(dataset: DatasetManager, data: dict):
     yield dataset.df_class(data)
 
 
-def test_json_flatten(df: pd.DataFrame):
+def test_json_flatten(df: DataFrameType):
     col_selector = ColumnSelector(["info"])
     result = json_flatten(col_selector, df)
 
