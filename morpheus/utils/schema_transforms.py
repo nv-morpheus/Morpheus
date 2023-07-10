@@ -32,10 +32,9 @@ patch_numpy_dtype_registry()
 
 logger = logging.getLogger(__name__)
 
-
 def process_dataframe(
-        df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
-        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+    df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
 ) -> pd.DataFrame:
     """
     Applies column transformations as defined by `input_schema`
