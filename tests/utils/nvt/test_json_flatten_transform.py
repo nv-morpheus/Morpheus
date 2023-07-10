@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pandas as pd
+import pytest
 from nvtabular.ops.operator import ColumnSelector
 
 import cudf
@@ -20,13 +21,17 @@ import cudf
 from morpheus.utils.nvt.transforms import json_flatten
 
 
-def test_json_flatten_pandas():
-    data = {
+@pytest.fixture(name="data")
+def data_fixture():
+    yield {
         "id": [1, 2],
         "info": [
             '{"name": "John", "age": 30, "city": "New York"}', '{"name": "Jane", "age": 28, "city": "San Francisco"}'
         ]
     }
+
+
+def test_json_flatten_pandas(data: dict):
     df = pd.DataFrame(data)
     col_selector = ColumnSelector(["info"])
     result = json_flatten(col_selector, df)
@@ -37,13 +42,7 @@ def test_json_flatten_pandas():
     pd.testing.assert_frame_equal(result, expected_df)
 
 
-def test_json_flatten_cudf():
-    data = {
-        "id": [1, 2],
-        "info": [
-            '{"name": "John", "age": 30, "city": "New York"}', '{"name": "Jane", "age": 28, "city": "San Francisco"}'
-        ]
-    }
+def test_json_flatten_cudf(data: dict):
     df = cudf.DataFrame(data)
     col_selector = ColumnSelector(["info"])
     result = json_flatten(col_selector, df)
