@@ -61,4 +61,4 @@ def test_process_features(
     results = stage.process_features(dfp_multi_message)
 
     assert isinstance(results, MultiDFPMessage)
-    dataset_pandas.assert_df_equal(results.get_meta_dataframe(), expected_df)
+    dataset_pandas.assert_compare_df(results.get_meta_dataframe(), expected_df)
