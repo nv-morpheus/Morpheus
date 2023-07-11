@@ -23,7 +23,9 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.doca.doca_source_stage import DocaSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
@@ -56,6 +58,11 @@ from morpheus.utils.logger import configure_logging
     help="Features length to use for the model",
 )
 @click.option(
+    "--out_file"
+    default="doca_output.csv"
+    help="File in which to store output",
+)
+@click.option(
     "--nic_addr",
     help="NIC PCI Address",
     required=True,
@@ -65,7 +72,7 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, nic_addr, gpu_addr):
+def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr, gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
@@ -133,6 +140,14 @@ def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_f
     # add class stage
     pipeline.add_stage(AddClassificationsStage(config))
     pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))
+
+    # serialize
+    pipeline.add_stage(SerializeStage(config))
+    pipeline.add_stage(MonitorStage(config, description="Serialize rate", unit='pkts'))
+
+    # write to file
+    pipeline.add_stage(WriteToFileStage(config, filename=out_file, overwrite=True))
+    pipeline.add_stage(MonitorStage(config, description="Write to file rate", unit='pkts'))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

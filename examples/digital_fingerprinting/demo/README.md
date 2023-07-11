@@ -25,7 +25,7 @@ This document will provide you instructions for setting up a Control Messages Su
 To set up the Control Messages Submission GUI, you will need to install the following dependencies:
 
 ```
-pip install flask confluent_kafka
+pip install flask==2.2 confluent_kafka
 ```
 
 #### Kafka Setup
