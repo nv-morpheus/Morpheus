@@ -46,9 +46,9 @@ def test_integration_pandas(json_data: typing.List[str], expected_pdf: pd.DataFr
     pdf = pd.DataFrame({'col1': json_data})
     col_selector = ColumnSelector(['col1'])
 
-    op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
-                                 ("col1.key2.subkey2", "object")])
-    result_pdf = op.transform(col_selector, pdf)
+    nvt_op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
+                                     ("col1.key2.subkey2", "object")])
+    result_pdf = nvt_op.transform(col_selector, pdf)
 
     assert result_pdf.equals(expected_pdf), "Integration test with pandas DataFrame failed"
 
@@ -57,9 +57,9 @@ def test_integration_cudf(json_data: typing.List[str], expected_pdf: pd.DataFram
     cdf = cudf.DataFrame({'col1': json_data})
     col_selector = ColumnSelector(['col1'])
 
-    op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
-                                 ("col1.key2.subkey2", "object")])
-    result_cdf = op.transform(col_selector, cdf)
+    nvt_op = MutateOp(json_flatten, [("col1.key1", "object"), ("col1.key2.subkey1", "object"),
+                                     ("col1.key2.subkey2", "object")])
+    result_cdf = nvt_op.transform(col_selector, cdf)
     result_pdf = result_cdf.to_pandas()
 
     assert result_pdf.equals(expected_pdf), "Integration test with cuDF DataFrame failed"

@@ -98,76 +98,81 @@ def test_sync_df_as_pandas_cudf_dataframe():
 
 
 def test_json_flatten_info_init():
-    ci = JSONFlattenInfo(name="json_info",
-                         dtype="str",
-                         input_col_names=["json_col1.a", "json_col2.b"],
-                         output_col_names=["json_output_col1", "json_output_col2"])
-    assert ci.name == "json_info"
-    assert ci.dtype == "str"
-    assert ci.input_col_names == ["json_col1.a", "json_col2.b"]
-    assert ci.output_col_names == ["json_output_col1", "json_output_col2"]
+    col_info = JSONFlattenInfo(name="json_info",
+                               dtype="str",
+                               input_col_names=["json_col1.a", "json_col2.b"],
+                               output_col_names=["json_output_col1", "json_output_col2"])
+    assert col_info.name == "json_info"
+    assert col_info.dtype == "str"
+    assert col_info.input_col_names == ["json_col1.a", "json_col2.b"]
+    assert col_info.output_col_names == ["json_output_col1", "json_output_col2"]
 
 
 def test_json_flatten_info_init_missing_input_col_names():
     with pytest.raises(TypeError):
-        ci = JSONFlattenInfo(  # noqa F841
+        # pylint: disable=no-value-for-parameter
+        # pylint: disable=unused-variable
+        col_info = JSONFlattenInfo(  # noqa F841
             name="json_info", dtype="str", output_col_names=["json_output_col1", "json_output_col2"])
 
 
 def test_json_flatten_info_init_missing_output_col_names():
     with pytest.raises(TypeError):
-        ci = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", "json_col2.b"])  # noqa F841
+        # pylint: disable=no-value-for-parameter
+        # pylint: disable=unused-variable
+        col_info = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", # noqa F841
+                                                                                   "json_col2.b"])
 
 
 def test_get_ci_column_selector_rename_column():
-    ci = RenameColumn(input_name="original_name", name="new_name", dtype="str")
-    result = _get_ci_column_selector(ci)
+    col_info = RenameColumn(input_name="original_name", name="new_name", dtype="str")
+    result = _get_ci_column_selector(col_info)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_bool_column():
-    ci = BoolColumn(input_name="original_name",
-                    name="new_name",
-                    dtype="bool",
-                    true_values=["True"],
-                    false_values=["False"])
-    result = _get_ci_column_selector(ci)
+    col_info = BoolColumn(input_name="original_name",
+                          name="new_name",
+                          dtype="bool",
+                          true_values=["True"],
+                          false_values=["False"])
+    result = _get_ci_column_selector(col_info)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_datetime_column():
-    ci = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
-    result = _get_ci_column_selector(ci)
+    col_info = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
+    result = _get_ci_column_selector(col_info)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_string_join_column():
-    ci = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
-    result = _get_ci_column_selector(ci)
+    col_info = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
+    result = _get_ci_column_selector(col_info)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_increment_column():
-    ci = IncrementColumn(input_name="original_name",
-                         name="new_name",
-                         dtype="datetime64[ns]",
-                         groupby_column="groupby_col")
-    result = _get_ci_column_selector(ci)
+    col_info = IncrementColumn(input_name="original_name",
+                               name="new_name",
+                               dtype="datetime64[ns]",
+                               groupby_column="groupby_col")
+    result = _get_ci_column_selector(col_info)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_string_cat_column():
-    ci = StringCatColumn(name="new_name", dtype="str", input_columns=["col1", "col2"], sep=", ")
-    result = _get_ci_column_selector(ci)
+    col_info = StringCatColumn(name="new_name", dtype="str", input_columns=["col1", "col2"], sep=", ")
+    result = _get_ci_column_selector(col_info)
     assert result == ["col1", "col2"]
 
 
 def test_get_ci_column_selector_json_flatten_info():
-    ci = JSONFlattenInfo(name="json_info",
-                         dtype="str",
-                         input_col_names=["json_col1.a", "json_col2.b"],
-                         output_col_names=["json_col1_a", "json_col2_b"])
-    result = _get_ci_column_selector(ci)
+    col_info = JSONFlattenInfo(name="json_info",
+                               dtype="str",
+                               input_col_names=["json_col1.a", "json_col2.b"],
+                               output_col_names=["json_col1_a", "json_col2_b"])
+    result = _get_ci_column_selector(col_info)
     assert result == ["json_col1.a", "json_col2.b"]
 
 
@@ -199,14 +204,14 @@ def test_resolve_json_output_columns():
 def test_resolve_json_output_columns_empty_input_schema():
     input_schema = DataFrameInputSchema()
     output_cols = _resolve_json_output_columns(input_schema)
-    assert output_cols == []
+    assert not output_cols
 
 
 def test_resolve_json_output_columns_no_json_columns():
     input_schema = DataFrameInputSchema(
         column_info=[ColumnInfo(name="column1", dtype="int"), ColumnInfo(name="column2", dtype="str")])
     output_cols = _resolve_json_output_columns(input_schema)
-    assert output_cols == []
+    assert not output_cols
 
 
 def test_resolve_json_output_columns_with_json_columns():
@@ -237,7 +242,7 @@ def test_bfs_traversal_with_op_map():
                                         column_info=source_column_info)
 
     column_info_objects = list(input_schema.column_info)
-    column_info_map = {ci.name: ci for ci in column_info_objects}
+    column_info_map = {col_info.name: col_info for col_info in column_info_objects}
     graph = _build_nx_dependency_graph(column_info_objects)
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
     visited, node_op_map = _bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
@@ -253,8 +258,8 @@ def test_coalesce_leaf_nodes():
     input_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                         column_info=source_column_info)
 
-    column_info_objects = [ci for ci in input_schema.column_info]
-    column_info_map = {ci.name: ci for ci in column_info_objects}
+    column_info_objects = list(input_schema.column_info)
+    column_info_map = {col_info.name: col_info for col_info in column_info_objects}
     graph = _build_nx_dependency_graph(column_info_objects)
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
 
@@ -267,7 +272,7 @@ def test_coalesce_leaf_nodes():
 
     # Extract the leaf nodes from the coalesced workflow
     leaf_nodes = []
-    for node, op in node_op_map.items():
+    for node, _ in node_op_map.items():
         neighbors = list(graph.neighbors(node))
         if len(neighbors) == 0:
             leaf_nodes.append(node)
@@ -292,6 +297,7 @@ def test_input_schema_conversion_empty_schema():
     empty_schema = DataFrameInputSchema()
 
     with pytest.raises(ValueError, match="Input schema is empty"):
+        # pylint: disable=unused-variable
         workflow = dataframe_input_schema_to_nvt_workflow(empty_schema)  # noqa
 
 
@@ -534,9 +540,11 @@ def test_input_schema_conversion_with_trivial_filter():
 
 def test_input_schema_conversion_with_functional_filter():
     # Create a DataFrameInputSchema instance with the example schema provided
-    example_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                          column_info=source_column_info,
-                                          row_filter=lambda df: df[df["result"] == True])  # noqa E712
+    example_schema = DataFrameInputSchema(
+        json_columns=["access_device", "application", "auth_device", "user"],
+        column_info=source_column_info,
+        # pylint: disable=singleton-comparison
+        row_filter=lambda df: df[df["result"] == True])  # noqa E712
 
     # Create a test dataframe with data according to the schema
     test_df = pd.DataFrame({
