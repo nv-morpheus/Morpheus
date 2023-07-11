@@ -119,33 +119,19 @@ def column_listjoin(df: pd.DataFrame, col_name: str) -> pd.Series:
     return pd.Series(None, dtype='string')
 
 
-class DTypeDescriptor:
-    """
-    Descriptor object which will convert str | type to a pandas dtype string on __set__.
-    """
-
-    def __init__(self):
-        pass
-
-    def __set_name__(self, owner, name):
-        self._name = "_" + name
-
-    def __get__(self, obj, type):
-        if obj is None:
-            # Most likely, this is getting the default field value for the dataclass.
-            raise AttributeError
-
-        return getattr(obj, self._name)
-
-    def __set__(self, obj, value: str | type):
-        setattr(obj, self._name, ColumnInfo.convert_pandas_dtype(value))
-
-
 @dataclasses.dataclass
 class ColumnInfo:
     """Defines a single column and type-cast."""
     name: str
-    dtype: str = DTypeDescriptor()  # The final type
+    dtype: str
+
+    def __setattr__(self, name: str, value: typing.Any) -> None:
+
+        # Convert the dtype to a string when its set to keep the type consistent.
+        if (name == "dtype"):
+            value = ColumnInfo.convert_pandas_dtype(value)
+
+        super().__setattr__(name, value)
 
     @staticmethod
     def convert_pandas_dtype(dtype: str | type) -> str:
@@ -153,22 +139,17 @@ class ColumnInfo:
         if ((isinstance(dtype, str) and dtype.startswith("datetime"))
                 or (isinstance(dtype, type) and issubclass(dtype, datetime))):
             return "datetime64[ns]"
-        else:
-            if (isinstance(dtype, str)):
-                return dtype
-            else:
-                return dtype.__name__
+
+        if (isinstance(dtype, str)):
+            return dtype
+
+        return dtype.__name__
 
     def get_pandas_dtype(self) -> str:
-        """Return the pandas type string of column."""
-        if ((isinstance(self.dtype, str) and self.dtype.startswith("datetime"))
-                or (isinstance(self.dtype, type) and issubclass(self.dtype, datetime))):
-            return "datetime64[ns]"
+        """Return the pandas type string for the currently set `dtype`."""
 
-        if (isinstance(self.dtype, str)):
-            return self.dtype
-
-        return self.dtype.__name__
+        # The type is already converted. This is maintained for backwards compatibility.
+        return self.dtype
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
