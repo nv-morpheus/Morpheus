@@ -170,10 +170,9 @@ class GenerateVizFramesStage(SinglePortStage):
         Launch the Websocket server and asynchronously send messages via Websocket.
         """
 
-        loop = asyncio.get_event_loop()
-        self._loop = loop
+        self._loop = asyncio.get_event_loop()
 
-        self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2, loop=loop)
+        self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2)
 
         async def client_connected(websocket: websockets.legacy.server.WebSocketServerProtocol):
             """
@@ -216,9 +215,9 @@ class GenerateVizFramesStage(SinglePortStage):
                 logger.error("Error during serve", exc_info=e)
                 raise
 
-        self._server_task = loop.create_task(run_server())
+        self._server_task = self._loop.create_task(run_server())
 
-        self._server_close_event = asyncio.Event(loop=loop)
+        self._server_close_event = asyncio.Event()
 
         await asyncio.sleep(1.0)
 
