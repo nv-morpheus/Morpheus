@@ -25,7 +25,6 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
-#include <cstdlib>  // for getenv
 #include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
@@ -42,14 +41,10 @@ void CudfHelper::load()
 {
     if (import_morpheus___lib__cudf_helpers() != 0)
     {
-        // Only log/throw if we are not in a sphinx build
-        if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
-        {
-            pybind11::error_already_set ex;
+        pybind11::error_already_set ex;
 
-            LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
-            throw ex;
-        }
+        LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
+        throw ex;
     }
 }
 
