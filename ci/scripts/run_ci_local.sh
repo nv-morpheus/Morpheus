@@ -75,6 +75,9 @@ for STAGE in "${STAGES[@]}"; do
         if [[ "${STAGE}" == "test" ]]; then
             DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_EXAMPLES_YAML=1 --cap-add=sys_nice"
         fi
+        if [[ "${STAGE}" == "docs" ]]; then
+            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_DOCS_YAML=1"
+        fi
     else
         CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=runc"
