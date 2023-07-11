@@ -68,7 +68,7 @@ The following GUI should be displayed when all containers have completed launchi
 
 ### Build Morpheus
 
-Once docker-compose command has completed and GUI is displayed, exec into the container to build and run Morpheus:
+Once `docker compose` command has completed and GUI is displayed, exec into the container to build and run Morpheus:
 
 Exec into the Morpheus container:
 ```bash

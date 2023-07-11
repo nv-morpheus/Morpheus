@@ -18,7 +18,7 @@
 
 ### Set Environment
 
-To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLflow server have been set up and running with `docker-compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
+To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLflow server have been set up and running with `docker compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
 
 ## Requirements
 > **Note**: Make sure `gputil`, `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
