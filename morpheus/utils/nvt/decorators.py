@@ -22,7 +22,8 @@ import cudf
 
 def sync_df_as_pandas(df_arg_name='df'):
     """
-    This function serves as a decorator that synchronizes cudf.DataFrame to pandas.DataFrame before applying the function.
+    This function serves as a decorator that synchronizes cudf.DataFrame to pandas.DataFrame before applying the
+    function.
 
     Parameters
     ----------
@@ -35,17 +36,20 @@ def sync_df_as_pandas(df_arg_name='df'):
         The decorator.
     """
 
-    XDataFrame = typing.TypeVar("XDataFrame", pd.DataFrame, cudf.DataFrame)
+    # pylint: disable=pointless-string-statement
+    x_data_frame = typing.TypeVar("x_data_frame", pd.DataFrame, cudf.DataFrame)
     """
     Represents a DataFrame that can be either a pandas or cudf DataFrame
     """
-    _SyncPandasArgs = typing.ParamSpec('_SyncPandasArgs')
+
+    # pylint: disable=pointless-string-statement
+    _sync_pandas_args = typing.ParamSpec('_sync_pandas_args')
     """
     Represents the remaining arguments to the function after the first argument (the DataFrame)
     """
 
-    def decorator(func: typing.Callable[typing.Concatenate[pd.DataFrame, _SyncPandasArgs], pd.DataFrame]) -> \
-        typing.Callable[typing.Concatenate[XDataFrame, _SyncPandasArgs], XDataFrame]:
+    def decorator(func: typing.Callable[typing.Concatenate[pd.DataFrame, _sync_pandas_args], pd.DataFrame]) -> \
+            typing.Callable[typing.Concatenate[x_data_frame, _sync_pandas_args], x_data_frame]:
         """
         The actual decorator that wraps the function.
 
@@ -75,7 +79,7 @@ def sync_df_as_pandas(df_arg_name='df'):
                         break
 
             convert_to_cudf = False
-            if type(df_arg) == cudf.DataFrame:
+            if isinstance(df_arg, cudf.DataFrame):
                 convert_to_cudf = True
                 if (is_arg):
                     args = list(args)

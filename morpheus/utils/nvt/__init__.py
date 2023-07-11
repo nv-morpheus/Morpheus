@@ -14,6 +14,5 @@
 
 from .extensions import register_morpheus_extensions
 from .mutate import MutateOp
-from .schema_converters import dataframe_input_schema_to_nvt_workflow
 
-__all__ = ["MutateOp", "dataframe_input_schema_to_nvt_workflow", "register_morpheus_extensions"]
+__all__ = ["MutateOp", "register_morpheus_extensions"]

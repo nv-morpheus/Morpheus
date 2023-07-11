@@ -22,8 +22,6 @@ import fsspec
 import pandas as pd
 import pytest
 
-import cudf
-
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -58,7 +56,7 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
         d = json.load(fh)
         expected_data = d['data']
 
-    aslist = [x.tolist() for x in df['data'].to_list()]  #  to_list returns a list of numpy arrays
+    aslist = [x.tolist() for x in df['data'].to_list()]  # to_list returns a list of numpy arrays
 
     assert (aslist == expected_data)
 

@@ -37,6 +37,7 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
+
 from morpheus.utils.nvt import MutateOp
 from morpheus.utils.nvt.decorators import sync_df_as_pandas
 from morpheus.utils.nvt.transforms import json_flatten
@@ -95,13 +96,13 @@ def _resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.L
     return output_cols
 
 
-def _get_ci_column_selector(ci: ColumnInfo) -> typing.Union[str, typing.List[str]]:
+def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
     """
     Return a column selector based on a ColumnInfo object.
 
     Parameters
     ----------
-    ci : ColumnInfo
+    col_info : ColumnInfo
         The ColumnInfo object.
 
     Returns
@@ -117,26 +118,27 @@ def _get_ci_column_selector(ci: ColumnInfo) -> typing.Union[str, typing.List[str
         If the type of ColumnInfo is unknown.
     """
 
-    if (not isinstance(ci, ColumnInfo)):
+    if (not isinstance(col_info, ColumnInfo)):
         raise TypeError
 
-    if (ci.__class__ == ColumnInfo):
-        return ci.name
+    # pylint: disable=no-else-return
+    if (col_info.__class__ == ColumnInfo):
+        return col_info.name
 
-    elif ci.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
-        return ci.input_name
+    elif col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+        return col_info.input_name
 
-    elif ci.__class__ == StringCatColumn:
-        return ci.input_columns
+    elif col_info.__class__ == StringCatColumn:
+        return col_info.input_columns
 
-    elif ci.__class__ == JSONFlattenInfo:
-        return ci.input_col_names
+    elif col_info.__class__ == JSONFlattenInfo:
+        return col_info.input_col_names
 
-    elif ci.__class__ == CustomColumn:
+    elif col_info.__class__ == CustomColumn:
         return '*'
 
     else:
-        raise Exception(f"Unknown ColumnInfo type: {ci.__class__}")
+        raise ValueError(f"Unknown ColumnInfo type: {col_info.__class__}")
 
 
 def _json_flatten_from_input_schema(json_input_cols: typing.List[str],
@@ -187,7 +189,8 @@ def _string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFr
     return pd.DataFrame({output_column: cat_col})
 
 
-def _nvt_string_cat_col(column_selector: ColumnSelector,
+# pylint
+def _nvt_string_cat_col(column_selector: ColumnSelector,  # pylint: disable=unused-argument
                         df: typing.Union[pd.DataFrame, cudf.DataFrame],
                         output_column: str,
                         input_columns: typing.List[str],
@@ -245,7 +248,7 @@ def _increment_column(df: pd.DataFrame, output_column: str, input_column: str, p
     return pd.DataFrame({output_column: groupby_col})
 
 
-def _nvt_increment_column(column_selector: ColumnSelector,
+def _nvt_increment_column(column_selector: ColumnSelector,  # pylint: disable=unused-argument
                           df: typing.Union[pd.DataFrame, cudf.DataFrame],
                           output_column: str,
                           input_column: str,
@@ -272,23 +275,24 @@ def _nvt_increment_column(column_selector: ColumnSelector,
         The resulting DataFrame.
     """
 
-    return _increment_column(column_selector, df, output_column, input_column, period)
+    return _increment_column(df, output_column, input_column, period)
 
 
 # Mappings from ColumnInfo types to functions that create the corresponding NVT operator
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-        deps: [
+               deps: [
             LambdaOp(
                 lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
         ],
     ColumnInfo:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(lambda selector,
-                     df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
-                     else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                            df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (
+                    ci.name in df.columns)
+            else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
@@ -298,40 +302,40 @@ ColumnInfoProcessingMap = {
     #   transform taking df->series(ci.name)
     CustomColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(lambda selector,
-                     df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
+                            df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[CustomColumn] '{ci.name}'")
         ],
     DateTimeColumn:
         lambda ci,
-        deps: [
+               deps: [
             Rename(f=lambda name: ci.name if name == ci.input_name else name),
             LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")
         ],
     IncrementColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(
                 _nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
-                     dependencies=deps,
-                     output_columns=[(ci.name, ci.groupby_column)],
-                     label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
+                dependencies=deps,
+                output_columns=[(ci.name, ci.groupby_column)],
+                label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
         ],
     RenameColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(lambda selector,
-                     df: df.rename(columns={ci.input_name: ci.name}),
+                            df: df.rename(columns={ci.input_name: ci.name}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     StringCatColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(_nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
@@ -339,16 +343,16 @@ ColumnInfoProcessingMap = {
         ],
     StringJoinColumn:
         lambda ci,
-        deps: [
+               deps: [
             MutateOp(partial(
                 _nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
-                     dependencies=deps,
-                     output_columns=[(ci.name, ci.dtype)],
-                     label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
+                dependencies=deps,
+                output_columns=[(ci.name, ci.dtype)],
+                label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     JSONFlattenInfo:
         lambda ci,
-        deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+               deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
@@ -370,14 +374,17 @@ def _build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> 
     graph = nx.DiGraph()
 
     def _find_dependent_column(name, current_name):
-        for ci in column_info_objects:
-            if ci.name == current_name:
+        for col_info in column_info_objects:
+            if col_info.name == current_name:
                 continue
-            if ci.name == name:
-                return ci
-            elif ci.__class__ == JSONFlattenInfo:
-                if name in [c for c, _ in ci.output_col_names]:
-                    return ci
+
+            # pylint: disable=no-else-return
+            if col_info.name == name:
+                return col_info
+            elif col_info.__class__ == JSONFlattenInfo:
+                if name in [c for c, _ in col_info.output_col_names]:
+                    return col_info
+
         return None
 
     for col_info in column_info_objects:
@@ -428,7 +435,7 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
     """
 
     visited = set()
-    queue = [n for n in root_nodes]
+    queue = list(root_nodes)
     node_op_map = {}
 
     while queue:
@@ -436,7 +443,7 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
         if node not in visited:
             visited.add(node)
 
-            parents = [n for n in graph.predecessors(node)]
+            parents = list(graph.predecessors(node))
             if len(parents) == 0:
                 # We need to start an operator chain with a column selector, so root nodes need to prepend a parent
                 #   column selection operator
@@ -451,18 +458,18 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
                         parent_input = parent_input + node_op_map[parent]
 
             # Map the column info object to its NVT operator implementation
-            ops = ColumnInfoProcessingMap[type(ci_map[node])](ci_map[node], deps=[])
+            nvt_ops = ColumnInfoProcessingMap[type(ci_map[node])](ci_map[node], deps=[])
 
             # Chain ops together into a compound op
             node_op = parent_input
-            for op in ops:
-                node_op = node_op >> op
+            for nvt_op in nvt_ops:
+                node_op = node_op >> nvt_op
 
             # Set the op for this node to the compound operator
             node_op_map[node] = node_op
 
             # Add our neighbors to the queue
-            neighbors = [n for n in graph.neighbors(node)]
+            neighbors = list(graph.neighbors(node))
             for neighbor in neighbors:
                 queue.append(neighbor)
 
@@ -490,14 +497,14 @@ def _coalesce_leaf_nodes(node_op_map: typing.Dict[typing.Any, typing.Any],
         Coalesced workflow for leaf nodes.
     """
     coalesced_workflow = None
-    for node, op in node_op_map.items():
-        neighbors = [n for n in graph.neighbors(node)]
+    for node, nvt_op in node_op_map.items():
+        neighbors = list(graph.neighbors(node))
         # Only add the operators for leaf nodes, or those explicitly preserved
         if len(neighbors) == 0 or (preserve_re and preserve_re.match(node)):
             if coalesced_workflow is None:
-                coalesced_workflow = op
+                coalesced_workflow = nvt_op
             else:
-                coalesced_workflow = coalesced_workflow + op
+                coalesced_workflow = coalesced_workflow + nvt_op
 
     return coalesced_workflow
 
@@ -524,7 +531,7 @@ def _coalesce_ops(graph: nx.Graph,
     """
 
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
-    visited, node_op_map = _bfs_traversal_with_op_map(graph, ci_map, root_nodes)
+    _, node_op_map = _bfs_traversal_with_op_map(graph, ci_map, root_nodes)  #
     coalesced_workflow = _coalesce_leaf_nodes(node_op_map, graph, preserve_re=preserve_re)
 
     return coalesced_workflow
@@ -569,10 +576,10 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema,
     json_output_cols = _resolve_json_output_columns(input_schema)
 
     json_cols = input_schema.json_columns
-    column_info_objects = [ci for ci in input_schema.column_info]
+    column_info_objects = list(input_schema.column_info)
     if (json_cols is not None and len(json_cols) > 0):
         column_info_objects.append(
-            JSONFlattenInfo(input_col_names=[c for c in json_cols],
+            JSONFlattenInfo(input_col_names=list(json_cols),
                             output_col_names=json_output_cols,
                             dtype="str",
                             name="json_info"))

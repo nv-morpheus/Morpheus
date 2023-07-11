@@ -72,7 +72,6 @@ def create_test_dataframe():
 
 
 def test_sync_df_as_pandas_pd_dataframe():
-
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -85,7 +84,6 @@ def test_sync_df_as_pandas_pd_dataframe():
 
 
 def test_sync_df_as_pandas_cudf_dataframe():
-
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -236,7 +234,7 @@ def test_bfs_traversal_with_op_map():
     input_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                         column_info=source_column_info)
 
-    column_info_objects = [ci for ci in input_schema.column_info]
+    column_info_objects = list(input_schema.column_info)
     column_info_map = {ci.name: ci for ci in column_info_objects}
     graph = _build_nx_dependency_graph(column_info_objects)
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]

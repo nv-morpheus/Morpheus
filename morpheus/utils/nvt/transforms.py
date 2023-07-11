@@ -49,7 +49,7 @@ def json_flatten(col_selector: ColumnSelector,
         pd_series = df[col] if not convert_to_cudf else df[col].to_pandas()
         pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
         pdf_norm = pd.json_normalize(pd_series)
-        pdf_norm.rename(columns=lambda x: col + "." + x, inplace=True)
+        pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
         pdf_norm.reset_index(drop=True, inplace=True)
 
         if (df_normalized is None):

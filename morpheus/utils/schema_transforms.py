@@ -21,18 +21,18 @@ import pandas as pd
 import cudf
 
 from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.nvt import dataframe_input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
 # Apply patches to NVT
 # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
 # ========================================================================
-from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
+from morpheus.utils.nvt.patches import patch_numpy_dtype_registry  # noqa: E402
 
 patch_numpy_dtype_registry()
 # ========================================================================
 
 # Add morpheus conversion mappings
 # ========================================================================
-from morpheus.utils.nvt import register_morpheus_extensions
+from morpheus.utils.nvt import register_morpheus_extensions  # noqa: E402
 
 register_morpheus_extensions()
 # =========================================================================
