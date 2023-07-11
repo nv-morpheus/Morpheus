@@ -151,7 +151,7 @@ class GenerateVizFramesStage(SinglePortStage):
         df["ts_round_sec"] = (df["timestamp"] / 1000.0).astype(int) * 1000
 
         # Return a list of tuples of (ts_round_sec, dataframe)
-        return [(key, group) for key, group in df.groupby(df.ts_round_sec)]
+        return list(df.groupby(df.ts_round_sec))
 
     def _write_viz_file(self, x: typing.List[typing.Tuple[int, pd.DataFrame]]):
 
@@ -250,13 +250,13 @@ class GenerateVizFramesStage(SinglePortStage):
                 sink = pa.BufferOutputStream()
 
                 # This is the timestamp of the earliest message
-                t0 = x.get_meta("timestamp").min()
+                time0 = x.get_meta("timestamp").min()
 
                 df = x.get_meta(["timestamp", "src_ip", "dest_ip", "secret_keys", "data"])
 
                 out_df = cudf.DataFrame()
 
-                out_df["dt"] = (df["timestamp"] - t0).astype(np.int32)
+                out_df["dt"] = (df["timestamp"] - time0).astype(np.int32)
                 out_df["src"] = df["src_ip"].str.ip_to_int().astype(np.int32)
                 out_df["dst"] = df["dest_ip"].str.ip_to_int().astype(np.int32)
                 out_df["lvl"] = df["secret_keys"].astype(np.int32)
