@@ -20,35 +20,53 @@ limitations under the License.
 This example is designed to illustrate a full-scale, production-ready, DFP deployment in Morpheus. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
 
 Key Differences:
- * Multiple pipelines are specialized to perform either training or inference
- * Requires setting up a model store to allow the training and inference pipelines to communicate
- * Organized into a docker-compose deployment for easy startup
- * Contains a Jupyter notebook service to ease development and debugging
- * Can be deployed to Kubernetes using provided Helm charts
- * Uses many customized stages to maximize performance.
+
+- Multiple pipelines are specialized to perform either training or inference
+- Requires setting up a model store to allow the training and inference pipelines to communicate
+- Organized into a docker-compose deployment for easy startup
+- Contains a Jupyter notebook service to ease development and debugging
+- Can be deployed to Kubernetes using provided Helm charts
+- Uses many customized stages to maximize performance.
 
 ## Build the Morpheus container
+
 This is necessary to get the latest changes needed for DFP. From the root of the Morpheus repo:
+
 ```bash
 ./docker/build_container_release.sh
 ```
 
 ## Building and Running via `docker-compose`
+
 ### Build
+
 ```bash
 cd examples/digital_fingerprinting/production
 export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker-compose build
 ```
 
+> **Note:** This requires version 1.28.0 or higher of `docker-compose`. If you enconter an error similar to:
+>
+> ```log
+> ERROR: The Compose file './docker-compose.yml' is invalid because:
+> services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was > unexpected)
+> ```
+>
+> This is most likely due to an older version of `docker-compose`.
+
 ### Running the services
+
 #### Jupyter Server
+
 From the `examples/digital_fingerprinting/production` dir run:
+
 ```bash
 docker-compose up jupyter
 ```
 
 Once the build is complete and the service has started, a message similar to the following should display:
+
 ```
 jupyter  |     To access the server, open this file in a browser:
 jupyter  |         file:///root/.local/share/jupyter/runtime/jpserver-7-open.html
@@ -58,25 +76,30 @@ jupyter  |      or http://127.0.0.1:8888/lab?token=<token>
 ```
 
 Copy and paste the URL into a web browser. There are four notebooks included with the DFP example:
-* dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
-* dfp_azure_inference.ipynb - Inference pipeline for Azure Active Directory data
-* dfp_duo_training.ipynb - Training pipeline for Duo Authentication
-* dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
+
+- dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
+- dfp_azure_inference.ipynb - Inference pipeline for Azure Active Directory data
+- dfp_duo_training.ipynb - Training pipeline for Duo Authentication
+- dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
 
 > **Note:** The token in the URL is a one-time use token, and a new one is generated with each invocation.
 
 #### Morpheus Pipeline
+
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
+
 ```bash
 docker-compose up morpheus_pipeline
 ```
 
 If instead you want to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
+
 ```bash
 docker-compose run morpheus_pipeline bash
 ```
 
 From the prompt within the `morpheus_pipeline` container you can run either the `dfp_azure_pipeline.py` or `dfp_duo_pipeline.py` pipeline scripts.
+
 ```bash
 python dfp_azure_pipeline.py --help
 python dfp_duo_pipeline.py --help
@@ -90,16 +113,17 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--only_user` | TEXT | Only users specified by this option will be included. Mutually exclusive with `skip_user` |
 | `--start_time` | TEXT | The start of the time window, if undefined start_date will be `now()-duration` |
 | `--duration` | TEXT | The duration to run starting from now [default: 60d] |
-| `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
-| `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
-| `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
-| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
-| `--watch_inputs` | FLAG | Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. This assumes that the at least one paths contains a wildcard. |
-| `--watch_interval` | FLOAT | Amount of time, in seconds, to wait between checks for new files. Only used if --watch_inputs is set. [default `1.0`] |
-| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
+| `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
+| `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use. [default: `WARNING`] |
+| `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs. [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (_) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/_`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `--watch_inputs`| FLAG | Instructs the pipeline to continuously check the paths specified by`--input_file`for new files. This assumes that the at least one paths contains a wildcard. |
+|`--watch_interval`| FLOAT | Amount of time, in seconds, to wait between checks for new files. Only used if --watch_inputs is set. [default`1.0`] |
+| `--tracking_uri`| TEXT | The MLflow tracking URI to connect to the tracking backend. [default:`http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
 ##### Steps to Run Example Pipeline
+
 The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
 
 ```bash
@@ -107,6 +131,7 @@ export DFP_HOME=examples/digital_fingerprinting
 ```
 
 Usage of the script is as follows:
+
 ```bash
 python $DFP_HOME/fetch_example_data.py --help
 
@@ -120,16 +145,19 @@ optional arguments:
 ```
 
 Download the data needed to run a pipeline on Azure / Duo logs:
+
 ```bash
 python $DFP_HOME/fetch_example_data.py all
 ```
 
 Run Duo Training Pipeline:
+
 ```bash
 python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/duo-training-data/*.json"
 ```
 
 Run Duo Inference Pipeline:
+
 ```bash
 python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="../../../data/dfp/duo-inference-data/*.json"
 ```
@@ -141,19 +169,23 @@ python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --i
 ```
 
 Run Azure Inference Pipeline:
+
 ```bash
 python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json"
 ```
 
 #### Optional MLflow Service
-Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+
+Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
 From the `examples/digital_fingerprinting/production` dir run:
+
 ```bash
 docker-compose up mlflow
 ```
 
 By default, a MLflow dashboard will be available at:
+
 ```bash
 http://localhost:5000
 ```
@@ -179,6 +211,7 @@ helm install --set ngc.apiKey="$API_KEY",sdk.args="cd /workspace/examples/digita
 ```
 
 Make note of the Jupyter token by examining the logs of the SDK pod:
+
 ```
 kubectl logs sdk-cli-<sdk-release-name>
 ```
