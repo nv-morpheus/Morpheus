@@ -17,14 +17,14 @@ name: morpheus
 channels:
     - conda-forge
 dependencies:
-    - doxygen=1.9.2
+    - doxygen=1.9.7
     - pip
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
-        - breathe==4.34.0
+        - breathe==4.35.0
         - exhale==0.3.6
         - ipython
-        - myst-parser==0.17.2
+        - myst-parser==0.18
         - nbsphinx
         - sphinx
         - sphinx_rtd_theme
