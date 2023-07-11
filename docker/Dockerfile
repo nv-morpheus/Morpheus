@@ -236,6 +236,9 @@ COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.y
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # CVE-2018-20225 for the base pip, not the env one
+    # conda will ignore the request to remove pip
+    python -m pip uninstall -y pip && \
     source activate morpheus &&\
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
