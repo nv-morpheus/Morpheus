@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .extensions import register_morpheus_extensions
-from .mutate import MutateOp
-from .schema_converters import dataframe_input_schema_to_nvt_workflow
+from .morpheus_ext import register_morpheus_extensions
 
-__all__ = ["MutateOp", "dataframe_input_schema_to_nvt_workflow", "register_morpheus_extensions"]
+__all__ = ["register_morpheus_extensions"]

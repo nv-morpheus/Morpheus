@@ -12,18 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import json
 import typing
 
 import pandas as pd
+from nvtabular import ColumnSelector
 
 import cudf
 
-from morpheus.utils.nvt.decorators import sync_df_as_pandas
 
+def json_flatten(col_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame]) -> typing.Union[
+    pd.DataFrame, cudf.DataFrame]:
+    """
+    Flattens JSON columns in the given DataFrame and concatenates them into a single DataFrame.
 
-def json_flatten(col_selector, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
+    Parameters
+    ----------
+    col_selector : ColumnSelector
+        An instance of ColumnSelector that contains the names of the columns to flatten.
+    df : Union[pd.DataFrame, cudf.DataFrame]
+        The input DataFrame that contains the JSON columns to flatten.
+
+    Returns
+    -------
+    Union[pd.DataFrame, cudf.DataFrame]
+        A new DataFrame with flattened JSON columns. If 'df' was a cudf.DataFrame,
+        the return type is cudf.DataFrame. Otherwise, it is pd.DataFrame.
+    """
     convert_to_cudf = False
     if isinstance(df, cudf.DataFrame):
         convert_to_cudf = True

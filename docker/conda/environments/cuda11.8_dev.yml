@@ -93,7 +93,7 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - sysroot_linux-64=2.17
-  - tritonclient>=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
+  - tritonclient=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
   - tqdm=4
   - typing_utils=0.1
   - watchdog=2.1

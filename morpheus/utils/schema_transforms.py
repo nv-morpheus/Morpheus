@@ -30,7 +30,15 @@ from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
 patch_numpy_dtype_registry()
 # ========================================================================
 
+# Add morpheus conversion mappings
+# ========================================================================
+from morpheus.utils.nvt import register_morpheus_extensions
+
+register_morpheus_extensions()
+# =========================================================================
+
 logger = logging.getLogger(__name__)
+
 
 def process_dataframe(
     df_in: typing.Union[pd.DataFrame, cudf.DataFrame],

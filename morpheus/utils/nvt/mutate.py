@@ -25,7 +25,26 @@ from nvtabular.ops.operator import Operator
 
 class MutateOp(Operator):
 
-    def __init__(self, func, output_columns=None, dependencies=None, label=None):
+    def __init__(self,
+                 func: typing.Callable,
+                 output_columns: typing.Optional[typing.List] = None,
+                 dependencies: typing.Optional[typing.List] = None,
+                 label: typing.Optional[str] = None):
+        """
+        Initialize MutateOp class.
+
+        Parameters
+        ----------
+        func : Callable
+            Function to perform mutation operation.
+        output_columns : Optional[List], optional
+            List of output columns, by default None.
+        dependencies : Optional[List], optional
+            List of dependencies, by default None.
+        label : Optional[str], optional
+            Label for MutateOp, by default None.
+        """
+
         super().__init__()
 
         self._dependencies = dependencies or []
@@ -33,7 +52,21 @@ class MutateOp(Operator):
         self._label = label
         self._output_columns = output_columns or []
 
-    def _remove_deps(self, column_selector):
+    def _remove_deps(self, column_selector: ColumnSelector):
+        """
+        Remove dependencies from column selector.
+
+        Parameters
+        ----------
+        column_selector : ColumnSelector
+            Instance of ColumnSelector from which dependencies will be removed.
+
+        Returns
+        -------
+        ColumnSelector
+            Updated instance of ColumnSelector.
+        """
+
         to_skip = ColumnSelector(
             [dep if isinstance(dep, str) else dep.output_schema.column_names for dep in self._dependencies])
 
@@ -41,6 +74,15 @@ class MutateOp(Operator):
 
     @property
     def label(self):
+        """
+        Get the label of the MutateOp instance.
+
+        Returns
+        -------
+        str
+            The label of the MutateOp instance.
+        """
+
         if (self._label is not None):
             return self._label
 
@@ -67,12 +109,39 @@ class MutateOp(Operator):
     # pylint: disable=arguments-renamed
     @annotate("MutateOp", color="darkgreen", domain="nvt_python")
     def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        """
+        Apply the transformation function on the dataframe.
+
+        Parameters
+        ----------
+        col_selector : ColumnSelector
+            Instance of ColumnSelector.
+        df : DataFrameType
+            Input dataframe.
+
+        Returns
+        -------
+        DataFrameType
+            Transformed dataframe.
+        """
+
         return self._func(col_selector, df)
 
-    def column_mapping(
-        self,
-        col_selector: ColumnSelector,
-    ) -> typing.Dict[str, str]:
+    def column_mapping(self, col_selector: ColumnSelector) -> typing.Dict[str, str]:
+        """
+        Generate a column mapping.
+
+        Parameters
+        ----------
+        col_selector : ColumnSelector
+            Instance of ColumnSelector.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary of column mappings.
+        """
+
         column_mapping = {}
 
         for col_name, _ in self._output_columns:
@@ -86,6 +155,23 @@ class MutateOp(Operator):
         col_selector: ColumnSelector,
         prev_output_schema: typing.Optional[Schema] = None,
     ) -> Schema:
+        """
+        Compute the output schema.
+
+        Parameters
+        ----------
+        input_schema : Schema
+            The input schema.
+        col_selector : ColumnSelector
+            Instance of ColumnSelector.
+        prev_output_schema : Optional[Schema], optional
+            Previous output schema, by default None.
+
+        Returns
+        -------
+        Schema
+            The output schema.
+        """
         output_schema = super().compute_output_schema(input_schema, col_selector, prev_output_schema)
 
         # Add new columns to the output schema

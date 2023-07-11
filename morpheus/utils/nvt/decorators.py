@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import cudf
 import inspect
 import typing
+
 import pandas as pd
+
+import cudf
 
 
 def sync_df_as_pandas(df_arg_name='df'):
@@ -34,8 +35,9 @@ def sync_df_as_pandas(df_arg_name='df'):
         The decorator.
     """
 
-    def decorator(func: typing.Callable[..., pd.DataFrame]) -> typing.Callable[
-        ..., typing.Union[pd.DataFrame, cudf.DataFrame]]:
+    def decorator(
+            func: typing.Callable[...,
+                                  pd.DataFrame]) -> typing.Callable[..., typing.Union[pd.DataFrame, cudf.DataFrame]]:
         """
         The actual decorator that wraps the function.
 
