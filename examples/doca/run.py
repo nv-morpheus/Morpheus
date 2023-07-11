@@ -58,8 +58,8 @@ from morpheus.utils.logger import configure_logging
     help="Features length to use for the model",
 )
 @click.option(
-    "--out_file"
-    default="doca_output.csv"
+    "--out_file",
+    default="doca_output.csv",
     help="File in which to store output",
 )
 @click.option(
