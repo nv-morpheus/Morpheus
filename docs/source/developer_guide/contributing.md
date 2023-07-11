@@ -300,7 +300,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
 6. Launch kafka with 3 instances:
 
    ```bash
-   docker-compose up -d --scale kafka=3
+   docker compose up -d --scale kafka=3
    ```
    In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell

@@ -172,7 +172,7 @@ The reference architecture is composed of the following services:​
 From the root of the Morpheus repo, run:
 ```bash
 cd examples/digital_fingerprinting/production
-docker-compose build
+docker compose build
 ```
 
 #### Downloading the example datasets
@@ -188,7 +188,7 @@ python examples/digital_fingerprinting/fetch_example_data.py all
 ##### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up jupyter
+docker compose up jupyter
 ```
 
 Once the build is complete and the service has started, a message similar to the following should display:
@@ -211,12 +211,12 @@ Copy and paste the URL into a web browser. There are four notebooks included wit
 ##### Morpheus Pipeline
 By default, the `morpheus_pipeline` will run the training pipeline for Duo data from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up morpheus_pipeline
+docker compose up morpheus_pipeline
 ```
 
 If instead you want to run a different pipeline from the `examples/digital_fingerprinting/production` dir, run:
 ```bash
-docker-compose run morpheus_pipeline bash
+docker compose run morpheus_pipeline bash
 ```
 
 
@@ -291,7 +291,7 @@ Starting the `morpheus_pipeline` or the `jupyter` service, will start the `mlflo
 
 From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
-docker-compose up mlflow
+docker compose up mlflow
 ```
 
 ### Running via Kubernetes​
