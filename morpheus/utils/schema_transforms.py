@@ -92,5 +92,5 @@ def process_dataframe(
 
     if (convert_to_pd):
         return result.to_pandas()
-    else:
-        return result
+
+    return result

@@ -43,6 +43,7 @@ def single_file_obj():
     yield fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
 
+# pylint: disable=redefined-outer-name
 def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
     from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
@@ -53,8 +54,8 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
 
     assert df.columns == ['data']
     with open(single_file_obj.path, encoding='UTF-8') as fh:
-        d = json.load(fh)
-        expected_data = d['data']
+        json_data = json.load(fh)
+        expected_data = json_data['data']
 
     aslist = [x.tolist() for x in df['data'].to_list()]  # to_list returns a list of numpy arrays
 
@@ -94,6 +95,7 @@ def test_constructor(config: Config):
     assert stage._cache_dir.startswith('/test/path/cache')
 
 
+# pylint: disable=redefined-outer-name
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])

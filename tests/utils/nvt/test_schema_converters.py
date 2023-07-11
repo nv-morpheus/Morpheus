@@ -120,8 +120,8 @@ def test_json_flatten_info_init_missing_output_col_names():
     with pytest.raises(TypeError):
         # pylint: disable=no-value-for-parameter
         # pylint: disable=unused-variable
-        col_info = JSONFlattenInfo(name="json_info", dtype="str", input_col_names=["json_col1.a", # noqa F841
-                                                                                   "json_col2.b"])
+        col_info = JSONFlattenInfo(  # noqa F841
+            name="json_info", dtype="str", input_col_names=["json_col1.a", "json_col2.b"])
 
 
 def test_get_ci_column_selector_rename_column():
