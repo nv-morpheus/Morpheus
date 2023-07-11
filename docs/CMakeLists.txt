@@ -22,11 +22,13 @@ set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/html)
 
 add_custom_target(${PROJECT_NAME}_docs ALL
-                  COMMAND
-                  BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
-                  ${SPHINX_EXECUTABLE} -b html -j auto -T
-                  ${SPHINX_SOURCE} ${SPHINX_BUILD}
-                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                  COMMENT "Generating documentation with Sphinx")
+    COMMAND
+    BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+    MORPHEUS_IN_SPHINX_BUILD=1 ${SPHINX_EXECUTABLE} -W --keep-going -b html -j auto -T
+    ${SPHINX_SOURCE} ${SPHINX_BUILD}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating documentation with Sphinx"
+    DEPENDS morpheus ${cudf_helpers_target} morpheus._lib.common morpheus._lib.stages morpheus._lib.messages morpheus._lib.modules
+)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
