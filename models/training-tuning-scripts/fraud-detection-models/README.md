@@ -31,23 +31,17 @@ pip install -r requirements.txt
 
 ```
 python training.py --help
-optional arguments:
-  -h, --help            show this help message and exit
-  --training-data TRAINING_DATA
-                     CSV with fraud_label
-  --validation-data VALIDATION_DATA
-                        CSV with fraud_label
-  --epochs EPOCHS     Number of epochs
-  --node_type NODE_TYPE
-                        Target node type
-  --output-xgb OUTPUT_XGB
-                        output file to save xgboost model
-  --output-hinsage OUTPUT_HINSAGE
-                        output file to save GraphHinSage model
-  --save_model SAVE_MODEL
-                        Save models to given  filenames
-  --embedding_size EMBEDDING_SIZE
-                        output file to save new model
+Usage: training.py [OPTIONS]
+
+Options:
+  --training-data TEXT    Path to training data
+  --validation-data TEXT  Path to validation data
+  --model-dir TEXT        path to model directory
+  --target-node TEXT      Target node
+  --epochs INTEGER        Number of epochs
+  --batch_size INTEGER    Batch size
+  --output-file TEXT      Path to csv inference result
+  --help                  Show this message and exit
 
 ```
 
@@ -59,10 +53,7 @@ export DATASET=../../dataset
 
 python training.py --training-data $DATASET/training-data/fraud-detection-training-data.csv \
 --validation-data $DATASET\validation-datafraud-detection-validation-data.csv \
-         --epoch 10 \
-         --output-xgb model/xgb.pt \ 
-         --output-hinsage model/hinsage.pt \
-         --save_model True
+         --epochs 20 \
+         --model_dir model
 ```
-
-This results in a trained models of GraphSAGE (hinsage.pt) and Gradient boosting tree (xgb.pt) at the `model` directory.
+This results is a trained models of RGCN (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.

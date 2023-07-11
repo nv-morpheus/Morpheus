@@ -12,218 +12,427 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""""
-# EXample usage:
-python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv \
-     --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
-         --epoch 10 --output-xgb model/xgb.pt --output-hinsage model/hinsage.pt
-"""
-import argparse
 
-import networkx as nx
+import os
+import pickle
+
+import click
+import dgl
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from evaluation import Evaluation
-from stellargraph import StellarGraph
-from stellargraph.layer import HinSAGE
-from stellargraph.mapper import HinSAGENodeGenerator
-from tensorflow.keras import Model
-from tensorflow.keras import layers
-from tensorflow.keras import optimizers
-from tensorflow.keras.losses import binary_crossentropy
+import torch
+import torch.nn as nn
+from model import HeteroRGCN
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import auc
+from sklearn.metrics import average_precision_score
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+from torchmetrics.functional import accuracy
+from tqdm import trange
 from xgboost import XGBClassifier
 
-tf.random.set_seed(1001)
+np.random.seed(1001)
+torch.manual_seed(1001)
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def graph_construction(nodes, edges, node_features):
+def get_metrics(pred, labels, out_dir, name='RGCN'):
+    """Compute evaluation metrics
 
-    g_nx = nx.Graph()
-    # add nodes
-    for key, values in nodes.items():
-        g_nx.add_nodes_from(values, ntype=key)
-    # add edges
-    for edge in edges:
-        g_nx.add_edges_from(edge)
+    Args:
+        pred : prediction
+        labels (_type_): groundtruth label
+        out_dir (_type_): directory for saving
+        name (str, optional): model name. Defaults to 'RGCN'.
 
-    return StellarGraph(g_nx, node_type_name="ntype", node_features=node_features)
-
-
-def build_graph_features(dataset):
-
-    transaction_node_data = dataset.drop(["client_node", "merchant_node", "fraud_label", "index"], axis=1)
-    client_node_data = pd.DataFrame([1] * len(dataset.client_node.unique())).set_index(dataset.client_node.unique())
-    merchant_node_data = pd.DataFrame([1] * len(dataset.merchant_node.unique())).set_index(
-        dataset.merchant_node.unique())
-
-    nodes = {"client": dataset.client_node, "merchant": dataset.merchant_node, "transaction": dataset.index}
-    edges = [zip(dataset.client_node, dataset.index), zip(dataset.merchant_node, dataset.index)]
-    features = {"transaction": transaction_node_data, 'client': client_node_data, 'merchant': merchant_node_data}
-    graph = graph_construction(nodes, edges, features)
-
-    return graph
-
-
-def split_train_test(df, ratio=0.7, train_anom_prop=0.1, test_anom_prop=0.1):
-    cutoff = round(ratio * len(df))
-    train_data = df.head(cutoff)
-    test_data = df.tail(len(df) - cutoff)
-
-    train_fraud = np.random.choice(train_data[train_data.fraud_label == 1].index,
-                                   int((1 - train_anom_prop) * train_data.shape[0]))
-    test_fraud = np.random.choice(test_data[test_data.fraud_label == 1].index,
-                                  int((1 - test_anom_prop) * test_data.shape[0]))
-
-    train_data, test_data = train_data[~train_data.index.isin(
-        train_fraud)], test_data[~test_data.index.isin(test_fraud)]
-    return train_data, test_data, train_data.index, test_data.index
-
-
-def data_preprocessing(training_dataset):
-
-    # Load dataset
-    df = pd.read_csv(training_dataset)
-    train_data, test_data, train_data_index, test_data_index = split_train_test(df, 0.7, 1.0, 0.7)
-    return train_data, test_data, train_data_index, test_data_index
-
-
-def train_model(train_graph, node_identifiers, label):
-    # train_graph: Stellar graph structure.
-    # Train graphsage and GBT model.
-
-    # Global parameters:
-    batch_size = 5
-    xgb_n_estimator = 100
-    num_samples = [2, 32]
-
-    # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_node_identifiers = node_identifiers[:round(0.8 * len(node_identifiers))]
-    train_labels = label.loc[train_node_identifiers]
-
-    validation_node_identifiers = node_identifiers[round(0.8 * len(node_identifiers)):]
-    validation_labels = label.loc[validation_node_identifiers]
-    generator = HinSAGENodeGenerator(train_graph, batch_size, num_samples, head_node_type=embedding_node_type)
-    train_gen = generator.flow(train_node_identifiers, train_labels, shuffle=True)
-    test_gen = generator.flow(validation_node_identifiers, validation_labels)
-
-    # HinSAGE model
-    model = HinSAGE(layer_sizes=[embedding_size] * len(num_samples), generator=generator, dropout=0)
-    x_inp, x_out = model.build()
-
-    # Final estimator layer
-    prediction = layers.Dense(units=1, activation="sigmoid", dtype='float32')(x_out)
-
-    # Create Keras model for training
-    model = Model(inputs=x_inp, outputs=prediction)
-    model.compile(
-        optimizer=optimizers.Adam(lr=1e-3),
-        loss=binary_crossentropy,
-    )
-
-    # Train Model
-    model.fit(train_gen, epochs=epochs, verbose=1, validation_data=test_gen, shuffle=False)
-
-    hinsage_model = Model(inputs=x_inp, outputs=x_out)
-    train_gen_not_shuffled = generator.flow(node_identifiers, label, shuffle=False)
-    embeddings_train = hinsage_model.predict(train_gen_not_shuffled)
-
-    inductive_embedding = pd.DataFrame(embeddings_train, index=node_identifiers)
-
-    xgb_model = XGBClassifier(n_estimators=xgb_n_estimator)
-    xgb_model.fit(inductive_embedding, label)
-
-    return {"hinsage": hinsage_model, "xgb": xgb_model}
-
-
-def save_model(model, output_xgboost, output_hinsage):
-    # model: dict of xgb & hsg model
-    # Save as tensorflow model file
-
-    model['hinsage'].save(output_hinsage)
-    model['xgb'].save_model(output_xgboost)
-
-
-def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_size):
+    Returns:
+        List[List]: List of metrics f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
     """
 
-    This function generates embeddings for unseen nodes using a trained hinsage model.
-    It returns the embeddings for these unseen nodes.
+    labels, pred, pred_proba = labels, pred.argmax(1), pred[:, 1]
+
+    acc = ((pred == labels)).sum() / len(pred)
+
+    true_pos = (np.where(pred == 1, 1, 0) + np.where(labels == 1, 1, 0) > 1).sum()
+    false_pos = (np.where(pred == 1, 1, 0) + np.where(labels == 0, 1, 0) > 1).sum()
+    false_neg = (np.where(pred == 0, 1, 0) + np.where(labels == 1, 1, 0) > 1).sum()
+    true_neg = (np.where(pred == 0, 1, 0) + np.where(labels == 0, 1, 0) > 1).sum()
+
+    precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
+    recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
+
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    confusion_matrix = pd.DataFrame(np.array([[true_pos, false_pos], [false_neg, true_neg]]),
+                                    columns=["labels positive", "labels negative"],
+                                    index=["predicted positive", "predicted negative"])
+
+    ap = average_precision_score(labels, pred_proba)
+
+    fpr, tpr, _ = roc_curve(labels, pred_proba)
+    prc, rec, _ = precision_recall_curve(labels, pred_proba)
+    roc_auc = auc(fpr, tpr)
+    pr_auc = auc(rec, prc)
+    auc_r = (fpr, tpr, roc_auc, name)
+    return (acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r)
+
+
+def build_fsi_graph(train_data, col_drop):
+    """Build heterograph from edglist and node index.
+
+    Args:
+        train_data (pd.DataFrame): training data for node features.
+        col_drop (list): features to drop from node features.
+
+    Returns:
+       Tuple[DGLGraph, torch.tensor]: dlg graph, normalized feature tensor
+    """
+
+    edge_list = {
+        ('client', 'buy', 'transaction'): (train_data['client_node'].values, train_data['index'].values),
+        ('transaction', 'bought', 'client'): (train_data['index'].values, train_data['client_node'].values),
+        ('transaction', 'issued', 'merchant'): (train_data['index'].values, train_data['merchant_node'].values),
+        ('merchant', 'sell', 'transaction'): (train_data['merchant_node'].values, train_data['index'].values)
+    }
+
+    G = dgl.heterograph(edge_list)
+    feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
+    feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
+
+    return G, feature_tensors
+
+
+def map_node_id(df, col_name):
+    """ Convert column node list to integer index for dgl graph.
+
+    Args:
+        df (pd.DataFrame): dataframe
+        col_name (list) : column list
+    """
+    node_index = {j: i for i, j in enumerate(df[col_name].unique())}
+    df[col_name] = df[col_name].map(node_index)
+
+
+def prepare_data(training_data, test_data):
+    """Process data for training/inference operation
 
     Parameters
     ----------
-    S : StellarGraph Object
-        The graph on which HinSAGE is deployed.
-    trained_model : Neural Network
-        The trained hinsage model, containing the trained and optimized aggregation functions per depth.
-    inductive_node_identifiers : list
-        Defines the nodes that HinSAGE needs to generate embeddings for
-    batch_size: int
-        batch size for the neural network in which HinSAGE is implemented.
+    training_data : str
+        path to training data
+    test_data : str
+        path to test/validation data
 
+    Returns
+    -------
+    tuple
+     tuple of (training_data, test_data, train_index, test_index, label, combined data)
     """
 
-    # The mapper feeds data from sampled subgraph to HinSAGE model
-    generator = HinSAGENodeGenerator(S, batch_size, num_samples, head_node_type="transaction")
-    test_gen_not_shuffled = generator.flow(inductive_node_identifiers, shuffle=False)
+    df_train = pd.read_csv(training_data)
+    train_idx_ = df_train.shape[0]
+    df_test = pd.read_csv(test_data)
+    df = pd.concat([df_train, df_test], axis=0)
+    df['tran_id'] = df['index']
 
-    inductive_emb = np.concatenate([trained_model.predict(row[0], verbose=1) for row in test_gen_not_shuffled])
-    inductive_emb = pd.DataFrame(inductive_emb, index=inductive_node_identifiers)
+    meta_cols = ['tran_id', 'client_node', 'merchant_node']
+    for col in meta_cols:
+        map_node_id(df, col)
 
-    return inductive_emb
+    train_idx = df['tran_id'][:train_idx_]
+    test_idx = df['tran_id'][train_idx_:]
 
+    df['index'] = df['tran_id']
+    df.index = df['index']
 
-def model_eval(trained_model, S, node_identifier, label):
-
-    inductive_emb = inductive_step_hinsage(S, trained_model['hinsage'], node_identifier, batch_size=5)
-    predictions = trained_model['xgb'].predict_proba(inductive_emb)
-    # evaluate performance.
-    eval = Evaluation(predictions, label, "GraphSAGE+features")
-    eval.f1_ap_rec()
-    print(f"AUC -- {eval.roc_curve()}")
+    return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
 
 
-def main():
-    print("Data Preprocessing...")
-    train_data = pd.read_csv(args.training_data)
+def save_model(g, model, hyperparameters, xgb_model, model_dir):
+    """Save trained model with graph & hyperparameters dict
 
-    val_data = pd.read_csv(args.validation_data)
-    val_data.index = val_data['index']
-    # train_data, val_data, train_data_index, val_data_index = split_train_test(df, 0.7, 1.0,0.7)
+    Args:
+        g (DGLHeteroGraph): dgl graph
+        model (HeteroRGCN): trained RGCN model
+        model_dir (str): directory to save
+        hyperparameters (dict): hyperparameter for model training.
+    """
+    torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
+    with open(os.path.join(model_dir, 'hyperparams.pkl'), 'wb') as f:
+        pickle.dump(hyperparameters, f)
+    with open(os.path.join(model_dir, 'graph.pkl'), 'wb') as f:
+        pickle.dump(g, f)
+    xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
-    print("Graph construction")
-    S_graph = build_graph_features(train_data)
-    print("Model Training...")
-    model = train_model(S_graph, node_identifiers=list(train_data.index), label=train_data['fraud_label'])
-    # print(model)
-    print("Save trained model")
-    if args.save_model:
-        save_model(model, args.output_xgb, args.output_hinsage)
-    # Save graph info
-    print("Model Evaluation...")
-    inductive_data = pd.concat((train_data, val_data))
-    S_graph = build_graph_features(inductive_data)
-    model_eval(model, S_graph, node_identifier=list(val_data.index), label=val_data['fraud_label'])
+
+def load_model(model_dir):
+    """Load trained model, graph structure from given directory
+
+    Args:
+        model_dir (str path):directory path for trained model obj.
+
+    Returns:
+        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+    """
+    from cuml import ForestInference
+
+    with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
+        g = pickle.load(f)
+    with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
+        hyperparameters = pickle.load(f)
+    model = HeteroRGCN(g,
+                       in_size=hyperparameters['in_size'],
+                       hidden_size=hyperparameters['hidden_size'],
+                       out_size=hyperparameters['out_size'],
+                       n_layers=hyperparameters['n_layers'],
+                       embedding_size=hyperparameters['embedding_size'],
+                       target=hyperparameters['target_node'],
+                       device=device)
+    model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
+    xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
+
+    return model, xgb_model, g
+
+
+def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='transaction', batch_size=100):
+    """Initialize dataloader and graph sampler. For training use neighbor sampling.
+
+    Args:
+        g_train (DGLHeteroGraph): train graph
+        train_idx (list): train feature index
+        test_idx (list): test feature index
+        val_idx (list): validation index
+        g_test (DGLHeteroGraph): test graph
+        target_node (str, optional): target node. Defaults to 'authentication'.
+
+    Returns:
+        List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
+    """
+
+    neighbor_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
+    full_sampler = dgl.dataloading.MultiLayerNeighborSampler([4, 3])
+
+    train_dataloader = dgl.dataloading.DataLoader(g_train, {target_node: train_idx},
+                                                  neighbor_sampler,
+                                                  batch_size=batch_size,
+                                                  shuffle=False,
+                                                  drop_last=False,
+                                                  num_workers=0,
+                                                  use_uva=False)
+
+    test_dataloader = dgl.dataloading.DataLoader(g_test, {target_node: test_idx},
+                                                 full_sampler,
+                                                 batch_size=batch_size,
+                                                 shuffle=False,
+                                                 drop_last=False,
+                                                 num_workers=0,
+                                                 use_uva=False)
+
+    val_dataloader = dgl.dataloading.DataLoader(g_test, {target_node: val_idx},
+                                                neighbor_sampler,
+                                                batch_size=batch_size,
+                                                shuffle=False,
+                                                drop_last=False,
+                                                num_workers=0,
+                                                use_uva=False)
+
+    return train_dataloader, val_dataloader, test_dataloader
+
+
+def train(model,
+          loss_func,
+          train_dataloader,
+          labels,
+          optimizer,
+          feature_tensors,
+          target_node='transaction',
+          device='cpu'):
+    """Train RGCN model
+
+    Args:
+        model(HeteroRGCN): RGCN model
+        loss_func (nn.loss) : loss function
+        train_dataloader (NodeDataLoader) : train dataloader class
+        labels (list): training label
+        optimizer (nn.optimizer) : optimizer for training
+        feature_tensors (torch.Tensor) : node features
+        target_node (str, optional): target node embedding. Defaults to 'transaction'.
+        device (str, optional): host device. Defaults to 'cpu'.
+
+    Returns:
+        _type_: training accuracy and training loss
+    """
+    model.train()
+    train_loss = 0.0
+    for i, (input_nodes, output_nodes, blocks) in enumerate(train_dataloader):
+        seed = output_nodes[target_node]
+        blocks = [b.to(device) for b in blocks]
+        nid = blocks[0].srcnodes[target_node].data[dgl.NID]
+        input_features = feature_tensors[nid].to(device)
+
+        logits = model(blocks, input_features)
+        loss = loss_func(logits, labels[seed])
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+        train_acc = accuracy_score(logits.argmax(1).cpu(), labels[seed].cpu().long()).item()
+    return train_acc, train_loss
+
+
+@torch.no_grad()
+def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
+    """Takes trained RGCN model and input dataloader & produce logits and embedding.
+
+    Args:
+        model (HeteroRGCN): trained HeteroRGCN model object
+        eval_loader (NodeDataLoader): evaluation dataloader
+        feature_tensors (torch.Tensor) : test feature tensor
+        target_node (str): target node encoding.
+        device (str, optional): device runtime. Defaults to 'cpu'.
+
+    Returns:
+        List: logits, index & output embedding.
+    """
+    model.eval()
+    eval_logits = []
+    eval_seeds = []
+    embedding = []
+
+    for input_nodes, output_nodes, blocks in eval_loader:
+
+        seed = output_nodes[target_node]
+
+        nid = blocks[0].srcnodes[target_node].data[dgl.NID]
+        blocks = [b.to(device) for b in blocks]
+        input_features = feature_tensors[nid].to(device)
+        logits, embedd = model.infer(blocks, input_features)
+        eval_logits.append(logits.cpu().detach())
+        eval_seeds.append(seed)
+        embedding.append(embedd)
+
+    eval_logits = torch.cat(eval_logits)
+    eval_seeds = torch.cat(eval_seeds)
+    embedding = torch.cat(embedding)
+    return eval_logits, eval_seeds, embedding
+
+
+@click.command()
+@click.option('--training-data', help="Path to training data ", default="data/training.csv")
+@click.option('--validation-data', help="Path to validation data", default="data/validation.csv")
+@click.option('--model-dir', help="path to model directory", default="modeldir")
+@click.option('--target-node', help="Target node", default="transaction")
+@click.option('--epochs', help="Number of epochs", default=20)
+@click.option('--batch_size', help="Batch size", default=1024)
+@click.option('--output-file', help="Path to csv inference result", default="out.csv")
+def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file):
+
+    # process training data
+    train_data, _, train_idx, inductive_idx,\
+        labels, df = prepare_data(training_data, validation_data)
+    meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
+
+    # Build graph
+    g, feature_tensors = build_fsi_graph(df, meta_cols)
+    g_train, _ = build_fsi_graph(train_data, meta_cols)
+    g = g.to(device)
+
+    feature_tensors = feature_tensors.to(device)
+    train_idx = torch.tensor(train_idx).to(device)
+    inductive_idx = torch.tensor(inductive_idx.values).to(device)
+    labels = torch.LongTensor(labels).to(device)
+
+    # Hyperparameters
+    in_size, hidden_size, out_size, n_layers,\
+        embedding_size = 111, 64, 2, 2, 16
+    hyperparameters = {
+        "in_size": in_size,
+        "hidden_size": hidden_size,
+        "out_size": out_size,
+        "n_layers": n_layers,
+        "embedding_size": embedding_size,
+        "target_node": target_node,
+        "epoch": epochs
+    }
+
+    scale_pos_weight = train_data['fraud_label'].sum() / train_data.shape[0]
+    scale_pos_weight = torch.tensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
+
+    # Dataloaders
+    train_loader, val_loader, test_loader = init_loaders(g_train.to(
+        device), train_idx, test_idx=inductive_idx,
+        val_idx=inductive_idx, g_test=g, batch_size=batch_size)
+
+    # Set model variables
+    model = HeteroRGCN(g, in_size, hidden_size, out_size, n_layers, embedding_size, device=device).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    loss_func = nn.CrossEntropyLoss(weight=scale_pos_weight.float())
+
+    for epoch in trange(epochs):
+
+        train_acc, loss = train(
+            model, loss_func, train_loader, labels, optimizer, feature_tensors,
+            target_node, device=device)
+        print("Epoch {:03d}/{:03d} | Train Accuracy: {:.4f} | Train Loss: {:.4f}".format(
+            epoch, epochs, train_acc, loss))
+
+        val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node, device=device)
+        val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), task="binary").item()
+        val_auc = roc_auc_score(
+            labels.long()[val_seed].cpu().numpy(),
+            val_logits[:, 1].numpy(),
+        )
+        print("Validation Accuracy: {:.4f} auc {:.4f}".format(val_accuracy, val_auc))
+
+    # Create embeddings
+    _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node, device=device)
+    test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
+
+    # compute metrics
+    test_acc = accuracy(test_logits.argmax(dim=1), labels.long()[test_seeds].cpu(), task="binary").item()
+    test_auc = roc_auc_score(labels.long()[test_seeds].cpu().numpy(), test_logits[:, 1].numpy())
+
+    metrics_result = pd.DataFrame()
+    print("Final Test Accuracy: {:.4f} auc {:.4f}".format(test_acc, test_auc))
+
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, _, _ = get_metrics(
+        test_logits.numpy(), labels[test_seeds].cpu().numpy(), out_dir='result')
+    metrics_result = [{
+        'model': 'RGC',
+        'acc': acc,
+        'f1': f1,
+        'precision': precision,
+        'recall': recall,
+        'roc_auc': roc_auc,
+        'pr_auc': pr_auc,
+        'ap': ap
+    }]
+
+    # Train XGBoost classifier on embedding vector
+    classifier = XGBClassifier(n_estimators=100)
+    classifier.fit(train_embedding.cpu().numpy(), labels[train_seeds].cpu().numpy())
+    xgb_pred = classifier.predict_proba(test_embedding.cpu().numpy())
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, _, _ = get_metrics(
+        xgb_pred, labels[inductive_idx].cpu().numpy(), out_dir='result', name='XGB+GS')
+    metrics_result += [{
+        'model': 'RGCN+XGB',
+        'acc': acc,
+        'f1': f1,
+        'precision': precision,
+        'recall': recall,
+        'roc_auc': roc_auc,
+        'pr_auc': pr_auc,
+        'ap': ap
+    }]
+
+    # Save model
+    pd.DataFrame(metrics_result).to_csv(output_file)
+    save_model(g, model, hyperparameters, classifier, model_dir)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--training-data", required=True, help="CSV with fraud_label")
-    parser.add_argument("--validation-data", required=False, help="CSV with fraud_label")
-    parser.add_argument("--epochs", help="Number of epochs", type=int, default=10)
-    parser.add_argument("--node_type", required=False, help="Target node type", default="transaction")
-    parser.add_argument("--output-xgb", required=False, help="output file to save xgboost model")
-    parser.add_argument("--output-hinsage", required=False, help="output file to save GraphHinSage model")
-    parser.add_argument("--save_model", type=bool, default=False, help="Save models to give filenames")
-    parser.add_argument("--embedding_size", required=False, default=64, help="output file to save new model")
-
-    args = parser.parse_args()
-
-    # Global parameters:
-    embedding_size = int(args.embedding_size)
-    epochs = int(args.epochs)
-    embedding_node_type = str(args.node_type)
-    num_samples = [2, 32]
-
-    main()
+    train_model()
