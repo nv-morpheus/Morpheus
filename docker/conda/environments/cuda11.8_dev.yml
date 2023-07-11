@@ -15,93 +15,93 @@
 
 name: morpheus
 channels:
-  - rapidsai
-  - nvidia/label/cuda-11.8.0
-  - nvidia
-  - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-  - pytorch
-  - conda-forge
-  - numba
+    - rapidsai
+    - nvidia/label/cuda-11.8.0
+    - nvidia
+    - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
+    - pytorch
+    - conda-forge
+    - numba
 dependencies:
-  ####### Morpheus Dependencies (keep sorted!) #######
-  - automake=1.16.5
-  - benchmark=1.6.1
-  - boost-cpp=1.74
-  - cachetools=5.0.0
-  - ccache>=3.7
-  - clangdev=14
-  - click >=8
-  - cmake=3.24
-  - configargparse=1.5
-  - cuda-compiler=11.8
-  - cuda-nvml-dev=11.8
-  - cuda-toolkit=11.8
-  - cudf=23.06
-  - cupy>=12.0.0
-  - cxx-compiler
-  - cython=0.29.24
-  - datacompy=0.8
-  - dill
-  - docker-compose=1.29.2
-  - docker-py=5.0
-  - faker=12.3.0
-  - flake8
-  - flatbuffers=2.0
-  - gcc_linux-64=11.2
-  - gflags=2.2
-  - git-lfs=3.2
-  - git>=2.35.3 # Needed for wildcards on safe.directory
-  - glog=0.6
-  - gmock>=1.13.0
-  - gputil
-  - grpc-cpp>=1.43
-  - grpcio
-  - gtest>=1.13.0
-  - gxx_linux-64=11.2
-  - include-what-you-use=0.18
-  - isort
-  - librdkafka=1.7.0
-  - mlflow>=2.2.1,<3
-  - mrc=23.07
-  - myst-parser==1.0.0
-  - networkx=3.1
-  - ninja=1.10
-  - nodejs=18.15.0
-  - numba>=0.56.2
-  - numpydoc=1.4
-  - nvtabular=23.06
-  - pandas=1.3
-  - pip
-  - pkg-config # for mrc cmake
-  - pluggy=1.0
-  - protobuf=4.21.*
-  - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
-  - pybind11-stubgen=0.10.5
-  - pydot
-  - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
-  - pytest
-  - pytest-benchmark>=4.0
-  - pytest-cov
-  - python-confluent-kafka=1.7.0
-  - python-graphviz
-  - python=3.10
-  - pytorch=2.0.1
-  - pytorch-cuda
-  - rapidjson=1.1.0
-  - scikit-build=0.17.1
-  - scikit-learn=1.2.2
-  - sphinx
-  - sphinx_rtd_theme
-  - sysroot_linux-64=2.17
-  - tritonclient=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
-  - tqdm=4
-  - typing_utils=0.1
-  - watchdog=2.1
-  - yapf=0.32.0
-  ####### Morpheus Pip Dependencies (keep sorted!) #######
-  - pip:
-    # Add additional dev dependencies here
-    - docutils
-    - pytest-kafka==0.6.0
-    # Ensure all runtime requirements are installed using the requirements file
-    - --requirement requirements.txt
+    ####### Morpheus Dependencies (keep sorted!) #######
+    - automake=1.16.5
+    - benchmark=1.6.1
+    - boost-cpp=1.74
+    - cachetools=5.0.0
+    - ccache>=3.7
+    - clangdev=14
+    - click >=8
+    - cmake=3.24
+    - configargparse=1.5
+    - cuda-compiler=11.8
+    - cuda-nvml-dev=11.8
+    - cuda-toolkit=11.8
+    - cudf=23.06
+    - cupy>=12.0.0
+    - cxx-compiler
+    - cython=0.29.24
+    - datacompy=0.8
+    - dill
+    - docker-compose=1.29.2
+    - docker-py=5.0
+    - faker=12.3.0
+    - flake8
+    - flatbuffers=2.0
+    - gcc_linux-64=11.2
+    - gflags=2.2
+    - git-lfs=3.2
+    - git>=2.35.3 # Needed for wildcards on safe.directory
+    - glog=0.6
+    - gmock>=1.13.0
+    - gputil
+    - grpc-cpp>=1.43
+    - grpcio
+    - gtest>=1.13.0
+    - gxx_linux-64=11.2
+    - include-what-you-use=0.18
+    - isort
+    - librdkafka=1.9.2
+    - mlflow>=2.2.1,<3
+    - mrc=23.07
+    - myst-parser==1.0.0
+    - networkx=3.1
+    - ninja=1.10
+    - nodejs=18.15.0
+    - numba>=0.56.2
+    - numpydoc=1.4
+    - nvtabular=23.06
+    - pandas=1.3
+    - pip
+    - pkg-config # for mrc cmake
+    - pluggy=1.0
+    - protobuf=4.21.*
+    - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
+    - pybind11-stubgen=0.10.5
+    - pydot
+    - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
+    - pytest
+    - pytest-benchmark>=4.0
+    - pytest-cov
+    - python-confluent-kafka=1.9.2
+    - python-graphviz
+    - python=3.10
+    - pytorch=2.0.1
+    - pytorch-cuda
+    - rapidjson=1.1.0
+    - scikit-build=0.17.1
+    - scikit-learn=1.2.2
+    - sphinx
+    - sphinx_rtd_theme
+    - sysroot_linux-64=2.17
+    - tritonclient=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
+    - tqdm=4
+    - typing_utils=0.1
+    - watchdog=2.1
+    - yapf=0.32.0
+    ####### Morpheus Pip Dependencies (keep sorted!) #######
+    - pip:
+        # Add additional dev dependencies here
+        - docutils
+        - pytest-kafka==0.6.0
+        # Ensure all runtime requirements are installed using the requirements file
+        - --requirement requirements.txt
