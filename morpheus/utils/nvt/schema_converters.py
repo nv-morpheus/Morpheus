@@ -37,7 +37,6 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-
 from morpheus.utils.nvt import MutateOp
 from morpheus.utils.nvt.decorators import sync_df_as_pandas
 from morpheus.utils.nvt.transforms import json_flatten
@@ -190,11 +189,12 @@ def _string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFr
 
 
 # pylint
-def _nvt_string_cat_col(column_selector: ColumnSelector,  # pylint: disable=unused-argument
-                        df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                        output_column: str,
-                        input_columns: typing.List[str],
-                        sep: str = ', '):
+def _nvt_string_cat_col(
+        column_selector: ColumnSelector,  # pylint: disable=unused-argument
+        df: typing.Union[pd.DataFrame, cudf.DataFrame],
+        output_column: str,
+        input_columns: typing.List[str],
+        sep: str = ', '):
     """
     Concatenates the string representation of the specified columns in a DataFrame.
 
@@ -248,11 +248,12 @@ def _increment_column(df: pd.DataFrame, output_column: str, input_column: str, p
     return pd.DataFrame({output_column: groupby_col})
 
 
-def _nvt_increment_column(column_selector: ColumnSelector,  # pylint: disable=unused-argument
-                          df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                          output_column: str,
-                          input_column: str,
-                          period: str = 'D') -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+def _nvt_increment_column(
+        column_selector: ColumnSelector,  # pylint: disable=unused-argument
+        df: typing.Union[pd.DataFrame, cudf.DataFrame],
+        output_column: str,
+        input_column: str,
+        period: str = 'D') -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
     Increment a column in a DataFrame.
 
@@ -282,17 +283,16 @@ def _nvt_increment_column(column_selector: ColumnSelector,  # pylint: disable=un
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-               deps: [
+        deps: [
             LambdaOp(
                 lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
         ],
     ColumnInfo:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (
-                    ci.name in df.columns)
-            else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                     df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
+                     else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
@@ -302,40 +302,40 @@ ColumnInfoProcessingMap = {
     #   transform taking df->series(ci.name)
     CustomColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
+                     df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[CustomColumn] '{ci.name}'")
         ],
     DateTimeColumn:
         lambda ci,
-               deps: [
+        deps: [
             Rename(f=lambda name: ci.name if name == ci.input_name else name),
             LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")
         ],
     IncrementColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(
                 _nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
-                dependencies=deps,
-                output_columns=[(ci.name, ci.groupby_column)],
-                label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.groupby_column)],
+                     label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
         ],
     RenameColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: df.rename(columns={ci.input_name: ci.name}),
+                     df: df.rename(columns={ci.input_name: ci.name}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     StringCatColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(_nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
@@ -343,16 +343,16 @@ ColumnInfoProcessingMap = {
         ],
     StringJoinColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(
                 _nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
-                dependencies=deps,
-                output_columns=[(ci.name, ci.dtype)],
-                label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     JSONFlattenInfo:
         lambda ci,
-               deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+        deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 

@@ -23,7 +23,6 @@ def patch_numpy_dtype_registry() -> None:
     """
     import merlin.dtypes.aliases as mn
     import numpy as np
-
     from merlin.dtypes import _dtype_registry
 
     numpy_dtypes = _dtype_registry.mappings["numpy"].from_merlin_
