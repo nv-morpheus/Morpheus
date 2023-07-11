@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 
 #include <memory>
