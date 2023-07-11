@@ -22,7 +22,7 @@ We show here how to set up and run the Production DFP pipeline on Azure and Duo 
 
 To run the demo you will need the following:
 - Docker
-- `docker-compose` (Tested with version 2.12.2)
+- `docker-compose-plugin` (Tested with version 2.12.2)
 
 ## Pull `morpheus-visualizations` submodule
 
