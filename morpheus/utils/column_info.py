@@ -119,11 +119,45 @@ def column_listjoin(df: pd.DataFrame, col_name: str) -> pd.Series:
     return pd.Series(None, dtype='string')
 
 
+class DTypeDescriptor:
+    """
+    Descriptor object which will convert str | type to a pandas dtype string on __set__.
+    """
+
+    def __init__(self):
+        pass
+
+    def __set_name__(self, owner, name):
+        self._name = "_" + name
+
+    def __get__(self, obj, type):
+        if obj is None:
+            # Most likely, this is getting the default field value for the dataclass.
+            raise AttributeError
+
+        return getattr(obj, self._name)
+
+    def __set__(self, obj, value: str | type):
+        setattr(obj, self._name, ColumnInfo.convert_pandas_dtype(value))
+
+
 @dataclasses.dataclass
 class ColumnInfo:
     """Defines a single column and type-cast."""
     name: str
-    dtype: str  # The final type
+    dtype: str = DTypeDescriptor()  # The final type
+
+    @staticmethod
+    def convert_pandas_dtype(dtype: str | type) -> str:
+        """Return the pandas type string of column."""
+        if ((isinstance(dtype, str) and dtype.startswith("datetime"))
+                or (isinstance(dtype, type) and issubclass(dtype, datetime))):
+            return "datetime64[ns]"
+        else:
+            if (isinstance(dtype, str)):
+                return dtype
+            else:
+                return dtype.__name__
 
     def get_pandas_dtype(self) -> str:
         """Return the pandas type string of column."""
