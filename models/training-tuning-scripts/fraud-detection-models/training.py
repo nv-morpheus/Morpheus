@@ -36,8 +36,6 @@ from xgboost import XGBClassifier
 np.random.seed(1001)
 torch.manual_seed(1001)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 def get_metrics(pred, labels, name='RGCN'):
     """Compute evaluation metrics
@@ -97,7 +95,7 @@ def build_fsi_graph(train_data, col_drop):
     }
 
     graph = dgl.heterograph(edge_list)
-    feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
+    feature_tensors = torch.from_numpy(train_data.drop(col_drop, axis=1).values).float()
     feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
     return graph, feature_tensors
@@ -167,15 +165,17 @@ def save_model(graph, model, hyperparameters, xgb_model, model_dir):
     xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
 
-def load_model(model_dir):
+def load_model(model_dir, device):
     """Load trained model, graph structure from given directory
 
     Args:
-        model_dir (str path):directory path for trained model obj.
+        model_dir (str): directory path for trained models.
+        device (str):  host device, cpu/gpu
 
     Returns:
-        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+       List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
     """
+
     from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
@@ -331,6 +331,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
 @click.option('--output-file', help="Path to csv inference result", default="out.csv")
 def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file):
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # process training data
     train_data, _, train_idx, inductive_idx,\
         labels, df = prepare_data(training_data, validation_data)
@@ -342,8 +343,8 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     whole_graph = whole_graph.to(device)
 
     feature_tensors = feature_tensors.to(device)
-    train_idx = torch.tensor(train_idx).to(device)
-    inductive_idx = torch.tensor(inductive_idx.values).to(device)
+    train_idx = torch.from_numpy(train_idx.values).to(device)
+    inductive_idx = torch.from_numpy(inductive_idx.values).to(device)
     labels = torch.LongTensor(labels).to(device)
 
     # Hyperparameters
@@ -360,7 +361,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     }
 
     scale_pos_weight = train_data['fraud_label'].sum() / train_data.shape[0]
-    scale_pos_weight = torch.tensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
+    scale_pos_weight = torch.from_numpy([scale_pos_weight, 1 - scale_pos_weight]).to(device)
 
     # Dataloaders
     train_loader, val_loader, test_loader = init_loaders(train_graph.to(
@@ -379,7 +380,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
             target_node, device=device)
         print(f"Epoch {epoch}/{epochs} | Train Accuracy: {train_acc} | Train Loss: {loss}")
         val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node, device=device)
-        val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), task="binary").item()
+        val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), "binary").item()
         val_auc = roc_auc_score(
             labels.long()[val_seed].cpu().numpy(),
             val_logits[:, 1].numpy(),
@@ -390,7 +391,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
 
     # compute metrics
-    test_acc = accuracy(test_logits.argmax(dim=1), labels.long()[test_seeds].cpu(), task="binary").item()
+    test_acc = accuracy(test_logits.argmax(dim=1), labels.long()[test_seeds].cpu(), "binary").item()
     test_auc = roc_auc_score(labels.long()[test_seeds].cpu().numpy(), test_logits[:, 1].numpy())
 
     metrics_result = pd.DataFrame()

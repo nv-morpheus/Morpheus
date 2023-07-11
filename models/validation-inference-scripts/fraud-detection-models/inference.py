@@ -26,7 +26,7 @@ import dgl
 import numpy as np
 import pandas as pd
 import torch
-from rgcn import HeteroRGCN
+from model import HeteroRGCN
 
 np.random.seed(1001)
 torch.manual_seed(1001)
@@ -51,7 +51,7 @@ def build_fsi_graph(train_data, col_drop):
     }
 
     graph = dgl.heterograph(edge_list)
-    feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
+    feature_tensors = torch.from_numpy(train_data.drop(col_drop, axis=1).values).float()
     feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
     return graph, feature_tensors
@@ -102,11 +102,12 @@ def prepare_data(training_data, test_data):
     return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
 
 
-def load_model(model_dir):
+def load_model(model_dir, device):
     """Load trained model, graph structure from given directory
 
     Args:
-        model_dir (str path):directory path for trained model obj.
+        model_dir (str): directory path for trained model obj.
+        device (str): device runtime.
 
     Returns:
         List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
@@ -168,7 +169,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     return eval_logits, eval_seeds, embedding
 
 
-def inference(model, input_graph, feature_tensors, test_idx, target_node):
+def inference(model, input_graph, feature_tensors, test_idx, target_node, device):
     """Minibatch inference on test graph
 
     Args:
@@ -177,6 +178,7 @@ def inference(model, input_graph, feature_tensors, test_idx, target_node):
         feature_tensors (torch.Tensor) : node features
         test_idx (list): test index
         target_node (list): target node
+        device (str, optional): device runtime.
 
     Returns:
         list: logits, index, output embedding
@@ -204,6 +206,7 @@ def inference(model, input_graph, feature_tensors, test_idx, target_node):
 @click.option('--output-file', help="Path to csv inference result", default="out.csv")
 def main(training_data, validation_data, model_dir, target_node, output_file):
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
 
     # prepare data
@@ -213,13 +216,13 @@ def main(training_data, validation_data, model_dir, target_node, output_file):
     g_test, feature_tensors = build_fsi_graph(all_data, meta_cols)
 
     # Load graph model
-    model, xgb_model, _ = load_model(model_dir)
+    model, xgb_model, _ = load_model(model_dir, device)
     model = model.to(device)
     g_test = g_test.to(device)
     feature_tensors = feature_tensors.to(device)
-    test_idx = torch.tensor(test_idx).to(device)
+    test_idx = torch.from_numpy(test_idx.values).to(device)
 
-    _, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node)
+    _, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node, device)
 
     # collect result
     pred_score = xgb_model.predict_proba(test_embedding)[:, 1]
@@ -230,5 +233,5 @@ def main(training_data, validation_data, model_dir, target_node, output_file):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     main()
