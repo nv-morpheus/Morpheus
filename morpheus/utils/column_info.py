@@ -119,8 +119,6 @@ def column_listjoin(df: pd.DataFrame, col_name: str) -> pd.Series:
     return pd.Series(None, dtype='string')
 
 
-
-
 @dataclasses.dataclass
 class ColumnInfo:
     """Defines a single column and type-cast."""
