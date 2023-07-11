@@ -40,12 +40,42 @@ register_morpheus_extensions()
 logger = logging.getLogger(__name__)
 
 
+@typing.overload
+def process_dataframe(
+    df_in: pd.DataFrame,
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+) -> pd.DataFrame:
+    ...
+
+
+@typing.overload
+def process_dataframe(
+    df_in: cudf.DataFrame,
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+) -> cudf.DataFrame:
+    ...
+
+
 def process_dataframe(
     df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
     input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
-) -> pd.DataFrame:
+) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
-    Applies column transformations as defined by `input_schema`
+    Applies column transformations to the input dataframe as defined by the `input_schema`.
+
+    Parameters
+    ----------
+    df_in : Union[pd.DataFrame, cudf.DataFrame]
+        The input DataFrame to process.
+    input_schema : Union[nvt.Workflow, DataFrameInputSchema]
+        If an instance of nvt.Workflow, it is directly used to transform the dataframe.
+        If an instance of DataFrameInputSchema, it is converted to a nvt.Workflow before being used.
+
+    Returns
+    -------
+    Union[pd.DataFrame, cudf.DataFrame]
+        The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is pd.DataFrame.
+        Otherwise, it is cudf.DataFrame.
     """
 
     workflow = input_schema

@@ -21,8 +21,8 @@ from nvtabular import ColumnSelector
 import cudf
 
 
-def json_flatten(col_selector: ColumnSelector, df: typing.Union[pd.DataFrame, cudf.DataFrame]) -> typing.Union[
-    pd.DataFrame, cudf.DataFrame]:
+def json_flatten(col_selector: ColumnSelector,
+                 df: typing.Union[pd.DataFrame, cudf.DataFrame]) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
     Flattens JSON columns in the given DataFrame and concatenates them into a single DataFrame.
 

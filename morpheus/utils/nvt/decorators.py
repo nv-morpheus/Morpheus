@@ -35,9 +35,17 @@ def sync_df_as_pandas(df_arg_name='df'):
         The decorator.
     """
 
-    def decorator(
-            func: typing.Callable[...,
-                                  pd.DataFrame]) -> typing.Callable[..., typing.Union[pd.DataFrame, cudf.DataFrame]]:
+    XDataFrame = typing.TypeVar("XDataFrame", pd.DataFrame, cudf.DataFrame)
+    """
+    Represents a DataFrame that can be either a pandas or cudf DataFrame
+    """
+    _SyncPandasArgs = typing.ParamSpec('_SyncPandasArgs')
+    """
+    Represents the remaining arguments to the function after the first argument (the DataFrame)
+    """
+
+    def decorator(func: typing.Callable[typing.Concatenate[pd.DataFrame, _SyncPandasArgs], pd.DataFrame]) -> \
+        typing.Callable[typing.Concatenate[XDataFrame, _SyncPandasArgs], XDataFrame]:
         """
         The actual decorator that wraps the function.
 
