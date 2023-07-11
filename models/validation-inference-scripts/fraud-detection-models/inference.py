@@ -31,8 +31,6 @@ from rgcn import HeteroRGCN
 np.random.seed(1001)
 torch.manual_seed(1001)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 def build_fsi_graph(train_data, col_drop):
     """Build heterograph from edglist and node index.
@@ -52,11 +50,11 @@ def build_fsi_graph(train_data, col_drop):
         ('merchant', 'sell', 'transaction'): (train_data['merchant_node'].values, train_data['index'].values)
     }
 
-    G = dgl.heterograph(edge_list)
+    graph = dgl.heterograph(edge_list)
     feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
     feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
-    return G, feature_tensors
+    return graph, feature_tensors
 
 
 def map_node_id(df, col_name):
@@ -116,10 +114,10 @@ def load_model(model_dir):
     from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
-        g = pickle.load(f)
+        graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = HeteroRGCN(g,
+    model = HeteroRGCN(graph,
                        in_size=hyperparameters['in_size'],
                        hidden_size=hyperparameters['hidden_size'],
                        out_size=hyperparameters['out_size'],
@@ -130,7 +128,7 @@ def load_model(model_dir):
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
     xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
 
-    return model, xgb_model, g
+    return model, xgb_model, graph
 
 
 @torch.no_grad()
@@ -152,7 +150,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     eval_seeds = []
     embedding = []
 
-    for input_nodes, output_nodes, blocks in eval_loader:
+    for _, output_nodes, blocks in eval_loader:
 
         seed = output_nodes[target_node]
 
@@ -170,12 +168,12 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     return eval_logits, eval_seeds, embedding
 
 
-def inference(model, g, feature_tensors, test_idx, target_node):
+def inference(model, input_graph, feature_tensors, test_idx, target_node):
     """Minibatch inference on test graph
 
     Args:
         model (HeteroRGCN) : trained HeteroRGCN model.
-        g (DGLHeterograph) : test graph
+        input_graph (DGLHeterograph) : test graph
         feature_tensors (torch.Tensor) : node features
         test_idx (list): test index
         target_node (list): target node
@@ -186,7 +184,7 @@ def inference(model, g, feature_tensors, test_idx, target_node):
 
     # create sampler and test dataloaders
     full_sampler = dgl.dataloading.MultiLayerNeighborSampler([4, 3])
-    test_dataloader = dgl.dataloading.DataLoader(g, {target_node: test_idx},
+    test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
                                                  full_sampler,
                                                  batch_size=100,
                                                  shuffle=False,
@@ -209,19 +207,19 @@ def main(training_data, validation_data, model_dir, target_node, output_file):
     meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
 
     # prepare data
-    _, test_data, _, test_idx, labels, all_data = prepare_data(training_data, validation_data)
+    _, _, _, test_idx, _, all_data = prepare_data(training_data, validation_data)
 
     # build graph structure
     g_test, feature_tensors = build_fsi_graph(all_data, meta_cols)
 
     # Load graph model
-    model, xgb_model, g_training = load_model(model_dir)
+    model, xgb_model, _ = load_model(model_dir)
     model = model.to(device)
     g_test = g_test.to(device)
     feature_tensors = feature_tensors.to(device)
     test_idx = torch.tensor(test_idx).to(device)
 
-    test_logits, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node)
+    _, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node)
 
     # collect result
     pred_score = xgb_model.predict_proba(test_embedding)[:, 1]
@@ -232,4 +230,5 @@ def main(training_data, validation_data, model_dir, target_node, output_file):
 
 
 if __name__ == '__main__':
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     main()

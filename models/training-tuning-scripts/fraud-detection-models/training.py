@@ -21,7 +21,6 @@ import dgl
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 from model import HeteroRGCN
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import auc
@@ -29,6 +28,7 @@ from sklearn.metrics import average_precision_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
+from torch import nn
 from torchmetrics.functional import accuracy
 from tqdm import trange
 from xgboost import XGBClassifier
@@ -39,20 +39,19 @@ torch.manual_seed(1001)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def get_metrics(pred, labels, out_dir, name='RGCN'):
+def get_metrics(pred, labels, name='RGCN'):
     """Compute evaluation metrics
 
     Args:
-        pred : prediction
-        labels (_type_): groundtruth label
-        out_dir (_type_): directory for saving
+        pred (np.array) : prediction
+        labels (np.array): groundtruth label
         name (str, optional): model name. Defaults to 'RGCN'.
 
     Returns:
         List[List]: List of metrics f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
     """
 
-    labels, pred, pred_proba = labels, pred.argmax(1), pred[:, 1]
+    pred, pred_proba = pred.argmax(1), pred[:, 1]
 
     acc = ((pred == labels)).sum() / len(pred)
 
@@ -64,19 +63,19 @@ def get_metrics(pred, labels, out_dir, name='RGCN'):
     precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
     recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
 
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    f_1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
     confusion_matrix = pd.DataFrame(np.array([[true_pos, false_pos], [false_neg, true_neg]]),
                                     columns=["labels positive", "labels negative"],
                                     index=["predicted positive", "predicted negative"])
 
-    ap = average_precision_score(labels, pred_proba)
+    average_precision = average_precision_score(labels, pred_proba)
 
     fpr, tpr, _ = roc_curve(labels, pred_proba)
     prc, rec, _ = precision_recall_curve(labels, pred_proba)
     roc_auc = auc(fpr, tpr)
     pr_auc = auc(rec, prc)
     auc_r = (fpr, tpr, roc_auc, name)
-    return (acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r)
+    return (acc, f_1, precision, recall, roc_auc, pr_auc, average_precision, confusion_matrix, auc_r)
 
 
 def build_fsi_graph(train_data, col_drop):
@@ -97,11 +96,11 @@ def build_fsi_graph(train_data, col_drop):
         ('merchant', 'sell', 'transaction'): (train_data['merchant_node'].values, train_data['index'].values)
     }
 
-    G = dgl.heterograph(edge_list)
+    graph = dgl.heterograph(edge_list)
     feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
     feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
-    return G, feature_tensors
+    return graph, feature_tensors
 
 
 def map_node_id(df, col_name):
@@ -150,20 +149,21 @@ def prepare_data(training_data, test_data):
     return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
 
 
-def save_model(g, model, hyperparameters, xgb_model, model_dir):
+def save_model(graph, model, hyperparameters, xgb_model, model_dir):
     """Save trained model with graph & hyperparameters dict
 
     Args:
-        g (DGLHeteroGraph): dgl graph
+        graph (DGLHeteroGraph): dgl graph
         model (HeteroRGCN): trained RGCN model
-        model_dir (str): directory to save
         hyperparameters (dict): hyperparameter for model training.
+        xgb_model (XGBoost): XGBoost trained model.
+        model_dir (str): directory to save
     """
     torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'wb') as f:
         pickle.dump(hyperparameters, f)
     with open(os.path.join(model_dir, 'graph.pkl'), 'wb') as f:
-        pickle.dump(g, f)
+        pickle.dump(graph, f)
     xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
 
@@ -179,10 +179,10 @@ def load_model(model_dir):
     from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
-        g = pickle.load(f)
+        graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = HeteroRGCN(g,
+    model = HeteroRGCN(graph,
                        in_size=hyperparameters['in_size'],
                        hidden_size=hyperparameters['hidden_size'],
                        out_size=hyperparameters['out_size'],
@@ -193,7 +193,7 @@ def load_model(model_dir):
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
     xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
 
-    return model, xgb_model, g
+    return model, xgb_model, graph
 
 
 def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='transaction', batch_size=100):
@@ -205,7 +205,8 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='tra
         test_idx (list): test feature index
         val_idx (list): validation index
         g_test (DGLHeteroGraph): test graph
-        target_node (str, optional): target node. Defaults to 'authentication'.
+        target_node (str, optional): target node. Defaults to 'transaction'.
+        batch_size (int): Batch size
 
     Returns:
         List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
@@ -266,7 +267,7 @@ def train(model,
     """
     model.train()
     train_loss = 0.0
-    for i, (input_nodes, output_nodes, blocks) in enumerate(train_dataloader):
+    for _, (_, output_nodes, blocks) in enumerate(train_dataloader):
         seed = output_nodes[target_node]
         blocks = [b.to(device) for b in blocks]
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
@@ -302,7 +303,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     eval_seeds = []
     embedding = []
 
-    for input_nodes, output_nodes, blocks in eval_loader:
+    for _, output_nodes, blocks in eval_loader:
 
         seed = output_nodes[target_node]
 
@@ -336,9 +337,9 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
 
     # Build graph
-    g, feature_tensors = build_fsi_graph(df, meta_cols)
-    g_train, _ = build_fsi_graph(train_data, meta_cols)
-    g = g.to(device)
+    whole_graph, feature_tensors = build_fsi_graph(df, meta_cols)
+    train_graph, _ = build_fsi_graph(train_data, meta_cols)
+    whole_graph = whole_graph.to(device)
 
     feature_tensors = feature_tensors.to(device)
     train_idx = torch.tensor(train_idx).to(device)
@@ -362,12 +363,12 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     scale_pos_weight = torch.tensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
 
     # Dataloaders
-    train_loader, val_loader, test_loader = init_loaders(g_train.to(
+    train_loader, val_loader, test_loader = init_loaders(train_graph.to(
         device), train_idx, test_idx=inductive_idx,
-        val_idx=inductive_idx, g_test=g, batch_size=batch_size)
+        val_idx=inductive_idx, g_test=whole_graph, batch_size=batch_size)
 
     # Set model variables
-    model = HeteroRGCN(g, in_size, hidden_size, out_size, n_layers, embedding_size, device=device).to(device)
+    model = HeteroRGCN(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size, device=device).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
     loss_func = nn.CrossEntropyLoss(weight=scale_pos_weight.float())
 
@@ -376,17 +377,14 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         train_acc, loss = train(
             model, loss_func, train_loader, labels, optimizer, feature_tensors,
             target_node, device=device)
-        print("Epoch {:03d}/{:03d} | Train Accuracy: {:.4f} | Train Loss: {:.4f}".format(
-            epoch, epochs, train_acc, loss))
-
+        print(f"Epoch {epoch}/{epochs} | Train Accuracy: {train_acc} | Train Loss: {loss}")
         val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node, device=device)
         val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), task="binary").item()
         val_auc = roc_auc_score(
             labels.long()[val_seed].cpu().numpy(),
             val_logits[:, 1].numpy(),
         )
-        print("Validation Accuracy: {:.4f} auc {:.4f}".format(val_accuracy, val_auc))
-
+        print(f"Validation Accuracy: {val_accuracy} auc {val_auc}")
     # Create embeddings
     _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node, device=device)
     test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
@@ -396,41 +394,40 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     test_auc = roc_auc_score(labels.long()[test_seeds].cpu().numpy(), test_logits[:, 1].numpy())
 
     metrics_result = pd.DataFrame()
-    print("Final Test Accuracy: {:.4f} auc {:.4f}".format(test_acc, test_auc))
-
-    acc, f1, precision, recall, roc_auc, pr_auc, ap, _, _ = get_metrics(
-        test_logits.numpy(), labels[test_seeds].cpu().numpy(), out_dir='result')
+    print(f"Final Test Accuracy: {test_acc} auc {test_auc}")
+    acc, f_1, precision, recall, roc_auc, pr_auc, average_precision, _, _ = get_metrics(
+        test_logits.numpy(), labels[test_seeds].cpu().numpy())
     metrics_result = [{
         'model': 'RGC',
         'acc': acc,
-        'f1': f1,
+        'f1': f_1,
         'precision': precision,
         'recall': recall,
         'roc_auc': roc_auc,
         'pr_auc': pr_auc,
-        'ap': ap
+        'ap': average_precision
     }]
 
     # Train XGBoost classifier on embedding vector
     classifier = XGBClassifier(n_estimators=100)
     classifier.fit(train_embedding.cpu().numpy(), labels[train_seeds].cpu().numpy())
     xgb_pred = classifier.predict_proba(test_embedding.cpu().numpy())
-    acc, f1, precision, recall, roc_auc, pr_auc, ap, _, _ = get_metrics(
-        xgb_pred, labels[inductive_idx].cpu().numpy(), out_dir='result', name='XGB+GS')
+    acc, f_1, precision, recall, roc_auc, pr_auc, average_precision, _, _ = get_metrics(
+        xgb_pred, labels[inductive_idx].cpu().numpy(),  name='XGB+RGCN')
     metrics_result += [{
         'model': 'RGCN+XGB',
         'acc': acc,
-        'f1': f1,
+        'f1': f_1,
         'precision': precision,
         'recall': recall,
         'roc_auc': roc_auc,
         'pr_auc': pr_auc,
-        'ap': ap
+        'ap': average_precision
     }]
 
     # Save model
     pd.DataFrame(metrics_result).to_csv(output_file)
-    save_model(g, model, hyperparameters, classifier, model_dir)
+    save_model(whole_graph, model, hyperparameters, classifier, model_dir)
 
 
 if __name__ == "__main__":
