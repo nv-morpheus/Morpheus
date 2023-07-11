@@ -30,9 +30,9 @@ from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
 from morpheus.utils.nvt.schema_converters import _bfs_traversal_with_op_map
 from morpheus.utils.nvt.schema_converters import _build_nx_dependency_graph
 from morpheus.utils.nvt.schema_converters import _coalesce_leaf_nodes
+from morpheus.utils.nvt.schema_converters import _get_ci_column_selector
+from morpheus.utils.nvt.schema_converters import _resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
-from morpheus.utils.nvt.schema_converters import get_ci_column_selector
-from morpheus.utils.nvt.schema_converters import resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import sync_df_as_pandas
 
 source_column_info = [
@@ -121,7 +121,7 @@ def test_json_flatten_info_init_missing_output_col_names():
 
 def test_get_ci_column_selector_rename_column():
     ci = RenameColumn(input_name="original_name", name="new_name", dtype="str")
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == "original_name"
 
 
@@ -131,19 +131,19 @@ def test_get_ci_column_selector_bool_column():
                     dtype="bool",
                     true_values=["True"],
                     false_values=["False"])
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_datetime_column():
     ci = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_string_join_column():
     ci = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == "original_name"
 
 
@@ -152,13 +152,13 @@ def test_get_ci_column_selector_increment_column():
                          name="new_name",
                          dtype="datetime64[ns]",
                          groupby_column="groupby_col")
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == "original_name"
 
 
 def test_get_ci_column_selector_string_cat_column():
     ci = StringCatColumn(name="new_name", dtype="str", input_columns=["col1", "col2"], sep=", ")
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == ["col1", "col2"]
 
 
@@ -167,7 +167,7 @@ def test_get_ci_column_selector_json_flatten_info():
                          dtype="str",
                          input_col_names=["json_col1.a", "json_col2.b"],
                          output_col_names=["json_col1_a", "json_col2_b"])
-    result = get_ci_column_selector(ci)
+    result = _get_ci_column_selector(ci)
     assert result == ["json_col1.a", "json_col2.b"]
 
 
@@ -189,7 +189,7 @@ def test_resolve_json_output_columns():
                                                             sep=", "),
                                         ])
 
-    output_cols = resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema)
     expected_output_cols = [
         ("json_col.a", "str"),
     ]
@@ -198,14 +198,14 @@ def test_resolve_json_output_columns():
 
 def test_resolve_json_output_columns_empty_input_schema():
     input_schema = DataFrameInputSchema()
-    output_cols = resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema)
     assert output_cols == []
 
 
 def test_resolve_json_output_columns_no_json_columns():
     input_schema = DataFrameInputSchema(
         column_info=[ColumnInfo(name="column1", dtype="int"), ColumnInfo(name="column2", dtype="str")])
-    output_cols = resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema)
     assert output_cols == []
 
 
@@ -216,7 +216,7 @@ def test_resolve_json_output_columns_with_json_columns():
                                             ColumnInfo(name="json_col.b", dtype="int"),
                                             ColumnInfo(name="column3", dtype="float")
                                         ])
-    output_cols = resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 
@@ -228,7 +228,7 @@ def test_resolve_json_output_columns_with_complex_schema():
                                             ColumnInfo(name="column3", dtype="float"),
                                             RenameColumn(name="new_column", dtype="str", input_name="column4")
                                         ])
-    output_cols = resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 

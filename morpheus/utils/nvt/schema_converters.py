@@ -59,7 +59,7 @@ class JSONFlattenInfo(ColumnInfo):
     output_col_names: list
 
 
-def resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
+def _resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
     """
     Resolves JSON output columns from an input schema.
 
@@ -95,7 +95,7 @@ def resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.Li
     return output_cols
 
 
-def get_ci_column_selector(ci: ColumnInfo) -> typing.Union[str, typing.List[str]]:
+def _get_ci_column_selector(ci: ColumnInfo) -> typing.Union[str, typing.List[str]]:
     """
     Return a column selector based on a ColumnInfo object.
 
@@ -139,8 +139,8 @@ def get_ci_column_selector(ci: ColumnInfo) -> typing.Union[str, typing.List[str]
         raise Exception(f"Unknown ColumnInfo type: {ci.__class__}")
 
 
-def json_flatten_from_input_schema(json_input_cols: typing.List[str],
-                                   json_output_cols: typing.List[typing.Tuple[str, str]]) -> MutateOp:
+def _json_flatten_from_input_schema(json_input_cols: typing.List[str],
+                                    json_output_cols: typing.List[typing.Tuple[str, str]]) -> MutateOp:
     """
     Return a JSON flatten operation from an input schema.
 
@@ -156,13 +156,14 @@ def json_flatten_from_input_schema(json_input_cols: typing.List[str],
     MutateOp
         A MutateOp object that represents the JSON flatten operation.
     """
+
     json_flatten_op = MutateOp(json_flatten, dependencies=json_input_cols, output_columns=json_output_cols)
 
     return json_flatten_op
 
 
 @sync_df_as_pandas()
-def string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFrame:
+def _string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFrame:
     """
     Concatenate the string representation of all supplied columns in a DataFrame.
 
@@ -186,11 +187,11 @@ def string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFra
     return pd.DataFrame({output_column: cat_col})
 
 
-def nvt_string_cat_col(column_selector: ColumnSelector,
-                       df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       output_column: str,
-                       input_columns: typing.List[str],
-                       sep: str = ', '):
+def _nvt_string_cat_col(column_selector: ColumnSelector,
+                        df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                        output_column: str,
+                        input_columns: typing.List[str],
+                        sep: str = ', '):
     """
     Concatenates the string representation of the specified columns in a DataFrame.
 
@@ -213,11 +214,11 @@ def nvt_string_cat_col(column_selector: ColumnSelector,
         The resulting DataFrame.
     """
 
-    return string_cat_col(df[input_columns], output_column=output_column, sep=sep)
+    return _string_cat_col(df[input_columns], output_column=output_column, sep=sep)
 
 
 @sync_df_as_pandas()
-def increment_column(df: pd.DataFrame, output_column: str, input_column: str, period: str = 'D') -> pd.DataFrame:
+def _increment_column(df: pd.DataFrame, output_column: str, input_column: str, period: str = 'D') -> pd.DataFrame:
     """
     Crete an increment a column in a DataFrame.
 
@@ -244,11 +245,11 @@ def increment_column(df: pd.DataFrame, output_column: str, input_column: str, pe
     return pd.DataFrame({output_column: groupby_col})
 
 
-def nvt_increment_column(column_selector: ColumnSelector,
-                         df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                         output_column: str,
-                         input_column: str,
-                         period: str = 'D') -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+def _nvt_increment_column(column_selector: ColumnSelector,
+                          df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                          output_column: str,
+                          input_column: str,
+                          period: str = 'D') -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
     Increment a column in a DataFrame.
 
@@ -271,7 +272,7 @@ def nvt_increment_column(column_selector: ColumnSelector,
         The resulting DataFrame.
     """
 
-    return increment_column(column_selector, df, output_column, input_column, period)
+    return _increment_column(column_selector, df, output_column, input_column, period)
 
 
 # Mappings from ColumnInfo types to functions that create the corresponding NVT operator
@@ -292,7 +293,7 @@ ColumnInfoProcessingMap = {
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
         ],
-    # TODO(Devin): Custom columns are, potentially, very inefficient, because we have to run the custom function on the
+    # Note(Devin): Custom columns are, potentially, very inefficient, because we have to run the custom function on the
     #   entire dataset this is because NVT requires the input column be available, but CustomColumn is a generic
     #   transform taking df->series(ci.name)
     CustomColumn:
@@ -314,7 +315,7 @@ ColumnInfoProcessingMap = {
         lambda ci,
         deps: [
             MutateOp(partial(
-                nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
+                _nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.groupby_column)],
                      label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
@@ -331,7 +332,7 @@ ColumnInfoProcessingMap = {
     StringCatColumn:
         lambda ci,
         deps: [
-            MutateOp(partial(nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
+            MutateOp(partial(_nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[StringCatColumn] '{','.join(ci.input_columns)}' => '{ci.name}'")
@@ -340,14 +341,14 @@ ColumnInfoProcessingMap = {
         lambda ci,
         deps: [
             MutateOp(partial(
-                nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
+                _nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     JSONFlattenInfo:
         lambda ci,
-        deps: [json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+        deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
@@ -439,7 +440,7 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
             if len(parents) == 0:
                 # We need to start an operator chain with a column selector, so root nodes need to prepend a parent
                 #   column selection operator
-                parent_input = get_ci_column_selector(ci_map[node])
+                parent_input = _get_ci_column_selector(ci_map[node])
             else:
                 # Not a root node, so we need to gather the parent operators, and collect them up.
                 parent_input = None
@@ -565,7 +566,7 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema,
         raise ValueError("Input schema is empty")
 
     # Try to guess which output columns we'll produce
-    json_output_cols = resolve_json_output_columns(input_schema)
+    json_output_cols = _resolve_json_output_columns(input_schema)
 
     json_cols = input_schema.json_columns
     column_info_objects = [ci for ci in input_schema.column_info]
