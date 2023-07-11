@@ -113,7 +113,7 @@ exhale_args = {
         BRIEF_MEMBER_DESC = YES
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
-        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
+        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/* */doca/*
         EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
         EXTENSION_MAPPING = cu=C++ cuh=C++
         EXTRACT_ALL = YES
@@ -147,8 +147,11 @@ autodoc_typehints_description_target = "documented"  # Dont double up on type hi
 add_module_names = False  # Remove namespaces from class/method signatures
 myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
+    "cudf",  # Avoid loading GPU libraries during the documentation build
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
+    "morpheus.models.dfencoder.logging",
     "tensorrt",
+    "torch",
     "tqdm",
 ]
 
