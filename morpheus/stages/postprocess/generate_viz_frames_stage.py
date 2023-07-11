@@ -69,6 +69,11 @@ class GenerateVizFramesStage(SinglePortStage):
 
         self._replay_buffer = []
 
+        # Properties set on start
+        self._loop: asyncio.AbstractEventLoop = None
+        self._server_task: asyncio.Task = None
+        self._server_close_event: asyncio.Event = None
+
     @property
     def name(self) -> str:
         return "gen_viz"
@@ -89,13 +94,13 @@ class GenerateVizFramesStage(SinglePortStage):
         return False
 
     @staticmethod
-    def round_to_sec(x):
+    def round_to_sec(x: int | float):
         """
         Round to even seconds second
 
         Parameters
         ----------
-        x : int/float
+        x : int | float
             Rounding up the value
 
         Returns
@@ -126,7 +131,7 @@ class GenerateVizFramesStage(SinglePortStage):
         def indent_data(y: str):
             try:
                 return json.dumps(json.loads(y), indent=3)
-            except:  # noqa: E722
+            except Exception:
                 return y
 
         df["data"] = df["data"].apply(indent_data)
@@ -159,11 +164,11 @@ class GenerateVizFramesStage(SinglePortStage):
 
         offset = (curr_timestamp - self._first_timestamp) / 1000
 
-        fn = os.path.join(self._out_dir, "{}.csv".format(offset))
+        out_file = os.path.join(self._out_dir, f"{offset}.csv")
 
-        assert not os.path.exists(fn)
+        assert not os.path.exists(out_file)
 
-        in_df.to_csv(fn, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
+        in_df.to_csv(out_file, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
     async def start_async(self):
         """
@@ -179,7 +184,7 @@ class GenerateVizFramesStage(SinglePortStage):
             Establishes a connection with the WebSocket server.
             """
 
-            logger.info("Got connection from: {}:{}".format(*websocket.remote_address))
+            logger.info("Got connection from: %s:%s", *websocket.remote_address)
 
             while True:
                 try:
@@ -190,7 +195,7 @@ class GenerateVizFramesStage(SinglePortStage):
                 except Exception as ex:
                     logger.exception("Error occurred trying to send message over socket", exc_info=ex)
 
-            logger.info("Disconnected from: {}:{}".format(*websocket.remote_address))
+            logger.info("Disconnected from: %s:%s", *websocket.remote_address)
 
         async def run_server():
             """
@@ -204,13 +209,13 @@ class GenerateVizFramesStage(SinglePortStage):
                     listening_on = [":".join([str(y) for y in x.getsockname()]) for x in server.sockets]
                     listening_on_str = [f"'{x}'" for x in listening_on]
 
-                    logger.info("Websocket server listening at: {}".format(", ".join(listening_on_str)))
+                    logger.info("Websocket server listening at: %s", ", ".join(listening_on_str))
 
                     await self._server_close_event.wait()
 
                     logger.info("Server shut down")
 
-                logger.info("Server shut down. Is queue empty: {}".format(self._buffer_queue.empty()))
+                logger.info("Server shut down. Is queue empty: %s", self._buffer_queue.empty())
             except Exception as e:
                 logger.error("Error during serve", exc_info=e)
                 raise
@@ -234,11 +239,11 @@ class GenerateVizFramesStage(SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, seg: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
-        def node_fn(input, output):
+        def node_fn(input_obs, output_obs):
 
             def write_batch(x: MultiResponseMessage):
 
@@ -267,7 +272,7 @@ class GenerateVizFramesStage(SinglePortStage):
                 # Enqueue the buffer and block until that completes
                 asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
 
-            input.pipe(ops.map(write_batch)).subscribe(output)
+            input_obs.pipe(ops.map(write_batch)).subscribe(output_obs)
 
             logger.info("Gen-viz stage completed. Waiting for shutdown")
 
@@ -279,8 +284,8 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = seg.make_node(self.unique_name, ops.build(node_fn))
-        seg.make_edge(stream, to_file)
+        to_file = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(stream, to_file)
         stream = to_file
 
         # Return input unchanged to allow passthrough
