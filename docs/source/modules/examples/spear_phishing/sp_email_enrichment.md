@@ -28,8 +28,8 @@ This module performs spear phishing email enrichment.
 |--------------------------|------|---------------------------------------------------------------------|------------------------|---------------|
 | `sender_sketches`        | list | List of sender strings naming sender sketch inputs.                 | ["sender1", "sender2"] | `[]`          |
 | `intents`                | list | List of intent strings naming computed intent inputs.               | ["intent1", "intent2"] | `[]`          |
-| `raise_on_failure`       | bool | Indicate if we should treat processing errors as pipeline failures. | false                  | `false`       |
-| `token_length_threshold` | int  | Minimum token length to use when computing syntax similarity        | 5                      | None          |
+| `raise_on_failure`       | boolean | Indicate if we should treat processing errors as pipeline failures. | false                  | `false`       |
+| `token_length_threshold` | integer  | Minimum token length to use when computing syntax similarity        | 5                      | None          |
 
 ### Example JSON Configuration
 

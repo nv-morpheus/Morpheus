@@ -26,10 +26,10 @@ This module defines a setup for spear-phishing inference.
 
 | Parameter              | Type | Description                           | Example Value      | Default Value |
 |------------------------|------|---------------------------------------|--------------------|---------------|
-| `tracking_uri`         | str  | The tracking URI for the model        | "/path/to/uri"     | `None`        |
-| `registered_model`     | str  | The registered model for inference    | "model_1"          | `None`        |
+| `tracking_uri`         | string  | The tracking URI for the model        | "/path/to/uri"     | `None`        |
+| `registered_model`     | string  | The registered model for inference    | "model_1"          | `None`        |
 | `input_model_features` | list | The input features for the model      | ["feat1", "feat2"] | `[]`          |
-| `raise_on_failure`     | bool | If true, raise exceptions on failures | false              | `false`       |
+| `raise_on_failure`     | boolean | If true, raise exceptions on failures | false              | `false`       |
 
 ### Example JSON Configuration
 

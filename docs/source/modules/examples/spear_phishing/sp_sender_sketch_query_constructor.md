@@ -27,7 +27,7 @@ This module constructs SQL sender sketch queries in the spear phishing detection
 
 | Parameter          | Type | Description                           | Example Value | Default Value |
 |--------------------|------|---------------------------------------|---------------|---------------|
-| `raise_on_failure` | bool | If true, raise exceptions on failures | false         | `false`       |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures | false         | `false`       |
 
 ### Example JSON Configuration
 

@@ -26,8 +26,8 @@ This module defines a setup for spear-phishing email scoring.
 
 | Parameter          | Type | Description                           | Example Value             | Default Value |
 |--------------------|------|---------------------------------------|---------------------------|---------------|
-| `scoring_config`   | dict | The scoring configuration             | {"method": "probability"} | `None`        |
-| `raise_on_failure` | bool | If true, raise exceptions on failures | false                     | `false`       |
+| `scoring_config`   | dictionary | The scoring configuration             | {"method": "probability"} | `None`        |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures | false                     | `false`       |
 
 ### Example JSON Configuration
 
