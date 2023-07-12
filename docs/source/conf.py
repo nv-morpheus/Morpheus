@@ -150,9 +150,14 @@ autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "morpheus.models.dfencoder.logging",
+    "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
     "tensorrt",
     "torch",
     "tqdm",
+]
+
+suppress_warnings = [
+    "myst.header"  # Allow header increases from h2 to h4 (skipping h3)
 ]
 
 # Config numpydoc
