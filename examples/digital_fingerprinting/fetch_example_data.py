@@ -551,7 +551,7 @@ def fetch_dataset(dataset):
     for f in train_files:
         if not exists(train_dir + f):
             print("Downloading {}".format(f))
-            fs.get(S3_BASE_PATH + f, train_dir + f)
+            fs.get_file(S3_BASE_PATH + f, train_dir + f)
 
     infer_dir = EXAMPLE_DATA_DIR + "/dfp/{}-inference-data/".format(dataset)
     if not exists(infer_dir):
@@ -561,7 +561,7 @@ def fetch_dataset(dataset):
     for f in infer_files:
         if not os.path.exists(infer_dir + f):
             print("Downloading {}".format(f))
-            fs.get(S3_BASE_PATH + f, infer_dir + f)
+            fs.get_file(S3_BASE_PATH + f, infer_dir + f)
 
 
 def parse_args():
