@@ -118,7 +118,6 @@ Deploying Morpheus
    :hidden:
 
    modules/index
-   modules/morpheus_modules
 
 .. toctree::
    :caption: Morpheus Loaders

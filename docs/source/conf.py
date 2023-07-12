@@ -40,10 +40,10 @@ import packaging
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Get the morpheus root from the environment variable or default to finding it relative to this file
-morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(__file__, "..", "")))
+morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 # Make sure we can access the digital fingerprinting example
-sys.path.insert(0, os.path.join(morpheus_root, 'examples/digital_fingerprinting/production/morpheus'))
+sys.path.append(os.path.join(morpheus_root, 'examples/digital_fingerprinting/production/morpheus'))
 
 # Add the Sphinx extensions directory to sys.path to allow for the github_link extension to be found
 sys.path.insert(0, os.path.abspath('sphinxext'))
