@@ -159,3 +159,7 @@ class ExecutionChain:
                 if ((signature.return_annotation is not dict)
                         and (typing.get_origin(signature.return_annotation) is not dict)):
                     raise ValueError(f"Function {function.__name__} must return a dictionary. {signature}")
+
+
+def run_execution_chain(*function_chain: typing.Callable, **start_kwargs):
+    return ExecutionChain(list(function_chain))(**start_kwargs)
