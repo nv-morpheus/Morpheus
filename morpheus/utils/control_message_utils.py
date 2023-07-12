@@ -100,6 +100,7 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
     """
 
     def decorator(func):
+
         @wraps(func)
         def wrapper(control_messsage: ControlMessage, *args, **kwargs):
             with CMDefaultFailureContextManager(control_message=control_messsage,

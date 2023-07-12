@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def try_parse_query_data(
-        query_data: typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]
+    query_data: typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]
 ) -> typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]:
     """
     Parses a dictionary of query data.

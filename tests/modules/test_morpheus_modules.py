@@ -23,7 +23,6 @@ import cudf
 
 # pylint: disable=unused-import
 import morpheus.modules  # noqa: F401
-
 from morpheus import messages
 from morpheus.utils.module_ids import FILTER_CM_FAILED
 
@@ -73,6 +72,7 @@ def test_get_module():
 
 
 def test_get_module_with_bad_config_no_loaders():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -109,6 +109,7 @@ def test_get_module_with_bad_config_no_loaders():
 
 
 def test_get_module_with_bad_loader_type():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -143,6 +144,7 @@ def test_get_module_with_bad_loader_type():
 
 
 def test_get_module_with_bad_control_message():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -349,6 +351,7 @@ def test_filter_cm_failed():
     PACKETS_RECEIVED = 0
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             msg = messages.ControlMessage()
             msg.set_metadata("cm_failed", "true")

@@ -62,6 +62,7 @@ def test_replace_function():
 
 
 def test_nested_execution_chain():
+
     def inner_func1(arg1, arg2) -> dict:
         return {'result': arg1 + arg2}
 

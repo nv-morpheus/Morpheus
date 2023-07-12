@@ -99,33 +99,33 @@ def test_insert_data(sql_utils, mock_connection):
     [
         # Valid configurations
         ({
-             "drivername": "postgres+psycopg2", "host": "localhost", "database": "mydb"
-         },
+            "drivername": "postgres+psycopg2", "host": "localhost", "database": "mydb"
+        },
          "postgres+psycopg2://localhost/mydb",
          None),
         # Valid configurations
         ({
-             "drivername": "mysql+pymysql",
-             "host": "localhost",
-             "port": 3306,
-             "database": "mydb",
-             "username": "user",
-             "password": "password"
-         },
+            "drivername": "mysql+pymysql",
+            "host": "localhost",
+            "port": 3306,
+            "database": "mydb",
+            "username": "user",
+            "password": "password"
+        },
          "mysql+pymysql://user:password@localhost:3306/mydb",
          None),
         # Missing drivername
         ({
-             "host": "localhost", "database": "mydb"
-         }, None, RuntimeError("Must specify SQL drivername, ex. 'sqlite'")),
+            "host": "localhost", "database": "mydb"
+        }, None, RuntimeError("Must specify SQL drivername, ex. 'sqlite'")),
         # Missing host and database
         ({
-             "drivername": "postgres+psycopg2"
-         }, None, RuntimeError("Must specify 'host' or 'database'")),
+            "drivername": "postgres+psycopg2"
+        }, None, RuntimeError("Must specify 'host' or 'database'")),
         # Missing username or password
         ({
-             "drivername": "mysql+pymysql", "host": "localhost", "port": 3306, "database": "mydb", "username": "user"
-         },
+            "drivername": "mysql+pymysql", "host": "localhost", "port": 3306, "database": "mydb", "username": "user"
+        },
          None,
          RuntimeError("Must include both 'username' and 'password' or neither")),
     ])

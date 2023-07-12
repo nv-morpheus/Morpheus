@@ -15,7 +15,6 @@
 import inspect
 import typing
 
-
 # def execution_chain_annotations(*annotations):
 #    def inner_annotate(func):
 #        def wrapper(*args, **kwargs):
