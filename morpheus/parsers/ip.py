@@ -454,6 +454,7 @@ def mask(ips, masks):
     -------
     rtype : cudf.Series
         Masked IP address from list of IPs
+
     Examples
     --------
     >>> import clx.ip
@@ -461,9 +462,9 @@ def mask(ips, masks):
     >>> input_ips = cudf.Series(["192.168.0.1","10.0.0.1"])
     >>> input_masks = cudf.Series(["255.255.0.0", "255.255.0.0"])
     >>> clx.ip.mask(input_ips, input_masks)
-    0    192.168.0.0
-    1       10.0.0.0
-    Name: mask, dtype: object
+    ... 0    192.168.0.0
+    ... 1       10.0.0.0
+    ... Name: mask, dtype: object
     """
     df = cudf.DataFrame()
     df["int_mask"] = masks.str.ip2int()

@@ -58,9 +58,9 @@ def mlflow_model_writer(builder: mrc.Builder):
             - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
             - databricks_permissions (dict): Permissions for the model; See Below; Default: None
             - experiment_name_formatter (str): Formatter for the experiment name;
-            Example: `experiment_name_{timestamp}`; Default: `[Required]`
+                Example: `experiment_name_{timestamp}`; Default: `[Required]`
             - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
-            Default: `[Required]`
+                Default: `[Required]`
             - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
             - source (str): from source where the logs are generated; Example: `azure`; Default: `[Required]`
 

@@ -64,7 +64,7 @@ def file_batcher(builder: mrc.Builder):
         batching_options:
             - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
             - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
-            Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+                Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
             - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
             - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
             - sampling_rate_s (int): Sampling rate in seconds; Example: 0; Default: None
