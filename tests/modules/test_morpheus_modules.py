@@ -75,6 +75,7 @@ def test_get_module():
 
 
 def test_get_module_with_bad_config_no_loader():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -85,9 +86,7 @@ def test_get_module_with_bad_config_no_loader():
 
         source = builder.make_source("source", gen_data)
 
-        config = {
-            "loaders": []
-        }
+        config = {"loaders": []}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -113,6 +112,7 @@ def test_get_module_with_bad_config_no_loader():
 
 
 def test_get_module_with_bad_loader_type():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -147,6 +147,7 @@ def test_get_module_with_bad_loader_type():
 
 
 def test_get_module_with_bad_control_message():
+
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -349,6 +350,7 @@ def test_filter_cm_failed():
     PACKETS_RECEIVED = 0
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             msg = messages.ControlMessage()
             msg.set_metadata("cm_failed", "true")
