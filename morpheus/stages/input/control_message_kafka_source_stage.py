@@ -72,7 +72,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: typing.List[str] = ["test_cm"],
+                 input_topic: typing.List[str] = None,
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -96,6 +96,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
+        input_topic = input_topic if (input_topic is not None) else ["test_cm"]
         if isinstance(input_topic, str):
             input_topic = [input_topic]
 

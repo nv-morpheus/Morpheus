@@ -21,49 +21,50 @@ from morpheus.utils.control_message_utils import skip_processing_if_cm_failed
 
 
 def test_cm_set_failure():
-    cm = ControlMessage()
+    control_message = ControlMessage()
     reason = "Test Failure"
 
-    assert cm_set_failure(cm, reason) == cm
+    assert cm_set_failure(control_message, reason) == control_message
 
-    assert cm.get_metadata("cm_failed") is True
-    assert cm.get_metadata("cm_failed_reason") == reason
+    assert control_message.get_metadata("cm_failed") is True
+    assert control_message.get_metadata("cm_failed_reason") == reason
 
 
 def test_skip_forward_on_cm_failed():
-    cm = ControlMessage()
+    control_message = ControlMessage()
     reason = "Test Failure"
-    cm_set_failure(cm, reason)
+    cm_set_failure(control_message, reason)
 
+    # pylint: disable=unused-argument
     @skip_processing_if_cm_failed
-    def dummy_func(cm, *args, **kwargs):
+    def dummy_func(control_message, *args, **kwargs):
         return "Function Executed"
 
-    assert dummy_func(cm) == cm
+    assert dummy_func(control_message) == control_message
 
-    cm2 = ControlMessage()
-    assert dummy_func(cm2) == "Function Executed"
+    control_message2 = ControlMessage()
+    assert dummy_func(control_message2) == "Function Executed"
 
 
-def test_CMDefaultFailureContextManager_no_exception():
-    cm = ControlMessage()
-    with CMDefaultFailureContextManager(cm) as c:
+def test_cm_default_failure_context_manager_no_exception():
+    control_message = ControlMessage()
+    with CMDefaultFailureContextManager(control_message):
         pass
     with pytest.raises(RuntimeError):
-        cm.get_metadata("cm_failed")
+        control_message.get_metadata("cm_failed")
 
 
-def test_CMDefaultFailureContextManager_with_exception():
-    cm = ControlMessage()
-    with CMDefaultFailureContextManager(cm) as c:
-        raise Exception("Test Exception")
+def test_cm_default_failure_context_manager_with_exception():
+    control_message = ControlMessage()
+    with CMDefaultFailureContextManager(control_message):
+        raise RuntimeError("Test Exception")
 
-    assert cm.get_metadata("cm_failed") is True
-    assert cm.get_metadata("cm_failed_reason") == "Test Exception"
+    assert control_message.get_metadata("cm_failed") is True
+    assert control_message.get_metadata("cm_failed_reason") == "Test Exception"
 
 
 if (__name__ == "__main__"):
     test_cm_set_failure()
     test_skip_forward_on_cm_failed()
-    test_CMDefaultFailureContextManager_no_exception()
-    test_CMDefaultFailureContextManager_with_exception()
+    test_cm_default_failure_context_manager_no_exception()
+    test_cm_default_failure_context_manager_with_exception()

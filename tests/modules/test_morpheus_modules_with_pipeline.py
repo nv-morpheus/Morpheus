@@ -18,18 +18,18 @@ import tempfile
 
 import cudf
 
-import morpheus.messages as messages
+from morpheus import messages
+# pylint: disable=unused-import
 import morpheus.modules  # noqa: F401
 from morpheus.utils.module_ids import FILTER_CM_FAILED
 
 from .morpheus_module_test_pipeline import MorpheusModuleTestPipeline
 
-packet_count = 5
-packet_received = 0
+PACKET_COUNT = 5
+PACKETS_RECEIVED = 0
 
 
 def test_payload_loader_module():
-
     df = cudf.DataFrame({
         'col1': [1, 2, 3, 4, 5],
         'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
@@ -39,16 +39,16 @@ def test_payload_loader_module():
 
     def gen_data():
         payload = messages.MessageMeta(df)
-        global packet_count
-        for i in range(packet_count):
+        for _ in range(PACKET_COUNT):
             config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
             msg = messages.ControlMessage(config)
             msg.payload(payload)
             yield msg
 
     def on_next(control_msg):
-        global packet_received
-        packet_received += 1
+        # pylint: disable=global-statement
+        global PACKETS_RECEIVED
+        PACKETS_RECEIVED += 1
         assert (control_msg.payload().df.equals(df))
 
     config = {"loaders": [{"id": "payload", "properties": {"file_types": "something", "prop2": "something else"}}]}
@@ -64,12 +64,13 @@ def test_payload_loader_module():
                                                on_complete=None)
     test_pipeline.run()
 
-    assert (packet_received == packet_count)
+    assert (PACKETS_RECEIVED == PACKET_COUNT)
 
 
 def test_file_loader_module():
-    global packets_received
-    packets_received = 0
+    # pylint: disable=global-statement
+    global PACKETS_RECEIVED
+    PACKETS_RECEIVED = 0
 
     df = cudf.DataFrame(
         {
@@ -83,21 +84,19 @@ def test_file_loader_module():
     files = []
     file_types = ["csv", "parquet", "orc"]
     for ftype in file_types:
-        _tempfile = tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False)
-        filename = _tempfile.name
+        with tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False) as _tempfile:
+            filename = _tempfile.name
 
-        if ftype == "csv":
-            df.to_csv(filename, index=False)
-        elif ftype == "parquet":
-            df.to_parquet(filename)
-        elif ftype == "orc":
-            df.to_orc(filename)
+            if ftype == "csv":
+                df.to_csv(filename, index=False)
+            elif ftype == "parquet":
+                df.to_parquet(filename)
+            elif ftype == "orc":
+                df.to_orc(filename)
 
-        files.append((filename, ftype))
+            files.append((filename, ftype))
 
     def gen_data():
-        global packet_count
-
         for f in files:
             # Check with the file type
             config = {
@@ -128,8 +127,8 @@ def test_file_loader_module():
             yield msg
 
     def on_next(control_msg):
-        global packets_received
-        packets_received += 1
+        global PACKETS_RECEIVED
+        PACKETS_RECEIVED += 1
         assert (control_msg.payload().df.equals(df))
 
     config = {"loaders": [{"id": "file", "properties": {"file_types": "something", "prop2": "something else"}}]}
@@ -145,15 +144,16 @@ def test_file_loader_module():
                                                on_complete=None)
     test_pipeline.run()
 
-    assert (packets_received == len(files) * 2)
+    assert (PACKETS_RECEIVED == len(files) * 2)
 
     for f in files:
         os.remove(f[0])
 
 
 def test_filter_cm_failed():
-    global packets_received
-    packets_received = 0
+    # pylint: disable=global-statement
+    global PACKETS_RECEIVED
+    PACKETS_RECEIVED = 0
 
     def gen_data():
         msg = messages.ControlMessage()
@@ -171,9 +171,10 @@ def test_filter_cm_failed():
         yield msg
 
     def on_next(control_msg):
-        global packets_received
+        # pylint: disable=global-statement
+        global PACKETS_RECEIVED
         if control_msg:
-            packets_received += 1
+            PACKETS_RECEIVED += 1
 
     config = {}
     test_pipeline = MorpheusModuleTestPipeline(FILTER_CM_FAILED,
@@ -188,7 +189,7 @@ def test_filter_cm_failed():
                                                on_complete=None)
     test_pipeline.run()
 
-    assert packets_received == 1
+    assert PACKETS_RECEIVED == 1
 
 
 if (__name__ == "__main__"):

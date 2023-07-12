@@ -21,11 +21,14 @@ import mrc
 
 import cudf
 
-import morpheus.messages as messages
+# pylint: disable=unused-import
 import morpheus.modules  # noqa: F401
+
+from morpheus import messages
 from morpheus.utils.module_ids import FILTER_CM_FAILED
 
 
+# pylint: disable=unused-argument
 def on_next(control_msg):
     pass
 
@@ -65,15 +68,15 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
+    # pylint: disable=unused-variable
     module_instance = fn_constructor("ModuleDataLoaderTest", config)  # noqa: F841 -- we don't need to use it
 
 
 def test_get_module_with_bad_config_no_loaders():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for i in range(packet_count):
+            for _ in range(PACKET_COUNT):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -100,20 +103,16 @@ def test_get_module_with_bad_config_no_loaders():
 
     try:
         executor.start()
-        assert (  # noqa: F631
-            False,
-            "This should fail, because no loaders were specified in the config and none were added.")
-        executor.join()
+        assert False, "This should fail, because no loaders were specified in the config and none were added."
     except Exception:
         pass
 
 
 def test_get_module_with_bad_loader_type():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for i in range(packet_count):
+            for _ in range(PACKET_COUNT):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -138,17 +137,16 @@ def test_get_module_with_bad_loader_type():
     pipeline = mrc.Pipeline()
     try:
         pipeline.make_segment("main", init_wrapper)
-        assert (False, "This should fail, because the loader type is not a valid loader")  # noqa: F631
+        assert False, "This should fail, because the loader type is not a valid loader"  # noqa: F631
     except Exception:
         pass
 
 
 def test_get_module_with_bad_control_message():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for i in range(packet_count):
+            for _ in range(PACKET_COUNT):
                 config = {
                     "tasks": [{
                         "type": "load", "properties": {
@@ -181,15 +179,13 @@ def test_get_module_with_bad_control_message():
 
     try:
         executor.start()
-        assert (  # noqa: F631
-            False, "We should never get here, because the control message specifies an invalid loader")  # noqa: F631
-        executor.join()
+        assert False, "We should never get here, because the control message specifies an invalid loader"
     except Exception:
         pass
 
 
-packet_count = 5
-packets_received = 0
+PACKET_COUNT = 5
+PACKETS_RECEIVED = 0
 
 
 def test_payload_loader_module():
@@ -207,19 +203,19 @@ def test_payload_loader_module():
         })
 
         def gen_data():
-            global packet_count
             config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
 
             payload = messages.MessageMeta(df)
-            for i in range(packet_count):
+            for _ in range(PACKET_COUNT):
                 msg = messages.ControlMessage(config)
                 msg.payload(payload)
 
                 yield msg
 
         def _on_next(control_msg):
-            global packets_received
-            packets_received += 1
+            # pylint: disable=global-statement
+            global PACKETS_RECEIVED
+            PACKETS_RECEIVED += 1
             assert (control_msg.payload().df.equals(df))
 
         source = builder.make_source("source", gen_data)
@@ -244,12 +240,13 @@ def test_payload_loader_module():
     executor.start()
     executor.join()
 
-    assert (packets_received == packet_count)
+    assert (PACKETS_RECEIVED == PACKET_COUNT)
 
 
 def test_file_loader_module():
-    global packets_received
-    packets_received = 0
+    # pylint: disable=global-statement
+    global PACKETS_RECEIVED
+    PACKETS_RECEIVED = 0
 
     df = cudf.DataFrame(
         {
@@ -263,23 +260,21 @@ def test_file_loader_module():
     files = []
     file_types = ["csv", "parquet", "orc"]
     for ftype in file_types:
-        _tempfile = tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False)
-        filename = _tempfile.name
+        with tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False) as _tempfile:
+            filename = _tempfile.name
 
-        if ftype == "csv":
-            df.to_csv(filename, index=False)
-        elif ftype == "parquet":
-            df.to_parquet(filename)
-        elif ftype == "orc":
-            df.to_orc(filename)
+            if ftype == "csv":
+                df.to_csv(filename, index=False)
+            elif ftype == "parquet":
+                df.to_parquet(filename)
+            elif ftype == "orc":
+                df.to_orc(filename)
 
-        files.append((filename, ftype))
+            files.append((filename, ftype))
 
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            global packet_count
-
             for f in files:
                 # Check with the file type
                 config = {
@@ -310,8 +305,9 @@ def test_file_loader_module():
                 yield msg
 
         def _on_next(control_msg):
-            global packets_received
-            packets_received += 1
+            # pylint: disable=global-statement
+            global PACKETS_RECEIVED
+            PACKETS_RECEIVED += 1
             assert (control_msg.payload().df.equals(df))
 
         registry = mrc.ModuleRegistry
@@ -341,18 +337,18 @@ def test_file_loader_module():
     executor.start()
     executor.join()
 
-    assert (packets_received == len(files) * 2)
+    assert (PACKETS_RECEIVED == len(files) * 2)
 
     for f in files:
         os.remove(f[0])
 
 
 def test_filter_cm_failed():
-    global packets_received
-    packets_received = 0
+    # pylint: disable=global-statement
+    global PACKETS_RECEIVED
+    PACKETS_RECEIVED = 0
 
     def init_wrapper(builder: mrc.Builder):
-
         def gen_data():
             msg = messages.ControlMessage()
             msg.set_metadata("cm_failed", "true")
@@ -369,9 +365,10 @@ def test_filter_cm_failed():
             yield msg
 
         def _on_next(control_msg):
-            global packets_received
+            # pylint: disable=global-statement
+            global PACKETS_RECEIVED
             if control_msg:
-                packets_received += 1
+                PACKETS_RECEIVED += 1
 
         source = builder.make_source("source", gen_data)
 
@@ -394,7 +391,7 @@ def test_filter_cm_failed():
     executor.start()
     executor.join()
 
-    assert packets_received == 1
+    assert PACKETS_RECEIVED == 1
 
 
 if (__name__ == "__main__"):

@@ -46,6 +46,7 @@ def filter_cm_failed(builder: mrc.Builder):
     config = builder.get_current_module_config()
     on_cm_failure = config.get("on_cm_failure", None)
 
+    # pylint: disable=inconsistent-return-statements
     def on_data(control_message: ControlMessage):
         if control_message.has_metadata("cm_failed"):
             cm_failed = control_message.get_metadata("cm_failed")
@@ -56,7 +57,7 @@ def filter_cm_failed(builder: mrc.Builder):
                 else:
                     logger.error("cm_failed: true, cm_failed_reason: None")
 
-                # TODO: support customized operations
+                # Note: support customized operations
                 if on_cm_failure:
                     logger.debug("on_cm_failure: %s", on_cm_failure)
 

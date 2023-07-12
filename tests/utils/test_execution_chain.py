@@ -12,28 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-
-import pytest
-
 from morpheus.utils.execution_chain import ExecutionChain
 
 
-def func1(a: int, b: int) -> dict:
-    return {'result': a + b}
+def func1(arg1: int, arg2: int) -> dict:
+    return {'result': arg1 + arg2}
 
 
-def func2(a: int, b: int) -> dict:
-    return {'result': a - b}
+def func2(arg1: int, arg2: int) -> dict:
+    return {'result': arg1 - arg2}
 
 
-def func_error(a: int, b: int) -> dict:
+# pylint: disable=unused-argument
+def func_error(arg1: int, arg2: int) -> dict:
     raise ValueError("An error occurred.")
 
 
 def test_execution_chain():
     chain = ExecutionChain([func1, func2])
-    result = chain(a=3, b=3)
+    result = chain(arg1=3, arg2=3)
     assert result == {'result': 0}
 
 
@@ -65,14 +62,13 @@ def test_replace_function():
 
 
 def test_nested_execution_chain():
+    def inner_func1(arg1, arg2) -> dict:
+        return {'result': arg1 + arg2}
 
-    def func1(a, b) -> dict:
-        return {'result': a + b}
+    def inner_func2(result) -> dict:
+        chain = ExecutionChain([inner_func1])
+        return {'nested_result': chain(arg1=2, arg2=3)}
 
-    def func2(result) -> dict:
-        chain = ExecutionChain([func1])
-        return {'nested_result': chain(a=2, b=3)}
-
-    chain = ExecutionChain([func1, func2])
-    result = chain(a=3, b=3)
+    chain = ExecutionChain([inner_func1, inner_func2])
+    result = chain(arg1=3, arg2=3)
     assert result == {'nested_result': {'result': 5}}

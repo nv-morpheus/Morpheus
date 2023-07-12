@@ -103,20 +103,21 @@ def payload_batcher(builder: mrc.Builder):
 
     @skip_processing_if_cm_failed
     @cm_default_failure_context_manager(raise_on_failure=raise_on_failure)
-    def on_next(cm: ControlMessage) -> typing.List[ControlMessage]:
+    def on_next(control_message: ControlMessage) -> typing.List[ControlMessage]:
         nonlocal disable_max_batch_size
 
-        message_meta = cm.payload()
-        cms = []
+        message_meta = control_message.payload()
+        control_messages = []
         with message_meta.mutable_dataframe() as dfm:
             dfs = _batch_dataframe(dfm) if not disable_max_batch_size else _batch_dataframe_by_group(dfm)
             logger.debug("Number of batches created: %s", len(dfs))
             for df in dfs:
-                ret_cm = cm.copy()
+                ret_cm = control_message.copy()
                 df = df.reset_index(drop=True)
                 ret_cm.payload(MessageMeta(df))
-                cms.append(ret_cm)
-        return cms
+                control_messages.append(ret_cm)
+
+        return control_messages
 
     def _batch_dataframe(df: cudf.DataFrame) -> typing.List[cudf.DataFrame]:
         nonlocal max_batch_size

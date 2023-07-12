@@ -15,6 +15,7 @@
 import inspect
 import typing
 
+
 # def execution_chain_annotations(*annotations):
 #    def inner_annotate(func):
 #        def wrapper(*args, **kwargs):
@@ -103,10 +104,11 @@ class ExecutionChain:
                 func_kwargs = {key: value for key, value in local_state.items() if key in signature.parameters}
                 returned_state = function(**func_kwargs)
                 local_state.update(returned_state)
-            else:
-                result = returned_state
+
+            result = returned_state
         except Exception as error:
-            raise Exception(f"Execution failed processing function {function.__name__}. Error: {str(error)}")
+            raise RuntimeError(
+                f"Execution failed processing function {function.__name__}. Error: {str(error)}") from error
 
         return result
 
@@ -176,6 +178,6 @@ class ExecutionChain:
             signature = inspect.signature(function)
 
             if (idx < len(self.functions) - 1):
-                if ((not signature.return_annotation is dict)
-                        and (not typing.get_origin(signature.return_annotation) is dict)):
+                if ((signature.return_annotation is not dict)
+                        and (typing.get_origin(signature.return_annotation) is not dict)):
                     raise ValueError(f"Function {function.__name__} must return a dictionary. {signature}")

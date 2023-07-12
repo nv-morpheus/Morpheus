@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def try_parse_query_data(
-    query_data: typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]
+        query_data: typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]
 ) -> typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]:
     """
     Parses a dictionary of query data.
@@ -106,8 +106,8 @@ def try_aggregate_df(df_aggregate: typing.Optional[cudf.DataFrame], df: pd.DataF
     cdf = cudf.from_pandas(df)
     if (df_aggregate):
         return df_aggregate.append(cdf)
-    else:
-        return cdf
+
+    return cdf
 
 
 @register_loader("SQLLoader")

@@ -18,6 +18,7 @@ import typing
 
 import mrc
 
+# pylint: disable=unused-import
 import morpheus.modules  # noqa: F401
 
 

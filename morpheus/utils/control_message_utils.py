@@ -56,23 +56,22 @@ def skip_processing_if_cm_failed(func: typing.Callable) -> typing.Callable:
         The decorated function.
     """
 
-    def wrapper(cm: ControlMessage, *args, **kwargs):
-        if cm.has_metadata("cm_failed") and cm.get_metadata("cm_failed"):
-            return cm
-        else:
+    def wrapper(control_message: ControlMessage, *args, **kwargs):
+        if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed")):
+            return control_message
 
-            return func(cm, *args, **kwargs)
+        return func(control_message, *args, **kwargs)
 
     return wrapper
 
 
-def ensure_payload_not_null(cm: ControlMessage):
+def ensure_payload_not_null(control_message: ControlMessage):
     """
     Ensures that the payload of a ControlMessage is not None.
 
     Parameters
     ----------
-    cm : ControlMessage
+    control_message : ControlMessage
         The ControlMessage to check.
 
     Raises
@@ -81,7 +80,7 @@ def ensure_payload_not_null(cm: ControlMessage):
         If the payload is None.
     """
 
-    if cm.payload().mutable_dataframe() is None:
+    if (control_message.payload().mutable_dataframe() is None):
         raise ValueError("Payload cannot be None")
 
 
@@ -101,12 +100,11 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
     """
 
     def decorator(func):
-
         @wraps(func)
-        def wrapper(cm: ControlMessage, *args, **kwargs):
-
-            with CMDefaultFailureContextManager(control_message=cm, raise_on_failure=raise_on_failure) as ctx_mgr:
-                ensure_payload_not_null(cm=cm)
+        def wrapper(control_messsage: ControlMessage, *args, **kwargs):
+            with CMDefaultFailureContextManager(control_message=control_messsage,
+                                                raise_on_failure=raise_on_failure) as ctx_mgr:
+                ensure_payload_not_null(control_message=control_messsage)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
             return ret_cm
