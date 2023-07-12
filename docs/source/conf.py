@@ -39,12 +39,18 @@ import packaging
 # https://github.com/sphinx-doc/sphinx/issues/9777
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+# Get the morpheus root from the environment variable or default to finding it relative to this file
+morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(__file__, "..", "")))
+
+# Make sure we can access the digital fingerprinting example
+sys.path.insert(0, os.path.join(morpheus_root, 'examples/digital_fingerprinting/production/morpheus'))
+
+# Add the Sphinx extensions directory to sys.path to allow for the github_link extension to be found
 sys.path.insert(0, os.path.abspath('sphinxext'))
-sys.path.insert(0, os.path.join(os.environ['MORPHEUS_ROOT'], 'examples/digital_fingerprinting/production/morpheus'))
 
 from github_link import make_linkcode_resolve  # noqa
 
-# Set an environment variable we can use to determine if we are building docs
+# Set an environment variable we can use to determine ifuncf we are building docs
 os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 
 # -- Project information -----------------------------------------------------
@@ -158,7 +164,10 @@ myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
+    "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
+    "morpheus.utils.nvt.mutate.annotate",
+    "nvtabular",
     "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
     "tensorrt",
     "torch",
