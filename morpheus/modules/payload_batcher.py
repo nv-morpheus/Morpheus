@@ -24,7 +24,7 @@ import cudf
 from morpheus._lib.messages import ControlMessage
 from morpheus._lib.messages import MessageMeta
 from morpheus.utils.control_message_utils import cm_default_failure_context_manager
-from morpheus.utils.control_message_utils import skip_processing_if_cm_failed
+from morpheus.utils.control_message_utils import cm_skip_processing_if_failed
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import PAYLOAD_BATCHER
 from morpheus.utils.module_utils import register_module
@@ -101,7 +101,7 @@ def payload_batcher(builder: mrc.Builder):
             # Add the period column to the group_by_columns
             group_by_columns.append(period_column)
 
-    @skip_processing_if_cm_failed
+    @cm_skip_processing_if_failed
     @cm_default_failure_context_manager(raise_on_failure=raise_on_failure)
     def on_next(control_message: ControlMessage) -> typing.List[ControlMessage]:
         nonlocal disable_max_batch_size

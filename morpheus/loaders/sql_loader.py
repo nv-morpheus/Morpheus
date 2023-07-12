@@ -24,15 +24,16 @@ import cudf
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.control_message_utils import CMDefaultFailureContextManager
+from morpheus.utils.control_message_utils import cm_skip_processing_if_failed
 from morpheus.utils.execution_chain import ExecutionChain
 from morpheus.utils.loader_utils import register_loader
 
 logger = logging.getLogger(__name__)
 
 
-def try_parse_query_data(
-    query_data: typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]
-) -> typing.Dict[str, typing.Union[str, typing.Optional[typing.Dict[str, typing.Any]]]]:
+def _parse_query_data(
+    query_data: dict[str, str | typing.Optional[dict[str, typing.Any]]]
+) -> dict[str, str | typing.Optional[dict[str, typing.Any]]]:
     """
     Parses a dictionary of query data.
 
@@ -54,7 +55,7 @@ def try_parse_query_data(
     }
 
 
-def try_read_sql(connection_string: str, query: str, params: typing.Optional[typing.Dict[str, typing.Any]] = None) -> \
+def _read_sql(connection_string: str, query: str, params: typing.Optional[typing.Dict[str, typing.Any]] = None) -> \
         typing.Dict[str, pd.DataFrame]:
     """
     Creates a DataFrame from a SQL query.
@@ -86,7 +87,7 @@ def try_read_sql(connection_string: str, query: str, params: typing.Optional[typ
     return {"df": df}
 
 
-def try_aggregate_df(df_aggregate: typing.Optional[cudf.DataFrame], df: pd.DataFrame) -> cudf.DataFrame:
+def _aggregate_df(df_aggregate: typing.Optional[cudf.DataFrame], df: pd.DataFrame) -> cudf.DataFrame:
     """
     Aggregates two DataFrames.
 
@@ -111,6 +112,7 @@ def try_aggregate_df(df_aggregate: typing.Optional[cudf.DataFrame], df: pd.DataF
 
 
 @register_loader("SQLLoader")
+@cm_skip_processing_if_failed
 def sql_loader(control_message: ControlMessage, task: typing.Dict[str, typing.Any]) -> ControlMessage:
     """
     SQL loader to fetch data from a SQL database and store it in a DataFrame.
@@ -128,17 +130,15 @@ def sql_loader(control_message: ControlMessage, task: typing.Dict[str, typing.An
         Control message with the final DataFrame in the payload.
     """
 
-    if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed") is True):
-        return control_message
-
-    sql_config = task.get("sql_config", None)
-    queries = sql_config.get("queries", None)
-
     with CMDefaultFailureContextManager(control_message):
         final_df = None
+
+        sql_config = task["sql_config"]
+        queries = sql_config["queries"]
+
         for query_data in queries:
-            aggregate_df = functools.partial(try_aggregate_df, df_aggregate=final_df)
-            execution_chain = ExecutionChain(function_chain=[try_parse_query_data, try_read_sql, aggregate_df])
+            aggregate_df = functools.partial(_aggregate_df, df_aggregate=final_df)
+            execution_chain = ExecutionChain(function_chain=[_parse_query_data, _read_sql, aggregate_df])
             final_df = execution_chain(query_data=query_data)
 
         control_message.payload(MessageMeta(final_df))

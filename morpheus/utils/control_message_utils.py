@@ -13,35 +13,16 @@
 # limitations under the License.
 
 import typing
+from collections.abc import Callable
 from functools import wraps
 
 from morpheus.messages import ControlMessage
 
-
-def cm_set_failure(control_message: ControlMessage, reason: str) -> ControlMessage:
-    """
-    Sets the failure metadata on a ControlMessage.
-
-    Parameters
-    ----------
-    control_message : ControlMessage
-        The ControlMessage to set the failure metadata on.
-    reason : str
-        The reason for the failure.
-
-    Returns
-    -------
-    control_message : ControlMessage
-        The modified ControlMessage with the failure metadata set.
-    """
-
-    control_message.set_metadata("cm_failed", True)
-    control_message.set_metadata("cm_failed_reason", reason)
-
-    return control_message
+cm_skip_t = typing.TypeVar('cm_skip_t')
+cm_skip_p = typing.ParamSpec('cm_skip_p')
 
 
-def skip_processing_if_cm_failed(func: typing.Callable) -> typing.Callable:
+def cm_skip_processing_if_failed(func: Callable[cm_skip_p, cm_skip_t]) -> Callable[cm_skip_p, cm_skip_t]:
     """
     Decorator function to skip processing if the ControlMessage has failed.
 
@@ -56,7 +37,7 @@ def skip_processing_if_cm_failed(func: typing.Callable) -> typing.Callable:
         The decorated function.
     """
 
-    def wrapper(control_message: ControlMessage, *args, **kwargs):
+    def wrapper(control_message: ControlMessage, *args: cm_skip_p.args, **kwargs: cm_skip_p.kwargs) -> cm_skip_t:
         if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed")):
             return control_message
 
@@ -65,7 +46,7 @@ def skip_processing_if_cm_failed(func: typing.Callable) -> typing.Callable:
     return wrapper
 
 
-def ensure_payload_not_null(control_message: ControlMessage):
+def cm_ensure_payload_not_null(control_message: ControlMessage):
     """
     Ensures that the payload of a ControlMessage is not None.
 
@@ -105,7 +86,7 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
         def wrapper(control_messsage: ControlMessage, *args, **kwargs):
             with CMDefaultFailureContextManager(control_message=control_messsage,
                                                 raise_on_failure=raise_on_failure) as ctx_mgr:
-                ensure_payload_not_null(control_message=control_messsage)
+                cm_ensure_payload_not_null(control_message=control_messsage)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
             return ret_cm
@@ -113,6 +94,29 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
         return wrapper
 
     return decorator
+
+
+def cm_set_failure(control_message: ControlMessage, reason: str) -> ControlMessage:
+    """
+    Sets the failure metadata on a ControlMessage.
+
+    Parameters
+    ----------
+    control_message : ControlMessage
+        The ControlMessage to set the failure metadata on.
+    reason : str
+        The reason for the failure.
+
+    Returns
+    -------
+    control_message : ControlMessage
+        The modified ControlMessage with the failure metadata set.
+    """
+
+    control_message.set_metadata("cm_failed", True)
+    control_message.set_metadata("cm_failed_reason", reason)
+
+    return control_message
 
 
 class CMDefaultFailureContextManager:

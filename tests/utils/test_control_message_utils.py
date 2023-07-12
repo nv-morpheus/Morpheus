@@ -17,7 +17,7 @@ import pytest
 from morpheus.messages import ControlMessage
 from morpheus.utils.control_message_utils import CMDefaultFailureContextManager
 from morpheus.utils.control_message_utils import cm_set_failure
-from morpheus.utils.control_message_utils import skip_processing_if_cm_failed
+from morpheus.utils.control_message_utils import cm_skip_processing_if_failed
 
 
 def test_cm_set_failure():
@@ -36,7 +36,7 @@ def test_skip_forward_on_cm_failed():
     cm_set_failure(control_message, reason)
 
     # pylint: disable=unused-argument
-    @skip_processing_if_cm_failed
+    @cm_skip_processing_if_failed
     def dummy_func(control_message, *args, **kwargs):
         return "Function Executed"
 

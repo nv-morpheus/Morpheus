@@ -18,6 +18,7 @@ import os
 import tempfile
 
 import mrc
+import pytest
 
 import cudf
 
@@ -25,9 +26,6 @@ import cudf
 import morpheus.modules  # noqa: F401
 from morpheus import messages
 from morpheus.utils.module_ids import FILTER_CM_FAILED
-
-PACKET_COUNT = 5
-PACKETS_RECEIVED = 0
 
 
 # pylint: disable=unused-argument
@@ -75,11 +73,13 @@ def test_get_module():
 
 
 def test_get_module_with_bad_config_no_loader():
+    packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for _ in range(PACKET_COUNT):
+            nonlocal packet_count
+            for _ in range(packet_count):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -95,28 +95,28 @@ def test_get_module_with_bad_config_no_loader():
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)
 
-    try:
-        pipeline = mrc.Pipeline()
-        pipeline.make_segment("main", init_wrapper)
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
 
-        options = mrc.Options()
-        options.topology.user_cpuset = "0-1"
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
 
-        executor = mrc.Executor(options)
-        executor.register_pipeline(pipeline)
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+
+    with pytest.raises(Exception):
         executor.start()
         executor.join()
-        assert False, "This should fail, because we haven't specified any loaders"  # noqa: F631
-    except Exception:
-        pass
 
 
 def test_get_module_with_bad_loader_type():
+    packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for _ in range(PACKET_COUNT):
+            nonlocal packet_count
+            for _ in range(packet_count):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -139,19 +139,17 @@ def test_get_module_with_bad_loader_type():
         builder.make_edge(data_loader.output_port("output"), sink)
 
     pipeline = mrc.Pipeline()
-    try:
-        pipeline.make_segment("main", init_wrapper)
-        assert False, "This should fail, because the loader type is not a valid loader"  # noqa: F631
-    except Exception:
-        pass
+    pipeline.make_segment("main", init_wrapper)
 
 
 def test_get_module_with_bad_control_message():
+    packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
-            for _ in range(PACKET_COUNT):
+            nonlocal packet_count
+            for _ in range(packet_count):
                 config = {
                     "tasks": [{
                         "type": "load", "properties": {
@@ -173,7 +171,7 @@ def test_get_module_with_bad_control_message():
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)
 
-    try:
+    with pytest.raises(Exception):
         pipeline = mrc.Pipeline()
         pipeline.make_segment("main", init_wrapper)
 
@@ -182,14 +180,14 @@ def test_get_module_with_bad_control_message():
 
         executor = mrc.Executor(options)
         executor.register_pipeline(pipeline)
+
         executor.start()
         executor.join()
-        assert False, "We should never get here, because the control message specifies an invalid loader"
-    except Exception as e:
-        print(e)
 
 
 def test_payload_loader_module():
+    packet_count = 5
+    packets_received = 0
     registry = mrc.ModuleRegistry
 
     fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
@@ -204,10 +202,11 @@ def test_payload_loader_module():
         })
 
         def gen_data():
+            nonlocal packet_count
             config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
 
             payload = messages.MessageMeta(df)
-            for _ in range(PACKET_COUNT):
+            for _ in range(packet_count):
                 msg = messages.ControlMessage(config)
                 msg.payload(payload)
 
@@ -215,8 +214,8 @@ def test_payload_loader_module():
 
         def _on_next(control_msg):
             # pylint: disable=global-statement
-            global PACKETS_RECEIVED
-            PACKETS_RECEIVED += 1
+            nonlocal packets_received
+            packets_received += 1
             assert (control_msg.payload().df.equals(df))
 
         source = builder.make_source("source", gen_data)
@@ -241,13 +240,11 @@ def test_payload_loader_module():
     executor.start()
     executor.join()
 
-    assert (PACKETS_RECEIVED == PACKET_COUNT)
+    assert (packets_received == packet_count)
 
 
-def test_file_loader_module():
-    # pylint: disable=global-statement
-    global PACKETS_RECEIVED
-    PACKETS_RECEIVED = 0
+def test_file_loader_module(tmp_path):
+    packets_received = 0
 
     df = cudf.DataFrame(
         {
@@ -261,17 +258,16 @@ def test_file_loader_module():
     files = []
     file_types = ["csv", "parquet", "orc"]
     for ftype in file_types:
-        with tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False) as _tempfile:
-            filename = _tempfile.name
+        filename = (tmp_path / f"file.{ftype}").name
 
-            if ftype == "csv":
-                df.to_csv(filename, index=False)
-            elif ftype == "parquet":
-                df.to_parquet(filename)
-            elif ftype == "orc":
-                df.to_orc(filename)
+        if ftype == "csv":
+            df.to_csv(filename, index=False)
+        elif ftype == "parquet":
+            df.to_parquet(filename)
+        elif ftype == "orc":
+            df.to_orc(filename)
 
-            files.append((filename, ftype))
+        files.append((filename, ftype))
 
     def init_wrapper(builder: mrc.Builder):
 
@@ -307,8 +303,8 @@ def test_file_loader_module():
 
         def _on_next(control_msg):
             # pylint: disable=global-statement
-            global PACKETS_RECEIVED
-            PACKETS_RECEIVED += 1
+            nonlocal packets_received
+            packets_received += 1
             assert (control_msg.payload().df.equals(df))
 
         registry = mrc.ModuleRegistry
@@ -338,16 +334,14 @@ def test_file_loader_module():
     executor.start()
     executor.join()
 
-    assert (PACKETS_RECEIVED == len(files) * 2)
+    assert (packets_received == len(files) * 2)
 
     for f in files:
         os.remove(f[0])
 
 
 def test_filter_cm_failed():
-    # pylint: disable=global-statement
-    global PACKETS_RECEIVED
-    PACKETS_RECEIVED = 0
+    packets_received = 0
 
     def init_wrapper(builder: mrc.Builder):
 
@@ -367,10 +361,9 @@ def test_filter_cm_failed():
             yield msg
 
         def _on_next(control_msg):
-            # pylint: disable=global-statement
-            global PACKETS_RECEIVED
+            nonlocal packets_received
             if control_msg:
-                PACKETS_RECEIVED += 1
+                packets_received += 1
 
         source = builder.make_source("source", gen_data)
 
@@ -393,7 +386,7 @@ def test_filter_cm_failed():
     executor.start()
     executor.join()
 
-    assert PACKETS_RECEIVED == 1
+    assert packets_received == 1
 
 
 if (__name__ == "__main__"):
