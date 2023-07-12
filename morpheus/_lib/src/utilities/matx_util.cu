@@ -27,8 +27,8 @@
 #include <array>
 #include <cstddef>  // for size_t
 
-namespace morpheus {
-
+namespace {
+using namespace morpheus;
 using tensorShape_1d = std::array<matx::index_t, 1>;
 using tensorShape_2d = std::array<matx::index_t, 2>;
 
@@ -371,7 +371,9 @@ struct MatxUtil__MatxReduceMax
         (output_slice = tmp_tensor).run(stream.value());
     }
 };
+}  // namespace
 
+namespace morpheus {
 // Component public implementations
 // ************ MatxUtil************************* //
 std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, TypeId output_type)
