@@ -26,16 +26,16 @@ Infers an 'intent' for a given email body.
 
 | Parameter          | Type | Description                             | Example Value         | Default Value           |
 |--------------------|------|-----------------------------------------|-----------------------|-------------------------|
-| `intent`           | str  | The intent for the model                | "classify"            | `None`                  |
-| `task`             | str  | The task for the model                  | "text-classification" | `"text-classification"` |
-| `model_path`       | str  | The path to the model                   | "/path/to/model"      | `None`                  |
-| `truncation`       | bool | If true, truncates inputs to max_length | true                  | `true`                  |
-| `max_length`       | int  | Maximum length for model input          | 512                   | `512`                   |
-| `batch_size`       | int  | The size of batches for processing      | 256                   | `256`                   |
-| `feature_col`      | str  | The feature column to use               | "body"                | `"body"`                |
-| `label_col`        | str  | The label column to use                 | "label"               | `"label"`               |
-| `device`           | int  | The device to run on                    | 0                     | `0`                     |
-| `raise_on_failure` | bool | If true, raise exceptions on failures   | false                 | `false`                 |
+| `intent`           | string  | The intent for the model                | "classify"            | `None`                  |
+| `task`             | string  | The task for the model                  | "text-classification" | `"text-classification"` |
+| `model_path`       | string  | The path to the model                   | "/path/to/model"      | `None`                  |
+| `truncation`       | boolean | If true, truncates inputs to max_length | true                  | `true`                  |
+| `max_length`       | integer  | Maximum length for model input          | 512                   | `512`                   |
+| `batch_size`       | integer  | The size of batches for processing      | 256                   | `256`                   |
+| `feature_col`      | string  | The feature column to use               | "body"                | `"body"`                |
+| `label_col`        | string  | The label column to use                 | "label"               | `"label"`               |
+| `device`           | integer  | The device to run on                    | 0                     | `0`                     |
+| `raise_on_failure` | boolean | If true, raise exceptions on failures   | false                 | `false`                 |
 
 ### Example JSON Configuration
 

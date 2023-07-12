@@ -25,37 +25,37 @@ label and score module, updates the sender sketch, and prepares the final output
 
 ## Configurable Parameters
 
-| Parameter              | Type | Description                                                                                                  | 
+| Parameter              | Type | Description                                                                                                  |
 |------------------------|------|--------------------------------------------------------------------------------------------------------------|
-| `scoring_config`       | dict | Configuration for scoring, can include custom parameters for the scoring module. See below for more details. |
-| `sender_sketch_config` | dict | Configuration for sender sketch module, including parameters such as endpoint details and sketch settings.   |
+| `scoring_config`       | dictionary | Configuration for scoring, can include custom parameters for the scoring module. See below for more details. |
+| `sender_sketch_config` | dictionary | Configuration for sender sketch module, including parameters such as endpoint details and sketch settings.   |
 
 #### `scoring_config`
 
 | Key                | Type  | Description                                                        |
 |--------------------|-------|--------------------------------------------------------------------|
 | `threshold`        | float | Detection threshold for scoring.                                   |
-| `scoring_type`     | str   | Type of scoring to use. Currently only "probability" is supported. |
-| `raise_on_failure` | bool  | If true, raise exceptions on failures. Default is False.           |
+| `scoring_type`     | string   | Type of scoring to use. Currently only "probability" is supported. |
+| `raise_on_failure` | boolean  | If true, raise exceptions on failures. Default is False.           |
 
 #### `sender_sketch_config`
 
 | Key                           | Type | Description                                                  | Default Value |
 |-------------------------------|------|--------------------------------------------------------------|---------------|
-| `endpoint`                    | dict | See `endpoint` subparameters                                 | `None`        |
+| `endpoint`                    | dictionary | See `endpoint` subparameters                                 | `None`        |
 | `sender_sketches`             | list | List of sender sketches                                      | `[]`          |
 | `required_intents`            | list | List of required intents                                     | `[]`          |
-| `raise_on_failure`            | bool | If true, raise exceptions on failures                        | `False`       |
+| `raise_on_failure`            | boolean | If true, raise exceptions on failures                        | `False`       |
 | `token_length_threshold`      | int  | Minimum token length to use when computing syntax similarity | `3`           |
-| `sender_sketch_tables_config` | dict | Configuration for sender sketch tables                       | `None`        |
+| `sender_sketch_tables_config` | dictionary | Configuration for sender sketch tables                       | `None`        |
 
 ##### `endpoint`
 
 | Key          | Type | Description                                |
 |--------------|------|--------------------------------------------|
-| `database`   | str  | Sender sketch database name                |
-| `drivername` | str  | Driver name for the sender sketch database |
-| `host`       | str  | Host of the sender sketch database         |
-| `port`       | str  | Port of the sender sketch database         |
-| `username`   | str  | Username for the sender sketch database    |
-| `password`   | str  | Password for the sender sketch database    |
+| `database`   | string  | Sender sketch database name                |
+| `drivername` | string  | Driver name for the sender sketch database |
+| `host`       | string  | Host of the sender sketch database         |
+| `port`       | string  | Port of the sender sketch database         |
+| `username`   | string  | Username for the sender sketch database    |
+| `password`   | string  | Password for the sender sketch database    |

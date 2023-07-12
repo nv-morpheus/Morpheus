@@ -21,8 +21,7 @@ Custom functions called "Loaders" can be utilized by the DataLoader Module to lo
 choose to register their own customized loader function and add it to a dataloader registry, which will then become
 accessible to the DataLoader module during module loading.
 
-**Note** :  Loaders receive configuration from the `load` task
-via [control message](../../source/control_message_guide.md) during runtime.
+**Note** :  Loaders receive configuration from the `load` task via control message during runtime.
 
 ## Core Loaders
 

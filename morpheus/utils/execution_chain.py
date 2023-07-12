@@ -15,27 +15,6 @@
 import inspect
 import typing
 
-# def execution_chain_annotations(*annotations):
-#    def inner_annotate(func):
-#        def wrapper(*args, **kwargs):
-#            _annocations = list(*annotations)
-#
-#            result = func(*args, **kwargs)
-#            signature = inspect.signature(func)
-#
-#            return {key: value for key, value in result.items() if key in signature.return_annotation}
-#
-#        return wrapper
-#
-#    return inner_annotate
-#
-#
-# @execution_chain_annotations("x", "y", "z")
-# def myfunc(a, b, c) -> (int, int, int):
-#    x, y, z = 1, 2, 3
-#
-#    return x, y, z
-
 
 class ExecutionChain:
     """

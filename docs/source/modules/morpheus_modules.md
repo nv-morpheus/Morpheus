@@ -26,6 +26,7 @@ limitations under the License.
 - [Filter Detections](./core/filter_detections.md)
 - [MLflow Model Writer](./core/mlflow_model_writer.md)
 - [Multiplexer](./core/multiplexer.md)
+- [Payload Batcher](./core/payload_batcher.md)
 - [Serializer](./core/serializer.md)
 - [To Control Message](./core/to_control_message.md)
 - [Write to File](./core/write_to_file.md)

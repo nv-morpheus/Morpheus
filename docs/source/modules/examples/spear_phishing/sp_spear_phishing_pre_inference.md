@@ -27,36 +27,36 @@ required connections between modules.
 
 | Parameter              | Type | Description                              | Default Value |
 |------------------------|------|------------------------------------------|---------------|
-| `raise_on_failure`     | bool | If true, raise exceptions on failures    | `False`       |
-| `max_batch_size`       | int  | Maximum size of each batch               | `500`         |
-| `intent_config`        | dict | See `intent_config` subparameters        | `{}`          |
-| `sender_sketch_config` | dict | See `sender_sketch_config` subparameters | `None`        |
+| `raise_on_failure`     | boolean | If true, raise exceptions on failures    | `False`       |
+| `max_batch_size`       | integer  | Maximum size of each batch               | `500`         |
+| `intent_config`        | dictionary | See `intent_config` subparameters        | `{}`          |
+| `sender_sketch_config` | dictionary | See `sender_sketch_config` subparameters | `None`        |
 
 #### `intent_config`
 
 | Key                 | Type | Description                     | Default Value |
 |---------------------|------|---------------------------------|---------------|
 | `required_intents`  | list | List of required intents        | `[]`          |
-| `available_intents` | dict | Dictionary of available intents | `{}`          |
+| `available_intents` | dictionary | Dictionary of available intents | `{}`          |
 
 #### `sender_sketch_config`
 
 | Key                           | Type | Description                                                  | Default Value |
 |-------------------------------|------|--------------------------------------------------------------|---------------|
-| `endpoint`                    | dict | See `endpoint` subparameters                                 | `None`        |
+| `endpoint`                    | dictionary | See `endpoint` subparameters                                 | `None`        |
 | `sender_sketches`             | list | List of sender sketches                                      | `[]`          |
 | `required_intents`            | list | List of required intents                                     | `[]`          |
-| `raise_on_failure`            | bool | If true, raise exceptions on failures                        | `False`       |
-| `token_length_threshold`      | int  | Minimum token length to use when computing syntax similarity | `3`           |
-| `sender_sketch_tables_config` | dict | Configuration for sender sketch tables                       | `None`        |
+| `raise_on_failure`            | boolean | If true, raise exceptions on failures                        | `False`       |
+| `token_length_threshold`      | integer  | Minimum token length to use when computing syntax similarity | `3`           |
+| `sender_sketch_tables_config` | dictionary | Configuration for sender sketch tables                       | `None`        |
 
 ##### `endpoint`
 
 | Key          | Type | Description                                |
 |--------------|------|--------------------------------------------|
-| `database`   | str  | Sender sketch database name                |
-| `drivername` | str  | Driver name for the sender sketch database |
-| `host`       | str  | Host of the sender sketch database         |
-| `port`       | str  | Port of the sender sketch database         |
-| `username`   | str  | Username for the sender sketch database    |
-| `password`   | str  | Password for the sender sketch database    |
+| `database`   | string  | Sender sketch database name                |
+| `drivername` | string  | Driver name for the sender sketch database |
+| `host`       | string  | Host of the sender sketch database         |
+| `port`       | string  | Port of the sender sketch database         |
+| `username`   | string  | Username for the sender sketch database    |
+| `password`   | string  | Password for the sender sketch database    |
