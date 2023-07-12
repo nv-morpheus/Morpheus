@@ -31,5 +31,4 @@ dependencies:
     - nodejs=17.4.0
     - nvtabular=23.06
     - papermill
-    - requests=2.26.0
     - s3fs>=2023.6
