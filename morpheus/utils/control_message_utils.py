@@ -105,9 +105,8 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
         @wraps(func)
         def wrapper(cm: ControlMessage, *args, **kwargs):
 
-            ensure_payload_not_null(cm=cm)
-
             with CMDefaultFailureContextManager(control_message=cm, raise_on_failure=raise_on_failure) as ctx_mgr:
+                ensure_payload_not_null(cm=cm)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
             return ret_cm
