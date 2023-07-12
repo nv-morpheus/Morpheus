@@ -92,6 +92,7 @@ morpheus --version
 
 Ensure the data has been downloaded:
 ```bash
+git lfs install
 ./scripts/fetch_data.py fetch examples
 ```
 
