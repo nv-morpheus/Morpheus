@@ -204,7 +204,7 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 
 The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
 
-```json
+```
 ...
 {"mining": 0}
 {"mining": 0}
