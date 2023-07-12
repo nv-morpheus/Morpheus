@@ -62,7 +62,6 @@ dependencies:
     - librdkafka=1.9.2
     - mlflow>=2.2.1,<3
     - mrc=23.07
-    - myst-parser==1.0.0
     - networkx=3.1
     - ninja=1.10
     - nodejs=18.15.0
@@ -88,8 +87,6 @@ dependencies:
     - rapidjson=1.1.0
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
-    - sphinx
-    - sphinx_rtd_theme
     - sysroot_linux-64=2.17
     - tqdm=4
     - typing_utils=0.1

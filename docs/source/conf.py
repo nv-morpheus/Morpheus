@@ -38,6 +38,9 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 
 from github_link import make_linkcode_resolve  # noqa
 
+# Set an environment variable we can use to determine if we are building docs
+os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
+
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
@@ -148,8 +151,8 @@ add_module_names = False  # Remove namespaces from class/method signatures
 myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
+    "cupy",  # Avoid loading GPU libraries during the documentation build
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "morpheus.models.dfencoder.logging",
     "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
     "tensorrt",
     "torch",
@@ -181,7 +184,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
