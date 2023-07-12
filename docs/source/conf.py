@@ -35,6 +35,7 @@ import textwrap
 import packaging
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
+sys.path.insert(0, os.path.join(os.environ['MORPHEUS_ROOT'], 'examples/digital_fingerprinting/production/morpheus'))
 
 from github_link import make_linkcode_resolve  # noqa
 
