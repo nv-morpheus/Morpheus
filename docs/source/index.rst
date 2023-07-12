@@ -78,6 +78,7 @@ Deploying Morpheus
    getting_started
    basics/overview
    basics/building_a_pipeline
+   models_and_datasets
    examples/index
    developer_guide/guides/index
 
@@ -109,6 +110,7 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
+   modules/index
    modules/morpheus_modules
 
 .. toctree::
@@ -116,7 +118,7 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-   loaders/morpheus_loaders
+   loaders/index
 
 .. toctree::
    :maxdepth: 20
