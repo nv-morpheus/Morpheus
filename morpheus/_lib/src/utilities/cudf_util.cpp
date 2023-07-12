@@ -40,6 +40,7 @@ namespace morpheus {
 
 void CudfHelper::load()
 {
+    // Avoid loading cudf_helpers if we are in a sphinx build
     if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
     {
         if (import_morpheus___lib__cudf_helpers() != 0)
