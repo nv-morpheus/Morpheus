@@ -34,11 +34,11 @@ def ip_to_int(values):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.ip_to_int(cudf.Series(["192.168.0.1","10.0.0.1"]))
-    0      89088434
-    1    1585596973
+    >>> ip.ip_to_int(cudf.Series(["192.168.0.1","10.0.0.1"]))
+    0    3232235521
+    1    167772161
     dtype: int64
     """
     return cudf.Series(values.str.ip2int())
@@ -61,11 +61,11 @@ def int_to_ip(values):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.int_to_ip(cudf.Series([3232235521, 167772161]))
-    0     5.79.97.178
-    1    94.130.74.45
+    >>> ip.int_to_ip(cudf.Series([3232235521, 167772161]))
+    0    192.168.0.1
+    1    10.0.0.1
     dtype: object
     """
     return cudf.Series(values._column.int2ip())
@@ -88,9 +88,9 @@ def is_ip(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_ip(cudf.Series(["192.168.0.1","10.123.0"]))
+    >>> ip.is_ip(cudf.Series(["192.168.0.1","10.123.0"]))
     0     True
     1    False
     dtype: bool
@@ -116,9 +116,9 @@ def is_reserved(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_reserved(cudf.Series(["127.0.0.1","10.0.0.1"]))
+    >>> ip.is_reserved(cudf.Series(["127.0.0.1","10.0.0.1"]))
     0    False
     1    False
     dtype: bool
@@ -146,9 +146,9 @@ def is_loopback(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_loopback(cudf.Series(["127.0.0.1","10.0.0.1"]))
+    >>> ip.is_loopback(cudf.Series(["127.0.0.1","10.0.0.1"]))
     0     True
     1    False
     dtype: bool
@@ -176,9 +176,9 @@ def is_link_local(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_link_local(cudf.Series(["127.0.0.1","169.254.123.123"]))
+    >>> ip.is_link_local(cudf.Series(["127.0.0.1","169.254.123.123"]))
     0    False
     1    True
     dtype: bool
@@ -206,9 +206,9 @@ def is_unspecified(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_unspecified(cudf.Series(["127.0.0.1","10.0.0.1"]))
+    >>> ip.is_unspecified(cudf.Series(["127.0.0.1","10.0.0.1"]))
     0    False
     1    False
     dtype: bool
@@ -234,9 +234,9 @@ def is_multicast(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_multicast(cudf.Series(["127.0.0.1","224.0.0.0"]))
+    >>> ip.is_multicast(cudf.Series(["127.0.0.1","224.0.0.0"]))
     0    False
     1    True
     dtype: bool
@@ -264,9 +264,9 @@ def is_private(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_private(cudf.Series(["127.0.0.1","207.46.13.151"]))
+    >>> ip.is_private(cudf.Series(["127.0.0.1","207.46.13.151"]))
     0    True
     1    False
     dtype: bool
@@ -307,9 +307,9 @@ def is_global(ips):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.is_global(cudf.Series(["127.0.0.1","207.46.13.151"]))
+    >>> ip.is_global(cudf.Series(["127.0.0.1","207.46.13.151"]))
     0    False
     1    True
     dtype: bool
@@ -351,9 +351,9 @@ def netmask(ips, prefixlen=16):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.netmask(cudf.Series(["192.168.0.1","10.0.0.1"]), prefixlen=16)
+    >>> ip.netmask(cudf.Series(["192.168.0.1","10.0.0.1"]), prefixlen=16)
     0    255.255.0.0
     1    255.255.0.0
     Name: net_mask, dtype: object
@@ -404,9 +404,9 @@ def hostmask(ips, prefixlen=16):
 
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
-    >>> clx.ip.hostmask(cudf.Series(["192.168.0.1","10.0.0.1"], prefixlen=16)
+    >>> ip.hostmask(cudf.Series(["192.168.0.1","10.0.0.1"]), prefixlen=16)
     0    0.0.255.255
     1    0.0.255.255
     Name: hostmask, dtype: object
@@ -456,11 +456,11 @@ def mask(ips, masks):
         Masked IP address from list of IPs
     Examples
     --------
-    >>> import clx.ip
+    >>> import morpheus.parsers.ip as ip
     >>> import cudf
     >>> input_ips = cudf.Series(["192.168.0.1","10.0.0.1"])
     >>> input_masks = cudf.Series(["255.255.0.0", "255.255.0.0"])
-    >>> clx.ip.mask(input_ips, input_masks)
+    >>> ip.mask(input_ips, input_masks)
     0    192.168.0.0
     1       10.0.0.0
     Name: mask, dtype: object
