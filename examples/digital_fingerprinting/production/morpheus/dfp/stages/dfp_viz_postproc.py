@@ -23,10 +23,9 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-
-from ..messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +75,13 @@ class DFPVizPostprocStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiDFPMessage, )
+        return (MultiAEMessage, )
 
     def supports_cpp_node(self):
         """Whether this stage supports a C++ node."""
         return False
 
-    def _postprocess(self, x: MultiDFPMessage) -> pd.DataFrame:
+    def _postprocess(self, x: MultiAEMessage) -> pd.DataFrame:
 
         viz_pdf = pd.DataFrame()
         viz_pdf[["user", "time"]] = x.get_meta([self._user_column_name, self._timestamp_column])
@@ -96,7 +95,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
         return viz_pdf
 
-    def _write_to_files(self, x: MultiDFPMessage):
+    def _write_to_files(self, x: MultiAEMessage):
 
         df = self._postprocess(x)
 
