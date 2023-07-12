@@ -109,7 +109,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._async_commits = async_commits
         self._client = None
 
-        # Flag to indicate whether or not we should stop
+        # Flag to indicate whether we should stop
         self._stop_requested = False
 
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
@@ -126,7 +126,6 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         return False
 
     def _process_msg(self, consumer, msg):
-
         control_messages = []
 
         payload = msg.value()
@@ -134,13 +133,14 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             try:
                 decoded_msg = payload.decode("utf-8")
                 control_messages_conf = json.loads(decoded_msg)
+
                 self._num_messages += 1
                 # TODO(Devin) - one CM at a time(?), don't need to submit 'inputs'
                 for control_message_conf in control_messages_conf.get("inputs", []):
                     self._records_emitted += 1
                     control_messages.append(ControlMessage(control_message_conf))
             except Exception as e:
-                logger.error("\nError converting payload to ControlMessage : {}".format(e))
+                logger.error("\nError converting payload to ControlMessage : %s", e)
 
         if (not self._disable_commit):
             consumer.commit(message=msg, asynchronous=self._async_commits)
@@ -155,6 +155,8 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         try:
             consumer = ck.Consumer(self._consumer_params)
             consumer.subscribe(self._topics)
+
+            do_sleep = False
 
             while not self._stop_requested:
 

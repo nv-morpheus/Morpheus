@@ -1,0 +1,197 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import tempfile
+
+import cudf
+
+import morpheus.messages as messages
+import morpheus.modules  # noqa: F401
+from morpheus.utils.module_ids import FILTER_CM_FAILED
+
+from .morpheus_module_test_pipeline import MorpheusModuleTestPipeline
+
+packet_count = 5
+packet_received = 0
+
+
+def test_payload_loader_module():
+
+    df = cudf.DataFrame({
+        'col1': [1, 2, 3, 4, 5],
+        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+        'col3': ['a', 'b', 'c', 'd', 'e'],
+        'col4': [True, False, True, False, True]
+    })
+
+    def gen_data():
+        payload = messages.MessageMeta(df)
+        global packet_count
+        for i in range(packet_count):
+            config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
+            msg = messages.ControlMessage(config)
+            msg.payload(payload)
+            yield msg
+
+    def on_next(control_msg):
+        global packet_received
+        packet_received += 1
+        assert (control_msg.payload().df.equals(df))
+
+    config = {"loaders": [{"id": "payload", "properties": {"file_types": "something", "prop2": "something else"}}]}
+    test_pipeline = MorpheusModuleTestPipeline("DataLoader",
+                                               "morpheus",
+                                               "ModuleDataLoaderTest",
+                                               config,
+                                               "input",
+                                               "output",
+                                               gen_data,
+                                               on_next,
+                                               on_error=None,
+                                               on_complete=None)
+    test_pipeline.run()
+
+    assert (packet_received == packet_count)
+
+
+def test_file_loader_module():
+    global packets_received
+    packets_received = 0
+
+    df = cudf.DataFrame(
+        {
+            'col1': [1, 2, 3, 4, 5],
+            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+            'col3': ['a', 'b', 'c', 'd', 'e'],
+            'col4': [True, False, True, False, True]
+        },
+        columns=['col1', 'col2', 'col3', 'col4'])
+
+    files = []
+    file_types = ["csv", "parquet", "orc"]
+    for ftype in file_types:
+        _tempfile = tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False)
+        filename = _tempfile.name
+
+        if ftype == "csv":
+            df.to_csv(filename, index=False)
+        elif ftype == "parquet":
+            df.to_parquet(filename)
+        elif ftype == "orc":
+            df.to_orc(filename)
+
+        files.append((filename, ftype))
+
+    def gen_data():
+        global packet_count
+
+        for f in files:
+            # Check with the file type
+            config = {
+                "tasks": [{
+                    "type": "load",
+                    "properties": {
+                        "loader_id": "file", "strategy": "aggregate", "files": [{
+                            "path": f[0], "type": f[1]
+                        }]
+                    }
+                }]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
+
+            # Make sure we can auto-detect the file type
+            config = {
+                "tasks": [{
+                    "type": "load",
+                    "properties": {
+                        "loader_id": "file", "strategy": "aggregate", "files": [{
+                            "path": f[0],
+                        }]
+                    }
+                }]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
+
+    def on_next(control_msg):
+        global packets_received
+        packets_received += 1
+        assert (control_msg.payload().df.equals(df))
+
+    config = {"loaders": [{"id": "file", "properties": {"file_types": "something", "prop2": "something else"}}]}
+    test_pipeline = MorpheusModuleTestPipeline("DataLoader",
+                                               "morpheus",
+                                               "ModuleDataLoaderTest",
+                                               config,
+                                               "input",
+                                               "output",
+                                               gen_data,
+                                               on_next,
+                                               on_error=None,
+                                               on_complete=None)
+    test_pipeline.run()
+
+    assert (packets_received == len(files) * 2)
+
+    for f in files:
+        os.remove(f[0])
+
+
+def test_filter_cm_failed():
+    global packets_received
+    packets_received = 0
+
+    def gen_data():
+        msg = messages.ControlMessage()
+        msg.set_metadata("cm_failed", "true")
+        msg.set_metadata("cm_failed_reason", "cm_failed_reason_1")
+        yield msg
+
+        msg = messages.ControlMessage()
+        msg.set_metadata("cm_failed", "true")
+        yield msg
+
+        msg = messages.ControlMessage()
+        msg.set_metadata("cm_failed", "false")
+        msg = messages.ControlMessage(config)
+        yield msg
+
+    def on_next(control_msg):
+        global packets_received
+        if control_msg:
+            packets_received += 1
+
+    config = {}
+    test_pipeline = MorpheusModuleTestPipeline(FILTER_CM_FAILED,
+                                               "morpheus",
+                                               "filter_cm_failed",
+                                               config,
+                                               "input",
+                                               "output",
+                                               gen_data,
+                                               on_next,
+                                               on_error=None,
+                                               on_complete=None)
+    test_pipeline.run()
+
+    assert packets_received == 1
+
+
+if (__name__ == "__main__"):
+    test_payload_loader_module()
+    test_file_loader_module()
+    test_filter_cm_failed()

@@ -7,3 +7,6 @@ tests/mock_triton_server/payloads/** filter=lfs diff=lfs merge=lfs -text
 tests/tests_data/** filter=lfs diff=lfs merge=lfs -text
 examples/basic_usage/img/** filter=lfs diff=lfs merge=lfs -text
 docs/source/img/* filter=lfs diff=lfs merge=lfs -text
+list filter=lfs diff=lfs merge=lfs -text
+examples/spear_phishing/development_resources/models/intent/** filter=lfs diff=lfs merge=lfs -text
+examples/spear_phishing/development_resources/tests/data/** filter=lfs diff=lfs merge=lfs -text

@@ -16,11 +16,7 @@
  */
 
 #include "../test_morpheus.hpp"  // IWYU pragma: associated
-#include "mrc/channel/status.hpp"
-#include "mrc/modules/properties/persistent.hpp"
-#include "mrc/options/engine_groups.hpp"
 #include "mrc/runnable/types.hpp"
-#include "mrc/segment/object.hpp"
 #include "test_modules.hpp"
 
 #include "morpheus/messages/control.hpp"
@@ -28,13 +24,16 @@
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+#include <mrc/modules/properties/persistent.hpp>
 #include <mrc/node/rx_sink.hpp>
 #include <mrc/node/rx_source.hpp>
+#include <mrc/options/engine_groups.hpp>
 #include <mrc/options/options.hpp>
 #include <mrc/options/topology.hpp>
 #include <mrc/pipeline/executor.hpp>
 #include <mrc/pipeline/pipeline.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <nlohmann/json.hpp>
 #include <rxcpp/rx.hpp>
 
@@ -43,7 +42,6 @@
 #include <map>
 #include <memory>
 #include <utility>
-#include <vector>
 
 using namespace morpheus;
 using namespace morpheus::test;

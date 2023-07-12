@@ -22,6 +22,7 @@
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/types.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <http_client.h>
 #include <mrc/node/rx_sink_base.hpp>
@@ -38,6 +39,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {

@@ -23,6 +23,7 @@ import cudf
 
 import morpheus.messages as messages
 import morpheus.modules  # noqa: F401
+from morpheus.utils.module_ids import FILTER_CM_FAILED
 
 
 def on_next(control_msg):
@@ -126,7 +127,7 @@ def test_get_module_with_bad_loader_type():
                 }
             }]
         }
-        # This will unpack the config and forward it's payload (MessageMeta) to the sink
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
@@ -219,7 +220,7 @@ def test_payload_loader_module():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert (control_msg.payload().df.equals(df))
 
         source = builder.make_source("source", gen_data)
 
@@ -311,7 +312,7 @@ def test_file_loader_module():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (control_msg.payload().df == df)
+            assert (control_msg.payload().df.equals(df))
 
         registry = mrc.ModuleRegistry
 
@@ -346,9 +347,60 @@ def test_file_loader_module():
         os.remove(f[0])
 
 
+def test_filter_cm_failed():
+    global packets_received
+    packets_received = 0
+
+    def init_wrapper(builder: mrc.Builder):
+
+        def gen_data():
+            msg = messages.ControlMessage()
+            msg.set_metadata("cm_failed", "true")
+            msg.set_metadata("cm_failed_reason", "cm_failed_reason_1")
+            yield msg
+
+            msg = messages.ControlMessage()
+            msg.set_metadata("cm_failed", "true")
+            yield msg
+
+            msg = messages.ControlMessage()
+            msg.set_metadata("cm_failed", "false")
+            msg = messages.ControlMessage(config)
+            yield msg
+
+        def _on_next(control_msg):
+            global packets_received
+            if control_msg:
+                packets_received += 1
+
+        source = builder.make_source("source", gen_data)
+
+        config = {}
+        filter_cm_failed_module = builder.load_module(FILTER_CM_FAILED, "morpheus", "filter_cm_failed", config)
+
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
+
+        builder.make_edge(source, filter_cm_failed_module.input_port("input"))
+        builder.make_edge(filter_cm_failed_module.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+
+    assert packets_received == 1
+
+
 if (__name__ == "__main__"):
     test_contains_namespace()
     test_is_version_compatible()
     test_get_module()
     test_payload_loader_module()
     test_file_loader_module()
+    test_filter_cm_failed()

@@ -43,3 +43,17 @@ limitations under the License.
 - [DFP Split Users](./examples/digital_fingerprinting/dfp_split_users.md)
 - [DFP Training](./examples/digital_fingerprinting/dfp_training.md)
 - [DFP Training Pipe](./examples/digital_fingerprinting/dfp_training_pipe.md)
+
+## Spear Phishing Modules
+
+- [SP Spear Phishing Pre-Inference](./examples/spear_phishing/sp_spear_phishing_pre_inference.md)
+- [SP Spear Phishing Post-Inference](./examples/spear_phishing/sp_spear_phishing_post_inference.md)
+
+- [SP Email Enrichment](./examples/spear_phishing/sp_email_enrichemnt.md)
+- [SP Inference Classifier](./examples/spear_phishing/sp_inference_sp_classifier.md)
+- [SP Inference Intent](./examples/spear_phishing/sp_inference_intent.md)
+- [SP Label and Score](./examples/spear_phishing/sp_label_and_score.md)
+- [SP Preprocessing](./examples/spear_phishing/sp_preprocessing.md)
+- [SP Sender Sketch Aggregator](./examples/spear_phishing/sp_sender_sketch_aggregator.md)
+- [SP Sender Sketch Query Constructor](./examples/spear_phishing/sp_sender_sketch_query_constructor.md)
+- [SP Sender Sketch Updater](./examples/spear_phishing/sp_sender_sketch_update.md)

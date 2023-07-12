@@ -91,6 +91,7 @@ dependencies:
     - scikit-learn=1.2.2
     - sphinx
     - sphinx_rtd_theme
+    - sqlalchemy<=1.9
     - sysroot_linux-64=2.17
     - tritonclient=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
     - tqdm=4
