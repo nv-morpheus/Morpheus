@@ -26,6 +26,9 @@ import morpheus.modules  # noqa: F401
 from morpheus import messages
 from morpheus.utils.module_ids import FILTER_CM_FAILED
 
+PACKET_COUNT = 5
+PACKETS_RECEIVED = 0
+
 
 # pylint: disable=unused-argument
 def on_next(control_msg):
@@ -71,8 +74,7 @@ def test_get_module():
     module_instance = fn_constructor("ModuleDataLoaderTest", config)  # noqa: F841 -- we don't need to use it
 
 
-def test_get_module_with_bad_config_no_loaders():
-
+def test_get_module_with_bad_config_no_loader():
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -83,8 +85,10 @@ def test_get_module_with_bad_config_no_loaders():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": []}
-        # This will unpack the config and forward it's payload (MessageMeta) to the sink
+        config = {
+            "loaders": []
+        }
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
@@ -92,24 +96,23 @@ def test_get_module_with_bad_config_no_loaders():
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)
 
-    pipeline = mrc.Pipeline()
-    pipeline.make_segment("main", init_wrapper)
-
-    options = mrc.Options()
-    options.topology.user_cpuset = "0-1"
-
-    executor = mrc.Executor(options)
-    executor.register_pipeline(pipeline)
-
     try:
+        pipeline = mrc.Pipeline()
+        pipeline.make_segment("main", init_wrapper)
+
+        options = mrc.Options()
+        options.topology.user_cpuset = "0-1"
+
+        executor = mrc.Executor(options)
+        executor.register_pipeline(pipeline)
         executor.start()
-        assert False, "This should fail, because no loaders were specified in the config and none were added."
+        executor.join()
+        assert False, "This should fail, because we haven't specified any loaders"  # noqa: F631
     except Exception:
         pass
 
 
 def test_get_module_with_bad_loader_type():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -144,7 +147,6 @@ def test_get_module_with_bad_loader_type():
 
 
 def test_get_module_with_bad_control_message():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -170,24 +172,20 @@ def test_get_module_with_bad_control_message():
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)
 
-    pipeline = mrc.Pipeline()
-    pipeline.make_segment("main", init_wrapper)
-
-    options = mrc.Options()
-    options.topology.user_cpuset = "0-1"
-
-    executor = mrc.Executor(options)
-    executor.register_pipeline(pipeline)
-
     try:
+        pipeline = mrc.Pipeline()
+        pipeline.make_segment("main", init_wrapper)
+
+        options = mrc.Options()
+        options.topology.user_cpuset = "0-1"
+
+        executor = mrc.Executor(options)
+        executor.register_pipeline(pipeline)
         executor.start()
+        executor.join()
         assert False, "We should never get here, because the control message specifies an invalid loader"
-    except Exception:
-        pass
-
-
-PACKET_COUNT = 5
-PACKETS_RECEIVED = 0
+    except Exception as e:
+        print(e)
 
 
 def test_payload_loader_module():
@@ -351,7 +349,6 @@ def test_filter_cm_failed():
     PACKETS_RECEIVED = 0
 
     def init_wrapper(builder: mrc.Builder):
-
         def gen_data():
             msg = messages.ControlMessage()
             msg.set_metadata("cm_failed", "true")

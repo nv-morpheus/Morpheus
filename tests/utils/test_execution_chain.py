@@ -37,7 +37,7 @@ def test_execution_chain():
 def test_execution_chain_error():
     chain = ExecutionChain([func1, func_error, func2])
     try:
-        chain(a=3, b=3)
+        chain(arg1=3, arg2=3)
     except Exception as e:
         print(str(e))  # Debugging line
         assert str(e) == "Execution failed processing function func_error. Error: An error occurred."
@@ -62,7 +62,6 @@ def test_replace_function():
 
 
 def test_nested_execution_chain():
-
     def inner_func1(arg1, arg2) -> dict:
         return {'result': arg1 + arg2}
 
