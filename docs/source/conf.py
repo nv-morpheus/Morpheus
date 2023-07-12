@@ -31,8 +31,13 @@ import importlib
 import os
 import sys
 import textwrap
+import warnings
 
 import packaging
+
+# Ignore FutureWarnings coming from docutils remove this once we can upgrade to Sphinx 5.0
+# https://github.com/sphinx-doc/sphinx/issues/9777
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
 sys.path.insert(0, os.path.join(os.environ['MORPHEUS_ROOT'], 'examples/digital_fingerprinting/production/morpheus'))
