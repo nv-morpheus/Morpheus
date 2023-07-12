@@ -14,19 +14,20 @@
 # limitations under the License.
 """
 Example Usage:
-python hammah-inference.py \
-    --validationdata ../../datasets/validation-data/hammah-user123-validation-data.csv \
-    --model ../../hammah-models/hammah-user123-20211017-dill.pkl \
-    --output abp-validation-output.csv
+python hammah-inference.py --validationdata \
+    ../../datasets/validation-data/dfp-cloudtrail-user123-validation-data-input.csv \
+ --model ../../training-tuning-scripts/dfp-models/hammah-user123-20211017dill.pkl \
+      --output abp-validation-output.csv
+
 """
 
 import argparse
 import datetime
 
-import clx.analytics.periodicity_detection as pdd
 import cupy as cp
 import dill
 import pandas as pd
+import periodicity_detection as pdd
 
 import cudf
 
@@ -86,7 +87,7 @@ def infer(validationdata, model, output):
     # X_val['ts_anomaly']=X_val_original['ts_anomaly']
     df = cudf.read_csv(validationdata)
     df = df.sort_values(by=['eventTime'])
-    timearr = df.eventTime.to_array()
+    timearr = df.eventTime.to_numpy()
     START = stript(timearr[0])
     timeobj = list(map(stript, timearr))
     hs = list(map(date2min, timeobj))
@@ -96,13 +97,13 @@ def infer(validationdata, model, output):
     periodogram = pdd.to_periodogram(signal)
     periodogram = periodogram[:int((len(signal) / 2))]
     threshold = float(cp.percentile(cp.array(periodogram), 90))
-    indices = cudf.Series(cp.arange(len(periodogram)))[periodogram < threshold].to_array()
+    indices = cudf.Series(cp.arange(len(periodogram)))[periodogram < threshold].to_numpy()
     rft = cp.fft.rfft(a)
     rft[indices] = 0
     recon = cp.fft.irfft(rft)
     err = (abs(recon - a))
     z = zscore(err)
-    indices = cudf.Series(cp.arange(len(z)))[z >= 8].to_array()
+    indices = cudf.Series(cp.arange(len(z)))[z >= 8].to_numpy()
     strlist = []
     for mins in indices:
         from_start = START + datetime.timedelta(minutes=int(mins))
