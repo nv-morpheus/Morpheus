@@ -67,6 +67,7 @@ dependencies:
     - nodejs=18.15.0
     - numba>=0.56.2
     - numpydoc=1.4
+    - nvtabular=23.06
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake
@@ -88,6 +89,7 @@ dependencies:
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
     - sysroot_linux-64=2.17
+    - tritonclient=2.26 #  Required by NvTabular, force the version, so we get protobufs compatible with 4.21
     - tqdm=4
     - typing_utils=0.1
     - watchdog=2.1
