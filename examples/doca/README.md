@@ -1,8 +1,8 @@
 Obtaining the Morpheus DOCA Container
 -----
-DOCA Support is in Early Access and must may only be used via the Morpheus DOCA Container found in NGC. Please speak to your NVIDIA Morpheus contact for more information.
+DOCA Support is in early access and may only be used via the Morpheus DOCA Container found in NGC. Please speak to your NVIDIA Morpheus contact for more information.
 
-The container must be run in privileged mode and mount in hugepages as configured according to the DOCA documentation.
+The container must be run in privileged mode and mount in hugepages as configured according to the DOCA GPUNetIO documentation.
 
 ```
 docker run -v /dev/hugepages:/dev/hugepages --privileged --rm -ti --runtime=nvidia --net=host --gpus=all --cap-add=sys_nice ${MORPHEUS_DOCA_IMAGE} bash
@@ -41,11 +41,11 @@ ce:08.0 PCI bridge: Mellanox Technologies MT42822 Family [BlueField-2 SoC PCIe B
 $ lspci | grep NVIDIA
 cf:00.0 3D controller: NVIDIA Corporation Device 20b9 (rev a1)
 ```
-We can see the GPU's PCIe address is `cf:00.0`, and we can infer from the above commands that the nearest Ethernet NIC PCIe address is `cc:00.*`. In this case, we have port `1` physically connected to the network, so we use PCIe Address `cc:00.1`.
+We can see the GPU's PCIe address is `cf:00.0`, and we can infer from the above commands that the nearest ConnectX-6 NIC's PCIe address is `cc:00.*`. In this case, we have port `1` physically connected to the network, so we use PCIe Address `cc:00.1`.
 
 Running the Example
 -----
-The DOCA example is similar to the Sensative Information Detection (SID) example in that it uses the `sid-minibert` model in conjunction with the `TritonInferenceStage` to detect sensative information. The difference is that the sensative information we will be detecting is obtained from a live TCP packet stream provided by a `DocaSourceStage`.
+The DOCA example is similar to the Sensitive Information Detection (SID) example in that it uses the `sid-minibert` model in conjunction with the `TritonInferenceStage` to detect sensitive information. The difference is that the sensitive information we will be detecting is obtained from a live TCP packet stream provided by a `DocaSourceStage`.
 
 Prior to running the example, the `rdma-core` conda package needs to be _removed by force_ from the conda environment, otherwise the environment is incompatible with the DOCA-provided packages.
 ```
