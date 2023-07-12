@@ -33,10 +33,10 @@ def to_periodogram(signal):
     signal_cp_std = (signal_cp - cp.mean(signal_cp)) / cp.std(signal_cp)
 
     # take fourier transform of signal
-    FFT_data = cp.fft.fft(signal_cp_std)
+    fft_data = cp.fft.fft(signal_cp_std)
 
     # create periodogram
-    prdg = (1 / len(signal)) * ((cp.absolute(FFT_data))**2)
+    prdg = (1 / len(signal)) * ((cp.absolute(fft_data))**2)
 
     return prdg
 
@@ -46,9 +46,9 @@ def filter_periodogram(prdg, p_value):
     Select important frequencies by filtering periodogram by p-value. Filtered out frequencies are set to zero.
 
     :param prdg: periodogram to be filtered
-    :type signal: cudf.Series
+    :type prdg: cudf.Series
     :param p_value: p-value to filter by
-    :type signal: float
+    :type p_value: float
     :return: CuPy array representing periodogram
     :rtype: cupy.ndarray
     """
