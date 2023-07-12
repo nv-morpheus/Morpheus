@@ -15,7 +15,6 @@
 import inspect
 import typing
 
-
 # def execution_chain_annotations(*annotations):
 #    def inner_annotate(func):
 #        def wrapper(*args, **kwargs):
@@ -177,7 +176,6 @@ class ExecutionChain:
             signature = inspect.signature(function)
 
             if (idx < len(self.functions) - 1):
-                if ((not signature.return_annotation is dict) and (
-                        not typing.get_origin(signature.return_annotation) is dict)):
-                    raise ValueError(
-                        f"Function {function.__name__} must return a dictionary. {signature}")
+                if ((not signature.return_annotation is dict)
+                        and (not typing.get_origin(signature.return_annotation) is dict)):
+                    raise ValueError(f"Function {function.__name__} must return a dictionary. {signature}")
