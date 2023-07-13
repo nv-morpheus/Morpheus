@@ -1,5 +1,5 @@
-Obtaining the Morpheus DOCA Container
------
+# DOCA Sensitive Information Detection Example
+## Obtaining the Morpheus DOCA Container
 DOCA Support is in early access and may only be used via the Morpheus DOCA Container found in NGC. Please speak to your NVIDIA Morpheus contact for more information.
 
 The container must be run in privileged mode and mount in hugepages as configured according to the DOCA GPUNetIO documentation.
@@ -8,8 +8,7 @@ The container must be run in privileged mode and mount in hugepages as configure
 docker run -v /dev/hugepages:/dev/hugepages --privileged --rm -ti --runtime=nvidia --net=host --gpus=all --cap-add=sys_nice ${MORPHEUS_DOCA_IMAGE} bash
 ```
 
-Finding the GPU and NIC PCIe Addresses
------
+## Finding the GPU and NIC PCIe Addresses
 The DOCA example requires specifying the PCIe Address of both the GPU and NIC explicitly. Determining the correct GPU and NIC PCIe Addresses is non-trivial and requires coordinating with those who have configured the physical hardware and firmware according to the DOCA GPUNetIO documentation, but the following commands can help find a NIC and GPU situation on the same NUMA node.
 ```
 $ lspci -tv | grep -E "NVIDIA|ella|(^\+)|(^\-)"
@@ -43,8 +42,7 @@ cf:00.0 3D controller: NVIDIA Corporation Device 20b9 (rev a1)
 ```
 We can see the GPU's PCIe address is `cf:00.0`, and we can infer from the above commands that the nearest ConnectX-6 NIC's PCIe address is `cc:00.*`. In this case, we have port `1` physically connected to the network, so we use PCIe Address `cc:00.1`.
 
-Running the Example
------
+## Running the Example
 The DOCA example is similar to the Sensitive Information Detection (SID) example in that it uses the `sid-minibert` model in conjunction with the `TritonInferenceStage` to detect sensitive information. The difference is that the sensitive information we will be detecting is obtained from a live TCP packet stream provided by a `DocaSourceStage`.
 
 Prior to running the example, the `rdma-core` conda package needs to be _removed by force_ from the conda environment, otherwise the environment is incompatible with the DOCA-provided packages.
@@ -55,6 +53,8 @@ conda remove --force rdma-core
 To run the example from the Morpheus root directory and capture all TCP network traffic from the given NIC, use the following command and replace the `nic_addr` and `gpu_addr` arguments with your NIC and GPU PCIe addresses.
 ```
 # python examples/doca/run.py --nic_addr cc:00.1 --gpu_addr cf:00.0
+```
+```
 ====Registering Pipeline====
 ====Building Pipeline====
 DOCA GPUNetIO rate: 0 pkts [00:00, ? pkt====Building Pipeline Complete!====
