@@ -147,8 +147,7 @@ class ModifiedScaler(object):
 class GaussRankScaler(object):
     """
     So-called "Gauss Rank" scaling.
-    Forces a transformation, uses bins to perform
-        inverse mapping.
+    Forces a transformation, uses bins to perform inverse mapping.
 
     Uses sklearn QuantileTransformer to work.
     """
