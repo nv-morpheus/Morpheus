@@ -72,7 +72,8 @@ from morpheus.utils.logger import configure_logging
     help="GPU PCI Address",
     required=True,
 )
-def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr, gpu_addr):
+def run_pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_fea_length, out_file, nic_addr,
+                 gpu_addr):
     # Enable the default logger
     configure_logging(log_level=logging.DEBUG)
 
