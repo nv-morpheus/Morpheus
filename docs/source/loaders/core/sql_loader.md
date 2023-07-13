@@ -17,7 +17,8 @@ limitations under the License.
 
 ## SQL Loader
 
-[DataLoader](../../modules/core/data_loader.md) module is configured to use this loader function. SQL loader to fetch data from a SQL database and store it in a DataFrame, and returns the updated ControlMessage object with payload
+[DataLoader](./../../modules/core/data_loader.md) module is configured to use this loader function. SQL loader to
+fetch data from a SQL database and store it in a DataFrame, and returns the updated ControlMessage object with payload
 as MessageMeta.
 
 ### Example Loader Configuration
@@ -33,17 +34,17 @@ as MessageMeta.
 ```
 
 **Note** :  Loaders can receive configuration from the `load` task
-via [control message](../../../source/control_message_guide.md) during runtime.
+via [control message](../../../source/developer_guide/guides/9_control_messages.md) during runtime.
 
 ### Task Configurable Parameters
 
 The parameters that can be configured for this specific loader at load task level:
 
-| Parameter    | Type   | Description                              | Example Value      | Default Value |
-|--------------|--------|------------------------------------------|--------------------|---------------|
-| `strategy`   | string | Strategy for combining queries           | "aggregate"      	 | `aggregate`   |
-| `loader_id`  | string | Unique identifier for the loader         | "file_to_df"       | `[Required]`  |
-| `sql_config` | dictionary   | Dictionary containing SQL queries to run | "file_to_df"       | `See below`   |
+| Parameter    | Type       | Description                              | Example Value      | Default Value |
+|--------------|------------|------------------------------------------|--------------------|---------------|
+| `strategy`   | string     | Strategy for combining queries           | "aggregate"      	 | `aggregate`   |
+| `loader_id`  | string     | Unique identifier for the loader         | "file_to_df"       | `[Required]`  |
+| `sql_config` | dictionary | Dictionary containing SQL queries to run | "file_to_df"       | `See below`   |
 
 `sql_config`
 
@@ -53,11 +54,11 @@ The parameters that can be configured for this specific loader at load task leve
 
 `queries`
 
-| Parameter           | Type   | Description                          | Example Value                                                   | Default Value |
-|---------------------|--------|--------------------------------------|-----------------------------------------------------------------|---------------|
-| `connection_string` | string | Strategy for combining queries       | "postgresql://postgres:postgres@localhost:5432/postgres"      	 | `[required]`  |
-| `query`             | string | SQL Query to execute                 | "SELECT * FROM test_table WHERE id IN (?, ?, ?)"                | `[Required]`  |
-| `params`            | dictionary   | Named or positional paramters values | "[foo, bar, baz]"                                               | `-`           |
+| Parameter           | Type       | Description                          | Example Value                                                   | Default Value |
+|---------------------|------------|--------------------------------------|-----------------------------------------------------------------|---------------|
+| `connection_string` | string     | Strategy for combining queries       | "postgresql://postgres:postgres@localhost:5432/postgres"      	 | `[required]`  |
+| `query`             | string     | SQL Query to execute                 | "SELECT * FROM test_table WHERE id IN (?, ?, ?)"                | `[Required]`  |
+| `params`            | dictionary | Named or positional paramters values | "[foo, bar, baz]"                                               | `-`           |
 
 ### Example Load Task Configuration
 
