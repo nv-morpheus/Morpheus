@@ -66,7 +66,7 @@ limitations under the License.
 ./examples/spear_phishing/sp_spear_phishing_pre_inference.md
 ./examples/spear_phishing/sp_spear_phishing_post_inference.md
 
-./examples/spear_phishing/sp_email_enrichemnt.md
+./examples/spear_phishing/sp_email_enrichment.md
 ./examples/spear_phishing/sp_inference_sp_classifier.md
 ./examples/spear_phishing/sp_inference_intent.md
 ./examples/spear_phishing/sp_label_and_score.md
