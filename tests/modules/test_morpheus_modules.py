@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import os
-import tempfile
 
 import mrc
 import pytest
@@ -243,6 +242,7 @@ def test_payload_loader_module():
     assert (packets_received == packet_count)
 
 
+# pylint: disable=no-value-for-parameter
 def test_file_loader_module(tmp_path):
     packets_received = 0
 
@@ -302,7 +302,6 @@ def test_file_loader_module(tmp_path):
                 yield msg
 
         def _on_next(control_msg):
-            # pylint: disable=global-statement
             nonlocal packets_received
             packets_received += 1
             assert (control_msg.payload().df.equals(df))

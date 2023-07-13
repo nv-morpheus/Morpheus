@@ -18,11 +18,11 @@ from functools import wraps
 
 from morpheus.messages import ControlMessage
 
-cm_skip_t = typing.TypeVar('cm_skip_t')
-cm_skip_p = typing.ParamSpec('cm_skip_p')
+T = typing.TypeVar('T')
+CM_SKIP_P = typing.ParamSpec('CM_SKIP_P')
 
 
-def cm_skip_processing_if_failed(func: Callable[cm_skip_p, cm_skip_t]) -> Callable[cm_skip_p, cm_skip_t]:
+def cm_skip_processing_if_failed(func: Callable[CM_SKIP_P, T]) -> Callable[CM_SKIP_P, T]:
     """
     Decorator function to skip processing if the ControlMessage has failed.
 
@@ -37,7 +37,7 @@ def cm_skip_processing_if_failed(func: Callable[cm_skip_p, cm_skip_t]) -> Callab
         The decorated function.
     """
 
-    def wrapper(control_message: ControlMessage, *args: cm_skip_p.args, **kwargs: cm_skip_p.kwargs) -> cm_skip_t:
+    def wrapper(control_message: ControlMessage, *args: CM_SKIP_P.args, **kwargs: CM_SKIP_P.kwargs) -> T:
         if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed")):
             return control_message
 
