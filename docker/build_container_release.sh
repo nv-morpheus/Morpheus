@@ -14,12 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -x
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Change to the script file to ensure we are in the correct repo (in case were in a submodule)
+pushd ${SCRIPT_DIR} &> /dev/null
 
 export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
 export DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
+
+popd &> /dev/null
 
 # Call the general build script
 ${SCRIPT_DIR}/build_container.sh

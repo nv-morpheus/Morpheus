@@ -53,13 +53,6 @@ export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
 CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
 export USE_SCCACHE=${USE_SCCACHE:-""}
 
-export CUDA="$(conda list | grep cudatoolkit | egrep -o "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")"
-export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
-export CUDA=11.8
-echo "CUDA        : ${CUDA}"
-echo "PYTHON_VER  : ${PYTHON_VER}"
-echo ""
-
 export CMAKE_GENERATOR="Ninja"
 
 # Export variables for the cache
@@ -97,17 +90,27 @@ fi
 
 # And default channels (with optional channel alias)
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.8.0")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
-CONDA_ARGS_ARRAY+=("-c" "pytorch")
-CONDA_ARGS_ARRAY+=("-c" "conda-forge")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}pytorch")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}conda-forge")
 
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
 
-   echo "Running conda-build for morpheus..."
+   # if [[ $(git rev-parse --is-inside-work-tree) == "true" ]]; then
+   #    # Make sure to pull all of the submodules before building
+   #    git submodule update --init --recursive
+
+   #    # Also pull all lfs files
+   #    echo "Pulling all LFS files before ..."
+   #    git lfs checkout *
+   # else
+   #    echo "Not in a git repo, skipping git pull"
+   # fi
+
+   echo "Running conda-build for morpheus v${GIT_VERSION}..."
    set -x
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
