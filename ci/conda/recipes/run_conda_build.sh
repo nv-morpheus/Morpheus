@@ -99,17 +99,6 @@ if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    export GIT_VERSION="$(get_version)"
 
-   # if [[ $(git rev-parse --is-inside-work-tree) == "true" ]]; then
-   #    # Make sure to pull all of the submodules before building
-   #    git submodule update --init --recursive
-
-   #    # Also pull all lfs files
-   #    echo "Pulling all LFS files before ..."
-   #    git lfs checkout *
-   # else
-   #    echo "Not in a git repo, skipping git pull"
-   # fi
-
    echo "Running conda-build for morpheus v${GIT_VERSION}..."
    set -x
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
