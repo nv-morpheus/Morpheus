@@ -175,6 +175,16 @@ cd examples/digital_fingerprinting/production
 docker compose build
 ```
 
+> **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
+>
+> ```
+> ERROR: The Compose file './docker-compose.yml' is invalid because:
+> services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was
+> unexpected)
+> ```
+>
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
+
 #### Downloading the example datasets
 First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
 
