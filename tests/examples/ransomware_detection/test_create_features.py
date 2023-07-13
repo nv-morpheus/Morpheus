@@ -32,6 +32,7 @@ from utils.dataset_manager import DatasetManager
 
 @pytest.mark.use_python
 class TestCreateFeaturesRWStage:
+    # pylint: disable=no-name-in-module
 
     @mock.patch('stages.create_features.Client')
     def test_constructor(

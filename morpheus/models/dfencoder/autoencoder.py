@@ -1478,13 +1478,12 @@ class AutoEncoder(torch.nn.Module):
 
     def get_representation(self, df, layer=0):
         """
-        Computes latent feature vector from hidden layer
-            given input dataframe.
+        Computes latent feature vector from hidden layer given input dataframe.
 
         argument layer (int) specifies which layer to get.
         by default (layer=0), returns the "encoding" layer.
-            layer < 0 counts layers back from encoding layer.
-            layer > 0 counts layers forward from encoding layer.
+        layer < 0 counts layers back from encoding layer.
+        layer > 0 counts layers forward from encoding layer.
         """
         result = []
         n_batches = len(df) // self.eval_batch_size
@@ -1610,8 +1609,7 @@ class AutoEncoder(torch.nn.Module):
         """
         Runs end-to-end model.
         Interprets output and creates a dataframe.
-        Outputs dataframe with same shape as input
-            containing model predictions.
+        Outputs dataframe with same shape as input containing model predictions.
         """
         self.eval()
         data = self.prepare_df(df)

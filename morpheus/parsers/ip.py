@@ -16,6 +16,8 @@ import numpy as np
 
 import cudf
 
+# pylint: disable=invalid-name,use-dict-literal
+
 
 def ip_to_int(values):
     """
@@ -71,7 +73,7 @@ def int_to_ip(values):
     return cudf.Series(values._column.int2ip())
 
 
-def is_ip(ips):
+def is_ip(ips: str):
     """
     Indicates whether each address is an ip string.
     **Addresses must be IPv4. IPv6 not yet supported.**
@@ -324,7 +326,7 @@ def is_global(ips):
 
 
 def _netmask_kernel(idx, out1, out2, out3, out4, kwarg1):
-    for i in range(len(idx)):
+    for i, _ in enumerate(idx):
         out1[i] = int(kwarg1 / 16777216) % 256
         out2[i] = int(kwarg1 / 65536) % 256
         out3[i] = int(kwarg1 / 256) % 256
@@ -380,7 +382,7 @@ def netmask(ips, prefixlen=16):
 
 
 def _hostmask_kernel(idx, out1, out2, out3, out4, kwarg1):
-    for i in range(len(idx)):
+    for i, _ in enumerate(idx):
         out1[i] = int(kwarg1 / 16777216) % 256
         out2[i] = int(kwarg1 / 65536) % 256
         out3[i] = int(kwarg1 / 256) % 256
@@ -432,7 +434,7 @@ def hostmask(ips, prefixlen=16):
     return df["hostmask"]
 
 
-def _mask_kernel(masked_ip_int, out1, out2, out3, out4):
+def _mask_kernel(masked_ip_int, out1, out2, out3, out4, kwarg1):  # pylint: disable=unused-argument
     for i, ipnum in enumerate(masked_ip_int):
         out1[i] = int(ipnum / 16777216) % 256
         out2[i] = int(ipnum / 65536) % 256
@@ -456,6 +458,7 @@ def mask(ips, masks):
     -------
     rtype : cudf.Series
         Masked IP address from list of IPs
+
     Examples
     --------
     >>> import morpheus.parsers.ip as ip

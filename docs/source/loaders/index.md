@@ -19,9 +19,14 @@ limitations under the License.
 
 Custom functions called "Loaders" can be utilized by the DataLoader Module to load data into the pipeline. The user can choose to register their own customized loader function and add it to a dataloader registry, which will then become accessible to the DataLoader module during module loading.
 
-**Note** :  Loaders receive configuration from the `load` task  via [control message](../../source/control_message_guide.md) during runtime.
+**Note** :  Loaders receive configuration from the `load` task  via [control message](../../developer_guide/guides/9_control_messages.md) during runtime.
 
 ## Core Loaders
 
-- [File to DataFrame Loader](./core/file_to_df_loader.md)
-- [Filesystem Spec Loader](./core/fsspec_loader.md)
+```{toctree}
+:maxdepth: 20
+
+./core/file_to_df_loader.md
+./core/fsspec_loader.md
+
+```
