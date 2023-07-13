@@ -16,8 +16,6 @@ import numpy as np
 
 import cudf
 
-# pylint: disable=invalid-name,use-dict-literal
-
 
 def ip_to_int(values):
     """
@@ -480,7 +478,7 @@ def mask(ips, masks):
                       outcols={
                           "out1": np.int64, "out2": np.int64, "out3": np.int64, "out4": np.int64
                       },
-                      kwargs={})
+                      kwargs={"kwarg1": 0})
 
     out1 = x["out1"].astype(str)
     out2 = x["out2"].astype(str)
