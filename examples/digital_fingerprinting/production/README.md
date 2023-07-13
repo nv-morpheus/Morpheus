@@ -41,15 +41,15 @@ export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker-compose build
 ```
 
-> **Note:** This requires version 1.28.0 or higher of `docker-compose`. If you enconter an error similar to:
+> **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
 >
-> ```log
+> ```
 > ERROR: The Compose file './docker-compose.yml' is invalid because:
 > services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was
 > unexpected)
 > ```
 >
-> This is most likely due to an older version of `docker-compose`.
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
 ### Running the services
 #### Jupyter Server
