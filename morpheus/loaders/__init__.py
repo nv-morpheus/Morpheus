@@ -18,4 +18,4 @@ Morpheus loader definitions, each loader is automatically registered when import
 from morpheus.loaders import file_to_df_loader
 from morpheus.loaders import fsspec_loader
 
-__all__ = []
+__all__ = ["file_to_df_loader", "fsspec_loader"]

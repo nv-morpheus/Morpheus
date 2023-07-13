@@ -138,7 +138,7 @@ class DataRecord:
         """
         Get the file format of the data record.
         Returns:
-            str: File format of the data record.
+        str: File format of the data record.
         """
         return self._file_format
 
@@ -147,7 +147,7 @@ class DataRecord:
         """Get the number of rows in the data record.
 
         Returns:
-            int: Number of rows in the data record.
+        int: Number of rows in the data record.
         """
 
         return self._storage.num_rows

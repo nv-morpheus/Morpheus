@@ -327,8 +327,10 @@
 					"-b",
 					"html",
 					"-aE",
+					"-j",
+					"auto",
 					"source",
-					"build",
+					"${workspaceFolder}/build/docs/html",
 				],
 				"justMyCode": false
 			},

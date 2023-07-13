@@ -932,4 +932,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [`examples/developer_guide/2_2_rabbitmq/README.md`](../../../../examples/developer_guide/2_2_rabbitmq/README.md) in the root of the Morpheus repo.
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the root of the Morpheus repo.
