@@ -258,10 +258,11 @@ git submodule update --init --recursive
 
 Launching a full production Kafka cluster is outside the scope of this project; however, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. Refer to [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
 
-1. Install `docker-compose` if not already installed:
+1. Install `docker-compose-plugin` if not already installed:
 
    ```bash
-   conda install -c conda-forge docker-compose
+   apt-get update
+   apt-get install docker-compose-plugin
    ```
 2. Clone the `kafka-docker` repo from the Morpheus repo root:
 
@@ -300,7 +301,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
 6. Launch kafka with 3 instances:
 
    ```bash
-   docker-compose up -d --scale kafka=3
+   docker compose up -d --scale kafka=3
    ```
    In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell

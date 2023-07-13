@@ -21,7 +21,7 @@ limitations under the License.
 
 To run the demo, you will need the following:
 - Docker
-- `docker-compose` (Tested with version 1.29)
+- `docker-compose-plugin` (Tested with version 2.12.2)
 
 ## Setup
 
@@ -59,7 +59,7 @@ cd ${MORPHEUS_ROOT}/examples/sid_visualization
 
 Launch the containers:
 ```bash
-DOCKER_BUILDKIT=1 docker-compose up --build -d
+DOCKER_BUILDKIT=1 docker compose up --build -d
 ```
 
 The following GUI should be displayed when all containers have completed launching:
@@ -68,11 +68,11 @@ The following GUI should be displayed when all containers have completed launchi
 
 ### Build Morpheus
 
-Once docker-compose command has completed and GUI is displayed, exec into the container to build and run Morpheus:
+Once `docker compose` command has completed and GUI is displayed, exec into the container to build and run Morpheus:
 
 Exec into the Morpheus container:
 ```bash
-docker-compose exec morpheus bash
+docker compose exec morpheus bash
 ```
 
 Inside the container, compile Morpheus:

@@ -57,13 +57,13 @@ Build `docker-compose` services:
 ```
 cd examples/digital_fingerprinting/production
 export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker-compose build
+docker compose build
 ```
 
 Create `bash` shell in `morpheus_pipeline` container:
 
 ```bash
-docker-compose run morpheus_pipeline bash
+docker compose run morpheus_pipeline bash
 ```
 
 ### Run Azure training pipeline

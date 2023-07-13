@@ -38,7 +38,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ```bash
 cd examples/digital_fingerprinting/production
 export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker-compose build
+docker compose build
 ```
 
 > **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
@@ -55,7 +55,7 @@ docker-compose build
 #### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up jupyter
+docker compose up jupyter
 ```
 
 Once the build is complete and the service has started, a message similar to the following should display:
@@ -78,12 +78,12 @@ Copy and paste the URL into a web browser. There are four notebooks included wit
 #### Morpheus Pipeline
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up morpheus_pipeline
+docker compose up morpheus_pipeline
 ```
 
 If instead you want to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose run morpheus_pipeline bash
+docker compose run morpheus_pipeline bash
 ```
 
 From the prompt within the `morpheus_pipeline` container you can run either the `dfp_azure_pipeline.py` or `dfp_duo_pipeline.py` pipeline scripts.
@@ -160,7 +160,7 @@ Starting either the `morpheus_pipeline` or the `jupyter` service, will start the
 
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up mlflow
+docker compose up mlflow
 ```
 
 By default, a MLflow dashboard will be available at:
