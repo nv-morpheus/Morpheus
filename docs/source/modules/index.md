@@ -32,6 +32,7 @@ limitations under the License.
 ./core/from_control_message.md
 ./core/mlflow_model_writer.md
 ./core/multiplexer.md
+./core/payload_batcher.md
 ./core/serializer.md
 ./core/to_control_message.md
 ./core/write_to_file.md
