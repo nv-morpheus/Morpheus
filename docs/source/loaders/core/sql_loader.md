@@ -33,8 +33,7 @@ as MessageMeta.
 }
 ```
 
-**Note** :  Loaders can receive configuration from the `load` task
-via [control message](../../../source/developer_guide/guides/9_control_messages.md) during runtime.
+**Note** :  Loaders can receive configuration from the `load` task via ControlMessage during runtime.
 
 ### Task Configurable Parameters
 
