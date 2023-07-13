@@ -30,3 +30,8 @@ Examples
    ransomware_detection/README.md
    root_cause_analysis/README.md
    sid_visualization/README.md
+
+.. toctree::
+   :hidden:
+
+   ../examples

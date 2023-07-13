@@ -33,7 +33,7 @@ Using below configuration while loading DataLoader module, specifies that the Da
 }
 ```
 
-**Note** :  Loaders can receive configuration from the `load` task via [control message](../../../source/control_message_guide.md) during runtime.
+**Note** :  Loaders can receive configuration from the `load` task via [control message](../../developer_guide/guides/9_control_messages.md) during runtime.
 
 ### Task Configurable Parameters
 
@@ -81,4 +81,4 @@ Below JSON configuration specifies how to pass additional configuration to the l
 }
 ```
 
-**Note** : The [file_batcher](../../../../morpheus/modules/file_batcher.py) module currently generates tasks internally and assigns them to control messages, and then sends them to [DataLoader](../../modules/core/data_loader.md) module which uses [file_to_df_loader](../../../../morpheus/loaders/file_to_df_loader.py). Having stated that, this loader configuration is obtained from the [File Batcher](../../modules/core/file_batcher.md) module configuration.
+**Note** : The {py:mod}`~morpheus.modules.file_batcher` module currently generates tasks internally and assigns them to control messages, and then sends them to [DataLoader](../../modules/core/data_loader.md) module which uses {py:mod}`~morpheus.loaders.file_to_df_loader`. Having stated that, this loader configuration is obtained from the [File Batcher](../../modules/core/file_batcher.md) module configuration.
