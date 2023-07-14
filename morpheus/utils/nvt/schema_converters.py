@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import dataclasses
-import numpy as np
 import os
 import re
 import typing
