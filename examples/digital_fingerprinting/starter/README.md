@@ -178,6 +178,105 @@ morpheus --log_level=DEBUG \
   to-file --filename=./cloudtrail-dfp-detections.csv --overwrite
 ```
 
+## Duo DFP Pipeline
+
+The following pipeline trains user models from downloaded training data and saves user models to file. Pipeline then uses these models to run inference
+on downloaded inference data. Inference results are written to `duo-detections.csv`.
+```
+morpheus --log_level=DEBUG \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  pipeline-ae \
+  --columns_file=morpheus/data/columns_ae_duo.txt \
+  --userid_column_name=username \
+  --feature_scaler=standard \
+  from-duo \
+  --input_glob=examples/data/dfp/duo-inference-data/*.json \
+  --max_files=200 \
+  monitor --description='Input rate' \
+  train-ae \
+  --train_data_glob=examples/data/dfp/duo-training-data/*.json \
+  --source_stage_class=morpheus.stages.input.duo_source_stage.DuoSourceStage \
+  --seed=42 \
+  --models_output_filename=models/dfp-models/duo_ae_user_models.pkl \
+  preprocess \
+  inf-pytorch \
+  monitor --description='Inference rate' --unit inf \
+  add-scores \
+  serialize \
+  to-file --filename=./duo-detections.csv --overwrite
+```
+
+The following example shows how we can load pre-trained user models from the file (`models/dfp-models/duo_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/duo`. Inference results are written to `duo-detections.csv`.
+```
+morpheus --log_level=DEBUG \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  pipeline-ae \
+  --columns_file=morpheus/data/columns_ae_duo.txt \
+  --userid_column_name=username \
+  --feature_scaler=standard \
+  from-duo \
+  --input_glob=examples/data/dfp/duo-inference-data/*.json \
+  --max_files=200 \
+  monitor --description='Input rate' \
+  train-ae \
+  --pretrained_filename=models/dfp-models/duo_ae_user_models.pkl \
+  preprocess \
+  inf-pytorch \
+  monitor --description='Inference rate' --unit inf \
+  add-scores \
+  serialize \
+  to-file --filename=./duo-detections.csv --overwrite
+```
+
+## Azure DFP Pipeline
+
+The following pipeline trains user models from downloaded training data and saves user models to file. Pipeline then uses these models to run inference
+on downloaded inference data. Inference results are written to `azure-detections.csv`.
+```
+morpheus --log_level=DEBUG \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  pipeline-ae \
+  --columns_file=morpheus/data/columns_ae_azure.txt \
+  --userid_column_name=userPrincipalName \
+  --feature_scaler=standard \
+  from-azure \
+  --input_glob=examples/data/dfp/azure-inference-data/*.json \
+  --max_files=200 \
+  train-ae \
+  --train_data_glob=examples/data/dfp/azure-training-data/*.json \
+  --source_stage_class=morpheus.stages.input.azure_source_stage.AzureSourceStage \
+  --seed=42 \
+  --models_output_filename=models/dfp-models/azure_ae_user_models.pkl \
+  preprocess \
+  inf-pytorch \
+  monitor --description='Inference rate' --unit inf \
+  add-scores \
+  serialize \
+  to-file --filename=./azure-detections.csv --overwrite
+```
+
+The following example shows how we can load pre-trained user models from the file (`models/dfp-models/azure_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/azure`. Inference results are written to `azure-detections.csv`.
+```
+morpheus --log_level=DEBUG \
+  run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
+  pipeline-ae \
+  --columns_file=morpheus/data/columns_ae_azure.txt \
+  --userid_column_name=userPrincipalName \
+  --feature_scaler=standard \
+  from-azure \
+  --input_glob=examples/data/dfp/azure-inference-data/*.json \
+  --max_files=200 \
+  train-ae \
+  --pretrained_filename=models/dfp-models/azure_ae_user_models.pkl \
+  preprocess \
+  inf-pytorch \
+  monitor --description='Inference rate' --unit inf \
+  add-scores \
+  serialize \
+  to-file --filename=./azure-detections.csv --overwrite
+```
+
+
 ## Using Morpheus Python API
 
 The DFP pipelines can also be constructed and run via the Morpheus Python API. An [example](./run_cloudtrail_dfp.py) is included for the Cloudtrail DFP pipeline. The following are some commands to
