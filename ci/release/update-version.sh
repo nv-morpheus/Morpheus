@@ -61,6 +61,7 @@ function sed_runner() {
 # .gitmodules
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/morpheus-visualizations
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} morpheus_utils
+git submodule update --remote --recursive
 
 # Root CMakeLists.txt
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' CMakeLists.txt
