@@ -97,6 +97,7 @@ outputs:
         - pytorch-cuda
         - scikit-learn 1.2.2.*
         - tqdm 4.*
+        - tritonclient 2.26.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
       run_constrained:

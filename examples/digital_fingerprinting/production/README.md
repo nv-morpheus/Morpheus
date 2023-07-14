@@ -67,11 +67,13 @@ jupyter  |         http://localhost:8888/lab?token=<token>
 jupyter  |      or http://127.0.0.1:8888/lab?token=<token>
 ```
 
-Copy and paste the URL into a web browser. There are four notebooks included with the DFP example:
-* dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
+Copy and paste the URL into a web browser. There are six notebooks included with the DFP example:
 * dfp_azure_inference.ipynb - Inference pipeline for Azure Active Directory data
-* dfp_duo_training.ipynb - Training pipeline for Duo Authentication
+* dfp_azure_integrated_training.ipynb - Integrated training pipeline for Azure Active Directory data
+* dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
 * dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
+* dfp_duo_integrated_training.ipynb - Integrated training pipeline for Duo Authentication
+* dfp_duo_training.ipynb - Training pipeline for Duo Authentication
 
 > **Note:** The token in the URL is a one-time use token, and a new one is generated with each invocation.
 

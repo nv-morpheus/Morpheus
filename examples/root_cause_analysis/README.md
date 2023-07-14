@@ -31,7 +31,7 @@ Once the model is capable of identifying even the new root causes, it can also b
 
 ### The Dataset
 
-The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 or root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
+The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 for root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
 
 ## Pipeline Architecture
 
