@@ -125,9 +125,7 @@ class MutateOp(Operator):
             Transformed dataframe.
         """
 
-        df = self._func(col_selector, df)
-
-        return df
+        return self._func(col_selector, df)
 
     def column_mapping(self, col_selector: ColumnSelector) -> typing.Dict[str, str]:
         """
@@ -152,10 +150,10 @@ class MutateOp(Operator):
         return column_mapping
 
     def compute_output_schema(
-            self,
-            input_schema: Schema,
-            col_selector: ColumnSelector,
-            prev_output_schema: typing.Optional[Schema] = None,
+        self,
+        input_schema: Schema,
+        col_selector: ColumnSelector,
+        prev_output_schema: typing.Optional[Schema] = None,
     ) -> Schema:
         """
         Compute the output schema.
