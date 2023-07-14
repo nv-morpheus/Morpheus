@@ -14,11 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Get the path to MORPHEUS_ROOT without altering the docker context (in case we are in a submodule)
+pushd ${SCRIPT_DIR} &> /dev/null
+export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(git rev-parse --show-toplevel)"}
+popd &> /dev/null
 
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:?"Must set \$DOCKER_IMAGE_NAME to build. Use the dev/release scripts to set these automatically"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:?"Must set \DOCKER_IMAGE_TAG to build. Use the dev/release scripts to set these automatically"}
 DOCKER_TARGET=${DOCKER_TARGET:-"runtime"}
-DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
+
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Build args
@@ -35,6 +41,10 @@ PYTHON_VER=${PYTHON_VER:-3.10}
 RAPIDS_VER=${RAPIDS_VER:-23.06}
 TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
+# Determine the relative path from $PWD to $MORPHEUS_ROOT
+MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"./$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
+
+# Build the docker arguments
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_MAJOR_VER=${CUDA_MAJOR_VER}"
@@ -45,6 +55,7 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg DOCA_REPO_HOST=${DOCA_REPO_HOST}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg FROM_IMAGE=${FROM_IMAGE}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg LINUX_DISTRO=${LINUX_DISTRO}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg LINUX_VER=${LINUX_VER}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg RAPIDS_VER=${RAPIDS_VER}"
@@ -57,22 +68,23 @@ DOCKER_ARGS="${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS}"
 # Export buildkit variable
 export DOCKER_BUILDKIT=1
 
-echo "Building morpheus:${DOCKER_TAG}..."
-echo "   CUDA_MAJOR_VER  : ${CUDA_MAJOR_VER}"
-echo "   CUDA_MINOR_VER  : ${CUDA_MINOR_VER}"
-echo "   CUDA_REV_VER    : ${CUDA_REV_VER}"
-echo "   FROM_IMAGE      : ${FROM_IMAGE}"
-echo "   LINUX_DISTRO    : ${LINUX_DISTRO}"
-echo "   LINUX_VER       : ${LINUX_VER}"
-echo "   PYTHON_VER      : ${PYTHON_VER}"
-echo "   RAPIDS_VER      : ${RAPIDS_VER}"
-echo "   TENSORRT_VERSION: ${TENSORRT_VERSION}"
-if [ -n "${MORPHEUS_SUPPORT_DOCA}" ]; then
-  echo "   DOCA_ARTIFACTS_HOST: ${DOCA_ARTIFACTS_HOST}"
-  echo "   DOCA_REPO_HOST     : ${DOCA_REPO_HOST}"
-fi
+echo "Building morpheus:${DOCKER_TAG} with args..."
+echo "   CUDA_MAJOR_VER       : ${CUDA_MAJOR_VER}"
+echo "   CUDA_MINOR_VER       : ${CUDA_MINOR_VER}"
+echo "   CUDA_REV_VER         : ${CUDA_REV_VER}"
+echo "   DOCA_ARTIFACTS_HOST  : ${DOCA_ARTIFACTS_HOST}"
+echo "   DOCA_REPO_HOST       : ${DOCA_REPO_HOST}"
+echo "   FROM_IMAGE           : ${FROM_IMAGE}"
+echo "   LINUX_DISTRO         : ${LINUX_DISTRO}"
+echo "   LINUX_VER            : ${LINUX_VER}"
+echo "   MORPHEUS_ROOT_HOST   : ${MORPHEUS_ROOT_HOST}"
+echo "   MORPHEUS_SUPPORT_DOCA: ${MORPHEUS_SUPPORT_DOCA}"
+echo "   PYTHON_VER           : ${PYTHON_VER}"
+echo "   RAPIDS_VER           : ${RAPIDS_VER}"
+echo "   TENSORRT_VERSION     : ${TENSORRT_VERSION}"
+
 echo ""
 echo "   COMMAND: docker build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_EXTRA_ARGS to show all container build output"
 
-docker build ${DOCKER_ARGS} -f docker/Dockerfile .
+docker build ${DOCKER_ARGS} -f ${SCRIPT_DIR}/Dockerfile .

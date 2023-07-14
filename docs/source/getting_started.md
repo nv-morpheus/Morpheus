@@ -31,7 +31,7 @@ More advanced users, or those who are interested in using the latest pre-release
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
+- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
 
 > **Note about Docker:**
 >
@@ -146,7 +146,7 @@ Many of the validation tests and example workflows require a Triton server to fu
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -160,7 +160,7 @@ Note: The above command is useful for testing out Morpheus, however it does load
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -233,7 +233,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found in the [Basic Usage](./examples/basic_usage/README.md) guide along with the other [Morpheus Examples](./examples.md).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 

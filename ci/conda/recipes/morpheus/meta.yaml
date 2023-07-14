@@ -15,24 +15,20 @@
 
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
-{% set py_version=environ.get('CONDA_PY', '3.10') %}
-{% set cuda_version='.'.join(environ.get('CUDA', '11.8').split('.')[:2]) %}
-{% set cuda_major=cuda_version.split('.')[0] %}
-{% set rapids_version = "23.06" %}
 
 package:
   name: morpheus-split
   version: {{ version }}
 
 source:
-  git_url: ../../../..
+  path: ../../../..
 
 outputs:
 
   - name: morpheus
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+      string: cuda_{{ cuda_compiler_version }}_py{{ python }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
       script_env:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
@@ -53,11 +49,10 @@ outputs:
         - {{ compiler("cuda") }}
         - ccache
         - cmake 3.24
-        - cuda-cudart-dev # Needed by CMake to compile a test application
+        - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
         - ninja
       host:
-        - cuda-cudart
-        - cuda-toolkit
+        - cuda-toolkit {{ cuda_compiler_version }}
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -88,7 +83,7 @@ outputs:
         - mrc
         - networkx 3.1.*
         - numpydoc 1.4.*
-        - nvtabular 23.06.*
+        - nvtabular {{ rapids_version }}.*
         - pandas 1.3.*
         - pluggy 1.0.*
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF

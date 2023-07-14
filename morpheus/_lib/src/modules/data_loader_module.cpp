@@ -17,8 +17,6 @@
 
 #include "morpheus/modules/data_loader_module.hpp"
 
-#include "mrc/modules/properties/persistent.hpp"
-#include "mrc/node/rx_node.hpp"
 #include "rxcpp/operators/rx-map.hpp"
 
 #include "morpheus/io/data_loader_registry.hpp"
@@ -26,6 +24,7 @@
 
 #include <glog/logging.h>
 #include <mrc/modules/segment_modules.hpp>
+#include <mrc/node/rx_node.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/utils/type_utils.hpp>
 #include <nlohmann/json.hpp>
@@ -46,6 +45,11 @@ using nlohmann::json;
 namespace morpheus {
 
 const std::string DataLoaderModule::s_config_schema = R"()";
+
+DataLoaderModule::~DataLoaderModule()
+{
+    VLOG(30) << "DataLoaderModule::~DataLoaderModule(): " << name() << std::endl;
+}
 
 DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(module_name) {}
 

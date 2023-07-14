@@ -33,7 +33,7 @@ pip install flask==2.2 confluent_kafka
 To publish control messages to a Kafka topic, you will need to start the Kafka service first. Navigate to the `~/examples/digital_fingerprinting/production` directory and execute the following command:
 
 ```
-docker-compose up kafka
+docker compose up kafka
 ```
 
 ##### Create Kafka Topic

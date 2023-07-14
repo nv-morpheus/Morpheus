@@ -95,7 +95,7 @@ class DataLoader
     /**
      * @brief Default constructor for the DataLoader class.
      */
-    DataLoader();
+    DataLoader() = default;
 
     /**
      * @brief Destructor for the DataLoader class.

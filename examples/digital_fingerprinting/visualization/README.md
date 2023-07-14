@@ -22,7 +22,7 @@ We show here how to set up and run the Production DFP pipeline on Azure and Duo 
 
 To run the demo you will need the following:
 - Docker
-- `docker-compose` (Tested with version 1.29)
+- `docker-compose-plugin` (Tested with version 2.12.2)
 
 ## Pull `morpheus-visualizations` submodule
 
@@ -41,14 +41,14 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ```bash
 cd examples/digital_fingerprinting/production
 export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
-docker-compose build
+docker compose build
 ```
 
 ## Start Morpheus Pipeline Container
 
 From the `examples/digital_fingerprinting/production` directory run:
 ```bash
-docker-compose run -p 3000:3000 morpheus_pipeline bash
+docker compose run -p 3000:3000 morpheus_pipeline bash
 ```
 
 The `-p 3000:3000` maps the visualization app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.

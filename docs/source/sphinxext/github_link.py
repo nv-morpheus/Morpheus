@@ -82,11 +82,19 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
         return
 
     class_name = info['fullname'].split('.')[0]
+    attr_name = info['fullname'].split('.')[-1]
     module = __import__(info['module'], fromlist=[class_name])
 
     try:
         obj = attrgetter(info['fullname'])(module)
     except Exception as ex:
+
+        class_type = getattr(module, class_name)
+
+        if (attr_name in inspect.get_annotations(class_type)):
+            # This is a ClassVar. Just exit because we can't get the source
+            return
+
         logger.exception("Error in github_link. Message: {}".format(ex), exc_info=ex, stack_info=True)
         return
 

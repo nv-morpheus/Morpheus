@@ -44,26 +44,22 @@ ARG CUDA_MINOR_VER=8
 ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
+
+# =====Global Options=====
 ARG PYTHON_VER=3.10
+# Allows running the docker build from a different directory than MORPHEUS_ROOT. Needed for using Morpheus in a
+# submodule
+ARG MORPHEUS_ROOT_HOST=.
+# Supply a channel alias to use for conda. This is needed if the conda channels go down
+ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
 
 # ============ Stage: base ============
 # Configure the base conda environment
 FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
 
-# Required arguments
-ARG PYTHON_VER
-ARG IMAGE_TYPE=base
-ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=23.06
-ARG CONDA_CHANNEL=rapidsai
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
-
-# Temp option to set conda channel_alias property during build
-ARG CONDA_CHANNEL_ALIAS
-
-# The TensorRT Version must be the full version (i.e. 7.2.2.3) and match Triton EXACTLY
-ARG TENSORRT_VERSION=8.2.1.3
+ARG PYTHON_VER
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -115,13 +111,16 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
+    source activate base &&\
+    git lfs install
     # conda clean -afy
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
 FROM base as conda_env
+
+ARG MORPHEUS_ROOT_HOST
 
 # Create a base environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -140,7 +139,7 @@ RUN source activate morpheus &&\
     conda config --env --add channels rapidsai
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
-COPY docker/entrypoint.sh ./docker/
+COPY ${MORPHEUS_ROOT_HOST}/docker/entrypoint.sh ./docker/
 ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
@@ -151,6 +150,7 @@ SHELL ["/bin/bash", "-c"]
 FROM conda_env as base_extended
 
 # Add one or more optional dependencies to the base environment
+ARG MORPHEUS_ROOT_HOST
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
 ARG DOCA_ARTIFACTS_HOST
 ARG DOCA_REPO_HOST
@@ -162,7 +162,7 @@ ARG DPDK_VERSION=22.11.0-1.4.1
 ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 
 # Copy all of the optional dependency scripts
-COPY ./docker/optional_deps docker/optional_deps
+COPY ${MORPHEUS_ROOT_HOST}/docker/optional_deps docker/optional_deps
 
 # Install DOCA (If requested)
 RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
@@ -173,16 +173,19 @@ RUN --mount=type=cache,id=doca,target=/tmp/doca,sharing=locked \
 # Create the development conda environment
 FROM base_extended as conda_env_dev
 
+ARG MORPHEUS_ROOT_HOST
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
-COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
-    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
+    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias &&\
@@ -193,7 +196,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 # Now build the morpheus conda package
 FROM base_extended as conda_bld_morpheus
 
-ARG CONDA_CHANNEL_ALIAS
+ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
@@ -220,18 +223,21 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
+    # Change to the morpheus directory and build the conda package
+    cd ${MORPHEUS_ROOT_HOST} &&\
     MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
-
-# sid_visualization is a submodule we need to init
-RUN git submodule update --init --recursive
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
 FROM base_extended as runtime
 
+ARG MORPHEUS_ROOT_HOST
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
-COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
-COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/requirements.txt ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -253,12 +259,12 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
 
 # Only copy specific files/folders over that are necessary for runtime
-COPY "./docker" "./docker"
-COPY "./docs" "./docs"
-COPY "./examples" "./examples"
-COPY "./models" "./models"
-COPY "./scripts" "./scripts"
-COPY ["*.md", "LICENSE", "./"]
+COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
+COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
+COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
+COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
+COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
+COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
 
 # Use morpheus by default
 CMD [ "morpheus" ]
@@ -266,6 +272,7 @@ CMD [ "morpheus" ]
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
+
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
@@ -298,9 +305,9 @@ RUN git config --global --add safe.directory "*"
 # Configure and build cpython with debugging symbols
 FROM development as development_pydbg
 
-COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
-COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
-COPY ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
+COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
+COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
+COPY ${MORPHEUS_ROOT_HOST}/ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
 
 # Temporary until #68 goes in
 ARG MORPHEUS_USER="root"
