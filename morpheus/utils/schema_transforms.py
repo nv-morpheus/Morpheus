@@ -84,6 +84,12 @@ def process_dataframe(
     convert_to_pd = False
     if (isinstance(df_in, pd.DataFrame)):
         convert_to_pd = True
+
+        # for col in df_in.columns:
+        #     print(df_in[col].dtype)
+        #     if df_in[col].dtype == "datetime":
+        #         df_in[col].dt.tz_localize(None)
+
         df_in = cudf.DataFrame(df_in)
 
     dataset = nvt.Dataset(df_in)

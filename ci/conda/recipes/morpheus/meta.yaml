@@ -88,6 +88,7 @@ outputs:
         - mrc
         - networkx 3.1.*
         - numpydoc 1.4.*
+        - nvtabular 23.06.*
         - pandas 1.3.*
         - pluggy 1.0.*
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF

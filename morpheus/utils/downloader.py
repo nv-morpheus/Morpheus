@@ -90,7 +90,7 @@ class Downloader:
 
         Returns
         -------
-        dask.distributed.LocalCluster
+        dask_cuda.LocalCUDACluster
         """
         if self._dask_cluster is None:
             import dask
@@ -100,8 +100,8 @@ class Downloader:
             # Up the heartbeat interval which can get violated with long download times
             dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
 
-            self._dask_cluster = dask.distributed.LocalCluster(start=True,
-                                                               processes=self.download_method != "dask_thread")
+            import dask_cuda
+            self._dask_cluster = dask_cuda.LocalCUDACluster()
 
             logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
 
