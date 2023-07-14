@@ -16,6 +16,7 @@ Downloader utility class for fetching files, potentially from a remote file serv
 by the `DownloadMethods` enum.
 """
 
+from merlin.core.utils import Distributed
 import logging
 import multiprocessing as mp
 import os
@@ -64,6 +65,8 @@ class Downloader:
     def __init__(self,
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
+
+        self._merlin_distributed = None
         self._dask_cluster = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
@@ -92,6 +95,7 @@ class Downloader:
         -------
         dask_cuda.LocalCUDACluster
         """
+
         if self._dask_cluster is None:
             import dask
             import dask.distributed
@@ -116,10 +120,18 @@ class Downloader:
         dask.distributed.Client
         """
         import dask.distributed
-        return dask.distributed.Client(self.get_dask_cluster())
+
+        if (self._merlin_distributed is None):
+            self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()),
+                                                   n_workers=16)
+
+        return self._merlin_distributed
 
     def close(self):
         """Close the dask cluster if it exists."""
+        if (self._merlin_distributed is not None):
+            self._merlin_distributed.deactivate()
+
         if (self._dask_cluster is not None):
             logger.debug("Stopping dask cluster...")
 
@@ -151,10 +163,9 @@ class Downloader:
         dfs = []
         if (self._download_method.startswith("dask")):
             # Create the client each time to ensure all connections to the cluster are closed (they can time out)
-            with self.get_dask_client() as client:
-                dfs = client.map(download_fn, download_buckets)
-
-                dfs = client.gather(dfs)
+            with self.get_dask_client() as dist:
+                dfs = dist.client.map(download_fn, download_buckets)
+                dfs = dist.client.gather(dfs)
 
         elif (self._download_method in ("multiprocess", "multiprocessing")):
             # Use multiprocessing here since parallel downloads are a pain
