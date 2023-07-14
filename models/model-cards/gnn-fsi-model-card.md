@@ -155,7 +155,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### What training is recommended for developers working with this model?  If none, please state "none."
 * Familiarity with the Morpheus SDK is recommended for developers working with this model.
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
