@@ -168,7 +168,6 @@ autodoc_mock_imports = [
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "morpheus.utils.nvt.mutate.annotate",
     "nvtabular",
-    "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
     "tensorrt",
     "torch",
     "tqdm",
@@ -308,6 +307,13 @@ intersphinx_mapping = {
     "python": ('https://docs.python.org/', None), "scipy": ('https://docs.scipy.org/doc/scipy/reference', None)
 }
 
+exclude_inherited_members = ('morpheus.models.dfencoder.dataframe.EncoderDataFrame', )
+
+
+def process_docstrings(app, what, name, obj, options, lines):
+    if what == "class" and name in exclude_inherited_members:
+        options["inherited-members"] = False
+
 
 def setup(app):
     app.add_css_file('omni-style.css')
@@ -315,6 +321,7 @@ def setup(app):
     app.add_css_file('infoboxes.css')
     app.add_css_file('params.css')
     app.add_css_file('references.css')
+    app.connect("autodoc-process-docstring", process_docstrings)
 
 
 # The following is used by sphinx.ext.linkcode to provide links to github
