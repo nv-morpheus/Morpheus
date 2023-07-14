@@ -64,7 +64,7 @@ def file_batcher(builder: mrc.Builder):
         batching_options:
             - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
             - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
-            Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+                Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
             - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
             - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
             - sampling_rate_s (int): Sampling rate in seconds; Example: 0; Default: None
@@ -154,13 +154,14 @@ def file_batcher(builder: mrc.Builder):
         full_names = []
 
         for file_object in file_objects:
-            ts = date_extractor(file_object, iso_date_regex)
+            time_stamp = date_extractor(file_object, iso_date_regex)
 
             # Exclude any files outside the time window
-            if ((start_time is not None and ts < start_time) or (end_time is not None and ts > end_time)):
+            if ((start_time is not None and time_stamp < start_time)
+                    or (end_time is not None and time_stamp > end_time)):
                 continue
 
-            timestamps.append(ts)
+            timestamps.append(time_stamp)
             full_names.append(file_object.full_name)
 
         # Build the dataframe
@@ -243,7 +244,7 @@ def file_batcher(builder: mrc.Builder):
                     }
                 }
 
-                if (data_type == "payload" or data_type == "streaming"):
+                if (data_type in ("payload", "streaming")):
                     batch_control_message = control_message.copy()
                     batch_control_message.add_task("load", load_task)
                     control_messages.append(batch_control_message)

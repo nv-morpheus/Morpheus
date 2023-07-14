@@ -428,7 +428,7 @@ For each MultiAEMessage received, containing a trained model, the function uploa
 associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow
 server is running on Databricks, the function also applies the required permissions to the registered model.
 
-For a complete reference, refer to: [MLflow Model Writer](./docs/source/modules/examples/digital_fingerprinting/mlflow_model_writer.md)
+For a complete reference, refer to: [MLflow Model Writer](../../modules/core/mlflow_model_writer.md)
 
 ```python
 @register_module(MLFLOW_MODEL_WRITER, MORPHEUS_MODULE_NAMESPACE)

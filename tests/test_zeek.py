@@ -67,7 +67,7 @@ def test_parse_log_file(tmpdir):
 
     footer = "#close^I2015-01-24-16-50-35"
 
-    fname = tmpdir.mkdir("tmp_clx_zeek_test").join("tst_zeek_conn_log.csv")
+    fname = tmpdir.mkdir("tmp_zeek_test").join("tst_zeek_conn_log.csv")
     actual.to_csv(fname, sep="\t", index=False, header=False)
 
     with open(fname, "r+", encoding='UTF-8') as f:

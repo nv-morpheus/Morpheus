@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Background
 
-See [Simple Python Module](./7_simple_python_module.md) for an introduction to Morpheus modules.
+See [Simple Python Module](./7_python_modules.md) for an introduction to Morpheus modules.
 
 ## The Passthrough Module
 
@@ -52,9 +52,9 @@ class MyTestModule: public mrc::modules::SegmentModule, public mrc::modules::Per
   protected:
     void initialize(mrc::segment::Builder& builder) override;
     std::string module_type_name() const override;
-    
+
   private:
-    int my_persistent_value{0};  
+    int my_persistent_value{0};
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
@@ -82,7 +82,7 @@ void MyTestModule::initialize(mrc::segment::Builder& builder) {
             rxcpp::operators::map([this](std::shared_ptr<MyDataType> data) {
                 return data;
             }));
-    
+
     register_input_port("input_0", passthrough_node);
     register_output_port("output_0", passthrough_node);
 }
@@ -103,11 +103,11 @@ std::string MyTestModule::module_type_name() const
 
 int main(int argc, char** argv) {
     const std::vector<unsigned int> release_version = {1, 0, 0};
-    
+
     auto module_constructor = [](std::string module_name, nlohmann::json config) {
         return std::make_shared<morpheus::MyTestModule>(module_name, config);
     };
-    
+
     ModuleRegistry::register_module("my_test_module", "my_module_namespace", release_version, module_constructor);
 }
 ```
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
 ```c++
 #include "mrc/version.hpp"
 #include "mrc/modules/module_registry.hpp"
-    
+
 #include "my_test_module.hpp"
 
 extern "C" {
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
     std::string module_namespace{"my_module_namespace"};
     std::string module_name{"my_test_module"};
 
-    ModuleRegistry::contains_namespace(module_namespace); // Should be true 
+    ModuleRegistry::contains_namespace(module_namespace); // Should be true
     ModuleRegistry::contains(module_name, module_namespace); // Should be true
 }
 ```

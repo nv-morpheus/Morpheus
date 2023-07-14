@@ -40,7 +40,7 @@ def dask_distributed(fail_missing: bool):
 @pytest.fixture(autouse=True, scope='session')
 def dask_cuda(fail_missing: bool):
     """
-    Mark tests requiring dask.distributed
+    Mark tests requiring dask_cuda
     """
     yield import_or_skip("dask_cuda", reason="Downloader requires dask_cuda", fail_missing=fail_missing)
 

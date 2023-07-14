@@ -52,7 +52,7 @@ Refers to small-reusable MRC nodes contained in the `mrc.core.operators` Python 
 * `to_list`
 
 ## pipeline
-Represents all work to be performed end-to-end in Morpheus. A Morpheus pipeline consists of one or more [segments](#segment), and each segment consists of one or more [stages](#stage). At build time, a Morpheus pipeline is transformed into a [MRC](#MRC) pipeline which is then executed.
+Represents all work to be performed end-to-end in Morpheus. A Morpheus pipeline consists of one or more [segments](#segment), and each segment consists of one or more [stages](#stage). At build time, a Morpheus pipeline is transformed into a [MRC](#mrc) pipeline which is then executed.
 
 ## RxCpp
 MRC is built on top of [RxCpp](https://github.com/ReactiveX/RxCpp) which is an open source C++ implementation of the [ReactiveX API](https://reactivex.io/). In general, Morpheus users are only exposed to this when they wish to write a [stage](#stage) in C++.

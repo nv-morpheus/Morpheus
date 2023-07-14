@@ -30,7 +30,7 @@ limitations under the License.
 }
 ```
 
-**Note** :  Loaders can receive configuration from the `load` task via [control message](../../../source/control_message_guide.md) during runtime.
+**Note** :  Loaders can receive configuration from the `load` task via [control message](../../developer_guide/guides/9_control_messages.md) during runtime.
 
 ### Task Configurable Parameters
 

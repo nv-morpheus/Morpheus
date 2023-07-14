@@ -31,10 +31,10 @@
 #include <stdexcept>  // for runtime_error
 #include <utility>    // for move
 
-namespace morpheus {
-
+namespace {
 // MatX works best with C-Style arrays so ignore this warning
 // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+using namespace morpheus;
 TensorIndex read_idx_from_tensor(const TensorObject& tensor, const TensorIndex (&idx)[2])
 {
     switch (tensor.dtype().type_id())
@@ -60,6 +60,9 @@ TensorIndex read_idx_from_tensor(const TensorObject& tensor, const TensorIndex (
         return -1;
     }
 }
+}  // namespace
+
+namespace morpheus {
 
 /****** Component public implementations *******************/
 /****** <MultiTensorMessage>****************************************/

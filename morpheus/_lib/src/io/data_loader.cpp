@@ -27,12 +27,7 @@
 
 namespace morpheus {
 
-DataLoader::DataLoader() : m_loaders{} {}
-
-Loader::Loader(nlohmann::json config)
-{
-    m_config = std::move(config);
-}
+Loader::Loader(nlohmann::json config) : m_config(std::move(config)) {}
 
 nlohmann::json Loader::config() const
 {
@@ -56,7 +51,7 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
         auto task      = control_message->remove_task("load");
         auto loader_id = task["loader_id"];
 
-        auto loader = m_loaders.find(loader_id);
+        auto loader = m_loaders.find(loader_id.get<std::string>());
         if (loader != m_loaders.end())
         {
             VLOG(5) << "Loading data using loader: " << loader_id
