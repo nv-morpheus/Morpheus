@@ -319,7 +319,6 @@ def run_pipeline(train_users,
     experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
 
     if (is_training):
-
         # Finally, perform training which will output a model
         pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 

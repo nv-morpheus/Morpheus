@@ -124,8 +124,11 @@ def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
     if (col_info.__class__ == ColumnInfo):
         return col_info.name
 
-    elif col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+    elif col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn]:
         return col_info.input_name
+
+    elif col_info.__class__ in [IncrementColumn]:
+        return [col_info.groupby_column, col_info.input_name]
 
     elif col_info.__class__ == StringCatColumn:
         return col_info.input_columns
@@ -221,7 +224,11 @@ def _nvt_string_cat_col(
 
 
 @sync_df_as_pandas()
-def _increment_column(df: pd.DataFrame, output_column: str, input_column: str, period: str = 'D') -> pd.DataFrame:
+def _increment_column(df: pd.DataFrame,
+                      output_column: str,
+                      input_column: str,
+                      groupby_column: str,
+                      period: str = 'D') -> pd.DataFrame:
     """
     Crete an increment a column in a DataFrame.
 
@@ -243,7 +250,7 @@ def _increment_column(df: pd.DataFrame, output_column: str, input_column: str, p
     """
 
     period_index = pd.to_datetime(df[input_column]).dt.to_period(period)
-    groupby_col = df.groupby([output_column, period_index]).cumcount()
+    groupby_col = df.groupby([groupby_column, period_index]).cumcount()
 
     return pd.DataFrame({output_column: groupby_col})
 
@@ -253,6 +260,7 @@ def _nvt_increment_column(
         df: typing.Union[pd.DataFrame, cudf.DataFrame],
         output_column: str,
         input_column: str,
+        groupby_column: str,
         period: str = 'D') -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
     Increment a column in a DataFrame.
@@ -267,6 +275,8 @@ def _nvt_increment_column(
         The name of the output column.
     input_column : str
         The name of the input column.
+    groupby_column : str
+        Name of the column to groupby after creating the increment
     period : str, default is 'D'
         The period to increment by.
 
@@ -276,7 +286,15 @@ def _nvt_increment_column(
         The resulting DataFrame.
     """
 
-    return _increment_column(df, output_column, input_column, period)
+    return _increment_column(df, output_column, input_column, groupby_column, period)
+
+
+@sync_df_as_pandas()
+def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str, dtype: None) -> pd.Series:
+    if (input_col_name in df.columns):
+        return df.rename(columns={input_col_name: output_col_name})
+
+    return pd.Series(None, index=df.index, dtype=dtype)
 
 
 # Mappings from ColumnInfo types to functions that create the corresponding NVT operator
@@ -318,17 +336,20 @@ ColumnInfoProcessingMap = {
     IncrementColumn:
         lambda ci,
         deps: [
-            MutateOp(partial(
-                _nvt_increment_column, output_column=ci.groupby_column, input_column=ci.name, period=ci.period),
+            MutateOp(partial(_nvt_increment_column,
+                             output_column=ci.name,
+                             input_column=ci.input_name,
+                             groupby_column=ci.groupby_column,
+                             period=ci.period),
                      dependencies=deps,
-                     output_columns=[(ci.name, ci.groupby_column)],
-                     label=f"[IncrementColumn] '{ci.name}' => '{ci.groupby_column}'")
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[IncrementColumn] '{ci.input_name}.{ci.groupby_column}' => '{ci.name}'")
         ],
     RenameColumn:
         lambda ci,
         deps: [
             MutateOp(lambda selector,
-                     df: df.rename(columns={ci.input_name: ci.name}),
+                     df: _nvt_try_rename(df, ci.input_name, ci.name, ci.dtype),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
@@ -390,12 +411,18 @@ def _build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> 
     for col_info in column_info_objects:
         graph.add_node(col_info.name)
 
-        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn, IncrementColumn]:
+        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn]:
             # If col_info.name != col_info.input_name then we're creating a potential dependency
             if col_info.name != col_info.input_name:
                 dep_col_info = _find_dependent_column(col_info.input_name, col_info.name)
                 if dep_col_info:
                     # This CI is dependent on the dep_col_info CI
+                    graph.add_edge(dep_col_info.name, col_info.name)
+
+        elif col_info.__class__ in [IncrementColumn]:
+            for input_col_name in [col_info.input_name, col_info.groupby_column]:
+                dep_col_info = _find_dependent_column(input_col_name, col_info.name)
+                if (dep_col_info):
                     graph.add_edge(dep_col_info.name, col_info.name)
 
         elif col_info.__class__ == StringCatColumn:

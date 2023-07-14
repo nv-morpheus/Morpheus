@@ -44,7 +44,6 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                 file_type: FileTypes,
                                 filter_null: bool,
                                 parser_kwargs: dict) -> pd.DataFrame:
-
     retries = 0
     s3_df = None
     while (retries < 2):
@@ -124,7 +123,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Accepted input types."""
-        return (typing.Any, )
+        return (typing.Any,)
 
     def _get_or_create_dataframe_from_s3_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
