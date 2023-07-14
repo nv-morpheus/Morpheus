@@ -40,7 +40,7 @@ def dask_distributed(fail_missing: bool):
 @pytest.fixture(autouse=True, scope='session')
 def dask_cuda(fail_missing: bool):
     """
-    Mark tests requiring dat_cuda
+    Mark tests requiring dask_cuda
     """
     yield import_or_skip("dask_cuda", reason="Downloader requires dask_cuda", fail_missing=fail_missing)
 
@@ -101,7 +101,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
     assert downloader.get_dask_cluster() is mock_dask_cluster
 
     mock_dask_config.set.assert_called_once()
-    mock_dask_cluster.assert_called_once_with(start=True, processes=use_processes)
+    mock_dask_cluster.assert_called_once_with()
 
 
 @mock.patch('dask.config')

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import functools
 import os
 import typing
@@ -139,7 +140,19 @@ class MutateOp(Operator):
             Transformed dataframe.
         """
 
-        return self._func(col_selector, df)
+        df = self._func(col_selector, df)
+
+        # If our dataframe doesn't contain the expected output columns, even after processing, we add dummy columns.
+        # This could occur if our JSON data doesn't always contain columns we expect to be expanded.
+        df_cols_set = set(df.columns)
+        new_cols = {
+            col[0]: np.zeros(df.shape[0], dtype=col[1])
+            for col in self._output_columns if col[0] not in df_cols_set
+        }
+
+        df = df.assign(**new_cols)
+
+        return df
 
     def column_mapping(self, col_selector: ColumnSelector) -> typing.Dict[str, str]:
         """
