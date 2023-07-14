@@ -36,6 +36,14 @@ def dask_distributed(fail_missing: bool):
 
 
 @pytest.fixture(autouse=True, scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask_cuda", reason=SKIP_REASON, fail_missing=fail_missing)
+
+
+@pytest.fixture(autouse=True, scope='session')
 def mlflow(fail_missing: bool):
     """
     Mark tests requiring mlflow

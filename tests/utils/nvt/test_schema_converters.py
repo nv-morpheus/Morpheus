@@ -158,7 +158,7 @@ def test_get_ci_column_selector_increment_column():
                                dtype="datetime64[ns]",
                                groupby_column="groupby_col")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["groupby_col", "original_name"]
 
 
 def test_get_ci_column_selector_string_cat_column():
