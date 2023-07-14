@@ -84,7 +84,7 @@ def test_dataframe_input_schema_with_json_cols():
                             "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason2"),
+        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
     ]
 
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
