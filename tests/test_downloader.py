@@ -37,6 +37,14 @@ def dask_distributed(fail_missing: bool):
                          fail_missing=fail_missing)
 
 
+@pytest.fixture(autouse=True, scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dat_cuda
+    """
+    yield import_or_skip("dask_cuda", reason="Downloader requires dask_cuda", fail_missing=fail_missing)
+
+
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize('use_env', [True, False])
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
@@ -83,7 +91,7 @@ def test_constructor_invalid_dltype(use_env: bool):
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize('dl_method,use_processes', [("dask", True), ("dask_thread", False)])
 @mock.patch('dask.config')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
                           mock_dask_config: mock.MagicMock,
                           dl_method: str,
@@ -97,7 +105,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
 
 
 @mock.patch('dask.config')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 @pytest.mark.parametrize('dl_method', ["dask", "dask_thread"])
 def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -111,7 +119,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
     mock_dask_cluster.close.assert_called_once()
 
 
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])
 def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -129,7 +137,7 @@ def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 def test_download(mock_dask_cluster: mock.MagicMock,
                   mock_dask_client: mock.MagicMock,
                   mock_dask_config: mock.MagicMock,

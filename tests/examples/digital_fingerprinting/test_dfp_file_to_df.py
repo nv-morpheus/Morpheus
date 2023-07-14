@@ -102,7 +102,7 @@ def test_constructor(config: Config):
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.MagicMock,
                                                           mock_dask_cluster: mock.MagicMock,
@@ -198,7 +198,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
@@ -266,7 +266,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
-@mock.patch('dask.distributed.LocalCluster')
+@mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
