@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cudf
+import pandas as pd
 import typing
 from inspect import getsourcelines
 
@@ -125,7 +127,9 @@ class MutateOp(Operator):
             Transformed dataframe.
         """
 
-        return self._func(col_selector, df)
+        df = self._func(col_selector, df)
+
+        return df
 
     def column_mapping(self, col_selector: ColumnSelector) -> typing.Dict[str, str]:
         """
@@ -150,10 +154,10 @@ class MutateOp(Operator):
         return column_mapping
 
     def compute_output_schema(
-        self,
-        input_schema: Schema,
-        col_selector: ColumnSelector,
-        prev_output_schema: typing.Optional[Schema] = None,
+            self,
+            input_schema: Schema,
+            col_selector: ColumnSelector,
+            prev_output_schema: typing.Optional[Schema] = None,
     ) -> Schema:
         """
         Compute the output schema.
