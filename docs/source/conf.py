@@ -32,8 +32,13 @@ import os
 import sys
 import textwrap
 import warnings
+from unittest import mock
 
 import packaging
+
+# Prevent these from being called when morpheus.utils.schema_transforms is parsed
+mock.patch("morpheus.utils.nvt.extensions.morpheus_ext.register_morpheus_extensions").start()
+mock.patch("morpheus.utils.nvt.patches.patch_numpy_dtype_registry").start()
 
 # Ignore FutureWarnings coming from docutils remove this once we can upgrade to Sphinx 5.0
 # https://github.com/sphinx-doc/sphinx/issues/9777
