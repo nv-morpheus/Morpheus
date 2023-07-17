@@ -26,7 +26,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import importlib
 import os
 import sys
@@ -317,6 +317,29 @@ exclude_inherited_members = ('morpheus.models.dfencoder.dataframe.EncoderDataFra
 def process_docstrings(app, what, name, obj, options, lines):
     if what == "class" and name in exclude_inherited_members:
         options["inherited-members"] = False
+
+    if name == "morpheus.utils.nvt.mutate.MutateOp":
+        """
+        The MutateOp.transform method has a merlin decorator that is being mocked by sphinx. This work-around ensures
+        that the original function is documented, but not the version decorated by the mocked decorator.
+        """
+        cut_begin = None
+        cut_end = None
+        for (i, line) in enumerate(lines):
+            if line.startswith("**transform**"):
+                cut_begin = i
+                cut_end = i + 1
+
+                if cut_begin > 0 and lines[cut_begin - 1].startswith("==="):
+                    cut_begin -= 1
+
+                if cut_end < len(lines) - 1 and lines[cut_end].startswith("==="):
+                    cut_end += 1
+
+                break
+
+        if cut_begin is not None and cut_end is not None:
+            lines[:] = lines[:cut_begin] + lines[cut_end:]
 
 
 def setup(app):
