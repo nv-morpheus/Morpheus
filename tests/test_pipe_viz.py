@@ -19,6 +19,7 @@ import os
 
 import pytest
 
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -27,7 +28,6 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import assert_path_exists
-from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.use_cudf

@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 from mrc.core import operators as ops
 
+from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -34,7 +35,6 @@ from utils import TEST_DIRS
 from utils import assert_results
 from utils import write_data_to_kafka
 from utils import write_file_to_kafka
-from utils.stages.dfp_length_checker import DFPLengthChecker
 
 
 @pytest.mark.kafka
