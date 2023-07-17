@@ -61,12 +61,6 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                 logger.warning(f"Error fetching {file_object}: {e}\nRetrying...")
                 retries += 1
 
-    # Run the pre-processing before returning
-    if (s3_df is None):
-        return s3_df
-
-    s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
-
     return s3_df
 
 
@@ -174,6 +168,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             return None, False
 
         output_df: pd.DataFrame = pd.concat(dfs)
+        output_df = process_dataframe(df_in=output_df, input_schema=self._schema)
 
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)

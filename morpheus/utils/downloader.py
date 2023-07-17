@@ -122,24 +122,13 @@ class Downloader:
         import dask.distributed
 
         if (self._merlin_distributed is None):
-            self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()),
-                                                   n_workers=16)
+            self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
 
         return self._merlin_distributed
 
     def close(self):
         """Close the dask cluster if it exists."""
-        if (self._merlin_distributed is not None):
-            self._merlin_distributed.deactivate()
-
-        if (self._dask_cluster is not None):
-            logger.debug("Stopping dask cluster...")
-
-            self._dask_cluster.close()
-
-            self._dask_cluster = None
-
-            logger.debug("Stopping dask cluster... Done.")
+        pass
 
     def download(self,
                  download_buckets: fsspec.core.OpenFiles,
