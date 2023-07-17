@@ -20,7 +20,7 @@ from merlin.dag import ColumnSelector
 
 import cudf
 
-from morpheus.utils.nvt import MutateOp
+from morpheus.utils.nvt.mutate import MutateOp
 from morpheus.utils.nvt.transforms import json_flatten
 
 
