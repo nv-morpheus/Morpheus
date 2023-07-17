@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference import inference_stage
 
 
@@ -25,3 +29,6 @@ class IW(inference_stage.InferenceWorker):
         # Intentionally calling the abc empty method for coverage
         super().calc_output_dims(_)
         return (1, 2)
+
+    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
+        pass
