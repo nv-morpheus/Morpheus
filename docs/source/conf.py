@@ -171,7 +171,6 @@ autodoc_mock_imports = [
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "morpheus.utils.nvt.mutate.annotate",
     "nvtabular",
     "tensorrt",
     "torch",
