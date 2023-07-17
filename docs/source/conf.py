@@ -311,6 +311,7 @@ intersphinx_mapping = {
     "python": ('https://docs.python.org/', None), "scipy": ('https://docs.scipy.org/doc/scipy/reference', None)
 }
 
+# For classes that inherit from a third-party class, we want to exclude the inherited members from the documentation.
 exclude_inherited_members = ('morpheus.models.dfencoder.dataframe.EncoderDataFrame', )
 
 
@@ -319,10 +320,8 @@ def process_docstrings(app, what, name, obj, options, lines):
         options["inherited-members"] = False
 
     if name == "morpheus.utils.nvt.mutate.MutateOp":
-        """
-        The MutateOp.transform method has a merlin decorator that is being mocked by sphinx. This work-around ensures
-        that the original function is documented, but not the version decorated by the mocked decorator.
-        """
+        # The MutateOp.transform method has a merlin decorator that is being mocked by sphinx. This work-around ensures
+        # that the original function is documented, but not the version decorated by the mocked decorator.
         cut_begin = None
         cut_end = None
         for (i, line) in enumerate(lines):
