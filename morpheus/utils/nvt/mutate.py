@@ -12,15 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
+import os
 import typing
 from inspect import getsourcelines
 
 from merlin.core.dispatch import DataFrameType
-from merlin.core.dispatch import annotate
 from merlin.schema import ColumnSchema
 from merlin.schema import Schema
 from nvtabular.ops.operator import ColumnSelector
 from nvtabular.ops.operator import Operator
+
+# Avoid using the annotate decorator in sphinx builds, instead define a simple pass-through decorator
+if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
+    from merlin.core.dispatch import annotate  # pylint: disable=ungrouped-imports
+else:
+
+    def annotate(func, *args, **kwargs):  # pylint: disable=unused-argument
+
+        @functools.wraps(func)
+        def decorator(func):
+            return func
+
+        return decorator
 
 
 class MutateOp(Operator):

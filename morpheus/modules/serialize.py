@@ -47,11 +47,11 @@ def serialize(builder: mrc.Builder):
     -----
         Configurable Parameters:
             - columns (list[str]): List of columns to include; Example: `["column1", "column2", "column3"]`;
-            Default: None
+                Default: None
             - exclude (list[str]): List of regex patterns to exclude columns; Example: `["column_to_exclude"]`;
-            Default: `[r'^ID$', r'^_ts_']`
+                Default: `[r'^ID$', r'^_ts_']`
             - fixed_columns (bool): If true, the columns are fixed and not determined at runtime; Example: `true`;
-            Default: true
+                Default: true
             - include (str): Regex to include columns; Example: `^column`; Default: None
             - use_cpp (bool): If true, use C++ to serialize; Example: `true`; Default: false
     """
@@ -79,12 +79,12 @@ def serialize(builder: mrc.Builder):
             Columns that are required send to downstream stage.
         exclude_columns : typing.List[typing.Pattern]
             Columns that are not required send to downstream stage.
-
+        columns : typing.List[str]
+            Explicit list of columns to include, if not `None` and `fixed_columns` is `True`, then `include_columns`
+            and `exclude_columns` will be ignored.
         """
 
-        if fixed_columns and columns is not None:
-            columns = columns
-        else:
+        if (not fixed_columns or columns is None):
             columns: typing.List[str] = []
 
             # Minimize access to x.meta.df
@@ -100,8 +100,6 @@ def serialize(builder: mrc.Builder):
             for test in exclude_columns:
                 columns = [y for y in columns if not test.match(y)]
 
-            columns = columns
-
         # Get metadata from columns
         df = x.get_meta(columns)
 
@@ -111,7 +109,7 @@ def serialize(builder: mrc.Builder):
         return MessageMeta(df=df)
 
     if (include_columns is not None and len(include_columns) > 0):
-        include_columns = re.compile("({})".format("|".join(include_columns)))
+        include_columns = re.compile(f"({'|'.join(include_columns)})")
 
     exclude_columns = [re.compile(x) for x in exclude_columns]
 

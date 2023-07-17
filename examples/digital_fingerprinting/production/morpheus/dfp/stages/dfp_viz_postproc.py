@@ -49,12 +49,12 @@ class DFPVizPostprocStage(SinglePortStage):
          Prefix for output files.
     """
 
-    def __init__(self, c: Config, period: str = "D", output_dir: str = ".", output_prefix: str = "dfp-viz-"):
-        super().__init__(c)
+    def __init__(self, config: Config, period: str = "D", output_dir: str = ".", output_prefix: str = "dfp-viz-"):
+        super().__init__(config)
 
-        self._user_column_name = c.ae.userid_column_name
-        self._timestamp_column = c.ae.timestamp_column_name
-        self._feature_columns = c.ae.feature_columns
+        self._user_column_name = config.ae.userid_column_name
+        self._timestamp_column = config.ae.timestamp_column_name
+        self._feature_columns = config.ae.feature_columns
         self._period = period
         self._output_dir = output_dir
         self._output_prefix = output_prefix

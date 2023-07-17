@@ -21,6 +21,7 @@
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/table_info.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
@@ -36,6 +37,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {

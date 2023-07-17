@@ -44,7 +44,7 @@ More information can be found at: [Contributor Code of Conduct](https://github.c
 
 1. Find an issue to work on. The best way is to search for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
-3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
+3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#licensing).
 4. When done, [create your pull request](https://github.com/nv-morpheus/Morpheus/compare).
 5. Wait for other developers to review your code and update code as needed.
 6. Once reviewed and approved, a Morpheus developer will merge your pull request.
@@ -91,7 +91,7 @@ git submodule update --init --recursive
 
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
-By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Refer to the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Refer to the section [Git LFS](../getting_started.md#git-lfs) of the [getting_started.md](../getting_started.md) guide for details on this.
 
 ### Build in Docker Container
 
@@ -99,7 +99,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
 
 #### Prerequisites
 
-1. Ensure all [requirements](README.md#requirements) from [README.md](README.md) are met.
+1. Ensure all [requirements](../getting_started.md#requirements) from [getting_started.md](../getting_started.md) are met.
 1. Build the development container
    ```bash
    ./docker/build_container_dev.sh
@@ -159,7 +159,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    pip install -e /workspace
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-5. [Run Morpheus](./README.md#running-morpheus)
+5. [Run Morpheus](../getting_started.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
@@ -258,10 +258,11 @@ git submodule update --init --recursive
 
 Launching a full production Kafka cluster is outside the scope of this project; however, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. Refer to [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
 
-1. Install `docker-compose` if not already installed:
+1. Install `docker-compose-plugin` if not already installed:
 
    ```bash
-   conda install -c conda-forge docker-compose
+   apt-get update
+   apt-get install docker-compose-plugin
    ```
 2. Clone the `kafka-docker` repo from the Morpheus repo root:
 
@@ -300,7 +301,7 @@ Launching a full production Kafka cluster is outside the scope of this project; 
 6. Launch kafka with 3 instances:
 
    ```bash
-   docker-compose up -d --scale kafka=3
+   docker compose up -d --scale kafka=3
    ```
    In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell

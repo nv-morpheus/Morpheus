@@ -74,6 +74,18 @@ bool ControlMessage::has_task(const std::string& task_type) const
     return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
 }
 
+const nlohmann::json ControlMessage::list_metadata() const
+{
+    nlohmann::json key_list = nlohmann::json::array();
+
+    for (auto it = m_config["metadata"].begin(); it != m_config["metadata"].end(); ++it)
+    {
+        key_list.push_back(it.key());
+    }
+
+    return key_list;
+}
+
 void ControlMessage::set_metadata(const std::string& key, const nlohmann::json& value)
 {
     if (m_config["metadata"].contains(key))
@@ -213,6 +225,13 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self, const std::st
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)
 {
     self.set_metadata(key, mrc::pymrc::cast_from_pyobject(value));
+}
+
+py::dict ControlMessageProxy::list_metadata(ControlMessage& self)
+{
+    auto dict = mrc::pymrc::cast_from_json(self.list_metadata());
+
+    return dict;
 }
 
 void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
