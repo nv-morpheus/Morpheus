@@ -25,13 +25,13 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
-from utils import TEST_DIRS
 
 
 def build_response_mem(messages_mod, log_test_data_dir: str):

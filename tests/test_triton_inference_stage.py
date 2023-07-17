@@ -23,6 +23,7 @@ import pytest
 
 import cudf
 
+from _utils import assert_results
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -34,7 +35,6 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
-from utils import assert_results
 
 MODEL_MAX_BATCH_SIZE = 1024
 

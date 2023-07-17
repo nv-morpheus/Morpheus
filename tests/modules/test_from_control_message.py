@@ -23,6 +23,7 @@ import pytest
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
 import morpheus.loaders  # noqa: F401
 import morpheus.modules  # noqa: F401
+from _utils import TEST_DIRS
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
@@ -31,7 +32,6 @@ from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FROM_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from utils import TEST_DIRS
 
 
 @pytest.fixture(scope="function")

@@ -19,10 +19,10 @@ import typing
 
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 def test_constructor(config: Config):

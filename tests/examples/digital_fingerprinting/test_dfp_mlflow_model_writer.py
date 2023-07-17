@@ -21,11 +21,11 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
 MockedMLFlow = namedtuple("MockedMLFlow",

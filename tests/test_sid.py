@@ -21,6 +21,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import compare_class_to_scores
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -34,9 +37,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from utils import TEST_DIRS
-from utils import calc_error_val
-from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256

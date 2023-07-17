@@ -21,15 +21,15 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from utils import TEST_DIRS
-from utils import assert_results
-from utils.dataset_manager import DatasetManager
 
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32

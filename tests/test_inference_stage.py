@@ -22,6 +22,7 @@ import pytest
 
 import cudf
 
+from _utils.inference_worker import IW
 from morpheus.messages import ResponseMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -29,7 +30,6 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
-from utils.inference_worker import IW
 
 
 class InferenceStageT(InferenceStage):

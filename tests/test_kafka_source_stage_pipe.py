@@ -22,6 +22,10 @@ import pandas as pd
 import pytest
 from mrc.core import operators as ops
 
+from _utils import TEST_DIRS
+from _utils import assert_results
+from _utils import write_data_to_kafka
+from _utils import write_file_to_kafka
 from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -31,10 +35,6 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import assert_results
-from utils import write_data_to_kafka
-from utils import write_file_to_kafka
 
 
 @pytest.mark.kafka

@@ -22,10 +22,10 @@ from datetime import timezone
 import fsspec
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.file_utils import date_extractor
-from utils import TEST_DIRS
 
 
 def test_constructor(config: Config):

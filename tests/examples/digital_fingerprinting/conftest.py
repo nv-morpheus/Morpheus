@@ -19,8 +19,8 @@ from unittest import mock
 
 import pytest
 
-from utils import TEST_DIRS
-from utils import import_or_skip
+from _utils import TEST_DIRS
+from _utils import import_or_skip
 
 SKIP_REASON = (
     "Tests for the digital_fingerprinting production example requires a number of packages not installed in the "

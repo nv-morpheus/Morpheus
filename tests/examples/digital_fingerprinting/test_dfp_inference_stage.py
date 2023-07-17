@@ -19,10 +19,10 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(autouse=True)

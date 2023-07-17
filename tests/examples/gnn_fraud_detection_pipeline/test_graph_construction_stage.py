@@ -23,10 +23,10 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python

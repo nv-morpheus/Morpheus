@@ -19,6 +19,7 @@ import typing
 import pandas as pd
 import pytest
 
+from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -29,7 +30,6 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
 
 
 def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List[str]):

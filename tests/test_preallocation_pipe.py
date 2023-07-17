@@ -22,6 +22,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
@@ -36,7 +37,6 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
 
 
 class CheckPreAlloc(SinglePortStage):

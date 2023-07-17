@@ -22,11 +22,11 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
 
 
 def _check_pass_thru(config: Config,

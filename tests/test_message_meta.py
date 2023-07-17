@@ -22,9 +22,9 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
 from morpheus.messages.message_meta import MessageMeta
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(name="index_type", scope="function", params=["normal", "skip", "dup", "down", "updown"])

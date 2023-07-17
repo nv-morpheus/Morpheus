@@ -20,6 +20,9 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import compare_class_to_scores
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -39,9 +42,6 @@ from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.utils.file_utils import load_labels_file
-from utils import TEST_DIRS
-from utils import calc_error_val
-from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the ABP validation test
 FEATURE_LENGTH = 29

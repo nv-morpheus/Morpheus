@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from utils import TEST_DIRS
 
 INFERENCE_START_DATE = "2022-11-01"
 VALIDATION_SET_SIZE = 3000  # around 1/10 of the train set

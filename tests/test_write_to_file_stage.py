@@ -19,10 +19,10 @@ from unittest import mock
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python

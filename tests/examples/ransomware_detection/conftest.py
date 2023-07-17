@@ -19,8 +19,8 @@ import sys
 import pytest
 import yaml
 
-from utils import TEST_DIRS
-from utils import import_or_skip
+from _utils import TEST_DIRS
+from _utils import import_or_skip
 
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `examples/ransomware_detection/README.md` "

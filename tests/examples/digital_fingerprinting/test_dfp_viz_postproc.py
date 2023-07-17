@@ -18,9 +18,9 @@ import os
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture
