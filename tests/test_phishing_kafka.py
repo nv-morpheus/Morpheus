@@ -24,6 +24,7 @@ import pandas
 import pytest
 
 from _utils import TEST_DIRS
+from _utils import mk_async_infer
 from _utils import write_file_to_kafka
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -80,11 +81,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_phishing_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 

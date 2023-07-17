@@ -23,6 +23,7 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import assert_results
+from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
@@ -118,12 +119,7 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
         data = np.load(os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing/triton_results.npy'))
         inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-        mock_infer_result = mock.MagicMock()
-        mock_infer_result.as_numpy.side_effect = inf_results
-
-        def async_infer(callback=None, **k):
-            callback(mock_infer_result, None)
-
+        async_infer = mk_async_infer(inf_results)
         mock_triton_client.async_infer.side_effect = async_infer
 
         return _run_pipeline(config, dataset_cudf, import_mod)
