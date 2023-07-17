@@ -18,6 +18,7 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
+# pylint: disable=unused-import
 import modules.multiplexer  # noqa: F401
 from _utils.dataset_manager import DatasetManager
 from morpheus.pipeline.pipeline import Pipeline

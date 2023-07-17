@@ -128,7 +128,7 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
@@ -198,7 +198,7 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)

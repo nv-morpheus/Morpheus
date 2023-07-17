@@ -31,8 +31,8 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.use_cudf
-@pytest.fixture(scope="function")
-def viz_pipeline(config, filter_probs_df):
+@pytest.fixture(name="viz_pipeline", scope="function")
+def viz_pipeline_fixture(config, filter_probs_df):
     """
     Creates a quick pipeline.
     """
@@ -44,7 +44,7 @@ def viz_pipeline(config, filter_probs_df):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_stage(InMemorySinkStage(config))
 
     return pipe

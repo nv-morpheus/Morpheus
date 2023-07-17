@@ -146,6 +146,10 @@ def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     _test_get_meta(filter_probs_df)
 
 
+# Ignore unused arguments warnigns due to using the `use_cpp` fixture
+# pylint:disable=unused-argument
+
+
 def test_get_meta_dup_index(use_cpp: bool, dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
@@ -262,9 +266,9 @@ def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
 def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     meta = MessageMeta(df)
 
-    mm = MultiMessage(meta=meta)
+    mm1 = MultiMessage(meta=meta)
 
-    mm2 = mm.copy_ranges([(2, 6)])
+    mm2 = mm1.copy_ranges([(2, 6)])
     assert len(mm2.meta.df) == 4
     assert mm2.meta.count == 4
     assert len(mm2.get_meta()) == 4
@@ -275,7 +279,7 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     DatasetManager.assert_df_equal(mm2.get_meta(), df.iloc[2:6])
 
     # slice two different ranges of rows
-    mm3 = mm.copy_ranges([(2, 6), (12, 15)])
+    mm3 = mm1.copy_ranges([(2, 6), (12, 15)])
     assert len(mm3.meta.df) == 7
     assert mm3.meta.count == 7
     assert len(mm3.get_meta()) == 7
@@ -714,8 +718,8 @@ def test_tensor_slicing(use_cpp: bool, dataset: DatasetManager):
     probs = cp.random.rand(tensor_count, 2)
     seq_ids = cp.zeros((tensor_count, 3), dtype=cp.int32)
 
-    for i, r in enumerate(repeat_counts):
-        seq_ids[sum(repeat_counts[:i]):sum(repeat_counts[:i]) + r] = cp.ones((r, 3), int) * i
+    for i, repeat_count in enumerate(repeat_counts):
+        seq_ids[sum(repeat_counts[:i]):sum(repeat_counts[:i]) + repeat_count] = cp.ones((repeat_count, 3), int) * i
 
     # First with no offsets
     memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
