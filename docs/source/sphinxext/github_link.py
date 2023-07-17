@@ -24,7 +24,6 @@ import subprocess
 import sys
 from functools import partial
 from operator import attrgetter
-from unittest.mock import Mock
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
     # Note: objects mocked by autodoc_mock_imports will raise an exception when we try to unwrap them
     try:
         obj = inspect.unwrap(obj)
-    except:
+    except:  # noqa: E722
         return
 
     fn: str = None
