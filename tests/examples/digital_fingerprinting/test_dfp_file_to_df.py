@@ -142,13 +142,13 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_obf_to_df: mock.M
     # We're going to feed the function a file object pointing to a different file than the one we are going to return
     # from out mocked fetch function. This way we will be able to easily tell if our mocks are working. Mostly we just
     # want to make sure that we aren't accidentally spinning up dask clusters or process pools in CI
-    returnd_df = dataset_pandas['filter_probs.csv']
+    returned_df = dataset_pandas['filter_probs.csv']
     if dl_type.startswith('dask'):
-        mock_dask_client.gather.return_value = [returnd_df]
+        mock_dask_client.gather.return_value = [returned_df]
     elif dl_type in ("multiprocess", "multiprocessing"):
-        mock_mp_pool.map.return_value = [returnd_df]
+        mock_mp_pool.map.return_value = [returned_df]
     else:
-        mock_obf_to_df.return_value = returnd_df
+        mock_obf_to_df.return_value = returned_df
 
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)

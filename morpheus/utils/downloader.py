@@ -130,7 +130,7 @@ class Downloader:
         return self._merlin_distributed
 
     def close(self):
-        """Close the dask cluster if it exists."""
+        """Cluster management is handled by Merlin.Distributed"""
         pass
 
     def download(self,
