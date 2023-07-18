@@ -28,7 +28,7 @@ More advanced users, or those who are interested in using the latest pre-release
 
 ## Requirements
 - Pascal architecture GPU or better
-- NVIDIA driver `450.80.02` or higher
+- NVIDIA driver `460.27.03` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
