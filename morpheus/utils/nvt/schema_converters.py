@@ -60,48 +60,6 @@ class JSONFlattenInfo(ColumnInfo):
     output_col_names: list
 
 
-def _resolve_input_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
-    column_info_objects = input_schema.column_info
-
-    input_columns = []
-    for col_info in column_info_objects:
-        input_columns.append((col_info.name, col_info.dtype))
-        if (hasattr(col_info, 'input_name')):
-            input_columns.append((col_info.input_name, col_info.dtype))
-        if (hasattr(col_info, 'input_columns')):
-            for col_name in col_info.input_columns:
-                input_columns.append((col_name, col_info.dtype))
-
-    return input_columns
-
-
-def _resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
-    """
-    Resolves JSON output columns from an input schema.
-
-    Parameters
-    ----------
-    input_schema : DataFrameInputSchema
-        The input schema to resolve the JSON output columns from.
-
-    Returns
-    -------
-    list of tuples
-        A list of tuples where each tuple is a pair of column name and its data type.
-    """
-
-    json_output_candidates = _resolve_input_columns(input_schema)
-
-    output_cols = []
-    json_cols = input_schema.json_columns
-    for col in json_output_candidates:
-        cnsplit = col[0].split('.')
-        if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
-            output_cols.append(col)
-
-    return output_cols
-
-
 def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
     """
     Return a column selector based on a ColumnInfo object.
@@ -304,17 +262,11 @@ def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str,
     return pd.Series(None, index=df.index, dtype=dtype)
 
 
-def bool_conversion(ci, series):
-    result = series.map(ci.value_map).astype(bool)
-
-    return result
-
-
 # Mappings from ColumnInfo types to functions that create the corresponding NVT operator
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-        deps: [LambdaOp(lambda series: bool_conversion(ci, series), dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
+        deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
     ColumnInfo:
         lambda ci,
         deps: [
