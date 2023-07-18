@@ -61,12 +61,6 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                 logger.warning(f"Error fetching {file_object}: {e}\nRetrying...")
                 retries += 1
 
-    # Run the pre-processing before returning
-    if (s3_df is None):
-        return s3_df
-
-    s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
-
     return s3_df
 
 
@@ -123,7 +117,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Accepted input types."""
-        return (typing.Any,)
+        return (typing.Any, )
 
     def _get_or_create_dataframe_from_s3_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
@@ -137,7 +131,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         fs: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
-        # hashes all of the output of `info()` which is perfect
+        # hashes all the output of `info()` which is perfect
         hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
@@ -174,6 +168,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             return None, False
 
         output_df: pd.DataFrame = pd.concat(dfs)
+        output_df = process_dataframe(df_in=output_df, input_schema=self._schema)
 
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)
@@ -206,11 +201,11 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
+            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
                          len(output_df),
                          "hit" if cache_hit else "miss",
-                         duration)
-
+                         duration,
+                         len(output_df) / (duration / 1000.0))
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")

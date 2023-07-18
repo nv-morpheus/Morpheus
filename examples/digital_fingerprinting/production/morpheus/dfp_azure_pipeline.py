@@ -61,6 +61,7 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 
 @click.command()
@@ -231,6 +232,7 @@ def run_pipeline(train_users,
     ]
 
     source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
+    source_schema = create_and_attach_nvt_workflow(source_schema)
 
     # Preprocessing schema
     preprocess_column_info = [
@@ -263,6 +265,7 @@ def run_pipeline(train_users,
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    preprocess_schema = create_and_attach_nvt_workflow(preprocess_schema)
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)

@@ -18,6 +18,7 @@ import re
 import typing
 from datetime import datetime
 
+import nvtabular as nvt
 import pandas as pd
 
 import cudf
@@ -494,6 +495,17 @@ class DataFrameInputSchema:
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
     preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
+    json_output_columns: typing.List[str] = None
+    _nvt_workflow: nvt.Workflow = None
+    _json_preproc: typing.Callable[[pd.DataFrame], typing.List[str]] = None
+
+    @property
+    def nvt_workflow(self):
+        return self._nvt_workflow
+
+    @property
+    def json_preproc(self):
+        return self._json_preproc
 
     def __post_init__(self):
         """

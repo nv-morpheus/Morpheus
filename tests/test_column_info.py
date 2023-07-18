@@ -33,7 +33,7 @@ from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
 from utils import TEST_DIRS
 
@@ -99,7 +99,7 @@ def test_dataframe_input_schema_with_json_cols():
     assert "time" not in processed_df_cols
     assert "properties.userPrincipalName" not in processed_df_cols
 
-    nvt_workflow = dataframe_input_schema_to_nvt_workflow(schema)
+    nvt_workflow = create_and_attach_nvt_workflow(schema)
     df_processed_workflow = process_dataframe(input_df, nvt_workflow)
     assert df_processed_schema.equals(df_processed_workflow)
 

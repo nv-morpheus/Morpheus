@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import dataclasses
+import json
 import os
 import re
 import typing
@@ -564,8 +565,37 @@ def _coalesce_ops(graph: nx.Graph,
     return coalesced_workflow
 
 
-def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema,
-                                           visualize: typing.Optional[bool] = False) -> nvt.Workflow:
+def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], json_cols, preserve_re=None):
+    convert_to_cudf = False
+    if (isinstance(df_input, cudf.DataFrame)):
+        convert_to_cudf = True
+        df_input = df_input.to_pandas()
+
+    json_normalized = []
+    cols_to_keep = list(df_input.columns)
+    for col in json_cols:
+        pd_series = df_input[col]
+        pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
+
+        pdf_norm = pd.json_normalize(pd_series)
+        pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
+        pdf_norm.reset_index(drop=True, inplace=True)
+
+        json_normalized.append(pdf_norm)
+        if (preserve_re is not None and not preserve_re.match(col)):
+            cols_to_keep.remove(col)
+
+    df_input.reset_index(drop=True, inplace=True)
+    df_normalized = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
+
+    if (convert_to_cudf):
+        df_normalized = cudf.from_pandas(df_normalized).reset_index(drop=True)
+
+    return df_normalized
+
+
+def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
+                                   visualize: typing.Optional[bool] = False) -> DataFrameInputSchema:
     """
     Converts an `input_schema` to a `nvt.Workflow` object.
 
@@ -600,17 +630,22 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema,
         raise ValueError("Input schema is empty")
 
     # Try to guess which output columns we'll produce
-    json_output_cols = _resolve_json_output_columns(input_schema)
 
     json_cols = input_schema.json_columns
-    column_info_objects = list(input_schema.column_info)
     if (json_cols is not None and len(json_cols) > 0):
-        column_info_objects.append(
-            JSONFlattenInfo(input_col_names=list(json_cols),
-                            output_col_names=json_output_cols,
-                            dtype="str",
-                            name="json_info"))
+        input_schema.json_output_columns = _resolve_json_output_columns(input_schema)
+        input_schema._json_preproc = partial(_json_flatten,
+                                             json_cols=json_cols,
+                                             preserve_re=input_schema.preserve_columns)
 
+    # Note(Devin): soft locking problem with nvt operators, skip for now.
+    #    column_info_objects.append(
+    #        JSONFlattenInfo(input_col_names=list(json_cols),
+    #                        output_col_names=json_output_cols,
+    #                        dtype="str",
+    #                        name="json_info"))
+
+    column_info_objects = list(input_schema.column_info)
     column_info_map = {ci.name: ci for ci in column_info_objects}
 
     graph = _build_nx_dependency_graph(column_info_objects)
@@ -629,4 +664,6 @@ def dataframe_input_schema_to_nvt_workflow(input_schema: DataFrameInputSchema,
     if (visualize):
         coalesced_workflow.graph.render(view=True, format='svg')
 
-    return nvt.Workflow(coalesced_workflow)
+    input_schema._nvt_workflow = nvt.Workflow(coalesced_workflow)
+
+    return input_schema

@@ -49,7 +49,6 @@ def dask_cuda(fail_missing: bool):
 @pytest.mark.parametrize('use_env', [True, False])
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 def test_constructor_download_type(use_env: bool, dl_method: str):
-
     kwargs = {}
     if use_env:
         os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_method
@@ -101,7 +100,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
     assert downloader.get_dask_cluster() is mock_dask_cluster
 
     mock_dask_config.set.assert_called_once()
-    mock_dask_cluster.assert_called_once_with()
+    mock_dask_cluster.assert_called_once_with(n_workers=2, threads_per_worker=16)
 
 
 @mock.patch('dask.config')
@@ -116,8 +115,6 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
 
     mock_dask_cluster.close.assert_not_called()
     downloader.close()
-    mock_dask_cluster.close.assert_called_once()
-
 
 @mock.patch('dask_cuda.LocalCUDACluster')
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])

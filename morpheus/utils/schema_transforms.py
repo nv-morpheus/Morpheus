@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import typing
@@ -24,7 +25,7 @@ import cudf
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.nvt import register_morpheus_extensions
 from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
-from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
     # Apply patches to NVT
@@ -64,41 +65,57 @@ def process_dataframe(
     """
     Applies column transformations to the input dataframe as defined by the `input_schema`.
 
+    If `input_schema` is an instance of `DataFrameInputSchema`, and it has a 'json_preproc' attribute,
+    the function will first flatten the JSON columns and concatenate the results with the original DataFrame.
+
     Parameters
     ----------
     df_in : Union[pd.DataFrame, cudf.DataFrame]
         The input DataFrame to process.
     input_schema : Union[nvt.Workflow, DataFrameInputSchema]
+        Defines the transformations to apply to 'df_in'.
         If an instance of nvt.Workflow, it is directly used to transform the dataframe.
-        If an instance of DataFrameInputSchema, it is converted to a nvt.Workflow before being used.
+        If an instance of DataFrameInputSchema, it is first converted to an nvt.Workflow,
+        with JSON columns preprocessed if 'json_preproc' attribute is present.
 
     Returns
     -------
     Union[pd.DataFrame, cudf.DataFrame]
-        The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is pd.DataFrame.
-        Otherwise, it is cudf.DataFrame.
-    """
+        The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is also pd.DataFrame,
+        otherwise, it is cudf.DataFrame.
 
-    workflow = input_schema
-    if (isinstance(input_schema, DataFrameInputSchema)):
-        workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
+    Note
+    ----
+    Any transformation that needs to be performed should be defined in 'input_schema'.
+    If 'df_in' is a pandas DataFrame, it is temporarily converted into a cudf DataFrame for the transformation.
+    """
 
     convert_to_pd = False
     if (isinstance(df_in, pd.DataFrame)):
         convert_to_pd = True
 
-        # for col in df_in.columns:
-        #     print(df_in[col].dtype)
-        #     if df_in[col].dtype == "datetime":
-        #         df_in[col].dt.tz_localize(None)
+    # If we're given an nvt_schema, we just use it.
+    nvt_workflow = input_schema
+    if (isinstance(input_schema, DataFrameInputSchema)):
+        if (input_schema.nvt_workflow is None):
+            input_schema = create_and_attach_nvt_workflow(input_schema)
 
+        # Note(Devin): pre-flatten to avoid Dask hang when calling json_normalize within an NVT operator
+        if (input_schema.json_preproc is not None):
+            df_in = input_schema.json_preproc(df_in)
+
+        input_schema.json_columns = None
+
+        nvt_workflow = input_schema.nvt_workflow
+
+    if (convert_to_pd):
         df_in = cudf.DataFrame(df_in)
 
     dataset = nvt.Dataset(df_in)
 
-    result = workflow.fit_transform(dataset).to_ddf().compute()
+    df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
 
     if (convert_to_pd):
-        return result.to_pandas()
+        return df_result.to_pandas()
 
-    return result
+    return df_result
