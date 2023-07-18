@@ -46,17 +46,17 @@ class TestGraphConstructionStage:
     def _check_graph(
             self,
             stellargraph: types.ModuleType,
-            sg: "stellargraph.StellarGraph",  # noqa: F821
+            graph: "stellargraph.StellarGraph",  # noqa: F821
             expected_nodes,
             expected_edges):
-        assert isinstance(sg, stellargraph.StellarGraph)
-        sg.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
-        assert not sg.is_directed()
+        assert isinstance(graph, stellargraph.StellarGraph)
+        graph.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
+        assert not graph.is_directed()
 
-        nodes = sg.nodes()
+        nodes = graph.nodes()
         assert set(nodes) == expected_nodes
 
-        edges = sg.edges()
+        edges = graph.edges()
         assert set(edges) == expected_edges
 
     def test_graph_construction(self,
@@ -70,7 +70,7 @@ class TestGraphConstructionStage:
         merchant_features = pd.DataFrame({0: 1}, index=test_data['merchant_data'])
 
         # Call _graph_construction
-        sg = graph_construction_stage.FraudGraphConstructionStage._graph_construction(
+        graph = graph_construction_stage.FraudGraphConstructionStage._graph_construction(
             nodes={
                 'client': df.client_node, 'merchant': df.merchant_node, 'transaction': df.index
             },
@@ -84,15 +84,15 @@ class TestGraphConstructionStage:
                 "merchant": merchant_features
             })
 
-        self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
+        self._check_graph(stellargraph, graph, test_data['expected_nodes'], test_data['expected_edges'])
 
     def test_build_graph_features(self,
                                   import_mod: typing.List[types.ModuleType],
                                   stellargraph: types.ModuleType,
                                   test_data: dict):
         graph_construction_stage = import_mod[0]
-        sg = graph_construction_stage.FraudGraphConstructionStage._build_graph_features(test_data['df'])
-        self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
+        graph = graph_construction_stage.FraudGraphConstructionStage._build_graph_features(test_data['df'])
+        self._check_graph(stellargraph, graph, test_data['expected_nodes'], test_data['expected_edges'])
 
     def test_process_message(self,
                              config: Config,
@@ -108,8 +108,8 @@ class TestGraphConstructionStage:
 
         # Since we used the first 5 rows as the training data, send the second 5 as inference data
         meta = MessageMeta(cudf.DataFrame(df))
-        mm = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
-        fgmm = stage._process_message(mm)
+        multi_mesg = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
+        fgmm = stage._process_message(multi_mesg)
 
         assert isinstance(fgmm, graph_construction_stage.FraudGraphMultiMessage)
         assert fgmm.meta is meta
