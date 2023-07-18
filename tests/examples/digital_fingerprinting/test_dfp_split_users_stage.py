@@ -76,8 +76,8 @@ def test_extract_users(config: Config,
     expected_data = {}
     with open(input_file, encoding='UTF-8') as fh:
         for line in fh:
-            d = json.loads(line)
-            user_id = d['From']
+            json_data = json.loads(line)
+            user_id = json_data['From']
             if user_id in skip_users:
                 continue
 
@@ -85,10 +85,10 @@ def test_extract_users(config: Config,
                 continue
 
             if include_generic:
-                all_data.append(d)
+                all_data.append(json_data)
 
             if include_individual:
-                expected_data[user_id] = [d]
+                expected_data[user_id] = [json_data]
 
     if include_generic:
         expected_data[config.ae.fallback_username] = all_data

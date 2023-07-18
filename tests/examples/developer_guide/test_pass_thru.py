@@ -29,15 +29,13 @@ from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-def _check_pass_thru(config: Config,
-                     filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     PassThruStageCls: SinglePortStage):
-    stage = PassThruStageCls(config)
+def _check_pass_thru(config: Config, filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame], cls: SinglePortStage):
+    stage = cls(config)
 
     meta = MessageMeta(filter_probs_df)
-    mm = MultiMessage(meta=meta)
+    multi_mesg = MultiMessage(meta=meta)
 
-    assert stage.on_data(mm) is mm
+    assert stage.on_data(multi_mesg) is multi_mesg
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])

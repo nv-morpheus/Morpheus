@@ -84,7 +84,7 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
         mock_train_test_split.assert_called_once()
         assert len(mock_train_test_split.call_args.args) == 1
         dataset_pandas.assert_compare_df(mock_train_test_split.call_args.args[0], train_df)
-        mock_train_test_split.call_args.kwargs == {'test_size': validation_size, 'shuffle': False}
+        assert mock_train_test_split.call_args.kwargs == {'test_size': validation_size, 'shuffle': False}
     else:
         expected_run_validation = False
         expected_val_data = None
@@ -94,7 +94,7 @@ def test_on_data(mock_train_test_split: mock.MagicMock,
 
     assert len(mock_ae.fit.call_args.args) == 1
     dataset_pandas.assert_compare_df(mock_ae.fit.call_args.args[0], train_df)
-    mock_ae.fit.call_args.kwargs == {
+    assert mock_ae.fit.call_args.kwargs == {
         'epochs': stage._epochs, 'val_data': expected_val_data, 'run_validation': expected_run_validation
     }
 

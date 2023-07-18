@@ -25,15 +25,15 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
 
 
-@pytest.fixture(autouse=True)
-def mock_mlflow_client():
+@pytest.fixture(name="mock_mlflow_client", autouse=True)
+def mock_mlflow_client_fixture():
     with mock.patch("dfp.stages.dfp_inference_stage.MlflowClient") as mock_mlflow_client:
         mock_mlflow_client.return_value = mock_mlflow_client
         yield mock_mlflow_client
 
 
-@pytest.fixture(autouse=True)
-def mock_model_manager():
+@pytest.fixture(name="mock_model_manager", autouse=True)
+def mock_model_manager_fixture():
     with mock.patch("dfp.stages.dfp_inference_stage.ModelManager") as mock_model_manager:
         mock_model_manager.return_value = mock_model_manager
         yield mock_model_manager
@@ -73,7 +73,7 @@ def test_get_model(config: Config, mock_mlflow_client: mock.MagicMock, mock_mode
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 def test_on_data(
         config: Config,
-        mock_mlflow_client: mock.MagicMock,
+        mock_mlflow_client: mock.MagicMock,  # pylint: disable=unused-argument
         mock_model_manager: mock.MagicMock,
         dfp_multi_message: "MultiDFPMessage",  # noqa: F821
         morpheus_log_level: int,
@@ -83,7 +83,7 @@ def test_on_data(
 
     set_log_level(morpheus_log_level)
 
-    expected_results = [i for i in range(1000, dfp_multi_message.mess_count + 1000)]
+    expected_results = list(range(1000, dfp_multi_message.mess_count + 1000))
 
     expected_df = dfp_multi_message.get_meta_dataframe().copy(deep=True)
     expected_df["results"] = expected_results
@@ -112,7 +112,7 @@ def test_on_data(
 @pytest.mark.parametrize("raise_error", [True, False])
 def test_on_data_get_model_error(
         config: Config,
-        mock_mlflow_client: mock.MagicMock,
+        mock_mlflow_client: mock.MagicMock,  # pylint: disable=unused-argument
         mock_model_manager: mock.MagicMock,
         dfp_multi_message: "MultiDFPMessage",  # noqa: F821
         raise_error: bool):
