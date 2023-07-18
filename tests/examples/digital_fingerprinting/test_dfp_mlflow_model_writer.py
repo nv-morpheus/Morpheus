@@ -285,10 +285,12 @@ def test_on_data(config: Config,
         "Batch size": 100,
         "Start Epoch": min_time,
         "End Epoch": max_time,
-        "Log Count": len(df)})
+        "Log Count": len(df)
+    })
 
-    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
-                                                     "embedding-test-embedding_dim": 102})
+    mock_mlflow.log_metrics.assert_called_once_with({
+        "embedding-test-num_embeddings": 101, "embedding-test-embedding_dim": 102
+    })
 
     mock_model.prepare_df.assert_called_once()
     mock_model.get_anomaly_score.assert_called_once()

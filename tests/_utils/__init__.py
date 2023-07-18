@@ -22,8 +22,8 @@ import types
 import typing
 from unittest import mock
 
-import pytest
 import numpy as np
+import pytest
 
 from morpheus.io.deserializers import read_file_to_df
 
