@@ -51,7 +51,14 @@ class TestPreprocessingRWStage:
         results = stage._sliding_window_offsets(ids, len(ids), window=window)
         assert results == [(0, 3), (1, 4), (2, 5), (3, 6), (4, 7), (7, 10)]
 
+    def test_sliding_window_non_consequtive(self, config: Config, rwd_conf: dict):
         # Non-consecutive ids don't create sliding windows
+        from stages.preprocessing import PreprocessingRWStage
+
+        stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=6)
+
+        window = 3
+        ids = [17, 19, 21, 23, 31, 33]
         assert stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window) == []
 
     def test_sliding_window_offsets_errors(self, config: Config, rwd_conf: dict):
