@@ -101,10 +101,8 @@ def process_dataframe(
             input_schema = create_and_attach_nvt_workflow(input_schema)
 
         # Note(Devin): pre-flatten to avoid Dask hang when calling json_normalize within an NVT operator
-        if (input_schema.json_preproc is not None):
-            df_in = input_schema.json_preproc(df_in)
-
-        input_schema.json_columns = None
+        if (input_schema.prep_dataframe is not None):
+            df_in = input_schema.prep_dataframe(df_in)
 
         nvt_workflow = input_schema.nvt_workflow
 
@@ -113,7 +111,10 @@ def process_dataframe(
 
     dataset = nvt.Dataset(df_in)
 
-    df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
+    if (nvt_workflow is not None):
+        df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
+    else:
+        df_result = df_in
 
     if (convert_to_pd):
         return df_result.to_pandas()

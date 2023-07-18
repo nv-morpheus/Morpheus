@@ -60,6 +60,21 @@ class JSONFlattenInfo(ColumnInfo):
     output_col_names: list
 
 
+def _resolve_input_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
+    column_info_objects = input_schema.column_info
+
+    input_columns = []
+    for col_info in column_info_objects:
+        input_columns.append((col_info.name, col_info.dtype))
+        if (hasattr(col_info, 'input_name')):
+            input_columns.append((col_info.input_name, col_info.dtype))
+        if (hasattr(col_info, 'input_columns')):
+            for col_name in col_info.input_columns:
+                input_columns.append((col_name, col_info.dtype))
+
+    return input_columns
+
+
 def _resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.List[typing.Tuple[str, str]]:
     """
     Resolves JSON output columns from an input schema.
@@ -75,16 +90,7 @@ def _resolve_json_output_columns(input_schema: DataFrameInputSchema) -> typing.L
         A list of tuples where each tuple is a pair of column name and its data type.
     """
 
-    column_info_objects = input_schema.column_info
-
-    json_output_candidates = []
-    for col_info in column_info_objects:
-        json_output_candidates.append((col_info.name, col_info.dtype))
-        if (hasattr(col_info, 'input_name')):
-            json_output_candidates.append((col_info.input_name, col_info.dtype))
-        if (hasattr(col_info, 'input_columns')):
-            for col_name in col_info.input_columns:
-                json_output_candidates.append((col_name, col_info.dtype))
+    json_output_candidates = _resolve_input_columns(input_schema)
 
     output_cols = []
     json_cols = input_schema.json_columns
@@ -298,14 +304,17 @@ def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str,
     return pd.Series(None, index=df.index, dtype=dtype)
 
 
+def bool_conversion(ci, series):
+    result = series.map(ci.value_map).astype(bool)
+
+    return result
+
+
 # Mappings from ColumnInfo types to functions that create the corresponding NVT operator
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-        deps: [
-            LambdaOp(
-                lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
-        ],
+        deps: [LambdaOp(lambda series: bool_conversion(ci, series), dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
     ColumnInfo:
         lambda ci,
         deps: [
@@ -565,35 +574,6 @@ def _coalesce_ops(graph: nx.Graph,
     return coalesced_workflow
 
 
-def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], json_cols, preserve_re=None):
-    convert_to_cudf = False
-    if (isinstance(df_input, cudf.DataFrame)):
-        convert_to_cudf = True
-        df_input = df_input.to_pandas()
-
-    json_normalized = []
-    cols_to_keep = list(df_input.columns)
-    for col in json_cols:
-        pd_series = df_input[col]
-        pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
-
-        pdf_norm = pd.json_normalize(pd_series)
-        pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
-        pdf_norm.reset_index(drop=True, inplace=True)
-
-        json_normalized.append(pdf_norm)
-        if (preserve_re is not None and not preserve_re.match(col)):
-            cols_to_keep.remove(col)
-
-    df_input.reset_index(drop=True, inplace=True)
-    df_normalized = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
-
-    if (convert_to_cudf):
-        df_normalized = cudf.from_pandas(df_normalized).reset_index(drop=True)
-
-    return df_normalized
-
-
 def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
                                    visualize: typing.Optional[bool] = False) -> DataFrameInputSchema:
     """
@@ -626,17 +606,12 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
     can be run in parallel and pass them the updated schema from the preprocessing steps.
     """
 
-    if (input_schema is None or len(input_schema.column_info) == 0):
-        raise ValueError("Input schema is empty")
-
-    # Try to guess which output columns we'll produce
-
-    json_cols = input_schema.json_columns
-    if (json_cols is not None and len(json_cols) > 0):
-        input_schema.json_output_columns = _resolve_json_output_columns(input_schema)
-        input_schema._json_preproc = partial(_json_flatten,
-                                             json_cols=json_cols,
-                                             preserve_re=input_schema.preserve_columns)
+    if (input_schema is None):
+        input_schema = DataFrameInputSchema()
+        return input_schema
+    elif (len(input_schema.column_info) == 0):
+        input_schema.nvt_workflow = None
+        return input_schema
 
     # Note(Devin): soft locking problem with nvt operators, skip for now.
     #    column_info_objects.append(
@@ -664,6 +639,6 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
     if (visualize):
         coalesced_workflow.graph.render(view=True, format='svg')
 
-    input_schema._nvt_workflow = nvt.Workflow(coalesced_workflow)
+    input_schema.nvt_workflow = nvt.Workflow(coalesced_workflow)
 
     return input_schema

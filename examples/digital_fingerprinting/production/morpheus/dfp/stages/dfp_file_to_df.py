@@ -163,7 +163,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             return None, False
 
-        if (not dfs):
+        if (dfs is None or len(dfs) == 0):
             logger.error("No logs were downloaded")
             return None, False
 
@@ -201,12 +201,13 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
-                         len(output_df),
-                         "hit" if cache_hit else "miss",
-                         duration,
-                         len(output_df) / (duration / 1000.0))
-            return output_df
+            if (output_df is not None):
+                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
+                             len(output_df),
+                             "hit" if cache_hit else "miss",
+                             duration,
+                             len(output_df) / (duration / 1000.0))
+                return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
             raise

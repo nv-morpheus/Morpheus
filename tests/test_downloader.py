@@ -116,6 +116,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
     mock_dask_cluster.close.assert_not_called()
     downloader.close()
 
+
 @mock.patch('dask_cuda.LocalCUDACluster')
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])
 def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
@@ -140,6 +141,7 @@ def test_download(mock_dask_cluster: mock.MagicMock,
                   mock_dask_config: mock.MagicMock,
                   mock_mp_gc: mock.MagicMock,
                   dl_method: str):
+    mock_dask_config.get = lambda key: 1.0 if (key == "distributed.comm.timesouts.connect") else None
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
     mock_dask_client.__enter__.return_value = mock_dask_client

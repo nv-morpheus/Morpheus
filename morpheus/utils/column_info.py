@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import dataclasses
+import json
 import logging
 import re
 import typing
 from datetime import datetime
+from functools import partial
 
 import nvtabular as nvt
 import pandas as pd
@@ -146,6 +148,11 @@ class ColumnInfo:
 
         return dtype.__name__
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.name: self.dtype}
+
     def get_pandas_dtype(self) -> str:
         """Return the pandas type string for the currently set `dtype`."""
 
@@ -226,6 +233,11 @@ class RenameColumn(ColumnInfo):
     """
     input_name: str
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.input_name: self.dtype}
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Rename the column and return it as a Series.
@@ -280,6 +292,11 @@ class BoolColumn(RenameColumn):
     true_values: dataclasses.InitVar[typing.List[str]] = None
     false_values: dataclasses.InitVar[typing.List[str]] = None
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.input_name: 'str'}
+
     def __post_init__(self,
                       true_value: str,
                       false_value: str,
@@ -327,6 +344,13 @@ class DateTimeColumn(RenameColumn):
         Convert the values in the column to datetime and return the result as a Series.
 
     """
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {self.input_name: ColumnInfo.convert_pandas_dtype(str)}
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
@@ -404,6 +428,11 @@ class StringCatColumn(ColumnInfo):
     input_columns: typing.List[str]
     sep: str
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {key: ColumnInfo.convert_pandas_dtype(str) for key in self.input_columns}
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Concatenate the values from the input columns and return the result as a Series.
@@ -447,6 +476,13 @@ class IncrementColumn(DateTimeColumn):
     groupby_column: str
     period: str = "D"
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {self.groupby_column: ColumnInfo.convert_pandas_dtype(datetime)}
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Count the unique occurrences and return the result as a Series.
@@ -466,6 +502,89 @@ class IncrementColumn(DateTimeColumn):
 
         # Create the `groupby_column`, per-period log count
         return df.groupby([self.groupby_column, period]).cumcount()
+
+
+def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], input_columns, json_cols, preserve_re=None):
+    if (json_cols is None or len(json_cols) == 0):
+        return df_input
+
+    if (not df_input.columns.intersection(json_cols).empty):
+        convert_to_cudf = False
+
+        if (isinstance(df_input, cudf.DataFrame)):
+            convert_to_cudf = True
+            df_input = df_input.to_pandas()
+
+        json_normalized = []
+        cols_to_keep = list(df_input.columns)
+        for col in json_cols:
+            if (col not in cols_to_keep):
+                continue
+
+            pd_series = df_input[col]
+            pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
+
+            pdf_norm = pd.json_normalize(pd_series)
+            pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
+            pdf_norm.reset_index(drop=True, inplace=True)
+
+            json_normalized.append(pdf_norm)
+            if (preserve_re is None or not preserve_re.match(col)):
+                cols_to_keep.remove(col)
+
+        df_input.reset_index(drop=True, inplace=True)
+        df_input = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
+
+        if (convert_to_cudf):
+            df_input = cudf.from_pandas(df_input).reset_index(drop=True)
+
+    df_input = df_input.reindex(columns=input_columns.keys(), fill_value=None)
+
+    df_input = df_input.astype(input_columns)
+
+    return df_input
+
+
+def _resolve_input_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
+    column_info_objects = input_schema.column_info
+
+    input_columns = []
+    for col_info in column_info_objects:
+        input_columns.append((col_info.name, col_info.dtype))
+        if (hasattr(col_info, 'input_name')):
+            input_columns.append((col_info.input_name, col_info.dtype))
+        if (hasattr(col_info, 'input_columns')):
+            for col_name in col_info.input_columns:
+                input_columns.append((col_name, col_info.dtype))
+
+    return input_columns
+
+
+def _resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
+    """
+    Resolves JSON output columns from an input schema.
+
+    Parameters
+    ----------
+    input_schema : DataFrameInputSchema
+        The input schema to resolve the JSON output columns from.
+
+    Returns
+    -------
+    list of tuples
+        A list of tuples where each tuple is a pair of column name and its data type.
+    """
+
+    json_output_candidates = _resolve_input_columns(input_schema)
+
+    output_cols = []
+    json_cols = input_schema.json_columns
+    for col in json_output_candidates:
+        cnsplit = col[0].split('.')
+        if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
+            output_cols.append(col)
+
+    return output_cols
 
 
 @dataclasses.dataclass
@@ -493,19 +612,15 @@ class DataFrameInputSchema:
 
     json_columns: typing.List[str] = dataclasses.field(default_factory=list)
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
-    preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
+    preserve_columns: typing.Pattern[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
-    json_output_columns: typing.List[str] = None
-    _nvt_workflow: nvt.Workflow = None
-    _json_preproc: typing.Callable[[pd.DataFrame], typing.List[str]] = None
 
-    @property
-    def nvt_workflow(self):
-        return self._nvt_workflow
+    json_output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False)
+    input_columns: typing.Dict[str, str] = dataclasses.field(init=False)
+    output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False)
 
-    @property
-    def json_preproc(self):
-        return self._json_preproc
+    nvt_workflow: nvt.Workflow = dataclasses.field(init=False)
+    prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False)
 
     def __post_init__(self):
         """
@@ -524,3 +639,22 @@ class DataFrameInputSchema:
             input_preserve_columns = None
 
         self.preserve_columns = input_preserve_columns
+        self.output_columns = []
+
+        input_columns_dict = {}
+        for col_info in self.column_info:
+            self.output_columns.append((col_info.name, col_info.dtype))
+
+            # Update the dictionary with the input columns
+            # TODO(MDD): Add validation that there are no duplicates
+            input_columns_dict.update(col_info.get_input_column_types())
+
+        self.json_output_columns = _resolve_json_output_columns(self)
+        self.input_columns = {key: val for key, val in input_columns_dict.items()}
+
+        self.prep_dataframe = partial(_json_flatten,
+                                      input_columns=self.input_columns,
+                                      json_cols=self.json_columns,
+                                      preserve_re=self.preserve_columns)
+
+        self.nvt_workflow = None
