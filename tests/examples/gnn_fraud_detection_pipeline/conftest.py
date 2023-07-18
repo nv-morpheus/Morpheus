@@ -50,8 +50,8 @@ def tensorflow(fail_missing: bool):
     yield import_or_skip("tensorflow", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture
-def config(config):
+@pytest.fixture(name="config")
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """
@@ -60,8 +60,8 @@ def config(config):
     yield config
 
 
-@pytest.fixture
-def example_dir():
+@pytest.fixture(name="example_dir")
+def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
 
 
@@ -83,8 +83,10 @@ def xgb_model(example_dir: str):
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
-@pytest.fixture
-def gnn_fraud_detection_pipeline(request: pytest.FixtureRequest, restore_sys_path, reset_plugins):
+@pytest.fixture(name="gnn_fraud_detection_pipeline")
+def gnn_fraud_detection_pipeline_fixture(
+        restore_sys_path,  # pylint: disable=unused-argument
+        reset_plugins):  # pylint: disable=unused-argument
     sys.path.append(TEST_DIRS.examples_dir)
     import gnn_fraud_detection_pipeline
     yield gnn_fraud_detection_pipeline
@@ -132,9 +134,11 @@ def test_data():
 
     assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
 
-    yield dict(index=index,
-               client_data=client_data,
-               merchant_data=merchant_data,
-               df=df,
-               expected_nodes=expected_nodes,
-               expected_edges=expected_edges)
+    yield {
+        'index': index,
+        'client_data': client_data,
+        'merchant_data': merchant_data,
+        'df': df,
+        'expected_nodes': expected_nodes,
+        'expected_edges': expected_edges
+    }
