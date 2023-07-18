@@ -245,15 +245,17 @@ morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localh
 
 The output should contain lines similar to:
 ```
-====Pipeline Started====
+====Building Segment: linear_segment_0====
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=('test_pcap',), group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage()>
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
   └─ morpheus.MultiMessage -> morpheus.MessageMeta
-Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=False, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+====Pipeline Started====
 ```
 
 This is important because, when the log level is set to `INFO` and above, it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
