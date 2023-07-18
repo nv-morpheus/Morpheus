@@ -161,8 +161,8 @@ class Downloader:
 
         elif (self._download_method in ("multiprocess", "multiprocessing")):
             # Use multiprocessing here since parallel downloads are a pain
-            with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                dfs = p.map(download_fn, download_buckets)
+            with mp.get_context("spawn").Pool(mp.cpu_count()) as pool:
+                dfs = pool.map(download_fn, download_buckets)
         else:
             # Simply loop
             for open_file in download_buckets:

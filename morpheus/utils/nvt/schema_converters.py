@@ -563,7 +563,7 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
     if (input_schema is None):
         input_schema = DataFrameInputSchema()
         return input_schema
-    elif (len(input_schema.column_info) == 0):
+    if (len(input_schema.column_info) == 0):
         input_schema.nvt_workflow = None
         return input_schema
 

@@ -88,13 +88,10 @@ def test_constructor_invalid_dltype(use_env: bool):
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_method,use_processes', [("dask", True), ("dask_thread", False)])
+@pytest.mark.parametrize("dl_method", ["dask", "dask_thread"])
 @mock.patch('dask.config')
 @mock.patch('dask_cuda.LocalCUDACluster')
-def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock,
-                          mock_dask_config: mock.MagicMock,
-                          dl_method: str,
-                          use_processes: bool):
+def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
     assert downloader.get_dask_cluster() is mock_dask_cluster

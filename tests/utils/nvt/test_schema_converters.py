@@ -194,7 +194,7 @@ def test_resolve_json_output_columns():
                                                             sep=", "),
                                         ])
 
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     expected_output_cols = [
         ("json_col.a", "str"),
     ]
@@ -203,14 +203,14 @@ def test_resolve_json_output_columns():
 
 def test_resolve_json_output_columns_empty_input_schema():
     input_schema = DataFrameInputSchema()
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert not output_cols
 
 
 def test_resolve_json_output_columns_no_json_columns():
     input_schema = DataFrameInputSchema(
         column_info=[ColumnInfo(name="column1", dtype="int"), ColumnInfo(name="column2", dtype="str")])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert not output_cols
 
 
@@ -221,7 +221,7 @@ def test_resolve_json_output_columns_with_json_columns():
                                             ColumnInfo(name="json_col.b", dtype="int"),
                                             ColumnInfo(name="column3", dtype="float")
                                         ])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 
@@ -233,7 +233,7 @@ def test_resolve_json_output_columns_with_complex_schema():
                                             ColumnInfo(name="column3", dtype="float"),
                                             RenameColumn(name="new_column", dtype="str", input_name="column4")
                                         ])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 

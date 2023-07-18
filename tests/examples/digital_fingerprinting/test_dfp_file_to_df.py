@@ -59,7 +59,7 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
         json_data = json.load(fh)
         expected_data = [json_data['data']]
 
-    aslist = [x for x in df['data'].to_list()]  # to_list returns a list of numpy arrays
+    aslist = df['data'].to_list()  # to_list returns a list of numpy arrays
 
     assert (aslist == expected_data)
 
@@ -102,7 +102,6 @@ def test_constructor(config: Config):
 @pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('multiprocessing.get_context')
-@mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
@@ -113,7 +112,6 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
                                                           mock_obf_to_df: mock.MagicMock,
                                                           mock_dask_cluster: mock.MagicMock,
                                                           mock_dask_client: mock.MagicMock,
-                                                          mock_dask_config: mock.MagicMock,
                                                           mock_mp_gc: mock.MagicMock,
                                                           config: Config,
                                                           dl_type: str,

@@ -36,7 +36,7 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.downloader import Downloader
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
@@ -58,7 +58,7 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
             break
         except Exception as e:
             if (retries < 2):
-                logger.warning(f"Error fetching {file_object}: {e}\nRetrying...")
+                logger.warning("Error fetching %s: %s\nRetrying...", file_object, e)
                 retries += 1
 
     # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
@@ -128,16 +128,16 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 
         if (not file_object_batch):
-            return None, False
+            raise RuntimeError("No file objects to process")
 
         file_list = file_object_batch[0]
         batch_count = file_object_batch[1]
 
-        fs: fsspec.AbstractFileSystem = file_list.fs
+        file_system: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
         # hashes all the output of `info()` which is perfect
-        hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
+        hash_data = [{"ukey": file_system.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
         objects_hash_hex = hashlib.md5(json.dumps(hash_data, sort_keys=True).encode()).hexdigest()
@@ -166,11 +166,10 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             dfs = self._downloader.download(download_buckets, download_method)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
-            return None, False
+            raise
 
         if (dfs is None or len(dfs) == 0):
-            logger.error("No logs were downloaded")
-            return None, False
+            raise ValueError("No logs were downloaded")
 
         output_df: pd.DataFrame = pd.concat(dfs)
         output_df = process_dataframe(df_in=output_df, input_schema=self._schema)
@@ -216,6 +215,8 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
             raise
+
+        return None
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name,
