@@ -26,12 +26,12 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
+from morpheus.utils.column_info import _resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
 from morpheus.utils.nvt.schema_converters import _bfs_traversal_with_op_map
 from morpheus.utils.nvt.schema_converters import _build_nx_dependency_graph
 from morpheus.utils.nvt.schema_converters import _coalesce_leaf_nodes
 from morpheus.utils.nvt.schema_converters import _get_ci_column_selector
-from morpheus.utils.nvt.schema_converters import _resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.nvt.schema_converters import sync_df_as_pandas
 from morpheus.utils.schema_transforms import process_dataframe
@@ -72,7 +72,6 @@ def create_test_dataframe():
 
 
 def test_sync_df_as_pandas_pd_dataframe():
-
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -85,7 +84,6 @@ def test_sync_df_as_pandas_pd_dataframe():
 
 
 def test_sync_df_as_pandas_cudf_dataframe():
-
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
