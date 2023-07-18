@@ -285,7 +285,7 @@ Commands:
   add-scores    Add probability scores to each message.
   buffer        (Deprecated) Buffer results.
   delay         (Deprecated) Delay results for a certain duration.
-  deserialize   Deserialize source data into Dataframes.
+  deserialize   Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna        Drop null data entries from a DataFrame.
   filter        Filter message by a classification threshold.
   from-file     Load messages from a file.
