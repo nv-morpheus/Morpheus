@@ -22,7 +22,7 @@ from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
 
 
-def test_concat_df(config: Config, dataset: DatasetManager):
+def test_concat_df(config: Config, dataset: DatasetManager):  # pylint: disable=unused-argument
     meta = MessageMeta(dataset["filter_probs.csv"])
     messages = [
         meta,

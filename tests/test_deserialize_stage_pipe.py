@@ -28,7 +28,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.use_cudf
-def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
+def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):  # pylint: disable=unused-argument
     # Set 2 ids equal to others
     df = dataset.dup_index(dataset["filter_probs.csv"], count=2)
 
