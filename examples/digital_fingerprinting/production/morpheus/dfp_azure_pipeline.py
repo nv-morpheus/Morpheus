@@ -61,7 +61,6 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 
 @click.command()
@@ -295,60 +294,60 @@ def run_pipeline(train_users,
 
     pipeline.add_stage(MonitorStage(config, description="Input data rate"))
 
-    # # This will split users or just use one single user
-    # pipeline.add_stage(
-    #     DFPSplitUsersStage(config,
-    #                        include_generic=include_generic,
-    #                        include_individual=include_individual,
-    #                        skip_users=skip_users,
-    #                        only_users=only_users))
+    # This will split users or just use one single user
+    pipeline.add_stage(
+        DFPSplitUsersStage(config,
+                           include_generic=include_generic,
+                           include_individual=include_individual,
+                           skip_users=skip_users,
+                           only_users=only_users))
 
-    # # Next, have a stage that will create rolling windows
-    # pipeline.add_stage(
-    #     DFPRollingWindowStage(
-    #         config,
-    #         min_history=300 if is_training else 1,
-    #         min_increment=300 if is_training else 0,
-    #         # For inference, we only ever want 1 day max
-    #         max_history="60d" if is_training else "1d",
-    #         cache_dir=cache_dir))
+    # Next, have a stage that will create rolling windows
+    pipeline.add_stage(
+        DFPRollingWindowStage(
+            config,
+            min_history=300 if is_training else 1,
+            min_increment=300 if is_training else 0,
+            # For inference, we only ever want 1 day max
+            max_history="60d" if is_training else "1d",
+            cache_dir=cache_dir))
 
-    # # Output is UserMessageMeta -- Cached frame set
-    # pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
+    # Output is UserMessageMeta -- Cached frame set
+    pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    # model_name_formatter = "DFP-azure-{user_id}"
-    # experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
+    model_name_formatter = "DFP-azure-{user_id}"
+    experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
 
-    # if (is_training):
-    #     # Finally, perform training which will output a model
-    #     pipeline.add_stage(DFPTraining(config, validation_size=0.10))
+    if (is_training):
+        # Finally, perform training which will output a model
+        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 
-    #     pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
+        pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
-    #     # Write that model to MLFlow
-    #     pipeline.add_stage(
-    #         DFPMLFlowModelWriterStage(config,
-    #                                   model_name_formatter=model_name_formatter,
-    #                                   experiment_name_formatter=experiment_name_formatter))
-    # else:
-    #     # Perform inference on the preprocessed data
-    #     pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
+        # Write that model to MLFlow
+        pipeline.add_stage(
+            DFPMLFlowModelWriterStage(config,
+                                      model_name_formatter=model_name_formatter,
+                                      experiment_name_formatter=experiment_name_formatter))
+    else:
+        # Perform inference on the preprocessed data
+        pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
 
-    #     pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
+        pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
-    #     # Filter for only the anomalous logs
-    #     pipeline.add_stage(
-    #         FilterDetectionsStage(config,
-    #                               threshold=filter_threshold,
-    #                               filter_source=FilterSource.DATAFRAME,
-    #                               field_name='mean_abs_z'))
-    #     pipeline.add_stage(DFPPostprocessingStage(config))
+        # Filter for only the anomalous logs
+        pipeline.add_stage(
+            FilterDetectionsStage(config,
+                                  threshold=filter_threshold,
+                                  filter_source=FilterSource.DATAFRAME,
+                                  field_name='mean_abs_z'))
+        pipeline.add_stage(DFPPostprocessingStage(config))
 
-    #     # Exclude the columns we don't want in our output
-    #     pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
+        # Exclude the columns we don't want in our output
+        pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
-    #     # Write all anomalies to a CSV file
-    #     pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
+        # Write all anomalies to a CSV file
+        pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
 
     # Run the pipeline
     pipeline.run()

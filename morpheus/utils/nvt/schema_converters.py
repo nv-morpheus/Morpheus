@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import dataclasses
-import json
 import os
 import re
 import typing
