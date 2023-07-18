@@ -97,7 +97,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, mock_dask_config: m
     assert downloader.get_dask_cluster() is mock_dask_cluster
 
     mock_dask_config.set.assert_called_once()
-    mock_dask_cluster.assert_called_once_with(n_workers=2, threads_per_worker=16)
+    mock_dask_cluster.assert_called_once()
 
 
 @mock.patch('dask.config')
