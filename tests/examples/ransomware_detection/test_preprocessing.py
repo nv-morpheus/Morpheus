@@ -27,6 +27,7 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 @pytest.mark.use_python
 class TestPreprocessingRWStage:
+    # pylint: disable=no-name-in-module
 
     def test_constructor(self, config: Config, rwd_conf: dict):
         from stages.preprocessing import PreprocessingRWStage
@@ -51,7 +52,7 @@ class TestPreprocessingRWStage:
         assert results == [(0, 3), (1, 4), (2, 5), (3, 6), (4, 7), (7, 10)]
 
         # Non-consecutive ids don't create sliding windows
-        stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window) == []
+        assert stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window) == []
 
     def test_sliding_window_offsets_errors(self, config: Config, rwd_conf: dict):
         from stages.preprocessing import PreprocessingRWStage
@@ -146,11 +147,11 @@ class TestPreprocessingRWStage:
         df['source_pid_process'] = 'appshield_' + df.pid_process
         expected_df = df.copy(deep=True).fillna('')
         meta = AppShieldMessageMeta(df=df, source='tests')
-        mm = MultiMessage(meta=meta)
+        multi_message = MultiMessage(meta=meta)
 
         sliding_window = 4
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
-        results = stage._pre_process_batch(mm)
+        results = stage._pre_process_batch(multi_message)
         assert isinstance(results, MultiInferenceFILMessage)
 
         expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]

@@ -30,22 +30,26 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 def test_constructor(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
 
-    ac = AddClassificationsStage(config)
-    assert ac._class_labels == ['frogs', 'lizards', 'toads']
-    assert ac._labels == ['frogs', 'lizards', 'toads']
-    assert ac._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
-    assert ac.name == "add-class"
+    stage = AddClassificationsStage(config)
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['frogs', 'lizards', 'toads']
+    assert stage._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
+    assert stage.name == "add-class"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = ac.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
-    ac = AddClassificationsStage(config, threshold=1.3, labels=['lizards'], prefix='test_')
-    assert ac._class_labels, ['frogs', 'lizards', 'toads']
-    assert ac._labels, ['lizards']
-    assert ac._idx2label, {1: 'test_lizards'}
 
+def test_constructor_explicit_labels(config: Config):
+    stage = AddClassificationsStage(config, threshold=1.3, labels=['lizards'], prefix='test_')
+    assert stage._class_labels, ['frogs', 'lizards', 'toads']
+    assert stage._labels, ['lizards']
+    assert stage._idx2label, {1: 'test_lizards'}
+
+
+def test_constructor_errors(config: Config):
     with pytest.raises(AssertionError):
         AddClassificationsStage(config, labels=['missing'])
 

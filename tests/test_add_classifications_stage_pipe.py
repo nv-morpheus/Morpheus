@@ -52,7 +52,7 @@ def test_add_classifications_stage_pipe(config, filter_probs_df):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     comp_stage = pipe.add_stage(
         CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
     pipe.run()
@@ -75,7 +75,7 @@ def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     comp_stage = pipe.add_stage(
         CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))

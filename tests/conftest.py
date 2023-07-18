@@ -25,7 +25,6 @@ import typing
 import warnings
 from collections import namedtuple
 from functools import partial
-from unittest import mock
 
 import pytest
 import requests

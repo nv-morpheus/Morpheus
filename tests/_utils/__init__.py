@@ -168,7 +168,7 @@ def import_or_skip(modname: str,
 def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
-    
+
     def async_infer(callback=None, **_):
         callback(mock_infer_result, None)
 
