@@ -46,7 +46,7 @@ MockedMLFlow = namedtuple("MockedMLFlow",
 
 
 @pytest.fixture(name="databricks_env")
-def databricks_env_fixture(restore_environ): # pylint: disable=unused-argument
+def databricks_env_fixture(restore_environ):  # pylint: disable=unused-argument
     env = {'DATABRICKS_HOST': 'https://test_host', 'DATABRICKS_TOKEN': 'test_token'}
     os.environ.update(env)
     yield env
