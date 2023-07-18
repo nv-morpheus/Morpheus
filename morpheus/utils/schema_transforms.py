@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import typing
@@ -24,7 +25,7 @@ import cudf
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.nvt import register_morpheus_extensions
 from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
-from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
     # Apply patches to NVT
@@ -39,89 +40,6 @@ if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
     # =========================================================================
 
 logger = logging.getLogger(__name__)
-
-
-def _process_columns(df_in, input_schema: DataFrameInputSchema):
-    # TODO(MDD): See what causes this to have such a perf impact over using df_in
-    output_df = pd.DataFrame()
-
-    convert_to_cudf = False
-
-    if (isinstance(df_in, cudf.DataFrame)):
-        df_in = df_in.to_pandas()
-        convert_to_cudf = True
-
-    # Iterate over the column info
-    for ci in input_schema.column_info:
-        try:
-            output_df[ci.name] = ci._process_column(df_in)
-        except Exception:
-            logger.exception("Failed to process column '%s'. Dataframe: \n%s", ci.name, df_in, exc_info=True)
-            raise
-
-    if (input_schema.preserve_columns is not None):
-        # Get the list of remaining columns not already added
-        df_in_columns = set(df_in.columns) - set(output_df.columns)
-
-        # Finally, keep any columns that match the preserve filters
-        match_columns = [y for y in df_in_columns if input_schema.preserve_columns.match(y)]
-
-        output_df[match_columns] = df_in[match_columns]
-
-    if (convert_to_cudf):
-        return cudf.from_pandas(output_df)
-
-    return output_df
-
-
-def _normalize_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-    if (input_schema.json_columns is None or len(input_schema.json_columns) == 0):
-        return df_in
-
-    convert_to_cudf = False
-
-    # Check if we are cudf
-    if (isinstance(df_in, cudf.DataFrame)):
-        df_in = df_in.to_pandas()
-        convert_to_cudf = True
-
-    json_normalized = []
-    remaining_columns = list(df_in.columns)
-
-    for j_column in input_schema.json_columns:
-
-        if (j_column not in remaining_columns):
-            continue
-
-        normalized = pd.json_normalize(df_in[j_column])
-
-        # Prefix the columns
-        normalized.rename(columns={n: f"{j_column}.{n}" for n in normalized.columns}, inplace=True)
-
-        # Reset the index otherwise there is a conflict
-        normalized.reset_index(drop=True, inplace=True)
-
-        json_normalized.append(normalized)
-
-        # Remove from the list of remaining columns
-        remaining_columns.remove(j_column)
-
-    # Also need to reset the original index
-    df_in.reset_index(drop=True, inplace=True)
-
-    df_normalized = pd.concat([df_in[remaining_columns]] + json_normalized, axis=1)
-
-    if (convert_to_cudf):
-        return cudf.from_pandas(df_normalized)
-
-    return df_normalized
-
-
-def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-    if (input_schema.row_filter is None):
-        return df_in
-
-    return input_schema.row_filter(df_in)
 
 
 @typing.overload
@@ -147,48 +65,55 @@ def process_dataframe(
     """
     Applies column transformations to the input dataframe as defined by the `input_schema`.
 
+    If `input_schema` is an instance of `DataFrameInputSchema`, and it has a 'json_preproc' attribute,
+    the function will first flatten the JSON columns and concatenate the results with the original DataFrame.
+
     Parameters
     ----------
     df_in : Union[pd.DataFrame, cudf.DataFrame]
         The input DataFrame to process.
     input_schema : Union[nvt.Workflow, DataFrameInputSchema]
+        Defines the transformations to apply to 'df_in'.
         If an instance of nvt.Workflow, it is directly used to transform the dataframe.
-        If an instance of DataFrameInputSchema, it is converted to a nvt.Workflow before being used.
+        If an instance of DataFrameInputSchema, it is first converted to an nvt.Workflow,
+        with JSON columns preprocessed if 'json_preproc' attribute is present.
 
     Returns
     -------
     Union[pd.DataFrame, cudf.DataFrame]
-        The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is pd.DataFrame.
-        Otherwise, it is cudf.DataFrame.
+        The processed DataFrame. If 'df_in' was a pd.DataFrame, the return type is also pd.DataFrame,
+        otherwise, it is cudf.DataFrame.
+
+    Note
+    ----
+    Any transformation that needs to be performed should be defined in 'input_schema'.
+    If 'df_in' is a pandas DataFrame, it is temporarily converted into a cudf DataFrame for the transformation.
     """
-
-    work_algorithm = {
-        "data_frame_input_schema": None,
-        "nvt_workflow": None
-    }
-    workflow = input_schema
-    if (isinstance(input_schema, DataFrameInputSchema)):
-        work_algorithm["data_frame_input_schema"] = workflow
-        workflow = dataframe_input_schema_to_nvt_workflow(input_schema)
-
-    work_algorithm["nvt_workflow"] = workflow
 
     convert_to_pd = False
     if (isinstance(df_in, pd.DataFrame)):
         convert_to_pd = True
 
+    # If we're given an nvt_schema, we just use it.
+    nvt_workflow = input_schema
+    if (isinstance(input_schema, DataFrameInputSchema)):
+        if (input_schema.nvt_workflow is None):
+            input_schema = create_and_attach_nvt_workflow(input_schema)
+
+        # Note(Devin): pre-flatten to avoid Dask hang when calling json_normalize within an NVT operator
+        if (input_schema.json_preproc is not None):
+            df_in = input_schema.json_preproc(df_in)
+
+        input_schema.json_columns = None
+
+        nvt_workflow = input_schema.nvt_workflow
+
+    if (convert_to_pd):
         df_in = cudf.DataFrame(df_in)
 
-    if (df_in.shape[0] < 500 and work_algorithm["data_frame_input_schema"] is not None):
-        input_schema = work_algorithm["data_frame_input_schema"]
-        df_result = _normalize_dataframe(df_in, input_schema)
-        df_result = _process_columns(df_result, input_schema)
-        df_result = _filter_rows(df_result, input_schema)
-    else:
-        nvt_workflow = work_algorithm["nvt_workflow"]
-        dataset = nvt.Dataset(df_in)
+    dataset = nvt.Dataset(df_in)
 
-        df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
+    df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
 
     if (convert_to_pd):
         return df_result.to_pandas()

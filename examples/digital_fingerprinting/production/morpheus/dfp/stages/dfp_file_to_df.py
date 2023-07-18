@@ -131,7 +131,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         fs: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
-        # hashes all of the output of `info()` which is perfect
+        # hashes all the output of `info()` which is perfect
         hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
@@ -201,11 +201,11 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
+            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
                          len(output_df),
                          "hit" if cache_hit else "miss",
-                         duration)
-
+                         duration,
+                         len(output_df) / (duration / 1000.0))
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
