@@ -60,8 +60,8 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.file_utils import date_extractor
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.logger import configure_logging
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 
 @click.command()

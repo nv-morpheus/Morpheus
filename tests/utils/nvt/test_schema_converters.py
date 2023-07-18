@@ -71,6 +71,7 @@ def create_test_dataframe():
 
 
 def test_sync_df_as_pandas_pd_dataframe():
+
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value
@@ -83,6 +84,7 @@ def test_sync_df_as_pandas_pd_dataframe():
 
 
 def test_sync_df_as_pandas_cudf_dataframe():
+
     @sync_df_as_pandas()
     def test_func(df: pd.DataFrame, value: int) -> pd.DataFrame:
         df['test_col'] = df['test_col'] * value

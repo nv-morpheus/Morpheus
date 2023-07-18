@@ -16,7 +16,6 @@ Downloader utility class for fetching files, potentially from a remote file serv
 by the `DownloadMethods` enum.
 """
 
-from merlin.core.utils import Distributed
 import logging
 import multiprocessing as mp
 import os
@@ -25,6 +24,7 @@ from enum import Enum
 
 import fsspec
 import pandas as pd
+from merlin.core.utils import Distributed
 
 logger = logging.getLogger(__name__)
 

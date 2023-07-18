@@ -44,23 +44,23 @@ logger = logging.getLogger(__name__)
 
 @typing.overload
 def process_dataframe(
-        df_in: pd.DataFrame,
-        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+    df_in: pd.DataFrame,
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
 ) -> pd.DataFrame:
     ...
 
 
 @typing.overload
 def process_dataframe(
-        df_in: cudf.DataFrame,
-        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+    df_in: cudf.DataFrame,
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
 ) -> cudf.DataFrame:
     ...
 
 
 def process_dataframe(
-        df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
-        input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
+    df_in: typing.Union[pd.DataFrame, cudf.DataFrame],
+    input_schema: typing.Union[nvt.Workflow, DataFrameInputSchema],
 ) -> typing.Union[pd.DataFrame, cudf.DataFrame]:
     """
     Applies column transformations to the input dataframe as defined by the `input_schema`.

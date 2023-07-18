@@ -45,7 +45,7 @@ class DFPPreprocessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiDFPMessage,)
+        return (MultiDFPMessage, )
 
     def process_features(self, message: MultiDFPMessage):
         if (message is None):

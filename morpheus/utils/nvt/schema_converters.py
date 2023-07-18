@@ -302,17 +302,16 @@ def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str,
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-               deps: [
+        deps: [
             LambdaOp(
                 lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
         ],
     ColumnInfo:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (
-                    ci.name in df.columns)
-            else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
+                     df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
+                     else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[ColumnInfo] '{ci.name}'")
@@ -322,22 +321,22 @@ ColumnInfoProcessingMap = {
     #   transform taking df->series(ci.name)
     CustomColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
+                     df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[CustomColumn] '{ci.name}'")
         ],
     DateTimeColumn:
         lambda ci,
-               deps: [
+        deps: [
             Rename(f=lambda name: ci.name if name == ci.input_name else name),
             LambdaOp(lambda series: series.astype(ci.dtype), dtype=ci.dtype, label=f"[DateTimeColumn] '{ci.name}'")
         ],
     IncrementColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(_nvt_increment_column,
                              output_column=ci.name,
                              input_column=ci.input_name,
@@ -349,16 +348,16 @@ ColumnInfoProcessingMap = {
         ],
     RenameColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(lambda selector,
-                            df: _nvt_try_rename(df, ci.input_name, ci.name, ci.dtype),
+                     df: _nvt_try_rename(df, ci.input_name, ci.name, ci.dtype),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[RenameColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     StringCatColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(_nvt_string_cat_col, output_column=ci.name, input_columns=ci.input_columns, sep=ci.sep),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
@@ -366,16 +365,16 @@ ColumnInfoProcessingMap = {
         ],
     StringJoinColumn:
         lambda ci,
-               deps: [
+        deps: [
             MutateOp(partial(
                 _nvt_string_cat_col, output_column=ci.name, input_columns=[ci.name, ci.input_name], sep=ci.sep),
-                dependencies=deps,
-                output_columns=[(ci.name, ci.dtype)],
-                label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=f"[StringJoinColumn] '{ci.input_name}' => '{ci.name}'")
         ],
     JSONFlattenInfo:
         lambda ci,
-               deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
+        deps: [_json_flatten_from_input_schema(ci.input_col_names, ci.output_col_names)]
 }
 
 
@@ -635,7 +634,8 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
     json_cols = input_schema.json_columns
     if (json_cols is not None and len(json_cols) > 0):
         input_schema.json_output_columns = _resolve_json_output_columns(input_schema)
-        input_schema._json_preproc = partial(_json_flatten, json_cols=json_cols,
+        input_schema._json_preproc = partial(_json_flatten,
+                                             json_cols=json_cols,
                                              preserve_re=input_schema.preserve_columns)
 
     # Note(Devin): soft locking problem with nvt operators, skip for now.

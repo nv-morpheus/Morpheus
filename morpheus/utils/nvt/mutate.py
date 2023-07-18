@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import functools
 import os
 import typing
 from inspect import getsourcelines
 
+import numpy as np
 from merlin.core.dispatch import DataFrameType
 from merlin.schema import ColumnSchema
 from merlin.schema import Schema

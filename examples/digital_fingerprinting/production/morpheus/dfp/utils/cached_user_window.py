@@ -20,8 +20,8 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 @dataclasses.dataclass
