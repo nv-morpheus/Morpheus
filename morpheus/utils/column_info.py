@@ -545,22 +545,7 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], input_co
     return df_input
 
 
-def _resolve_input_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
-    column_info_objects = input_schema.column_info
-
-    input_columns = []
-    for col_info in column_info_objects:
-        input_columns.append((col_info.name, col_info.dtype))
-        if (hasattr(col_info, 'input_name')):
-            input_columns.append((col_info.input_name, col_info.dtype))
-        if (hasattr(col_info, 'input_columns')):
-            for col_name in col_info.input_columns:
-                input_columns.append((col_name, col_info.dtype))
-
-    return input_columns
-
-
-def _resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, str]]:
+def _resolve_json_output_columns(json_cols: list[str], input_cols: dict[str, str]) -> list[tuple[str, str]]:
     """
     Resolves JSON output columns from an input schema.
 
@@ -575,10 +560,10 @@ def _resolve_json_output_columns(input_schema) -> typing.List[typing.Tuple[str, 
         A list of tuples where each tuple is a pair of column name and its data type.
     """
 
-    json_output_candidates = _resolve_input_columns(input_schema)
+    json_output_candidates = list(input_cols.items())
 
     output_cols = []
-    json_cols = input_schema.json_columns
+
     for col in json_output_candidates:
         cnsplit = col[0].split('.')
         if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
@@ -649,8 +634,9 @@ class DataFrameInputSchema:
             # TODO(MDD): Add validation that there are no duplicates
             input_columns_dict.update(col_info.get_input_column_types())
 
-        self.json_output_columns = _resolve_json_output_columns(self)
-        self.input_columns = {key: val for key, val in input_columns_dict.items()}
+        self.input_columns = input_columns_dict
+
+        self.json_output_columns = _resolve_json_output_columns(self.json_columns, self.input_columns)
 
         self.prep_dataframe = partial(_json_flatten,
                                       input_columns=self.input_columns,

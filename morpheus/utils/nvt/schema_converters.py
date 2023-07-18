@@ -266,7 +266,10 @@ def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str,
 ColumnInfoProcessingMap = {
     BoolColumn:
         lambda ci,
-        deps: [LambdaOp(lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")],
+        deps: [
+            LambdaOp(
+                lambda series: series.map(ci.value_map).astype(bool), dtype="bool", label=f"[BoolColumn] '{ci.name}'")
+        ],
     ColumnInfo:
         lambda ci,
         deps: [

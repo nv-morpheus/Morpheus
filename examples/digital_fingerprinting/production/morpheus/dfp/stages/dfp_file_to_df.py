@@ -61,6 +61,11 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                 logger.warning(f"Error fetching {file_object}: {e}\nRetrying...")
                 retries += 1
 
+    # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
+    # increases performance significantly)
+    if (schema.prep_dataframe is not None):
+        s3_df = schema.prep_dataframe(s3_df)
+
     return s3_df
 
 
