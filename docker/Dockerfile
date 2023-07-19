@@ -111,9 +111,8 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base &&\
-    git lfs install
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
+    source activate base
     # conda clean -afy
 
 # ============ Stage: conda_env ============
@@ -220,7 +219,10 @@ COPY . ./
 
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Install git-lfs before running the build to avoid errors during conda build
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "git-lfs" &&\
     source activate base &&\
+    git lfs install &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
     # Change to the morpheus directory and build the conda package
