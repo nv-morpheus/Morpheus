@@ -22,13 +22,10 @@ limitations under the License.
 >./scripts/fetch_data.py fetch examples
 >```
 
-To build a pipeline via the CLI, users must first specify the type of pipeline, a source object, followed by a sequential list of stages. For each stage, options can be specified to configure the particular stage. Since stages are listed sequentially the output of one stage becomes the input to the next. Unless heavily customized, pipelines start with either:
+To build a pipeline via the CLI, users must first specify the type of pipeline, a source object, followed by a sequential list of stages. For each stage, options can be specified to configure the particular stage. Since stages are listed sequentially the output of one stage becomes the input to the next. Unless heavily customized, pipelines typically start with `morpheus run` followed by the pipeline mode such as `pipeline-nlp` or `pipeline-fil`. For example, to run the NLP pipeline, use:
 
 ```bash
-# For NLP Pipelines
 morpheus run pipeline-nlp ...
-# For FIL Pipelines
-morpheus run pipeline-fil ...
 ```
 
 While each stage has configuration options, there are options that apply to the pipeline as a whole as well. Check
@@ -41,7 +38,7 @@ All pipelines configured with the CLI need to start with a source object. Two co
 
 * `from-file`
   - Reads from a local file into the Pipeline
-  - Supports JSON lines format
+  - Supports CSV, JSON, JSON lines and Parquet formats
   - All lines are read at the start and queued into the pipeline at one time. Useful for performance testing.
   - Refer to `morpheus.stages.input.file_source_stage.FileSourceStage` for more information
 * `from-kafka`
@@ -53,7 +50,7 @@ All pipelines configured with the CLI need to start with a source object. Two co
 
 From this point on, any number of stages can be sequentially added to the command line from start to finish. For example, we could build a trivial pipeline that reads from a file, deserializes messages, serializes them, and then writes to a file use the following:
 ```bash
-morpheus --log_level=DEBUG run pipeline-nlp --viz_file=.tmp/simple_identity.png \
+morpheus --log_level=DEBUG run pipeline-other --viz_file=.tmp/simple_identity.png \
   from-file --filename=examples/data/pcap_dump.jsonlines \
   deserialize \
   serialize \
@@ -64,31 +61,20 @@ morpheus --log_level=DEBUG run pipeline-nlp --viz_file=.tmp/simple_identity.png 
 The output should be similar to:
 ```console
 Configuring Pipeline via CLI
-Parameter, 'labels_file', with relative path, 'data/labels_nlp.txt', does not exist. Using package relative location: '/home/dagardner/work/morpheus/morpheus/data/labels_nlp.txt'
-Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
   "ae": null,
-  "class_labels": [
-    "address",
-    "bank_acct",
-    "credit_card",
-    "email",
-    "govt_id",
-    "name",
-    "password",
-    "phone_num",
-    "secret_keys",
-    "user"
-  ],
+  "class_labels": [],
   "debug": false,
   "edge_buffer_size": 128,
-  "feature_length": 256,
-  "fil": null,
+  "feature_length": 1,
+  "fil": {
+    "feature_columns": null
+  },
   "log_config_file": null,
   "log_level": 10,
-  "mode": "NLP",
+  "mode": "OTHER",
   "model_max_batch_size": 8,
   "num_threads": 64,
   "pipeline_batch_size": 256,
@@ -97,29 +83,29 @@ Config:
 CPP Enabled: True
 ====Registering Pipeline====
 ====Building Pipeline====
-====Building Segment: linear_segment_0====
-====Building Segment Complete!====
 ====Building Pipeline Complete!====
-Starting! Time: 1672959248.7163541
+Starting! Time: 1689786614.4988477
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
-====Pipeline Started====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+====Building Segment: linear_segment_0====
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage()>
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
   └─ morpheus.MultiMessage -> morpheus.MessageMeta
-Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+====Pipeline Started====
 ====Pipeline Complete====
 Pipeline visualization saved to .tmp/simple_identity.png
 ```
 
 ### Pipeline Build Checks
-After the `====Building Pipeline====` message, if logging is `INFO` or greater, the CLI prints a list of all stages and the type transformations of each stage. To be a valid Pipeline, the output type of one stage must match the input type of the next. Many stages are flexible and determines their type at runtime but some stages require a specific input type. If your Pipeline is configured incorrectly, Morpheus reports the error. For example, if we run the same command as above but forget the `serialize` stage:
+After the `====Building Pipeline====` message, if logging is `INFO` or greater, the CLI prints a list of all stages and the type transformations of each stage. To be a valid Pipeline, the output type of one stage must match the input type of the next. Many stages are flexible and determine their type at runtime but some stages require a specific input type. If your Pipeline is configured incorrectly, Morpheus reports the error. For example, if we run the same command as above but forget the `serialize` stage:
 ```bash
-morpheus --log_level=DEBUG run pipeline-nlp \
+morpheus --log_level=DEBUG run pipeline-other \
   from-file --filename=examples/data/pcap_dump.jsonlines \
   deserialize \
   to-file --overwrite --filename .tmp/temp_out.json
@@ -130,8 +116,7 @@ Then the following error displays:
 RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`.
-This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the ``to-file`` stage has no idea how to write that class to a file; it only knows how to write instances of `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `MultiMessage`, to `MessageMeta`, which is exactly what the `serialize` stage does.
 
 ### Kafka Source Example
 The above example essentially just copies a file. However, it is an important to note that most Morpheus pipelines are similar in structure, in that they begin with a source stage (`from-file`) followed by a `deserialize` stage, end with a `serialize` stage followed by a sink stage (`to-file`), with the actual training or inference logic occurring in between.
