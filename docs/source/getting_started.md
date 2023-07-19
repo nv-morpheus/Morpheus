@@ -274,7 +274,7 @@ This indicates that the `to-file` stage cannot accept the input type of `morpheu
 
 A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
 
-```bash
+```
 $ morpheus run pipeline-nlp --help
 Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -288,6 +288,7 @@ Commands:
   deserialize   Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna        Drop null data entries from a DataFrame.
   filter        Filter message by a classification threshold.
+  from-doca     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
   from-file     Load messages from a file.
   from-kafka    Load messages from a Kafka cluster.
   gen-viz       (Deprecated) Write out visualization DataFrames.
@@ -297,7 +298,7 @@ Commands:
   mlflow-drift  Report model drift statistics to ML Flow.
   monitor       Display throughput numbers at a specific point in the pipeline.
   preprocess    Prepare NLP input DataFrames for inference.
-  serialize     Include & exclude columns from messages.
+  serialize     Includes & excludes columns from messages.
   to-file       Write all messages to a file.
   to-kafka      Write all messages to a Kafka cluster.
   trigger       Buffer data until the previous stage has completed.
@@ -305,8 +306,7 @@ Commands:
 ```
 
 And for the FIL pipeline:
-
-```bash
+```
 $ morpheus run pipeline-fil --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -317,12 +317,11 @@ Commands:
   add-scores      Add probability scores to each message.
   buffer          (Deprecated) Buffer results.
   delay           (Deprecated) Delay results for a certain duration.
-  deserialize     Deserialize source data into Dataframes.
+  deserialize     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna          Drop null data entries from a DataFrame.
   filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a
-                  dataframe. It normalizes nested json messages and arranges them into a dataframe by
-                  snapshot and source.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them
+                  into a dataframe by snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -331,7 +330,7 @@ Commands:
   mlflow-drift    Report model drift statistics to ML Flow.
   monitor         Display throughput numbers at a specific point in the pipeline.
   preprocess      Prepare FIL input DataFrames for inference.
-  serialize       Include & exclude columns from messages.
+  serialize       Includes & excludes columns from messages.
   to-file         Write all messages to a file.
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
