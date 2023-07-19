@@ -30,29 +30,16 @@ logger = logging.getLogger(__name__)
 @register_stage("from-doca", modes=[PipelineModes.NLP], ignore_args=["cudf_kwargs"])
 class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
-    Load messages from a file.
-
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    A source stage used to receive raw packet data from a Bluefield 2 NIC.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    filename : pathlib.Path, exists = True, dir_okay = False
-        Name of the file from which the messages will be read.
-    iterative : boolean, default = False, is_flag = True
-        Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
-        good for interleaving source stages.
-    repeat : int, default = 1, min = 1
-        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    filter_null : bool, default = True
-        Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
-        the line with processing. Setting this to True is recommended.
-    cudf_kwargs : dict, default = None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
+    nic_pci_address : str
+        The PCI Address of the NIC from which to recieve packets
+    gpu_pci_address : str
+        The PCI Address of the GPU which will receive packets
     """
 
     def __init__(
