@@ -19,6 +19,7 @@
 
 #include "morpheus/io/deserializers.hpp"     // for load_table_from_file, prepare_df_index
 #include "morpheus/messages/meta.hpp"        // for MessageMeta and SlicedMessageMeta
+#include "morpheus/messages/multi.hpp"       // for MultiMessage
 #include "morpheus/objects/table_info.hpp"   // for TableInfo
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 
@@ -31,6 +32,7 @@
 #include <utility>     // for move
 
 using namespace morpheus;
+using namespace morpheus::test;
 
 class TestSlicedMessageMeta : public morpheus::test::TestWithPythonInterpreter
 {
@@ -73,4 +75,54 @@ TEST_F(TestSlicedMessageMeta, TestCount)
     auto p_meta        = std::dynamic_pointer_cast<MessageMeta>(p_sliced_meta);
     EXPECT_EQ(p_meta->count(), 10);
     EXPECT_EQ(p_meta->get_info().num_rows(), p_meta->count());
+}
+
+TEST_F(TestSlicedMessageMeta, TestDocEx3)
+{
+    // Test to verify that the lambda in docs/source/developer_guide/guides/3_simple_cpp_stage.md
+    // compiles and runs correctly
+    using namespace pybind11::literals;
+    pybind11::gil_scoped_release no_gil;
+
+    auto doc_fn = [](std::shared_ptr<MultiMessage> msg) {
+        auto mutable_info = msg->meta->get_mutable_info();
+
+        std::shared_ptr<MessageMeta> new_meta;
+        {
+            pybind11::gil_scoped_acquire gil;
+            auto df = mutable_info.checkout_obj();
+
+            // Maka a copy of the original DataFrame
+            auto copied_df = df.attr("copy")("deep"_a = true);
+
+            // Now that we are done with `df` return it to the owner
+            mutable_info.return_obj(std::move(df));
+
+            // do something with copied_df
+            new_meta = MessageMeta::create_from_python(std::move(copied_df));
+        }  // GIL is released
+
+        return new_meta;
+    };
+
+    auto msg_meta = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
+    auto msg      = std::make_shared<MultiMessage>(msg_meta);
+
+    auto result = doc_fn(msg);
+
+    auto orig_mutable_info   = msg_meta->get_mutable_info();
+    auto result_mutable_info = result->get_mutable_info();
+    {
+        pybind11::gil_scoped_acquire gil;
+
+        auto orig_df   = orig_mutable_info.checkout_obj();
+        auto result_df = result_mutable_info.checkout_obj();
+
+        // orig_df.eq(result_df).all().all()
+        auto is_true = orig_df.attr("eq")(result_df).attr("all")().attr("all")();
+        EXPECT_TRUE(is_true.cast<bool>());
+
+        orig_mutable_info.return_obj(std::move(orig_df));
+        result_mutable_info.return_obj(std::move(result_df));
+    }
 }
