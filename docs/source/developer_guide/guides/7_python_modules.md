@@ -196,6 +196,11 @@ def my_compound_module(builder: mrc.Builder):
 `my_compound_module_consumer_stage.py`
 
 ```python
+import mrc
+
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
+
 class MyCompoundOpModuleWrapper(SinglePortStage):
     # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
@@ -225,7 +230,7 @@ module_config = {
     "module_id": "my_compound_module",
     "module_namespace": "my_module_namespace",
     "module_instance_name": "module_instance_name",
-    ... other module config params...
+    # ... other module config params...
 }
 
 pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input_0", output_port_name="output_0"))
