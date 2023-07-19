@@ -1,0 +1,6 @@
+/* Fix property methods to not be displayed inline */
+.property {
+  display: unset !important;
+  padding-right: unset !important;
+  max-width: unset !important;
+}
