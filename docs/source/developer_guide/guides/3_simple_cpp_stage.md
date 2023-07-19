@@ -224,17 +224,34 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 
 Note the use of `std::move` in the `on_next` function. In Morpheus, our messages often contain both large payloads as well as Python objects where performing a copy necessitates acquiring the Python [Global Interpreter Lock (GIL)](https://docs.python.org/3.10/glossary.html#term-global-interpreter-lock). In either case, unnecessary copies can become a performance bottleneck, and much care is taken to limit the number of copies required for data to move through the pipeline.
 
-There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement. In these situations, it is important to ensure the GIL is released before calling the `on_next` method. This is typically accomplished using pybind11's [gil_scoped_acquire](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Consider the following `on_next` lambda function from Morpheus' `SerializeStage`:
+There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement.
+This is typically accomplished using pybind11's [gil_scoped_acquire](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [gil_scoped_release](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
+
+For stages it is important to ensure that the GIL is released before calling the output's `on_next` method. Consider the following `on_next` lambda function:
 
 ```cpp
+using namespace pybind11::literals;
+pybind11::gil_scoped_release no_gil;
+
 [this, &output](sink_type_t msg) {
-    auto table_info = this->get_meta(msg);
-    std::shared_ptr<MessageMeta> meta;
+    auto mutable_info = msg->meta->get_mutable_info();
+
+    std::shared_ptr<MessageMeta> new_meta;
     {
         pybind11::gil_scoped_acquire gil;
-        meta = MessageMeta::create_from_python(std::move(table_info.as_py_object()));
-    } // GIL is released
-    output.on_next(std::move(meta));
+        auto df = mutable_info.checkout_obj();
+
+        // Maka a copy of the original DataFrame
+        auto copied_df = df.attr("copy")("deep"_a = true);
+
+        // Now that we are done with `df` return it to the owner
+        mutable_info.return_obj(std::move(df));
+
+        // do something with copied_df
+        new_meta = MessageMeta::create_from_python(std::move(copied_df));
+    }  // GIL is released
+
+    output.on_next(std::move(new_meta));
 }
 ```
 

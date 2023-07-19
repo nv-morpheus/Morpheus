@@ -24,6 +24,7 @@ add_executable(test_libmorpheus
   io/test_data_loader_registry.cpp
   io/test_loaders.cpp
   messages/test_control_message.cpp
+  messages/test_dev_doc_ex3.cpp
   messages/test_sliced_message_meta.cpp
   modules/test_data_loader_module.cpp
   test_deserializers.cpp
@@ -59,9 +60,9 @@ set_target_properties(test_libmorpheus
 
 install(
     TARGETS
-      test_libmorpheus
+  test_libmorpheus
     RUNTIME DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+  "${MORPHEUS_LIB_INSTALL_DIR}/tests"
     COMPONENT Wheel
 )
 

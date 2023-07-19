@@ -51,7 +51,8 @@ class TestDevDocEx3 : public morpheus::test::TestWithPythonInterpreter
 TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
 {
     // Test to verify that the lambda in docs/source/developer_guide/guides/3_simple_cpp_stage.md
-    // compiles and runs correctly
+    // compiles and runs correctly.
+    // If you have to make a change here to ensure the test passes, please update the documentation
     using namespace pybind11::literals;
     pybind11::gil_scoped_release no_gil;
 
