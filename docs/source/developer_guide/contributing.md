@@ -447,5 +447,6 @@ Ex:
 ---
 
 ## Attribution
-Portions adopted from https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md \
-Portions adopted from https://github.com/dask/dask/blob/master/docs/source/develop.rst
+Portions adopted from
+* [https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md](https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md)
+* [https://github.com/dask/dask/blob/master/docs/source/develop.rst](https://github.com/dask/dask/blob/master/docs/source/develop.rst)
