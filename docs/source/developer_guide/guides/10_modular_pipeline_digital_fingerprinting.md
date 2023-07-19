@@ -138,11 +138,11 @@ configuration options; however, the majority of these have intelligent defaults 
 
 The module consists of three chained sub-modules:
 
-- `fs_spec_dataloader`
+- `fsspec_dataloader`
     - Responsible for expanding data source declarations into individual files that can be processed by the pipeline.
-- `dfp_training`
+- `dfp_training_pipe`
     - Connected to the output of the preprocessing stage. Responsible for handling training based control messages.
-- `dfp_inference`
+- `dfp_inference_pipe`
     - Connected to the output of the preprocessing stage. Responsible for handling inference based control messages.
 
 For a complete reference, refer to: [DFP Deployment](../../modules/examples/digital_fingerprinting/dfp_deployment.md)
@@ -164,7 +164,7 @@ def dfp_deployment(builder: mrc.Builder):
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
 ```
 
-### FS Spec Dataloader
+### fsspec Dataloader
 
 
 Source: `morpheus/loaders/fsspec_loader.py`
