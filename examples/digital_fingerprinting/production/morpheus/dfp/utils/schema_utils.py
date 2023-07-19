@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
@@ -34,6 +35,13 @@ class Schema:
     preprocess: DataFrameInputSchema
 
 
+def remove_tz_inplace(df):
+    datetime_cols = [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]
+    for col in datetime_cols:
+        if df[col].dt.tz is not None:
+            df[col] = df[col].astype("datetime64[ns]")
+
+
 class SchemaBuilder:
 
     def __init__(self, config: Config, source: str):
@@ -52,7 +60,7 @@ class SchemaBuilder:
     def _build_azure_schema(self) -> Schema:
         # Specify the column names to ensure all data is uniform
         source_column_info = [
-            DateTimeColumn(name=self._config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
+            DateTimeColumn(name=self._config.ae.timestamp_column_name, dtype="datetime64[ns]", input_name="time"),
             RenameColumn(name=self._config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
             RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
             ColumnInfo(name="category", dtype=str),
@@ -75,7 +83,7 @@ class SchemaBuilder:
         source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
 
         preprocess_column_info = [
-            ColumnInfo(name=self._config.ae.timestamp_column_name, dtype=datetime),
+            ColumnInfo(name=self._config.ae.timestamp_column_name, dtype="datetime64[ns]"),
             ColumnInfo(name=self._config.ae.userid_column_name, dtype=str),
             ColumnInfo(name="appDisplayName", dtype=str),
             ColumnInfo(name="clientAppUsed", dtype=str),
@@ -97,7 +105,8 @@ class SchemaBuilder:
                          process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
         ]
 
-        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info,
+                                                 preserve_columns=["_batch_id", "timestamp"])
 
         schema = Schema(source=source_schema, preprocess=preprocess_schema)
 
@@ -124,7 +133,7 @@ class SchemaBuilder:
                        dtype=bool,
                        input_name="result",
                        true_values=["success", "SUCCESS"],
-                       false_values=["denied", "DENIED", "FRAUD"]),
+                       false_values=["denied", "Denied", "DENIED", "FRAUD"]),
             ColumnInfo(name="reason", dtype=str),
         ]
 
@@ -150,7 +159,8 @@ class SchemaBuilder:
                          process_column_fn=partial(create_increment_col, column_name="location")),
         ]
 
-        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info,
+                                                 preserve_columns=["_batch_id", "timestamp"])
 
         schema = Schema(source=source_schema, preprocess=preprocess_schema)
 

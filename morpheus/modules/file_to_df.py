@@ -124,8 +124,6 @@ def file_to_df(builder: mrc.Builder):
         if (s3_df is None):
             return s3_df
 
-        s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
-
         return s3_df
 
     def get_or_create_dataframe_from_s3_batch(
@@ -176,6 +174,9 @@ def file_to_df(builder: mrc.Builder):
             return None, False
 
         output_df: pd.DataFrame = pd.concat(dfs)
+
+        output_df = process_dataframe(df_in=output_df, input_schema=schema)
+
 
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[timestamp_column_name], inplace=True)

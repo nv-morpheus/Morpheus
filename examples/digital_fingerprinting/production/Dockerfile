@@ -59,6 +59,7 @@ RUN source activate morpheus \
     && mamba install -y -c conda-forge \
         ipywidgets \
         nb_conda_kernels \
+    && pip install notebook==6 \
     && pip install jupyter_contrib_nbextensions==0.5.1 \
     && jupyter contrib nbextension install --user \
     && pip install jupyterlab_nvdashboard==0.7.0

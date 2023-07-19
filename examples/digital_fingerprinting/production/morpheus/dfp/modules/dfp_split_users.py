@@ -16,8 +16,10 @@ import logging
 import typing
 
 import mrc
+import numpy as np
 import pandas as pd
 from dfp.utils.logging_timer import log_time
+from dfp.utils.schema_utils import remove_tz_inplace
 from mrc.core import operators as ops
 
 import cudf
@@ -83,6 +85,7 @@ def dfp_split_users(builder: mrc.Builder):
                 continue
 
             user_df = split_dataframes[user_id]
+            remove_tz_inplace(user_df)
 
             current_user_count = user_index_map.get(user_id, 0)
 
