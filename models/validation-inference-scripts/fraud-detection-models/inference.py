@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,14 @@ python inference.py --training-data ../../datasets/training-data/fraud-detection
 
 import os
 import pickle
-from rgc_mod import HinSAGE, HeteroRGCN
+
+import click
 import dgl
+import numpy as np
 import pandas as pd
 import torch
-import numpy as np
-import click
+from model import HeteroRGCN
+from model import HinSAGE
 
 np.random.seed(1001)
 torch.manual_seed(1001)
