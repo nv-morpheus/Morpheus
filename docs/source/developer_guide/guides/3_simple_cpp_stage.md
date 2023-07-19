@@ -80,9 +80,9 @@ To start with, we have our Morpheus and MRC-specific includes:
 
 ```cpp
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pymrc/node.hpp>               // for PythonNode
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
 ```
 
 We'll want to define our stage in its own namespace. In this case, we will name it `morpheus_example`, giving us a namespace and class definition like:
@@ -137,9 +137,9 @@ struct PassThruStageInterfaceProxy
 #pragma once
 
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pymrc/node.hpp>               // for PythonNode
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
 
 #include <memory>
 #include <string>
@@ -166,8 +166,8 @@ class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage
 
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
-                                                                     const std::string &name);
+    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder& builder,
+                                                                     const std::string& name);
 };
 
 #pragma GCC visibility pop
