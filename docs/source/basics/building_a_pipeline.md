@@ -126,7 +126,7 @@ We could also easily swap out the source or sink stages in the above example wit
 > **Note**: This assumes a Kafka broker running on the localhost listening to port 9092. For testing Morpheus with Kafka follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../developer_guide/contributing.md), creating a topic named `test_pcap` then replace port `9092` with the port your Kafka instance is listening on.
 
 ```bash
-morpheus --log_level=DEBUG run pipeline-nlp \
+morpheus --log_level=DEBUG run pipeline-other \
   from-kafka --input_topic test_pcap --bootstrap_servers localhost:9092 \
   deserialize \
   serialize \
@@ -134,7 +134,10 @@ morpheus --log_level=DEBUG run pipeline-nlp \
 ```
 
 ## Available Stages
-For a complete list of available stages, use the CLI help commands. The available stages can also be queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.
+For a complete list of available stages for a particular pipeline mode, use the CLI help commands. First `morpheus run --help` can be used to list the available pipeline modes. Then `morpheus run <mode> --help` can be used to list the available stages for that mode. For example, to list the available stages for the `pipeline-nlp` mode:
+```bash
+morpheus run pipeline-nlp --help
+```
 
 ## Basic Usage Examples
 
@@ -145,7 +148,7 @@ This example only copies the fields 'timestamp', 'src_ip' and 'dest_ip' from `ex
 ![../img/remove_fields_from_json_objects.png](../img/remove_fields_from_json_objects.png)
 
 ```bash
-morpheus run pipeline-nlp --viz_file=.tmp/remove_fields_from_json_objects.png \
+morpheus run pipeline-other --viz_file=.tmp/remove_fields_from_json_objects.png \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
    serialize --include 'timestamp' --include 'src_ip' --include 'dest_ip' \
@@ -159,7 +162,7 @@ This example reports the throughput on the command line.
 ![../img/monitor_throughput.png](../img/monitor_throughput.png)
 
 ```bash
-morpheus run pipeline-nlp --viz_file=.tmp/monitor_throughput.png  \
+morpheus --log_level=INFO run pipeline-other --viz_file=.tmp/monitor_throughput.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
    monitor --description "Lines Throughput" --smoothing 0.1 --unit "lines" \
@@ -175,6 +178,8 @@ Lines Throughput[Complete]: 93085 lines [00:03, 29446.18 lines/s]
 Pipeline visualization saved to .tmp/monitor_throughput.png
 ```
 
+> **Note**: By default the monitor stage will omit itself from the pipeline if the `log_level` is set to `WARNING` or below.
+
 ### Multi-Monitor Throughput
 
 This example reports the throughput for each stage independently.
@@ -182,7 +187,7 @@ This example reports the throughput for each stage independently.
 ![../img/multi_monitor_throughput.png](../img/multi_monitor_throughput.png)
 
 ```bash
-morpheus run pipeline-nlp --viz_file=.tmp/multi_monitor_throughput.png  \
+morpheus --log_level=INFO run pipeline-nlp --viz_file=.tmp/multi_monitor_throughput.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    monitor --description "From File Throughput" \
    deserialize \
@@ -217,7 +222,7 @@ Follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing
 ![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
 
 ```bash
-morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+morpheus  --log_level=INFO run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    pipeline-nlp --viz_file=.tmp/nlp_kitchen_sink.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
