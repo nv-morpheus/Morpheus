@@ -16,7 +16,6 @@ import logging
 import typing
 
 import mrc
-import numpy as np
 import pandas as pd
 from dfp.utils.logging_timer import log_time
 from dfp.utils.schema_utils import remove_tz_inplace
