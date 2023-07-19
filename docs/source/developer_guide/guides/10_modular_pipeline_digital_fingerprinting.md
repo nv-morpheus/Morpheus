@@ -82,7 +82,7 @@ inference tasks against a specific set of data, and the capacity for real-time l
 that can be injected back into the training pipeline.
 
 The following content will track the pipeline declared in
-`examples/digitial_fingerprinting/production/dfp_morpheus_streaming_pipeline.py`
+`examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
 
 ```python
 # Setup and command line argument parsing
