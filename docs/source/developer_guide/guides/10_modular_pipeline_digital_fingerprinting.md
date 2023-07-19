@@ -129,7 +129,7 @@ and [C++ Modules](8_cpp_modules.md) guides.
 ## DFP Deployment
 
 
-Source: `examples/digitial_fingerprinting/production/morpheus/dfp/modules/dfp_deployment.py`
+Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_deployment.py`
 
 This is the top level module that encapsulates the entire Digital Fingerprinting pipeline, it is primarily
 responsible for wrapping the training and inference pipelines, providing the correct module interface, and doing
