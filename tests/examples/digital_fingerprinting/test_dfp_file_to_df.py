@@ -54,7 +54,7 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
 
     fake_lambda.assert_not_called()
     assert sorted(df.columns) == sorted(['plugin', 'titles', 'data', 'count'])
-    print(f"\n{df}")
+
     with open(single_file_obj.path, encoding='UTF-8') as fh:
         json_data = json.load(fh)
         expected_data = [json_data['data']]
@@ -191,14 +191,10 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
         mock_dask_client.assert_called_once_with(mock_dask_cluster)
         mock_dist_client.map.assert_called_once()
         mock_dist_client.gather.assert_called_once()
-        # mock_dask_client.map.assert_called_once()
-        # mock_dask_client.gather.assert_called_once()
     else:
         mock_dask_cluster.assert_not_called()
         mock_dist_client.map.assert_not_called()
         mock_dist_client.gather.assert_not_called()
-        # mock_dask_client.assert_not_called()
-        # mock_dask_config.assert_not_called()
 
     dataset_pandas.assert_df_equal(output_df, expected_df)
 

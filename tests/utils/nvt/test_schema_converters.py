@@ -297,7 +297,7 @@ def test_input_schema_conversion_empty_schema():
     empty_schema = DataFrameInputSchema()
 
     # pylint: disable=unused-variable
-    workflow = create_and_attach_nvt_workflow(empty_schema)  # noqa
+    empty_schema = create_and_attach_nvt_workflow(empty_schema)  # noqa
 
 
 def test_input_schema_conversion_additional_column():
@@ -310,7 +310,6 @@ def test_input_schema_conversion_additional_column():
     modified_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                            column_info=modified_source_column_info)
     test_df = create_test_dataframe()
-    print(f"\nTEST_DF: {test_df}")
 
     output_df = process_dataframe(test_df, modified_schema)
 
@@ -348,10 +347,10 @@ def test_input_schema_conversion_interdependent_columns():
     test_df["user"] = ['{"firstname": "Jane", "lastname": "Smith", "name": "Jane Smith"}']
     test_df["application"] = ['{"name": "AnotherApp", "version": "1.0"}']
 
-    workflow = create_and_attach_nvt_workflow(modified_schema)
-    test_df = workflow.prep_dataframe(test_df)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
         "result": [False],
@@ -386,10 +385,10 @@ def test_input_schema_conversion_nested_operations():
     # Add the 'appsuffix' column to the schema
     modified_schema.column_info.append(ColumnInfo(name="appsuffix", dtype="str"))
 
-    workflow = create_and_attach_nvt_workflow(modified_schema)
-    test_df = workflow.prep_dataframe(test_df)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
         "result": [False],
@@ -421,9 +420,9 @@ def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = create_and_attach_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({"rootcat": ["lhs-rhs"]})
 
@@ -447,9 +446,9 @@ def test_input_schema_conversion_preserve_column():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = create_and_attach_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({"lhs_top_level": ["lhs"], "rhs_top_level": ["rhs"], "rootcat": ["lhs-rhs"]})
 
@@ -476,12 +475,12 @@ def test_input_schema_conversion():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = create_and_attach_nvt_workflow(example_schema)
+    modified_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
-    test_df = workflow.prep_dataframe(test_df)
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({
@@ -560,13 +559,12 @@ def test_input_schema_conversion_with_functional_filter():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = create_and_attach_nvt_workflow(example_schema)
+    example_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
-    test_df = workflow.prep_dataframe(test_df)
-    print(f"========> {test_df.columns}")
+    test_df = example_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = example_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({

@@ -62,7 +62,6 @@ class TestClassificationStage:
 
         stage = ClassificationStage(config, xgb_model)
         results = stage._process_message(msg)
-        print(results.get_meta(['prediction', 'node_id']))
 
         # The stage actually edits the message in place, and returns it, but we don't need to assert that
         dataset_cudf.assert_compare_df(results.get_meta(['prediction', 'node_id']), expected_df)
