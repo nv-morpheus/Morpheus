@@ -20,9 +20,9 @@ from unittest import mock
 import pytest
 
 from morpheus.config import Config
-from tests.utils.dataset_manager import DatasetManager
 from utils import TEST_DIRS
 from utils import import_or_skip
+from utils.dataset_manager import DatasetManager
 
 # pylint: disable=redefined-outer-name
 

@@ -302,7 +302,8 @@ def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.Ma
     if use_convert_to_dataframe:
         assert stage.convert_to_dataframe(None) is None
     else:
-        assert stage._get_or_create_dataframe_from_s3_batch(None) == (None, False)
+        with pytest.raises(RuntimeError, match="No file objects to process"):
+            stage._get_or_create_dataframe_from_s3_batch(None)
 
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
