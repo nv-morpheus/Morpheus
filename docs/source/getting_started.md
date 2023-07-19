@@ -339,7 +339,7 @@ Commands:
 
 And for the AE pipeline:
 
-```bash
+```
 $ morpheus run pipeline-ae --help
 Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -358,7 +358,7 @@ Commands:
   inf-triton       Perform inference with Triton Inference Server.
   monitor          Display throughput numbers at a specific point in the pipeline.
   preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Include & exclude columns from messages.
+  serialize        Includes & excludes columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
   to-file          Write all messages to a file.
   to-kafka         Write all messages to a Kafka cluster.
