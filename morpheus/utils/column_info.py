@@ -504,10 +504,36 @@ class IncrementColumn(DateTimeColumn):
         return df.groupby([self.groupby_column, period]).cumcount()
 
 
-def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], input_columns, json_cols, preserve_re=None):
+def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
+                  input_columns: dict[str, str],
+                  json_cols: list[str],
+                  preserve_re: re.Pattern = None):
+    """
+    Prepares a DataFrame for processing by flattening JSON columns and converting to Pandas if necessary. Will remove
+    all columns that are not specified in `input_columns` or matched by `preserve_re`.
+
+    Parameters
+    ----------
+    df_input : typing.Union[pd.DataFrame, cudf.DataFrame]
+        DataFrame to process.
+    input_columns : dict[str, str]
+        The final input columns that are needed for processing. All other columns will be removed
+    json_cols : list[str]
+        List of JSON columns to flatten.
+    preserve_re : re.Pattern, optional
+        A RegEx where matching column names will be preserved, by default None
+
+    Returns
+    -------
+    typing.Union[pd.DataFrame, cudf.DataFrame]
+        The processed DataFrame.
+    """
+
+    # Early exit
     if (json_cols is None or len(json_cols) == 0):
         return df_input
 
+    # Check if we even have any JSON columns to flatten
     if (not df_input.columns.intersection(json_cols).empty):
         convert_to_cudf = False
 
@@ -522,22 +548,33 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame], input_co
                 continue
 
             pd_series = df_input[col]
-            pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
 
+            # Get the flattened columns
+            pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
             pdf_norm = pd.json_normalize(pd_series)
+
+            # Prefix column names with the JSON column name
             pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
+
+            # Reset the index otherwise there is a conflict
             pdf_norm.reset_index(drop=True, inplace=True)
 
             json_normalized.append(pdf_norm)
+
+            # Remove from the list of remaining columns
             if (preserve_re is None or not preserve_re.match(col)):
                 cols_to_keep.remove(col)
 
+        # Also need to reset the original index
         df_input.reset_index(drop=True, inplace=True)
+
+        # Combine the original DataFrame with the normalized JSON columns
         df_input = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
 
         if (convert_to_cudf):
             df_input = cudf.from_pandas(df_input).reset_index(drop=True)
 
+    # Remove all columns that are not in the input columns list. Ensure the correct types
     df_input = df_input.reindex(columns=input_columns.keys(), fill_value=None)
 
     df_input = df_input.astype(input_columns)
