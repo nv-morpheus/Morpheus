@@ -177,7 +177,6 @@ def file_to_df(builder: mrc.Builder):
 
         output_df = process_dataframe(df_in=output_df, input_schema=schema)
 
-
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[timestamp_column_name], inplace=True)
 

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pandas as pd
 from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
+
+import pandas as pd
 
 from morpheus.config import Config
 from morpheus.utils.column_info import BoolColumn
