@@ -15,7 +15,7 @@
 """
 python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv\
       --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
-          --model-dir models-dir --output-file out.txt\
+          --model-dir ../../fraud-detection-models --output-file out.txt\
             --model-type HinSAGE
 """
 import os

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Usage example:
-python inference.py --training-data data/training.csv
-    --validation-data data/validation.csv
-    --model-dir model_dir --output-file out.csv
+python inference.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv\
+        --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv\
+        --model-dir ../../fraud-detection-models\
+        --output-file out.txt --model-type HinSAGE
 """
 
 import os
 import pickle
-
-import click
+from rgc_mod import HinSAGE, HeteroRGCN
 import dgl
-import numpy as np
 import pandas as pd
 import torch
-from model import HeteroRGCN
+import numpy as np
+import click
 
 np.random.seed(1001)
 torch.manual_seed(1001)
@@ -77,6 +77,7 @@ def prepare_data(training_data, test_data):
         path to training data
     test_data : str
         path to test/validation data
+
     Returns
     -------
     tuple
@@ -93,39 +94,38 @@ def prepare_data(training_data, test_data):
     for col in meta_cols:
         map_node_id(df, col)
 
-    train_idx = df['tran_id'][:train_idx_]
     test_idx = df['tran_id'][train_idx_:]
 
     df['index'] = df['tran_id']
     df.index = df['index']
 
-    return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
+    return test_idx, df
 
 
-def load_model(model_dir, device):
+def load_model(model_dir, graph_input, gnn_model=HeteroRGCN):
     """Load trained model, graph structure from given directory
-
     Args:
-        model_dir (str): directory path for trained model obj.
-        device (str): device runtime.
+        model_dir (str): directory path for trained models
+        graph_input (DGLHeteroGraph): input graph for testing
+        gnn_model (HeteroRGCN, optional): GNN model type either HinSAGE/HeteroRGCN. Defaults to HeteroRGCN.
 
     Returns:
         List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
     """
+
     from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
         graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = HeteroRGCN(graph,
-                       in_size=hyperparameters['in_size'],
-                       hidden_size=hyperparameters['hidden_size'],
-                       out_size=hyperparameters['out_size'],
-                       n_layers=hyperparameters['n_layers'],
-                       embedding_size=hyperparameters['embedding_size'],
-                       target=hyperparameters['target_node'],
-                       device=device)
+    model = gnn_model(graph_input,
+                      in_size=hyperparameters['in_size'],
+                      hidden_size=hyperparameters['hidden_size'],
+                      out_size=hyperparameters['out_size'],
+                      n_layers=hyperparameters['n_layers'],
+                      embedding_size=hyperparameters['embedding_size'],
+                      target=hyperparameters['target_node'])
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
     xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
 
@@ -184,8 +184,7 @@ def inference(model, input_graph, feature_tensors, test_idx, target_node, device
         list: logits, index, output embedding
     """
 
-    # create sampler and test dataloaders
-    full_sampler = dgl.dataloading.MultiLayerNeighborSampler([4, 3])
+    full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
     test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
                                                  full_sampler,
                                                  batch_size=100,
@@ -204,19 +203,26 @@ def inference(model, input_graph, feature_tensors, test_idx, target_node, device
 @click.option('--model-dir', help="path to model directory", default="modeldir")
 @click.option('--target-node', help="Target node", default="transaction")
 @click.option('--output-file', help="Path to csv inference result", default="out.csv")
-def main(training_data, validation_data, model_dir, target_node, output_file):
+@click.option('--model-type', help="Model type either RGCN/Graphsage", default="RGCN")
+def main(training_data, validation_data, model_dir, target_node, output_file, model_type):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
+    if model_type == "RGCN":
+        gnn_model = HeteroRGCN
+    else:
+        gnn_model = HinSAGE
+
+    print(gnn_model.__name__)
 
     # prepare data
-    _, _, _, test_idx, _, all_data = prepare_data(training_data, validation_data)
+    test_idx, all_data = prepare_data(training_data, validation_data)
 
     # build graph structure
     g_test, feature_tensors = build_fsi_graph(all_data, meta_cols)
 
     # Load graph model
-    model, xgb_model, _ = load_model(model_dir, device)
+    model, xgb_model, _ = load_model(model_dir, gnn_model=gnn_model, graph_input=g_test)
     model = model.to(device)
     g_test = g_test.to(device)
     feature_tensors = feature_tensors.to(device)
@@ -231,7 +237,8 @@ def main(training_data, validation_data, model_dir, target_node, output_file):
 
     df_result.to_csv(output_file, index=False)
 
+    print(df_result)
+
 
 if __name__ == '__main__':
-
     main()
