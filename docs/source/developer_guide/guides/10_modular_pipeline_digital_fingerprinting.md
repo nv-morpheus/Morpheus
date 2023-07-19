@@ -95,7 +95,7 @@ pipeline = Pipeline(config)
 source_stage = pipeline.add_stage(
     ControlMessageKafkaSourceStage(config,
                                    bootstrap_servers=kwargs["bootstrap_servers"],
-                                   input_topic=kwargs["input_topic"],
+                                   input_topic=list(kwargs["input_topic"]),
                                    group_id=kwargs["group_id"],
                                    poll_interval=kwargs["poll_interval"],
                                    disable_commit=kwargs["disable_commit"],
@@ -105,9 +105,8 @@ source_stage = pipeline.add_stage(
 dfp_deployment_stage = pipeline.add_stage(
     MultiPortModulesStage(config,
                           dfp_deployment_module_config,
-                          input_port_name="input",
-                          output_port_name_prefix="output",
-                          num_output_ports=num_output_ports))
+                          input_ports=["input"],
+                          output_ports=["output_0", "output_1"]))
 
 # Connect the source stage to the DFP deployment module
 pipeline.add_edge(source_stage, dfp_deployment_stage)
