@@ -73,35 +73,25 @@ from stages.graph_sage_stage import GraphSAGEStage
     help="Training data filepath.",
 )
 @click.option(
-    "--model-hinsage-file",
+    "--model_dir",
     type=click.Path(exists=True, readable=True),
-    default="model/hinsage-model.pt",
+    default="model",
     required=True,
     help="Trained hinsage model filepath.",
-)
-@click.option(
-    "--model-xgb-file",
-    type=click.Path(exists=True, readable=True),
-    default="model/xgb-model.pt",
-    required=True,
-    help="Trained xgb model filepath.",
 )
 @click.option(
     "--output_file",
     default="output.csv",
     help="The path to the file where the inference output will be saved.",
 )
-def run_pipeline(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_fea_length,
-    input_file,
-    training_file,
-    model_hinsage_file,
-    model_xgb_file,
-    output_file,
-):
+def run_pipeline(num_threads,
+                 pipeline_batch_size,
+                 model_max_batch_size,
+                 model_fea_length,
+                 input_file,
+                 training_file,
+                 model_dir,
+                 output_file):
     # Enable the default logger.
     configure_logging(log_level=logging.INFO)
 
@@ -136,16 +126,16 @@ def run_pipeline(
     pipeline.add_stage(DeserializeStage(config))
 
     # Add the graph construction stage.
-    pipeline.add_stage(FraudGraphConstructionStage(config, training_file))
+    pipeline.add_stage(FraudGraphConstructionStage(config, training_file, input_file))
     pipeline.add_stage(MonitorStage(config, description="Graph construction rate"))
 
     # Add a sage inference stage.
-    pipeline.add_stage(GraphSAGEStage(config, model_hinsage_file))
+    pipeline.add_stage(GraphSAGEStage(config, model_dir))
     pipeline.add_stage(MonitorStage(config, description="Inference rate"))
 
     # Add classification stage.
     # This stage adds detected classifications to each message.
-    pipeline.add_stage(ClassificationStage(config, model_xgb_file))
+    pipeline.add_stage(ClassificationStage(config, os.path.join(model_dir, "xgb.pt")))
     pipeline.add_stage(MonitorStage(config, description="Add classification rate"))
 
     # Add a serialize stage.
