@@ -12,7 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""
+python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv\
+      --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
+          --model-dir models-dir --output-file out.txt\
+            --model-type HinSAGE
+"""
 import os
 import pickle
 
@@ -22,6 +27,7 @@ import numpy as np
 import pandas as pd
 import torch
 from model import HeteroRGCN
+from model import HinSAGE
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import auc
 from sklearn.metrics import average_precision_score
@@ -157,6 +163,8 @@ def save_model(graph, model, hyperparameters, xgb_model, model_dir):
         xgb_model (XGBoost): XGBoost trained model.
         model_dir (str): directory to save
     """
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
     torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'wb') as f:
         pickle.dump(hyperparameters, f)
@@ -165,31 +173,28 @@ def save_model(graph, model, hyperparameters, xgb_model, model_dir):
     xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
 
-def load_model(model_dir, device):
+def load_model(model_dir, gnn_model=HeteroRGCN):
     """Load trained model, graph structure from given directory
 
     Args:
-        model_dir (str): directory path for trained models.
-        device (str):  host device, cpu/gpu
+        model_dir (str path):directory path for trained model obj.
 
     Returns:
-       List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
     """
-
     from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
         graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = HeteroRGCN(graph,
-                       in_size=hyperparameters['in_size'],
-                       hidden_size=hyperparameters['hidden_size'],
-                       out_size=hyperparameters['out_size'],
-                       n_layers=hyperparameters['n_layers'],
-                       embedding_size=hyperparameters['embedding_size'],
-                       target=hyperparameters['target_node'],
-                       device=device)
+    model = gnn_model(graph,
+                      in_size=hyperparameters['in_size'],
+                      hidden_size=hyperparameters['hidden_size'],
+                      out_size=hyperparameters['out_size'],
+                      n_layers=hyperparameters['n_layers'],
+                      embedding_size=hyperparameters['embedding_size'],
+                      target=hyperparameters['target_node'])
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
     xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
 
@@ -205,8 +210,8 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='tra
         test_idx (list): test feature index
         val_idx (list): validation index
         g_test (DGLHeteroGraph): test graph
-        target_node (str, optional): target node. Defaults to 'transaction'.
-        batch_size (int): Batch size
+        target_node (str, optional): target node. Defaults to 'authentication'.
+        batch_size (int): batchsize for inference.
 
     Returns:
         List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
@@ -258,7 +263,7 @@ def train(model,
         train_dataloader (NodeDataLoader) : train dataloader class
         labels (list): training label
         optimizer (nn.optimizer) : optimizer for training
-        feature_tensors (torch.Tensor) : node features
+        feature_tensors (torch.from_numpy) : node features
         target_node (str, optional): target node embedding. Defaults to 'transaction'.
         device (str, optional): host device. Defaults to 'cpu'.
 
@@ -273,7 +278,7 @@ def train(model,
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
         input_features = feature_tensors[nid].to(device)
 
-        logits = model(blocks, input_features)
+        logits, _ = model(blocks, input_features)
         loss = loss_func(logits, labels[seed])
 
         optimizer.zero_grad()
@@ -281,6 +286,7 @@ def train(model,
         optimizer.step()
         train_loss += loss.item()
         train_acc = accuracy_score(logits.argmax(1).cpu(), labels[seed].cpu().long()).item()
+
     return train_acc, train_loss
 
 
@@ -324,14 +330,21 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
 @click.command()
 @click.option('--training-data', help="Path to training data ", default="data/training.csv")
 @click.option('--validation-data', help="Path to validation data", default="data/validation.csv")
-@click.option('--model-dir', help="path to model directory", default="modeldir")
+@click.option('--model-dir', help="path to model directory", default="debug")
 @click.option('--target-node', help="Target node", default="transaction")
 @click.option('--epochs', help="Number of epochs", default=20)
 @click.option('--batch_size', help="Batch size", default=1024)
-@click.option('--output-file', help="Path to csv inference result", default="out.csv")
-def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file):
+@click.option('--output-file', help="Path to csv inference result", default="debug/out.csv")
+@click.option('--model-type', help="Model type either RGCN/Graphsage", default="RGCN")
+def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file, model_type):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    if model_type == "RGCN":
+        gnn_model = HeteroRGCN
+    else:
+        gnn_model = HinSAGE
+
     # process training data
     train_data, _, train_idx, inductive_idx,\
         labels, df = prepare_data(training_data, validation_data)
@@ -349,7 +362,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
     # Hyperparameters
     in_size, hidden_size, out_size, n_layers,\
-        embedding_size = 111, 64, 2, 2, 16
+        embedding_size = 111, 64, 2, 2, 1
     hyperparameters = {
         "in_size": in_size,
         "hidden_size": hidden_size,
@@ -361,7 +374,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     }
 
     scale_pos_weight = train_data['fraud_label'].sum() / train_data.shape[0]
-    scale_pos_weight = torch.from_numpy([scale_pos_weight, 1 - scale_pos_weight]).to(device)
+    scale_pos_weight = torch.FloatTensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
 
     # Dataloaders
     train_loader, val_loader, test_loader = init_loaders(train_graph.to(
@@ -369,7 +382,8 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         val_idx=inductive_idx, g_test=whole_graph, batch_size=batch_size)
 
     # Set model variables
-    model = HeteroRGCN(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size, device=device).to(device)
+    # Set model variables
+    model = gnn_model(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
     loss_func = nn.CrossEntropyLoss(weight=scale_pos_weight.float())
 
@@ -386,6 +400,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
             val_logits[:, 1].numpy(),
         )
         print(f"Validation Accuracy: {val_accuracy} auc {val_auc}")
+
     # Create embeddings
     _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node, device=device)
     test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
@@ -399,7 +414,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     acc, f_1, precision, recall, roc_auc, pr_auc, average_precision, _, _ = get_metrics(
         test_logits.numpy(), labels[test_seeds].cpu().numpy())
     metrics_result = [{
-        'model': 'RGC',
+        'model': 'RGCN',
         'acc': acc,
         'f1': f_1,
         'precision': precision,
@@ -414,9 +429,9 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     classifier.fit(train_embedding.cpu().numpy(), labels[train_seeds].cpu().numpy())
     xgb_pred = classifier.predict_proba(test_embedding.cpu().numpy())
     acc, f_1, precision, recall, roc_auc, pr_auc, average_precision, _, _ = get_metrics(
-        xgb_pred, labels[inductive_idx].cpu().numpy(),  name='XGB+RGCN')
+        xgb_pred, labels[inductive_idx].cpu().numpy(),  name='RGCN_XGB')
     metrics_result += [{
-        'model': 'RGCN+XGB',
+        'model': 'RGCN_XGB',
         'acc': acc,
         'f1': f_1,
         'precision': precision,
@@ -432,5 +447,4 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
 
 if __name__ == "__main__":
-
     train_model()

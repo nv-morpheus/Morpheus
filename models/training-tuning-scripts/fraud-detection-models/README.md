@@ -41,8 +41,9 @@ Options:
   --epochs INTEGER        Number of epochs
   --batch_size INTEGER    Batch size
   --output-file TEXT      Path to csv inference result
+  --model-type TEXT       Model type either RGCN/HinSAGE
   --help                  Show this message and exit
-
+  
 ```
 
 
@@ -54,6 +55,8 @@ export DATASET=../../dataset
 python training.py --training-data $DATASET/training-data/fraud-detection-training-data.csv \
 --validation-data $DATASET\validation-datafraud-detection-validation-data.csv \
          --epochs 20 \
-         --model_dir model
+         --model_dir models\
+         --model-type HinSAGE
+"""
 ```
-This results is a trained models of RGCN (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.
+This results is a trained models of RGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.
