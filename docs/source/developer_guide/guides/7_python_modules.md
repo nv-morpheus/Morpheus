@@ -102,6 +102,11 @@ ease of use when loading and incorporating modules into existing workflows.
 `my_test_module_consumer_stage.py`
 
 ```python
+import mrc
+
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
+
 class MyPassthroughModuleWrapper(SinglePortStage):
     # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
