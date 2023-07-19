@@ -77,8 +77,8 @@ if msg.has_metadata("description"):
 
 ### Handling Payloads
 
-The payload of a Control Message is a Morpheus MessageMeta object that can carry raw data. You can set or retrieve the
-payload using the `payload` method, which can accept a MessageMeta instance or return the payload
+The payload of a Control Message is a Morpheus `MessageMeta` object that can carry raw data. You can set or retrieve the
+payload using the `payload` method, which can accept a `MessageMeta` instance or return the payload
 itself.
 
 ```python
@@ -94,5 +94,5 @@ msg.payload(msg_meta)
 
 retrieved_payload = msg.payload()
 
-msg_meta = retrieved_payload # True
+msg_meta == retrieved_payload # True
 ```
