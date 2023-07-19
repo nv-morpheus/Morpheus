@@ -29,8 +29,7 @@ written in Python or C++.
 ## The Passthrough Module
 
 The `passthrough` module is a simple module that takes a single input port and a single output port. It simply
-passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](.
-/guides/1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as
+passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as
 its own Morpheus stage, or within the context of another stage in order to be used.
 
 ### Module Definition and Registration
@@ -104,7 +103,7 @@ ease of use when loading and incorporating modules into existing workflows.
 
 ```python
 class MyPassthroughModuleWrapper(SinglePortStage):
-    # ... stage implementation 
+    # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         module_config = {
             "some_configuration_parameter": "some_value"
@@ -138,7 +137,7 @@ from mrc.core import operators as ops
 from morpheus.utils.module_utils import register_module
 
 
-## Create and register our two new component modules 
+## Create and register our two new component modules
 # ==========================================
 @register_module("my_square_module", "my_module_namespace")
 def my_test_module_initialization(builder: mrc.Builder):
@@ -193,7 +192,7 @@ def my_compound_module(builder: mrc.Builder):
 
 ```python
 class MyCompoundOpModuleWrapper(SinglePortStage):
-    # ... stage implementation 
+    # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         module_config = {}
 
