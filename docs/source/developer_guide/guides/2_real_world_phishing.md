@@ -638,7 +638,7 @@ If we were to make the above changes, we can view the resulting help string with
 ```bash
 morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
 ```
-```
+```console
 Configuring Pipeline via CLI
 Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
 
