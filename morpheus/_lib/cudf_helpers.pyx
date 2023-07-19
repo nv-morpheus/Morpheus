@@ -15,18 +15,10 @@
 
 import cudf
 
-from libcpp.memory cimport make_shared
-from libcpp.memory cimport make_unique
-from libcpp.memory cimport shared_ptr
-from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
 
-from cudf._lib.column cimport Column
-from cudf._lib.cpp.column.column_view cimport column_view
-from cudf._lib.cpp.io.types cimport column_name_info
-from cudf._lib.cpp.io.types cimport table_metadata
 from cudf._lib.cpp.io.types cimport table_with_metadata
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.utils cimport data_from_table_view

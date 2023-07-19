@@ -213,6 +213,6 @@ ulimit -n 4096
 1. Exit the Kafka terminal.
 1. From the root of the `kafka-docker` repo run (in the host OS not inside a container):
     ```bash
-    docker-compose stop
-    docker-compose rm
+    docker compose stop
+    docker compose rm
     ```

@@ -14,5 +14,3 @@
 """
 Memory classes
 """
-
-__all__ = []

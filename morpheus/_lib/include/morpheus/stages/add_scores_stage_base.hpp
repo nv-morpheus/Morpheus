@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 
+#include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
@@ -33,6 +34,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {

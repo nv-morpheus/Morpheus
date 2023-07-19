@@ -44,7 +44,7 @@ Morpheus includes, as of version 23.03, a number of pre-defined module implement
 custom pipeline. Modules can be thought of as units of work, which exist at a lower level than stages. Modules can
 be defined, registered, chained, nested, and loaded at runtime. Modules can be written in Python or C++.
 
-- [List of available Morpheus modules](../modules/morpheus_modules.md)
+- [List of available Morpheus modules](../modules/index.md)
 
 There are likely going to be situations that require writing a custom module, either for creating your own
 reusable work units, or for creating a new compound module from a set of existing primitives. The following guides
