@@ -435,12 +435,12 @@ pipeline.add_stage(SerializeStage(config))
 pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
 ```
 
-Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`
+Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`.
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Supported values are:
 * `FileTypes.Auto`
-* `FileTypes.JSON`
 * `FileTypes.CSV`
+* `FileTypes.JSON`
 
 ### The Completed Pipeline
 
@@ -637,7 +637,7 @@ If we were to make the above changes, we can view the resulting help string with
 ```bash
 morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
 ```
-```
+```console
 Configuring Pipeline via CLI
 Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
 

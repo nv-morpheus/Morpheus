@@ -19,8 +19,7 @@ limitations under the License.
 
 ## Background
 
-Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are
-comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
+Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
 ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus
 stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define
 basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be
@@ -29,8 +28,7 @@ written in Python or C++.
 ## The Passthrough Module
 
 The `passthrough` module is a simple module that takes a single input port and a single output port. It simply
-passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](.
-/guides/1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as
+passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as
 its own Morpheus stage, or within the context of another stage in order to be used.
 
 ### Module Definition and Registration
@@ -103,8 +101,13 @@ ease of use when loading and incorporating modules into existing workflows.
 `my_test_module_consumer_stage.py`
 
 ```python
+import mrc
+
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
+
 class MyPassthroughModuleWrapper(SinglePortStage):
-    # ... stage implementation 
+    # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         module_config = {
             "some_configuration_parameter": "some_value"
@@ -138,7 +141,7 @@ from mrc.core import operators as ops
 from morpheus.utils.module_utils import register_module
 
 
-## Create and register our two new component modules 
+## Create and register our two new component modules
 # ==========================================
 @register_module("my_square_module", "my_module_namespace")
 def my_test_module_initialization(builder: mrc.Builder):
@@ -192,8 +195,13 @@ def my_compound_module(builder: mrc.Builder):
 `my_compound_module_consumer_stage.py`
 
 ```python
+import mrc
+
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
+
 class MyCompoundOpModuleWrapper(SinglePortStage):
-    # ... stage implementation 
+    # ... stage implementation
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         module_config = {}
 
@@ -221,7 +229,7 @@ module_config = {
     "module_id": "my_compound_module",
     "module_namespace": "my_module_namespace",
     "module_instance_name": "module_instance_name",
-    ... other module config params...
+    # ... other module config params...
 }
 
 pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input_0", output_port_name="output_0"))
