@@ -36,14 +36,14 @@ class DFPPreprocessingStage(SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     input_schema : `morpheus.utils.column_info.DataFrameInputSchema`
         Input schema for the DataFrame.
     """
 
-    def __init__(self, c: Config, input_schema: DataFrameInputSchema):
-        super().__init__(c)
+    def __init__(self, config: Config, input_schema: DataFrameInputSchema):
+        super().__init__(config)
 
         self._input_schema = input_schema
 
