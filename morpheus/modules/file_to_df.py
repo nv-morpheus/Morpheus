@@ -33,7 +33,6 @@ import cudf
 from morpheus.cli.utils import str_to_file_type
 from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.downloader import Downloader
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -93,8 +92,8 @@ def file_to_df(builder: mrc.Builder):
 
     try:
         file_type = str_to_file_type(file_type.lower())
-    except Exception:
-        raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
+    except Exception as exec_info:
+        raise ValueError(f"Invalid input file type '{file_type}'. Available file types are: CSV, JSON.") from exec_info
 
     def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                    file_type: FileTypes,
@@ -124,7 +123,10 @@ def file_to_df(builder: mrc.Builder):
         if (s3_df is None):
             return s3_df
 
-        s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
+        # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
+        # increases performance significantly)
+        if (schema.prep_dataframe is not None):
+            s3_df = schema.prep_dataframe(s3_df)
 
         return s3_df
 
@@ -132,16 +134,16 @@ def file_to_df(builder: mrc.Builder):
             file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
 
         if (not file_object_batch):
-            return None, False
+            raise RuntimeError("No file objects to process")
 
         file_list = file_object_batch[0]
         batch_count = file_object_batch[1]
 
-        fs: fsspec.AbstractFileSystem = file_list.fs
+        file_system: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
         # hashes all of the output of `info()` which is perfect
-        hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
+        hash_data = [{"ukey": file_system.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
         objects_hash_hex = hashlib.md5(json.dumps(hash_data, sort_keys=True).encode()).hexdigest()
@@ -169,11 +171,10 @@ def file_to_df(builder: mrc.Builder):
             dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
-            return None, False
+            raise
 
-        if (not dfs):
-            logger.error("No logs were downloaded")
-            return None, False
+        if (dfs is None or len(dfs) == 0):
+            raise ValueError("No logs were downloaded")
 
         output_df: pd.DataFrame = pd.concat(dfs)
 
@@ -206,10 +207,13 @@ def file_to_df(builder: mrc.Builder):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
-                         len(output_df),
-                         "hit" if cache_hit else "miss",
-                         duration)
+            if (output_df is not None and logger.isEnabledFor(logging.DEBUG)):
+                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
+                             len(output_df),
+                             "hit" if cache_hit else "miss",
+                             duration,
+                             len(output_df) / (duration / 1000.0))
+
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")

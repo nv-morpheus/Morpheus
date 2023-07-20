@@ -205,18 +205,17 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             duration = (time.time() - start_time) * 1000.0
 
-            if (output_df is not None):
+            if (output_df is not None and logger.isEnabledFor(logging.DEBUG)):
                 logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
                              len(output_df),
                              "hit" if cache_hit else "miss",
                              duration,
                              len(output_df) / (duration / 1000.0))
-                return output_df
+
+            return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
             raise
-
-        return None
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name,

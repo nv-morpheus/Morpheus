@@ -22,6 +22,7 @@ from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
@@ -127,7 +128,7 @@ def test_json_flatten_info_init_missing_output_col_names():
 def test_get_ci_column_selector_rename_column():
     col_info = RenameColumn(input_name="original_name", name="new_name", dtype="str")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_bool_column():
@@ -137,19 +138,19 @@ def test_get_ci_column_selector_bool_column():
                           true_values=["True"],
                           false_values=["False"])
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_datetime_column():
     col_info = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_string_join_column():
     col_info = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_increment_column():
@@ -158,7 +159,17 @@ def test_get_ci_column_selector_increment_column():
                                dtype="datetime64[ns]",
                                groupby_column="groupby_col")
     result = _get_ci_column_selector(col_info)
-    assert result == ["groupby_col", "original_name"]
+    assert result == ["original_name", "groupby_col"]
+
+
+def test_get_ci_column_selector_distinct_increment_column():
+    col_info = DistinctIncrementColumn(input_name="original_name",
+                                       name="new_name",
+                                       dtype="datetime64[ns]",
+                                       groupby_column="groupby_col",
+                                       timestamp_column="timestamp_col")
+    result = _get_ci_column_selector(col_info)
+    assert result == ["original_name", "groupby_col", "timestamp_col"]
 
 
 def test_get_ci_column_selector_string_cat_column():
@@ -265,7 +276,7 @@ def test_coalesce_leaf_nodes():
 
     # Call bfs_traversal_with_op_map() and coalesce_leaf_nodes()
     _, node_op_map = _bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
-    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, graph, [])
+    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, column_info_objects)
 
     # Check if the coalesced workflow is not None
     assert coalesced_workflow is not None
@@ -399,7 +410,9 @@ def test_input_schema_conversion_nested_operations():
         "username": ["Jane Smith"],
         "accessdevicebrowser": ["Firefox"],
         "accessdeviceos": ["Linux"],
-        "appname": ["AnotherApp_v1"]
+        "appname": ["AnotherApp_v1"],
+        "application.name": ["AnotherApp"],
+        "appsuffix": ["_v1"]
     })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
@@ -424,7 +437,11 @@ def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     dataset = nvt.Dataset(test_df)
     output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
-    expected_df = pd.DataFrame({"rootcat": ["lhs-rhs"]})
+    expected_df = pd.DataFrame({
+        "rootcat": ["lhs-rhs"],
+        "rhs_top_level": ["rhs"],
+        "lhs_top_level": ["lhs"],
+    })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
 
@@ -440,17 +457,23 @@ def test_input_schema_conversion_preserve_column():
 
     modified_schema = DataFrameInputSchema(json_columns=[],
                                            column_info=modified_source_column_info,
-                                           preserve_columns=["lhs_top_level|rhs_top_level"])
+                                           preserve_columns=["to_preserve"])
 
     test_df = create_test_dataframe()
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
+    test_df["to_preserve"] = ["preserve me"]
 
     modified_schema = create_and_attach_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
     output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
-    expected_df = pd.DataFrame({"lhs_top_level": ["lhs"], "rhs_top_level": ["rhs"], "rootcat": ["lhs-rhs"]})
+    # See issue #1074. This should include the `to_preserve` column, but it doesn't.
+    expected_df = pd.DataFrame({
+        "rootcat": ["lhs-rhs"],
+        "rhs_top_level": ["rhs"],
+        "lhs_top_level": ["lhs"],  # "to_preserve": ["preserve me"],
+    })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
 

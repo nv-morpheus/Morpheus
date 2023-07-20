@@ -14,7 +14,6 @@
 
 import dataclasses
 import os
-import re
 import typing
 from functools import partial
 
@@ -33,10 +32,12 @@ from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
+from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.nvt import MutateOp
 from morpheus.utils.nvt.decorators import sync_df_as_pandas
 from morpheus.utils.nvt.transforms import json_flatten
@@ -57,6 +58,13 @@ class JSONFlattenInfo(ColumnInfo):
 
     input_col_names: list
     output_col_names: list
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {name: ColumnInfo.convert_pandas_dtype(str) for name in self.input_col_names}
 
 
 def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
@@ -84,27 +92,12 @@ def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
     if (not isinstance(col_info, ColumnInfo)):
         raise TypeError
 
-    # pylint: disable=no-else-return
-    if (col_info.__class__ == ColumnInfo):
-        return col_info.name
+    selected_cols = col_info.get_input_column_types()
 
-    elif col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn]:
-        return col_info.input_name
+    if (len(selected_cols) == 0 and isinstance(col_info, CustomColumn)):
+        return ["*"]
 
-    elif col_info.__class__ in [IncrementColumn]:
-        return [col_info.groupby_column, col_info.input_name]
-
-    elif col_info.__class__ == StringCatColumn:
-        return col_info.input_columns
-
-    elif col_info.__class__ == JSONFlattenInfo:
-        return col_info.input_col_names
-
-    elif col_info.__class__ == CustomColumn:
-        return '*'
-
-    else:
-        raise ValueError(f"Unknown ColumnInfo type: {col_info.__class__}")
+    return list(selected_cols.keys())
 
 
 def _json_flatten_from_input_schema(json_input_cols: typing.List[str],
@@ -254,6 +247,34 @@ def _nvt_increment_column(
 
 
 @sync_df_as_pandas()
+def _distinct_increment_column(df: pd.DataFrame,
+                               output_column: str,
+                               input_column: str,
+                               groupby_column: str = "username",
+                               period: str = 'D',
+                               timestamp_column: str = "timestamp") -> pd.DataFrame:
+
+    output_series = create_increment_col(df=df,
+                                         column_name=input_column,
+                                         groupby_column=groupby_column,
+                                         period=period,
+                                         timestamp_column=timestamp_column)
+
+    return pd.DataFrame({output_column: output_series})
+
+
+def _nvt_distinct_increment_column(_: ColumnSelector,
+                                   df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                                   output_column: str,
+                                   input_column: str,
+                                   groupby_column: str = "username",
+                                   period: str = 'D',
+                                   timestamp_column: str = "timestamp") -> typing.Union[pd.DataFrame, cudf.DataFrame]:
+
+    return _distinct_increment_column(df, output_column, input_column, groupby_column, period, timestamp_column)
+
+
+@sync_df_as_pandas()
 def _nvt_try_rename(df: pd.DataFrame, input_col_name: str, output_col_name: str, dtype: None) -> pd.Series:
     if (input_col_name in df.columns):
         return df.rename(columns={input_col_name: output_col_name})
@@ -308,6 +329,20 @@ ColumnInfoProcessingMap = {
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[IncrementColumn] '{ci.input_name}.{ci.groupby_column}' => '{ci.name}'")
+        ],
+    DistinctIncrementColumn:
+        lambda ci,
+        deps: [
+            MutateOp(partial(_nvt_distinct_increment_column,
+                             output_column=ci.name,
+                             input_column=ci.input_name,
+                             groupby_column=ci.groupby_column,
+                             period=ci.period,
+                             timestamp_column=ci.timestamp_column),
+                     dependencies=deps,
+                     output_columns=[(ci.name, ci.dtype)],
+                     label=(f"[DistinctIncrementColumn] "
+                            f"'{ci.input_name}.{ci.groupby_column}.{ci.timestamp_column}' => '{ci.name}'"))
         ],
     RenameColumn:
         lambda ci,
@@ -372,34 +407,15 @@ def _build_nx_dependency_graph(column_info_objects: typing.List[ColumnInfo]) -> 
 
         return None
 
+    # For each column, determine the inputs for that column and add edges to the graph
+    # Some columns will use simple strings
     for col_info in column_info_objects:
         graph.add_node(col_info.name)
 
-        if col_info.__class__ in [RenameColumn, BoolColumn, DateTimeColumn, StringJoinColumn]:
-            # If col_info.name != col_info.input_name then we're creating a potential dependency
-            if col_info.name != col_info.input_name:
-                dep_col_info = _find_dependent_column(col_info.input_name, col_info.name)
-                if dep_col_info:
-                    # This CI is dependent on the dep_col_info CI
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-        elif col_info.__class__ in [IncrementColumn]:
-            for input_col_name in [col_info.input_name, col_info.groupby_column]:
-                dep_col_info = _find_dependent_column(input_col_name, col_info.name)
-                if (dep_col_info):
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-        elif col_info.__class__ == StringCatColumn:
-            for input_col_name in col_info.input_columns:
-                dep_col_info = _find_dependent_column(input_col_name, col_info.name)
-                if dep_col_info:
-                    graph.add_edge(dep_col_info.name, col_info.name)
-
-        elif col_info.__class__ == JSONFlattenInfo:
-            for output_col_name in [c for c, _ in col_info.output_col_names]:
-                dep_col_info = _find_dependent_column(output_col_name, col_info.name)
-                if dep_col_info:
-                    graph.add_edge(dep_col_info.name, col_info.name)
+        for input_col_name in col_info.get_input_column_types().keys():
+            dep_col_info = _find_dependent_column(input_col_name, col_info.name)
+            if (dep_col_info):
+                graph.add_edge(dep_col_info.name, col_info.name)
 
     return graph
 
@@ -434,16 +450,23 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
         if node not in visited:
             visited.add(node)
 
+            # We need to start an operator chain with a column selector, so root nodes need to prepend a parent
+            # column selection operator
+            parent_input = _get_ci_column_selector(ci_map[node])
+
             parents = list(graph.predecessors(node))
-            if len(parents) == 0:
-                # We need to start an operator chain with a column selector, so root nodes need to prepend a parent
-                #   column selection operator
-                parent_input = _get_ci_column_selector(ci_map[node])
-            else:
+
+            # Thin the parent_input by any actual parents
+            parent_input = [x for x in parent_input if x not in parents]
+
+            # If we are a single element list, just use the element
+            if (len(parent_input) == 1):
+                parent_input = parent_input[0]
+
+            if len(parents) > 0:
                 # Not a root node, so we need to gather the parent operators, and collect them up.
-                parent_input = None
                 for parent in parents:
-                    if parent_input is None:
+                    if isinstance(parent_input, list) and len(parent_input) == 0:
                         parent_input = node_op_map[parent]
                     else:
                         parent_input = parent_input + node_op_map[parent]
@@ -468,8 +491,7 @@ def _bfs_traversal_with_op_map(graph: nx.Graph,
 
 
 def _coalesce_leaf_nodes(node_op_map: typing.Dict[typing.Any, typing.Any],
-                         graph: nx.Graph,
-                         preserve_re: typing.Optional[re.Pattern]) -> typing.Any:
+                         column_info_objects: list[ColumnInfo]) -> typing.Any:
     """
     Coalesce (combine) operations for the leaf nodes of a graph.
 
@@ -488,21 +510,20 @@ def _coalesce_leaf_nodes(node_op_map: typing.Dict[typing.Any, typing.Any],
         Coalesced workflow for leaf nodes.
     """
     coalesced_workflow = None
-    for node, nvt_op in node_op_map.items():
-        neighbors = list(graph.neighbors(node))
-        # Only add the operators for leaf nodes, or those explicitly preserved
-        if len(neighbors) == 0 or (preserve_re and preserve_re.match(node)):
-            if coalesced_workflow is None:
-                coalesced_workflow = nvt_op
-            else:
-                coalesced_workflow = coalesced_workflow + nvt_op
+
+    for column_info in column_info_objects:
+
+        nvt_op = node_op_map[column_info.name]
+
+        if coalesced_workflow is None:
+            coalesced_workflow = nvt_op
+        else:
+            coalesced_workflow = coalesced_workflow + nvt_op
 
     return coalesced_workflow
 
 
-def _coalesce_ops(graph: nx.Graph,
-                  ci_map: typing.Dict[typing.Any, ColumnInfo],
-                  preserve_re: typing.Optional[re.Pattern] = None) -> typing.Any:
+def _coalesce_ops(graph: nx.Graph, column_info_objects: list[ColumnInfo]) -> typing.Any:
     """
     Coalesce (combine) operations for a graph.
 
@@ -521,9 +542,13 @@ def _coalesce_ops(graph: nx.Graph,
         Coalesced workflow for the graph.
     """
 
+    ci_map = {ci.name: ci for ci in column_info_objects}
+
     root_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
-    _, node_op_map = _bfs_traversal_with_op_map(graph, ci_map, root_nodes)  #
-    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, graph, preserve_re=preserve_re)
+
+    _, node_op_map = _bfs_traversal_with_op_map(graph, ci_map, root_nodes)
+
+    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, column_info_objects)
 
     return coalesced_workflow
 
@@ -574,10 +599,7 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
     #                        dtype="str",
     #                        name="json_info"))
 
-    column_info_objects = list(input_schema.column_info)
-    column_info_map = {ci.name: ci for ci in column_info_objects}
-
-    graph = _build_nx_dependency_graph(column_info_objects)
+    graph = _build_nx_dependency_graph(input_schema.column_info)
 
     if os.getenv('MORPHEUS_NVT_VIS_DEBUG') is not None:
         from matplotlib import pyplot as plt
@@ -586,7 +608,7 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
         nx.draw(graph, pos, with_labels=True, font_weight='bold')
         plt.show()
 
-    coalesced_workflow = _coalesce_ops(graph, column_info_map, preserve_re=input_schema.preserve_columns)
+    coalesced_workflow = _coalesce_ops(graph, input_schema.column_info)
     if (input_schema.row_filter is not None):
         coalesced_workflow = coalesced_workflow >> Filter(f=input_schema.row_filter)
 

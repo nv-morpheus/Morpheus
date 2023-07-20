@@ -255,7 +255,7 @@ def test_date_column():
 
     datetime_series = datetime_col._process_column(df)
 
-    assert datetime_series.dtype == 'datetime64[ns, UTC]'
+    assert datetime_series.dtype == np.dtype("datetime64[ns]")
 
 
 @pytest.mark.use_python

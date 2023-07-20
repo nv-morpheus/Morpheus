@@ -16,7 +16,6 @@ import logging
 import time
 
 import mrc
-import pandas as pd
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
@@ -83,7 +82,6 @@ def dfp_inference(builder: mrc.Builder):
 
         with payload.mutable_dataframe() as dfm:
             df_user = dfm.to_pandas()
-        df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
 
         try:
             model_cache: ModelCache = get_model(user_id)
