@@ -59,11 +59,11 @@ set_target_properties(test_libmorpheus
 )
 
 install(
-    TARGETS
-  test_libmorpheus
-    RUNTIME DESTINATION
-  "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-    COMPONENT Wheel
+  TARGETS
+    test_libmorpheus
+  RUNTIME DESTINATION
+    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+  COMPONENT Wheel
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
