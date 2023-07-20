@@ -54,8 +54,8 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         Plugins for appshield to be extracted.
     cols_include : List[str], default = None
         Raw features to extract from appshield plugins data.
-    cols_exclude : List[str], default = ["SHA256"]
-        Columns that aren't essential should be excluded.
+    cols_exclude : List[str], default = None
+        Columns that aren't essential should be excluded. If `None`, ["SHA256"] will be used.
     watch_directory : bool, default = False
         The watch directory option instructs this stage to not close down once all files have been read. Instead it will
         read all files that match the 'input_glob' pattern, and then continue to watch the directory for additional
@@ -79,7 +79,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
                  input_glob: str,
                  plugins_include: typing.List[str],
                  cols_include: typing.List[str],
-                 cols_exclude: typing.List[str] = ["SHA256"],
+                 cols_exclude: typing.List[str] = None,
                  watch_directory: bool = False,
                  max_files: int = -1,
                  sort_glob: bool = False,
@@ -92,7 +92,12 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         self._plugins_include = plugins_include
         self._cols_include = cols_include
-        self._cols_exclude = cols_exclude
+
+        if cols_exclude is None:
+            self._cols_exclude = ["SHA256"]
+        else:
+            self._cols_exclude = cols_exclude
+
         self._encoding = encoding
 
         self._input_count = None
@@ -229,7 +234,8 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
             Splits of file path.
         plugin : str
             Plugin name to which the data belongs to.
-
+        plugin_df: pd.DataFrame
+            DataFrame to which the meta columns will be added to.
         Returns
         -------
         pandas.DataFrame
@@ -237,7 +243,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         """
 
         if len(filepath_split) < 3:
-            raise ValueError('Invalid filepath_split {}. Length should be greater than 2'.format(filepath_split))
+            raise ValueError(f'Invalid filepath_split {filepath_split}. Length should be greater than 2')
 
         source = filepath_split[-3]
 
@@ -245,7 +251,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         ts_re = re.search('[a-z]+_([0-9-_.]+).json', filepath_split[-1])
 
         if ts_re is None:
-            raise ValueError('Invalid format for filepath_split {}'.format(filepath_split))
+            raise ValueError(f'Invalid format for filepath_split {filepath_split}')
 
         timestamp = ts_re.group(1)
 
@@ -306,6 +312,8 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
             Columns that needs to include.
         cols_exclude : typing.List[str]
             Columns that needs to exclude.
+        plugins_include: typing.List[str]
+            For each path in `x`, a list of plugins to load additional meta cols from.
         encoding : str
             Encoding to read a file.
 
