@@ -33,6 +33,7 @@ import cudf
 from morpheus.cli.utils import str_to_file_type
 from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.downloader import Downloader
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE

@@ -34,13 +34,6 @@ class Schema:
     preprocess: DataFrameInputSchema
 
 
-def remove_tz_inplace(df):
-    datetime_cols = [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]
-    for col in datetime_cols:
-        if df[col].dt.tz is not None:
-            df[col] = df[col].astype("datetime64[ns]")
-
-
 class SchemaBuilder:
 
     def __init__(self, config: Config, source: str):
@@ -153,8 +146,7 @@ class SchemaBuilder:
             DistinctIncrementColumn(name="locincrement", dtype=int, input_name="location"),
         ]
 
-        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info,
-                                                 preserve_columns=["_batch_id", "timestamp"])
+        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
         schema = Schema(source=source_schema, preprocess=preprocess_schema)
 

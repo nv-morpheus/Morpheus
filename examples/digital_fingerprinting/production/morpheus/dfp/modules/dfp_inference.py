@@ -18,7 +18,6 @@ import time
 import mrc
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
-from dfp.utils.schema_utils import remove_tz_inplace
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
