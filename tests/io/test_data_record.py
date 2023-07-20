@@ -177,8 +177,6 @@ def test_properties_in_memory():
     df = cudf.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
     data_record = DataRecord(df, 'test_label', 'in_memory', 'csv')
 
-    print(data_record)
-    print(repr(data_record))
     assert data_record.backing_source == 'IO Buffer'
     pd.testing.assert_frame_equal(data_record.data, df.to_pandas())
     assert data_record.format == 'csv'

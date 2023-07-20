@@ -102,9 +102,6 @@ def dfp_rolling_window(builder: mrc.Builder):
             with message.mutable_dataframe() as dfm:
                 incoming_df = dfm.to_pandas()
 
-            # Note cuDF does not support tz aware datetimes (?)
-            incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
-
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasn't even covered by the window. Generate warning
                 logger.warning(("Incoming data preceeded existing history. "
@@ -166,7 +163,8 @@ def dfp_rolling_window(builder: mrc.Builder):
             # If we're an explicit training or inference task, then we don't need to do any rolling window logic
             if (data_type == "payload"):
                 return control_message
-            elif (data_type == "streaming"):
+
+            if (data_type == "streaming"):
                 with log_time(logger.debug):
                     result = try_build_window(payload, user_id)  # Return a MessageMeta
 
@@ -177,6 +175,8 @@ def dfp_rolling_window(builder: mrc.Builder):
                 control_message.set_metadata("data_type", "payload")
 
                 return control_message
+
+            raise RuntimeError(f"Unknown data type: {data_type}")
 
         except Exception as exec_info:
             logger.error("Error processing control message in rolling window: %s\nDiscarding control message.",

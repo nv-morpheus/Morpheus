@@ -22,6 +22,8 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import import_or_skip
+from _utils.dataset_manager import DatasetManager
+from morpheus.config import Config
 
 SKIP_REASON = (
     "Tests for the digital_fingerprinting production example requires a number of packages not installed in the "
@@ -34,6 +36,14 @@ def dask_distributed(fail_missing: bool):
     Mark tests requiring dask.distributed
     """
     yield import_or_skip("dask.distributed", reason=SKIP_REASON, fail_missing=fail_missing)
+
+
+@pytest.fixture(autouse=True, scope='session')
+def dask_cuda(fail_missing: bool):
+    """
+    Mark tests requiring dask.distributed
+    """
+    yield import_or_skip("dask_cuda", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture(autouse=True, scope='session')
@@ -51,7 +61,7 @@ def ae_feature_cols_fixture():
 
 
 @pytest.fixture(name="config")
-def config_fixture(config_no_cpp, ae_feature_cols: typing.List[str]):
+def config_fixture(config_no_cpp: Config, ae_feature_cols: typing.List[str]):
     """
     The digital_fingerprinting production example utilizes the Auto Encoder config, and requires C++ execution disabled.
     """
@@ -72,8 +82,8 @@ def example_dir_fixture():
 # For this reason we need to ensure that the digital_fingerprinting/production/morpheus dir is in sys.path
 @pytest.fixture(autouse=True)
 def dfp_prod_in_sys_path(
-        restore_sys_path,  # pylint: disable=unused-argument
-        reset_plugins,  # pylint: disable=unused-argument
+        restore_sys_path: list[str],  # pylint: disable=unused-argument
+        reset_plugins: None,  # pylint: disable=unused-argument
         example_dir: str):
     sys.path.append(example_dir)
 

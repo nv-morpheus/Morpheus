@@ -13,11 +13,14 @@
 # limitations under the License.
 
 import dataclasses
+import json
 import logging
 import re
 import typing
 from datetime import datetime
+from functools import partial
 
+import nvtabular as nvt
 import pandas as pd
 
 import cudf
@@ -53,7 +56,8 @@ def process_dataframe(df_in: typing.Union[pd.DataFrame, cudf.DataFrame], input_s
 def create_increment_col(df: pd.DataFrame,
                          column_name: str,
                          groupby_column: str = "username",
-                         timestamp_column: str = "timestamp") -> pd.Series:
+                         timestamp_column: str = "timestamp",
+                         period: str = "D") -> pd.Series:
     """
     Create a new integer column counting unique occurrences of values in `column_name` grouped per-day using the
     timestamp values in `timestamp_column` and then grouping by `groupby_column` returning incrementing values starting
@@ -69,6 +73,8 @@ def create_increment_col(df: pd.DataFrame,
         The column to group by.
     timestamp_column : str, default "timestamp"
         The column containing timestamp values.
+    period: str, default "D"
+        The period to group by.
 
     Returns
     -------
@@ -81,9 +87,9 @@ def create_increment_col(df: pd.DataFrame,
     if (isinstance(df, cudf.DataFrame)):
         df = df.to_pandas()
 
-    time_col = pd.to_datetime(df[timestamp_column], errors='coerce', utc=True).fillna(pd.to_datetime(DEFAULT_DATE))
+    time_col = df[timestamp_column].fillna(pd.to_datetime(DEFAULT_DATE))
 
-    per_day = time_col.dt.to_period("D")
+    per_day = time_col.dt.to_period(period)
 
     cat_col: pd.Series = df.groupby([per_day, groupby_column
                                      ])[column_name].transform(lambda x: pd.factorize(x.fillna("nan"))[0] + 1)
@@ -92,7 +98,7 @@ def create_increment_col(df: pd.DataFrame,
                               axis=1).groupby([per_day, groupby_column
                                                ])[column_name].expanding(1).max().droplevel(0).droplevel(0)
 
-    return increment_col
+    return increment_col.astype("int")
 
 
 def column_listjoin(df: pd.DataFrame, col_name: str) -> pd.Series:
@@ -145,6 +151,11 @@ class ColumnInfo:
 
         return dtype.__name__
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.name: self.dtype}
+
     def get_pandas_dtype(self) -> str:
         """Return the pandas type string for the currently set `dtype`."""
 
@@ -190,6 +201,16 @@ class CustomColumn(ColumnInfo):
 
     process_column_fn: typing.Callable
 
+    # The columns that the custom function will use
+    input_column_types: dict[str, str] = dataclasses.field(default_factory=dict)
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return self.input_column_types
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Apply the `process_column_fn` to the DataFrame and return the result as a Series.
@@ -224,6 +245,11 @@ class RenameColumn(ColumnInfo):
 
     """
     input_name: str
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.input_name: self.dtype}
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
@@ -279,11 +305,18 @@ class BoolColumn(RenameColumn):
     true_values: dataclasses.InitVar[typing.List[str]] = None
     false_values: dataclasses.InitVar[typing.List[str]] = None
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {self.input_name: 'str'}
+
     def __post_init__(self,
                       true_value: str,
                       false_value: str,
                       true_values: typing.List[str],
                       false_values: typing.List[str]):
+        assert self.dtype == ColumnInfo.convert_pandas_dtype(bool), "BoolColumn must have dtype 'bool'"
+
         if (true_value is not None):
             self.value_map.update({true_value: True})
 
@@ -311,7 +344,7 @@ class BoolColumn(RenameColumn):
             The processed column as a boolean Series.
         """
 
-        return super()._process_column(df).map(self.value_map).astype(bool)
+        return df[self.input_name].map(self.value_map).astype(bool)
 
 
 @dataclasses.dataclass
@@ -326,6 +359,13 @@ class DateTimeColumn(RenameColumn):
         Convert the values in the column to datetime and return the result as a Series.
 
     """
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {self.input_name: ColumnInfo.convert_pandas_dtype(str)}
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
@@ -342,7 +382,7 @@ class DateTimeColumn(RenameColumn):
             The processed column as a datetime Series.
         """
 
-        return pd.to_datetime(super()._process_column(df), infer_datetime_format=True, utc=True)
+        return pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True).astype(self.get_pandas_dtype())
 
 
 @dataclasses.dataclass
@@ -403,6 +443,11 @@ class StringCatColumn(ColumnInfo):
     input_columns: typing.List[str]
     sep: str
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses."""
+        return {key: ColumnInfo.convert_pandas_dtype(str) for key in self.input_columns}
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Concatenate the values from the input columns and return the result as a Series.
@@ -446,6 +491,16 @@ class IncrementColumn(DateTimeColumn):
     groupby_column: str
     period: str = "D"
 
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {
+            self.input_name: ColumnInfo.convert_pandas_dtype(datetime),
+            self.groupby_column: ColumnInfo.convert_pandas_dtype(str)
+        }
+
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
         """
         Count the unique occurrences and return the result as a Series.
@@ -461,10 +516,172 @@ class IncrementColumn(DateTimeColumn):
             The processed column as an integer Series.
         """
 
-        period = super()._process_column(df).dt.to_period(self.period)
+        period = df[self.input_name].dt.to_period(self.period)
 
         # Create the `groupby_column`, per-period log count
         return df.groupby([self.groupby_column, period]).cumcount()
+
+
+@dataclasses.dataclass
+class DistinctIncrementColumn(RenameColumn):
+    """
+    Subclass of `RenameColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time window
+    `period` based on dates in the `timestamp_column` field. Only increments the count when the value in `input_name`
+    changes.
+
+    Attributes
+    ----------
+    groupby_column : str
+        The column to group by.
+    period : str
+        The period to use when grouping.
+    timestamp_column : str
+        The column to use for determining the period.
+
+    """
+
+    groupby_column: str = "username"
+    period: str = "D"
+    timestamp_column: str = "timestamp"
+
+    def get_input_column_types(self) -> dict[str, str]:
+        """
+        Return a dictionary of input column names and types needed for processing. This is used for schema
+        validation and should be overridden by subclasses.
+        """
+        return {
+            self.input_name: ColumnInfo.convert_pandas_dtype(str),
+            self.groupby_column: ColumnInfo.convert_pandas_dtype(str),
+            self.timestamp_column: ColumnInfo.convert_pandas_dtype(datetime),
+        }
+
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        """
+        Count the unique occurrences and return the result as a Series.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The DataFrame containing the columns.
+
+        Returns
+        -------
+        pandas.Series
+            The processed column as an integer Series.
+        """
+
+        per_period = df[self.timestamp_column].dt.to_period(self.period)
+
+        cat_col: pd.Series = df.groupby([per_period, self.groupby_column
+                                         ])[self.input_name].transform(lambda x: pd.factorize(x.fillna("nan"))[0] + 1)
+
+        increment_col = pd.concat([cat_col, df[self.groupby_column]],
+                                  axis=1).groupby([per_period, self.groupby_column
+                                                   ])[self.input_name].expanding(1).max().droplevel(0).droplevel(0)
+
+        return increment_col.astype(self.get_pandas_dtype())
+
+
+def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
+                  input_columns: dict[str, str],
+                  json_cols: list[str],
+                  preserve_re: re.Pattern = None):
+    """
+    Prepares a DataFrame for processing by flattening JSON columns and converting to Pandas if necessary. Will remove
+    all columns that are not specified in `input_columns` or matched by `preserve_re`.
+
+    Parameters
+    ----------
+    df_input : typing.Union[pd.DataFrame, cudf.DataFrame]
+        DataFrame to process.
+    input_columns : dict[str, str]
+        The final input columns that are needed for processing. All other columns will be removed
+    json_cols : list[str]
+        List of JSON columns to flatten.
+    preserve_re : re.Pattern, optional
+        A RegEx where matching column names will be preserved, by default None
+
+    Returns
+    -------
+    typing.Union[pd.DataFrame, cudf.DataFrame]
+        The processed DataFrame.
+    """
+
+    # Early exit
+    if (json_cols is None or len(json_cols) == 0):
+        return df_input
+
+    # Check if we even have any JSON columns to flatten
+    if (not df_input.columns.intersection(json_cols).empty):
+        convert_to_cudf = False
+
+        if (isinstance(df_input, cudf.DataFrame)):
+            convert_to_cudf = True
+            df_input = df_input.to_pandas()
+
+        json_normalized = []
+        cols_to_keep = list(df_input.columns)
+        for col in json_cols:
+            if (col not in cols_to_keep):
+                continue
+
+            pd_series = df_input[col]
+
+            # Get the flattened columns
+            pd_series = pd_series.apply(lambda x: x if isinstance(x, dict) else json.loads(x))
+            pdf_norm = pd.json_normalize(pd_series)
+
+            # Prefix column names with the JSON column name
+            pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
+
+            # Reset the index otherwise there is a conflict
+            pdf_norm.set_index(df_input.index, inplace=True)
+
+            json_normalized.append(pdf_norm)
+
+            # Remove from the list of remaining columns
+            if (preserve_re is None or not preserve_re.match(col)):
+                cols_to_keep.remove(col)
+
+        # Combine the original DataFrame with the normalized JSON columns
+        df_input = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
+
+        if (convert_to_cudf):
+            df_input = cudf.from_pandas(df_input).reset_index(drop=True)
+
+    # Remove all columns that are not in the input columns list. Ensure the correct types
+    df_input = df_input.reindex(columns=input_columns.keys(), fill_value=None)
+
+    df_input = df_input.astype(input_columns)
+
+    return df_input
+
+
+def _resolve_json_output_columns(json_cols: list[str], input_cols: dict[str, str]) -> list[tuple[str, str]]:
+    """
+    Resolves JSON output columns from an input schema.
+
+    Parameters
+    ----------
+    input_schema : DataFrameInputSchema
+        The input schema to resolve the JSON output columns from.
+
+    Returns
+    -------
+    list of tuples
+        A list of tuples where each tuple is a pair of column name and its data type.
+    """
+
+    json_output_candidates = list(input_cols.items())
+
+    output_cols = []
+
+    for col in json_output_candidates:
+        cnsplit = col[0].split('.')
+        if (len(cnsplit) > 1 and cnsplit[0] in json_cols):
+            output_cols.append(col)
+
+    return output_cols
 
 
 @dataclasses.dataclass
@@ -492,8 +709,15 @@ class DataFrameInputSchema:
 
     json_columns: typing.List[str] = dataclasses.field(default_factory=list)
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
-    preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
+    preserve_columns: typing.Pattern[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
+
+    json_output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
+    input_columns: typing.Dict[str, str] = dataclasses.field(init=False, repr=False)
+    output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
+
+    nvt_workflow: nvt.Workflow = dataclasses.field(init=False, repr=False)
+    prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False, repr=False)
 
     def __post_init__(self):
         """
@@ -512,3 +736,32 @@ class DataFrameInputSchema:
             input_preserve_columns = None
 
         self.preserve_columns = input_preserve_columns
+        self.output_columns = []
+
+        input_columns_dict = {}
+        for col_info in self.column_info:
+            self.output_columns.append((col_info.name, col_info.dtype))
+
+            col_input_types = col_info.get_input_column_types()
+
+            overlapping_keys = set(col_input_types.keys()).intersection(input_columns_dict.keys())
+
+            for key in overlapping_keys:
+
+                if (col_input_types[key] != input_columns_dict[key]):
+                    raise ValueError(f"Column input '{key}' is defined with conflicting types: "
+                                     f"{col_input_types[key]} != {input_columns_dict[key]}")
+
+            # Update the dictionary with the input columns
+            input_columns_dict.update(col_info.get_input_column_types())
+
+        self.input_columns = input_columns_dict
+
+        self.json_output_columns = _resolve_json_output_columns(self.json_columns, self.input_columns)
+
+        self.prep_dataframe = partial(_json_flatten,
+                                      input_columns=self.input_columns,
+                                      json_cols=self.json_columns,
+                                      preserve_re=self.preserve_columns)
+
+        self.nvt_workflow = None

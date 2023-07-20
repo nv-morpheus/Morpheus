@@ -22,7 +22,7 @@ This example is designed to illustrate a full-scale, production-ready, DFP deplo
 Key Differences:
  * Multiple pipelines are specialized to perform either training or inference
  * Requires setting up a model store to allow the training and inference pipelines to communicate
- * Organized into a docker-compose deployment for easy startup
+ * Organized into a `docker compose` deployment for easy startup
  * Contains a Jupyter notebook service to ease development and debugging
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
@@ -33,7 +33,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ./docker/build_container_release.sh
 ```
 
-## Building and Running via `docker-compose`
+## Building and Running via `docker compose`
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
