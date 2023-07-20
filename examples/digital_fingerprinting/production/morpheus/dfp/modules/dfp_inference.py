@@ -16,7 +16,6 @@ import logging
 import time
 
 import mrc
-import pandas as pd
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from dfp.utils.schema_utils import remove_tz_inplace
@@ -84,9 +83,6 @@ def dfp_inference(builder: mrc.Builder):
 
         with payload.mutable_dataframe() as dfm:
             df_user = dfm.to_pandas()
-
-        df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
-        remove_tz_inplace(df_user)
 
         try:
             model_cache: ModelCache = get_model(user_id)

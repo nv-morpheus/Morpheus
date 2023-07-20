@@ -63,7 +63,6 @@ def dfp_split_users(builder: mrc.Builder):
     skip_users = config.get("skip_users", [])
     only_users = config.get("only_users", [])
 
-    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
     userid_column_name = config.get("userid_column_name", "username")
     include_generic = config.get("include_generic", False)
     include_individual = config.get("include_individual", False)
@@ -117,9 +116,7 @@ def dfp_split_users(builder: mrc.Builder):
             split_dataframes[fallback_username] = users_df
 
         if (include_individual):
-            split_dataframes.update(
-                {username: user_df
-                 for username, user_df in users_df.groupby(userid_column_name, sort=False)})
+            split_dataframes.update(dict(users_df.groupby(userid_column_name, sort=False)))
 
         return split_dataframes
 
@@ -137,7 +134,6 @@ def dfp_split_users(builder: mrc.Builder):
                     if (isinstance(dfm, cudf.DataFrame)):
                         # Convert to pandas because cudf is slow at this
                         users_df = dfm.to_pandas()
-                        users_df[timestamp_column_name] = pd.to_datetime(users_df[timestamp_column_name], utc=True)
                     else:
                         users_df = dfm
 

@@ -52,7 +52,7 @@ Build the Morpheus container:
 ./docker/build_container_release.sh
 ```
 
-Build `docker-compose` services:
+Build `docker compose` services:
 
 ```
 cd examples/digital_fingerprinting/production
@@ -79,7 +79,7 @@ python dfp_azure_pipeline.py --log_level INFO --train_users generic --start_time
 Run the inference pipeline with `filter_threshold=0.0`. This will disable the filtering of the inference results.
 
 ```bash
-python dfp_azure_pipeline.py --log_level INFO --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json" --filter_threshold=0.0 
+python dfp_azure_pipeline.py --log_level INFO --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json" --filter_threshold=0.0
 ```
 
 The inference results will be saved to `dfp_detection_azure.csv` in the directory where script was run.

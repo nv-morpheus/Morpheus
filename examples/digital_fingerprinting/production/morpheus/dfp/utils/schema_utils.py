@@ -14,20 +14,18 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from functools import partial
 
 import pandas as pd
 
 from morpheus.config import Config
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 
 
 @dataclass
@@ -53,10 +51,11 @@ class SchemaBuilder:
 
         if self._source == "duo":
             return self._build_duo_schema()
-        elif self._source == "azure":
+
+        if self._source == "azure":
             return self._build_azure_schema()
-        else:
-            raise Exception("No matching schema found for log type : {}".format(self._source))
+
+        raise RuntimeError(f"No matching schema found for log type : {self._source}")
 
     def _build_azure_schema(self) -> Schema:
         # Specify the column names to ensure all data is uniform
@@ -98,12 +97,8 @@ class SchemaBuilder:
                             dtype=int,
                             input_name=self._config.ae.timestamp_column_name,
                             groupby_column=self._config.ae.userid_column_name),
-            CustomColumn(name="locincrement",
-                         dtype=int,
-                         process_column_fn=partial(create_increment_col, column_name="location")),
-            CustomColumn(name="appincrement",
-                         dtype=int,
-                         process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
+            DistinctIncrementColumn(name="locincrement", dtype=int, input_name="location"),
+            DistinctIncrementColumn(name="appincrement", dtype=int, input_name="appDisplayName"),
         ]
 
         preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info,
@@ -155,9 +150,7 @@ class SchemaBuilder:
                             dtype=int,
                             input_name=self._config.ae.timestamp_column_name,
                             groupby_column=self._config.ae.userid_column_name),
-            CustomColumn(name="locincrement",
-                         dtype=int,
-                         process_column_fn=partial(create_increment_col, column_name="location")),
+            DistinctIncrementColumn(name="locincrement", dtype=int, input_name="location"),
         ]
 
         preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info,
