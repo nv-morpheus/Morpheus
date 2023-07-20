@@ -48,7 +48,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    if [[ "${SKIP_PYLINT}" == "" ]]; then
       NUM_PROC=$(get_num_proc)
-      PYLINT_OUTPUT=`pylint -j ${NUM_PROC} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
+      PYLINT_OUTPUT=`PYTHONPATH=${MORPHEUS_ROOT} pylint -j ${NUM_PROC} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       PYLINT_RETVAL=$?
    fi
 
