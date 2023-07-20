@@ -108,12 +108,23 @@ def process_dataframe(
     if (convert_to_pd):
         df_in = cudf.DataFrame(df_in)
 
+    # NVT will always reset the index, so we need to save it and restore it after the transformation
+    saved_index = df_in.index
+    df_in.reset_index(drop=True, inplace=True)
+
     dataset = nvt.Dataset(df_in)
 
     if (nvt_workflow is not None):
         df_result = nvt_workflow.fit_transform(dataset).to_ddf().compute()
     else:
         df_result = df_in
+
+    # Now reset the index
+    if (len(df_result) == len(saved_index)):
+        df_result.set_index(saved_index, inplace=True)
+    else:
+        # Must have done some filtering. Use the new index to index into the old index
+        df_result.set_index(saved_index.take(df_result.index), inplace=True)
 
     if (convert_to_pd):
         return df_result.to_pandas()

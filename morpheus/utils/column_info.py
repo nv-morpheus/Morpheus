@@ -635,16 +635,13 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
             pdf_norm.rename(columns=lambda x, col=col: col + "." + x, inplace=True)
 
             # Reset the index otherwise there is a conflict
-            pdf_norm.reset_index(drop=True, inplace=True)
+            pdf_norm.set_index(df_input.index, inplace=True)
 
             json_normalized.append(pdf_norm)
 
             # Remove from the list of remaining columns
             if (preserve_re is None or not preserve_re.match(col)):
                 cols_to_keep.remove(col)
-
-        # Also need to reset the original index
-        df_input.reset_index(drop=True, inplace=True)
 
         # Combine the original DataFrame with the normalized JSON columns
         df_input = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)

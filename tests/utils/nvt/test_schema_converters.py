@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 import nvtabular as nvt
 import pandas as pd
 import pytest
@@ -600,6 +602,54 @@ def test_input_schema_conversion_with_functional_filter():
         "accessdevicebrowser": ["Chrome"],
         "accessdeviceos": ["Windows"],
     })
+
+    pd.set_option('display.max_columns', None)
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
+def test_input_schema_conversion_with_filter_and_index():
+    # Create a DataFrameInputSchema instance with the example schema provided
+    example_schema = DataFrameInputSchema(
+        json_columns=["access_device"],
+        column_info=[
+            BoolColumn(name="result",
+                       dtype="bool",
+                       input_name="result",
+                       true_values=["success", "SUCCESS"],
+                       false_values=["denied", "Denied", "DENIED", "FRAUD"]),
+            RenameColumn(name="accessdeviceos", dtype="str", input_name="access_device.os"),
+        ],
+        # pylint: disable=singleton-comparison
+        row_filter=lambda df: df[df["result"] == True])  # noqa E712
+
+    # Create a test dataframe with data according to the schema
+    test_df = pd.DataFrame({
+        "access_device": [
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}',
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}',
+        ],
+        "result": ["SUCCESS", "FAILURE", "FAILURE", "SUCCESS"],
+    })
+
+    # Offset the index
+    test_df.index += 5
+
+    # Apply the returned nvt.Workflow to the test dataframe
+    output_df = process_dataframe(test_df, example_schema)
+
+    # Check if the output dataframe has the expected schema and values
+    expected_df = test_df.copy()
+
+    # Filter the rows
+    expected_df = expected_df[expected_df["result"] == "SUCCESS"]
+
+    expected_df["result"] = expected_df["result"] == "SUCCESS"
+    expected_df["accessdeviceos"] = expected_df["access_device"].apply(lambda x: json.loads(x)["os"])
+    expected_df = expected_df[["result", "accessdeviceos"]]
 
     pd.set_option('display.max_columns', None)
     pd.testing.assert_frame_equal(output_df, expected_df)

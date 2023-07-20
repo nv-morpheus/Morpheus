@@ -20,6 +20,10 @@ from functools import partial
 import networkx as nx
 import nvtabular as nvt
 import pandas as pd
+from merlin.core.dispatch import DataFrameType
+from merlin.core.dispatch import annotate
+from merlin.core.dispatch import is_dataframe_object
+from merlin.core.dispatch import is_series_object
 from merlin.dag import ColumnSelector
 from nvtabular.ops import Filter
 from nvtabular.ops import LambdaOp
@@ -65,6 +69,23 @@ class JSONFlattenInfo(ColumnInfo):
         validation and should be overridden by subclasses.
         """
         return {name: ColumnInfo.convert_pandas_dtype(str) for name in self.input_col_names}
+
+
+# Same in every way to the base, except we don't drop the index
+class _MorpheusFilter(Filter):
+
+    @annotate("Filter_op", color="darkgreen", domain="nvt_python")
+    def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
+        filtered = self.f(df)
+        if is_dataframe_object(filtered):
+            new_df = filtered
+        elif is_series_object(filtered) and filtered.dtype == bool:
+            new_df = df[filtered]
+        else:
+            raise ValueError(f"Invalid output from filter op: f{filtered.__class__}")
+
+        # new_df.reset_index(drop=True, inplace=True)
+        return new_df
 
 
 def _get_ci_column_selector(col_info) -> typing.Union[str, typing.List[str]]:
@@ -145,7 +166,7 @@ def _string_cat_col(df: pd.DataFrame, output_column: str, sep: str) -> pd.DataFr
 
     cat_col = df.apply(lambda row: sep.join(row.values.astype(str)), axis=1)
 
-    return pd.DataFrame({output_column: cat_col})
+    return pd.DataFrame({output_column: cat_col}, index=cat_col.index)
 
 
 # pylint
@@ -209,7 +230,7 @@ def _increment_column(df: pd.DataFrame,
     period_index = pd.to_datetime(df[input_column]).dt.to_period(period)
     groupby_col = df.groupby([groupby_column, period_index]).cumcount()
 
-    return pd.DataFrame({output_column: groupby_col})
+    return pd.DataFrame({output_column: groupby_col}, index=groupby_col.index)
 
 
 def _nvt_increment_column(
@@ -260,7 +281,7 @@ def _distinct_increment_column(df: pd.DataFrame,
                                          period=period,
                                          timestamp_column=timestamp_column)
 
-    return pd.DataFrame({output_column: output_series})
+    return pd.DataFrame({output_column: output_series}, index=output_series.index)
 
 
 def _nvt_distinct_increment_column(_: ColumnSelector,
@@ -293,7 +314,7 @@ ColumnInfoProcessingMap = {
     ColumnInfo:
         lambda ci,
         deps: [
-            MutateOp(lambda selector,
+            MutateOp(lambda _,
                      df: df.assign(**{ci.name: df[ci.name].astype(ci.get_pandas_dtype())}) if (ci.name in df.columns)
                      else df.assign(**{ci.name: pd.Series(None, index=df.index, dtype=ci.get_pandas_dtype())}),
                      dependencies=deps,
@@ -306,8 +327,8 @@ ColumnInfoProcessingMap = {
     CustomColumn:
         lambda ci,
         deps: [
-            MutateOp(lambda selector,
-                     df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}),
+            MutateOp(lambda _,
+                     df: cudf.DataFrame({ci.name: ci.process_column_fn(df)}, index=df.index),
                      dependencies=deps,
                      output_columns=[(ci.name, ci.dtype)],
                      label=f"[CustomColumn] '{ci.name}'")
@@ -610,7 +631,8 @@ def create_and_attach_nvt_workflow(input_schema: DataFrameInputSchema,
 
     coalesced_workflow = _coalesce_ops(graph, input_schema.column_info)
     if (input_schema.row_filter is not None):
-        coalesced_workflow = coalesced_workflow >> Filter(f=input_schema.row_filter)
+        # Use our own filter here to preserve any index from the DataFrame
+        coalesced_workflow = coalesced_workflow >> _MorpheusFilter(f=input_schema.row_filter)
 
     if (visualize):
         coalesced_workflow.graph.render(view=True, format='svg')
