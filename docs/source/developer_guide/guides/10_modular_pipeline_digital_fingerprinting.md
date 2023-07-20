@@ -230,27 +230,12 @@ For a complete reference, refer to: [Filter Control Message](../../modules/core/
 
 Source: `morpheus/modules/file_batcher.py`
 
-The file_batcher module is a component that is responsible for loading input files, filtering out
-files older than the specified time window, and grouping the remaining files by periods that fall within the time
-window. This module offers configurability for parameters such as batching options, cache directory, file type,
-filtering null values, data schema, and the timestamp column name. The file_batcher module processes control messages,
-validates them, and generates a list of files with their timestamps. The module then groups files by the given period,
-creates control messages for each batch, and sends them downstream for further processing. A node function is used to
-handle the processing of control messages, and input and output ports are registered to integrate the module into the
-data processing pipeline seamlessly.
+The `file_batcher` module is a component that is responsible for loading input files, filtering out
+files older than the specified time window, and grouping the remaining files by periods that fall within the time window. This module offers configurability for parameters such as batching options, cache directory, file type, filtering null values, data schema, and the timestamp column name. The `file_batcher` module processes control messages, validates them, and generates a list of files with their timestamps. The module then groups files by the given period, creates control messages for each batch, and sends them downstream for further processing. A node function is used to handle the processing of control messages, and input and output ports are registered to integrate the module into the data processing pipeline seamlessly.
 
-The file batcher is one of the first pipeline components that begins to differ more substantially from the previous
-raw-data pipeline, prior to 23.03. In addition to its previous functionality, the file batcher is now control
-message aware, and can handle both streaming and encapsulated control messages, a property denoted by the `data_type`
-property of the control message's metadata being set as either `streaming` or `payload`. Additionally, the file
-batcher's default processing criteria for `period`, `sampling_rate_s`, `start_time`, and `end_time` can now be
-overridden by their corresponding values in the control message's `batching_options` metadata entry.
+The file batcher is one of the first pipeline components that begins to differ more substantially from the previous raw-data pipeline, prior to 23.03. In addition to its previous functionality, the file batcher is now control message aware, and can handle both streaming and encapsulated control messages, a property denoted by the `data_type` property of the control message's metadata being set as either `streaming` or `payload`. Additionally, the file batcher's default processing criteria for `period`, `sampling_rate_s`, `start_time`, and `end_time` can now be overridden by their corresponding values in the control message's `batching_options` metadata entry.
 
-In the case of streaming data, the file batcher will operate as it did previously, grouping files by the specified
-by the `period`, `sampling_rate_s`, `start_time`, and `end_time` properties, creating a control message for each
-batch, and forwarding them downstream. In the case of encapsulated data, the file batcher will operate similarly, but
-will only create a single control message for the entire payload, and forward it downstream. In this way, it is
-possible to attach all the necessary training data to a given training task, and skip any downstream aggregation.
+In the case of streaming data, the file batcher will operate as it did previously, grouping files as specified by the `period`, `sampling_rate_s`, `start_time`, and `end_time` properties, creating a control message for each batch, and forwarding them downstream. In the case of encapsulated data, the file batcher will operate similarly, but will only create a single control message for the entire payload, and forward it downstream. In this way, it is possible to attach all the necessary training data to a given training task, and skip any downstream aggregation.
 
 For a complete reference, refer to: [File Batcher](../../modules/core/file_batcher.md)
 
@@ -263,30 +248,21 @@ def file_batcher(builder: mrc.Builder):
 
 ### File to DF DataLoader
 
-Source: `morpheus/loaders/file_to_df_dataloader.py`
+Source: `morpheus/loaders/file_to_df_loader.py`
 
-This is an instance of the new DataLoader module, utilizing a pre-defined 'file_to_df' style loader. The module is
-used to process 'load' tasks that reference files which need to be retrieved, possibly cached, and then loaded into a
-cuDF dataframe with is set as the control message payload.
+This is an instance of the new DataLoader module, utilizing a pre-defined 'file_to_df' style loader. The module is used to process 'load' tasks that reference files which need to be retrieved, possibly cached, and then loaded into a cuDF dataframe with is set as the control message payload.
 
-For a complete reference,
-refer to: [DataLoader Module](../../modules/core/data_loader.md)
+For a complete reference, refer to: [DataLoader Module](../../modules/core/data_loader.md)
 
 ### DFP Split Users
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_split_users.py`
 
-The dfp_split_users module is responsible for splitting the input data based on
-user IDs. The module provides configuration options, such as fallback username, include generic user, include individual
-users, and specify lists of user IDs to include or exclude in the output.
+The `dfp_split_users` module is responsible for splitting the input data based on user IDs. The module provides configuration options, such as fallback username, include generic user, include individual users, and specify lists of user IDs to include or exclude in the output.
 
-The module processes control messages by extracting the user information from the message
-payload, filtering the data based on the provided configuration, and splitting the data by user ID. For each user ID,
-the function generates a new control message containing the corresponding data and sends it downstream for further
-processing.
+The module processes control messages by extracting the user information from the message payload, filtering the data based on the provided configuration, and splitting the data by user ID. For each user ID, the function generates a new control message containing the corresponding data and sends it downstream for further processing.
 
-For a complete reference,
-refer to: [DFP Split Users](../../modules/examples/digital_fingerprinting/dfp_split_users.md)
+For a complete reference, refer to: [DFP Split Users](../../modules/examples/digital_fingerprinting/dfp_split_users.md)
 
 ```python
 @register_module(DFP_SPLIT_USERS, MORPHEUS_MODULE_NAMESPACE)
@@ -299,30 +275,15 @@ def dfp_split_users(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_rolling_window.py`
 
-The dfp_rolling_window module is responsible for maintaining a rolling window of historical data, acting as a streaming
-caching and batching system. The module provides various configuration options,
-such as aggregation span, cache directory, caching options, timestamp column name, and trigger conditions.
+The `dfp_rolling_window` module is responsible for maintaining a rolling window of historical data, acting as a streaming caching and batching system. The module provides various configuration options, such as aggregation span, cache directory, caching options, timestamp column name, and trigger conditions.
 
-The main functionality of the module is to processes control messages containing data. For each control message, the
-function determines the user ID and data type, then tries to build a rolling window with the historical data from the
-cache. If enough data is available based on the trigger conditions, the function returns a control message with the
-appropriate historical data for further processing.
+The main functionality of the module is to processes control messages containing data. For each control message, the function determines the user ID and data type, then tries to build a rolling window with the historical data from the cache. If enough data is available based on the trigger conditions, the function returns a control message with the appropriate historical data for further processing.
 
-The Rolling Window module is another example of a module that has been updated to be control message aware. In that
-it will differentiate between streaming and payload control messages, and handle them accordingly. In the case of a
-streaming control message, the module will process the message as it did previously, and either cache the streaming data
-and return, or if the trigger conditions are met, return a control message with the appropriate historical data. In
-the case of a payload control message, the rolling window module will be skipped entirely and simply forward the
-message to the next stage.
+The Rolling Window module is another example of a module that has been updated to be control message aware. In that it will differentiate between streaming and payload control messages, and handle them accordingly. In the case of a streaming control message, the module will process the message as it did previously, and either cache the streaming data and return, or if the trigger conditions are met, return a control message with the appropriate historical data. In the case of a payload control message, the rolling window module will be skipped entirely and simply forward the message to the next stage.
 
-The Rolling window module has also been updated to support an additional `batch` mode of operation, in which it will
-cache streaming data until the trigger conditions are met, generate a new control message with the all existing data,
-flush the cache, and then forward the message downstream. Batch caching is the default mode for the streaming
-inference pipeline, and improves performance by reducing the bookkeeping required. This mode of operation is denoted
-by the `cache_mode` property of the module's configuration.
+The Rolling window module has also been updated to support an additional `batch` mode of operation, in which it will cache streaming data until the trigger conditions are met, generate a new control message with the all existing data, flush the cache, and then forward the message downstream. Batch caching is the default mode for the streaming inference pipeline, and improves performance by reducing the bookkeeping required. This mode of operation is denoted by the `cache_mode` property of the module's configuration.
 
-For a complete reference,
-refer to: [DFP Rolling Window](../../modules/examples/digital_fingerprinting/dfp_rolling_window.md)
+For a complete reference, refer to: [DFP Rolling Window](../../modules/examples/digital_fingerprinting/dfp_rolling_window.md)
 
 ```python
 @register_module(DFP_ROLLING_WINDOW, MORPHEUS_MODULE_NAMESPACE)
@@ -335,12 +296,9 @@ def dfp_rolling_window(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_data_prep.py`
 
-The dfp_data_prep module is responsible for preparing data for either inference or model training. The module
-requires a defined schema for data preparation.
+The `dfp_data_prep` module is responsible for preparing data for either inference or model training. The module requires a defined schema for data preparation.
 
-The main functionality of the module is in the process_features function. For each control message containing data, the
-function processes the columns of the data according to the given schema. The processed dataframe is then applied to the
-control message payload.
+The main functionality of the module is in the `process_features` function. For each control message containing data, the function processes the columns of the data according to the given schema. The processed dataframe is then applied to the control message payload.
 
 For a complete reference, refer to: [DFP Data Prep](../../modules/examples/digital_fingerprinting/dfp_data_prep.md)
 
@@ -355,11 +313,7 @@ def dfp_data_prep(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training_pipe.py`
 
-The DFP Training Pipe module is a consolidated module that integrates several DFP pipeline modules that are essential to
-the training process. This module function provides a single entry point to the training pipeline, simplifying the
-process of training a model. The module offers configurable parameters for various stages in the pipeline, including
-data batching, data preprocessing, and data encoding for model training. Additionally, the MLflow model writer options
-allow for the trained model to be saved for future use.
+The DFP Training Pipe module is a consolidated module that integrates several DFP pipeline modules that are essential to the training process. This module function provides a single entry point to the training pipeline, simplifying the process of training a model. The module offers configurable parameters for various stages in the pipeline, including data batching, data preprocessing, and data encoding for model training. Additionally, the MLflow model writer options allow for the trained model to be saved for future use.
 
 The module itself consists of a series of chained sub-modules, each of which performs a specific task in the training:
 
@@ -410,13 +364,11 @@ def dfp_inference(builder: mrc.Builder):
 
 ### MLFlow Model Writer
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/mlflow_model_writer.py`
+Source: `morpheus/modules/mlflow_model_writer.py`
 
-The mlflow_model_writer module is responsible for uploading trained models to the MLflow server.
+The `mlflow_model_writer` module is responsible for uploading trained models to the MLflow server.
 
-For each MultiAEMessage received, containing a trained model, the function uploads the model to MLflow along with
-associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow
-server is running on Databricks, the function also applies the required permissions to the registered model.
+For each `MultiAEMessage` received, containing a trained model, the function uploads the model to MLflow along with associated metadata such as experiment name, run name, parameters, metrics, and the model signature. If the MLflow server is running on Databricks, the function also applies the required permissions to the registered model.
 
 For a complete reference, refer to: [MLflow Model Writer](../../modules/core/mlflow_model_writer.md)
 
@@ -431,16 +383,11 @@ def mlflow_model_writer(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_inference_pipe.py`
 
-The dfp_inference_pipe module function consolidates multiple data fusion pipeline (DFP) modules relevant to the
-inference process into a single module. Its purpose is to simplify the creation and configuration of an inference
-pipeline by combining all necessary components.
+The `dfp_inference_pipe` module function consolidates multiple digital fingerprinting pipeline (DFP) modules relevant to the inference process into a single module. Its purpose is to simplify the creation and configuration of an inference pipeline by combining all necessary components.
 
-The module sets up a series of interconnected components that handle various stages of the inference process, such as
-preprocessing, rolling window aggregation, data preparation, inference, detection filtering, post-processing,
-serialization, and writing the output to a file.
+The module sets up a series of interconnected components that handle various stages of the inference process, such as preprocessing, rolling window aggregation, data preparation, inference, detection filtering, post-processing, serialization, and writing the output to a file.
 
-The module itself consists of a series of chained sub-modules, each of which performs a specific task in the
-inference pipeline:
+The module itself consists of a series of chained sub-modules, each of which performs a specific task in the inference pipeline:
 
 - `dfp_preproc`
     - Data filtering and preprocessing
@@ -485,14 +432,9 @@ def dfp_inference_pipe(builder: mrc.Builder):
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_inference.py`
 
-The dfp_inference module function creates an inference module that retrieves trained models and performs inference on
-the input data. The module requires a model_name_formatter and a fallback_username to be configured in its parameters.
+The `dfp_inference` module function creates an inference module that retrieves trained models and performs inference on the input data. The module requires a `model_name_formatter` and a `fallback_username` to be configured in its parameters.
 
-The function defines a get_model method to load the model for a specific user, and a process_task method to handle
-individual inference tasks. The process_task method retrieves the user ID, extracts the payload, and converts the
-DataFrame to pandas format. It then attempts to load the model for the specified user ID and perform inference using the
-loaded model. Finally, it adds any additional columns from the input data to the results DataFrame and creates an output
-message with the results and metadata.
+The function defines a `get_model` method to load the model for a specific user, and a `process_task` method to handle individual inference tasks. The process_task method retrieves the user ID, extracts the payload, and converts the `DataFrame` to pandas format. It then attempts to load the model for the specified user ID and perform inference using the loaded model. Finally, it adds any additional columns from the input data to the results `DataFrame` and creates an output message with the results and metadata.
 
 For a complete reference, refer to: [DFP Inference](../../modules/examples/digital_fingerprinting/dfp_inference.md)
 
@@ -507,16 +449,11 @@ def dfp_inference(builder: mrc.Builder):
 
 Source: `morpheus/modules/filter_detections.py`
 
-The filter_detections module function is designed to filter rows from a DataFrame based on values in a tensor or
-DataFrame column according to a specified threshold. Rows are excluded if their associated value in the specified field
-is less than or equal to the threshold.
+The `filter_detections` module function is designed to filter rows from a `DataFrame` based on values in a tensor or `DataFrame` column according to a specified threshold. Rows are excluded if their associated value in the specified field is less than or equal to the threshold.
 
-This module can operate in two modes, set by the copy argument. When copy=True, rows that meet the filter criteria are
-copied into a new DataFrame. When copy=False, sliced views are used instead.
+This module can operate in two modes, set by the copy argument. When `copy=True`, rows that meet the filter criteria are copied into a new `DataFrame`. When `copy=False`, sliced views are used instead.
 
-The function defines the find_detections method to determine the filter source and identify the rows that match the
-filter criteria. The filter_copy and filter_slice methods are responsible for handling the filtering process based on
-the chosen mode.
+The function defines the `find_detections` method to determine the filter source and identify the rows that match the filter criteria. The `filter_copy` and `filter_slice` methods are responsible for handling the filtering process based on the chosen mode.
 
 ```python
 @register_module(FILTER_DETECTIONS, MORPHEUS_MODULE_NAMESPACE)
@@ -525,11 +462,13 @@ def filter_detections(builder: mrc.Builder):
     ...
 ```
 
+For a complete reference, refer to: [Filter Detections](../../modules/core/filter_detections.md)
+
 ### DFP Post Processing
 
-Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_post_proc.py`
+Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_postprocessing.py`
 
-The dfp_postprocessing module function performs post-processing tasks on the input data.
+The `dfp_postprocessing` module function performs post-processing tasks on the input data.
 
 ```python
 @register_module(DFP_POST_PROCESSING, MORPHEUS_MODULE_NAMESPACE)
@@ -538,20 +477,17 @@ def dfp_postprocessing(builder: mrc.Builder):
     ...
 ```
 
+For a complete reference, refer to: [DFP Post Processing](../../modules/examples/digital_fingerprinting/dfp_postprocessing.md)
+
 ### Serialize
 
 Source: `morpheus/modules/serialize.py`
 
-The serialize module function is responsible for filtering columns from a MultiMessage object and emitting a MessageMeta
-object.
+The serialize module function is responsible for filtering columns from a `MultiMessage` object and emitting a `MessageMeta` object.
 
-The convert_to_df function converts a dataframe to JSON lines. It takes a MultiMessage instance, include_columns (a
-pattern for columns to include), exclude_columns (a list of patterns for columns to exclude), and columns (a list of
-columns to include). The function filters the columns of the input dataframe based on the include and exclude patterns
-and retrieves the metadata of the filtered columns.
+The `convert_to_df` function converts a dataframe to JSON lines. It takes a `MultiMessage` instance, `include_columns` (a pattern for columns to include), `exclude_columns` (a list of patterns for columns to exclude), and `columns` (a list of columns to include). The function filters the columns of the input dataframe based on the include and exclude patterns and retrieves the metadata of the filtered columns.
 
-The module function compiles the include and exclude patterns into regular expressions. It then creates a node using the
-convert_to_df function with the compiled include and exclude patterns and the specified columns.
+The module function compiles the include and exclude patterns into regular expressions. It then creates a node using the `convert_to_df` function with the compiled include and exclude patterns and the specified columns.
 
 ```python
 @register_module(SERIALIZE, MORPHEUS_MODULE_NAMESPACE)
