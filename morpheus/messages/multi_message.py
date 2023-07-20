@@ -396,6 +396,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             A new `mess_count` to use, by default -1
         **kwargs : `dict`
             Keyword arguments to use when creating the new instance.
+
         Returns
         -------
         Self
