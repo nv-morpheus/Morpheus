@@ -434,7 +434,7 @@ Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_inf
 
 The `dfp_inference` module function creates an inference module that retrieves trained models and performs inference on the input data. The module requires a `model_name_formatter` and a `fallback_username` to be configured in its parameters.
 
-The function defines a `get_model` method to load the model for a specific user, and a `process_task` method to handle individual inference tasks. The process_task method retrieves the user ID, extracts the payload, and converts the `DataFrame` to pandas format. It then attempts to load the model for the specified user ID and perform inference using the loaded model. Finally, it adds any additional columns from the input data to the results `DataFrame` and creates an output message with the results and metadata.
+The function defines a `get_model` method to load the model for a specific user, and a `process_task` method to handle individual inference tasks. The `process_task` method retrieves the user ID, extracts the payload, and converts the `DataFrame` to pandas format. It then attempts to load the model for the specified user ID and perform inference using the loaded model. Finally, it adds any other columns from the input data to the results `DataFrame` and creates a message with the output and metadata.
 
 For a complete reference, refer to: [DFP Inference](../../modules/examples/digital_fingerprinting/dfp_inference.md)
 

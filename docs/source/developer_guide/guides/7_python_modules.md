@@ -19,8 +19,7 @@ limitations under the License.
 
 ## Background
 
-Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are
-comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
+Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
 ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus
 stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define
 basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be
