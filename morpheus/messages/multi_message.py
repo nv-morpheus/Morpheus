@@ -97,7 +97,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         return self.get_meta("ID")
 
     @property
-    def id(self) -> typing.List[int]:
+    def id(self) -> typing.List[int]:  # pylint: disable=invalid-name
         """
         Returns ID column values from `morpheus.pipeline.messages.MessageMeta.df` as list.
 
@@ -187,8 +187,9 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
             if (-1 in column_indexer):
                 missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
-                raise KeyError("Requested columns {} does not exist in the dataframe".format(missing_columns))
-            elif (isinstance(columns, str) and len(column_indexer) == 1):
+                raise KeyError(f"Requested columns {missing_columns} does not exist in the dataframe")
+
+            if (isinstance(columns, str) and len(column_indexer) == 1):
                 # Make sure to return a series for a single column
                 column_indexer = column_indexer[0]
 
@@ -312,8 +313,8 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         mask = zeros_fn(len(df), bool)
 
-        for range in ranges:
-            mask[range[0]:range[1]] = True
+        for range_ in ranges:
+            mask[range_[0]:range_[1]] = True
 
         return mask
 
@@ -376,7 +377,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
 
         When creating the new message, all required arguments for the class specified by `cls` will be pulled from
-        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        `message` unless otherwise specified in the `kwargs`. Special handling is performed depending on
         whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
         `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
 
@@ -393,7 +394,8 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             A new `mess_offset` to use, by default -1
         mess_count : int, optional
             A new `mess_count` to use, by default -1
-
+        **kwargs : `dict`
+            Keyword arguments to use when creating the new instance.
         Returns
         -------
         Self
