@@ -89,7 +89,7 @@ def dfp_prod_in_sys_path(
 
 
 @pytest.fixture(name="dfp_message_meta")
-def dfp_message_meta_fixture(config, dataset_pandas):
+def dfp_message_meta_fixture(config, dataset_pandas: DatasetManager):
     import pandas as pd
     from dfp.messages.multi_dfp_message import DFPMessageMeta
 
