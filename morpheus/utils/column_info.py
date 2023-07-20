@@ -87,7 +87,7 @@ def create_increment_col(df: pd.DataFrame,
     if (isinstance(df, cudf.DataFrame)):
         df = df.to_pandas()
 
-    time_col = pd.to_datetime(df[timestamp_column], errors='coerce', utc=True).fillna(pd.to_datetime(DEFAULT_DATE))
+    time_col = df[timestamp_column].fillna(pd.to_datetime(DEFAULT_DATE))
 
     per_day = time_col.dt.to_period(period)
 
@@ -715,12 +715,12 @@ class DataFrameInputSchema:
     preserve_columns: typing.Pattern[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
 
-    json_output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False)
-    input_columns: typing.Dict[str, str] = dataclasses.field(init=False)
-    output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False)
+    json_output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
+    input_columns: typing.Dict[str, str] = dataclasses.field(init=False, repr=False)
+    output_columns: typing.List[tuple[str, str]] = dataclasses.field(init=False, repr=False)
 
-    nvt_workflow: nvt.Workflow = dataclasses.field(init=False)
-    prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False)
+    nvt_workflow: nvt.Workflow = dataclasses.field(init=False, repr=False)
+    prep_dataframe: typing.Callable[[pd.DataFrame], typing.List[str]] = dataclasses.field(init=False, repr=False)
 
     def __post_init__(self):
         """

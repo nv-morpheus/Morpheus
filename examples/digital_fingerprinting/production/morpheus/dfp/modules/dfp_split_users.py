@@ -18,7 +18,6 @@ import typing
 import mrc
 import pandas as pd
 from dfp.utils.logging_timer import log_time
-from dfp.utils.schema_utils import remove_tz_inplace
 from mrc.core import operators as ops
 
 import cudf
@@ -83,7 +82,6 @@ def dfp_split_users(builder: mrc.Builder):
                 continue
 
             user_df = split_dataframes[user_id]
-            remove_tz_inplace(user_df)
 
             current_user_count = user_index_map.get(user_id, 0)
 
@@ -116,7 +114,9 @@ def dfp_split_users(builder: mrc.Builder):
             split_dataframes[fallback_username] = users_df
 
         if (include_individual):
-            split_dataframes.update(dict(users_df.groupby(userid_column_name, sort=False)))
+            split_dataframes.update(
+                {username: user_df
+                 for username, user_df in users_df.groupby(userid_column_name, sort=False)})
 
         return split_dataframes
 
