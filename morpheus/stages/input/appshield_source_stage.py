@@ -236,6 +236,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
             Plugin name to which the data belongs to.
         plugin_df: pd.DataFrame
             DataFrame to which the meta columns will be added to.
+
         Returns
         -------
         pandas.DataFrame
