@@ -15,8 +15,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-import pandas as pd
-
 from morpheus.config import Config
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
