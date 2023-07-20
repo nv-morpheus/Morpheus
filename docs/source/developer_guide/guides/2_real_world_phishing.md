@@ -435,13 +435,12 @@ pipeline.add_stage(SerializeStage(config))
 pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
 ```
 
-Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json`, `.jsonlines` & `.parquet`
+Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`.
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Supported values are:
 * `FileTypes.Auto`
 * `FileTypes.CSV`
 * `FileTypes.JSON`
-* `FileTypes.PARQUET`
 
 ### The Completed Pipeline
 
