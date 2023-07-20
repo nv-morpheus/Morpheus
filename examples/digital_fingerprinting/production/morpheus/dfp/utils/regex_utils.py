@@ -15,8 +15,9 @@
 
 import re
 
+# pylint: disable=invalid-name
 iso_date_regex_pattern = (
     r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-    r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
+    r"T(?P<hour>\d{1,2})(:|_|\.)(?P<minute>\d{1,2})(:|_|\.)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
 
 iso_date_regex = re.compile(iso_date_regex_pattern)
