@@ -171,11 +171,9 @@ def dfp_deployment(builder: mrc.Builder):
 
 Source: `morpheus/loaders/fsspec_loader.py`
 
-This is an instance of the new DataLoader module, utilizing a pre-defined 'fsspec' style loader. The module is used to
-transform regex specified file lists into individual file paths and update the control message with those paths.
+This is an instance of the new DataLoader module, utilizing a pre-defined 'fsspec' style loader. The module is used to transform glob specified file lists into individual file paths and update the control message with those paths.
 
-For a complete reference,
-refer to: [DataLoader Module](../../modules/core/data_loader.md)
+For a complete reference, refer to: [DataLoader Module](../../modules/core/data_loader.md)
 
 ## DFP Training and Inference Pipelines
 
@@ -184,13 +182,9 @@ configured independently. We'll introduce Shared modules here and then dive into
 
 ### DFP Preprocessing
 
-Source: `examples/digitial_fingerprinting/production/morpheus/dfp/modules/dfp_preproc.py`
+Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preproc.py`
 
-The dfp_preproc module is a functional component within the MORPHEUS framework that combines multiple data filtering and
-processing (dfp) pipeline modules related to inference and training. This module simplifies the pipeline by
-consolidating various modules into a single, cohesive unit. The dfp_preproc module offers configurability for parameters
-such as cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and
-supported data loaders for different file types.
+The `dfp_preproc` module is a functional component within the Morpheus framework that combines multiple data filtering and processing pipeline modules related to inference and training. This module simplifies the pipeline by consolidating various modules into a single, cohesive unit. The `dfp_preproc` module offers configurability for parameters such as cache directory, timestamp column name, pre-filter options, batching options, user splitting options, and supported data loaders for different file types.
 
 The module itself consists of a series of chained sub-modules, which are connected in a logical sequence:
 
@@ -228,12 +222,7 @@ def dfp_preproc(builder: mrc.Builder):
 
 Source: `morpheus/modules/filter_control_message.py`
 
-The filter_control_message module is a component designed to discard control messages based on specified filtering
-criteria. This module allows users to configure filtering options such as task type and data type. When either task
-filtering or data type filtering is enabled, the module processes control messages to verify if they meet the
-specified criteria. If the control message does not match the criteria, it is discarded. The module uses a node
-function to filter and process control messages, and registers input and output ports to facilitate seamless
-integration into the data processing pipeline.
+The `filter_control_message` module is a component designed to discard control messages based on specified filtering criteria. This module allows users to configure filtering options such as task type and data type. When either task filtering or data type filtering is enabled, the module processes control messages to verify if they meet the specified criteria. If the control message does not match the criteria, it is discarded. The module uses a node function to filter and process control messages, and registers input and output ports to facilitate seamless integration into the data processing pipeline.
 
 For a complete reference, refer to: [Filter Control Message](../../modules/core/filter_control_message.md)
 
