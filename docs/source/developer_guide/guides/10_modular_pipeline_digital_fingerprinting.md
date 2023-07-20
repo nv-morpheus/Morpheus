@@ -496,14 +496,15 @@ def serialize(builder: mrc.Builder):
     ...
 ```
 
+For a complete reference, refer to: [Serialize](../../modules/core/serialize.md)
+
 ### Write to File
 
 Source: `morpheus/modules/write_to_file.py`
 
-The write_to_file module function writes all messages to a file.
+The `write_to_file` module function writes all messages to a file.
 
-The convert_to_strings function takes a DataFrame (either pandas or cuDF) and converts it into the appropriate string
-format based on the file type (JSON or CSV). It checks whether to include the index column or not.
+The convert_to_strings function takes a `DataFrame`` (either pandas or cuDF) and converts it into the appropriate string format based on the file type (JSON or CSV). It checks whether to include the index column or not.
 
 ```python
 @register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
@@ -511,3 +512,5 @@ def write_to_file(builder: mrc.Builder):
     # Setup and config parsing
     ...
 ```
+
+For a complete reference, refer to: [Write to File](../../modules/core/write_to_file.md)
