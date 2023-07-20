@@ -31,29 +31,6 @@ from ..utils.module_ids import DFP_SPLIT_USERS
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-def dfp_preproc_module():
-    """
-     This module function allows for the consolidation of multiple dfp pipeline modules relevant to inference/training
-     process into a single module.
-
-     Parameters
-     ----------
-     builder : mrc.Builder
-         Pipeline builder instance.
-
-     Notes
-     ----------
-     Configurable parameters:
-         - cache_dir : str (Directory used for caching intermediate results)
-         - timestamp_column_name : str (Name of the column containing timestamps)
-         - pre_filter_options : dict (Options for pre-filtering control messages)
-         - batching_options : dict (Options for batching files)
-         - user_splitting_options : dict (Options for splitting data by user)
-         - supported_loaders : dict (Supported data loaders for different file types)
-     """
-    return dfp_preproc
-
-
 @register_module(DFP_PREPROC, MORPHEUS_MODULE_NAMESPACE)
 def dfp_preproc(builder: mrc.Builder):
     """

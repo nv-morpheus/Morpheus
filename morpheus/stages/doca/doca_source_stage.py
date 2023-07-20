@@ -27,7 +27,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-doca", modes=[PipelineModes.NLP], ignore_args=["cudf_kwargs"])
+@register_stage("from-doca", modes=[PipelineModes.NLP])
 class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.

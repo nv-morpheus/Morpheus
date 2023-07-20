@@ -51,7 +51,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         good for interleaving source stages.
     file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
-        Supported extensions: 'csv', 'json' and 'jsonlines'
+        Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     filter_null : bool, default = True
