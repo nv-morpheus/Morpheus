@@ -31,6 +31,16 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPPreprocessingStage(SinglePortStage):
+    """
+    This stage performs preprocessing on incoming DataFrame as defined by `input_schema` before training or inference.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    input_schema : `morpheus.utils.column_info.DataFrameInputSchema`
+        Input schema for the DataFrame.
+    """
 
     def __init__(self, c: Config, input_schema: DataFrameInputSchema):
         super().__init__(c)
