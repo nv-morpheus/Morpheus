@@ -55,13 +55,15 @@ CMD ["./launch.sh"]
 FROM base as jupyter
 
 # Install the jupyter specific requirements
-RUN source activate morpheus \
-    && mamba install -y -c conda-forge \
+RUN source activate morpheus &&\
+    mamba install -y -c conda-forge \
         ipywidgets \
         nb_conda_kernels \
-    && pip install jupyter_contrib_nbextensions==0.5.1 \
-    && jupyter contrib nbextension install --user \
-    && pip install jupyterlab_nvdashboard==0.7.0
+        jupyter_contrib_nbextensions \
+        # notebook v7 is incompatible with jupyter_contrib_nbextensions
+        notebook=6 &&\
+    jupyter contrib nbextension install --user &&\
+    pip install jupyterlab_nvdashboard==0.7.0
 
 # Launch jupyter
 CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]

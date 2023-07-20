@@ -25,26 +25,28 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestClassificationStage:
 
-    def test_constructor(self,
-                         config: Config,
-                         xgb_model: str,
-                         gnn_fraud_detection_pipeline: types.ModuleType,
-                         cuml: types.ModuleType):
+    def test_constructor(
+            self,
+            config: Config,
+            xgb_model: str,
+            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
+            cuml: types.ModuleType):
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
 
         stage = ClassificationStage(config, xgb_model)
         assert isinstance(stage._xgb_model, cuml.ForestInference)
 
-    def test_process_message(self,
-                             config: Config,
-                             xgb_model: str,
-                             gnn_fraud_detection_pipeline: types.ModuleType,
-                             dataset_cudf: DatasetManager):
+    def test_process_message(
+            self,
+            config: Config,
+            xgb_model: str,
+            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
+            dataset_cudf: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
 
         df = dataset_cudf['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
+        df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
 
         expected_df = dataset_cudf.pandas['examples/gnn_fraud_detection_pipeline/predictions.csv']
         assert len(df) == len(expected_df)
@@ -62,7 +64,6 @@ class TestClassificationStage:
 
         stage = ClassificationStage(config, xgb_model)
         results = stage._process_message(msg)
-        print(results.get_meta(['prediction', 'node_id']))
 
         # The stage actually edits the message in place, and returns it, but we don't need to assert that
         dataset_cudf.assert_compare_df(results.get_meta(['prediction', 'node_id']), expected_df)

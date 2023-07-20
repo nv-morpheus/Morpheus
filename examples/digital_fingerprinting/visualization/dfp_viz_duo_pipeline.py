@@ -19,7 +19,6 @@ import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
-from functools import partial
 
 import click
 import mlflow
@@ -48,13 +47,12 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
@@ -143,7 +141,7 @@ def run_pipeline(train_users,
                  output_prefix,
                  **kwargs):
     # To include the generic, we must be training all or generic
-    include_generic = train_users == "all" or train_users == "generic"
+    include_generic = train_users in ('all', 'generic')
 
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
@@ -170,7 +168,7 @@ def run_pipeline(train_users,
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    logger = logging.getLogger("morpheus.{}".format(__name__))
+    logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
@@ -236,9 +234,11 @@ def run_pipeline(train_users,
                         dtype=int,
                         input_name=config.ae.timestamp_column_name,
                         groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
+        DistinctIncrementColumn(name="locincrement",
+                                dtype=int,
+                                input_name="location",
+                                groupby_column=config.ae.userid_column_name,
+                                timestamp_column=config.ae.timestamp_column_name)
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
