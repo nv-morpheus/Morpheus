@@ -135,5 +135,5 @@ def test_dfencoder_e2e():
     # make sure the user baseline is modeled well enough so the minimum and median z scores
     # from inference are in range
     assert min(inf_res.mean_abs_z) < 1
-    assert (np.median(inf_res.mean_abs_z)
-            < 100)  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+    assert (np.median(inf_res.mean_abs_z) < 100
+            )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
