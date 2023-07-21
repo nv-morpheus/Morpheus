@@ -56,11 +56,15 @@ CheckDouble = re.compile(r"Copyright *(?:\(c\))? *(\d{4})-(\d{4}),? *NVIDIA C(?:
 CheckApacheLic = 'Licensed under the Apache License, Version 2.0 (the "License");'
 
 
+def is_file_empty(f):
+    return os.stat(f).st_size == 0
+
+
 def checkThisFile(f):
     # This check covers things like symlinks which point to files that DNE
     if not (os.path.exists(f)):
         return False
-    if gitutils and gitutils.isFileEmpty(f):
+    if is_file_empty(f):
         return False
     for exempt in ExemptFiles:
         if exempt.search(f):
@@ -142,7 +146,7 @@ def checkCopyright(f,
         crFound = True
         if update_start_year:
             try:
-                git_start = gitutils.determine_add_date(f).year
+                git_start = gitutils.get_file_add_date(f).year
                 if start > git_start:
                     e = [
                         f,
@@ -211,7 +215,7 @@ def checkCopyright(f,
                     out_file.write(new_line)
 
             if git_add:
-                gitutils.add(f)
+                gitutils.add_files(f)
 
         errs = [x for x in errs if x[-1] is None]
 
@@ -320,13 +324,13 @@ def checkCopyright_main():
         return 1
 
     if args.git_modified_only:
-        files = gitutils.modifiedFiles()
+        files = gitutils.modified_files()
     elif args.git_diff_commits:
-        files = gitutils.changedFilesBetweenCommits(*args.git_diff_commits)
+        files = gitutils.changed_files(*args.git_diff_commits)
     elif args.git_diff_staged:
-        files = gitutils.stagedFiles(args.git_diff_staged)
+        files = gitutils.staged_files(args.git_diff_staged)
     else:
-        files = gitutils.list_files_under_source_control(ref="HEAD", *dirs)
+        files = gitutils.all_files(*dirs)
 
     logging.debug("File count before filter(): %s", len(files))
 
