@@ -244,7 +244,7 @@ class _UserTimeSeries:
             idx = action.message.get_meta().index
 
             # Find anomalies that are in the active message
-            paired_anomalies = anomalies[anomalies is True].index.intersection(idx)  # noqa: E712
+            paired_anomalies = anomalies[anomalies == True].index.intersection(idx)  # noqa: E712
 
             # Return the anomalies for priting. But only if the current message has anomalies that will get flagged
             if (len(paired_anomalies) > 0):
