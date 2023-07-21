@@ -164,14 +164,16 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
     mock_requests.get.assert_called_once_with(
         url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/mlflow/databricks/registered-models/get",
         headers=expected_headers,
-        params={"name": experiment_name})
+        params={"name": experiment_name},
+        timeout=10)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
         url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/preview/permissions/registered-models/test_id",
         headers=expected_headers,
-        json={'access_control_list': expected_acl})
+        json={'access_control_list': expected_acl},
+        timeout=10)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
@@ -287,10 +289,12 @@ def test_on_data(config: Config,
         "Batch size": 100,
         "Start Epoch": min_time,
         "End Epoch": max_time,
-        "Log Count": len(df)})
+        "Log Count": len(df)
+    })
 
-    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
-                                                     "embedding-test-embedding_dim": 102})
+    mock_mlflow.log_metrics.assert_called_once_with({
+        "embedding-test-num_embeddings": 101, "embedding-test-embedding_dim": 102
+    })
 
     mock_model.prepare_df.assert_called_once()
     mock_model.get_anomaly_score.assert_called_once()

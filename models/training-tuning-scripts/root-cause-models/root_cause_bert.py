@@ -21,10 +21,12 @@ python root_cause_bert.py \
 
 import argparse
 import time
-import cudf
+
 import pandas as pd
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
+
+import cudf
 
 from common.sequence_classifier import SequenceClassifier  # pylint: disable=no-name-in-module
 from morpheus.utils.seed import manual_seed

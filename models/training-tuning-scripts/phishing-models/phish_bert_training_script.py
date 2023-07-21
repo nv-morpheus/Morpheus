@@ -19,11 +19,11 @@ python phish_bert_training_script.py
 import os.path
 import zipfile
 
-import cudf
-
 import requests
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
+
+import cudf
 
 from common.sequence_classifier import SequenceClassifier  # pylint: disable=no-name-in-module
 

@@ -246,7 +246,7 @@ class InferenceStage(MultiMessageStage):
 
                     fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
+                    worker.process(batch, partial(set_output_fut, inner_batch=batch, batch_future=completion_future))
 
                 for f in fut_list:
                     f.result()

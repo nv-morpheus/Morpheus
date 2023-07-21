@@ -27,9 +27,13 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 from utils.dataset_manager import DatasetManager
 
 
-def test_constructor(config: Config):
+@pytest.fixture(name="config")
+def config_fixture(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
+    yield config
 
+
+def test_constructor(config: Config):
     stage = AddClassificationsStage(config)
     assert stage._class_labels == ['frogs', 'lizards', 'toads']
     assert stage._labels == ['frogs', 'lizards', 'toads']
@@ -42,9 +46,9 @@ def test_constructor(config: Config):
     assert len(accepted_types) > 0
 
     stage = AddClassificationsStage(config, threshold=1.3, labels=['lizards'], prefix='test_')
-    assert stage._class_labels, ['frogs', 'lizards', 'toads']
-    assert stage._labels, ['lizards']
-    assert stage._idx2label, {1: 'test_lizards'}
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['lizards']
+    assert stage._idx2label == {1: 'test_lizards'}
 
     with pytest.raises(AssertionError):
         AddClassificationsStage(config, labels=['missing'])
