@@ -73,6 +73,7 @@ class JSONFlattenInfo(ColumnInfo):
 
 # Same in every way to the base, except we don't drop the index
 class _MorpheusFilter(Filter):
+
     @annotate("Filter_op", color="darkgreen", domain="nvt_python")
     def transform(self, col_selector: ColumnSelector, df: DataFrameType) -> DataFrameType:
         filtered = self.f(df)
