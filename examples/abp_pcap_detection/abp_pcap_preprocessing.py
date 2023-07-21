@@ -21,7 +21,6 @@ import numpy as np
 
 import cudf
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
