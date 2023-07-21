@@ -31,8 +31,17 @@ def isFileEmpty(f):
 def __git(*opts):
     """Runs a git command and returns its output"""
     cmd = "git " + " ".join(list(opts))
-    ret = subprocess.check_output(cmd, shell=True)
-    return ret.decode("UTF-8").rstrip("\n")
+
+    try:
+        ret = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
+        output = ret.decode("UTF-8").rstrip("\n")
+
+        logging.debug("Running git command: `%s`, Output: '%s'", cmd, output)
+
+        return output
+    except subprocess.CalledProcessError as e:
+        logging.warning("Running git command [ERRORED]: `%s`, Output: '%s'", cmd, e.stderr.decode("UTF-8").rstrip("\n"))
+        raise
 
 
 def __gitdiff(*opts):
@@ -127,8 +136,8 @@ def determine_merge_commit(current_branch="HEAD"):
         # Try to determine the target branch from the most recent tag
         head_branch = __git("describe", "--all", "--tags", "--match='branch-*'", "--abbrev=0")
     except subprocess.CalledProcessError:
-        logging.debug("Could not determine target branch from most recent "
-                      "tag. Falling back to 'branch-{major}.{minor}.")
+        logging.warning("Could not determine target branch from most recent "
+                        "tag. Falling back to 'branch-{major}.{minor}.")
         head_branch = None
 
     if (head_branch is not None):
@@ -261,8 +270,7 @@ def modifiedFiles(pathFilter=None):
     targetBranch = os.environ.get("TARGET_BRANCH")
     commitHash = os.environ.get("COMMIT_HASH")
     currentBranch = branch()
-    logging.debug(f"TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, "
-                  f"currentBranch={currentBranch}")
+    logging.info("TARGET_BRANCH=%s, COMMIT_HASH=%s, currentBranch=%s", targetBranch, commitHash, currentBranch)
 
     if targetBranch and commitHash and (currentBranch == "current-pr-branch"):
         logging.debug("Assuming a CI environment.")
@@ -353,8 +361,11 @@ def parse_args():
 
 
 def main():
+    log_level = logging.getLevelName(os.environ.get("MORPHEUS_LOG_LEVEL", "WARNING"))
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
+
     args = parse_args()
-    logging.basicConfig(level=logging.ERROR)
+
     if args.action == 'get_merge_target':
         print(get_merge_target())
 

@@ -224,10 +224,11 @@ def checkCopyright_main():
     repo, this script will just look for uncommitted files and in case of CI
     it compares between branches "$PR_TARGET_BRANCH" and "current-pr-branch"
     """
+    log_level = logging.getLevelName(os.environ.get("MORPHEUS_LOG_LEVEL", "WARNING"))
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
+
     retVal = 0
     global ExemptFiles
-
-    logging.basicConfig(level=logging.DEBUG)
 
     argparser = argparse.ArgumentParser("Checks for a consistent copyright header in git's modified files")
     argparser.add_argument("--update-start-year",
@@ -454,5 +455,4 @@ EXT_LIC_MAPPING = {
 }
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
     sys.exit(checkCopyright_main())
