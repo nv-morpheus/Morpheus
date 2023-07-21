@@ -17,6 +17,7 @@
 
 import argparse
 import datetime
+import functools
 import logging
 import os
 import re
@@ -28,39 +29,50 @@ def isFileEmpty(f):
     return os.stat(f).st_size == 0
 
 
-def __git(*opts):
-    """Runs a git command and returns its output"""
-    cmd = "git " + " ".join(list(opts))
+def __run_cmd(exe: str, *args: tuple[str]):
+    """Runs a command with args and returns its output"""
+
+    cmd_list = [exe] + list(args)
+
+    # Join the args to make the command string (for logging only)
+    cmd_str = " ".join(cmd_list)
+
+    # If we only passed in one executable (could be piping commands together) then use a shell
+    shell = False if len(args) > 0 else True
+
+    if (shell):
+        # For logging purposes, if we only passed in one executable, then clear the exe name to make logging better
+        exe = ""
 
     try:
-        ret = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
+        ret = subprocess.check_output(cmd_list, stderr=subprocess.PIPE, shell=shell)
         output = ret.decode("UTF-8").rstrip("\n")
 
-        logging.debug("Running git command: `%s`, Output: '%s'", cmd, output)
+        logging.debug("Running %s command: `%s`, Output: '%s'", exe, cmd_str, output)
 
         return output
     except subprocess.CalledProcessError as e:
-        logging.warning("Running git command [ERRORED]: `%s`, Output: '%s'", cmd, e.stderr.decode("UTF-8").rstrip("\n"))
+        logging.warning("Running %s command [ERRORED]: `%s`, Output: '%s'",
+                        exe,
+                        cmd_str,
+                        e.stderr.decode("UTF-8").rstrip("\n"))
         raise
+
+
+def __gh(*args):
+    """Runs a Github CLI command and returns its output"""
+
+    return __run_cmd("gh", *args)
+
+
+def __git(*args):
+    """Runs a git command and returns its output"""
+    return __run_cmd("git", *args)
 
 
 def __gitdiff(*opts):
     """Runs a git diff command with no pager set"""
     return __git("--no-pager", "diff", *opts)
-
-
-def top_level_dir():
-    """
-    Returns the top level directory for this git repo
-    """
-    return __git("rev-parse", "--show-toplevel")
-
-
-def branch():
-    """Returns the name of the current branch"""
-    name = __git("rev-parse", "--abbrev-ref", "HEAD")
-    name = name.rstrip()
-    return name
 
 
 def repo_version():
@@ -80,7 +92,152 @@ def add(f):
     return __git("add", f)
 
 
-def repo_version_major_minor():
+def determine_add_date(file_path):
+    """Return the date a given file was added to git"""
+    date_str = __git("log", "--follow", "--format=%as", "--", file_path, "|", "tail", "-n 1")
+    return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+
+
+@functools.lru_cache
+def gh_has_cli():
+    try:
+        __gh("--version")
+
+        gh_get_repo_owner_name()
+
+        logging.debug("Github CLI is installed")
+        return True
+    except subprocess.CalledProcessError:
+        logging.debug("Github CLI is not installed")
+        return False
+
+
+@functools.lru_cache
+def gh_get_repo_owner_name():
+
+    return __gh("repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
+
+
+@functools.lru_cache
+def gh_get_pr_number():
+
+    return __gh("pr", "status", "--json", "number", "--jq", ".currentBranch.number")
+
+
+@functools.lru_cache
+def gh_get_pr_base_ref_name():
+
+    return __gh("pr", "status", "--json", "baseRefName", "--jq", ".currentBranch.baseRefName")
+
+
+@functools.lru_cache
+def gh_is_pr():
+
+    pr_number = gh_get_pr_number()
+
+    return pr_number is not None and pr_number != ""
+
+
+@functools.lru_cache
+def gh_get_target_remote_branch():
+
+    # Make sure we have the CLI
+    if (not gh_has_cli()):
+        return None
+
+    # Make sure we are in a PR
+    if (not gh_is_pr()):
+        return None
+
+    # Get the PR base reference
+    base_ref = gh_get_pr_base_ref_name()
+
+    # Now determine the remote ref name matching our repository
+    remote_name = __run_cmd(f"git remote -v | grep :{gh_get_repo_owner_name()} | grep \"(fetch)\" | head -1 | cut -f1")
+
+    target_ref_full_name = f"{remote_name}/{base_ref}"
+
+    return target_ref_full_name
+
+
+@functools.lru_cache
+def gh_get_target_remote_branch():
+
+    # Make sure we have the CLI
+    if (not gh_has_cli()):
+        return None
+
+    # Make sure we are in a PR
+    if (not gh_is_pr()):
+        return None
+
+    # Get the PR base reference
+    base_ref = gh_get_pr_base_ref_name()
+
+    # Now determine the remote ref name matching our repository
+    remote_name = git_get_remote_name(gh_get_repo_owner_name())
+
+    target_ref_full_name = f"{remote_name}/{base_ref}"
+
+    return target_ref_full_name
+
+
+@functools.lru_cache
+def git_get_repo_owner_name():
+
+    return "nv-morpheus/" + __run_cmd("git remote -v | grep -oP '/\K\w*(?=\.git \(fetch\))' | head -1")
+
+
+@functools.lru_cache
+def git_get_remote_name(repo_owner_and_name: str):
+
+    return __run_cmd(f"git remote -v | grep :{repo_owner_and_name} | grep \"(fetch)\" | head -1 | cut -f1")
+
+
+@functools.lru_cache
+def git_get_target_remote_branch():
+    try:
+        # Try and guess the target branch as "branch-<major>.<minor>"
+        version = git_repo_version_major_minor()
+
+        if (version is None):
+            return None
+
+        base_ref = "branch-{}".format(version)
+    except Exception:
+        logging.debug("Could not determine branch version falling back to main")
+        base_ref = "main"
+
+    try:
+        remote_name = git_get_remote_name(git_get_repo_owner_name())
+
+        remote_branch = f"{remote_name}/{base_ref}"
+    except Exception:
+
+        # Try and find remote name using git
+        remote_branch = __git("rev-parse", "--abbrev-ref", "--symbolic-full-name", base_ref + "@{upstream}")
+
+    return remote_branch
+
+
+@functools.lru_cache
+def git_top_level_dir():
+    """
+    Returns the top level directory for this git repo
+    """
+    return __git("rev-parse", "--show-toplevel")
+
+
+@functools.lru_cache
+def git_current_branch():
+    """Returns the name of the current branch"""
+    name = __git("rev-parse", "--abbrev-ref", "HEAD")
+    name = name.rstrip()
+    return name
+
+
+@functools.lru_cache
+def git_repo_version_major_minor():
     """
     Determines the version of the repo using `git describe` and returns only
     the major and minor portion
@@ -108,12 +265,6 @@ def repo_version_major_minor():
     return out_version
 
 
-def determine_add_date(file_path):
-    """Return the date a given file was added to git"""
-    date_str = __git("log", "--follow", "--format=%as", "--", file_path, "|", "tail", "-n 1")
-    return datetime.datetime.strptime(date_str, "%Y-%m-%d")
-
-
 def determine_merge_commit(current_branch="HEAD"):
     """
     When running outside of CI, this will estimate the target merge commit hash
@@ -132,7 +283,32 @@ def determine_merge_commit(current_branch="HEAD"):
         The common commit hash ID
     """
 
+    # Order of operations:
+    # 1. Try to determine the target branch from GitLab CI (assuming were in a PR)
+    # 2. Try to guess the target branch as "branch-<major>.<minor>" using the most recent tag (assuming we have a remote pointing to the base repo)
+    # 3. Try to determine the target branch by finding a head reference that matches "branch-*" and is in this history
+    # 4. Fall back to "main" if all else fails or the target branch and current branch are the same
+
+    remote_branch = gh_get_target_remote_branch()
+
+    if (remote_branch is None):
+        # Try to use tags
+        remote_branch = git_get_target_remote_branch()
+
+    if (remote_branch is None):
+
+        raise RuntimeError("Could not determine remote_branch. Manually set TARGET_BRANCH to continue")
+
+    logging.debug(f"Determined TARGET_BRANCH as: '{remote_branch}'. "
+                  "Finding common ancestor.")
+
+    common_commit = __git("merge-base", remote_branch, current_branch)
+
+    return common_commit
+
     try:
+        repo_version = git_repo_version_major_minor()
+
         # Try to determine the target branch from the most recent tag
         head_branch = __git("describe", "--all", "--tags", "--match='branch-*'", "--abbrev=0")
     except subprocess.CalledProcessError:
@@ -146,7 +322,7 @@ def determine_merge_commit(current_branch="HEAD"):
     else:
         try:
             # Try and guess the target branch as "branch-<major>.<minor>"
-            version = repo_version_major_minor()
+            version = git_repo_version_major_minor()
 
             if (version is None):
                 return None
@@ -198,7 +374,7 @@ def changedFilesBetween(baseName, branchName, commitHash):
     Returns a list of files changed between branches baseName and latest commit
     of branchName.
     """
-    current = branch()
+    current = git_current_branch()
     # checkout "base" branch
     __git("checkout", "--force", baseName)
     # checkout branch for comparing
@@ -215,7 +391,7 @@ def changedFilesBetween(baseName, branchName, commitHash):
 
 def is_repo_relative(f: str, git_root: str = None):
     if (git_root is None):
-        git_root = top_level_dir()
+        git_root = git_top_level_dir()
 
     abs_f = os.path.abspath(f)
 
@@ -229,7 +405,7 @@ def filter_files(files: typing.Union[str, typing.List[str]], path_filter=None):
     if (isinstance(files, str)):
         files = files.splitlines()
 
-    git_root = top_level_dir()
+    git_root = git_top_level_dir()
 
     ret_files = []
     for fn in files:
@@ -244,7 +420,7 @@ def filter_files(files: typing.Union[str, typing.List[str]], path_filter=None):
 
 def changesInFileBetween(file, b1, b2, pathFilter=None):
     """Filters the changed lines to a file between the branches b1 and b2"""
-    current = branch()
+    current = git_current_branch()
     __git("checkout", "--quiet", b1)
     __git("checkout", "--quiet", b2)
     diffs = __gitdiff("--ignore-submodules", "-w", "--minimal", "-U0", "%s...%s" % (b1, b2), "--", file)
@@ -269,7 +445,7 @@ def modifiedFiles(pathFilter=None):
     """
     targetBranch = os.environ.get("TARGET_BRANCH")
     commitHash = os.environ.get("COMMIT_HASH")
-    currentBranch = branch()
+    currentBranch = git_current_branch()
     logging.info("TARGET_BRANCH=%s, COMMIT_HASH=%s, currentBranch=%s", targetBranch, commitHash, currentBranch)
 
     if targetBranch and commitHash and (currentBranch == "current-pr-branch"):
@@ -349,7 +525,7 @@ def listFilesToCheck(filesDirs, filter=None):
 
 
 def get_merge_target():
-    currentBranch = branch()
+    currentBranch = git_current_branch()
     return determine_merge_commit(currentBranch)
 
 
