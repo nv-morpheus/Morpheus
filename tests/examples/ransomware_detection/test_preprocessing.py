@@ -27,6 +27,7 @@ from utils.dataset_manager import DatasetManager
 
 @pytest.mark.use_python
 class TestPreprocessingRWStage:
+    # pylint: disable=no-name-in-module
 
     def test_constructor(self, config: Config, rwd_conf: dict):
         from stages.preprocessing import PreprocessingRWStage
@@ -58,7 +59,7 @@ class TestPreprocessingRWStage:
 
         window = 3
         ids = [17, 19, 21, 23, 31, 33]
-        assert stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window) == []
+        assert len(stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window)) == 0
 
     def test_sliding_window_offsets_errors(self, config: Config, rwd_conf: dict):
         from stages.preprocessing import PreprocessingRWStage
