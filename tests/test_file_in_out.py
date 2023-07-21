@@ -42,9 +42,9 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.parametrize("flush", [False, True], ids=["no_flush", "flush"])
 @pytest.mark.parametrize("repeat", [1, 2, 5], ids=["repeat1", "repeat2", "repeat5"])
 def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: int):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.{}'.format(input_type))
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, f'filter_probs.{input_type}')
     validation_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+    out_file = os.path.join(tmp_path, f'results.{output_type}')
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
@@ -62,7 +62,7 @@ def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: 
         # The output data will contain an additional id column that we will need to slice off
         output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
         output_data = output_data[:, 1:]
-    elif output_type == "json" or output_type == "jsonlines":  # assume json
+    elif output_type in ('json', 'jsonlines'):  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
         output_data = df.values
     elif output_type == "parquet":
@@ -101,9 +101,9 @@ def test_to_file_no_path(tmp_path, config):
 @pytest.mark.parametrize("input_type", ["csv", "jsonlines", "parquet"])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, input_type, output_type):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.{}'.format(input_type))
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, f'filter_probs.{input_type}')
     validation_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+    out_file = os.path.join(tmp_path, f'results.{output_type}')
 
     if (input_type == "parquet"):
         CppConfig.set_should_use_cpp(False)
@@ -163,10 +163,11 @@ def test_file_rw_index_pipe(tmp_path, config, input_file):
                              "include_header": True
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
                          ids=["CSV", "CSV_ID", "JSON"])
-def test_file_roundtrip(use_cpp, tmp_path, input_file, extra_kwargs):
+@pytest.mark.usefixtures("use_cpp")
+def test_file_roundtrip(tmp_path, input_file, extra_kwargs):
 
     # Output file should be same type as input
-    out_file = os.path.join(tmp_path, 'results{}'.format(os.path.splitext(input_file)[1]))
+    out_file = os.path.join(tmp_path, f'results{os.path.splitext(input_file)[1]}')
 
     # Read the dataframe
     df = read_file_to_df(input_file, df_type='cudf')
@@ -204,7 +205,7 @@ def test_read_cpp_compare(input_file: str):
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_serialize_deserialize_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+    out_file = os.path.join(tmp_path, f'results.{output_type}')
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
@@ -234,7 +235,7 @@ def test_file_rw_serialize_deserialize_pipe(tmp_path, config, output_type):
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_serialize_deserialize_multi_segment_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+    out_file = os.path.join(tmp_path, f'results.{output_type}')
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))

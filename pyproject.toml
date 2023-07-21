@@ -101,7 +101,7 @@ fail-under = 10.0
 # from-stdin =
 
 # Files or directories to be skipped. They should be base names, not paths.
-ignore = ["_version.py", "conf.py", "cudf_helpers.pyx", "github_link.py"]
+ignore = ["_version.py", "conf.py", "cudf_helpers.pyx", "github_link.py", "sid-models/sid-minibert-20230424-script.py"]
 
 # Add files or directories matching the regular expressions patterns to the
 # ignore-list. The regex matches against paths and can be in Posix or Windows
@@ -227,7 +227,26 @@ function-naming-style = "snake_case"
 # function-rgx =
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["ae", "df", "e", "f", "fh", "i", "ip", "j", "k", "ex", "Run", "_", "x", "y", "X", "Y"]
+good-names = [
+  "_",
+  "ae",
+  "df",
+  "e",
+  "ex",
+  "f",
+  "fh",
+  "fn",
+  "i",
+  "ip",
+  "j",
+  "k",
+  "Run",
+  "ts",
+  "x",
+  "X",
+  "y",
+  "Y",
+]
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted

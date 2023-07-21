@@ -20,7 +20,7 @@ import shutil
 import typing
 
 import boto3
-import dfp.modules  # noqa: F401
+import dfp.modules  # noqa: F401 # pylint:disable=unused-import
 import pytest
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
@@ -35,8 +35,8 @@ from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 from dfp.utils.schema_utils import Schema
 
-import morpheus.loaders  # noqa: F401
-import morpheus.modules  # noqa: F401
+import morpheus.loaders  # noqa: F401 # pylint:disable=unused-import
+import morpheus.modules  # noqa: F401 # pylint:disable=unused-import
 from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
 from benchmarks.benchmark_conf_generator import load_json
 from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri

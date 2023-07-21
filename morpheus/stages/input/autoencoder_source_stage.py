@@ -255,7 +255,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         pass
 
     @staticmethod
-    def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
+    def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):  # pylint: disable=unused-argument
         """
         If any features are available to be derived, can be implemented by overriding this function.
 
@@ -305,24 +305,24 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return user_metas
 
-    def _build_source(self, seg: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         # The first source just produces filenames
-        filename_source = self._watcher.build_node(self.unique_name, seg)
+        filename_source = self._watcher.build_node(self.unique_name, builder)
 
         out_type = typing.List[str]
 
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, seg: mrc.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
         # At this point, we have batches of filenames to process. Make a node for processing batches of
         # filenames into batches of dataframes
-        post_node = seg.make_node(
+        post_node = builder.make_node(
             self.unique_name + "-post",
             ops.map(
                 partial(
@@ -337,9 +337,9 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
             ops.map(self._build_user_metadata),
             # Finally flatten to single meta
             ops.flatten())
-        seg.make_edge(out_stream, post_node)
+        builder.make_edge(out_stream, post_node)
 
         out_stream = post_node
         out_type = UserMessageMeta
 
-        return super()._post_build_single(seg, (out_stream, out_type))
+        return super()._post_build_single(builder, (out_stream, out_type))

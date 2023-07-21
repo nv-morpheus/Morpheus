@@ -26,7 +26,7 @@ import pandas as pd
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 
-from common.sequence_classifier import SequenceClassifier
+from common.sequence_classifier import SequenceClassifier  # pylint: disable=no-name-in-module
 from morpheus.utils.seed import manual_seed
 
 

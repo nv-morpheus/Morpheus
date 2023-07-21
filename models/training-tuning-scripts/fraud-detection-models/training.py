@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""""
+"""
 # EXample usage:
 python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv \
      --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
@@ -95,7 +95,7 @@ def train_model(train_graph, node_identifiers, label):
     # Global parameters:
     batch_size = 5
     xgb_n_estimator = 100
-    num_samples = [2, 32]
+    n_samples = [2, 32]
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_node_identifiers = node_identifiers[:round(0.8 * len(node_identifiers))]
@@ -103,12 +103,12 @@ def train_model(train_graph, node_identifiers, label):
 
     validation_node_identifiers = node_identifiers[round(0.8 * len(node_identifiers)):]
     validation_labels = label.loc[validation_node_identifiers]
-    generator = HinSAGENodeGenerator(train_graph, batch_size, num_samples, head_node_type=embedding_node_type)
+    generator = HinSAGENodeGenerator(train_graph, batch_size, n_samples, head_node_type=EMBEDDING_NODE_TYPE)
     train_gen = generator.flow(train_node_identifiers, train_labels, shuffle=True)
     test_gen = generator.flow(validation_node_identifiers, validation_labels)
 
     # HinSAGE model
-    model = HinSAGE(layer_sizes=[embedding_size] * len(num_samples), generator=generator, dropout=0)
+    model = HinSAGE(layer_sizes=[embedding_size] * len(n_samples), generator=generator, dropout=0)
     x_inp, x_out = model.build()
 
     # Final estimator layer
@@ -144,7 +144,7 @@ def save_model(model, output_xgboost, output_hinsage):
     model['xgb'].save_model(output_xgboost)
 
 
-def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_size):
+def inductive_step_hinsage(graph: StellarGraph, trained_model, inductive_node_identifiers: list, batch_size: int):
     """
 
     This function generates embeddings for unseen nodes using a trained hinsage model.
@@ -152,9 +152,9 @@ def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_s
 
     Parameters
     ----------
-    S : StellarGraph Object
+    graph : StellarGraph Object
         The graph on which HinSAGE is deployed.
-    trained_model : Neural Network
+    trained_model: Model
         The trained hinsage model, containing the trained and optimized aggregation functions per depth.
     inductive_node_identifiers : list
         Defines the nodes that HinSAGE needs to generate embeddings for
@@ -164,7 +164,7 @@ def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_s
     """
 
     # The mapper feeds data from sampled subgraph to HinSAGE model
-    generator = HinSAGENodeGenerator(S, batch_size, num_samples, head_node_type="transaction")
+    generator = HinSAGENodeGenerator(graph, batch_size, num_samples, head_node_type="transaction")
     test_gen_not_shuffled = generator.flow(inductive_node_identifiers, shuffle=False)
 
     inductive_emb = np.concatenate([trained_model.predict(row[0], verbose=1) for row in test_gen_not_shuffled])
@@ -173,14 +173,14 @@ def inductive_step_hinsage(S, trained_model, inductive_node_identifiers, batch_s
     return inductive_emb
 
 
-def model_eval(trained_model, S, node_identifier, label):
+def model_eval(trained_model, graph, node_identifier, label):
 
-    inductive_emb = inductive_step_hinsage(S, trained_model['hinsage'], node_identifier, batch_size=5)
+    inductive_emb = inductive_step_hinsage(graph, trained_model['hinsage'], node_identifier, batch_size=5)
     predictions = trained_model['xgb'].predict_proba(inductive_emb)
     # evaluate performance.
-    eval = Evaluation(predictions, label, "GraphSAGE+features")
-    eval.f1_ap_rec()
-    print(f"AUC -- {eval.roc_curve()}")
+    eval_obj = Evaluation(predictions, label, "GraphSAGE+features")
+    eval_obj.f1_ap_rec()
+    print(f"AUC -- {eval_obj.roc_curve()}")
 
 
 def main():
@@ -192,9 +192,9 @@ def main():
     # train_data, val_data, train_data_index, val_data_index = split_train_test(df, 0.7, 1.0,0.7)
 
     print("Graph construction")
-    S_graph = build_graph_features(train_data)
+    s_graph = build_graph_features(train_data)
     print("Model Training...")
-    model = train_model(S_graph, node_identifiers=list(train_data.index), label=train_data['fraud_label'])
+    model = train_model(s_graph, node_identifiers=list(train_data.index), label=train_data['fraud_label'])
     # print(model)
     print("Save trained model")
     if args.save_model:
@@ -202,8 +202,8 @@ def main():
     # Save graph info
     print("Model Evaluation...")
     inductive_data = pd.concat((train_data, val_data))
-    S_graph = build_graph_features(inductive_data)
-    model_eval(model, S_graph, node_identifier=list(val_data.index), label=val_data['fraud_label'])
+    s_graph = build_graph_features(inductive_data)
+    model_eval(model, s_graph, node_identifier=list(val_data.index), label=val_data['fraud_label'])
 
 
 if __name__ == "__main__":
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Global parameters:
     embedding_size = int(args.embedding_size)
     epochs = int(args.epochs)
-    embedding_node_type = str(args.node_type)
+    EMBEDDING_NODE_TYPE = str(args.node_type)
     num_samples = [2, 32]
 
     main()

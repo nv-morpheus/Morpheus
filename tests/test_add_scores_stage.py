@@ -32,21 +32,21 @@ def test_constructor(config: Config):
     config.class_labels = ['frogs', 'lizards', 'toads']
     config.feature_length = 12
 
-    a = AddScoresStage(config)
-    assert a._class_labels == ['frogs', 'lizards', 'toads']
-    assert a._labels == ['frogs', 'lizards', 'toads']
-    assert a._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
-    assert a.name == "add-scores"
+    stage = AddScoresStage(config)
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['frogs', 'lizards', 'toads']
+    assert stage._idx2label == {0: 'frogs', 1: 'lizards', 2: 'toads'}
+    assert stage.name == "add-scores"
 
     # Just ensure that we get a valid non-empty tuple
-    accepted_types = a.accepted_types()
+    accepted_types = stage.accepted_types()
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
-    a = AddScoresStage(config, labels=['lizards'], prefix='test_')
-    assert a._class_labels == ['frogs', 'lizards', 'toads']
-    assert a._labels == ['lizards']
-    assert a._idx2label == {1: 'test_lizards'}
+    stage = AddScoresStage(config, labels=['lizards'], prefix='test_')
+    assert stage._class_labels == ['frogs', 'lizards', 'toads']
+    assert stage._labels == ['lizards']
+    assert stage._idx2label == {1: 'test_lizards'}
 
     with pytest.raises(AssertionError):
         AddScoresStage(config, labels=['missing'])

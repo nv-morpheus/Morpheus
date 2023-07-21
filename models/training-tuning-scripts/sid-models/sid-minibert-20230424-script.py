@@ -152,7 +152,7 @@ def train_model(model_dir, train_dataloader, idx2label):
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        print("Train loss: {}".format(tr_loss / nb_tr_steps))
+        print(f"Train loss: {tr_loss / nb_tr_steps}")
     return model
 
 
@@ -198,9 +198,9 @@ def model_eval(model, val_dataloader, idx2label):
     print('F1 Macro Validation Accuracy: ', val_f1_accuracy)
     print('Flat Validation Accuracy: ', val_flat_accuracy)
 
-    for label, cf in zip(list(idx2label.values()), multilabel_confusion_matrix(true_bools, pred_bools)):
+    for label, cfm in zip(list(idx2label.values()), multilabel_confusion_matrix(true_bools, pred_bools)):
         print(label)
-        print(cf)
+        print(cfm)
 
 
 def main():

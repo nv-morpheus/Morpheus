@@ -21,8 +21,8 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import morpheus.loaders  # noqa: F401
-import morpheus.modules  # noqa: F401
+import morpheus.loaders  # noqa: F401 # pylint:disable=unused-import
+import morpheus.modules  # noqa: F401 # pylint:disable=unused-import
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
@@ -32,6 +32,8 @@ from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FROM_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from utils import TEST_DIRS
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="function")
@@ -68,7 +70,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    module_instance = fn_constructor("FromControlMessageTest", config)  # noqa: F841 -- we don't need to use it
+    fn_constructor("FromControlMessageTest", config)  # noqa: F841 -- we don't need to use it
 
 
 @pytest.mark.use_cpp

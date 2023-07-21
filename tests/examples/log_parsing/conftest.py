@@ -17,7 +17,7 @@ import pytest
 
 
 @pytest.fixture
-def config(config):
+def config(config):  # pylint: disable=redefined-outer-name
     """
     The log_parsing pipelie requires NLP mode. Set this here so all the tests don't need to set it themselves.
     """

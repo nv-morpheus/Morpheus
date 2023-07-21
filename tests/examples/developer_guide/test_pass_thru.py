@@ -31,13 +31,13 @@ from utils import TEST_DIRS
 
 def _check_pass_thru(config: Config,
                      filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     PassThruStageCls: SinglePortStage):
-    stage = PassThruStageCls(config)
+                     pass_thru_stage_cls: SinglePortStage):
+    stage = pass_thru_stage_cls(config)
 
     meta = MessageMeta(filter_probs_df)
-    mm = MultiMessage(meta=meta)
+    multi = MultiMessage(meta=meta)
 
-    assert stage.on_data(mm) is mm
+    assert stage.on_data(multi) is multi
 
 
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])
