@@ -433,7 +433,7 @@ class Pipeline():
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
             for name, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
-                                        self._segment_graphs[segment_id].nodes).items():
+                                           self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
                 label = ""
