@@ -21,11 +21,11 @@ python sid-minibert-20230424-script.py \
 """
 
 import argparse
+
+import torch
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import multilabel_confusion_matrix
-
-import torch
 from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
