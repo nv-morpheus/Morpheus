@@ -194,7 +194,7 @@ From the root of the Morpheus project we will launch a Triton Docker container w
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -435,12 +435,12 @@ pipeline.add_stage(SerializeStage(config))
 pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
 ```
 
-Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`
+Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`.
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Supported values are:
 * `FileTypes.Auto`
-* `FileTypes.JSON`
 * `FileTypes.CSV`
+* `FileTypes.JSON`
 
 ### The Completed Pipeline
 
@@ -637,7 +637,7 @@ If we were to make the above changes, we can view the resulting help string with
 ```bash
 morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
 ```
-```
+```console
 Configuring Pipeline via CLI
 Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
 
@@ -932,4 +932,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [`examples/developer_guide/2_2_rabbitmq/README.md`](../../../../examples/developer_guide/2_2_rabbitmq/README.md) in the root of the Morpheus repo.
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the root of the Morpheus repo.

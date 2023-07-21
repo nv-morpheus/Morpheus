@@ -107,10 +107,10 @@ def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern
         # Convert the regex match
         groups = match.groupdict()
 
-        if ("microsecond" in groups):
+        if ("microsecond" in groups and groups["microsecond"] is not None):
             groups["microsecond"] = int(float(groups["microsecond"]) * 1000000)
 
-        groups = {key: int(value) for key, value in groups.items()}
+        groups = {key: int(value) for key, value in groups.items() if value is not None}
 
         groups["tzinfo"] = timezone.utc
 
@@ -118,5 +118,8 @@ def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern
     else:
         # Otherwise, fallback to the file modified (created?) time
         ts_object = file_object.fs.modified(file_object.path)
+
+        # Assume that its using the same timez
+        ts_object.replace(tzinfo=datetime.now().astimezone().tzinfo)
 
     return ts_object

@@ -104,6 +104,12 @@ class ControlMessage
     const nlohmann::json get_metadata(const std::string& key) const;
 
     /**
+     * @brief Get all metadata keys for the control message.
+     * @return A json object containing all metadata keys and values.
+     */
+    const nlohmann::json list_metadata() const;
+
+    /**
      * @brief Set the payload object for the control message.
      * @param payload
      * A shared pointer to the message payload.
@@ -163,6 +169,8 @@ struct ControlMessageProxy
      */
     static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
     static pybind11::object get_metadata(ControlMessage& self, const std::string& key);
+
+    static pybind11::dict list_metadata(ControlMessage& self);
 };
 
 #pragma GCC visibility pop

@@ -27,6 +27,6 @@ mamba env update -f docs/conda_docs.yml
 
 ## Build Morpheus and Documentation
 ```
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh --target morpheus_docs
 ```
 Outputs to `build/docs/html`

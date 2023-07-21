@@ -6,5 +6,4 @@ jupyterlab
 nvidia-pyindex
 # Duplicated in conda dev to ensure parity with libprotobuf
 protobuf==4.21.*
-tritonclient[all]==2.17.*
 websockets

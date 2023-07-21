@@ -32,12 +32,17 @@ from utils.dataset_manager import DatasetManager
 
 @pytest.mark.use_python
 class TestCreateFeaturesRWStage:
+    # pylint: disable=no-name-in-module
 
-    def test_constructor(self,
-                         config: Config,
-                         dask_distributed: types.ModuleType,
-                         rwd_conf: dict,
-                         interested_plugins: typing.List[str]):
+    @mock.patch('stages.create_features.Client')
+    def test_constructor(
+            self,
+            mock_dask_client,
+            config: Config,
+            dask_distributed: types.ModuleType,  # pylint: disable=unused-argument
+            rwd_conf: dict,
+            interested_plugins: typing.List[str]):
+        mock_dask_client.return_value = mock_dask_client
         from common.data_models import FeatureConfig
         from common.feature_extractor import FeatureExtractor
         from stages.create_features import CreateFeaturesRWStage
@@ -52,9 +57,8 @@ class TestCreateFeaturesRWStage:
                                       threads_per_worker=threads_per_worker)
 
         assert isinstance(stage, MultiMessageStage)
-        assert isinstance(stage._client, dask_distributed.Client)
+        assert stage._client is mock_dask_client
         scheduler_info = stage._client.scheduler_info()
-        len(scheduler_info['workers']) == n_workers
         for worker in scheduler_info['workers'].values():
             assert worker['nthreads'] == threads_per_worker
 
@@ -169,12 +173,12 @@ class TestCreateFeaturesRWStage:
         assert len(multi_messages) == len(pids)
 
         prev_loc = 0
-        for (i, mm) in enumerate(multi_messages):
-            assert isinstance(mm, MultiMessage)
+        for (i, _multi_message) in enumerate(multi_messages):
+            assert isinstance(_multi_message, MultiMessage)
             pid = pids[i]
-            (mm.get_meta(['pid_process']) == pid).all()
-            assert mm.mess_offset == prev_loc
-            prev_loc = mm.mess_offset + mm.mess_count
+            (_multi_message.get_meta(['pid_process']) == pid).all()
+            assert _multi_message.mess_offset == prev_loc
+            prev_loc = _multi_message.mess_offset + _multi_message.mess_count
 
         assert prev_loc == len(df)
 

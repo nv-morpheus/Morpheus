@@ -47,6 +47,9 @@
 			"--rcfile=${workspaceFolder}/pyproject.toml",
 			"--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")",
 		],
+		"python.analysis.extraPaths": [
+			"./examples/digital_fingerprinting/production/morpheus"
+		],
 		"python.linting.pylintEnabled": true,
 		"rewrap.wrappingColumn": 120,
 		"python.testing.pytestArgs": [
@@ -327,8 +330,10 @@
 					"-b",
 					"html",
 					"-aE",
+					"-j",
+					"auto",
 					"source",
-					"build",
+					"${workspaceFolder}/build/docs/html",
 				],
 				"justMyCode": false
 			},

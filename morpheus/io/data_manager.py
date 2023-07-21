@@ -160,7 +160,7 @@ class DataManager():
 
         :param data_source: DataFrame or file path to store as a source.
         :param copy_from_source: Whether to copy the data on disk when the input is a file path and the storage type is
-        'filesystem'.
+            'filesystem'.
         :param data_label: Optional label for the stored data.
         :return: UUID of the stored source.
         """
