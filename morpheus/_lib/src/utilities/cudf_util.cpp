@@ -17,6 +17,7 @@
 
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
@@ -24,6 +25,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
+#include <cstdlib>  // for getenv
 #include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
@@ -34,18 +36,20 @@
  */
 #include "cudf_helpers_api.h"
 
-#include "morpheus/objects/data_table.hpp"
-
 namespace morpheus {
 
 void CudfHelper::load()
 {
-    if (import_morpheus___lib__cudf_helpers() != 0)
+    // Avoid loading cudf_helpers if we are in a sphinx build
+    if (std::getenv("MORPHEUS_IN_SPHINX_BUILD") == nullptr)
     {
-        pybind11::error_already_set ex;
+        if (import_morpheus___lib__cudf_helpers() != 0)
+        {
+            pybind11::error_already_set ex;
 
-        LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
-        throw ex;
+            LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
+            throw ex;
+        }
     }
 }
 

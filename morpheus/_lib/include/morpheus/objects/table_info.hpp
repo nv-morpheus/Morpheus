@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "morpheus_export.h"
-
+#include "morpheus/export.h"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info_data.hpp"
@@ -40,6 +39,11 @@ namespace morpheus {
 
 struct CudfHelper;
 
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
 struct MORPHEUS_EXPORT TableInfoBase

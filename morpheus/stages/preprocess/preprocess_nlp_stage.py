@@ -18,7 +18,6 @@ from functools import partial
 import mrc
 
 import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -94,8 +93,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
 
-        self._tokenizer: SubwordTokenizer = None
-
     @property
     def name(self) -> str:
         return "preprocess-nlp"
@@ -119,7 +116,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         ----------
         x : `morpheus.pipeline.messages.MultiMessage`
             Input rows received from Deserialized stage.
-        vocab_hashfile : str
+        vocab_hash_file : str
             Path to hash file containing vocabulary of words with token-ids. This can be created from the raw vocabulary
             using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
         do_lower_case : bool

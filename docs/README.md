@@ -20,13 +20,13 @@
 Additional packages required for building the documentation are defined in `./conda_docs.yml`.
 
 ## Install Additional Dependencies
-From the root of the morpheus repo:
+From the root of the Morpheus repo:
 ```bash
 mamba env update -f docs/conda_docs.yml
 ```
 
 ## Build Morpheus and Documentation
 ```
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh --target morpheus_docs
 ```
 Outputs to `build/docs/html`

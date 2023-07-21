@@ -19,7 +19,7 @@
 
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/memory_descriptor.hpp"
-#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
+#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex, TensorSize
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
@@ -29,7 +29,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>  // for size_t
 #include <cstdint>  // for uint8_t
 #include <functional>
 #include <memory>   // for shared_ptr
@@ -108,7 +107,7 @@ struct ITensorStorage
     virtual void* data() const = 0;
 
     // virtual const void* data() const                             = 0;
-    virtual TensorIndex bytes() const = 0;
+    virtual TensorSize bytes() const = 0;
 
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
@@ -136,7 +135,7 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual RankType rank() const = 0;
 
-    virtual TensorIndex count() const = 0;
+    virtual TensorSize count() const = 0;
 
     virtual DType dtype() const = 0;
 
@@ -200,12 +199,12 @@ struct TensorObject final
         return m_tensor->dtype();
     }
 
-    TensorIndex count() const
+    TensorSize count() const
     {
         return m_tensor->count();
     }
 
-    TensorIndex bytes() const
+    TensorSize bytes() const
     {
         return m_tensor->bytes();
     }
@@ -215,7 +214,7 @@ struct TensorObject final
         return m_tensor->rank();
     }
 
-    std::size_t dtype_size() const
+    TensorSize dtype_size() const
     {
         return m_tensor->dtype().item_size();
     }

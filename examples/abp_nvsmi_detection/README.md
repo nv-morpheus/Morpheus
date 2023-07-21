@@ -65,12 +65,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:22.08-py3
+docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -93,7 +93,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way (you can copy/paste the entire command with comments).
 
-From the  Morpheus repo root directory run:
+From the  Morpheus repo root directory, run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
@@ -101,7 +101,7 @@ morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil \
+   pipeline-fil --columns_file=${MORPHEUS_ROOT}/morpheus/data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
@@ -204,7 +204,7 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 
 The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
 
-```json
+```
 ...
 {"mining": 0}
 {"mining": 0}

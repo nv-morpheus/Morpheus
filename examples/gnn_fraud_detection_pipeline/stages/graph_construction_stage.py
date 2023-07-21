@@ -20,6 +20,7 @@ import typing
 import mrc
 import networkx as nx
 import pandas as pd
+from mrc.core import operators as ops
 
 import cudf
 
@@ -89,7 +90,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         for edge in edges:
             g_nx.add_edges_from(edge)
 
-        return StellarGraph(g_nx, node_type_name="ntype", node_features=node_features)
+        return StellarGraph.from_networkx(g_nx, node_type_attr='ntype', node_features=node_features)
 
     @staticmethod
     def _build_graph_features(dataset: pd.DataFrame) -> "stellargraph.StellarGraph":
@@ -125,6 +126,6 @@ class FraudGraphConstructionStage(SinglePortStage):
         return FraudGraphMultiMessage.from_message(message, graph=graph)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._process_message)
+        node = builder.make_node(self.unique_name, ops.map(self._process_message))
         builder.make_edge(input_stream[0], node)
         return node, FraudGraphMultiMessage

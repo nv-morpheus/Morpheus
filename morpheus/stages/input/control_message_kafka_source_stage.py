@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 import json
 import logging
 import time
+import typing
 
 import confluent_kafka as ck
 import mrc
@@ -23,7 +24,7 @@ import pandas as pd
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_control import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
@@ -44,8 +45,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     bootstrap_servers : str
         Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
         'auto' to automatically determine the cluster IPs and ports
-    input_topic : str
-        Input kafka topic.
+    input_topic : typing.List[str], default = ["test_cm"]
+        Name of the Kafka topic from which messages will be consumed. To consume from multiple topics,
+        repeat the same option multiple times.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     client_id : str, default = None
@@ -70,7 +72,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: str = "test_cm",
+                 input_topic: typing.List[str] = None,
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -94,9 +96,13 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
 
-        self._topic = input_topic
-        # Setting max batch size to 1. As this source recieves only task defination (control messages)
-        self._max_batch_size = 1
+        input_topic = input_topic if (input_topic is not None) else ["test_cm"]
+        if isinstance(input_topic, str):
+            input_topic = [input_topic]
+
+        # Remove duplicate topics if there are any.
+        self._topics = list(set(input_topic))
+
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
@@ -104,7 +110,7 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._async_commits = async_commits
         self._client = None
 
-        # Flag to indicate whether or not we should stop
+        # Flag to indicate whether we should stop
         self._stop_requested = False
 
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
@@ -121,7 +127,6 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         return False
 
     def _process_msg(self, consumer, msg):
-
         control_messages = []
 
         payload = msg.value()
@@ -129,13 +134,14 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             try:
                 decoded_msg = payload.decode("utf-8")
                 control_messages_conf = json.loads(decoded_msg)
+
                 self._num_messages += 1
                 # TODO(Devin) - one CM at a time(?), don't need to submit 'inputs'
                 for control_message_conf in control_messages_conf.get("inputs", []):
                     self._records_emitted += 1
                     control_messages.append(ControlMessage(control_message_conf))
             except Exception as e:
-                logger.error("\nError converting payload to ControlMessage : {}".format(e))
+                logger.error("\nError converting payload to ControlMessage : %s", e)
 
         if (not self._disable_commit):
             consumer.commit(message=msg, asynchronous=self._async_commits)
@@ -149,7 +155,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
-            consumer.subscribe([self._topic])
+            consumer.subscribe(self._topics)
+
+            do_sleep = False
 
             while not self._stop_requested:
 

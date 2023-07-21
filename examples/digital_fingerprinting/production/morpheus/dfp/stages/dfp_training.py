@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Training stage for the DFP pipeline."""
 
 import logging
 import typing
@@ -31,6 +32,20 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPTraining(SinglePortStage):
+    """
+    Performs training of the DFP model using `AutoEncoder`. The trained model is then attached to output messages.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    model_kwargs : dict
+        Keyword arguments to pass to the `AutoEncoder` constructor.
+    epochs : int
+        Number of epochs to train the model for.
+    validation_size : float
+        Fraction of the training data to use for validation. Must be in the (0, 1) range.
+    """
 
     def __init__(self, c: Config, model_kwargs: dict = None, epochs=30, validation_size=0.0):
         super().__init__(c)
@@ -59,20 +74,23 @@ class DFPTraining(SinglePortStage):
         if (validation_size >= 0.0 and validation_size < 1.0):
             self._validation_size = validation_size
         else:
-            raise ValueError("validation_size={0} should be a positive float in the "
-                             "(0, 1) range".format(validation_size))
+            raise ValueError(f"validation_size={validation_size} should be a positive float in the (0, 1) range")
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-training"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Indicate which input message types this stage accepts."""
         return (MultiDFPMessage, )
 
-    def on_data(self, message: MultiDFPMessage):
+    def on_data(self, message: MultiDFPMessage) -> MultiAEMessage:
+        """Train the model and attach it to the output message."""
         if (message is None or message.mess_count == 0):
             return None
 
@@ -104,11 +122,7 @@ class DFPTraining(SinglePortStage):
         return output_message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

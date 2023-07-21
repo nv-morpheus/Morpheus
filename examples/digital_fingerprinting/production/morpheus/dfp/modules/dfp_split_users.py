@@ -29,7 +29,7 @@ from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_SPLIT_USERS, MORPHEUS_MODULE_NAMESPACE)
@@ -62,7 +62,6 @@ def dfp_split_users(builder: mrc.Builder):
     skip_users = config.get("skip_users", [])
     only_users = config.get("only_users", [])
 
-    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
     userid_column_name = config.get("userid_column_name", "username")
     include_generic = config.get("include_generic", False)
     include_individual = config.get("include_individual", False)
@@ -100,53 +99,52 @@ def dfp_split_users(builder: mrc.Builder):
 
         return output_messages
 
-    def generate_split_dataframes(df: pd.DataFrame):
+    def generate_split_dataframes(users_df: pd.DataFrame):
         split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
 
         # If we are skipping users, do that here
         if (len(skip_users) > 0):
-            df = df[~df[userid_column_name].isin(skip_users)]
+            users_df = users_df[~users_df[userid_column_name].isin(skip_users)]
 
         if (len(only_users) > 0):
-            df = df[df[userid_column_name].isin(only_users)]
+            users_df = users_df[users_df[userid_column_name].isin(only_users)]
 
         # Split up the dataframes
         if (include_generic):
-            split_dataframes[fallback_username] = df
+            split_dataframes[fallback_username] = users_df
 
         if (include_individual):
+            # pylint: disable=unnecessary-comprehension
+            # List comprehension is necessary here to convert to a dictionary
             split_dataframes.update(
                 {username: user_df
-                 for username, user_df in df.groupby(userid_column_name, sort=False)})
+                 for username, user_df in users_df.groupby(userid_column_name, sort=False)})
 
         return split_dataframes
 
     def extract_users(control_message: ControlMessage):
-        # logger.debug("Extracting users from message")
         if (control_message is None):
             logger.debug("No message to extract users from")
             return []
 
         try:
             control_messages = None  # for readability
-            mm = control_message.payload()
-            with mm.mutable_dataframe() as dfm:
+            message_meta = control_message.payload()
+            with message_meta.mutable_dataframe() as dfm:
                 with log_time(logger.debug):
 
                     if (isinstance(dfm, cudf.DataFrame)):
                         # Convert to pandas because cudf is slow at this
-                        df = dfm.to_pandas()
-                        df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
+                        users_df = dfm.to_pandas()
                     else:
-                        df = dfm
+                        users_df = dfm
 
-                    split_dataframes = generate_split_dataframes(df)
-
+                    split_dataframes = generate_split_dataframes(users_df)
                     control_messages = generate_control_messages(control_message, split_dataframes)
 
             return control_messages
-        except Exception:
-            logger.exception("Error extracting users from message, discarding control message")
+        except Exception as exec_info:
+            logger.exception("Error extracting users from message, discarding control message: %s", exec_info)
             return []
 
     def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):

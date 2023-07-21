@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Output stage that collects received messages and compares the concatinated dataframe of all messages against a known
+expected dataframe.
+"""
 
 import copy
 import typing
@@ -24,6 +28,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
 from morpheus.utils import concat_df
+from morpheus.utils.type_aliases import DataFrameType
 
 
 class CompareDataFrameStage(InMemorySinkStage):
@@ -37,7 +42,7 @@ class CompareDataFrameStage(InMemorySinkStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    compare_df : typing.Union[pd.DataFrame, cudf.DataFrame, str]
+    compare_df : typing.Union[DataFrameType, str]
         Dataframe to compare against the aggregate DataFrame composed from the received messages. When `compare_df` is
         a string it is assumed to be a file path.
     include : typing.List[str], optional
@@ -58,7 +63,7 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     def __init__(self,
                  c: Config,
-                 compare_df: typing.Union[pd.DataFrame, cudf.DataFrame, str],
+                 compare_df: typing.Union[DataFrameType, str],
                  include: typing.List[str] = None,
                  exclude: typing.List[str] = None,
                  index_col: str = None,
@@ -71,6 +76,13 @@ class CompareDataFrameStage(InMemorySinkStage):
             compare_df = read_file_to_df(compare_df, df_type='pandas')
         elif isinstance(compare_df, cudf.DataFrame):
             compare_df = compare_df.to_pandas()
+        elif isinstance(compare_df, list):
+            tmp_dfs = []
+            for item in compare_df:
+                tmp_df = read_file_to_df(item, df_type='pandas')
+                tmp_dfs.append(tmp_df)
+            compare_df = pd.concat(tmp_dfs)
+            compare_df.reset_index(inplace=True, drop=True)
 
         self._compare_df = compare_df
 
@@ -84,9 +96,11 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     @property
     def name(self) -> str:
+        """Name of the stage."""
         return "compare"
 
     def supports_cpp_node(self) -> bool:
+        """Indicates whether this stage supports a C++ node."""
         return False
 
     def get_results(self, clear=True) -> dict:
@@ -107,13 +121,15 @@ class CompareDataFrameStage(InMemorySinkStage):
         if self._reset_index:
             combined_df.reset_index(inplace=True)
 
+        results = compare_df.compare_df(self._compare_df,
+                                        combined_df,
+                                        include_columns=self._include_columns,
+                                        exclude_columns=self._exclude_columns,
+                                        replace_idx=self._index_col,
+                                        abs_tol=self._abs_tol,
+                                        rel_tol=self._rel_tol)
+
         if clear:
             self.clear()
 
-        return compare_df.compare_df(self._compare_df,
-                                     combined_df,
-                                     include_columns=self._include_columns,
-                                     exclude_columns=self._exclude_columns,
-                                     replace_idx=self._index_col,
-                                     abs_tol=self._abs_tol,
-                                     rel_tol=self._rel_tol)
+        return results

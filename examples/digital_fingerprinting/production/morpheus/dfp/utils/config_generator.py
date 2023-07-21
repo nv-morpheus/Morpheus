@@ -45,7 +45,6 @@ class ConfigGenerator:
         module_conf["module_id"] = DFP_DEPLOYMENT
         module_conf["module_name"] = "dfp_deployment"
         module_conf["namespace"] = MORPHEUS_MODULE_NAMESPACE
-        module_conf["num_output_ports"] = 2
 
         module_conf["training_options"] = self.train_module_conf()
         module_conf["inference_options"] = self.infer_module_conf()
@@ -69,6 +68,9 @@ class ConfigGenerator:
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }
             },
+            "monitor_options": {
+                "silence_monitors": self._dfp_arg_parser.silence_monitors,
+            },
             "user_splitting_options": {
                 "fallback_username": self._config.ae.fallback_username,
                 "include_generic": self._dfp_arg_parser.include_generic,
@@ -78,7 +80,9 @@ class ConfigGenerator:
                 "userid_column_name": self._config.ae.userid_column_name
             },
             "stream_aggregation_options": {
-                "aggregation_span": self._dfp_arg_parser.duration, "cache_to_disk": False
+                "aggregation_span": "1d",
+                "cache_to_disk": False,
+                "cache_mode": "streaming",
             },
             "preprocessing_options": {
                 "schema": {
@@ -96,7 +100,7 @@ class ConfigGenerator:
                 }
             },
             "write_to_file_options": {
-                "filename": "dfp_detections_{}.csv".format(self._dfp_arg_parser.source), "overwrite": True
+                "filename": f"dfp_detections_{self._dfp_arg_parser.source}.csv", "overwrite": True
             },
         }
 
@@ -119,6 +123,9 @@ class ConfigGenerator:
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }
             },
+            "monitor_options": {
+                "silence_monitors": self._dfp_arg_parser.silence_monitors,
+            },
             "user_splitting_options": {
                 "fallback_username": self._config.ae.fallback_username,
                 "include_generic": self._dfp_arg_parser.include_generic,
@@ -128,7 +135,11 @@ class ConfigGenerator:
                 "userid_column_name": self._config.ae.userid_column_name
             },
             "stream_aggregation_options": {
-                "aggregation_span": self._dfp_arg_parser.duration, "cache_to_disk": False
+                "aggregation_span": "60d",
+                "cache_to_disk": False,
+                "cache_mode": "streaming",
+                "trigger_on_min_history": 300,
+                "trigger_on_min_increment": 300
             },
             "preprocessing_options": {
                 "schema": {
@@ -139,12 +150,13 @@ class ConfigGenerator:
                 "feature_columns": self._config.ae.feature_columns, "epochs": 30, "validation_size": 0.10
             },
             "mlflow_writer_options": {
+                "source": self._dfp_arg_parser.source,
                 "model_name_formatter": self._dfp_arg_parser.model_name_formatter,
                 "experiment_name_formatter": self._dfp_arg_parser.experiment_name_formatter,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "conda_env": {
                     'channels': ['defaults', 'conda-forge'],
-                    'dependencies': ['python={}'.format('3.8'), 'pip'],
+                    'dependencies': ['python=3.8', 'pip'],
                     'pip': ['mlflow', 'dfencoder'],
                     'name': 'mlflow-env'
                 }
@@ -175,7 +187,7 @@ def generate_ae_config(source: str,
 
     config.ae = ConfigAutoEncoder()
 
-    labels_file = "data/columns_ae_{}.txt".format(source)
+    labels_file = f"data/columns_ae_{source}.txt"
     config.ae.feature_columns = load_labels_file(get_package_relative_file(labels_file))
     config.ae.userid_column_name = userid_column_name
     config.ae.timestamp_column_name = timestamp_column_name

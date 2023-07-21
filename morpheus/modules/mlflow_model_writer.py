@@ -58,10 +58,11 @@ def mlflow_model_writer(builder: mrc.Builder):
             - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
             - databricks_permissions (dict): Permissions for the model; See Below; Default: None
             - experiment_name_formatter (str): Formatter for the experiment name;
-            Example: `experiment_name_{timestamp}`; Default: `[Required]`
+                Example: `experiment_name_{timestamp}`; Default: `[Required]`
             - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
-            Default: `[Required]`
+                Default: `[Required]`
             - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+            - source (str): from source where the logs are generated; Example: `azure`; Default: `[Required]`
 
         databricks_permissions:
             - read (array): List of users with read permissions; Example: `["read_user1", "read_user2"]`; Default: -
@@ -72,6 +73,9 @@ def mlflow_model_writer(builder: mrc.Builder):
 
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
+    if ("source" not in config):
+        raise ValueError("Source is required")
+
     if ("model_name_formatter" not in config):
         raise ValueError("Model name formatter is required")
 
@@ -81,6 +85,7 @@ def mlflow_model_writer(builder: mrc.Builder):
     if ("conda_env" not in config):
         raise ValueError("Conda environment is required")
 
+    source = config["source"]
     model_name_formatter = config["model_name_formatter"]
     experiment_name_formatter = config["experiment_name_formatter"]
     conda_env = config.get("conda_env", None)
@@ -125,6 +130,8 @@ def mlflow_model_writer(builder: mrc.Builder):
             get_registered_model_url = urllib.parse.urljoin(url_base,
                                                             "/api/2.0/mlflow/databricks/registered-models/get")
 
+            # Remove once https://github.com/nv-morpheus/Morpheus/issues/1050 is resolved
+            # pylint: disable=missing-timeout
             get_registered_model_response = requests.get(url=get_registered_model_url,
                                                          headers=headers,
                                                          params={"name": reg_model_name})
@@ -171,7 +178,7 @@ def mlflow_model_writer(builder: mrc.Builder):
             # Creates a new experiment if it doesnt exist
             experiment = mlflow.set_experiment(experiment_name)
 
-            with mlflow.start_run(run_name="Duo autoencoder model training run",
+            with mlflow.start_run(run_name=f"{source} autoencoder model training run",
                                   experiment_id=experiment.experiment_id) as run:
 
                 model_path = f"{model_path}-{run.info.run_uuid}"
@@ -190,8 +197,8 @@ def mlflow_model_writer(builder: mrc.Builder):
                 metrics_dict: typing.Dict[str, float] = {}
 
                 # Add info on the embeddings
-                for k, v in model.categorical_fts.items():
-                    embedding = v.get("embedding", None)
+                for k, val in model.categorical_fts.items():
+                    embedding = val.get("embedding", None)
 
                     if (embedding is None):
                         continue
@@ -248,12 +255,12 @@ def mlflow_model_writer(builder: mrc.Builder):
                 }
 
                 # Now create the model version
-                mv = client.create_model_version(name=reg_model_name,
-                                                 source=model_src,
-                                                 run_id=run.info.run_id,
-                                                 tags=tags)
+                model_ver = client.create_model_version(name=reg_model_name,
+                                                        source=model_src,
+                                                        run_id=run.info.run_id,
+                                                        tags=tags)
 
-                logger.debug("ML Flow model upload complete: %s:%s:%s", user, reg_model_name, mv.version)
+                logger.debug("ML Flow model upload complete: %s:%s:%s", user, reg_model_name, model_ver.version)
 
         except Exception:
             logger.exception("Error uploading model to ML Flow", exc_info=True)

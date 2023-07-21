@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 # create a docker network for morpheus
 docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
 

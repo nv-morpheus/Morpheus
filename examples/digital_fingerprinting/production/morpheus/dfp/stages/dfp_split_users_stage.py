@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Split messages into individual users and generic messages."""
 
 import logging
 import typing
 
 import mrc
 import numpy as np
+import pandas as pd
 from mrc.core import operators as ops
 
 import cudf
@@ -24,6 +26,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.type_aliases import DataFrameType
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..utils.logging_timer import log_time
@@ -32,6 +35,26 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPSplitUsersStage(SinglePortStage):
+    """
+    This stage splits messages into individual users and generic messages, and potentially filtering data based on the
+    user.
+
+    This stage expects the user id to be defined by the `userid_column_name` in the `ae` section of the config, this
+    can be anything which uniquely identifies an entity such as a user name, IP address, hostname or application name.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    include_generic : bool
+        Whether to include generic messages in the output.
+    include_individual : bool
+        Whether to include individual messages in the output.
+    skip_users : list of str
+        List of user ids to skip.
+    only_users : list of str
+        List of user ids to include.
+    """
 
     def __init__(self,
                  c: Config,
@@ -51,15 +74,22 @@ class DFPSplitUsersStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-split-users"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (cudf.DataFrame, )
+        """Input types accepted by this stage."""
+        return (cudf.DataFrame, pd.DataFrame)
 
-    def extract_users(self, message: cudf.DataFrame):
+    def extract_users(self, message: DataFrameType) -> typing.List[DFPMessageMeta]:
+        """
+        Extract users from a message, splitting the incoming data into unique messages on a per-user basis, and
+        potentially filtering data based on the user.
+        """
         if (message is None):
             return []
 
@@ -69,7 +99,7 @@ class DFPSplitUsersStage(SinglePortStage):
                 # Convert to pandas because cudf is slow at this
                 message = message.to_pandas()
 
-            split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
+            split_dataframes: typing.Dict[str, pd.DataFrame] = {}
 
             # If we are skipping users, do that here
             if (len(self._skip_users) > 0):
@@ -131,11 +161,7 @@ class DFPSplitUsersStage(SinglePortStage):
             return output_messages
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.extract_users), ops.flatten()).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.extract_users), ops.flatten())
         builder.make_edge(input_stream[0], stream)
 
         return stream, DFPMessageMeta

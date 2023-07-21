@@ -22,7 +22,6 @@
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
 
-#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -57,26 +56,22 @@
 // IWYU pragma: no_include <atomic>
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
-/**
- * @addtogroup stages
- * @{
- * @file
- */
-
-/**
- * @brief Checks the error code returned by an RDKafka expression (`command`) against an `expected` code
- * (usually `RdKafka::ERR_NO_ERROR`), and logs an error otherwise.
- *
- */
-#define CHECK_KAFKA(command, expected, msg)                                                                    \
-    {                                                                                                          \
-        RdKafka::ErrorCode __code = command;                                                                   \
-        if (__code != expected)                                                                                \
-        {                                                                                                      \
-            LOG(ERROR) << msg << ". Received unexpected ErrorCode. Expected: " << #expected << "(" << expected \
-                       << "), Received: " << __code << ", Msg: " << RdKafka::err2str(__code);                  \
-        }                                                                                                      \
-    };
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
+    /**
+     * @brief Checks the error code returned by an RDKafka expression (`command`) against an `expected` code
+     * (usually `RdKafka::ERR_NO_ERROR`), and logs an error otherwise.
+     *
+     */
+    #define CHECK_KAFKA(command, expected, msg)                                                                    \
+        {                                                                                                          \
+            RdKafka::ErrorCode __code = command;                                                                   \
+            if (__code != expected)                                                                                \
+            {                                                                                                      \
+                LOG(ERROR) << msg << ". Received unexpected ErrorCode. Expected: " << #expected << "(" << expected \
+                           << "), Received: " << __code << ", Msg: " << RdKafka::err2str(__code);                  \
+            }                                                                                                      \
+        };
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace morpheus {
 // Component-private classes.
@@ -272,7 +267,26 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
-  m_topic(std::move(topic)),
+  m_topics(std::vector<std::string>{std::move(topic)}),
+  m_batch_timeout_ms(batch_timeout_ms),
+  m_config(std::move(config)),
+  m_disable_commit(disable_commit),
+  m_disable_pre_filtering(disable_pre_filtering),
+  m_stop_after{stop_after},
+  m_async_commits(async_commits)
+{}
+
+KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
+                                   std::vector<std::string> topics,
+                                   uint32_t batch_timeout_ms,
+                                   std::map<std::string, std::string> config,
+                                   bool disable_commit,
+                                   bool disable_pre_filtering,
+                                   TensorIndex stop_after,
+                                   bool async_commits) :
+  PythonSource(build()),
+  m_max_batch_size(max_batch_size),
+  m_topics(std::move(topics)),
   m_batch_timeout_ms(batch_timeout_ms),
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
@@ -446,17 +460,30 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         LOG(FATAL) << "Error occurred creating Kafka consumer. Error: " << errstr;
     }
 
-    // Subscribe to the topic. Uses the default rebalancer
-    CHECK_KAFKA(
-        consumer->subscribe(std::vector<std::string>{m_topic}), RdKafka::ERR_NO_ERROR, "Error subscribing to topics");
+    // Subscribe to the topics. Uses the default rebalancer
+    CHECK_KAFKA(consumer->subscribe(m_topics), RdKafka::ERR_NO_ERROR, "Error subscribing to topics");
 
-    auto spec_topic = std::unique_ptr<RdKafka::Topic>(RdKafka::Topic::create(consumer.get(), m_topic, nullptr, errstr));
+    // Create a vector of topic objects
+    std::vector<std::unique_ptr<RdKafka::Topic>> topicObjs;
+
+    // Create a topic object for each topic name and add it to the vector
+    for (const auto& m_topic : m_topics)
+    {
+        auto topicObj =
+            std::unique_ptr<RdKafka::Topic>(RdKafka::Topic::create(consumer.get(), m_topic, nullptr, errstr));
+        if (!topicObj)
+        {
+            throw std::runtime_error("Failed to create Kafka topic object");
+        }
+        topicObjs.push_back(std::move(topicObj));
+    }
 
     RdKafka::Metadata* md;
 
     for (unsigned short i = 0; i < 5; ++i)
     {
-        auto err_code = consumer->metadata(spec_topic == nullptr, spec_topic.get(), &md, 1000);
+        auto err_code =
+            consumer->metadata(topicObjs.empty(), topicObjs.empty() ? nullptr : topicObjs[0].get(), &md, 1000);
 
         if (err_code == RdKafka::ERR_NO_ERROR && md != nullptr)
         {
@@ -469,7 +496,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
     if (md == nullptr)
     {
-        throw std::runtime_error("Failed to list_topics in Kafka broker after 5 attempts");
+        throw std::runtime_error("Failed to list topics in Kafka broker after 5 attempts");
     }
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
@@ -540,7 +567,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string& bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    return load_json_table(options.build());
+    return cudf::io::read_json(options.build());
 }
 
 template <bool EnableFilter>
@@ -582,7 +609,7 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init_with_single_topic(
     mrc::segment::Builder& builder,
     const std::string& name,
     TensorIndex max_batch_size,
@@ -597,6 +624,31 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
                                                             topic,
+                                                            batch_timeout_ms,
+                                                            config,
+                                                            disable_commit,
+                                                            disable_pre_filtering,
+                                                            stop_after,
+                                                            async_commits);
+
+    return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init_with_multiple_topics(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    TensorIndex max_batch_size,
+    std::vector<std::string> topics,
+    uint32_t batch_timeout_ms,
+    std::map<std::string, std::string> config,
+    bool disable_commit,
+    bool disable_pre_filtering,
+    TensorIndex stop_after,
+    bool async_commits)
+{
+    auto stage = builder.construct_object<KafkaSourceStage>(name,
+                                                            max_batch_size,
+                                                            topics,
                                                             batch_timeout_ms,
                                                             config,
                                                             disable_commit,

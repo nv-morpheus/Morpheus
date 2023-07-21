@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Groups incomming messages into a rolling time window."""
 
 import logging
 import os
@@ -30,18 +31,36 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-# Setup conda environment
-conda_env = {
-    'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.8'), 'pip'],
-    'pip': ['mlflow', 'dfencoder'],
-    'name': 'mlflow-env'
-}
-
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPRollingWindowStage(SinglePortStage):
+    """
+    This stage groups incomming messages into a rolling time window, emitting them only when the history requirements
+    are met specified by the `min_history`, `min_increment` and `max_history` parameters.
+
+    Incoming data is cached to disk (`cache_dir`) to reduce memory ussage. This computes a row hash for the first and
+    last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as
+    `lists` should be dropped or converted into hashable types in the `DFPFileToDataFrameStage`.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    min_history : int
+        Exclude users with less than `min_history` records, setting this to `1` effectively disables this feature.
+    min_increment : int
+        Exclude incoming batches for users where less than `min_increment` new records have been added since the last
+        batch, setting this to `0` effectively disables this feature.
+    max_history : int or str
+        When not `None`, include up to `max_history` records. When `max_history` is an int, then the last `max_history`
+        records will be included. When `max_history` is a `str` it is assumed to represent a duration parsable by
+        [`pandas.Timedelta`](https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html) and only those records
+        within the window of [latest timestamp - `max_history`, latest timestamp] will be included.
+    cache_dir : str
+        Path to cache directory, cached items will be stored in a subdirectory under this directory named
+        `rolling-user-data`. This directory, along with `cache_dir` will be created if it does not already exist.
+    """
 
     def __init__(self,
                  c: Config,
@@ -61,39 +80,19 @@ class DFPRollingWindowStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-rolling-window"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Input types accepted by this stage."""
         return (DFPMessageMeta, )
 
-    def _trim_dataframe(self, df: pd.DataFrame):
-
-        if (self._max_history is None):
-            return df
-
-        # See if max history is an int
-        if (isinstance(self._max_history, int)):
-            return df.tail(self._max_history)
-
-        # If its a string, then its a duration
-        if (isinstance(self._max_history, str)):
-            # Get the latest timestamp
-            latest = df[self._config.ae.timestamp_column_name].max()
-
-            time_delta = pd.Timedelta(self._max_history)
-
-            # Calc the earliest
-            earliest = latest - time_delta
-
-            return df[df['timestamp'] >= earliest]
-
-        raise RuntimeError("Unsupported max_history")
-
     @contextmanager
-    def _get_user_cache(self, user_id: str):
+    def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
 
         # Determine cache location
         cache_location = os.path.join(self._cache_dir, f"{user_id}.pkl")
@@ -163,8 +162,11 @@ class DFPRollingWindowStage(SinglePortStage):
                                    mess_offset=0,
                                    mess_count=len(train_df))
 
-    def on_data(self, message: DFPMessageMeta):
-
+    def on_data(self, message: DFPMessageMeta) -> MultiDFPMessage:
+        """
+        Emits a new message containing the rolling window for the user if and only if the history requirments are met,
+        returns `None` otherwise.
+        """
         with log_time(logger.debug) as log_info:
 
             result = self._build_window(message)
@@ -189,11 +191,7 @@ class DFPRollingWindowStage(SinglePortStage):
             return result
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiDFPMessage

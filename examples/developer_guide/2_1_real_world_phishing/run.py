@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Pipeline for detecting phishing emails."""
 
 import logging
 import os
@@ -20,6 +21,7 @@ import os
 from recipient_features_stage import RecipientFeaturesStage
 
 import morpheus
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -35,6 +37,7 @@ from morpheus.utils.logger import configure_logging
 
 
 def run_pipeline():
+    """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
 
@@ -56,7 +59,7 @@ def run_pipeline():
     config.num_threads = os.cpu_count()
     config.feature_length = 128
 
-    with open(labels_file) as fh:
+    with open(labels_file, encoding='UTF-8') as fh:
         config.class_labels = [x.strip() for x in fh]
 
     # Create a linear pipeline object
@@ -92,7 +95,7 @@ def run_pipeline():
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
     # Filter values lower than 0.9
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9))
+    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9, filter_source=FilterSource.TENSOR))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))

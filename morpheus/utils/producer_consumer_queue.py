@@ -138,10 +138,10 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
     Custom queue.Queue implementation which supports closing and uses recursive locks
     """
 
-    def __init__(self, maxsize=0, *, loop=None) -> None:
-        super().__init__(maxsize=maxsize, loop=loop)
+    def __init__(self, maxsize=0) -> None:
+        super().__init__(maxsize=maxsize)
 
-        self._closed = asyncio.Event(loop=loop)
+        self._closed = asyncio.Event()
         self._is_closed = False
 
     async def join(self):
@@ -166,7 +166,7 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
         slot is available before adding item.
         """
         while self.full() and not self._is_closed:
-            putter = self._loop.create_future()
+            putter = self._get_loop().create_future()
             self._putters.append(putter)
             try:
                 await putter
@@ -196,7 +196,7 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
         If queue is empty, wait until an item is available.
         """
         while self.empty() and not self._is_closed:
-            getter = self._loop.create_future()
+            getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
                 await getter

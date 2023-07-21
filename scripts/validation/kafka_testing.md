@@ -19,10 +19,7 @@ This document walks through manual testing of the Kafka functionality in Morpheu
 ```bash
 mamba install -c conda-forge "openjdk=11.0.15"
 npm install -g camouflage-server@0.9
-mkdir -p ${MORPHEUS_ROOT}/.cache
-git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${MORPHEUS_ROOT}/.cache/pytest-kafka
-cd ${MORPHEUS_ROOT}/.cache/pytest-kafka
-python setup.py develop
+python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py
 cd ${MORPHEUS_ROOT}
 ```
 
@@ -216,6 +213,6 @@ ulimit -n 4096
 1. Exit the Kafka terminal.
 1. From the root of the `kafka-docker` repo run (in the host OS not inside a container):
     ```bash
-    docker-compose stop
-    docker-compose rm
+    docker compose stop
+    docker compose rm
     ```

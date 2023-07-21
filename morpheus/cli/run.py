@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Main entrypoint for the Morpheus CLI, when installed this module is executed as `morpheus`"""
 
 
 def run_cli():
-
+    """Main entrypoint for the CLI"""
     from morpheus.cli.commands import cli
-
     cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
 
 

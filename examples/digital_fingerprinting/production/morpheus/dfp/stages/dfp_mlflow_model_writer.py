@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Publishes models into MLflow"""
 
 import hashlib
 import logging
@@ -44,8 +45,8 @@ from ..utils.model_cache import user_to_model_name
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.8'), 'pip'],
-    'pip': ['mlflow', 'dfencoder'],
+    'dependencies': ['python={}'.format('3.10'), 'pip'],
+    'pip': ['mlflow'],
     'name': 'mlflow-env'
 }
 
@@ -53,6 +54,23 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPMLFlowModelWriterStage(SinglePortStage):
+    """
+    This stage publishes trained models into MLflow.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    model_name_formatter : str, optional
+        Format string to control the name of models stored in MLflow. Currently available field names are: `user_id`
+        and `user_md5` which is an md5 hexadecimal digest as returned by `hash.hexdigest`.
+    experiment_name_formatter : str, optional
+        Format string to control the experiment name for models stored in MLflow. Currently available field names are:
+        `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once
+        the field names have been applied.
+    databricks_permissions : dict, optional
+        When not `None` sets permissions needed when using a databricks hosted MLflow server.
+    """
 
     def __init__(self,
                  c: Config,
@@ -67,19 +85,23 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Stage name"""
         return "dfp-mlflow-model-writer"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node"""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Types accepted by this stage"""
         return (MultiAEMessage, )
 
-    def user_id_to_model(self, user_id: str):
-
+    def user_id_to_model(self, user_id: str) -> str:
+        """Converts a user ID to a model name"""
         return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
-    def user_id_to_experiment(self, user_id: str):
+    def user_id_to_experiment(self, user_id: str) -> str:
+        """Converts a user ID to an experiment name"""
         kwargs = {
             "user_id": user_id,
             "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
@@ -136,7 +158,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                              exc_info=True)
 
     def on_data(self, message: MultiAEMessage):
-
+        """Stores incoming models into MLflow."""
         user = message.meta.user_id
 
         model: AutoEncoder = message.model
@@ -153,7 +175,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
             # Creates a new experiment if it doesn't exist
             experiment = mlflow.set_experiment(experiment_name)
 
-            with mlflow.start_run(run_name="Duo autoencoder model training run",
+            with mlflow.start_run(run_name="autoencoder model training run",
                                   experiment_id=experiment.experiment_id) as run:
 
                 model_path = f"{model_path}-{run.info.run_uuid}"
@@ -243,11 +265,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

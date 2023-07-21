@@ -170,7 +170,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         ----------
         mess_offset : int
             Offset into the metadata batch.
-        mess_count : int
+        message_count : int
             Messages count.
         columns : typing.Union[None, str, typing.List[str]]
             Input column names. Returns all columns if `None` is specified. When a string is passed, a `Series` is
@@ -190,9 +190,9 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         if (columns is None):
             return self._df.loc[idx, :]
-        else:
-            # If its a str or list, this is the same
-            return self._df.loc[idx, columns]
+
+        # If its a str or list, this is the same
+        return self._df.loc[idx, columns]
 
 
 @dataclasses.dataclass(init=False)

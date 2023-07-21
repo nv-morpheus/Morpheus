@@ -16,6 +16,7 @@ limitations under the License.
 -->
 
 # Real-World Application: Phishing Detection
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_1_real_world_phishing` directory of the Morpheus repository.
 
 ## Data Preprocessing
 
@@ -74,7 +75,7 @@ def __init__(self, config: Config):
 
 Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
-If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
+If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note, however, that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
     # Get a copy of the DataFrame from the incoming message
@@ -108,9 +109,10 @@ Our `_build_single` method remains unchanged from the previous example; even tho
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
-from morpheus.common import TypeId
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -169,7 +171,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -192,7 +194,7 @@ From the root of the Morpheus project we will launch a Triton Docker container w
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -402,7 +404,7 @@ In addition to providing the `Config` object that we defined above, we also conf
 
 Note that the tokenizer parameters and vocabulary hash file should exactly match what was used for tokenization during the training of the NLP model.
 
-At this point, we have a pipeline that reads in a set of records and preprocesses them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
+At this point, we have a pipeline that reads in a set of records and pre-processes them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
 
 Next we will add a monitor stage to measure the inference rate as well as a filter stage to filter out any results below a probability threshold of `0.9`.
 ```python
@@ -433,12 +435,12 @@ pipeline.add_stage(SerializeStage(config))
 pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
 ```
 
-Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`
+Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`.
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Supported values are:
 * `FileTypes.Auto`
-* `FileTypes.JSON`
 * `FileTypes.CSV`
+* `FileTypes.JSON`
 
 ### The Completed Pipeline
 
@@ -548,7 +550,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
   inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
-  filter --threshold=0.9 \
+  filter --threshold=0.9 --filter_source=TENSOR \
   serialize \
   to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
@@ -625,7 +627,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -635,7 +637,7 @@ If we were to make the above changes, we can view the resulting help string with
 ```bash
 morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
 ```
-```
+```console
 Configuring Pipeline via CLI
 Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
 
@@ -647,6 +649,8 @@ Options:
 ```
 
 ## Defining a New Source Stage
+
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_2_rabbitmq` directory of the Morpheus repository.
 
 Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 
@@ -820,7 +824,7 @@ Note the return tuple contains our newly constructed node, along with the unchan
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.8/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):
@@ -832,8 +836,9 @@ def on_data(self, message: MessageMeta):
     return message
 ```
 
-The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure that the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
-Note: we didn't close the channel object since closing the connection will also close any associated channel objects.
+The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure  the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
+
+Note: We didn't close the channel object since closing the connection will also close any associated channel objects.
 
 ```python
 def on_error(self, ex: Exception):
@@ -927,4 +932,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [`examples/developer_guide/2_2_rabbitmq/README.md`](../../../../examples/developer_guide/2_2_rabbitmq/README.md) in the root of the Morpheus repo.
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the root of the Morpheus repo.

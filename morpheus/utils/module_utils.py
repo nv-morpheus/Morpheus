@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module utilities for Morpheus."""
 
 import functools
 import logging
@@ -18,8 +19,11 @@ import re
 import typing
 
 import mrc
-import numpy as np
 import pandas as pd
+
+import cudf
+
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +57,7 @@ def verify_module_registration(func):
             raise TypeError("TypeError: a string-like object is required for module_id and namespace, not 'NoneType'")
 
         if not registry.contains(module_id, namespace):
-            raise Exception("Module '{}' doesn't exist in the namespace '{}'".format(module_id, namespace))
+            raise ValueError(f"Module '{module_id}' doesn't exist in the namespace '{namespace}'")
 
         return func(config, **kwargs)
 
@@ -81,9 +85,9 @@ def register_module(module_id, namespace):
         # Register a module if not exists in the registry.
         if not registry.contains(module_id, namespace):
             registry.register_module(module_id, namespace, mrc_version, func)
-            logger.debug("Module '{}' was successfully registered with '{}' namespace.".format(module_id, namespace))
+            logger.debug("Module '%s' was successfully registered with '%s' namespace.", module_id, namespace)
         else:
-            logger.debug("Module: '{}' already exists in the given namespace '{}'".format(module_id, namespace))
+            logger.debug("Module: '%s' already exists in the given namespace '%s'", module_id, namespace)
 
         return func
 
@@ -114,7 +118,7 @@ def load_module(config: typing.Dict, builder: mrc.Builder):
 
     module = builder.load_module(module_id, namespace, module_name, config)
 
-    logger.debug("Module '{}' with namespace '{}' is successfully loaded.".format(module_id, namespace))
+    logger.debug("Module '%s' with namespace '%s' is successfully loaded.", module_id, namespace)
 
     return module
 
@@ -179,60 +183,52 @@ period_to_strptime = {
     "D": "%Y-%m-%d",
     "W": "%Y-%U",
     "M": "%Y-%m",
-    "Y": "%Y",
-    "Q": "%Y-%q",
-    "A": "%Y"
+    "Y": "%Y"
 }
 
 
-def to_period_cudf_approximation(df, period):
+def to_period_approximation(data_df: DataFrameType, period: str):
     """
     This function converts a cudf dataframe to a period approximation.
 
     Parameters
     ----------
-    df : cudf.DataFrame
-        Input cudf dataframe.
-    period : int
+    data_df : DataFrameType
+        Input cudf/pandas dataframe.
+    period : str
         Period.
 
     Returns
     -------
     cudf.DataFrame
-        Period approximation of the input cudf dataframe.
+        Period approximation of the input cudf/pandas dataframe.
     """
 
     match = re.match(r"(\d*)(\w)", period)
     if not match:
-        raise ValueError(f"Invalid period format: {period}")
-
-    count_str, period = match.groups()
-    count = int(count_str) if count_str else 1
+        raise ValueError(f"Invalid period format: {period}.")
 
     if period not in period_to_strptime:
-        raise ValueError(f"Unknown period: {period}")
+        raise ValueError(f"Unknown period: {period}. Supported period: {period_to_strptime}")
 
     strptime_format = period_to_strptime[period]
 
-    if "cudf" in str(type(df)):
-        df["period"] = df["ts"].dt.strftime(strptime_format).astype("datetime64[s]").astype("int")
-        if count > 1:
-            df["period"] = df["period"] // (count * np.timedelta64(1, period).astype("int"))
-    else:
-        df["period"] = pd.to_datetime(df["ts"].dt.strftime(strptime_format))
-        df["period"] = df["period"].dt.to_period(f"{count}{period}")
+    df_mod = cudf if isinstance(data_df, cudf.DataFrame) else pd
+    data_df["period"] = df_mod.to_datetime(data_df["ts"].dt.strftime(strptime_format) + '-1',
+                                           format=f"{strptime_format}-%w")
 
-    return df
+    return data_df
 
 
 def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):
+    """This function returns the module configuration with the overrides."""
     sub_config = config.get(module_id, None)
 
     try:
         if module_name is None:
             module_name = sub_config.get("module_name")
-    except Exception:
-        raise KeyError(f"'module_name' is not set in the '{module_id}' module configuration")
+    except Exception as exc_info:
+        raise KeyError(f"'module_name' is not set in the '{module_id}' module configuration.") from exc_info
 
     sub_config.setdefault("module_id", module_id)
     sub_config.setdefault("module_name", module_name)

@@ -80,7 +80,7 @@ function run_pipeline_abp_nvsmi(){
    VAL_OUTPUT=$5
 
    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
-      pipeline-fil \
+      pipeline-fil --columns_file=${MORPHEUS_ROOT}/morpheus/data/columns_fil.txt \
       from-file --filename=${INPUT_FILE} \
       deserialize \
       preprocess \

@@ -47,8 +47,7 @@ from utils import calc_error_val
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.reload_modules(preprocess_ae_stage)
-@pytest.mark.reload_modules(train_ae_stage)
+@pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_roleg(mock_ae, config, tmp_path):
@@ -77,12 +76,12 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    print(train_data_glob)
+
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
@@ -131,8 +130,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.reload_modules(preprocess_ae_stage)
-@pytest.mark.reload_modules(train_ae_stage)
+@pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123(mock_ae, config, tmp_path):
@@ -160,7 +158,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -213,8 +211,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.use_python
-@pytest.mark.reload_modules(preprocess_ae_stage)
-@pytest.mark.reload_modules(train_ae_stage)
+@pytest.mark.reload_modules([preprocess_ae_stage, train_ae_stage])
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
@@ -242,7 +239,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
 
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')) as fh:
+    with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")

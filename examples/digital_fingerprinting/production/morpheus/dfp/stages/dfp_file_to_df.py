@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Stage for converting fsspec file objects to a DataFrame."""
 
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import time
 import typing
@@ -26,12 +26,6 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
-import dask
-from dask.distributed import Client
-from dask.distributed import LocalCluster
-
-import cudf
-
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
@@ -40,16 +34,16 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                 schema: DataFrameInputSchema,
                                 file_type: FileTypes,
                                 filter_null: bool,
-                                parser_kwargs: dict):
-
+                                parser_kwargs: dict) -> pd.DataFrame:
     retries = 0
     s3_df = None
     while (retries < 2):
@@ -64,22 +58,40 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
             break
         except Exception as e:
             if (retries < 2):
-                logger.warning("Refreshing S3 credentials")
-                # cred_refresh()
+                logger.warning("Error fetching %s: %s\nRetrying...", file_object, e)
                 retries += 1
-            else:
-                raise e
 
-    # Run the pre-processing before returning
-    if (s3_df is None):
-        return s3_df
-
-    s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
+    # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
+    # increases performance significantly)
+    if (schema.prep_dataframe is not None):
+        s3_df = schema.prep_dataframe(s3_df)
 
     return s3_df
 
 
 class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
+    """
+    Stage for converting fsspec file objects to a DataFrame, pre-processing the DataFrame according to `schema`, and
+    caching fetched file objects. The file objects are fetched in parallel using `morpheus.utils.downloader.Downloader`,
+    which supports multiple download methods indicated by the `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable.
+
+    Refer to `morpheus.utils.downloader.Downloader` for more information on the supported download methods.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    schema : `morpheus.utils.column_info.DataFrameInputSchema`
+        Input schema for the DataFrame.
+    filter_null : bool, optional
+        Whether to filter null values from the DataFrame.
+    file_type : `morpheus.common.FileTypes`, optional
+        File type of the input files. If `FileTypes.Auto`, the file type will be inferred from the file extension.
+    parser_kwargs : dict, optional
+        Keyword arguments to pass to the DataFrame parser.
+    cache_dir : str, optional
+        Directory to use for caching.
+    """
 
     def __init__(self,
                  c: Config,
@@ -97,60 +109,35 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         self._parser_kwargs = {} if parser_kwargs is None else parser_kwargs
         self._cache_dir = os.path.join(cache_dir, "file_cache")
 
-        self._dask_cluster: Client = None
-
-        self._download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                              "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE",
-                                                                              "dask_thread")
+        self._downloader = Downloader()
 
     @property
     def name(self) -> str:
+        """Stage name."""
         return "dfp-s3-to-df"
 
     def supports_cpp_node(self):
+        """Whether this stage supports a C++ node."""
         return False
 
     def accepted_types(self) -> typing.Tuple:
+        """Accepted input types."""
         return (typing.Any, )
 
-    def _get_dask_cluster(self):
-
-        if (self._dask_cluster is None):
-            logger.debug("Creating dask cluster...")
-
-            # Up the heartbeat interval which can get violated with long download times
-            dask.config.set({"distributed.client.heartbeat": "30s"})
-
-            self._dask_cluster = LocalCluster(start=True, processes=not self._download_method == "dask_thread")
-
-            logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
-
-        return self._dask_cluster
-
-    def _close_dask_cluster(self):
-        if (self._dask_cluster is not None):
-            logger.debug("Stopping dask cluster...")
-
-            self._dask_cluster.close()
-
-            self._dask_cluster = None
-
-            logger.debug("Stopping dask cluster... Done.")
-
     def _get_or_create_dataframe_from_s3_batch(
-            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
+            self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 
         if (not file_object_batch):
-            return None, False
+            raise RuntimeError("No file objects to process")
 
         file_list = file_object_batch[0]
         batch_count = file_object_batch[1]
 
-        fs: fsspec.AbstractFileSystem = file_list.fs
+        file_system: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
-        # hashes all of the output of `info()` which is perfect
-        hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
+        # hashes all the output of `info()` which is perfect
+        hash_data = [{"ukey": file_system.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
         objects_hash_hex = hashlib.md5(json.dumps(hash_data, sort_keys=True).encode()).hexdigest()
@@ -160,8 +147,8 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         # Return the cache if it exists
         if (os.path.exists(batch_cache_location)):
             output_df = pd.read_pickle(batch_cache_location)
-            output_df["origin_hash"] = objects_hash_hex
             output_df["batch_count"] = batch_count
+            output_df["origin_hash"] = objects_hash_hex
 
             return (output_df, True)
 
@@ -176,33 +163,16 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (self._download_method.startswith("dask")):
-
-                # Create the client each time to ensure all connections to the cluster are closed (they can time out)
-                with Client(self._get_dask_cluster()) as client:
-                    dfs = client.map(download_method, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (self._download_method == "multiprocessing"):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method(s3_object))
-
+            dfs = self._downloader.download(download_buckets, download_method)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
-            return None, False
+            raise
 
-        if (not dfs):
-            logger.error("No logs were downloaded")
-            return None, False
+        if (dfs is None or len(dfs) == 0):
+            raise ValueError("No logs were downloaded")
 
         output_df: pd.DataFrame = pd.concat(dfs)
+        output_df = process_dataframe(df_in=output_df, input_schema=self._schema)
 
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)
@@ -223,6 +193,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         return (output_df, False)
 
     def convert_to_dataframe(self, s3_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
+        """Converts a batch of S3 objects to a DataFrame."""
         if (not s3_object_batch):
             return None
 
@@ -234,10 +205,12 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
-                         len(output_df),
-                         "hit" if cache_hit else "miss",
-                         duration)
+            if (output_df is not None and logger.isEnabledFor(logging.DEBUG)):
+                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
+                             len(output_df),
+                             "hit" if cache_hit else "miss",
+                             duration,
+                             len(output_df) / (duration / 1000.0))
 
             return output_df
         except Exception:
@@ -245,11 +218,9 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
             raise
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.convert_to_dataframe), ops.on_completed(self._close_dask_cluster)).subscribe(sub)
-
-        stream = builder.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node(self.unique_name,
+                                   ops.map(self.convert_to_dataframe),
+                                   ops.on_completed(self._downloader.close))
         builder.make_edge(input_stream[0], stream)
 
-        return stream, cudf.DataFrame
+        return stream, pd.DataFrame

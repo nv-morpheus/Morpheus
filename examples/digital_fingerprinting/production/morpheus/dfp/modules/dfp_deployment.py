@@ -14,12 +14,9 @@
 
 import logging
 
-import dfp.modules.dfp_inference_pipe  # noqa: F401
-import dfp.modules.dfp_training_pipe  # noqa: F401
 import mrc
 from mrc.core.node import Broadcast
 
-import morpheus.loaders.fsspec_loader  # noqa: F401
 from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -30,7 +27,7 @@ from ..utils.module_ids import DFP_DEPLOYMENT
 from ..utils.module_ids import DFP_INFERENCE_PIPE
 from ..utils.module_ids import DFP_TRAINING_PIPE
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module(DFP_DEPLOYMENT, MORPHEUS_MODULE_NAMESPACE)
@@ -74,12 +71,12 @@ def dfp_deployment(builder: mrc.Builder):
         - write_to_file_options (dict): Options for writing the detections to a file; Example: See Below
 
     batching_options:
-        - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
-        - iso_date_regex_pattern (string): Regex pattern for ISO date matching;
+        - end_time (datetime/str): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+        - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
         Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
-        - parser_kwargs (dictionary): Additional arguments for the parser; Example: {}; Default: {}
-        - period (string): Time period for grouping files; Example: "1d"; Default: "1d"
-        - sampling_rate_s (integer): Sampling rate in seconds; Example: 60; Default: 60
+        - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
+        - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
+        - sampling_rate_s (int):: Sampling rate in seconds; Example: 0; Default: None
         - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00"; Default: None
 
     dfencoder_options:
@@ -92,24 +89,25 @@ def dfp_deployment(builder: mrc.Builder):
         - validation_size (float): Size of the validation set; Example: 0.1
 
     mlflow_writer_options:
-        - conda_env (string): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
-        - databricks_permissions (dictionary): Permissions for the model; Example: See Below; Default: None
-        - experiment_name_formatter (string): Formatter for the experiment name; Example: `experiment_name_{timestamp}`;
+        - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
+        - databricks_permissions (dict): Permissions for the model; Example: See Below; Default: None
+        - experiment_name_formatter (str): Formatter for the experiment name; Example: `experiment_name_{timestamp}`;
          Default: `[Required]`
-        - model_name_formatter (string): Formatter for the model name; Example: `model_name_{timestamp}`;
+        - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
         Default: `[Required]`
-        - timestamp_column_name (string): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+        - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
 
     stream_aggregation_options:
-        - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
-        - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
-        - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
-        - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+        - cache_mode (str): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+        - trigger_on_min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+        - trigger_on_min_increment (int): Minmum increment from the last trained to new training event;
+        Example: 0; Default: 0
+        - timestamp_column_name (str): Name of the column containing timestamps; Example: 'timestamp';
         Default: 'timestamp'
-        - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+        - aggregation_span (str): Lookback timespan for training data in a new training event; Example: '60d';
         Default: '60d'
-        - cache_to_disk (bool): Whether or not to cache streaming data to disk; Example: false; Default: false
-        - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
+        - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
+        - cache_dir (str): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
 
     user_splitting_options:
         - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
@@ -128,19 +126,58 @@ def dfp_deployment(builder: mrc.Builder):
         - field_name (str): Name of the field to filter by threshold; Example: "score"; Default: probs
 
     inference_options:
-        - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+        - model_name_formatter (str): Formatter for model names; Example: "user_{username}_model";
         Default: `[Required]`
-        - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+        - fallback_username (str): Fallback user to use if no model is found for a user; Example: "generic_user";
         Default: generic_user
-        - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
+        - timestamp_column_name (str): Name of the timestamp column; Example: "timestamp"; Default: timestamp
 
     write_to_file_options:
-        - filename (string): Path to the output file; Example: `output.csv`; Default: None
+        - filename (str): Path to the output file; Example: `output.csv`; Default: None
         - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
         - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
         - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
         - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
+
+    monitoring_options:
+        - description (str): Name to show for this Monitor Stage in the console window; Example: 'Progress';
+        Default: 'Progress'
+        - silence_monitors (bool): Slience the monitors on the console; Example: True; Default: False
+        - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged.
+        0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
+        - unit (str): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
+        - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first
+        message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
+        immediately. In large pipelines, this option may be desired to give a more accurate timing;
+        Example: True; Default: False
+        - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called for
+        each message. Allows for correct counting of batched and sliced messages.; Example: func_str; Default: None
+        - log_level (str): Enable this stage when the configured log level is at `log_level` or lower;
+        Example: 'DEBUG'; Default: INFO
     """
+
+    #                                 MODULE_INPUT_PORT
+    #                                        |
+    #                                        v
+    #                     +-------------------------------------+
+    #                     |          fsspec_loader_module       |
+    #                     +-------------------------------------+
+    #                                        |
+    #                                        v
+    #                     +-------------------------------------+
+    #                     |              broadcast              |
+    #                     +-------------------------------------+
+    #                               /                   \
+    #                              /                     \
+    #                             /                       \
+    #                            v                         v
+    # +-------------------------------------+      +-------------------------------------+
+    # |      dfp_trianing_pipe_module       |      |       dfp_inference_pipe_module     |
+    # |              (NESTED)               |      |               (NESTED)              |
+    # +-------------------------------------+      +-------------------------------------+
+    #                   |                                              |
+    #                   v                                              v
+    #          MODULE_OUTPUT_PORT_0                           MODULE_OUTPUT_PORT_1
 
     module_config = builder.get_current_module_config()
 
@@ -184,4 +221,4 @@ def dfp_deployment(builder: mrc.Builder):
     # Register output ports for a module.
     for i in range(num_output_ports):
         # Output ports are registered in increment order.
-        builder.register_module_output(f"output-{i}", out_streams[i])
+        builder.register_module_output(f"output_{i}", out_streams[i])

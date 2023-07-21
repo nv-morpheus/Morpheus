@@ -11,15 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Write to file stage."""
 
 import os
 import typing
 
 import mrc
 import mrc.core.operators as ops
-import pandas as pd
-
-import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -30,6 +28,7 @@ from morpheus.io import serializers
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.type_aliases import DataFrameType
 
 
 @register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
@@ -73,8 +72,8 @@ class WriteToFileStage(SinglePortStage):
             if (self._overwrite):
                 os.remove(self._output_file)
             else:
-                raise FileExistsError("Cannot output classifications to '{}'. File exists and overwrite = False".format(
-                    self._output_file))
+                raise FileExistsError(
+                    f"Cannot output classifications to '{self._output_file}'. File exists and overwrite = False")
 
         self._file_type = file_type
 
@@ -87,6 +86,7 @@ class WriteToFileStage(SinglePortStage):
 
     @property
     def name(self) -> str:
+        """Returns the name of this stage."""
         return "to-file"
 
     def accepted_types(self) -> typing.Tuple:
@@ -102,9 +102,10 @@ class WriteToFileStage(SinglePortStage):
         return (MessageMeta, )
 
     def supports_cpp_node(self):
+        """Indicates whether this stage supports a C++ node."""
         return True
 
-    def _convert_to_strings(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
+    def _convert_to_strings(self, df: DataFrameType):
         if (self._file_type == FileTypes.JSON):
             output_strs = serializers.df_to_json(df, include_index_col=self._include_index_col)
         elif (self._file_type == FileTypes.CSV):
@@ -113,7 +114,7 @@ class WriteToFileStage(SinglePortStage):
                                                 include_index_col=self._include_index_col)
             self._is_first = False
         else:
-            raise NotImplementedError("Unknown file type: {}".format(self._file_type))
+            raise NotImplementedError(f"Unknown file type: {self._file_type}")
 
         # Remove any trailing whitespace
         if (len(output_strs[-1].strip()) == 0):
@@ -142,7 +143,7 @@ class WriteToFileStage(SinglePortStage):
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
                 # Open up the file handle
-                with open(self._output_file, "a") as out_file:
+                with open(self._output_file, "a", encoding='UTF-8') as out_file:
 
                     def write_to_file(x: MessageMeta):
 
@@ -159,7 +160,7 @@ class WriteToFileStage(SinglePortStage):
 
                 # File should be closed by here
 
-            to_file = builder.make_node_full(self.unique_name, node_fn)
+            to_file = builder.make_node(self.unique_name, ops.build(node_fn))
 
         builder.make_edge(stream, to_file)
         stream = to_file

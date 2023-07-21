@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Loader for fetching files and emitting them as DataFrames."""
 
 import hashlib
 import json
 import logging
-import multiprocessing as mp
 import os
 import pickle
+import time
 import typing
 from functools import partial
 
@@ -33,50 +34,11 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.downloader import Downloader
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
 
 logger = logging.getLogger(__name__)
-
-dask_cluster = None
-
-
-def get_dask_cluster(download_method: str):
-    global dask_cluster
-
-    if dask_cluster is None:
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Dask cluster doesn't exist. Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-    return dask_cluster
-
-
-def get_dask_client(dask_cluster):
-    from dask.distributed import Client
-    dask_client = Client(get_dask_cluster(dask_cluster))
-    logger.debug("Creating dask client %s ... Done.", dask_client)
-
-    return dask_client
-
-
-def close_dask_cluster():
-    if (dask_cluster is not None):
-        logger.debug("Stopping dask cluster...")
-        dask_cluster.close()
-
-        logger.debug("Stopping dask cluster... Done.")
 
 
 @register_loader(FILE_TO_DF_LOADER)
@@ -126,8 +88,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    downloader = Downloader()
 
     if (cache_dir is None):
         cache_dir = "./.cache"
@@ -140,14 +101,13 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
     try:
         file_type = str_to_file_type(file_type.lower())
-    except Exception:
-        raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
+    except Exception as exec_info:
+        raise ValueError(f"Invalid input file type '{file_type}'. Available file types are: CSV, JSON.") from exec_info
 
     def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                    file_type: FileTypes,
                                    filter_null: bool,
                                    parser_kwargs: dict):
-
         retries = 0
         s3_df = None
         while (retries < 2):
@@ -158,36 +118,38 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
                                             filter_nulls=filter_null,
                                             df_type="pandas",
                                             parser_kwargs=parser_kwargs)
-
                 break
-            except Exception as e:
+            except Exception as exec_info:
                 if (retries < 2):
                     logger.warning("Refreshing S3 credentials")
                     retries += 1
                 else:
-                    raise e
+                    raise exec_info
 
         # Run the pre-processing before returning
         if (s3_df is None):
             return s3_df
 
-        s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
+        # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
+        # increases performance significantly)
+        if (schema.prep_dataframe is not None):
+            s3_df = schema.prep_dataframe(s3_df)
 
         return s3_df
 
     def get_or_create_dataframe_from_s3_batch(file_name_batch: typing.List[str]) -> typing.Tuple[cudf.DataFrame, bool]:
 
         if (not file_name_batch):
-            return None, False
+            raise RuntimeError("No file objects to process")
 
         file_list = fsspec.open_files(file_name_batch)
         # batch_count = file_name_batch[1]
 
-        fs: fsspec.AbstractFileSystem = file_list.fs
+        file_system: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
         # hashes all the output of `info()` which is perfect
-        hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
+        hash_data = [{"ukey": file_system.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
         objects_hash_hex = hashlib.md5(json.dumps(hash_data, sort_keys=True).encode()).hexdigest()
@@ -212,34 +174,16 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = []
-            if (download_method.startswith("dask")):
-                # Create the client each time to ensure all connections to the cluster are
-                # closed (they can time out)
-                dask_cluster = get_dask_cluster(download_method)
-                with get_dask_client(dask_cluster) as client:
-                    dfs = client.map(download_method_func, download_buckets)
-
-                    dfs = client.gather(dfs)
-
-            elif (download_method == "multiprocessing"):
-                # Use multiprocessing here since parallel downloads are a pain
-                with mp.get_context("spawn").Pool(mp.cpu_count()) as p:
-                    dfs = p.map(download_method_func, download_buckets)
-            else:
-                # Simply loop
-                for s3_object in download_buckets:
-                    dfs.append(download_method_func(s3_object))
-
+            dfs = downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
-            return None, False
+            raise
 
-        if (not dfs):
-            logger.error("No logs were downloaded")
-            return None, False
+        if (dfs is None or len(dfs) == 0):
+            raise ValueError("No logs were downloaded")
 
         output_df: pd.DataFrame = pd.concat(dfs)
+        output_df = process_dataframe(df_in=output_df, input_schema=schema)
 
         # Finally sort by timestamp and then reset the index
         output_df.sort_values(by=[timestamp_column_name], inplace=True)
@@ -264,16 +208,21 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
         if (not filenames):
             return None
 
+        start_time = time.time()
+
         try:
-            # start_time = time.time()
+
             output_df, cache_hit = get_or_create_dataframe_from_s3_batch(filenames)
 
-            # duration = (time.time() - start_time) * 1000.0
-            #
-            # logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
-            #             len(output_df),
-            #             "hit" if cache_hit else "miss",
-            #             duration)
+            duration = (time.time() - start_time) * 1000.0
+
+            if (output_df is not None and logger.isEnabledFor(logging.DEBUG)):
+                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
+                             len(output_df),
+                             "hit" if cache_hit else "miss",
+                             duration,
+                             len(output_df) / (duration / 1000.0))
+
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
@@ -282,12 +231,8 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     pdf = convert_to_dataframe(files)
 
     df = cudf.from_pandas(pdf)
-    payload = control_message.payload()
-    if (payload is None):
-        control_message.payload(MessageMeta(df))
-    else:
-        with payload.mutable_dataframe() as dfm:
-            dfm = cudf.concat([dfm, df], ignore_index=True)
-            control_message.payload(MessageMeta(dfm))
+
+    # Overwriting payload with derived data
+    control_message.payload(MessageMeta(df))
 
     return control_message

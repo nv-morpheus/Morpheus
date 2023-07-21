@@ -19,6 +19,7 @@ import logging
 import os
 import signal
 import subprocess
+import sys
 import time
 import typing
 import warnings
@@ -32,37 +33,42 @@ import requests
 KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
                                                                            'morpheus_output_topic')
 
+# pylint: disable=invalid-name
 zookeeper_proc = None
 kafka_server = None
 kafka_consumer = None
 pytest_kafka_setup_error = None
+# pylint: enable=invalid-name
+
+# Don't let pylint complain about pytest fixtures
+# pylint: disable=redefined-outer-name,unused-argument
 
 
 def init_pytest_kafka():
     """
-    pytest_kafka is currently required to be installed manually, along with a download of Kafka and a functional JDK.
     Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-
-    Issue #9 should make the instalation of Kafka simpler:
-    https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
     """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error
+    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
     try:
         import pytest_kafka
         os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
         # Initialize pytest_kafka fixtures following the recomendations in:
         # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-        KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
-        ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
+        kafka_scripts = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
+        if not os.path.exists(kafka_scripts):
+            # check the old location
+            kafka_scripts = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
 
-        for kafka_script in (KAFKA_BIN, ZOOKEEPER_BIN):
+        kafka_bin = os.path.join(kafka_scripts, 'kafka-server-start.sh')
+        zookeeper_bin = os.path.join(kafka_scripts, 'zookeeper-server-start.sh')
+
+        for kafka_script in (kafka_bin, zookeeper_bin):
             if not os.path.exists(kafka_script):
-                raise RuntimeError("Required Kafka script not found: {}".format(kafka_script))
+                raise RuntimeError(f"Required Kafka script not found: {kafka_script}")
 
         teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
+        zookeeper_proc = pytest_kafka.make_zookeeper_process(zookeeper_bin, teardown_fn=teardown_fn)
+        kafka_server = pytest_kafka.make_kafka_server(kafka_bin, 'zookeeper_proc', teardown_fn=teardown_fn)
         kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
                                                           group_id='morpheus_unittest_reader',
                                                           client_id='morpheus_unittest_reader',
@@ -75,7 +81,7 @@ def init_pytest_kafka():
         return False
 
 
-pytest_kafka_avail = init_pytest_kafka()
+PYTEST_KAFKA_AVAIL = init_pytest_kafka()
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -109,6 +115,14 @@ def pytest_addoption(parser: pytest.Parser):
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
         dest="log_level",
         help="A specific log level to use during testing. Defaults to WARNING if not set.",
+    )
+
+    parser.addoption(
+        "--fail_missing",
+        action="store_true",
+        dest="fail_missing",
+        help=("Tests requiring unmet dependencies are normally skipped. "
+              "Setting this flag will instead cause them to be reported as a failure"),
     )
 
 
@@ -181,9 +195,8 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     To support old unittest style tests, try to determine the mark from the name
     """
 
-    if config.getoption("--run_kafka") and not pytest_kafka_avail:
-        raise RuntimeError(
-            "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
+    if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {pytest_kafka_setup_error}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
@@ -207,8 +220,8 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
 
 def clear_handlers(logger):
     handlers = logger.handlers.copy()
-    for h in handlers:
-        logger.removeHandler(h)
+    for handler in handlers:
+        logger.removeHandler(handler)
 
 
 @pytest.hookimpl(trylast=True)
@@ -232,12 +245,11 @@ def _set_use_cpp(request: pytest.FixtureRequest):
         use_python = request.node.get_closest_marker("use_python") is not None
 
         if (use_cpp and use_python):
-            raise RuntimeError(
-                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
-                format(request.node.nodeid))
-        else:
-            # This will default to True or follow use_cpp
-            do_use_cpp = not use_python
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to True or follow use_cpp
+        do_use_cpp = not use_python
 
     from morpheus.config import CppConfig
 
@@ -300,12 +312,11 @@ def df_type(request: pytest.FixtureRequest):
         use_cudf = request.node.get_closest_marker("use_cudf") is not None
 
         if (use_pandas and use_cudf):
-            raise RuntimeError(
-                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
-                format(request.node.nodeid))
-        else:
-            # This will default to "cudf" or follow use_pandas
-            df_type_str = "cudf" if not use_pandas else "pandas"
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to "cudf" or follow use_pandas
+        df_type_str = "cudf" if not use_pandas else "pandas"
 
     yield df_type_str
 
@@ -342,7 +353,7 @@ def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
     Used by tests that require both an input and an output topic
     """
     kafka_port = kafka_server[1]
-    yield "localhost:{}".format(kafka_port)
+    yield f"localhost:{kafka_port}"
 
 
 @pytest.fixture(scope="function")
@@ -360,17 +371,61 @@ def restore_environ():
 
 
 @pytest.fixture(scope="function")
+def restore_sys_path():
+    orig_vars = sys.path.copy()
+    yield sys.path
+    sys.path = orig_vars
+
+
+@pytest.fixture(scope="function")
+def import_mod(request: pytest.FixtureRequest, restore_sys_path):
+    marker = request.node.get_closest_marker("import_mod")
+    if marker is not None:
+        mod_paths = marker.args[0]
+        if not isinstance(mod_paths, list):
+            mod_paths = [mod_paths]
+
+        modules = []
+        module_names = []
+        for mod_path in mod_paths:
+            mod_dir, mod_fname = os.path.split(mod_path)
+            mod_name, _ = os.path.splitext(mod_fname)
+
+            sys.path.append(mod_dir)
+            module_names.append(mod_name)
+            mod = importlib.import_module(mod_name)
+            assert mod.__file__ == mod_path
+
+            modules.append(mod)
+
+        yield modules
+
+        # Un-import modules we previously imported, this allows for multiple examples to contain a `messages.py`
+        for mod in module_names:
+            sys.modules.pop(mod, None)
+
+    else:
+        raise ValueError("import_mod fixture requires setting paths in markers: "
+                         "`@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing/messages.py')])`")
+
+
+def _reload_modules(modules: typing.List[typing.Any]):
+    for mod in modules:
+        importlib.reload(mod)
+
+
+@pytest.fixture(scope="function")
 def reload_modules(request: pytest.FixtureRequest):
     marker = request.node.get_closest_marker("reload_modules")
-    yield
-
+    modules = []
     if marker is not None:
         modules = marker.args[0]
         if not isinstance(modules, list):
             modules = [modules]
 
-        for mod in modules:
-            importlib.reload(mod)
+    _reload_modules(modules)
+    yield
+    _reload_modules(modules)
 
 
 @pytest.fixture(scope="function")
@@ -403,22 +458,29 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(request.config.invocation_dir)
 
 
-@pytest.fixture(scope="session")
-def _filter_probs_df():
-    from morpheus.io.deserializers import read_file_to_df
-    from utils import TEST_DIRS
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    yield read_file_to_df(input_file, df_type='cudf')
+@pytest.fixture(scope="function")
+def reset_plugin_manger():
+    from morpheus.cli.plugin_manager import PluginManager
+    PluginManager._singleton = None
+    yield
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-    if df_type == 'cudf':
-        yield _filter_probs_df.copy(deep=True)
-    elif df_type == 'pandas':
-        yield _filter_probs_df.to_pandas()
-    else:
-        assert False, "Unknown df_type type"
+def reset_global_stage_registry():
+    from morpheus.cli.stage_registry import GlobalStageRegistry
+    from morpheus.cli.stage_registry import StageRegistry
+    GlobalStageRegistry._global_registry = StageRegistry()
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
+    """
+    Reset both the plugin manager and the global stage gregistry.
+    Some of the tests for examples import modules dynamically, which in some cases can cause register_stage to be
+    called more than once for the same stage.
+    """
+    yield
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
@@ -427,22 +489,22 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
     cur_time = start_time
     end_time = start_time + timeout
 
-    url = "http://{}:{}/ping".format(host, port)
+    url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
         timeout_epoch = min(cur_time + 1.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
-            r = requests.get(url, timeout=request_timeout)
+            resp = requests.get(url, timeout=request_timeout)
 
-            if (r.status_code == 200):
-                if (r.json()['message'] == 'I am alive.'):
+            if (resp.status_code == 200):
+                if (resp.json()['message'] == 'I am alive.'):
                     return True
-                else:
-                    warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. "
-                                   "Continuing to wait. Response JSON:\n%s"),
-                                  r.json())
+
+                warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
+                               "Response JSON:\n%s"),
+                              resp.json())
 
         except Exception:
             pass
@@ -504,19 +566,22 @@ def _camouflage_is_running():
     if launch_camouflage:
         popen = None
         try:
+            # pylint: disable=subprocess-popen-preexec-fn,consider-using-with
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
                                      stderr=subprocess.DEVNULL,
                                      stdout=subprocess.DEVNULL,
                                      preexec_fn=_set_pdeathsig(signal.SIGTERM))
+            # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
             if not wait_for_camouflage(timeout=startup_timeout):
 
                 if popen.poll() is not None:
-                    raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                        popen.poll(), os.path.join(root_dir, 'camouflage.log')))
+                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                    raise RuntimeError(
+                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
 
                 raise RuntimeError("Failed to launch camouflage server")
 
@@ -529,7 +594,7 @@ def _camouflage_is_running():
             raise
         finally:
             if popen is not None:
-                logger.info("Killing camouflage with pid {}".format(popen.pid))
+                logger.info("Killing camouflage with pid %s", popen.pid)
 
                 elapsed_time = 0.0
                 sleep_time = 0.1
@@ -563,9 +628,9 @@ def launch_mock_triton(_camouflage_is_running):
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
     if _camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
-        r = requests.post("http://localhost:8000/reset", timeout=2.0)
+        resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
-        assert r.ok, "Failed to reset Camouflage server state"
+        assert resp.ok, "Failed to reset Camouflage server state"
 
     yield
 
@@ -576,8 +641,6 @@ def configure_tests_logging(pytestconfig: pytest.Config):
     Sets the base logging settings for the entire test suite to ensure logs are generated. Automatically detects if a
     debugger is attached and lowers the logging level to DEBUG.
     """
-    import sys
-
     from morpheus.utils.logger import configure_logging
 
     log_level = logging.WARNING
@@ -611,6 +674,16 @@ def _wrap_set_log_level(log_level: int):
     set_log_level(old_level)
 
 
+@pytest.fixture(scope="session")
+def fail_missing(pytestconfig: pytest.Config) -> bool:
+    """
+    Returns the value of the `fail_missing` flag, when false tests requiring unmet dependencies will be skipped, when
+    True they will fail.
+    """
+    yield pytestconfig.getoption("fail_missing")
+
+
+# ==== Logging Fixtures ====
 @pytest.fixture(scope="function")
 def reset_loglevel():
     """
@@ -668,3 +741,106 @@ def loglevel_fatal():
 
 
 # ==== DataFrame Fixtures ====
+@pytest.fixture(scope="function")
+def dataset(df_type: typing.Literal['cudf', 'pandas']):
+    """
+    Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
+    Users of this fixture can still explicitly request either a cudf or pandas dataframe with the `cudf` and `pandas`
+    properties:
+    ```
+    def test_something(dataset: DatasetManager):
+        df = dataset["filter_probs.csv"]  # type will match the df_type parameter
+        if dataset.default_df_type == 'pandas':
+            assert isinstance(df, pd.DataFrame)
+        else:
+            assert isinstance(df, cudf.DataFrame)
+
+        pdf = dataset.pandas["filter_probs.csv"]
+        cdf = dataset.cudf["filter_probs.csv"]
+
+    ```
+
+    A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
+    If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
+    the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
+    df_type=pandas & use_cpp=True combinations as this will cause an unsupported usage of Pandas dataframes with the
+    C++ implementation of message classes.
+
+    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
+    ```
+    # This test will only run once with C++ enabled and cudf dataframes
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ...
+    # This test will run once for each dataframe type, with C++ disabled both times
+    @pytest.mark.use_python
+    import sysdf dataframes both times
+    @pytest.mark.use_cudf
+    def test something(use_cpp: bool, dataset: DatasetManager):
+    ...
+    # This test will run only once
+    @pytest.mark.use_cudf
+    @pytest.mark.use_python
+    def test something(dataset: DatasetManager):
+    ...
+    # This test creates an incompatible combination and will raise a RuntimeError without being executed
+    @pytest.mark.use_pandas
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ```
+
+    Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type=df_type)
+
+
+@pytest.fixture(scope="function")
+def dataset_pandas():
+    """
+    Yields a DatasetLoader instance with pandas as the default DataFrame type.
+
+    Note: This fixture won't prevent a user from writing a test requiring C++ mode execution and requesting Pandas
+    dataframes. This is quite useful for tests like `tests/test_add_scores_stage_pipe.py` where we want to test with
+    both Python & C++ executions, but we use Pandas to build up the expected DataFrame to validate the test against.
+
+    In addition to this, users can use this fixture to explicitly request a cudf Dataframe as well, allowing for a test
+    that looks like:
+    ```
+    @pytest.mark.use_cpp
+    def test_something(dataset_pandas: DatasetManager):
+        input_df = dataset_pandas.cudf["filter_probs.csv"] # Feed our source stage a cudf DF
+
+        # Perform pandas transformations to mimic the add scores stage
+        expected_df = dataset["filter_probs.csv"]
+        expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
+    ```
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='pandas')
+
+
+@pytest.fixture(scope="function")
+def dataset_cudf():
+    """
+    Yields a DatasetLoader instance with cudf as the default DataFrame type.
+
+    Users who wish to have both cudf and pandas DataFrames can do so with this fixture and using the `pandas` property:
+    def test_something(dataset_cudf: DatasetManager):
+        cdf = dataset_cudf["filter_probs.csv"]
+        pdf = dataset_cudf.pandas["filter_probs.csv"]
+    """
+    from utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(dataset, use_cpp: bool):
+    """
+    Shortcut fixture for loading the filter_probs.csv dataset.
+
+    Unless your test uses the `use_pandas` or `use_cudf` marks this fixture will parametarize over the two dataframe
+    types. Similarly unless your test uses the `use_cpp` or `use_python` marks this fixture will also parametarize over
+    that as well, while excluding the combination of C++ execution and Pandas dataframes.
+    """
+    yield dataset["filter_probs.csv"]

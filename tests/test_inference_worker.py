@@ -21,7 +21,7 @@ import pytest
 from morpheus.config import Config
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
-from utils import IW
+from utils.inference_worker import IW
 
 
 def test_constructor():

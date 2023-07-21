@@ -23,7 +23,7 @@ Every account, user, service, and machine has a digital fingerprint that represe
 To construct this digital fingerprint, we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained over time​, and alerts are triggered when deviations from normality occur for any user​.
 
 ## Training Sources
-The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The [digital fingerprinting example](/examples/digital_fingerprinting/README.md) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi#authentication-logs).
+The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The digital fingerprinting example (`examples/digital_fingerprinting/README.md`) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins), and [Duo Authentication](https://duo.com/docs/adminapi#authentication-logs).
 
 The location of these logs could be either local to the machine running Morpheus, a shared file system like NFS, or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 
@@ -39,10 +39,10 @@ Adding a new source for the DFP pipeline requires defining five critical pieces:
    * IP address of a client
    * Name of a service (for example, "DNS", "Customer DB", or "SMTP")
 
-1. The timestamp column in the Morpheus config attribute `ae.timestamp_column_name` and ensure it is converted to a datetime column refer to [`DateTimeColumn`](#date-time-column-datetimecolumn).
-1. The model's features as a list of strings in the Morpheus config attribute `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
-1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPFileToDataFrameStage`](#file-to-dataframe-stage-dfpfiletodataframestage) stage.
-1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
+1. The timestamp column in the Morpheus config attribute `ae.timestamp_column_name` and ensure it is converted to a datetime column refer to [`DateTimeColumn`](6_digital_fingerprinting_reference.md#date-time-column-datetimecolumn).
+1. The model's features as a list of strings in the Morpheus config attribute `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](6_digital_fingerprinting_reference.md#preprocessing-stage-dfppreprocessingstage).
+1. A [`DataFrameInputSchema`](6_digital_fingerprinting_reference.md#dataframe-input-schema-dataframeinputschema) for the [`DFPFileToDataFrameStage`](6_digital_fingerprinting_reference.md#file-to-dataframe-stage-dfpfiletodataframestage) stage.
+1. A [`DataFrameInputSchema`](6_digital_fingerprinting_reference.md#dataframe-input-schema-dataframeinputschema) for the [`DFPPreprocessingStage`](6_digital_fingerprinting_reference.md#preprocessing-stage-dfppreprocessingstage).
 
 ## DFP Examples
 The DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both perform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
@@ -56,7 +56,7 @@ Key Differences:
  * Requires no external services
  * Can be run from the Morpheus CLI
 
-This example is described in more detail in [`examples/digital_fingerprinting/starter/README.md`](/examples/digital_fingerprinting/starter/README.md)
+This example is described in more detail in `examples/digital_fingerprinting/starter/README.md`.
 
 ### The "Production" Example
 
@@ -70,7 +70,7 @@ Key Differences:
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
-This example is described in [`examples/digital_fingerprinting/production/README.md`](/examples/digital_fingerprinting/production/README.md) as well as the rest of this document.
+This example is described in `examples/digital_fingerprinting/production/README.md` as well as the rest of this document.
 
 ### DFP Features
 
@@ -166,14 +166,24 @@ The reference architecture is composed of the following services:​
 * [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
 * Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
-> **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
+> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
 
 #### Building the services
 From the root of the Morpheus repo, run:
 ```bash
 cd examples/digital_fingerprinting/production
-docker-compose build
+docker compose build
 ```
+
+> **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
+>
+> ```
+> ERROR: The Compose file './docker-compose.yml' is invalid because:
+> services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was
+> unexpected)
+> ```
+>
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
 
 #### Downloading the example datasets
 First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
@@ -188,7 +198,7 @@ python examples/digital_fingerprinting/fetch_example_data.py all
 ##### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up jupyter
+docker compose up jupyter
 ```
 
 Once the build is complete and the service has started, a message similar to the following should display:
@@ -211,12 +221,12 @@ Copy and paste the URL into a web browser. There are four notebooks included wit
 ##### Morpheus Pipeline
 By default, the `morpheus_pipeline` will run the training pipeline for Duo data from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker-compose up morpheus_pipeline
+docker compose up morpheus_pipeline
 ```
 
 If instead you want to run a different pipeline from the `examples/digital_fingerprinting/production` dir, run:
 ```bash
-docker-compose run morpheus_pipeline bash
+docker compose run morpheus_pipeline bash
 ```
 
 
@@ -238,6 +248,8 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
 | `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
 | `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `--watch_inputs` | FLAG | Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. This assumes that the at least one paths contains a wildcard. |
+| `--watch_interval` | FLOAT | Amount of time, in seconds, to wait between checks for new files. Only used if --watch_inputs is set. [default `1.0`] |
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
@@ -265,15 +277,15 @@ To run the DFP pipelines with the example datasets within the container, run:
    ```
 
 ##### Output Fields
-The output files will contain those logs from the input dataset for which an anomaly was detected; this is determined by the Z-Score in the `mean_abs_z` field. By default, any logs with a Z-Score of 2.0 or higher are considered anomalous. Refer to [`DFPPostprocessingStage`](#post-processing-stage-dfppostprocessingstage).
+The output files will contain those logs from the input dataset for which an anomaly was detected; this is determined by the z-score in the `mean_abs_z` field. By default, any logs with a z-score of 2.0 or higher are considered anomalous. Refer to [`DFPPostprocessingStage`](6_digital_fingerprinting_reference.md#post-processing-stage-dfppostprocessingstage).
 
 Most of the fields in the output files generated by running the above examples are input fields or derived from input fields. The additional output fields are:
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | event_time | TEXT | ISO 8601 formatted date string, the time the anomaly was detected by Morpheus |
 | model_version | TEXT | Name and version of the model used to performed the inference, in the form of `<model name>:<version>` |
-| max_abs_z | FLOAT | Max Z-Score across all features |
-| mean_abs_z | FLOAT | Average Z-Score across all features |
+| max_abs_z | FLOAT | Max z-score across all features |
+| mean_abs_z | FLOAT | Average z-score across all features |
 
 In addition to this, for each input feature the following output fields will exist:
 | Field | Type | Description |
@@ -282,14 +294,14 @@ In addition to this, for each input feature the following output fields will exi
 | `<feature name>_z_loss` | FLOAT | The loss z-score |
 | `<feature name>_pred` | FLOAT | The predicted value |
 
-Refer to [DFPInferenceStage](#inference-stage-dfpinferencestage) for more on these fields.
+Refer to [DFPInferenceStage](6_digital_fingerprinting_reference.md#inference-stage-dfpinferencestage) for more on these fields.
 
 ##### Optional MLflow Service
-Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes, it can be helpful to view the logs of the running MLflow service.
+Starting the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes, it can be helpful to view the logs of the running MLflow service.
 
 From the `examples/digital_fingerprinting/production` dir, run:
 ```bash
-docker-compose up mlflow
+docker compose up mlflow
 ```
 
 ### Running via Kubernetes​
@@ -297,7 +309,7 @@ docker-compose up mlflow
 * [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
 * [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
-> **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
+> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
 
 ## Customizing DFP
 For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./6_digital_fingerprinting_reference.md).

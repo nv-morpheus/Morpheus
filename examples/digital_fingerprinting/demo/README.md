@@ -25,7 +25,7 @@ This document will provide you instructions for setting up a Control Messages Su
 To set up the Control Messages Submission GUI, you will need to install the following dependencies:
 
 ```
-pip install flask confluent_kafka
+pip install flask==2.2 confluent_kafka
 ```
 
 #### Kafka Setup
@@ -33,7 +33,7 @@ pip install flask confluent_kafka
 To publish control messages to a Kafka topic, you will need to start the Kafka service first. Navigate to the `~/examples/digital_fingerprinting/production` directory and execute the following command:
 
 ```
-docker-compose up kafka
+docker compose up kafka
 ```
 
 ##### Create Kafka Topic
@@ -43,7 +43,7 @@ Create a Kafka topic named `test_cm` to submit control messages. Run the followi
 docker exec -it kafka kafka-topics --create --topic test_cm --bootstrap-server localhost:9092
 ```
 
-To ensure that the topic is receiving messages, run the following command:
+To ensure the topic is receiving messages, run the following command:
 ```
 docker exec -it kafka kafka-console-consumer --topic test_cm --from-beginning --bootstrap-server localhost:9092
 ```

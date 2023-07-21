@@ -20,6 +20,7 @@ import typing
 import mrc
 import pandas as pd
 import pytest
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -29,11 +30,11 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages.dfp_length_checker import DFPLengthChecker
 from utils import TEST_DIRS
 from utils import assert_results
 from utils import write_data_to_kafka
 from utils import write_file_to_kafka
+from utils.stages.dfp_length_checker import DFPLengthChecker
 
 
 @pytest.mark.kafka
@@ -60,6 +61,38 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.kafka
+def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str) -> None:
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
+
+    topic_1 = "morpheus_input_topic_1"
+    topic_2 = "morpheus_input_topic_2"
+
+    input_topics = [topic_1, topic_2]
+
+    # Fill our topic_1 and topic_2 with the input data
+    topic_1_records = write_file_to_kafka(kafka_bootstrap_servers, topic_1, input_file)
+    topic_2_records = write_file_to_kafka(kafka_bootstrap_servers, topic_2, input_file)
+
+    num_records = topic_1_records + topic_2_records
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(
+        KafkaSourceStage(config,
+                         bootstrap_servers=kafka_bootstrap_servers,
+                         input_topic=input_topics,
+                         auto_offset_reset="earliest",
+                         poll_interval="1seconds",
+                         client_id='test_multi_topic_kafka_source_stage_pipe',
+                         stop_after=num_records))
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(SerializeStage(config))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, [input_file, input_file]))
+    pipe.run()
+
+    assert_results(comp_stage.get_results())
+
+
 class OffsetChecker(SinglePortStage):
     """
     Verifies that the kafka offsets are being updated as a way of verifying that the
@@ -69,7 +102,7 @@ class OffsetChecker(SinglePortStage):
     def __init__(self, c: Config, bootstrap_servers: str, group_id: str):
         super().__init__(c)
 
-        # importing here so that running without the --run_kafka flag won't fail due
+        # Importing here so that running without the --run_kafka flag won't fail due
         # to not having the kafka libs installed
         from kafka import KafkaAdminClient
 
@@ -116,7 +149,7 @@ class OffsetChecker(SinglePortStage):
         return x
 
     def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, self._offset_checker)
+        node = builder.make_node(self.unique_name, ops.map(self._offset_checker))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

@@ -60,7 +60,7 @@ jobs:
   check:
     if: ${{ inputs.run_check }}
     name: Check
-    runs-on: [self-hosted, linux, amd64, cpu4]
+    runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
       credentials:
@@ -91,7 +91,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: [self-hosted, linux, amd64, cpu16]
+    runs-on: linux-amd64-cpu16
     timeout-minutes: 60
     container:
       credentials:
@@ -122,7 +122,7 @@ jobs:
   test:
     name: Test
     needs: [build]
-    runs-on: [self-hosted, linux, amd64, gpu-v100-525-1]
+    runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
       credentials:
@@ -133,6 +133,7 @@ jobs:
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
         PARALLEL_LEVEL: '10'
+        MERGE_EXAMPLES_YAML: '1'
     strategy:
       fail-fast: true
 
@@ -157,13 +158,15 @@ jobs:
   documentation:
     name: Documentation
     needs: [build]
-    runs-on: [self-hosted, linux, amd64, cpu4]
+    runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: ${{ inputs.container }}
+      env:
+        MERGE_DOCS_YAML: '1'
     strategy:
       fail-fast: true
 

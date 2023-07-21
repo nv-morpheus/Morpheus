@@ -44,8 +44,11 @@
 		],
 		"python.linting.flake8Enabled": true,
 		"python.linting.pylintArgs": [
-			"--rcfile=${workspaceFolder}/.pylintrc",
+			"--rcfile=${workspaceFolder}/pyproject.toml",
 			"--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")",
+		],
+		"python.analysis.extraPaths": [
+			"./examples/digital_fingerprinting/production/morpheus"
 		],
 		"python.linting.pylintEnabled": true,
 		"rewrap.wrappingColumn": 120,
@@ -54,7 +57,9 @@
 			"tests"
 		],
 		"python.testing.unittestEnabled": false,
-		"python.testing.pytestEnabled": true
+		"python.testing.pytestEnabled": true,
+		"cmake.format.allowOptionalArgumentIndentation": true,
+		"docker.languageserver.formatter.ignoreMultilineInstructions": true
 	},
 	"launch": {
 		"configurations": [
@@ -188,7 +193,7 @@
 					"--model_max_batch_size=1024",
 					"--use_cpp=False",
 					"pipeline-ae",
-                    "--userid_column_name=userIdentitysessionContextsessionIssueruserName",
+					"--userid_column_name=userIdentitysessionContextsessionIssueruserName",
 					"--userid_filter=user123",
 					"from-cloudtrail",
 					"--input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv",
@@ -325,8 +330,10 @@
 					"-b",
 					"html",
 					"-aE",
+					"-j",
+					"auto",
 					"source",
-					"build",
+					"${workspaceFolder}/build/docs/html",
 				],
 				"justMyCode": false
 			},

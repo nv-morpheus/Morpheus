@@ -14,12 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
+import json
 import os
 from datetime import datetime
 from functools import partial
 
+import numpy as np
 import pandas as pd
 import pytest
+
+import cudf
 
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -28,16 +33,16 @@ from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
-from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
+from morpheus.utils.schema_transforms import process_dataframe
 from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_with_json_cols():
-
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
-    input_df = pd.read_json(src_file)
+    input_df = cudf.read_json(src_file)
 
     raw_data_columns = [
         'time',
@@ -62,42 +67,45 @@ def test_dataframe_input_schema_with_json_cols():
     assert list(input_df.columns) == raw_data_columns
 
     column_info = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
+        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
+        ColumnInfo(name="category", dtype='str'),
+        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
+        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
+        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
         RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
+                     dtype='str',
                      input_name="properties.deviceDetail.operatingSystem"),
         StringCatColumn(name="location",
-                        dtype=str,
+                        dtype='str',
                         input_columns=[
                             "properties.location.city",
                             "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
     ]
 
     schema = DataFrameInputSchema(json_columns=["properties"], column_info=column_info)
 
-    df_processed = process_dataframe(input_df, schema)
-    processed_df_cols = df_processed.columns
+    df_processed_schema = process_dataframe(input_df, schema)
+    processed_df_cols = df_processed_schema.columns
 
-    assert len(input_df) == len(df_processed)
+    assert len(input_df) == len(df_processed_schema)
     assert len(processed_df_cols) == len(column_info)
     assert "timestamp" in processed_df_cols
     assert "userId" in processed_df_cols
     assert "time" not in processed_df_cols
     assert "properties.userPrincipalName" not in processed_df_cols
 
+    nvt_workflow = create_and_attach_nvt_workflow(schema)
+    df_processed_workflow = process_dataframe(input_df, nvt_workflow)
+    assert df_processed_schema.equals(df_processed_workflow)
+
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_without_json_cols():
-
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
 
     input_df = pd.read_json(src_file)
@@ -105,17 +113,8 @@ def test_dataframe_input_schema_without_json_cols():
     assert len(input_df.columns) == 16
 
     column_info = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        ColumnInfo(name="category", dtype='str'),
     ]
 
     schema = DataFrameInputSchema(column_info=column_info)
@@ -127,28 +126,26 @@ def test_dataframe_input_schema_without_json_cols():
     assert len(processed_df_cols) == len(column_info)
     assert "timestamp" in processed_df_cols
     assert "time" not in processed_df_cols
-    assert "userId" in processed_df_cols
-    assert len(df_processed[~df_processed.userId.isna()]) == 0
 
     column_info2 = [
-        DateTimeColumn(name="timestamp", dtype=datetime, input_name="time"),
-        RenameColumn(name="userId", dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+        DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),
+        RenameColumn(name="userId", dtype='str', input_name="properties.userPrincipalName"),
+        RenameColumn(name="appDisplayName", dtype='str', input_name="properties.appDisplayName"),
+        ColumnInfo(name="category", dtype='str'),
+        RenameColumn(name="clientAppUsed", dtype='str', input_name="properties.clientAppUsed"),
+        RenameColumn(name="deviceDetailbrowser", dtype='str', input_name="properties.deviceDetail.browser"),
+        RenameColumn(name="deviceDetaildisplayName", dtype='str', input_name="properties.deviceDetail.displayName"),
         RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
+                     dtype='str',
                      input_name="properties.deviceDetail.operatingSystem"),
         StringCatColumn(name="location",
-                        dtype=str,
+                        dtype='str',
                         input_columns=[
                             "properties.location.city",
                             "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        RenameColumn(name="statusfailureReason", dtype='str', input_name="properties.status.failureReason"),
     ]
 
     schema2 = DataFrameInputSchema(column_info=column_info2)
@@ -160,7 +157,6 @@ def test_dataframe_input_schema_without_json_cols():
 
 @pytest.mark.use_python
 def test_string_cat_column():
-
     cities = pd.Series([
         "New York",
         "Dallas",
@@ -183,7 +179,7 @@ def test_string_cat_column():
 
     df = pd.DataFrame({"city": cities, "country": countries, "state": states, "zipcode": zipcodes})
 
-    string_cat_col = StringCatColumn(name="location", dtype=str, input_columns=[
+    string_cat_col = StringCatColumn(name="location", dtype='str', input_columns=[
         "city",
         "country",
     ], sep=", ")
@@ -194,10 +190,13 @@ def test_string_cat_column():
 
     assert actual.equals(expected)
 
-    string_cat_col_with_int = StringCatColumn(name="location", dtype=str, input_columns=[
-        "city",
-        "zipcode",
-    ], sep=", ")
+    string_cat_col_with_int = StringCatColumn(name="location",
+                                              dtype='str',
+                                              input_columns=[
+                                                  "city",
+                                                  "zipcode",
+                                              ],
+                                              sep=", ")
 
     with pytest.raises(Exception):
         string_cat_col_with_int._process_column(df)
@@ -205,7 +204,6 @@ def test_string_cat_column():
 
 @pytest.mark.use_python
 def test_string_join_column():
-
     cities = pd.Series([
         "Boston",
         "Dallas",
@@ -214,7 +212,7 @@ def test_string_join_column():
 
     df = pd.DataFrame({"city": cities})
 
-    string_join_col = StringJoinColumn(name="city_new", dtype=str, input_name="city", sep="-")
+    string_join_col = StringJoinColumn(name="city_new", dtype='str', input_name="city", sep="-")
 
     actual = string_join_col._process_column(df)
 
@@ -225,7 +223,6 @@ def test_string_join_column():
 
 @pytest.mark.use_python
 def test_column_info():
-
     cities = pd.Series([
         "Boston",
         "Dallas",
@@ -234,7 +231,7 @@ def test_column_info():
 
     df = pd.DataFrame({"city": cities})
 
-    string_join_col = ColumnInfo(name="city", dtype=str)
+    string_join_col = ColumnInfo(name="city", dtype='str')
 
     actual = string_join_col._process_column(df)
 
@@ -244,7 +241,6 @@ def test_column_info():
 
 @pytest.mark.use_python
 def test_date_column():
-
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
         "2022-08-29T21:23:19.500982Z",
@@ -259,12 +255,11 @@ def test_date_column():
 
     datetime_series = datetime_col._process_column(df)
 
-    assert datetime_series.dtype == 'datetime64[ns, UTC]'
+    assert datetime_series.dtype == np.dtype("datetime64[ns]")
 
 
 @pytest.mark.use_python
 def test_rename_column():
-
     time_series = pd.Series([
         "2022-08-29T21:21:41.645157Z",
         "2022-08-29T21:23:19.500982Z",
@@ -275,7 +270,7 @@ def test_rename_column():
 
     df = pd.DataFrame({"time": time_series})
 
-    rename_col = RenameColumn(name="timestamp", dtype=str, input_name="time")
+    rename_col = RenameColumn(name="timestamp", dtype='str', input_name="time")
 
     actutal = rename_col._process_column(df)
 
@@ -288,7 +283,6 @@ def convert_to_upper(df, column_name: str):
 
 @pytest.mark.use_python
 def test_custom_column():
-
     cities = pd.Series([
         "New York",
         "Dallas",
@@ -298,7 +292,7 @@ def test_custom_column():
     df = pd.DataFrame({"city": cities})
 
     custom_col = CustomColumn(name="city_upper",
-                              dtype=str,
+                              dtype='str',
                               process_column_fn=partial(convert_to_upper, column_name="city"))
 
     actutal = custom_col._process_column(df)
@@ -306,3 +300,27 @@ def test_custom_column():
     expected = pd.Series(["NEW YORK", "DALLAS", "AUSTIN"])
 
     assert actutal.equals(expected)
+
+
+@pytest.mark.use_python
+def test_type_cast():
+    """
+    Test reproduces issue reported in #922
+    """
+
+    data = [{
+        "username": "tom", "timestamp": 1666741856, "FeatureA": "81"
+    }, {
+        "username": "jerry", "timestamp": 1666741856, "FeatureA": "1"
+    }]
+
+    data_s = "\n".join(json.dumps(d) for d in data)
+    df = pd.read_json(io.StringIO(data_s), lines=True)
+
+    cols = [ColumnInfo(name='FeatureA', dtype=str), RenameColumn(name='FeatureB', dtype=str, input_name='FeatureA')]
+    for col in cols:
+        actutal = col._process_column(df)
+        expected = pd.Series(["81", "1"])
+
+        assert actutal.dtype == np.dtype('O')
+        assert actutal.equals(expected)
