@@ -98,6 +98,7 @@ Subclass of `ColumnInfo`, defines a column to be computed by a user-defined func
 | `name` | `str` | Name of the column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
 | `process_column_fn` | `function` | Function which receives the entire `DataFrame` as its only input, returning a new [`pandas.Series`](https://pandas.pydata.org/docs/reference/api/pandas.Series.html) object to be stored in column `name`. |
+| `input_column_types` | `dict[str, str]` | The input columns and the expected dtypes that are needed for this Column to successfully process. Setting this as `None` will pass all columns. Specifying which columns are needed improves performance. |
 
 #### Rename Column (`RenameColumn`)
 Subclass of `ColumnInfo`, adds the ability to also perform a rename.

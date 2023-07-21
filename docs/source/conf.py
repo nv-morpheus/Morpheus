@@ -347,6 +347,7 @@ def setup(app):
     app.add_css_file('infoboxes.css')
     app.add_css_file('params.css')
     app.add_css_file('references.css')
+    app.add_css_file('py_properties.css')
     app.connect("autodoc-process-docstring", process_docstrings)
 
 

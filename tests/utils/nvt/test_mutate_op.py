@@ -44,10 +44,6 @@ def test_transform(df: DataFrameType):
     expected_df['A_new'] = df['A'] * 2
     expected_df['B_new'] = df['B'] * 2
 
-    print("")
-    print(expected_df)
-    print(transformed_df)
-
     assert transformed_df.equals(expected_df), "Test transform failed"
 
 

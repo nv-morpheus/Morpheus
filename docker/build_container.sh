@@ -42,7 +42,7 @@ RAPIDS_VER=${RAPIDS_VER:-23.06}
 TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
 # Determine the relative path from $PWD to $MORPHEUS_ROOT
-MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"./$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
+MORPHEUS_ROOT_HOST=${MORPHEUS_ROOT_HOST:-"$(realpath --relative-to=${PWD} ${MORPHEUS_ROOT})"}
 
 # Build the docker arguments
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"

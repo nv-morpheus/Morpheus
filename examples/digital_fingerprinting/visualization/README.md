@@ -36,7 +36,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ./docker/build_container_release.sh
 ```
 
-## Building Services via `docker-compose`
+## Building Services via `docker compose`
 
 ```bash
 cd examples/digital_fingerprinting/production
