@@ -244,6 +244,7 @@ class _UserTimeSeries:
             idx = action.message.get_meta().index
 
             # Find anomalies that are in the active message
+            # pylint: disable=singleton-comparison
             paired_anomalies = anomalies[anomalies == True].index.intersection(idx)  # noqa: E712
 
             # Return the anomalies for priting. But only if the current message has anomalies that will get flagged
