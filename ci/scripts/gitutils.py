@@ -543,7 +543,7 @@ def _parse_args():
 
 
 def _main():
-    log_level = logging.getLevelName(os.environ.get("MORPHEUS_LOG_LEVEL", "WARNING"))
+    log_level = logging.getLevelName(os.environ.get("MORPHEUS_LOG_LEVEL", "INFO"))
     logging.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
 
     args = _parse_args()
