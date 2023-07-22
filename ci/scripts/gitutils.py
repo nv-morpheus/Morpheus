@@ -224,7 +224,7 @@ class GitUtils:
         return ret
 
     @staticmethod
-    def diff(base_ref: str, target_ref: str, merge_base: bool = False, staged: bool = False):
+    def diff(target_ref: str, base_ref: str,  merge_base: bool = False, staged: bool = False):
 
         assert base_ref is not None or base_ref != "", "base_ref must be a valid ref"
         assert target_ref is not None or target_ref != "", "target_ref must be a valid ref"
@@ -237,7 +237,7 @@ class GitUtils:
         if (staged):
             args.append("--cached")
 
-        args += [base_ref, target_ref]
+        args += [target_ref, base_ref]
 
         return _git(*args).splitlines()
 
@@ -489,9 +489,9 @@ def changed_files(target_ref=None, base_ref="HEAD", *, merge_base: bool = True, 
     if (target_ref is None):
         target_ref = get_merge_target()
 
-    logging.info("Comparing %s..%s with merge_base: %s, staged: %s", base_ref, target_ref, merge_base, staged)
+    logging.info("Comparing %s..%s with merge_base: %s, staged: %s", target_ref, base_ref, merge_base, staged)
 
-    diffs = GitUtils.diff(base_ref, target_ref, merge_base=merge_base, staged=staged)
+    diffs = GitUtils.diff(target_ref, base_ref, merge_base=merge_base, staged=staged)
 
     return filter_files(diffs, path_filter=path_filter)
 
