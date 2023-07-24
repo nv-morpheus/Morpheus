@@ -270,7 +270,10 @@ COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
 
 # Update the symlinks in the models dir which are currently relative to the source repo to point to the installed
 # morpheus Python package
-RUN python ./docker/update_release_links.py
+RUN source activate morpheus \
+    && MORPHEUS_ROOT=/workspace \
+    && cd /workspace \
+    && python /workspace/docker/update_release_links.py
 
 # Use morpheus by default
 CMD [ "morpheus" ]

@@ -24,6 +24,7 @@ def update_link(full_path: str, filename: str):
     """
     Update a broken symlink if a file of the same name exists in the morpheus data dir.
     """
+    logging.debug("updating %s: %s", filename, full_path)
     new_link_target = os.path.join(morpheus.DATA_DIR, filename)
     if os.path.exists(new_link_target):
         try:
@@ -43,6 +44,7 @@ def main(morpheus_root_dir: str):
         for filename in filenames:
             full_path = os.path.join(dirpath, filename)
             if os.path.islink(full_path):
+                logging.debug("checking %s: %s", filename, full_path)
                 try:
                     os.path.realpath(full_path, strict=True)
                 except FileNotFoundError:
@@ -53,6 +55,6 @@ def main(morpheus_root_dir: str):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logging.info("Updating symlinks in models directory")
     main(os.environ["MORPHEUS_ROOT"])
