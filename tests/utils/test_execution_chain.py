@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from morpheus.utils.execution_chain import ExecutionChain
 
 
@@ -36,11 +38,9 @@ def test_execution_chain():
 
 def test_execution_chain_error():
     chain = ExecutionChain([func1, func_error, func2])
-    try:
+
+    with pytest.raises(Exception, match="Execution failed processing function func_error. Error: An error occurred."):
         chain(arg1=3, arg2=3)
-    except Exception as e:
-        print(str(e))  # Debugging line
-        assert str(e) == "Execution failed processing function func_error. Error: An error occurred."
 
 
 def test_add_function():
