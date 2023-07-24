@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
@@ -36,6 +37,7 @@
 #include <memory>
 #include <regex>
 #include <string>
+#include <thread>
 #include <vector>  // for vector
 
 namespace morpheus {

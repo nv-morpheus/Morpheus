@@ -116,7 +116,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
         ----------
         x : `morpheus.pipeline.messages.MultiMessage`
             Input rows received from Deserialized stage.
-        vocab_hashfile : str
+        vocab_hash_file : str
             Path to hash file containing vocabulary of words with token-ids. This can be created from the raw vocabulary
             using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
         do_lower_case : bool

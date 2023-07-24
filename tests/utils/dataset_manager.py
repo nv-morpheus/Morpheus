@@ -26,6 +26,7 @@ import cudf as cdf  # rename to avoid clash with property method
 
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils import compare_df
+from morpheus.utils.type_aliases import DataFrameType
 from utils import TEST_DIRS
 from utils import assert_results
 
@@ -40,8 +41,7 @@ class DatasetManager:
         Type of DataFrame to return unless otherwise explicitly specified.
     """
 
-    __df_cache: typing.Dict[typing.Tuple[typing.Literal['cudf', 'pandas'], str],
-                            typing.Union[cdf.DataFrame, pd.DataFrame]] = {}
+    __df_cache: typing.Dict[typing.Tuple[typing.Literal['cudf', 'pandas'], str], DataFrameType] = {}
 
     # Values in `__instances` are instances of `DatasetLoader`
     __instances: typing.Dict[typing.Literal['cudf', 'pandas'], typing.Any] = {}
@@ -72,7 +72,7 @@ class DatasetManager:
                file_path: str,
                df_type: typing.Literal['cudf', 'pandas'] = None,
                no_cache: bool = False,
-               **reader_kwargs) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+               **reader_kwargs) -> DataFrameType:
         """
         Fetch a DataFrame specified from `file_path`. If `file_path` is not an absolute path, it is assumed to be
         relative to the `test/tests_data` dir. If a DataFrame matching both `file_path` and `df_type` has already been
@@ -123,8 +123,8 @@ class DatasetManager:
         return df.copy(deep=True)
 
     def __getitem__(
-        self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf', 'pandas']]]
-    ) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+        self, item: typing.Union[str, typing.Tuple[str], typing.Tuple[str, typing.Literal['cudf',
+                                                                                          'pandas']]]) -> DataFrameType:
         """Implements `__getitem__` to allow for fetching DataFrames using the `[]` operator."""
         if not isinstance(item, tuple):
             item = (item, )
@@ -146,10 +146,17 @@ class DatasetManager:
         """Returns the default DataFrame type for this instance of `DatasetManager`."""
         return self._default_df_type
 
+    @property
+    def df_class(self):
+        if self.default_df_type == 'cudf':
+            cls = cdf.DataFrame
+        else:
+            cls = pd.DataFrame
+
+        return cls
+
     @staticmethod
-    def repeat(df: typing.Union[cdf.DataFrame, pd.DataFrame],
-               repeat_count: int = 2,
-               reset_index: bool = True) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+    def repeat(df: DataFrameType, repeat_count: int = 2, reset_index: bool = True) -> DataFrameType:
         """Returns a DF consisting of `repeat_count` copies of the original."""
         if isinstance(df, pd.DataFrame):
             concat_fn = pd.concat
@@ -164,15 +171,12 @@ class DatasetManager:
         return repeated_df
 
     @staticmethod
-    def replace_index(df: typing.Union[cdf.DataFrame, pd.DataFrame],
-                      replace_ids: typing.Dict[int, int]) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+    def replace_index(df: DataFrameType, replace_ids: typing.Dict[int, int]) -> DataFrameType:
         """Return a new DataFrame's where we replace some index values with others."""
         return df.rename(index=replace_ids)
 
     @classmethod
-    def dup_index(cls,
-                  df: typing.Union[cdf.DataFrame, pd.DataFrame],
-                  count: int = 1) -> typing.Union[cdf.DataFrame, pd.DataFrame]:
+    def dup_index(cls, df: DataFrameType, count: int = 1) -> DataFrameType:
         """Randomly duplicate `count` entries in a DataFrame's index"""
         assert count * 2 <= len(df), "Count must be less than half the number of rows."
 

@@ -39,8 +39,8 @@ def to_control_message(builder: mrc.Builder):
     -----
         Configurable Parameters:
             - control_message_conf (dict): Control message configuration;
-            Example: `{"meta_data": {"data_type": "streaming"}, "tasks": [{"type": "inference", "properties": {}}]}`;
-            Default: `{}`.
+                Example: `{"meta_data": {"data_type": "streaming"}, "tasks": [{"type": "inference", "properties": {}}]}`
+                Default: `{}`
     """
 
     config = builder.get_current_module_config()

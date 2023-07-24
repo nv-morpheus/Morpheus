@@ -21,10 +21,6 @@ import sys
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
 
-# Required to install torch via setup.py
-# Note: this is order dependent
-os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu116/torch_stable.html"
-
 try:
     import versioneer
 except ImportError:
@@ -57,7 +53,6 @@ setup(
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
-        "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",
     python_requires='>=3.10, <4',

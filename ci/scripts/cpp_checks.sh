@@ -93,10 +93,17 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
       # Find the intersection between compiled files and modified files
       IWYU_MODIFIED_FILES=( $(printf '%s\0' "${COMBINED_FILES[@]}" | sort -z | uniq -d -z | xargs -0n1) )
-      NUM_PROC=$(get_num_proc)
-      IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
-      IWYU_RETVAL=$?
 
+      if [[ "${#IWYU_MODIFIED_FILES[@]}" != "0" ]]; then
+         NUM_PROC=$(get_num_proc)
+         IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_MODIFIED_FILES[@]} 2>&1`
+         IWYU_RETVAL=$?
+      else
+         echo "No modified C++ files match IWYU's filters. Skipping IWYU"
+
+         # Set the return value to 0 if we didnt run it
+         IWYU_RETVAL=0
+      fi
    fi
 else
    echo "No modified C++ files to check"

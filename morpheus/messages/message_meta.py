@@ -69,7 +69,6 @@ class MutableTableCtxMgr:
 
 MessageMeta = _messages.MessageMeta
 
-
 @dataclasses.dataclass(init=False)
 class UserMessageMeta(MessageMeta):
     """
