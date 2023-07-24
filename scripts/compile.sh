@@ -38,3 +38,6 @@ cmake -B ${BUILD_DIR} -GNinja \
 
 echo "Running CMake build..."
 cmake --build ${BUILD_DIR} -j ${INSTALL_PREFIX:+--target install} "$@"
+
+echo "Running CTest..."
+ctest --test-dir ${BUILD_DIR}
