@@ -17,6 +17,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 
 find_package(pybind11 REQUIRED)
 
+include(GoogleTest)
+
 add_library(
     morpheus_test_utilities
       test_utils/common.cpp
@@ -47,10 +49,7 @@ function (add_morpheus_test TEST_NAME TEST_FILES)
       pybind11::embed
   )
 
-  add_test(
-    NAME test_${TEST_NAME}
-    COMMAND $<TARGET_FILE:test_${TEST_NAME}>
-  )
+  gtest_discover_tests(test_${TEST_NAME})
 
   set_target_properties(test_${TEST_NAME}
     PROPERTIES
