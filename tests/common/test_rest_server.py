@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import typing
 from http import HTTPStatus
 from unittest import mock
@@ -44,7 +45,7 @@ def make_url(port: int, endpoint: str):
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
 @pytest.mark.parametrize("use_callback", [True, False])
 @pytest.mark.parametrize("use_context_mgr", [True, False])
-@pytest.mark.parametrize("num_threads", [1, 2, 8])
+@pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
 @pytest.mark.parametrize("status,content_type,content",
                          [(HTTPStatus.OK, MimeTypes.TEXT.value, "OK"),
                           (HTTPStatus.OK, MimeTypes.JSON.value, '{"test": "OK"}'),
