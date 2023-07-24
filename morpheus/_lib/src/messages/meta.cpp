@@ -65,10 +65,6 @@ MutableTableInfo MessageMeta::get_mutable_info() const
 
 std::shared_ptr<MessageMeta> MessageMeta::create_from_python(py::object&& data_table)
 {
-    auto cudf = pybind11::module_::import("cudf");
-
-    data_table = cudf.attr("DataFrame")(data_table);
-
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
 
     return std::shared_ptr<MessageMeta>(new MessageMeta(std::move(data)));
@@ -135,11 +131,30 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
     if (!py::isinstance(data_frame, cudf_df_cls))
     {
         // Convert to cudf if it's a Pandas DF, thrown an error otherwise
-        auto pd_df_cls = py::module_::import("pandas").attr("DataFrame");
+        auto mod_pd = py::module_::import("pandas");
+        auto pd_df_cls = mod_pd.attr("DataFrame");
         if (py::isinstance(data_frame, pd_df_cls))
         {
+            // loop through each column, if it's a timezone column remove the timezone information. `s.dt.tz_localize(None)`
+
+            auto columns = data_frame.attr("columns");
+            auto num_columns = columns.attr("size").cast<int32_t>();
+            auto is_datetime = mod_pd.attr("api").attr("types").attr("is_datetime64_any_dtype");
+
+            for(auto i = 0 ; i < num_columns; i++)
+            {
+                auto column = data_frame[columns[pybind11::int_(i)]];
+
+                if (is_datetime(column).cast<bool>())
+                {
+                    data_frame[columns[pybind11::int_(i)]] = column.attr("dt").attr("tz_localize")(pybind11::none());
+                }
+            }
+
+            auto new_one = pd_df_cls();
+
             LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
-            data_frame = cudf_df_cls(std::move(data_frame));
+            data_frame = cudf_df_cls(std::move(new_one));
         }
         else
         {

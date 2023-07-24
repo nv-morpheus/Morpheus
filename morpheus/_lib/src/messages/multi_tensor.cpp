@@ -361,4 +361,34 @@ pybind11::object MultiTensorMessageInterfaceProxy::get_tensor_property(MultiTens
     }
 }
 
+pybind11::object MultiTensorMessageInterfaceProxy::get_slice(MultiTensorMessage& self, TensorIndex start, TensorIndex stop)
+{
+    if (start < 0)
+    {
+        throw std::out_of_range("Invalid message `start` argument");
+    }
+
+    if (stop < 0)
+    {
+        throw std::out_of_range("Invalid message `stop` argument");
+    }
+
+    // Need to drop the GIL before calling any methods on the C++ object
+    pybind11::gil_scoped_release no_gil;
+    auto message_sliced = self.get_slice(start, stop);
+    pybind11::gil_scoped_acquire gil;
+
+    auto message = pybind11::cast(self);
+
+    return MultiTensorMessageInterfaceProxy::from_message(message.attr("__class__"),
+                                                            pybind11::cast(message_sliced),
+                                                            pybind11::cast(message_sliced->meta),
+                                                            message_sliced->mess_offset,
+                                                            message_sliced->mess_count,
+                                                            pybind11::cast(message_sliced->memory),
+                                                            message_sliced->offset,
+                                                            message_sliced->count,
+                                                            {});
+}
+
 }  // namespace morpheus
