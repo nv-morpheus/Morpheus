@@ -55,6 +55,6 @@ def main(morpheus_root_dir: str):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logging.info("Updating symlinks in models directory")
     main(os.environ["MORPHEUS_ROOT"])
