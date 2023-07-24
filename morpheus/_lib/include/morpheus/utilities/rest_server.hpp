@@ -115,7 +115,7 @@ class RestServer
     std::chrono::seconds m_request_timeout;
     std::size_t m_max_payload_size;
     std::vector<std::thread> m_listener_threads;
-    std::shared_ptr<boost::asio::io_context> m_io_context;
+    boost::asio::io_context m_io_context;
     std::shared_ptr<Listener> m_listener;
     std::shared_ptr<payload_parse_fn_t> m_payload_parse_fn;
     std::atomic<bool> m_is_running;
@@ -129,7 +129,7 @@ class RestServer
 class Listener : public std::enable_shared_from_this<Listener>
 {
   public:
-    Listener(std::shared_ptr<boost::asio::io_context> io_context,
+    Listener(boost::asio::io_context& io_context,
              std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
              const std::string& bind_address,
              unsigned short port,
@@ -148,9 +148,9 @@ class Listener : public std::enable_shared_from_this<Listener>
     void do_accept();
     void on_accept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
 
-    std::shared_ptr<boost::asio::io_context> m_io_context;
+    boost::asio::io_context& m_io_context;
     boost::asio::ip::tcp::endpoint m_tcp_endpoint;
-    boost::asio::ip::tcp::acceptor m_acceptor;
+    std::unique_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 
     std::shared_ptr<morpheus::payload_parse_fn_t> m_payload_parse_fn;
     const std::string& m_url_endpoint;

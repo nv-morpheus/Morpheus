@@ -235,7 +235,7 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
   m_num_threads(num_threads),
   m_request_timeout(request_timeout),
   m_max_payload_size(max_payload_size),
-  m_io_context{nullptr},
+  m_io_context{m_num_threads},
   m_listener{nullptr},
   m_is_running{false}
 {
@@ -259,13 +259,9 @@ void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::
 {
     listener_semaphore.acquire();
 
-    DCHECK(m_io_context == nullptr) << "start_listener expects m_io_context to be null";
-
     // This function will block until the io context is shutdown, and should be called from the first worker thread
     DCHECK(m_listener_threads.size() == 1 && m_listener_threads[0].get_id() == std::this_thread::get_id())
         << "start_listener must be called from the first thread in m_listener_threads";
-
-    m_io_context = std::make_shared<net::io_context>(m_num_threads);
 
     m_listener = std::make_shared<Listener>(m_io_context,
                                             m_payload_parse_fn,
@@ -279,12 +275,13 @@ void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::
 
     for (auto i = 1; i < m_num_threads; ++i)
     {
-        m_listener_threads.emplace_back([this]() { this->m_io_context->run(); });
+        net::io_context& ioc = m_io_context;
+        m_listener_threads.emplace_back([&ioc]() { ioc.run(); });
     }
 
     m_is_running = true;
     started_semaphore.release();
-    m_io_context->run();
+    m_io_context.run();
 }
 
 void RestServer::start()
@@ -312,13 +309,10 @@ void RestServer::start()
 
 void RestServer::stop()
 {
-    if (m_io_context)
+    m_io_context.stop();
+    while (!m_io_context.stopped())
     {
-        m_io_context->stop();
-        while (!m_io_context->stopped())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     for (auto& t : m_listener_threads)
@@ -326,11 +320,7 @@ void RestServer::stop()
         t.join();
     }
 
-    if (m_io_context)
-    {
-        DCHECK(m_io_context->stopped());
-        m_io_context.reset();
-    }
+    m_listener_threads.clear();
 
     if (m_listener)
     {
@@ -448,7 +438,7 @@ void RestServerInterfaceProxy::exit(RestServer& self,
     self.stop();
 }
 
-Listener::Listener(std::shared_ptr<boost::asio::io_context> io_context,
+Listener::Listener(net::io_context& io_context,
                    std::shared_ptr<morpheus::payload_parse_fn_t> payload_parse_fn,
                    const std::string& bind_address,
                    unsigned short port,
@@ -456,9 +446,9 @@ Listener::Listener(std::shared_ptr<boost::asio::io_context> io_context,
                    http::verb method,
                    std::size_t max_payload_size,
                    std::chrono::seconds request_timeout) :
-  m_io_context{std::move(io_context)},
+  m_io_context{io_context},
   m_tcp_endpoint{net::ip::make_address(bind_address), port},
-  m_acceptor{net::make_strand(*m_io_context)},
+  m_acceptor{std::make_unique<tcp::acceptor>(net::make_strand(m_io_context))},
   m_payload_parse_fn{std::move(payload_parse_fn)},
   m_url_endpoint{endpoint},
   m_method{method},
@@ -466,21 +456,24 @@ Listener::Listener(std::shared_ptr<boost::asio::io_context> io_context,
   m_request_timeout{request_timeout},
   m_is_running{false}
 {
-    m_acceptor.open(m_tcp_endpoint.protocol());
-    m_acceptor.set_option(net::socket_base::reuse_address(true));
-    m_acceptor.bind(m_tcp_endpoint);
-    m_acceptor.listen(net::socket_base::max_listen_connections);
+    m_acceptor->open(m_tcp_endpoint.protocol());
+    m_acceptor->set_option(net::socket_base::reuse_address(true));
+    m_acceptor->bind(m_tcp_endpoint);
+    m_acceptor->listen(net::socket_base::max_listen_connections);
 }
 
 void Listener::stop()
 {
-    m_acceptor.close();
+    m_acceptor->close();
     m_is_running = false;
+    m_acceptor.reset();
+    m_payload_parse_fn.reset();
 }
 
 void Listener::run()
 {
-    net::dispatch(m_acceptor.get_executor(), beast::bind_front_handler(&Listener::do_accept, this->shared_from_this()));
+    net::dispatch(m_acceptor->get_executor(),
+                  beast::bind_front_handler(&Listener::do_accept, this->shared_from_this()));
     m_is_running = true;
 }
 
@@ -491,8 +484,8 @@ bool Listener::is_running() const
 
 void Listener::do_accept()
 {
-    m_acceptor.async_accept(net::make_strand(*m_io_context),
-                            beast::bind_front_handler(&Listener::on_accept, this->shared_from_this()));
+    m_acceptor->async_accept(net::make_strand(m_io_context),
+                             beast::bind_front_handler(&Listener::on_accept, this->shared_from_this()));
 }
 
 void Listener::on_accept(beast::error_code ec, tcp::socket socket)
