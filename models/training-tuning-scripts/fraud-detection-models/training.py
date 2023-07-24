@@ -39,6 +39,8 @@ from torchmetrics.functional import accuracy
 from tqdm import trange
 from xgboost import XGBClassifier
 
+from cuml import ForestInference
+
 np.random.seed(1001)
 torch.manual_seed(1001)
 
@@ -182,7 +184,6 @@ def load_model(model_dir, gnn_model=HeteroRGCN):
     Returns:
         List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
     """
-    from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
         graph = pickle.load(f)
@@ -381,7 +382,6 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         device), train_idx, test_idx=inductive_idx,
         val_idx=inductive_idx, g_test=whole_graph, batch_size=batch_size)
 
-    # Set model variables
     # Set model variables
     model = gnn_model(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
