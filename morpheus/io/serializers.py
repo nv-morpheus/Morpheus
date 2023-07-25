@@ -15,6 +15,7 @@
 """DataFrame serializers."""
 
 import typing
+from io import BytesIO
 from io import IOBase
 from io import StringIO
 
@@ -155,7 +156,7 @@ def df_to_json(df: DataFrameType, strip_newlines=False, include_index_col=True) 
     return results
 
 
-def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[str]:
+def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[bytes]:
     """
     Serializes a DataFrame into Parquet and returns the serialized output seperated by lines.
 
@@ -170,15 +171,15 @@ def df_to_parquet(df: DataFrameType, strip_newlines=False) -> typing.List[str]:
     typing.List[str]
         List of strings for each line.
     """
-    str_buf = StringIO()
+    buf = BytesIO()
 
-    df_to_stream_parquet(df=df, stream=str_buf)
+    df_to_stream_parquet(df=df, stream=buf)
 
     # Start from beginning
-    str_buf.seek(0)
+    buf.seek(0)
 
     # Return list of strs to write out
-    results = str_buf.readlines()
+    results = buf.readlines()
     if strip_newlines:
         results = [line.rstrip("\n") for line in results]
 
