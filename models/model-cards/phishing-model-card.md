@@ -104,7 +104,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 

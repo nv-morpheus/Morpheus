@@ -715,7 +715,7 @@ class TestCLI:
         assert isinstance(deserialize, DeserializeStage)
 
         assert isinstance(process_nlp, PreprocessNLPStage)
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
         assert process_nlp._truncation
         assert process_nlp._do_lower_case
         assert not process_nlp._add_special_tokens
@@ -838,7 +838,7 @@ class TestCLI:
         assert dropna._column == 'xyz'
 
         assert isinstance(process_nlp, PreprocessNLPStage)
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
         assert process_nlp._truncation
         assert process_nlp._do_lower_case
         assert not process_nlp._add_special_tokens
@@ -927,7 +927,7 @@ class TestCLI:
         # pylint: disable=unused-variable
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
-        assert process_nlp._vocab_hash_file == vocab_file_name
+        assert process_nlp._vocab_hash_file == os.path.realpath(vocab_file_name)
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
