@@ -188,6 +188,11 @@ void FiberQueueInterfaceProxy::close(morpheus::FiberQueue& self)
     self.close();
 }
 
+bool FiberQueueInterfaceProxy::is_closed(morpheus::FiberQueue& self)
+{
+    return self.is_closed();
+}
+
 morpheus::FiberQueue& FiberQueueInterfaceProxy::enter(morpheus::FiberQueue& self)
 {
     return self;

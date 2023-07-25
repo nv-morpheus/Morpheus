@@ -78,6 +78,7 @@ PYBIND11_MODULE(common, _module)
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close)
+        .def("is_closed", &FiberQueueInterfaceProxy::is_closed)
         .def("__enter__", &FiberQueueInterfaceProxy::enter, py::return_value_policy::reference)
         .def("__exit__", &FiberQueueInterfaceProxy::exit);
 

@@ -114,6 +114,8 @@ struct FiberQueueInterfaceProxy
      */
     static void close(morpheus::FiberQueue& self);
 
+    static bool is_closed(morpheus::FiberQueue& self);
+
     // Context manager methods
     static morpheus::FiberQueue& enter(morpheus::FiberQueue& self);
     static void exit(morpheus::FiberQueue& self,
