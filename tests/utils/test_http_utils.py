@@ -47,32 +47,60 @@ def make_mock_response(mock_request_session: mock.MagicMock,
     return mock_response
 
 
+@pytest.mark.parametrize("use_on_success_fn", [True, False])
 @mock.patch("requests.Session")
 @mock.patch("time.sleep")
-def test_request_with_retry(mock_sleep: mock.MagicMock, mock_request_session: mock.MagicMock):
+def test_request_with_retry(mock_sleep: mock.MagicMock, mock_request_session: mock.MagicMock, use_on_success_fn: bool):
     mock_response = make_mock_response(mock_request_session)
 
-    response = http_utils.request_with_retry({'method': 'GET', 'url': 'http://test.nvidia.com'})
+    if use_on_success_fn:
+        on_success_fn = mock.MagicMock()
+        on_success_fn.return_value = {'on_success_fn': 'mock'}
+    else:
+        on_success_fn = None
 
-    assert response == (mock_request_session, mock_response)
+    request_kwargs = {'method': 'GET', 'url': 'http://test.nvidia.com'}
+    response = http_utils.request_with_retry(request_kwargs, on_success_fn=on_success_fn)
+
+    if use_on_success_fn:
+        assert response == (mock_request_session, {'on_success_fn': 'mock'})
+    else:
+        assert response == (mock_request_session, mock_response)
+
     mock_request_session.request.assert_called_once_with(method='GET', url='http://test.nvidia.com')
     mock_sleep.assert_not_called()
 
+    if use_on_success_fn:
+        on_success_fn.assert_called_once_with(mock_response)
 
+
+@pytest.mark.parametrize("use_on_success_fn", [True, False])
 @pytest.mark.parametrize("respect_retry_after_header", [True, False])
 @mock.patch("requests.Session")
 @mock.patch("time.sleep")
 def test_request_with_retry_max_retries(mock_sleep: mock.MagicMock,
                                         mock_request_session: mock.MagicMock,
-                                        respect_retry_after_header: bool):
+                                        respect_retry_after_header: bool,
+                                        use_on_success_fn: bool):
     mock_response = make_mock_response(mock_request_session, status_code=500)
     mock_response.headers = {"Retry-After": "42"} if respect_retry_after_header else {}
 
+    if use_on_success_fn:
+        on_success_fn = mock.MagicMock()
+    else:
+        on_success_fn = None
+
     with pytest.raises(RuntimeError):
-        http_utils.request_with_retry({'method': 'GET', 'url': 'http://test.nvidia.com'}, max_retries=5, sleep_time=1)
+        http_utils.request_with_retry({
+            'method': 'GET', 'url': 'http://test.nvidia.com'
+        },
+                                      max_retries=5,
+                                      sleep_time=1,
+                                      on_success_fn=on_success_fn)
 
     assert mock_request_session.request.call_count == 5
     assert mock_sleep.call_count == 4
+
     if respect_retry_after_header:
         mock_sleep.assert_has_calls([mock.call(42)] * 4)
     else:
@@ -82,3 +110,6 @@ def test_request_with_retry_max_retries(mock_sleep: mock.MagicMock,
             mock.call(4),
             mock.call(8),
         ])
+
+    if use_on_success_fn:
+        on_success_fn.assert_not_called()
