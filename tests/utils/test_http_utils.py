@@ -33,7 +33,7 @@ def test_prepare_url_error():
         http_utils.prepare_url("")
 
 
-def make_mock_response(mock_request: mock.MagicMock,
+def make_mock_response(mock_request_session: mock.MagicMock,
                        status_code: int = 200,
                        content_type: str = http_utils.MimeTypes.TEXT.value,
                        text: str = "test"):
@@ -42,17 +42,43 @@ def make_mock_response(mock_request: mock.MagicMock,
     mock_response.headers = {"Content-Type": content_type}
     mock_response.text = text
 
-    mock_request.return_value = mock_response
+    mock_request_session.return_value = mock_request_session
+    mock_request_session.request.return_value = mock_response
     return mock_response
 
 
-@mock.patch("requests.sessions.Session.request")
+@mock.patch("requests.Session")
 @mock.patch("time.sleep")
-def test_max_retries(mock_sleep: mock.MagicMock, mock_request: mock.MagicMock):
-    make_mock_response(mock_request, status_code=500)
+def test_request_with_retry(mock_sleep: mock.MagicMock, mock_request_session: mock.MagicMock):
+    mock_response = make_mock_response(mock_request_session)
+
+    response = http_utils.request_with_retry({'method': 'GET', 'url': 'http://test.nvidia.com'})
+
+    assert response == (mock_request_session, mock_response)
+    mock_request_session.request.assert_called_once_with(method='GET', url='http://test.nvidia.com')
+    mock_sleep.assert_not_called()
+
+
+@pytest.mark.parametrize("respect_retry_after_header", [True, False])
+@mock.patch("requests.Session")
+@mock.patch("time.sleep")
+def test_request_with_retry_max_retries(mock_sleep: mock.MagicMock,
+                                        mock_request_session: mock.MagicMock,
+                                        respect_retry_after_header: bool):
+    mock_response = make_mock_response(mock_request_session, status_code=500)
+    mock_response.headers = {"Retry-After": "42"} if respect_retry_after_header else {}
 
     with pytest.raises(RuntimeError):
         http_utils.request_with_retry({'method': 'GET', 'url': 'http://test.nvidia.com'}, max_retries=5, sleep_time=1)
 
-    assert mock_request.call_count == 5
+    assert mock_request_session.request.call_count == 5
     assert mock_sleep.call_count == 4
+    if respect_retry_after_header:
+        mock_sleep.assert_has_calls([mock.call(42)] * 4)
+    else:
+        mock_sleep.assert_has_calls([
+            mock.call(1),
+            mock.call(2),
+            mock.call(4),
+            mock.call(8),
+        ])
