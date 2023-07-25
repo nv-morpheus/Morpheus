@@ -59,6 +59,8 @@ using request_queue_t = boost::fibers::buffered_channel<table_t>;
 
 #pragma GCC visibility push(default)
 
+// TODO: optionally add headers to the dataframe
+
 class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
