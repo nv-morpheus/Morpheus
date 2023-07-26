@@ -35,7 +35,7 @@ fi
 cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
 rapids-logger "Building targets that generate source code"
-cmake --build build --target morpheus_style_checks --parallel ${PARALLEL_LEVEL}
+cmake --build build --parallel ${PARALLEL_LEVEL}
 
 if [[ "${LOCAL_CI}" == "" ]]; then
     rapids-logger "sccache usage for source build:"
