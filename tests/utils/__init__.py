@@ -161,3 +161,10 @@ def import_or_skip(modname: str,
         if fail_missing:
             raise ImportError(e) from e
         raise
+
+
+def make_url(port: int, endpoint: str):
+    if not endpoint.startswith("/"):
+        endpoint = "/" + endpoint
+
+    return f"http://127.0.0.1:{port}{endpoint}"

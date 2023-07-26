@@ -22,6 +22,7 @@ import requests
 
 from morpheus.common import RestServer
 from morpheus.utils.http_utils import MimeTypes
+from utils import make_url
 
 
 def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
@@ -31,13 +32,6 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
     mock_parse_fn = mock.MagicMock()
     mock_parse_fn.return_value = (status.value, content_type, content, on_complete_cb)
     return mock_parse_fn
-
-
-def make_url(port: int, endpoint: str):
-    if not endpoint.startswith("/"):
-        endpoint = "/" + endpoint
-
-    return f"http://127.0.0.1:{port}{endpoint}"
 
 
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
