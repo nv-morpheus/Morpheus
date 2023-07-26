@@ -15,6 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 23.07.02 (25 Jul 2023)
+
+## 🐛 Bug Fixes
+- Move data dir to models ([#1099](https://github.com/nv-morpheus/Morpheus/pull/1099)) [@dagardner-nv](https://github.com/dagardner-nv)
+
 # Morpheus 23.07.01 (21 Jul 2023)
 
 ## 🐛 Bug Fixes
