@@ -64,7 +64,7 @@ class GetNext(threading.Thread):
 @pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
 @pytest.mark.parametrize("lines", [False, True])
 def test_generate_frames(config: Config,
-                         dataset: DatasetManager,
+                         dataset_pandas: DatasetManager,
                          port: int,
                          endpoint: str,
                          method: HTTPMethod,
@@ -78,7 +78,7 @@ def test_generate_frames(config: Config,
     else:
         content_type = MimeTypes.JSON.value
 
-    df = dataset['filter_probs.csv']
+    df = dataset_pandas['filter_probs.csv']
     buf = df_to_stream_json(df, StringIO(), lines=lines)
     buf.seek(0)
 
@@ -120,7 +120,7 @@ def test_generate_frames(config: Config,
     assert response.headers["Content-Type"] == MimeTypes.TEXT.value
     assert response.text == ""
 
-    dataset.assert_compare_df(df, result_msg.df)
+    dataset_pandas.assert_compare_df(df, result_msg.df)
 
 
 @pytest.mark.parametrize("invalid_method", [HTTPMethod.GET, HTTPMethod.PATCH])
