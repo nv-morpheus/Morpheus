@@ -89,7 +89,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/training-data/root-cause-training-data.csv <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/root-cause-training-data.csv <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
@@ -103,7 +103,7 @@ limitations under the License.
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/validation-data/root-cause-validation-data-input.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/root-cause-validation-data-input.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
@@ -216,7 +216,7 @@ limitations under the License.
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository.
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/training-data/root-cause-training-data.csv
+* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/root-cause-training-data.csv
 
 ### Is the model used in an application with physical safety impact?
 * No

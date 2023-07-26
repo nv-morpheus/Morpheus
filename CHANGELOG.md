@@ -14,6 +14,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# Morpheus 23.07.02 (25 Jul 2023)
+
+## 🐛 Bug Fixes
+- Move data dir to models ([#1099](https://github.com/nv-morpheus/Morpheus/pull/1099)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+# Morpheus 23.07.01 (21 Jul 2023)
+
+## 🐛 Bug Fixes
+- Fixing submodules commit ID which got messed up in merge ([#1086](https://github.com/nv-morpheus/Morpheus/pull/1086)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
 # Morpheus 23.07.00 (20 Jul 2023)
 
 ## 🚨 Breaking Changes
