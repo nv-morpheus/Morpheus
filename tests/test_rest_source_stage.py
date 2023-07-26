@@ -49,8 +49,8 @@ class GetNext(threading.Thread):
             print(f"Exception in GetNext thread: {e}")
             self._exception = e
 
-    def join(self):
-        super().join()
+    def join(self, timeout=None):
+        super().join(timeout=timeout)
         if self._exception:
             raise self._exception
 
