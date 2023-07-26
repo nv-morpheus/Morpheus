@@ -56,6 +56,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         The endpoint to listen for requests on.
     method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
         HTTP method to listen for. Valid values are "POST" and "PUT".
+    accept_status: `http.HTTPStatus`, default 201, optional
+        The HTTP status code to return when a request is accepted. Valid values must be in the 2xx range.
     sleep_time : float, default 0.1
         Amount of time in seconds to sleep if the request queue is empty.
     queue_timeout : int, default 5
@@ -80,6 +82,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  port: int = 8080,
                  endpoint: str = "/message",
                  method: HTTPMethod = HTTPMethod.POST,
+                 accept_status: HTTPStatus = HTTPStatus.CREATED,
                  sleep_time: float = 0.1,
                  queue_timeout: int = 5,
                  max_queue_size: int = None,
@@ -92,6 +95,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._port = port
         self._endpoint = endpoint
         self._method = method
+        self._accept_status = accept_status
         self._sleep_time = sleep_time
         self._queue_timeout = queue_timeout
         self._max_queue_size = max_queue_size or config.edge_buffer_size
@@ -100,11 +104,15 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
 
-        # This is only used when C++ mode is disabled
+        # These are only used when C++ mode is disabled
         self._queue = None
+        self._processing = False
 
         if method not in SUPPORTED_METHODS:
             raise ValueError(f"Unsupported method: {method}")
+
+        if accept_status.value < 200 or accept_status.value > 299:
+            raise ValueError(f"Invalid accept_status: {accept_status}")
 
     @property
     def name(self) -> str:
@@ -126,7 +134,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
         try:
             self._queue.put(df, block=True, timeout=self._queue_timeout)
-            return (HTTPStatus.CREATED.value, MimeTypes.TEXT.value, "", None)
+            return (self._accept_status.value, MimeTypes.TEXT.value, "", None)
         except (queue.Full, Closed) as e:
             err_msg = "REST payload queue is "
             if isinstance(e, queue.Full):
@@ -154,8 +162,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                          max_payload_size=self._max_payload_size_bytes,
                          request_timeout=self._request_timeout_secs) as rest_server):
 
-            processing = True
-            while (processing):
+            self._processing = True
+            while self._processing:
                 # Read as many messages as we can from the queue if it's empty check to see if we should be shutting
                 # down. It is important that any messages we received that are in the queue are processed before we
                 # shutdown since we already returned an OK response to the client.
@@ -164,13 +172,13 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                     df = self._queue.get()
                 except queue.Empty:
                     if (not rest_server.is_running()):
-                        processing = False
+                        self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
                         time.sleep(self._sleep_time)
                 except Closed:
                     logger.error("Queue closed unexpectedly, shutting down")
-                    processing = False
+                    self._processing = False
 
                 if df is not None:
                     yield MessageMeta(df)
@@ -184,6 +192,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            port=self._port,
                                            endpoint=self._endpoint,
                                            method=self._method.value,
+                                           accept_status=self._accept_status.value,
                                            sleep_time=self._sleep_time,
                                            queue_timeout=self._queue_timeout,
                                            max_queue_size=self._max_queue_size,

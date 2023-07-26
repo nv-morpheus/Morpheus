@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/rest_source.hpp"
 
+#include <boost/beast/http/status.hpp>        // for status
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <glog/logging.h>                     // for CHECK & LOG
@@ -29,13 +30,17 @@
 #include <tuple>       // for make_tuple
 #include <utility>     // for std::move
 
+namespace http = boost::beast::http;
+
 namespace morpheus {
+
 // Component public implementations
 // ************ RestSourceStage ************* //
 RestSourceStage::RestSourceStage(std::string bind_address,
                                  unsigned short port,
                                  std::string endpoint,
                                  std::string method,
+                                 unsigned accept_status,
                                  float sleep_time,
                                  long queue_timeout,
                                  std::size_t max_queue_size,
@@ -48,7 +53,9 @@ RestSourceStage::RestSourceStage(std::string bind_address,
   m_queue_timeout{queue_timeout},
   m_queue{max_queue_size}
 {
-    payload_parse_fn_t parser = [this, lines](const std::string& payload) {
+    CHECK(http::int_to_status(accept_status) != http::status::unknown) << "Invalid HTTP status code: " << accept_status;
+
+    payload_parse_fn_t parser = [this, accept_status, lines](const std::string& payload) {
         std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
         try
         {
@@ -59,7 +66,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
         {
             std::string error_msg = "Error occurred converting REST payload to Dataframe";
             LOG(ERROR) << error_msg << ": " << e.what();
-            return std::make_tuple(400, "text/plain", error_msg, nullptr);
+            return std::make_tuple(400u, "text/plain", error_msg, nullptr);
         }
 
         try
@@ -69,7 +76,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
 
             if (queue_status == boost::fibers::channel_op_status::success)
             {
-                return std::make_tuple(201, "text/plain", std::string(), nullptr);
+                return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
             }
 
             std::string error_msg = "REST payload queue is ";
@@ -91,12 +98,12 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             }
             }
 
-            return std::make_tuple(503, "text/plain", std::move(error_msg), nullptr);
+            return std::make_tuple(503u, "text/plain", std::move(error_msg), nullptr);
         } catch (const std::exception& e)
         {
             std::string error_msg = "Error occurred while pushing payload to queue";
             LOG(ERROR) << error_msg << ": " << e.what();
-            return std::make_tuple(500, "text/plain", error_msg, nullptr);
+            return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
     };
     m_server = std::make_unique<RestServer>(std::move(parser),
@@ -194,6 +201,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     unsigned short port,
     std::string endpoint,
     std::string method,
+    unsigned accept_status,
     float sleep_time,
     long queue_timeout,
     std::size_t max_queue_size,
@@ -209,6 +217,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
         port,
         std::move(endpoint),
         std::move(method),
+        accept_status,
         sleep_time,
         queue_timeout,
         max_queue_size,

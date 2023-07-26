@@ -215,6 +215,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("port")               = 8080,
              py::arg("endpoint")           = "/message",
              py::arg("method")             = "POST",
+             py::arg("accept_status")      = 201u,
              py::arg("sleep_time")         = 0.1f,
              py::arg("queue_timeout")      = 5,
              py::arg("max_queue_size")     = 1024,
