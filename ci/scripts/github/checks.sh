@@ -25,9 +25,6 @@ fetch_base_branch
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
 
-rapids-logger "Runing Python style checks"
-${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
-
 git submodule update --init --recursive
 
 rapids-logger "Configuring cmake for Morpheus"
@@ -47,6 +44,9 @@ fi
 
 rapids-logger "Checking versions"
 ${MORPHEUS_ROOT}/ci/scripts/version_checks.sh
+
+rapids-logger "Runing Python style checks"
+${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 rapids-logger "Runing C++ style checks"
 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh

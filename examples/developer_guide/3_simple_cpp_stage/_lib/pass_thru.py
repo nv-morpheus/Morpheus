@@ -18,7 +18,6 @@ import typing
 import mrc
 from mrc.core import operators as ops
 
-from _lib import morpheus_example as morpheus_example_cpp
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -43,6 +42,8 @@ class PassThruStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
+            from . import morpheus_example as morpheus_example_cpp
+
             # pylint: disable=c-extension-no-member
             node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
         else:

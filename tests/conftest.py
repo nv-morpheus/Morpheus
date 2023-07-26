@@ -547,7 +547,7 @@ def _camouflage_is_running():
     logger = logging.getLogger(f"morpheus.{__name__}")
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    startup_timeout = 5
+    startup_timeout = 10
     shutdown_timeout = 5
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
