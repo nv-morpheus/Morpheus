@@ -79,7 +79,8 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
                     unsigned short num_server_threads    = 1,
                     std::size_t max_payload_size         = DefaultMaxPayloadSize,
                     std::chrono::seconds request_timeout = std::chrono::seconds(30),
-                    bool lines                           = false);
+                    bool lines                           = false,
+                    std::size_t stop_after               = 0);
     ~RestSourceStage() override;
 
     void close();
@@ -92,6 +93,8 @@ class RestSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     std::chrono::duration<long> m_queue_timeout;
     std::unique_ptr<RestServer> m_server;
     request_queue_t m_queue;
+    std::size_t m_stop_after;
+    std::size_t m_records_emitted;
 };
 
 /****** RestSourceStageInterfaceProxy***********************/
@@ -113,7 +116,8 @@ struct RestSourceStageInterfaceProxy
                                                                        unsigned short num_server_threads,
                                                                        std::size_t max_payload_size,
                                                                        int64_t request_timeout,
-                                                                       bool lines);
+                                                                       bool lines,
+                                                                       std::size_t stop_after);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

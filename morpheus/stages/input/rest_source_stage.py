@@ -89,7 +89,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                  num_server_threads: int = None,
                  max_payload_size: int = 10,
                  request_timeout_secs: int = 30,
-                 lines: bool = False):
+                 lines: bool = False,
+                 stop_after: int = 0):
         super().__init__(config)
         self._bind_address = bind_address
         self._port = port
@@ -103,10 +104,12 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         self._max_payload_size_bytes = max_payload_size * 1024 * 1024
         self._request_timeout_secs = request_timeout_secs
         self._lines = lines
+        self._stop_after = stop_after
 
         # These are only used when C++ mode is disabled
         self._queue = None
         self._processing = False
+        self._records_emitted = 0
 
         if method not in SUPPORTED_METHODS:
             raise ValueError(f"Unsupported method: {method}")
@@ -181,7 +184,12 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                     self._processing = False
 
                 if df is not None:
+                    num_records = len(df)
                     yield MessageMeta(df)
+                    self._records_emitted += num_records
+
+                    if self._stop_after > 0 and self._records_emitted >= self._stop_after:
+                        self._processing = False
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
@@ -199,7 +207,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                                            num_server_threads=self._num_server_threads,
                                            max_payload_size=self._max_payload_size_bytes,
                                            request_timeout=self._request_timeout_secs,
-                                           lines=self._lines)
+                                           lines=self._lines,
+                                           stop_after=self._stop_after)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 

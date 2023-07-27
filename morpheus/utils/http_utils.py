@@ -95,6 +95,7 @@ def request_with_retry(
             try_count += 1
 
             if try_count >= max_retries:
+                logger.error("Failed after %s retries: %s", max_retries, e)
                 raise e
 
             if retry_after_header is not None:

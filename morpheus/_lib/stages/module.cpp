@@ -222,7 +222,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("num_server_threads") = 1,
              py::arg("max_payload_size")   = DefaultMaxPayloadSize,
              py::arg("request_timeout")    = 30,
-             py::arg("lines")              = false);
+             py::arg("lines")              = false,
+             py::arg("stop_after")         = 0);
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,

@@ -34,6 +34,9 @@ namespace http = boost::beast::http;
 
 namespace morpheus {
 
+class SourceStageStopAfter : public std::exception
+{};
+
 // Component public implementations
 // ************ RestSourceStage ************* //
 RestSourceStage::RestSourceStage(std::string bind_address,
@@ -47,11 +50,14 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                  unsigned short num_server_threads,
                                  std::size_t max_payload_size,
                                  std::chrono::seconds request_timeout,
-                                 bool lines) :
+                                 bool lines,
+                                 std::size_t stop_after) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
   m_queue_timeout{queue_timeout},
-  m_queue{max_queue_size}
+  m_queue{max_queue_size},
+  m_stop_after{stop_after},
+  m_records_emitted{0}
 {
     CHECK(http::int_to_status(accept_status) != http::status::unknown) << "Invalid HTTP status code: " << accept_status;
 
@@ -123,6 +129,9 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
         {
             m_server->start();
             this->source_generator(subscriber);
+        } catch (const SourceStageStopAfter& e)
+        {
+            DLOG(INFO) << "Completed after emitting " << m_records_emitted << " records";
         } catch (const std::exception& e)
         {
             LOG(ERROR) << "Encountered error while listening for incoming REST requests: " << e.what() << std::endl;
@@ -148,11 +157,18 @@ void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source
             DCHECK_NOTNULL(table_ptr);
             try
             {
-                auto message = MessageMeta::create_from_cpp(std::move(*table_ptr), 0);
+                auto message     = MessageMeta::create_from_cpp(std::move(*table_ptr), 0);
+                auto num_records = message->count();
                 subscriber.on_next(std::move(message));
+                m_records_emitted += num_records;
             } catch (const std::exception& e)
             {
                 LOG(ERROR) << "Error occurred converting REST payload to Dataframe: " << e.what();
+            }
+
+            if (m_stop_after > 0 && m_records_emitted >= m_stop_after)
+            {
+                throw SourceStageStopAfter();
             }
         }
         else if (queue_status == boost::fibers::channel_op_status::empty)
@@ -208,7 +224,8 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     unsigned short num_server_threads,
     std::size_t max_payload_size,
     int64_t request_timeout,
-    bool lines)
+    bool lines,
+    std::size_t stop_after)
 {
     return builder.construct_object<RestSourceStage>(
 
@@ -224,6 +241,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
         num_server_threads,
         max_payload_size,
         std::chrono::seconds(request_timeout),
-        lines);
+        lines,
+        stop_after);
 }
 }  // namespace morpheus
