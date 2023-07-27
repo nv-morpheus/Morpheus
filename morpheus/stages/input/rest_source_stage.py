@@ -74,6 +74,8 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     lines : bool, default False
         If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
         expect each request to be a JSON object per line.
+    stop_after : int, default 0
+        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     """
 
     def __init__(self,
