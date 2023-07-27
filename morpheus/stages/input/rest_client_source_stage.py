@@ -75,11 +75,11 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         Maximum number of times to retry the request fails, receives a redirect or returns a status in the
         `retry_status_codes` list. Setting this to 0 disables this feature, and setting this to a negative number will
         raise a `ValueError`.
-    stop_after: int, default = 0
-        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     lines : bool, default False
         If False, the response payloads are expected to be a JSON array of objects. If True, the payloads are expected
         to contain a JSON objects separated by end-of-line characters.
+    stop_after : int, default 0
+        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     **request_kwargs : dict
         Additional arguments to pass to the `requests.request` function.
     """
@@ -96,8 +96,8 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
                  request_timeout_secs: int = 30,
                  accept_status_codes: typing.List[HTTPStatus] = (HTTPStatus.OK, ),
                  max_retries: int = 10,
-                 stop_after: int = 0,
                  lines: bool = False,
+                 stop_after: int = 0,
                  **request_kwargs):
         super().__init__(config)
         self._url = http_utils.prepare_url(url)
@@ -158,7 +158,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         # Running counter of the number of messages emitted by this source
-        num_messages = 0
+        num_records_emitted = 0
 
         # The http_session variable is an in/out argument for the requests_retry_wrapper.request function and will be
         # initialized on the first call
@@ -176,7 +176,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
         request_args.update(self._requst_kwargs)
 
-        while (self._stop_after == 0 or num_messages < self._stop_after):
+        while (self._stop_after == 0 or num_records_emitted < self._stop_after):
             if self._query_params_fn is not None:
                 request_args['params'] = self._query_params_fn()
 
@@ -191,8 +191,9 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
 
             # Even if we didn't receive any errors, the server may not have had any data for us.
             if df is not None and len(df):
-                num_messages += len(df)
+                num_rows = len(df)
                 yield MessageMeta(df)
+                num_records_emitted += num_rows
 
             time.sleep(self._sleep_time)
 
