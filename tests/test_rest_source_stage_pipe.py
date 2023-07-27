@@ -20,7 +20,6 @@ from http import HTTPStatus
 from io import StringIO
 
 import pytest
-import requests
 
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
