@@ -530,23 +530,8 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-@pytest.fixture(scope="session")
-def _camouflage_is_running():
-    """
-    Responsible for actually starting and shutting down Camouflage. This has the scope of 'session' so we only
-    start/stop Camouflage once per testing session. Should not be used directly. Instead use `launch_mock_triton`
-
-    Yields
-    ------
-    bool
-        Whether or not we are using Camouflage or an actual Triton server
-    """
-
-    from utils import TEST_DIRS
-
+def _camouflage_is_running(root_dir: str, host: str = "localhost", port: int = 8000):
     logger = logging.getLogger(f"morpheus.{__name__}")
-
-    root_dir = TEST_DIRS.mock_triton_servers_dir
     startup_timeout = 5
     shutdown_timeout = 5
 
@@ -555,7 +540,7 @@ def _camouflage_is_running():
 
     # First, check to see if camoflage is already open
     if (launch_camouflage):
-        is_running = wait_for_camouflage(timeout=0.0)
+        is_running = wait_for_camouflage(host=host, port=port, timeout=0.0)
 
         if (is_running):
             logger.warning("Camoflage already running. Skipping startup")
@@ -576,7 +561,7 @@ def _camouflage_is_running():
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-            if not wait_for_camouflage(timeout=startup_timeout):
+            if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
 
                 if popen.poll() is not None:
                     camouflage_log = os.path.join(root_dir, 'camouflage.log')
@@ -586,7 +571,7 @@ def _camouflage_is_running():
                 raise RuntimeError("Failed to launch camouflage server")
 
             # Must have been started by this point
-            yield True
+            return True
 
         except Exception:
             # Log the error and rethrow
@@ -610,14 +595,51 @@ def _camouflage_is_running():
 
     else:
 
-        yield is_running
+        return is_running
+
+
+@pytest.fixture(scope="session")
+def _triton_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_triton_server`
+    dir. This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should
+    not be used directly. Instead use `launch_mock_triton`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Triton server
+    """
+
+    from utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_triton_servers_dir
+    yield _camouflage_is_running(root_dir=root_dir, port=8000)
+
+
+@pytest.fixture(scope="session")
+def _rest_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_rest_server` dir.
+    This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should not
+    be used directly. Instead use `launch_mock_rest`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Rest server
+    """
+
+    from utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_rest_server
+    yield _camouflage_is_running(root_dir=root_dir, port=8080)
 
 
 @pytest.fixture(scope="function")
-def launch_mock_triton(_camouflage_is_running):
+def launch_mock_triton(_triton_camouflage_is_running):
     """
-    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/) with a package
-    rooted at `root_dir` and configured with `config`.
+    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/).
 
     This function will wait for up to `timeout` seconds for camoflauge to startup
 
@@ -626,11 +648,28 @@ def launch_mock_triton(_camouflage_is_running):
     """
 
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
-    if _camouflage_is_running:
+    if _triton_camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
         resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
         assert resp.ok, "Failed to reset Camouflage server state"
+
+    yield
+
+
+@pytest.fixture(scope="function")
+def launch_mock_rest(_rest_camouflage_is_running):
+    """
+    Launches a mock rest server using camouflage (https://testinggospels.github.io/camouflage/).
+
+    This function will wait for up to `timeout` seconds for camoflauge to startup
+
+    This function is a no-op if the `MORPHEUS_NO_LAUNCH_CAMOUFLAGE` environment variable is defined, which can
+    be useful during test development to run camouflage by hand.
+    """
+
+    # Check if we are using Camouflage or not.
+    assert _rest_camouflage_is_running
 
     yield
 
