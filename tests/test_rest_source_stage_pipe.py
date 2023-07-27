@@ -50,6 +50,10 @@ async def make_request(pipe: LinearPipeline,
     if not pipe._is_running:
         raise RuntimeError("RestSourceStage did not start")
 
+    # Not strictly needed, but we don't have a good way of knowing when the server is ready to accept requests
+    # Adding this sleep here just lowers the likely-hood of seeing a logged warning on the first failed request.
+    await asyncio.sleep(0.1)
+
     (_, response) = request_with_retry(
         {
             'method': method.value,
