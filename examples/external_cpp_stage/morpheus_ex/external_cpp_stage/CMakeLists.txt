@@ -11,14 +11,15 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 # =============================================================================
-list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
+list(APPEND CMAKE_MESSAGE_CONTEXT "external_cpp_stage")
 
-# Add the binary dir before including examples so they can find the parent project
-list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
-
-add_subdirectory(developer_guide/3_simple_cpp_stage)
-add_subdirectory(developer_guide/4_rabbitmq_cpp_stage)
-
-add_subdirectory(external_cpp_stage)
+morpheus_add_pybind11_module(pass_thru_cpp
+  SOURCE_FILES
+    "src/pass_thru.cpp"
+  INCLUDE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+  LINK_TARGETS
+    morpheus
+)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
