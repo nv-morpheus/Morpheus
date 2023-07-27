@@ -135,8 +135,8 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
 
 void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source_type_t> subscriber)
 {
-    // only if the server is running when the queue is empty, allowing all queued messages to be processed prior to
-    // shutting down
+    // only check if the server is running when the queue is empty, allowing all queued messages to be processed prior
+    // to shutting down
     bool server_running = true;
     bool queue_closed   = false;
     while (subscriber.is_subscribed() && server_running && !queue_closed)
