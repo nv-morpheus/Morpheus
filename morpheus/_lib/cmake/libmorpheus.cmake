@@ -82,6 +82,7 @@ target_link_libraries(morpheus
   PRIVATE
     matx::matx
   PUBLIC
+    $<TARGET_NAME_IF_EXISTS:conda_env>
     cudf::cudf
     CUDA::nvToolsExt
     mrc::pymrc
@@ -128,6 +129,8 @@ target_sources(morpheus
   PUBLIC
     FILE_SET public_headers
     TYPE HEADERS
+    BASE_DIRS
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
       ${morpheus_public_headers}
 )
@@ -167,14 +170,18 @@ endif()
 # ##################################################################################################
 # - install targets --------------------------------------------------------------------------------
 
+# Get the library directory in a cross-platform way
 rapids_cmake_install_lib_dir(lib_dir)
+
 include(CPack)
 include(GNUInstallDirs)
 
 install(
   TARGETS morpheus
-  DESTINATION ${lib_dir}
-  EXPORT ${PROJECT_NAME}-exports
+  EXPORT
+    ${PROJECT_NAME}-exports
+  LIBRARY
+    DESTINATION ${lib_dir}
   FILE_SET
     public_headers
   COMPONENT Core
