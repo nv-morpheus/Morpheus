@@ -165,7 +165,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
         http_session = None
 
         request_args = {
-            'method': self._method,
+            'method': self._method.value,
             'url': self._url,
             'headers': self._headers,
             'timeout': self._request_timeout_secs,

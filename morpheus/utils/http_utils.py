@@ -65,7 +65,7 @@ def request_with_retry(
     """
 
     try_count = 0
-    while try_count < max_retries:
+    while try_count <= max_retries:
         if requests_session is None:
             requests_session = requests.Session()
 

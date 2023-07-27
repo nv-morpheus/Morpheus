@@ -530,10 +530,11 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-def _camouflage_is_running(root_dir: str, host: str = "localhost", port: int = 8000):
+def _start_camouflage(root_dir: str,
+                      host: str = "localhost",
+                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
     startup_timeout = 5
-    shutdown_timeout = 5
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
@@ -571,31 +572,36 @@ def _camouflage_is_running(root_dir: str, host: str = "localhost", port: int = 8
                 raise RuntimeError("Failed to launch camouflage server")
 
             # Must have been started by this point
-            return True
+            return (True, popen)
 
         except Exception:
             # Log the error and rethrow
             logger.exception("Error launching camouflage")
-            raise
-        finally:
             if popen is not None:
-                logger.info("Killing camouflage with pid %s", popen.pid)
-
-                elapsed_time = 0.0
-                sleep_time = 0.1
-                stopped = False
-
-                # It takes a little while to shutdown
-                while not stopped and elapsed_time < shutdown_timeout:
-                    popen.kill()
-                    stopped = (popen.poll() is not None)
-                    if not stopped:
-                        time.sleep(sleep_time)
-                        elapsed_time += sleep_time
+                _stop_camouflage(popen)
+            raise
 
     else:
 
-        return is_running
+        return (is_running, None)
+
+
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
+    logger.info("Killing camouflage with pid %s", popen.pid)
+
+    elapsed_time = 0.0
+    sleep_time = 0.1
+    stopped = False
+
+    # It takes a little while to shutdown
+    while not stopped and elapsed_time < shutdown_timeout:
+        popen.kill()
+        stopped = (popen.poll() is not None)
+        if not stopped:
+            time.sleep(sleep_time)
+            elapsed_time += sleep_time
 
 
 @pytest.fixture(scope="session")
@@ -614,7 +620,10 @@ def _triton_camouflage_is_running():
     from utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    yield _camouflage_is_running(root_dir=root_dir, port=8000)
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
 
 @pytest.fixture(scope="session")
@@ -633,7 +642,11 @@ def _rest_camouflage_is_running():
     from utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_rest_server
-    yield _camouflage_is_running(root_dir=root_dir, port=8080)
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
+
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
 
 @pytest.fixture(scope="function")
@@ -658,7 +671,7 @@ def launch_mock_triton(_triton_camouflage_is_running):
 
 
 @pytest.fixture(scope="function")
-def launch_mock_rest(_rest_camouflage_is_running):
+def mock_rest_server(_rest_camouflage_is_running):
     """
     Launches a mock rest server using camouflage (https://testinggospels.github.io/camouflage/).
 
@@ -666,12 +679,14 @@ def launch_mock_rest(_rest_camouflage_is_running):
 
     This function is a no-op if the `MORPHEUS_NO_LAUNCH_CAMOUFLAGE` environment variable is defined, which can
     be useful during test development to run camouflage by hand.
+
+    yields url to the mock rest server
     """
 
     # Check if we are using Camouflage or not.
     assert _rest_camouflage_is_running
 
-    yield
+    yield "http://localhost:8080"
 
 
 @pytest.fixture(scope="session", autouse=True)

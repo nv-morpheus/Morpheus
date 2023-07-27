@@ -120,7 +120,7 @@ def test_rest_source_stage_pipe(config: Config,
                         num_server_threads=num_threads,
                         lines=lines,
                         stop_after=num_records))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, df.to_pandas()))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, df))
 
     response_queue = queue.SimpleQueue()
 
