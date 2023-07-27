@@ -16,7 +16,7 @@
 loglevel: info
 cpus: 1
 monitoring:
-  port: 5555
+  port: 5556
 ssl:
   cert: "./certs/server.cert"
   key: "./certs/server.key"
