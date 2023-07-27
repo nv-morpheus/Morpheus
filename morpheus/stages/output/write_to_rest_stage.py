@@ -108,10 +108,16 @@ class WriteToRestStage(SinglePortStage):
     lines : bool, default False
         If False, dataframes will be serialized to a JSON array of objects. If True, then the dataframes will be
         serialized to a string JSON objects separated by end-of-line characters.
-    df_to_request_kwargs_fn: typing.Callable[[DataFrameType], dict], optional
+    df_to_request_kwargs_fn: typing.Callable[[str, str, DataFrameType], dict], optional
         Optional function to perform additional customizations of the request. This function will be called for each
-        DataFrame (according to `max_rows_per_payload`) before the request is sent. The function should return a dict
-        containing any keyword argument expected by the `requests.Session.request` function:
+        DataFrame (according to `max_rows_per_payload`) before the request is sent.
+        The function will be called with the following arguments:
+            * `base_url` : str
+            * `endpoint` : str
+            * `df` : DataFrameType
+
+        The function should return a dict containing any keyword argument expected by the `requests.Session.request`
+        function:
         https://requests.readthedocs.io/en/v2.9.1/api/#requests.Session.request
 
         Specifically, this function is responsible for serializing the DataFrame to either a POST/PUT body or a query
@@ -142,7 +148,7 @@ class WriteToRestStage(SinglePortStage):
                  max_retries: int = 10,
                  max_rows_per_payload: int = 10000,
                  lines: bool = False,
-                 df_to_request_kwargs_fn: typing.Callable[[DataFrameType], dict] = None,
+                 df_to_request_kwargs_fn: typing.Optional[typing.Callable[[str, str, DataFrameType], dict]] = None,
                  **request_kwargs):
         super().__init__(c)
         self._base_url = http_utils.prepare_url(base_url)
@@ -243,7 +249,7 @@ class WriteToRestStage(SinglePortStage):
             df_slice = df.iloc[slice_start:slice_end]
 
             if self._df_to_request_kwargs_fn is not None:
-                yield self._df_to_request_kwargs_fn(df_slice)
+                yield self._df_to_request_kwargs_fn(self._base_url, self._endpoint, df_slice)
             else:
                 chunk = {'data': self._df_to_payload(df_slice)}
                 if not self._static_endpoint:
