@@ -139,6 +139,7 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
             return;
         }
         subscriber.on_completed();
+        this->close();
     };
 }
 
