@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 import nvtabular as nvt
 import pandas as pd
 import pytest
@@ -22,25 +24,27 @@ from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
+from morpheus.utils.column_info import _resolve_json_output_columns
 from morpheus.utils.nvt.schema_converters import JSONFlattenInfo
 from morpheus.utils.nvt.schema_converters import _bfs_traversal_with_op_map
 from morpheus.utils.nvt.schema_converters import _build_nx_dependency_graph
 from morpheus.utils.nvt.schema_converters import _coalesce_leaf_nodes
 from morpheus.utils.nvt.schema_converters import _get_ci_column_selector
-from morpheus.utils.nvt.schema_converters import _resolve_json_output_columns
-from morpheus.utils.nvt.schema_converters import dataframe_input_schema_to_nvt_workflow
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.nvt.schema_converters import sync_df_as_pandas
+from morpheus.utils.schema_transforms import process_dataframe
 
 source_column_info = [
     BoolColumn(name="result",
                dtype="bool",
                input_name="result",
                true_values=["success", "SUCCESS"],
-               false_values=["denied", "DENIED", "FRAUD"]),
+               false_values=["denied", "Denied", "DENIED", "FRAUD"]),
     ColumnInfo(name="reason", dtype=str),
     DateTimeColumn(name="timestamp", dtype="datetime64[us]", input_name="timestamp"),
     StringCatColumn(
@@ -61,7 +65,6 @@ def create_test_dataframe():
             '{"browser": "Firefox", "os": "Linux", "location": '
             '{"city": "San Francisco", "state": "CA", "country": "USA"}}'
         ],
-        "user.name": ["Jane Smith"],
         "application": ['{"name": "AnotherApp"}'],
         "auth_device": ['{"name": "Device2"}'],
         "user": ['{"name": "Jane Smith"}'],
@@ -127,7 +130,7 @@ def test_json_flatten_info_init_missing_output_col_names():
 def test_get_ci_column_selector_rename_column():
     col_info = RenameColumn(input_name="original_name", name="new_name", dtype="str")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_bool_column():
@@ -137,19 +140,19 @@ def test_get_ci_column_selector_bool_column():
                           true_values=["True"],
                           false_values=["False"])
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_datetime_column():
     col_info = DateTimeColumn(input_name="original_name", name="new_name", dtype="datetime64[ns]")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_string_join_column():
     col_info = StringJoinColumn(input_name="original_name", name="new_name", dtype="str", sep=",")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name"]
 
 
 def test_get_ci_column_selector_increment_column():
@@ -158,7 +161,17 @@ def test_get_ci_column_selector_increment_column():
                                dtype="datetime64[ns]",
                                groupby_column="groupby_col")
     result = _get_ci_column_selector(col_info)
-    assert result == "original_name"
+    assert result == ["original_name", "groupby_col"]
+
+
+def test_get_ci_column_selector_distinct_increment_column():
+    col_info = DistinctIncrementColumn(input_name="original_name",
+                                       name="new_name",
+                                       dtype="datetime64[ns]",
+                                       groupby_column="groupby_col",
+                                       timestamp_column="timestamp_col")
+    result = _get_ci_column_selector(col_info)
+    assert result == ["original_name", "groupby_col", "timestamp_col"]
 
 
 def test_get_ci_column_selector_string_cat_column():
@@ -194,7 +207,7 @@ def test_resolve_json_output_columns():
                                                             sep=", "),
                                         ])
 
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     expected_output_cols = [
         ("json_col.a", "str"),
     ]
@@ -203,14 +216,14 @@ def test_resolve_json_output_columns():
 
 def test_resolve_json_output_columns_empty_input_schema():
     input_schema = DataFrameInputSchema()
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert not output_cols
 
 
 def test_resolve_json_output_columns_no_json_columns():
     input_schema = DataFrameInputSchema(
         column_info=[ColumnInfo(name="column1", dtype="int"), ColumnInfo(name="column2", dtype="str")])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert not output_cols
 
 
@@ -221,7 +234,7 @@ def test_resolve_json_output_columns_with_json_columns():
                                             ColumnInfo(name="json_col.b", dtype="int"),
                                             ColumnInfo(name="column3", dtype="float")
                                         ])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 
@@ -233,7 +246,7 @@ def test_resolve_json_output_columns_with_complex_schema():
                                             ColumnInfo(name="column3", dtype="float"),
                                             RenameColumn(name="new_column", dtype="str", input_name="column4")
                                         ])
-    output_cols = _resolve_json_output_columns(input_schema)
+    output_cols = _resolve_json_output_columns(input_schema.json_columns, input_schema.input_columns)
     assert output_cols == [("json_col.a", "str"), ("json_col.b", "int")]
 
 
@@ -265,7 +278,7 @@ def test_coalesce_leaf_nodes():
 
     # Call bfs_traversal_with_op_map() and coalesce_leaf_nodes()
     _, node_op_map = _bfs_traversal_with_op_map(graph, column_info_map, root_nodes)
-    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, graph, [])
+    coalesced_workflow = _coalesce_leaf_nodes(node_op_map, column_info_objects)
 
     # Check if the coalesced workflow is not None
     assert coalesced_workflow is not None
@@ -296,22 +309,22 @@ def test_coalesce_leaf_nodes():
 def test_input_schema_conversion_empty_schema():
     empty_schema = DataFrameInputSchema()
 
-    with pytest.raises(ValueError, match="Input schema is empty"):
-        # pylint: disable=unused-variable
-        workflow = dataframe_input_schema_to_nvt_workflow(empty_schema)  # noqa
+    # pylint: disable=unused-variable
+    empty_schema = create_and_attach_nvt_workflow(empty_schema)  # noqa
 
 
 def test_input_schema_conversion_additional_column():
-    additional_column = RenameColumn(name="appname", dtype="str", input_name="application.name")
-    modified_source_column_info = source_column_info + [additional_column]
+    additional_columns = [
+        RenameColumn(name="appname", dtype="str", input_name="application.name"),
+    ]
+
+    modified_source_column_info = source_column_info + additional_columns
 
     modified_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                            column_info=modified_source_column_info)
     test_df = create_test_dataframe()
 
-    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
-    dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = process_dataframe(test_df, modified_schema)
 
     expected_df = pd.DataFrame({
         "result": [False],
@@ -347,9 +360,10 @@ def test_input_schema_conversion_interdependent_columns():
     test_df["user"] = ['{"firstname": "Jane", "lastname": "Smith", "name": "Jane Smith"}']
     test_df["application"] = ['{"name": "AnotherApp", "version": "1.0"}']
 
-    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
         "result": [False],
@@ -368,11 +382,12 @@ def test_input_schema_conversion_interdependent_columns():
 
 
 def test_input_schema_conversion_nested_operations():
+    app_column = ColumnInfo(name="application.name", dtype="str")
     additional_column = StringCatColumn(name="appname",
                                         dtype="str",
                                         input_columns=["application.name", "appsuffix"],
                                         sep="")
-    modified_source_column_info = source_column_info + [additional_column]
+    modified_source_column_info = source_column_info + [additional_column, app_column]
 
     modified_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                            column_info=modified_source_column_info)
@@ -383,9 +398,10 @@ def test_input_schema_conversion_nested_operations():
     # Add the 'appsuffix' column to the schema
     modified_schema.column_info.append(ColumnInfo(name="appsuffix", dtype="str"))
 
-    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
         "result": [False],
@@ -396,7 +412,9 @@ def test_input_schema_conversion_nested_operations():
         "username": ["Jane Smith"],
         "accessdevicebrowser": ["Firefox"],
         "accessdeviceos": ["Linux"],
-        "appname": ["AnotherApp_v1"]
+        "appname": ["AnotherApp_v1"],
+        "application.name": ["AnotherApp"],
+        "appsuffix": ["_v1"]
     })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
@@ -417,11 +435,15 @@ def test_input_schema_conversion_root_schema_parent_schema_mix_operations():
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
 
-    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
-    expected_df = pd.DataFrame({"rootcat": ["lhs-rhs"]})
+    expected_df = pd.DataFrame({
+        "rootcat": ["lhs-rhs"],
+        "rhs_top_level": ["rhs"],
+        "lhs_top_level": ["lhs"],
+    })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
 
@@ -437,17 +459,23 @@ def test_input_schema_conversion_preserve_column():
 
     modified_schema = DataFrameInputSchema(json_columns=[],
                                            column_info=modified_source_column_info,
-                                           preserve_columns=["lhs_top_level|rhs_top_level"])
+                                           preserve_columns=["to_preserve"])
 
     test_df = create_test_dataframe()
     test_df["lhs_top_level"] = ["lhs"]
     test_df["rhs_top_level_pre"] = ["rhs"]
+    test_df["to_preserve"] = ["preserve me"]
 
-    workflow = dataframe_input_schema_to_nvt_workflow(modified_schema)
+    modified_schema = create_and_attach_nvt_workflow(modified_schema)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
-    expected_df = pd.DataFrame({"lhs_top_level": ["lhs"], "rhs_top_level": ["rhs"], "rootcat": ["lhs-rhs"]})
+    # See issue #1074. This should include the `to_preserve` column, but it doesn't.
+    expected_df = pd.DataFrame({
+        "rootcat": ["lhs-rhs"],
+        "rhs_top_level": ["rhs"],
+        "lhs_top_level": ["lhs"],  # "to_preserve": ["preserve me"],
+    })
 
     pd.testing.assert_frame_equal(output_df, expected_df)
 
@@ -463,7 +491,6 @@ def test_input_schema_conversion():
         "access_device": [
             '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}'
         ],
-        "user.name": ["John Doe"],
         "application": ['{"name": "TestApp"}'],
         "auth_device": ['{"name": "Device1"}'],
         "user": ['{"name": "John Doe"}'],
@@ -473,11 +500,12 @@ def test_input_schema_conversion():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
+    modified_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
+    test_df = modified_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({
@@ -506,7 +534,6 @@ def test_input_schema_conversion_with_trivial_filter():
         "access_device": [
             '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}'
         ],
-        "user.name": ["John Doe"],
         "application": ['{"name": "TestApp"}'],
         "auth_device": ['{"name": "Device1"}'],
         "user": ['{"name": "John Doe"}'],
@@ -515,12 +542,7 @@ def test_input_schema_conversion_with_trivial_filter():
         "reason": ["Authorized"]
     })
 
-    # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
-
-    # Apply the returned nvt.Workflow to the test dataframe
-    dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = process_dataframe(test_df, example_schema)
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({
@@ -553,7 +575,6 @@ def test_input_schema_conversion_with_functional_filter():
             '{"browser": "Firefox", "os": "Linux", "location": '
             '{"city": "San Francisco", "state": "CA", "country": "USA"}}'
         ],
-        "user.name": ["John Doe", "Jane Smith"],
         "application": ['{"name": "TestApp"}', '{"name": "AnotherApp"}'],
         "auth_device": ['{"name": "Device1"}', '{"name": "Device2"}'],
         "user": ['{"name": "John Doe"}', '{"name": "Jane Smith"}'],
@@ -563,11 +584,12 @@ def test_input_schema_conversion_with_functional_filter():
     })
 
     # Call `input_schema_to_nvt_workflow` with the created instance
-    workflow = dataframe_input_schema_to_nvt_workflow(example_schema)
+    example_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
+    test_df = example_schema.prep_dataframe(test_df)
     dataset = nvt.Dataset(test_df)
-    output_df = workflow.transform(dataset).to_ddf().compute().to_pandas()
+    output_df = example_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
     expected_df = pd.DataFrame({
@@ -580,6 +602,54 @@ def test_input_schema_conversion_with_functional_filter():
         "accessdevicebrowser": ["Chrome"],
         "accessdeviceos": ["Windows"],
     })
+
+    pd.set_option('display.max_columns', None)
+    pd.testing.assert_frame_equal(output_df, expected_df)
+
+
+def test_input_schema_conversion_with_filter_and_index():
+    # Create a DataFrameInputSchema instance with the example schema provided
+    example_schema = DataFrameInputSchema(
+        json_columns=["access_device"],
+        column_info=[
+            BoolColumn(name="result",
+                       dtype="bool",
+                       input_name="result",
+                       true_values=["success", "SUCCESS"],
+                       false_values=["denied", "Denied", "DENIED", "FRAUD"]),
+            RenameColumn(name="accessdeviceos", dtype="str", input_name="access_device.os"),
+        ],
+        # pylint: disable=singleton-comparison
+        row_filter=lambda df: df[df["result"] == True])  # noqa E712
+
+    # Create a test dataframe with data according to the schema
+    test_df = pd.DataFrame({
+        "access_device": [
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}',
+            '{"browser": "Chrome", "os": "Windows", "location": {"city": "New York", "state": "NY", "country": "USA"}}',
+            '{"browser": "Firefox", "os": "Linux", "location": '
+            '{"city": "San Francisco", "state": "CA", "country": "USA"}}',
+        ],
+        "result": ["SUCCESS", "FAILURE", "FAILURE", "SUCCESS"],
+    })
+
+    # Offset the index
+    test_df.index += 5
+
+    # Apply the returned nvt.Workflow to the test dataframe
+    output_df = process_dataframe(test_df, example_schema)
+
+    # Check if the output dataframe has the expected schema and values
+    expected_df = test_df.copy()
+
+    # Filter the rows
+    expected_df = expected_df[expected_df["result"] == "SUCCESS"]
+
+    expected_df["result"] = expected_df["result"] == "SUCCESS"
+    expected_df["accessdeviceos"] = expected_df["access_device"].apply(lambda x: json.loads(x)["os"])
+    expected_df = expected_df[["result", "accessdeviceos"]]
 
     pd.set_option('display.max_columns', None)
     pd.testing.assert_frame_equal(output_df, expected_df)
