@@ -225,7 +225,7 @@ class WriteToRestStage(SinglePortStage):
         str
             URL.
         """
-        endpoint = self._endpoint.format(df.iloc[0].to_dict())
+        endpoint = self._endpoint.format(**df.iloc[0].to_dict())
         return f"{self._base_url}{endpoint}"
 
     def _df_to_payload(self, df: DataFrameType) -> StringIO:

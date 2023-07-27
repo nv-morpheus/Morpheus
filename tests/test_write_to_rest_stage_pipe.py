@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from functools import partial
 from io import StringIO
 from unittest import mock
@@ -42,11 +43,11 @@ def _df_to_url(lines: bool, base_url: str, endpoint: str, df: DataFrameType) -> 
 
 
 @pytest.mark.slow
-@pytest.mark.use_cudf
+@pytest.mark.use_pandas
 @pytest.mark.parametrize("method", [HTTPMethod.POST, HTTPMethod.PUT])
 @pytest.mark.parametrize("lines", [False, True])
-@pytest.mark.parametrize("max_rows_per_payload", [10000, 10])
-@pytest.mark.parametrize("use_df_to_url", [False, True])
+@pytest.mark.parametrize("max_rows_per_payload", [10000, 5])
+@pytest.mark.parametrize("use_df_to_url,static_endpoint", [(False, True), (False, False), (True, True)])
 @mock.patch("requests.Session")
 @mock.patch("time.sleep")
 def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
@@ -56,7 +57,8 @@ def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
                                   method: HTTPMethod,
                                   lines: bool,
                                   max_rows_per_payload: int,
-                                  use_df_to_url: bool):
+                                  use_df_to_url: bool,
+                                  static_endpoint: bool):
     make_mock_response(mock_request_session)
     if lines:
         expected_content_type = MimeTypes.TEXT.value
@@ -68,18 +70,24 @@ def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
     else:
         df_to_request_kwargs_fn = None
 
-    df = dataset['filter_probs.csv']
+    if static_endpoint:
+        endpoint = "/data"
+    else:
+        endpoint = "/data/{correlationId}?callerIpAddress={callerIpAddress}"
+
+    df = dataset.get_df('azure_ad_logs.json', no_cache=True, parser_kwargs={'lines': False})
 
     if max_rows_per_payload > len(df):
         num_expected_requests = 1
     else:
         num_expected_requests = len(df) // max_rows_per_payload
 
-    expected_payloads = []
+    expected_payloads: typing.List[typing.Tuple[StringIO, DataFrameType]] = []
     rows_serialized = 0
     while rows_serialized < len(df):
-        expected_payload = _df_to_buffer(df=df[rows_serialized:rows_serialized + max_rows_per_payload], lines=lines)
-        expected_payloads.append(expected_payload)
+        sliced_df = df[rows_serialized:rows_serialized + max_rows_per_payload]
+        expected_payload = _df_to_buffer(df=sliced_df, lines=lines)
+        expected_payloads.append((expected_payload, sliced_df))
         rows_serialized += max_rows_per_payload
 
     assert len(expected_payloads) == num_expected_requests
@@ -89,7 +97,8 @@ def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
     pipe.add_stage(
         WriteToRestStage(config,
                          base_url="http://fake.nvidia.com",
-                         endpoint="/data",
+                         endpoint=endpoint,
+                         static_endpoint=static_endpoint,
                          method=method,
                          request_timeout_secs=42,
                          query_params={'unit': 'test'},
@@ -104,11 +113,19 @@ def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
     for i, call in enumerate(mocked_calls):
         # The `data` argument is a StringIO buffer which prevents us from testing directly for equality
         called_buffer = call.kwargs['data']
-        assert called_buffer.read() == expected_payloads[i].read()
+        (expected_payload, sliced_df) = expected_payloads[i]
+        assert called_buffer.read() == expected_payload.read()
         called_buffer.seek(0)
 
-        expected_url = 'http://fake.nvidia.com/data'
-        if df_to_request_kwargs_fn is not None:
+        if static_endpoint:
+            expected_endpoint = endpoint
+        else:
+            expected_endpoint = endpoint.format(correlationId=sliced_df.iloc[0]['correlationId'],
+                                                callerIpAddress=sliced_df.iloc[0]['callerIpAddress'])
+
+        expected_url = f'http://fake.nvidia.com{expected_endpoint}'
+
+        if use_df_to_url:
             expected_url = f"{expected_url}/{i*max_rows_per_payload}"
 
         assert call == mock.call(method=method.value,
