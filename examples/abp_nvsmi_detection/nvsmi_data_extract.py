@@ -1,0 +1,58 @@
+import argparse
+import time
+
+import pandas as pd
+from pynvml.smi import NVSMI_QUERY_GPU
+from pynvml.smi import nvidia_smi
+
+
+def main():
+    query_opts = NVSMI_QUERY_GPU.copy()
+
+    # Remove the timestamp and supported clocks from the query
+    del query_opts["timestamp"]
+    del query_opts["supported-clocks"]
+
+    nvsmi = nvidia_smi.getInstance()
+
+    with open(args.output_file, "w", encoding="UTF-8") as f:
+
+        while (True):
+
+            device_query = nvsmi.DeviceQuery(list(query_opts.values()))
+
+            output_dicts = []
+
+            # Flatten the GPUs to allow for a new row per GPU
+            for gpu in device_query["gpu"]:
+                single_gpu = device_query.copy()
+
+                # overwrite the gpu list with a single gpu
+                single_gpu["gpu"] = gpu
+
+                output_dicts.append(single_gpu)
+
+            df = pd.json_normalize(output_dicts, record_prefix="nvidia_smi_log")
+
+            # Rename the id column to match the XML converted output from NetQ
+            df.rename(columns={"gpu.id": "gpu.@id", "count": "attached_gpus"}, inplace=True)
+
+            df.rename(columns=lambda x: "nvidia_smi_log" + "." + x, inplace=True)
+
+            # Add the current timestamp
+            df.insert(0, "timestamp", time.time())
+
+            df.to_json(f, orient="records", lines=True)
+
+            f.flush()
+
+            time.sleep(args.interval_ms / 1000.0)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--interval-ms', default=1000, help='interval in ms between writes to output file')
+    parser.add_argument("--output-file", default='nvsmi.jsonlines', help='output file to save dataset')
+    args = parser.parse_args()
+
+    main()

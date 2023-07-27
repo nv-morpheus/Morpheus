@@ -48,6 +48,18 @@ Each line in the output represents the GPU metrics at a single point in time. As
 
 In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
+#### Generating your own dataset
+
+This example can be easily applied to datasets generated from your own NVIDIA GPU devices. If NetQ is not deployed in your environment, the `nvsmi_data_extract.py` script is provided which uses [pyNVML](https://pypi.org/project/nvidia-ml-py/) and [pandas](https://pandas.pydata.org/) to generate data similar to NetQ. `pyNVML` contains the Python bindings for NVIDIA Management Library (NVML), the same library used by `nvidia-smi`.
+
+`pyNVML` and `pandas` come already installed on the Morpheus release and development Docker images. Otherwise, they will need to be installed before running the script.
+
+Run the following to start generating your dataset:
+```
+python nvsmi_data_extract.py
+```
+This will write a new entry to an output file named `nvsmi.jsonlines` once per second until you press Ctrl+C to exit.
+
 ## Pipeline Architecture
 
 The pipeline we will be using in this example is a simple feed-forward linear pipeline where the data from each stage flows on to the next. Simple linear pipelines with no custom stages, like this example, can be configured via the Morpheus CLI or using the Python library. In this example we will be using the Morpheus CLI.
