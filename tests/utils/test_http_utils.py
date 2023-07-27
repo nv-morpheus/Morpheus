@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 
 from morpheus.utils import http_utils
+from utils import make_mock_response
 
 
 @pytest.mark.parametrize("url,expected",
@@ -31,20 +32,6 @@ def test_prepare_url(url: str, expected: str):
 def test_prepare_url_error():
     with pytest.raises(ValueError):
         http_utils.prepare_url("")
-
-
-def make_mock_response(mock_request_session: mock.MagicMock,
-                       status_code: int = 200,
-                       content_type: str = http_utils.MimeTypes.TEXT.value,
-                       text: str = "test"):
-    mock_response = mock.MagicMock()
-    mock_response.status_code = status_code
-    mock_response.headers = {"Content-Type": content_type}
-    mock_response.text = text
-
-    mock_request_session.return_value = mock_request_session
-    mock_request_session.request.return_value = mock_response
-    return mock_response
 
 
 @pytest.mark.parametrize("use_on_success_fn", [True, False])

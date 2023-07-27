@@ -256,7 +256,7 @@ class WriteToRestStage(SinglePortStage):
     def _process_message(self, msg: MessageMeta) -> MessageMeta:
 
         request_args = {
-            'method': self._method,
+            'method': self._method.value,
             'headers': self._headers,
             'timeout': self._request_timeout_secs,
             'params': self._query_params

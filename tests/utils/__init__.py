@@ -20,6 +20,7 @@ import os
 import time
 import types
 import typing
+from unittest import mock
 
 import pytest
 
@@ -163,8 +164,25 @@ def import_or_skip(modname: str,
         raise
 
 
-def make_url(port: int, endpoint: str):
+def make_url(port: int, endpoint: str) -> str:
     if not endpoint.startswith("/"):
         endpoint = "/" + endpoint
 
     return f"http://127.0.0.1:{port}{endpoint}"
+
+
+def make_mock_response(mock_request_session: mock.MagicMock,
+                       status_code: int = 200,
+                       content_type: str = "text/plain",
+                       text: str = "test") -> mock.MagicMock:
+    """
+    Given a mocked `requests.Session` object, returns a mocked `requests.Response` object with the given status code
+    """
+    mock_response = mock.MagicMock()
+    mock_response.status_code = status_code
+    mock_response.headers = {"Content-Type": content_type}
+    mock_response.text = text
+
+    mock_request_session.return_value = mock_request_session
+    mock_request_session.request.return_value = mock_response
+    return mock_response
