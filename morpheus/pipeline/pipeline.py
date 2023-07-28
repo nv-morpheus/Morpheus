@@ -84,7 +84,6 @@ class Pipeline():
         self._is_built = False
         self._is_build_complete = False
         self._is_started = False
-        self._is_running = False
 
         self._mrc_executor: mrc.Executor = None
         self._mrc_pipeline: mrc.Pipeline = None
@@ -303,7 +302,6 @@ class Pipeline():
         logger.info("====Starting Pipeline====")
 
         self._mrc_executor.start()
-        self._is_running = True
 
         logger.info("====Pipeline Started====")
 

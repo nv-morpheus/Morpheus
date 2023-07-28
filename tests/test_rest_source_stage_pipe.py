@@ -41,11 +41,11 @@ async def make_request(pipe: LinearPipeline,
                        payload: typing.Any,
                        content_type: str):
     attempt = 0
-    while not pipe._is_running and attempt < 2:
+    while not pipe._is_started and attempt < 2:
         await asyncio.sleep(1)
         attempt += 1
 
-    if not pipe._is_running:
+    if not pipe._is_started:
         raise RuntimeError("RestSourceStage did not start")
 
     # Not strictly needed, but we don't have a good way of knowing when the server is ready to accept requests
