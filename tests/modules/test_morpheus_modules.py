@@ -628,200 +628,200 @@ def test_rest_loader_module_get_with_params():
     assert packets_received == 1
 
 
-# def test_rest_loader_module_post_with_body():
-#     global packets_received
-#     packets_received = 0
+def test_rest_loader_module_post_with_body():
+    global packets_received
+    packets_received = 0
 
-#     df1 = cudf.DataFrame(
-#         {
-#             "col1": [1, 2],
-#             "col2": ["POST_body_123", ""],
-#         },
-#         columns=["col1", "col2"],
-#     )
-#     df2 = cudf.DataFrame(
-#         {
-#             "col1": [1, 2],
-#             "col2": ["POST_body_456", ""],
-#         },
-#         columns=["col1", "col2"],
-#     )
-#     df = cudf.concat([df1, df2])
+    df1 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["POST_body_123", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df2 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["POST_body_456", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df = cudf.concat([df1, df2])
 
-#     def init_wrapper(builder: mrc.Builder):
-#         def gen_data():
-#             global packet_count
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            global packet_count
 
-#             config = {
-#                 "tasks": [
-#                     {
-#                         "type": "load",
-#                         "properties": {
-#                             "loader_id": "rest",
-#                             "strategy": "aggregate",
-#                             "queries": [
-#                                 {
-#                                     "method": "POST",
-#                                     "endpoint": "0.0.0.0/path",
-#                                     "params": [
-#                                         {"something1": "something2"},
-#                                     ],
-#                                     "content_type": "text/plain",
-#                                     "body": "123",
-#                                 },
-#                                 {
-#                                     "method": "POST",
-#                                     "endpoint": "0.0.0.0/path",
-#                                     "params": [
-#                                         {"something1": "something2"},
-#                                     ],
-#                                     "content_type": "text/plain",
-#                                     "body": "456",
-#                                 },
-#                             ],
-#                         },
-#                     }
-#                 ]
-#             }
-#             msg = messages.ControlMessage(config)
-#             yield msg
+            config = {
+                "tasks": [
+                    {
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "rest",
+                            "strategy": "aggregate",
+                            "queries": [
+                                {
+                                    "method": "POST",
+                                    "endpoint": "0.0.0.0/path",
+                                    "params": [
+                                        {"something1": "something2"},
+                                    ],
+                                    "content_type": "text/plain",
+                                    "body": "123",
+                                },
+                                {
+                                    "method": "POST",
+                                    "endpoint": "0.0.0.0/path",
+                                    "params": [
+                                        {"something1": "something2"},
+                                    ],
+                                    "content_type": "text/plain",
+                                    "body": "456",
+                                },
+                            ],
+                        },
+                    }
+                ]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
 
-#         def _on_next(control_msg):
-#             global packets_received
-#             packets_received += 1
-#             assert control_msg.payload().df.equals(df)
+        def _on_next(control_msg):
+            global packets_received
+            packets_received += 1
+            assert control_msg.payload().df.equals(df)
 
-#         registry = mrc.ModuleRegistry
+        registry = mrc.ModuleRegistry
 
-#         fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
-#         assert fn_constructor is not None
+        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+        assert fn_constructor is not None
 
-#         source = builder.make_source("source", gen_data)
+        source = builder.make_source("source", gen_data)
 
-#         config = {
-#             "loaders": [
-#                 {
-#                     "id": "rest",
-#                     "properties": {"prop1": "something", "prop2": "something else"},
-#                 }
-#             ]
-#         }
-#         # This will unpack the config and forward its payload (MessageMeta) to the sink
-#         data_loader = builder.load_module(
-#             "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-#         )
+        config = {
+            "loaders": [
+                {
+                    "id": "rest",
+                    "properties": {"prop1": "something", "prop2": "something else"},
+                }
+            ]
+        }
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module(
+            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
+        )
 
-#         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
-#         builder.make_edge(source, data_loader.input_port("input"))
-#         builder.make_edge(data_loader.output_port("output"), sink)
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
 
-#     pipeline = mrc.Pipeline()
-#     pipeline.make_segment("main", init_wrapper)
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
 
-#     options = mrc.Options()
-#     options.topology.user_cpuset = "0-1"
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
 
-#     executor = mrc.Executor(options)
-#     executor.register_pipeline(pipeline)
-#     executor.start()
-#     executor.join()
-#     assert packets_received == 1
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+    assert packets_received == 1
 
 
-# def test_rest_loader_module_x_headers():
-#     global packets_received
-#     packets_received = 0
+def test_rest_loader_module_x_headers():
+    global packets_received
+    packets_received = 0
 
-#     df1 = cudf.DataFrame(
-#         {
-#             "col1": [1, 2],
-#             "col2": ["x_header_1", ""],
-#         },
-#         columns=["col1", "col2"],
-#     )
-#     df2 = cudf.DataFrame(
-#         {
-#             "col1": [1, 2],
-#             "col2": ["x_header_2", ""],
-#         },
-#         columns=["col1", "col2"],
-#     )
-#     df = cudf.concat([df1, df2])
+    df1 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["x_header_1", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df2 = cudf.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": ["x_header_2", ""],
+        },
+        columns=["col1", "col2"],
+    )
+    df = cudf.concat([df1, df2])
 
-#     def init_wrapper(builder: mrc.Builder):
-#         def gen_data():
-#             global packet_count
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            global packet_count
 
-#             config = {
-#                 "tasks": [
-#                     {
-#                         "type": "load",
-#                         "properties": {
-#                             "loader_id": "rest",
-#                             "strategy": "aggregate",
-#                             "queries": [
-#                                 {
-#                                     "endpoint": "0.0.0.0/path",
-#                                     "x-headers": {
-#                                         "X-Header1": "x_header1",
-#                                     },
-#                                 },
-#                                 {
-#                                     "endpoint": "0.0.0.0/path",
-#                                     "x-headers": {
-#                                         "X-Header2": "x_header2",
-#                                     },
-#                                 },
-#                             ],
-#                         },
-#                     }
-#                 ]
-#             }
-#             msg = messages.ControlMessage(config)
-#             yield msg
+            config = {
+                "tasks": [
+                    {
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "rest",
+                            "strategy": "aggregate",
+                            "queries": [
+                                {
+                                    "endpoint": "0.0.0.0/path",
+                                    "x-headers": {
+                                        "X-Header1": "x_header1",
+                                    },
+                                },
+                                {
+                                    "endpoint": "0.0.0.0/path",
+                                    "x-headers": {
+                                        "X-Header2": "x_header2",
+                                    },
+                                },
+                            ],
+                        },
+                    }
+                ]
+            }
+            msg = messages.ControlMessage(config)
+            yield msg
 
-#         def _on_next(control_msg):
-#             global packets_received
-#             packets_received += 1
-#             assert control_msg.payload().df.equals(df)
+        def _on_next(control_msg):
+            global packets_received
+            packets_received += 1
+            assert control_msg.payload().df.equals(df)
 
-#         registry = mrc.ModuleRegistry
+        registry = mrc.ModuleRegistry
 
-#         fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
-#         assert fn_constructor is not None
+        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+        assert fn_constructor is not None
 
-#         source = builder.make_source("source", gen_data)
+        source = builder.make_source("source", gen_data)
 
-#         config = {
-#             "loaders": [
-#                 {
-#                     "id": "rest",
-#                     "properties": {"prop1": "something", "prop2": "something else"},
-#                 }
-#             ]
-#         }
-#         # This will unpack the config and forward its payload (MessageMeta) to the sink
-#         data_loader = builder.load_module(
-#             "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-#         )
+        config = {
+            "loaders": [
+                {
+                    "id": "rest",
+                    "properties": {"prop1": "something", "prop2": "something else"},
+                }
+            ]
+        }
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module(
+            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
+        )
 
-#         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
-#         builder.make_edge(source, data_loader.input_port("input"))
-#         builder.make_edge(data_loader.output_port("output"), sink)
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
 
-#     pipeline = mrc.Pipeline()
-#     pipeline.make_segment("main", init_wrapper)
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
 
-#     options = mrc.Options()
-#     options.topology.user_cpuset = "0-1"
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
 
-#     executor = mrc.Executor(options)
-#     executor.register_pipeline(pipeline)
-#     executor.start()
-#     executor.join()
-#     assert packets_received == 1
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+    assert packets_received == 1
 
 
 if __name__ == "__main__":
@@ -829,11 +829,11 @@ if __name__ == "__main__":
     test_is_version_compatible()
     test_get_module()
     test_payload_loader_module()
-    # test_file_loader_module()
+    test_file_loader_module()
+    test_filter_cm_failed()
 
     # Flask service needed for testing RESTDataloader
     test_rest_loader_module_get_without_params()
     test_rest_loader_module_get_with_params()
-    # test_rest_loader_module_post_with_body()
-    # test_rest_loader_module_x_headers()
-    test_filter_cm_failed()
+    test_rest_loader_module_post_with_body()
+    test_rest_loader_module_x_headers()

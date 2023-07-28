@@ -269,8 +269,6 @@ void create_dataframe_from_response(py::object& dataframe,
                                     const std::string& strategy)
 {
     std::string df_json_str = beast::buffers_to_string(response.body().data());
-    // Strip non-printable characters
-    boost::algorithm::trim_if(df_json_str, [](char c) -> bool { return !std::isprint(c); });
 
     // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
     // The workaround here is to add square brackets if the original data is not represented as an array.
