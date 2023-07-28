@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import os
 import queue
 import typing
 from http import HTTPStatus
