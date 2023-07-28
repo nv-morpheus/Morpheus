@@ -48,8 +48,8 @@ class WriteToRestStage(SinglePortStage):
         Server base url, should include the intended protocol (e.g. http:// or https://) and port if necessary.
         This may or may not include a base path from which `endpoint` will be appended.
         examples:
-            "https://nvcr.io/"
-            "http://localhost:8080/base/path"
+        * "https://nvcr.io/"
+        * "http://localhost:8080/base/path"
     endpoint : str
         Endpoint to which messages will be sent. This will be appended to `base_url` and may include a query string.
         The primary difference between `endpoint` and `base_url` is that `endpoint` may contain named format strings,
@@ -69,17 +69,17 @@ class WriteToRestStage(SinglePortStage):
         customizations of the request.
 
         examples:
-            "api/v1/endpoint"
-            "api/v1/endpoint?time={timestamp}&id={id}"
-            "/{model_name}/{user}?time={timestamp}"
+        * "api/v1/endpoint"
+        * "api/v1/endpoint?time={timestamp}&id={id}"
+        * "/{model_name}/{user}?time={timestamp}"
     static_endpoint : bool, default True
         Setting this to `True` indicates that the value of `endpoint` does not change between requests, and can be an
         optimization.
     headers : dict, optional
         Optional set of headers to include in the request.
         If `None` the header value will be inferred based on `lines`.
-            * `{"Content-Type": "text/plain"}` when `lines` is `True`
-            * `{"Content-Type": "application/json"}` when `lines` is `False`
+        * `{"Content-Type": "text/plain"}` when `lines` is `True`
+        * `{"Content-Type": "application/json"}` when `lines` is `False`
     query_params : dict, optional
         Optional set of query parameters to include in the request.
     method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
@@ -112,9 +112,9 @@ class WriteToRestStage(SinglePortStage):
         Optional function to perform additional customizations of the request. This function will be called for each
         DataFrame (according to `max_rows_per_payload`) before the request is sent.
         The function will be called with the following arguments:
-            * `base_url` : str
-            * `endpoint` : str
-            * `df` : DataFrameType
+        * `base_url` : str
+        * `endpoint` : str
+        * `df` : DataFrameType
 
         The function should return a dict containing any keyword argument expected by the `requests.Session.request`
         function:
