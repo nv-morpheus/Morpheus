@@ -21,17 +21,41 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
-download_artifact "wheel.tar.bz"
-download_artifact "cpp_tests.tar.bz"
-download_artifact "morhpeus_libs.tar.bz"
+rapids-logger "Check versions"
+python3 --version
+x86_64-conda-linux-gnu-cc --version
+x86_64-conda-linux-gnu-c++ --version
+cmake --version
+ninja --version
+sccache --version
 
-tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
-tar xf "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
-tar xf "${WORKSPACE_TMP}/cpp_tests.tar.bz"
+git submodule update --init --recursive
 
-# Install the built Morpheus python package
-cd ${MORPHEUS_ROOT}
-pip install ${MORPHEUS_ROOT}/build/dist/*.whl
+CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
+if [[ "${LOCAL_CI}" == "" ]]; then
+    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
+fi
+
+rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
+cmake -B build -G Ninja ${CMAKE_FLAGS} .
+
+rapids-logger "Building Morpheus"
+cmake --build build --parallel ${PARALLEL_LEVEL}
+
+if [[ "${LOCAL_CI}" == "" ]]; then
+    rapids-logger "sccache usage for morpheus build:"
+    sccache --show-stats
+fi
+
+# Check for git diffs which would mean the build is out of sync with the repo
+if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]]; then
+    rapids-logger "ERROR: git diff found, build is out of sync with repo"
+    git status
+    exit 1
+fi
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
 
