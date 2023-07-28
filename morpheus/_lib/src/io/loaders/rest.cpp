@@ -35,6 +35,7 @@
 #include <pymrc/utilities/object_cache.hpp>
 
 #include <cctype>
+#include <exception>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
@@ -46,12 +47,11 @@ namespace http  = beast::http;
 namespace net   = boost::asio;
 using tcp       = net::ip::tcp;
 
-#define PORT "8081"
-
 namespace {
 void extract_query_fields(nlohmann::json& query,
                           std::string& method,
                           std::string& endpoint,
+                          std::string& port,
                           std::string& http_version,
                           std::string& content_type,
                           std::string& body,
@@ -67,6 +67,8 @@ void extract_query_fields(nlohmann::json& query,
         throw std::runtime_error("'REST loader' receives query with empty endpoint");
     }
 
+    // TODO: change default value to 80 before merge
+    port         = query.value("port", "8081");
     http_version = query.value("http_version", "1.1");
     content_type = query.value("content_type", "");
     body         = query.value("body", "");
@@ -137,6 +139,7 @@ void construct_request(http::request<http::string_body>& request,
 }
 
 void get_response_with_retry(http::request<http::string_body>& request,
+                             const std::string& port,
                              http::response<http::dynamic_body>& response,
                              int max_retry,
                              int retry_interval_milliseconds)
@@ -144,10 +147,9 @@ void get_response_with_retry(http::request<http::string_body>& request,
     net::io_context ioc;
     tcp::resolver resolver(ioc);
     beast::tcp_stream stream(ioc);
-    auto const endpoint_results = resolver.resolve(std::string(request[http::field::host]), PORT);
-
+    auto const endpoint_results = resolver.resolve(std::string(request[http::field::host]), port);
     while (max_retry > 0)
-    {
+    {   
         stream.connect(endpoint_results);
         http::write(stream, request);
         beast::flat_buffer buffer;
@@ -158,15 +160,18 @@ void get_response_with_retry(http::request<http::string_body>& request,
         {
             throw beast::system_error{ec};
         }
-        int status = response.result_int();
+        unsigned status = response.result_int();
         // Retry only if status is 503 Service Unavailable / 504 Gateway Timeout
-        if (status != 503 && status != 504)
+        if (status != (unsigned)http::status::service_unavailable && status != (unsigned)http::status::gateway_timeout)
         {
             break;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(retry_interval_milliseconds));
         retry_interval_milliseconds *= 2;
         max_retry--;
+    }
+    if (max_retry == 0) {
+        throw std::runtime_error("'REST loader' reaches max_retry count");
     }
 }
 
@@ -239,6 +244,7 @@ void parse_endpoint_to_url(
 void get_response_from_endpoint(http::response<http::dynamic_body>& response,
                                 std::string& method,
                                 std::string& endpoint,
+                                std::string& port,
                                 std::string& http_version,
                                 std::string& content_type,
                                 std::string& body,
@@ -251,9 +257,10 @@ void get_response_from_endpoint(http::response<http::dynamic_body>& response,
     std::string target;
     std::string query;
     http::request<http::string_body> request;
+
     parse_endpoint_to_url(endpoint, params, host, target, query);
     construct_request(request, method, host, target, query, http_version, content_type, body, x_headers);
-    get_response_with_retry(request, response, max_retry, retry_interval_milliseconds);
+    get_response_with_retry(request, port, response, max_retry, retry_interval_milliseconds);
 }
 
 void create_dataframe_from_response(py::object& dataframe,
@@ -268,7 +275,7 @@ void create_dataframe_from_response(py::object& dataframe,
     // When calling cudf.read_json() with engine='cudf', it expects an array object as input.
     // The workaround here is to add square brackets if the original data is not represented as an array.
     // Submitted an issue to cudf: https://github.com/rapidsai/cudf/issues/13527.
-    if (!(df_json_str.front() == '[' && df_json_str.back() == ']'))
+    if (!df_json_str.empty() && !(df_json_str.front() == '[' && df_json_str.back() == ']'))
     {
         df_json_str = "[" + df_json_str + "]";
     }
@@ -300,18 +307,20 @@ void create_dataframe_from_query(py::object& dataframe,
 {
     std::string method;
     std::string endpoint;
+    std::string port;
     std::string http_version;
     std::string content_type;
     std::string body;
     nlohmann::json params;
     nlohmann::json x_headers;
-    extract_query_fields(query, method, endpoint, http_version, content_type, body, params, x_headers);
+    extract_query_fields(query, method, endpoint, port, http_version, content_type, body, params, x_headers);
     if (params.empty())
     {
         http::response<http::dynamic_body> response;
         get_response_from_endpoint(response,
                                    method,
                                    endpoint,
+                                   port,
                                    http_version,
                                    content_type,
                                    body,
@@ -330,6 +339,7 @@ void create_dataframe_from_query(py::object& dataframe,
             get_response_from_endpoint(response,
                                        method,
                                        endpoint,
+                                       port,
                                        http_version,
                                        content_type,
                                        body,
@@ -417,7 +427,8 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             message->payload(MessageMeta::create_from_python(std::move(dataframe)));
         }  // release GIL
     } catch (std::runtime_error& e)
-    {
+    {   
+        std::cout << "catch << " << e.what() << std::endl;
         process_failures(e.what(), message, processes_failures_as_errors);
     }
     return message;

@@ -31,7 +31,7 @@ Using below configuration while loading DataLoader module, specifies that the Da
 }
 ```
 
-**Note** :  Loaders can receive configuration from the `load` task via [control message](../../../source/control_message_guide.md) during runtime.
+**Note** :  Loaders can receive configuration from the `load` task via [control message] during runtime.
 
 ### Task Configurable Parameters
 
@@ -50,6 +50,7 @@ The parameters that can be configured for this specific loader at load task leve
 | -------------- | ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------- |
 | `method`       | string     | Method of request                                                 | "GET"                                                                          | `"GET"`       |
 | `endpoint`     | string     | Endpoint of request                                               | "0.0.0.0/path/to/target?param1=true"                                           | `[Required]`  |
+| `port`         | string     | Target port of request                                            | "80"                                                                           | `"80"`        |
 | `http_version` | string     | HTTP version of request                                           | "1.1"                                                                          | `"1.1"`       |
 | `content_type` | string     | Content type of request body in a POST request                    | "text/plain"                                                                   | `-`           |
 | `body`         | string     | Request body in a POST request                                    | "param1=true&param2=false"                                                     | `-`           |
@@ -72,6 +73,8 @@ Below JSON configuration specifies how to pass additional configuration to the l
             {
                 "method":"<GET/POST>",
                 "endpoint":"0.0.0.0/?param1=false&param2=true",
+                "port": "80",
+                "http_version": "1.1",
                 "content_type":"text/plain",
                 "body":"http POST body",
                 "x-headers":

@@ -476,11 +476,13 @@ def test_rest_loader_module_get_without_params():
                                     "method": "GET",
                                     "endpoint": "0.0.0.0/path?param1=true&param2=false",
                                     "http_version": "1.0",
+                                    "port": "8081"
                                 },
                                 {
                                     "method": "GET",
                                     "endpoint": "0.0.0.0/path?param1=false&param2=true",
-                                },
+                                    "port": "8081"
+                                }
                             ],
                         },
                     }
@@ -827,7 +829,7 @@ if __name__ == "__main__":
     test_is_version_compatible()
     test_get_module()
     test_payload_loader_module()
-    test_file_loader_module()
+    # test_file_loader_module()
 
     # Flask service needed for testing RESTDataloader
     test_rest_loader_module_get_without_params()
