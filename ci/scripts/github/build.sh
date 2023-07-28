@@ -60,6 +60,7 @@ CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec r
 tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${CPP_TESTS[@]}"
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+set_job_summary_preamble
 upload_artifact "${WORKSPACE_TMP}/wheel.tar.bz"
 upload_artifact "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
 upload_artifact "${WORKSPACE_TMP}/cpp_tests.tar.bz"

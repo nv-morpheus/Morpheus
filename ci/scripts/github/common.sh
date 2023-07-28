@@ -51,7 +51,7 @@ export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
 if [[ "${LOCAL_CI}" == "1" ]]; then
     export DISPLAY_ARTIFACT_URL="${LOCAL_CI_TMP}"
 else
-    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
+    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}"
 fi
 
 # Set sccache env vars
@@ -164,6 +164,7 @@ function upload_artifact() {
         cp ${FILE_NAME} "${LOCAL_CI_TMP}/${BASE_NAME}"
     else
         aws s3 cp --only-show-errors "${FILE_NAME}" "${ARTIFACT_URL}/${BASE_NAME}"
+        echo "- ${DISPLAY_ARTIFACT_URL}/${BASE_NAME}" >> ${GITHUB_STEP_SUMMARY}
     fi
 }
 
@@ -175,4 +176,10 @@ function download_artifact() {
     else
         aws s3 cp --only-show-errors "${ARTIFACT_URL}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
     fi
+}
+
+function set_job_summary_preamble() {
+    msg="Note: NVIDIA VPN access is required to view these URLs."
+    echo $msg >> ${GITHUB_STEP_SUMMARY}
+    rapids-logger $msg
 }
