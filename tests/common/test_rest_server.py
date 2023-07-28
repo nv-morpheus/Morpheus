@@ -35,7 +35,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
 
 
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8080, 9090])
+@pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
 @pytest.mark.parametrize("use_callback", [True, False])
 @pytest.mark.parametrize("use_context_mgr", [True, False])

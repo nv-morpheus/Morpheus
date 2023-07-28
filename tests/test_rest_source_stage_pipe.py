@@ -83,7 +83,7 @@ async def run_pipe_and_request(pipe: LinearPipeline,
 @pytest.mark.slow
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8080, 9090])
+@pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", [HTTPMethod.POST, HTTPMethod.PUT])
 @pytest.mark.parametrize("accept_status", [HTTPStatus.OK, HTTPStatus.CREATED])
 @pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
@@ -127,7 +127,7 @@ def test_rest_source_stage_pipe(config: Config,
     asyncio.run(run_pipe_and_request(pipe, response_queue, method, accept_status, url, payload, content_type))
     assert_results(comp_stage.get_results())
 
-    response = response_queue.get(timeout=5.0)
+    response = response_queue.get_nowait()
 
     assert response.status_code == accept_status.value
     assert response.headers["Content-Type"] == MimeTypes.TEXT.value

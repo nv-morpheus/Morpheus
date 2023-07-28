@@ -58,7 +58,7 @@ class GetNext(threading.Thread):
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8080, 9090])
+@pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", [HTTPMethod.POST, HTTPMethod.PUT])
 @pytest.mark.parametrize("accept_status", [HTTPStatus.OK, HTTPStatus.CREATED])
 @pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
