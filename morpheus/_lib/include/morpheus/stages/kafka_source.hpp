@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/types.hpp"
 
+#include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
@@ -36,6 +37,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {

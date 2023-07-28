@@ -46,8 +46,8 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
             line_count = len(open(source_file, encoding='UTF-8').readlines())  # pylint: disable=consider-using-with
             byte_count = os.path.getsize(source_file)
 
-        elif "glob_path" in E2E_TEST_CONFIGS[bench["name"]]:
-            for file_name in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["glob_path"]):
+        elif "input_glob_path" in E2E_TEST_CONFIGS[bench["name"]]:
+            for file_name in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["input_glob_path"]):
                 line_count += len(open(file_name, encoding='UTF-8').readlines())  # pylint: disable=consider-using-with
                 byte_count += os.path.getsize(file_name)
 

@@ -30,5 +30,11 @@ Developer Guides
    ./6_digital_fingerprinting_reference.md
    ./7_python_modules.md
    ./8_cpp_modules.md
-   ./9_cpp_modules_reference.md
+   ./9_control_messages.md
    ./10_modular_pipeline_digital_fingerprinting.md
+
+
+.. toctree::
+   :hidden:
+
+   ../guides.md

@@ -39,6 +39,11 @@ namespace morpheus {
 
 struct CudfHelper;
 
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
 struct MORPHEUS_EXPORT TableInfoBase

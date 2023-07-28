@@ -16,6 +16,9 @@ limitations under the License.
 -->
 
 # Creating a C++ Source Stage
+> **Note**: The code for this guide can be found in the `examples/developer_guide/4_rabbitmq_cpp_stage` directory of the Morpheus repository. To build the C++ examples, pass `-DMORPHEUS_BUILD_EXAMPLES=ON` to CMake when building Morpheus. Users building Morpheus with the provided `scripts/compile.sh` script can do do by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+> ```bash
+> CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 
 For this example, we are going to add a C++ implementation for the `RabbitMQSourceStage` we designed in the Python examples. The Python implementation of this stage emits messages of the type `MessageMeta`; as such, our C++ implementation must do the same.
 
@@ -509,12 +512,12 @@ Lastly, our `_build_source` method needs to be updated to build a C++ node when 
 def _build_source(self, builder: mrc.Builder) -> StreamPair:
     if self._build_cpp_node():
         node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
-                                                        self.unique_name,
-                                                        self._host,
-                                                        self._exchange,
-                                                        self._exchange_type,
-                                                        self._queue_name,
-                                                        self._poll_interval.to_pytimedelta())
+                                                       self.unique_name,
+                                                       self._host,
+                                                       self._exchange,
+                                                       self._exchange_type,
+                                                       self._queue_name,
+                                                       self._poll_interval.to_pytimedelta())
     else:
         self.connect()
         node = builder.make_source(self.unique_name, self.source_generator)

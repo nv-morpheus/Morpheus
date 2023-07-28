@@ -36,7 +36,7 @@ are specified in the module configuration file at the time of object constructio
 
 ### Example JSON Configuration
 
-```json
+```
 {
   "loaders": [
     {

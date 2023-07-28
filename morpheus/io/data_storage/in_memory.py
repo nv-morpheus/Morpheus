@@ -75,8 +75,8 @@ class InMemoryStorage(RecordStorageInterface):
         Args:
             data_source: The data to store. Can be a pandas.DataFrame, cudf.DataFrame, or a file path.
             copy_from_source: If True, data_source is assumed to be a file path and the data will be copied
-                              from this file to the buffer. If False, the buffer will simply be updated to point
-                              to data_source (which is assumed to be a file path).
+            from this file to the buffer. If False, the buffer will simply be updated to point to data_source
+            (which is assumed to be a file path).
         """
 
         self._data = io.BytesIO()

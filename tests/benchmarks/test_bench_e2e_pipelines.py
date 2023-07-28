@@ -44,8 +44,8 @@ from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
-e2e_config_file = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
-with open(e2e_config_file, 'r', encoding='UTF-8') as f:
+E2E_CONFIG_FILE = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
+with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
     E2E_TEST_CONFIGS = json.load(f)
 
 
@@ -226,9 +226,9 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     config.ae.feature_columns = load_labels_file(ae_cols_filepath)
     CppConfig.set_should_use_cpp(False)
 
-    input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]
+    input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["input_glob_path"]
     repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
-    train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
+    train_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["train_glob_path"]
     output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
 
-    benchmark(ae_pipeline, config, input_glob, repeat, train_data_glob, output_filepath)
+    benchmark(ae_pipeline, config, input_glob, repeat, train_glob, output_filepath)

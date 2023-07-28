@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ git clone ${GIT_URL} Morpheus
 cd Morpheus/
 git checkout ${GIT_BRANCH}
 git pull
+git checkout ${GIT_COMMIT}
 
 export MORPHEUS_ROOT=$(pwd)
 export WORKSPACE=${MORPHEUS_ROOT}

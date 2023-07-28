@@ -48,9 +48,7 @@ using tcp       = net::ip::tcp;
 
 #define PORT "8081"
 
-namespace morpheus {
-RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
-
+namespace {
 void extract_query_fields(nlohmann::json& query,
                           std::string& method,
                           std::string& endpoint,
@@ -316,7 +314,7 @@ void create_dataframe_from_query(py::object& dataframe,
 }
 
 void process_failures(const std::string& error_msg,
-                      std::shared_ptr<ControlMessage> message,
+                      std::shared_ptr<morpheus::ControlMessage> message,
                       bool processes_failures_as_errors)
 {
     if (processes_failures_as_errors)
@@ -326,6 +324,10 @@ void process_failures(const std::string& error_msg,
     message->set_metadata("cm_failed", "true");
     message->set_metadata("cm_failed_reason", error_msg);
 }
+}  // namespace
+
+namespace morpheus {
+RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
 std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {

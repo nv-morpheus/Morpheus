@@ -19,11 +19,12 @@ find_package(pybind11 REQUIRED)
 
 # Keep all source files sorted
 add_executable(test_libmorpheus
-  # test_cuda.cu
+  test_cuda.cu
   io/test_data_loader.cpp
   io/test_data_loader_registry.cpp
   io/test_loaders.cpp
   messages/test_control_message.cpp
+  messages/test_dev_doc_ex3.cpp
   messages/test_sliced_message_meta.cpp
   modules/test_data_loader_module.cpp
   test_deserializers.cpp
@@ -53,14 +54,16 @@ add_test(
 set_target_properties(test_libmorpheus
   PROPERTIES
     INSTALL_RPATH "$ORIGIN/.."
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
 )
 
 install(
-    TARGETS
-      test_libmorpheus
-    RUNTIME DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-    COMPONENT Wheel
+  TARGETS
+    test_libmorpheus
+  RUNTIME DESTINATION
+    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+  COMPONENT Wheel
 )
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

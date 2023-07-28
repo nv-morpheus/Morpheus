@@ -33,13 +33,18 @@ in both Python and C++.
 - [Simple C++ Stage](./guides/3_simple_cpp_stage.md)
 - [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md)
 
+> **Note**: The code for the above guides can be found in the `examples/developer_guide` directory of the Morpheus repository. To build the C++ examples, pass `-DMORPHEUS_BUILD_EXAMPLES=ON` to CMake when building Morpheus. Users building Morpheus with the provided `scripts/compile.sh` script can do do by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+> ```bash
+> CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+> ```
+
 ## Morpheus Modules
 
 Morpheus includes, as of version 23.03, a number of pre-defined module implementations to choose from when building a
 custom pipeline. Modules can be thought of as units of work, which exist at a lower level than stages. Modules can
 be defined, registered, chained, nested, and loaded at runtime. Modules can be written in Python or C++.
 
-- [List of available Morpheus modules](../modules/morpheus_modules.md)
+- [List of available Morpheus modules](../modules/index.md)
 
 There are likely going to be situations that require writing a custom module, either for creating your own
 reusable work units, or for creating a new compound module from a set of existing primitives. The following guides
