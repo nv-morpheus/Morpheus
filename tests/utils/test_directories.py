@@ -18,7 +18,7 @@ import os
 import morpheus
 
 
-class TestDirectories(object):
+class TestDirectories:
 
     def __init__(self, cur_file=__file__) -> None:
         self.tests_dir = os.path.dirname(os.path.dirname(cur_file))
