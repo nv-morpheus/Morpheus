@@ -152,14 +152,13 @@ class RestServerSinkStage(SinglePortStage):
                                   num_threads=self._num_server_threads,
                                   request_timeout=self._request_timeout_secs)
         self._server.start()
-    
+
     def is_running(self) -> bool:
         """Indicates whether or not the stage is running."""
         if self._server is not None:
             return self._server.is_running()
-        
+
         return False
-        
 
     def _default_df_serializer(self, df: DataFrameType) -> str:
         """
@@ -244,6 +243,7 @@ class RestServerSinkStage(SinglePortStage):
         logger.debug("stopping server")
         self._server.stop()
         logger.debug("stopped")
+        self._server = None
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name,
