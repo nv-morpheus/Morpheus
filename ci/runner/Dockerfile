@@ -33,14 +33,6 @@ ARG CUDA_SHORT_VER
 
 SHELL ["/bin/bash",  "-c"]
 
-# OS deps
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y \
-        libnuma1 && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Create conda environment
 COPY ./docker/conda/environments/* /tmp/conda/
 
