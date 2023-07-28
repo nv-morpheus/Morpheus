@@ -35,6 +35,10 @@ dependencies:
     - s3fs>=2023.6
     - pip
     - wrapt=1.14.1 # ver 1.15 breaks the keras model used by the gnn_fraud_detection_pipeline
+    - dgl==1.0.2+cu118
+    - torchmetrics==0.11.4
+    - tqdm==4.65.0
+    - torch==2.0.0+cu118
     - pip:
         # tensorflow exists in conda-forge but is tied to CUDA-11.3
         - tensorflow==2.12.0

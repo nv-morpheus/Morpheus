@@ -17,14 +17,14 @@ limitations under the License.
 
 
 
-## Instruction how to train new GNN models. 
+## Instruction how to train new GNN models.
 
 ### Setup training environment
 
-Install packages for training GNN model. 
+Install packages for training GNN model.
 
 ```
-pip install -r requirements.txt
+mamba env update -n ${CONDA_DEFAULT_ENV} -f requirements.yml
 ```
 
 ### Options for training and tuning models.
@@ -43,7 +43,7 @@ Options:
   --output-file TEXT      Path to csv inference result
   --model-type TEXT       Model type either RGCN/HinSAGE
   --help                  Show this message and exit
-  
+
 ```
 
 
@@ -57,6 +57,5 @@ python training.py --training-data $DATASET/training-data/fraud-detection-traini
          --epochs 20 \
          --model_dir models\
          --model-type HinSAGE
-"""
 ```
-This results is a trained models of RGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.
+This results is a trained models of HeteroRGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.

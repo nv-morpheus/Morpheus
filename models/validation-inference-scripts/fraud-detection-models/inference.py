@@ -104,15 +104,20 @@ def prepare_data(training_data, test_data):
     return test_idx, df
 
 
-def load_model(model_dir, graph_input, gnn_model=HeteroRGCN):
-    """Load trained model, graph structure from given directory
-    Args:
-        model_dir (str): directory path for trained models
-        graph_input (DGLHeteroGraph): input graph for testing
-        gnn_model (HeteroRGCN, optional): GNN model type either HinSAGE/HeteroRGCN. Defaults to HeteroRGCN.
+def load_model(model_dir,  gnn_model=HeteroRGCN):
+    """Load trained models from model directory
 
-    Returns:
-        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+    Parameters
+    ----------
+    model_dir : str
+        models directory path
+    gnn_model: nn.Module
+        GNN model type to load either HinSAGE or HeteroRGCN
+
+    Returns
+    -------
+    (nn.Module, dgl.DGLHeteroGraph, dict)
+        model, training graph, hyperparameter
     """
 
     from cuml import ForestInference
@@ -121,7 +126,7 @@ def load_model(model_dir, graph_input, gnn_model=HeteroRGCN):
         graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = gnn_model(graph_input,
+    model = gnn_model(graph,
                       in_size=hyperparameters['in_size'],
                       hidden_size=hyperparameters['hidden_size'],
                       out_size=hyperparameters['out_size'],
@@ -136,17 +141,27 @@ def load_model(model_dir, graph_input, gnn_model=HeteroRGCN):
 
 @torch.no_grad()
 def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
-    """Takes trained RGCN model and input dataloader & produce logits and embedding.
+    """Evaluate the specified model on the given evaluation input graph
 
-    Args:
-        model (HeteroRGCN): trained HeteroRGCN model object
-        eval_loader (NodeDataLoader): evaluation dataloader
-        feature_tensors (torch.Tensor) : test feature tensor
-        target_node (str): target node encoding.
-        device (str, optional): device runtime. Defaults to 'cpu'.
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The PyTorch model to be evaluated.
+    eval_loader : dgl.dataloading.DataLoader
+        DataLoader containing the evaluation dataset.
+    feature_tensors : torch.Tensor
+        The feature tensors corresponding to the evaluation data.
+        Shape: (num_samples, num_features).
+    target_node : str
+        The target node for evaluation, indicating the node of interest.
+    device : str, optional
+        The device where the model and tensors should be loaded.
+        Default is 'cpu'.
 
-    Returns:
-        List: logits, index & output embedding.
+    Returns
+    -------
+    (torch.Tensor, torch.Tensor, torch.Tensor)
+        A tuple containing numpy arrays of logits, eval seed and embeddings
     """
     model.eval()
     eval_logits = []
@@ -170,20 +185,29 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     embedding = torch.cat(embedding)
     return eval_logits, eval_seeds, embedding
 
-
 def inference(model, input_graph, feature_tensors, test_idx, target_node, device):
-    """Minibatch inference on test graph
 
-    Args:
-        model (HeteroRGCN) : trained HeteroRGCN model.
-        input_graph (DGLHeterograph) : test graph
-        feature_tensors (torch.Tensor) : node features
-        test_idx (list): test index
-        target_node (list): target node
-        device (str, optional): device runtime.
+    """ Perform inference on a given model using the provided input graph and feature tensors.
 
-    Returns:
-        list: logits, index, output embedding
+    Parameters
+    ----------
+    model : nn.Module
+        The neural network model to be used for inference.
+    input_graph : dgl.DGLHeteroGraph
+        The input heterogeneous graph in DGL format. It represents the graph structure.
+    feature_tensors : torch.Tensor
+        The input feature tensors for nodes in the input graph. Each row corresponds to the features of a single node.
+    test_idx : torch.Tensor
+        The indices of the nodes in the input graph that are used for testing and evaluation.
+    target_node : str, optional (default: "transaction")
+        The type of node for which inference will be performed. By default, it is set to "transaction".
+    device : str or torch.device, optional (default: "cuda:0" if torch.cuda.is_available() else "cpu")
+        The device where the computation will take place. By default, it uses GPU ("cuda:0") if available,
+          otherwise CPU ("cpu").
+    Returns
+    -------
+    (logits, seeds, embedding) : torch.Tensor
+        The logits, node seeds, embeddings using model inference.
     """
 
     full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
@@ -215,8 +239,6 @@ def main(training_data, validation_data, model_dir, target_node, output_file, mo
     else:
         gnn_model = HinSAGE
 
-    print(gnn_model.__name__)
-
     # prepare data
     test_idx, all_data = prepare_data(training_data, validation_data)
 
@@ -224,7 +246,7 @@ def main(training_data, validation_data, model_dir, target_node, output_file, mo
     g_test, feature_tensors = build_fsi_graph(all_data, meta_cols)
 
     # Load graph model
-    model, xgb_model, _ = load_model(model_dir, gnn_model=gnn_model, graph_input=g_test)
+    model, xgb_model, _ = load_model(model_dir, gnn_model=gnn_model)
     model = model.to(device)
     g_test = g_test.to(device)
     feature_tensors = feature_tensors.to(device)

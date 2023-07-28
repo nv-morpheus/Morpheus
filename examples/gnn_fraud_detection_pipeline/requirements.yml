@@ -18,11 +18,10 @@ channels:
     - nvidia
     - conda-forge
 dependencies:
-    - chardet=5.0.0
     - cuml=23.06
     - dask>=2023.1.1
     - distributed>=2023.1.1
-    - pip
-    - pip:
-        # tensorflow exists in conda-forge but is tied to CUDA-11.3
-        - tensorflow==2.12.0
+    - dgl==1.0.2+cu118
+    - torchmetrics==0.11.4
+    - tqdm==4.65.0
+    - torch==2.0.0+cu118

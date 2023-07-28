@@ -36,17 +36,15 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 @dataclasses.dataclass
 class FraudGraphMultiMessage(MultiMessage):
-    graph: "dgl.heterograph.DGLGraph"
-    node_features: "torch.tensor"
 
     def __init__(self,
                  *,
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 graph: "dgl.heterograph.DGLGraph",
-                 node_features="torch.tensor",
-                 test_index: "torch.tensor"):
+                 graph: dgl.DGLHeteroGraph,
+                 node_features= torch.tensor,
+                 test_index: torch.tensor):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
         self.graph = graph
@@ -97,7 +95,7 @@ class FraudGraphConstructionStage(SinglePortStage):
 
         Returns
         -------
-        tuple
+        (pd.DataFrame, pd.DataFrame)
         tuple of (test_index, whole data)
         """
 
@@ -128,7 +126,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         return test_idx, df
 
     @staticmethod
-    def _build_graph_features(dataset: pd.DataFrame) -> "dgl.heterograph.DGLGraph":
+    def _build_graph_features(dataset: pd.DataFrame) -> dgl.DGLHeteroGraph:
 
         edge_list = {
             ('client', 'buy', 'transaction'): (dataset['client_node'].values, dataset['index'].values),

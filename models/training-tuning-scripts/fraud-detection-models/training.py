@@ -46,15 +46,29 @@ torch.manual_seed(1001)
 
 
 def get_metrics(pred, labels, name='RGCN'):
-    """Compute evaluation metrics
+    """Compute evaluation metrics.
 
-    Args:
-        pred (np.array) : prediction
-        labels (np.array): groundtruth label
-        name (str, optional): model name. Defaults to 'RGCN'.
+    Parameters
+    ----------
+    pred : numpy.ndarray
+        Predictions made by the model.
+    labels : numpy.ndarray
+        Groundtruth labels.
+    name : str, optional
+        Model name. Defaults to 'RGCN'.
 
-    Returns:
-        List[List]: List of metrics f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
+    Returns
+    -------
+    List[List]
+        List of evaluation metrics including:
+        - f1: F1-score
+        - precision: Precision score
+        - recall: Recall score
+        - roc_auc: Area under the Receiver Operating Characteristic curve
+        - pr_auc: Area under the Precision-Recall curve
+        - ap: Average Precision
+        - confusion_matrix: Confusion matrix as a list of lists
+        - auc_r: AUC-ROC (Area Under the ROC curve)
     """
 
     pred, pred_proba = pred.argmax(1), pred[:, 1]
@@ -85,14 +99,38 @@ def get_metrics(pred, labels, name='RGCN'):
 
 
 def build_fsi_graph(train_data, col_drop):
-    """Build heterograph from edglist and node index.
+    """Build a heterogeneous graph from an edgelist and node index.
+    Parameters
+    ----------
+    train_data : pd.DataFrame
+        Training data containing node features.
+    col_drop : list
+        List of features to drop from the node features.
+    Returns
+    -------
+    tuple
+        A tuple containing the following elements:
+        DGLGraph
+            The built DGL graph representing the heterogeneous graph.
+        torch.tensor
+            Normalized feature tensor after dropping specified columns.
+    Notes
+    -----
+    This function takes the training data, represented as a pandas DataFrame,
+    and constructs a heterogeneous graph (DGLGraph) from the given edgelist
+    and node index.
 
-    Args:
-        train_data (pd.DataFrame): training data for node features.
-        col_drop (list): features to drop from node features.
+    The `col_drop` list specifies which features should be dropped from the
+    node features to build the normalized feature tensor.
 
-    Returns:
-       Tuple[DGLGraph, torch.tensor]: dlg graph, normalized feature tensor
+    Example
+    -------
+    >>> import pandas as pd
+    >>> train_data = pd.DataFrame({'node_id': [1, 2, 3],
+    ...                            'feature1': [0.1, 0.2, 0.3],
+    ...                            'feature2': [0.4, 0.5, 0.6]})
+    >>> col_drop = ['feature2']
+    >>> graph, features = build_heterograph(train_data, col_drop)
     """
 
     edge_list = {
@@ -110,12 +148,7 @@ def build_fsi_graph(train_data, col_drop):
 
 
 def map_node_id(df, col_name):
-    """ Convert column node list to integer index for dgl graph.
-
-    Args:
-        df (pd.DataFrame): dataframe
-        col_name (list) : column list
-    """
+    # Convert column node list to integer index for dgl graph.
     node_index = {j: i for i, j in enumerate(df[col_name].unique())}
     df[col_name] = df[col_name].map(node_index)
 
@@ -156,15 +189,27 @@ def prepare_data(training_data, test_data):
 
 
 def save_model(graph, model, hyperparameters, xgb_model, model_dir):
-    """Save trained model with graph & hyperparameters dict
+    """ Save the trained model and associated data to the specified directory.
 
-    Args:
-        graph (DGLHeteroGraph): dgl graph
-        model (HeteroRGCN): trained RGCN model
-        hyperparameters (dict): hyperparameter for model training.
-        xgb_model (XGBoost): XGBoost trained model.
-        model_dir (str): directory to save
+    Parameters
+    ----------
+    graph : dgl.DGLGraph
+        The graph object representing the data used for training the model.
+
+    model : nn.Module
+        The trained model object to be saved.
+
+    hyperparameters : dict
+        A dictionary containing the hyperparameters used for training the model.
+
+    xgb_model : XGBoost
+        The trained XGBoost model associated with the main model.
+
+    model_dir : str
+        The directory path where the model and associated data will be saved.
+
     """
+
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
@@ -175,14 +220,20 @@ def save_model(graph, model, hyperparameters, xgb_model, model_dir):
     xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
 
-def load_model(model_dir, gnn_model=HeteroRGCN):
-    """Load trained model, graph structure from given directory
+def load_model(model_dir, gnn_model=HinSAGE):
+    """Load trained models from model directory
 
-    Args:
-        model_dir (str path):directory path for trained model obj.
+    Parameters
+    ----------
+    model_dir : str
+        models directory path
+    gnn_model: nn.Module
+        GNN model type to load either HinSAGE or HeteroRGCN
 
-    Returns:
-        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+    Returns
+    -------
+    (nn.Module, dgl.DGLHeteroGraph, dict)
+        model, training graph, hyperparameter
     """
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
@@ -203,19 +254,35 @@ def load_model(model_dir, gnn_model=HeteroRGCN):
 
 
 def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='transaction', batch_size=100):
-    """Initialize dataloader and graph sampler. For training use neighbor sampling.
+    """
+    Initialize dataloader and graph sampler. For training, use neighbor sampling.
 
-    Args:
-        g_train (DGLHeteroGraph): train graph
-        train_idx (list): train feature index
-        test_idx (list): test feature index
-        val_idx (list): validation index
-        g_test (DGLHeteroGraph): test graph
-        target_node (str, optional): target node. Defaults to 'authentication'.
-        batch_size (int): batchsize for inference.
+    Parameters
+    ----------
+    g_train : DGLHeteroGraph
+        Train graph.
+    train_idx : list
+        Train feature index.
+    test_idx : list
+        Test feature index.
+    val_idx : list
+        Validation index.
+    g_test : DGLHeteroGraph
+        Test graph.
+    target_node : str, optional
+        Target node. Defaults to 'transaction'.
+    batch_size : int
+        Batch size for inference.
+    Returns
+    -------
+    List[tuple]
+        List of data loaders consisting of (DataLoader, DataLoader, DataLoader).
 
-    Returns:
-        List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
+
+    Example
+    -------
+    >>> train_loader, test_loader, val_loader = initialize_dataloader(g_train, train_idx, test_idx,
+            val_idx, g_test, target_node='authentication', batch_size=32)
     """
 
     neighbor_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
@@ -256,21 +323,37 @@ def train(model,
           feature_tensors,
           target_node='transaction',
           device='cpu'):
-    """Train RGCN model
-
-    Args:
-        model(HeteroRGCN): RGCN model
-        loss_func (nn.loss) : loss function
-        train_dataloader (NodeDataLoader) : train dataloader class
-        labels (list): training label
-        optimizer (nn.optimizer) : optimizer for training
-        feature_tensors (torch.from_numpy) : node features
-        target_node (str, optional): target node embedding. Defaults to 'transaction'.
-        device (str, optional): host device. Defaults to 'cpu'.
-
-    Returns:
-        _type_: training accuracy and training loss
     """
+    Train the specified GNN model using the given training data.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The PyTorch model to be trained.
+    loss_func : callable
+        The loss function to compute the training loss.
+    train_dataloader : dgl.dataloading.DataLoader
+        DataLoader containing the training dataset.
+    labels : torch.Tensor
+        The ground truth labels for the training data.
+        Shape: (num_samples, num_classes).
+    optimizer : torch.optim.Optimizer
+        The optimizer used to update the model's parameters during training.
+    feature_tensors : torch.Tensor
+        The feature tensors corresponding to the training data.
+        Shape: (num_samples, num_features).
+    target_node : str, optional
+        The target node for training, indicating the node of interest.
+        Defaults to 'transaction'.
+    device : str, optional
+        The device where the model and tensors should be loaded.
+        Default is 'cpu'.
+    Returns
+    -------
+    List[float, float]
+        Training accuracy and training loss
+    """
+
     model.train()
     train_loss = 0.0
     for _, (_, output_nodes, blocks) in enumerate(train_dataloader):
@@ -293,17 +376,27 @@ def train(model,
 
 @torch.no_grad()
 def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
-    """Takes trained RGCN model and input dataloader & produce logits and embedding.
+    """Evaluate the specified model on the given evaluation input graph
 
-    Args:
-        model (HeteroRGCN): trained HeteroRGCN model object
-        eval_loader (NodeDataLoader): evaluation dataloader
-        feature_tensors (torch.Tensor) : test feature tensor
-        target_node (str): target node encoding.
-        device (str, optional): device runtime. Defaults to 'cpu'.
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The PyTorch model to be evaluated.
+    eval_loader : dgl.dataloading.DataLoader
+        DataLoader containing the evaluation dataset.
+    feature_tensors : torch.Tensor
+        The feature tensors corresponding to the evaluation data.
+        Shape: (num_samples, num_features).
+    target_node : str
+        The target node for evaluation, indicating the node of interest.
+    device : str, optional
+        The device where the model and tensors should be loaded.
+        Default is 'cpu'.
 
-    Returns:
-        List: logits, index & output embedding.
+    Returns
+    -------
+    (torch.Tensor, torch.Tensor, torch.Tensor)
+        A tuple containing numpy arrays of logits, eval seed and embeddings
     """
     model.eval()
     eval_logits = []
