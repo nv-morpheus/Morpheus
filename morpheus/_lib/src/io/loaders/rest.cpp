@@ -149,7 +149,7 @@ void get_response_with_retry(http::request<http::string_body>& request,
     beast::tcp_stream stream(ioc);
     auto const endpoint_results = resolver.resolve(std::string(request[http::field::host]), port);
     while (max_retry > 0)
-    {   
+    {
         stream.connect(endpoint_results);
         http::write(stream, request);
         beast::flat_buffer buffer;
@@ -170,7 +170,8 @@ void get_response_with_retry(http::request<http::string_body>& request,
         retry_interval_milliseconds *= 2;
         max_retry--;
     }
-    if (max_retry == 0) {
+    if (max_retry == 0)
+    {
         throw std::runtime_error("'REST loader' reaches max_retry count");
     }
 }
@@ -197,8 +198,7 @@ py::dict convert_url_query_to_dict(const py::str& raw_query)
     return params_dict;
 }
 
-void parse_endpoint_to_url(
-    std::string& endpoint, nlohmann::json& params, std::string& host, std::string& target, std::string& query)
+void parse_endpoint(std::string& endpoint, std::string& host, std::string& target, std::string& query)
 {
     py::gil_scoped_acquire gil;
     py::module_ urllib = py::module::import("urllib.parse");
@@ -225,40 +225,40 @@ void parse_endpoint_to_url(
 
     py::str raw_query = result.attr("query");
     py::dict query_pydict;
-    if (params.empty())
-    {
-        query_pydict = convert_url_query_to_dict(raw_query);
-    }
-    // if params exists, overrides query included in endpoint
-    else
-    {
-        for (auto& param : params.items())
-        {
-            query_pydict[py::str(param.key())] = py::str(param.value());
-        }
-    }
+    query_pydict = convert_url_query_to_dict(raw_query);
+
     // Encode URL query
+    query = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
+}
+
+void parse_params(nlohmann::json& params, std::string& query)
+{
+    py::gil_scoped_acquire gil;
+    py::module_ urllib = py::module::import("urllib.parse");
+
+    py::dict query_pydict;
+    for (auto& param : params.items())
+    {
+        query_pydict[py::str(param.key())] = py::str(param.value());
+    }
     query = py::len(query_pydict) == 0 ? "" : "?" + urllib.attr("urlencode")(query_pydict).cast<std::string>();
 }
 
 void get_response_from_endpoint(http::response<http::dynamic_body>& response,
                                 std::string& method,
-                                std::string& endpoint,
+                                std::string& host,
+                                std::string& target,
+                                std::string& query,
                                 std::string& port,
                                 std::string& http_version,
                                 std::string& content_type,
                                 std::string& body,
-                                nlohmann::json& params,
                                 nlohmann::json& x_headers,
                                 int max_retry,
                                 int retry_interval_milliseconds)
 {
-    std::string host;
-    std::string target;
-    std::string query;
     http::request<http::string_body> request;
 
-    parse_endpoint_to_url(endpoint, params, host, target, query);
     construct_request(request, method, host, target, query, http_version, content_type, body, x_headers);
     get_response_with_retry(request, port, response, max_retry, retry_interval_milliseconds);
 }
@@ -314,17 +314,24 @@ void create_dataframe_from_query(py::object& dataframe,
     nlohmann::json params;
     nlohmann::json x_headers;
     extract_query_fields(query, method, endpoint, port, http_version, content_type, body, params, x_headers);
+
+    std::string host;
+    std::string target;
+    std::string queries;
+    parse_endpoint(endpoint, host, target, queries);
+
     if (params.empty())
     {
         http::response<http::dynamic_body> response;
         get_response_from_endpoint(response,
                                    method,
-                                   endpoint,
+                                   host,
+                                   target,
+                                   queries,
                                    port,
                                    http_version,
                                    content_type,
                                    body,
-                                   params,
                                    x_headers,
                                    max_retry,
                                    retry_interval_milliseconds);
@@ -335,15 +342,17 @@ void create_dataframe_from_query(py::object& dataframe,
         // For each set of param, send a separate request
         for (auto& param : params)
         {
+            parse_params(param, queries);
             http::response<http::dynamic_body> response;
             get_response_from_endpoint(response,
                                        method,
-                                       endpoint,
+                                       host,
+                                       target,
+                                       queries,
                                        port,
                                        http_version,
                                        content_type,
                                        body,
-                                       param,
                                        x_headers,
                                        max_retry,
                                        retry_interval_milliseconds);
@@ -427,8 +436,7 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
             message->payload(MessageMeta::create_from_python(std::move(dataframe)));
         }  // release GIL
     } catch (std::runtime_error& e)
-    {   
-        std::cout << "catch << " << e.what() << std::endl;
+    {
         process_failures(e.what(), message, processes_failures_as_errors);
     }
     return message;
