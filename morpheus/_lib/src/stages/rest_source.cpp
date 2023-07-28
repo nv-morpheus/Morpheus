@@ -17,7 +17,7 @@
 
 #include "morpheus/stages/rest_source.hpp"
 
-#include <boost/beast/http/status.hpp>        // for status
+#include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
 #include <cudf/io/json.hpp>                   // for json_reader_options & read_json
 #include <glog/logging.h>                     // for CHECK & LOG
@@ -29,8 +29,8 @@
 #include <thread>      // for std::this_thread::sleep_for
 #include <tuple>       // for make_tuple
 #include <utility>     // for std::move
-
-namespace http = boost::beast::http;
+// IWYU thinks we need more boost headers than we need as int_to_status is defined in status.hpp
+// IWYU pragma: no_include <boost/beast/http.hpp>
 
 namespace morpheus {
 
@@ -59,7 +59,8 @@ RestSourceStage::RestSourceStage(std::string bind_address,
   m_stop_after{stop_after},
   m_records_emitted{0}
 {
-    CHECK(http::int_to_status(accept_status) != http::status::unknown) << "Invalid HTTP status code: " << accept_status;
+    CHECK(boost::beast::http::int_to_status(accept_status) != boost::beast::http::status::unknown)
+        << "Invalid HTTP status code: " << accept_status;
 
     payload_parse_fn_t parser = [this, accept_status, lines](const std::string& payload) {
         std::unique_ptr<cudf::io::table_with_metadata> table{nullptr};
