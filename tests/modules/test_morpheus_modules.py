@@ -475,6 +475,7 @@ def test_rest_loader_module_get_without_params():
                                 {
                                     "method": "GET",
                                     "endpoint": "0.0.0.0/path?param1=true&param2=false",
+                                    "http_version": "1.0",
                                 },
                                 {
                                     "method": "GET",
@@ -491,7 +492,9 @@ def test_rest_loader_module_get_without_params():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
+            print("df")
             print(df)
+            print("control_msg.payload().df")
             print(control_msg.payload().df)
             assert control_msg.payload().df.equals(df)
 

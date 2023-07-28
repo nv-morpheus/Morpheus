@@ -50,6 +50,7 @@ The parameters that can be configured for this specific loader at load task leve
 | -------------- | ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------- |
 | `method`       | string     | Method of request                                                 | "GET"                                                                          | `"GET"`       |
 | `endpoint`     | string     | Endpoint of request                                               | "0.0.0.0/path/to/target?param1=true"                                           | `[Required]`  |
+| `http_version` | string     | HTTP version of request                                           | "1.1"                                                                          | `"1.1"`       |
 | `content_type` | string     | Content type of request body in a POST request                    | "text/plain"                                                                   | `-`           |
 | `body`         | string     | Request body in a POST request                                    | "param1=true&param2=false"                                                     | `-`           |
 | `X-Headers`    | dictionary | Customized X-Headers of request                                   | "{"X-Header1":"header1", "X-Header2":"header2"}"                               | `-`           |

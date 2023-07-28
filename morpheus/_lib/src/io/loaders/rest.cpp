@@ -52,6 +52,7 @@ namespace {
 void extract_query_fields(nlohmann::json& query,
                           std::string& method,
                           std::string& endpoint,
+                          std::string& http_version,
                           std::string& content_type,
                           std::string& body,
                           nlohmann::json& params,
@@ -66,6 +67,7 @@ void extract_query_fields(nlohmann::json& query,
         throw std::runtime_error("'REST loader' receives query with empty endpoint");
     }
 
+    http_version = query.value("http_version", "1.1");
     content_type = query.value("content_type", "");
     body         = query.value("body", "");
     params       = query.value("params", nlohmann::json());
@@ -95,6 +97,7 @@ void construct_request(http::request<http::string_body>& request,
                        const std::string& host,
                        const std::string& target,
                        const std::string& query,
+                       const std::string& http_version,
                        const std::string& content_type,
                        const std::string& body,
                        const nlohmann::json& x_headers)
@@ -102,7 +105,23 @@ void construct_request(http::request<http::string_body>& request,
     auto verb = get_http_verb(method);
     request.method(verb);
     request.target(target + query);
-    request.version(11);
+
+    // Supported HTTP versions are HTTP/1.1 and HTTP/1.0 :
+    //   - Currently Beast does not support HTTP/2.0 (see
+    //     https://www.boost.org/doc/libs/1_82_0/libs/beast/doc/html/beast/design_choices/faq.html)
+    //   - The default value of http_version is 1.1 if not specified within REST loader's config, since Beast sets
+    //     to 1.1 by default.
+    //   - Beast provides http client examples compatible with HTTP/1.0 (see
+    //     https://www.boost.org/doc/libs/1_82_0/libs/beast/example/http/client/sync/http_client_sync.cpp). REST loader
+    //     implements the http client in the same way as Beast's example, providing support to HTTP/1.0 if explicitly
+    //     specified in the config.
+    if (http_version != "1.1" && http_version != "1.0")
+    {
+        throw std::runtime_error("'REST Loader' receives http version not supported: " + http_version);
+    }
+    unsigned version = http_version == "1.1" ? 11 : 10;
+    request.version(version);
+
     request.set(http::field::host, host);
     request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     if (verb == http::verb::post)
@@ -220,6 +239,7 @@ void parse_endpoint_to_url(
 void get_response_from_endpoint(http::response<http::dynamic_body>& response,
                                 std::string& method,
                                 std::string& endpoint,
+                                std::string& http_version,
                                 std::string& content_type,
                                 std::string& body,
                                 nlohmann::json& params,
@@ -232,7 +252,7 @@ void get_response_from_endpoint(http::response<http::dynamic_body>& response,
     std::string query;
     http::request<http::string_body> request;
     parse_endpoint_to_url(endpoint, params, host, target, query);
-    construct_request(request, method, host, target, query, content_type, body, x_headers);
+    construct_request(request, method, host, target, query, http_version, content_type, body, x_headers);
     get_response_with_retry(request, response, max_retry, retry_interval_milliseconds);
 }
 
@@ -280,17 +300,25 @@ void create_dataframe_from_query(py::object& dataframe,
 {
     std::string method;
     std::string endpoint;
+    std::string http_version;
     std::string content_type;
     std::string body;
     nlohmann::json params;
     nlohmann::json x_headers;
-    extract_query_fields(query, method, endpoint, content_type, body, params, x_headers);
-
+    extract_query_fields(query, method, endpoint, http_version, content_type, body, params, x_headers);
     if (params.empty())
     {
         http::response<http::dynamic_body> response;
-        get_response_from_endpoint(
-            response, method, endpoint, content_type, body, params, x_headers, max_retry, retry_interval_milliseconds);
+        get_response_from_endpoint(response,
+                                   method,
+                                   endpoint,
+                                   http_version,
+                                   content_type,
+                                   body,
+                                   params,
+                                   x_headers,
+                                   max_retry,
+                                   retry_interval_milliseconds);
         create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
     }
     else
@@ -302,6 +330,7 @@ void create_dataframe_from_query(py::object& dataframe,
             get_response_from_endpoint(response,
                                        method,
                                        endpoint,
+                                       http_version,
                                        content_type,
                                        body,
                                        param,
