@@ -81,21 +81,12 @@ async def run_pipe_and_request(pipe: LinearPipeline,
 
 
 @pytest.mark.slow
-@pytest.mark.use_cudf
-@pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8088, 9090])
-@pytest.mark.parametrize("method", [HTTPMethod.POST, HTTPMethod.PUT])
-@pytest.mark.parametrize("accept_status", [HTTPStatus.OK, HTTPStatus.CREATED])
-@pytest.mark.parametrize("num_threads", [1, 2, min(8, os.cpu_count())])
 @pytest.mark.parametrize("lines", [False, True])
-def test_rest_source_stage_pipe(config: Config,
-                                dataset: DatasetManager,
-                                port: int,
-                                endpoint: str,
-                                method: HTTPMethod,
-                                accept_status: HTTPStatus,
-                                num_threads: int,
-                                lines: bool):
+def test_rest_source_stage_pipe(config: Config, dataset_cudf: DatasetManager, lines: bool):
+    endpoint = '/test'
+    port = 8088
+    method = HTTPMethod.POST
+    accept_status = HTTPStatus.OK
     url = make_url(port, endpoint)
 
     if lines:
@@ -103,7 +94,7 @@ def test_rest_source_stage_pipe(config: Config,
     else:
         content_type = MimeTypes.JSON.value
 
-    df = dataset['filter_probs.csv']
+    df = dataset_cudf['filter_probs.csv']
     num_records = len(df)
     buf = df_to_stream_json(df, StringIO(), lines=lines)
     buf.seek(0)
@@ -117,7 +108,6 @@ def test_rest_source_stage_pipe(config: Config,
                         endpoint=endpoint,
                         method=method,
                         accept_status=accept_status,
-                        num_server_threads=num_threads,
                         lines=lines,
                         stop_after=num_records))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, df))

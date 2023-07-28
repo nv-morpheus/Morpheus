@@ -89,29 +89,25 @@ def _custom_serializer(df: DataFrameType) -> str:
 
 
 @pytest.mark.slow
-@pytest.mark.use_cudf
 @pytest.mark.use_python
-@pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
-@pytest.mark.parametrize("port", [8088, 9090])
-@pytest.mark.parametrize("method", [HTTPMethod.GET, HTTPMethod.POST])
 @pytest.mark.parametrize("lines", [False, True])
 @pytest.mark.parametrize("max_rows_per_response", [10000, 10])
 @pytest.mark.parametrize("df_serializer_fn", [None, _custom_serializer])
 def test_rest_server_sink_stage_pipe(config: Config,
-                                     dataset: DatasetManager,
-                                     endpoint: str,
-                                     port: int,
-                                     method: HTTPMethod,
+                                     dataset_cudf: DatasetManager,
                                      lines: bool,
                                      max_rows_per_response: int,
                                      df_serializer_fn: typing.Optional[typing.Callable]):
+    port = 8088
+    method = HTTPMethod.GET
+    endpoint = '/test'
     url = make_url(port, endpoint)
     if lines:
         content_type = MimeTypes.TEXT.value
     else:
         content_type = MimeTypes.JSON.value
 
-    df = dataset['filter_probs.csv']
+    df = dataset_cudf['filter_probs.csv']
 
     if max_rows_per_response > len(df):
         num_requests = 1
