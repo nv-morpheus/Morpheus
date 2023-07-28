@@ -15,7 +15,6 @@
 import asyncio
 import queue
 import typing
-from functools import partial
 from http import HTTPStatus
 from io import StringIO
 
