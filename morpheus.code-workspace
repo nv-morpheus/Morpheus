@@ -641,7 +641,7 @@
 					"name": "Python: GNN model training",
 					"type": "python",
 					"request": "launch",
-					"program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/trainingc.py",
+					"program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
 					"console": "integratedTerminal",
 					"cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
 					"justMyCode": false,
@@ -653,22 +653,7 @@
 						"--model-dir=models",
 						"--epochs=5"
 					]
-					},
-					{
-						"name": "GNN model inference script",
-						"type": "python",
-						"request": "launch",
-						"program": "${workspaceFolder}/models/validation-inference-scripts/fraud-detection-models/inference.py",
-						"console": "integratedTerminal",
-						"cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
-						"justMyCode": false,
-						"args": [
-							"--training-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/training.csv",
-							"--validation-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/validation.csv",
-							"--output-file=result_out.csv",
-							"--model-dir=models"
-						]
-						},
+					}
 		],
 		"compounds": []
 	}
