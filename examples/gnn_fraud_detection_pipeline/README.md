@@ -97,10 +97,10 @@ Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05
 Added stage: <to-file-10; WriteToFileStage(filename=result.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
-Graph construction rate[Complete]: 265 messages [00:00, 4130.83 messages/s]
-Inference rate[Complete]: 265 messages [00:01, 185.37 messages/s]
-Add classification rate[Complete]: 265 messages [00:01, 180.41 messages/s]
-Serialize rate[Complete]: 265 messages [00:01, 178.19 messages/s]
+Graph construction rate[Complete]: 265 messages [00:00, 866.07 messages/s]
+Inference rate[Complete]: 265 messages [00:03, 84.62 messages/s]
+Add classification rate[Complete]: 265 messages [00:03, 83.91 messages/s]
+Serialize rate[Complete]: 265 messages [00:03, 83.08 messages/s]
 ====Pipeline Complete====
 ```
 

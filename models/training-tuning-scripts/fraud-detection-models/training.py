@@ -431,7 +431,8 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
 @click.option('--output-file', help="Path to csv inference result", default="debug/out.csv")
 @click.option('--model-type', help="Model type either RGCN/Graphsage", default="RGCN")
 def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file, model_type):
-
+    from timeit import default_timer as timer
+    start = timer()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     if model_type == "RGCN":
@@ -537,6 +538,9 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     # Save model
     pd.DataFrame(metrics_result).to_csv(output_file)
     save_model(whole_graph, model, hyperparameters, classifier, model_dir)
+
+    end = timer()
+    print(end - start)
 
 
 if __name__ == "__main__":

@@ -641,7 +641,7 @@
 					"name": "Python: GNN model training",
 					"type": "python",
 					"request": "launch",
-					"program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
+					"program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/trainingc.py",
 					"console": "integratedTerminal",
 					"cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
 					"justMyCode": false,

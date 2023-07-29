@@ -14,13 +14,9 @@
 # limitations under the License.
 
 import dataclasses
-import os
-import pickle
 import typing
 
-import dgl
 import mrc
-import torch
 from mrc.core import operators as ops
 
 import cudf
@@ -34,7 +30,8 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 from .graph_construction_stage import FraudGraphMultiMessage
-from .model import inference, load_model
+from .model import inference
+from .model import load_model
 
 
 @dataclasses.dataclass
@@ -68,7 +65,6 @@ class GraphSAGEStage(SinglePortStage):
 
         self._dgl_model, _, self.hyperparam = load_model(model_dir)
         self._batch_size = batch_size
-        # self._sample_size = list(sample_size)
         self._record_id = record_id
         self._target_node = target_node
 
@@ -86,12 +82,14 @@ class GraphSAGEStage(SinglePortStage):
 
         node_identifiers = list(message.get_meta(self._record_id).to_pandas())
 
-        # inductive_embedding = self._inductive_step_hinsage(message.graph, self._keras_model, node_identifiers)
-        inductive_embedding, node_id = inference(self._dgl_model, message.graph, message.node_features, node_identifiers,
-                                        batch_size=self._batch_size)
+        # Perform inference
+        inductive_embedding, _ = inference(self._dgl_model, message.graph,
+                                           message.node_features,
+                                           message.test_index,
+                                           batch_size=self._batch_size)
 
         inductive_embedding = cudf.DataFrame(inductive_embedding)
-        # inductive_embedding['node_id'] = node_id
+
         # Rename the columns to be more descriptive
         inductive_embedding.rename(lambda x: "ind_emb_" + str(x), axis=1, inplace=True)
 

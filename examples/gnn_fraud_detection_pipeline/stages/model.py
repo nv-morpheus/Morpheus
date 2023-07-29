@@ -13,13 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dgl import nn as dglnn
+import os
+import pickle
+
 import dgl
+import torch
+from dgl import nn as dglnn
 from torch import nn
 from torch.nn import functional as F
-import torch
-import pickle
-import os
+
+import cudf as cf
 
 
 class HeteroRGCN(nn.Module):
@@ -74,9 +77,6 @@ class HeteroRGCN(nn.Module):
     HeteroRGCN is a deep learning model designed for heterogeneous graphs.
     It applies graph convolutional layers to learn representations of nodes in the graph.
 
-    The model takes the input graph, input feature size, number of hidden units, and output feature size
-    to construct the HeteroRGCN architecture.
-
     Examples
     --------
     >>> input_graph = dgl.heterograph(...)
@@ -125,7 +125,7 @@ class HeteroRGCN(nn.Module):
 
     def forward(self, input_graph, features):
 
-        # get embeddings for all node types. Initialize nodes with random weights.
+        # Get embeddings for all none target node types.
         h_dict = self.hetro_embedding(
             {ntype: input_graph[0].nodes(ntype)
              for ntype in self.hetro_embedding.embeds.keys()})
@@ -379,13 +379,14 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     embedding = torch.cat(embedding)
     return eval_logits, eval_seeds, embedding
 
+
 def inference(model: nn.Module,
               input_graph: dgl.DGLHeteroGraph,
               feature_tensors: torch.Tensor,
               test_idx: torch.Tensor,
-              target_node="transaction",
-              batch_size=100,
-              device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+              target_node: str = "transaction",
+              batch_size: int = 100,
+              device: str = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     """
     Perform inference on a given model using the provided input graph and feature tensors.
 
@@ -404,7 +405,8 @@ def inference(model: nn.Module,
     batch_size : int, optional (default: 100)
         The batch size used during inference to process data in mini-batches.
     device : str or torch.device, optional (default: "cuda:0" if torch.cuda.is_available() else "cpu")
-        The device where the computation will take place. By default, it uses GPU ("cuda:0") if available, otherwise CPU ("cpu").
+        The device where the computation will take place. By default, it uses GPU ("cuda:0") if available,
+        otherwise CPU ("cpu").
     Returns
     -------
     test_embedding : torch.Tensor
@@ -422,3 +424,99 @@ def inference(model: nn.Module,
     _, test_seed, test_embedding = evaluate(model, test_dataloader, feature_tensors, target_node, device=device)
 
     return test_embedding, test_seed
+
+
+def build_fsi_graph(train_data, col_drop):
+    """Build a heterogeneous graph from an edgelist and node index.
+    Parameters
+    ----------
+    train_data : pd.DataFrame
+        Training data containing node features.
+    col_drop : list
+        List of features to drop from the node features.
+    Returns
+    -------
+    tuple
+        A tuple containing the following elements:
+        DGLGraph
+            The built DGL graph representing the heterogeneous graph.
+        torch.tensor
+            Normalized feature tensor after dropping specified columns.
+    Notes
+    -----
+    This function takes the training data, represented as a pandas DataFrame,
+    and constructs a heterogeneous graph (DGLGraph) from the given edgelist
+    and node index.
+
+    The `col_drop` list specifies which features should be dropped from the
+    node features to build the normalized feature tensor.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> train_data = pd.DataFrame({'node_id': [1, 2, 3],
+    ...                            'feature1': [0.1, 0.2, 0.3],
+    ...                            'feature2': [0.4, 0.5, 0.6]})
+    >>> col_drop = ['feature2']
+    >>> graph, features = build_heterograph(train_data, col_drop)
+    """
+
+    feature_tensors = train_data.drop(col_drop, axis=1).values
+    feature_tensors = torch.from_dlpack(feature_tensors.toDlpack())
+    feature_tensors = (feature_tensors - feature_tensors.mean(0, keepdim=True)) / (0.0001 +
+                                                                                   feature_tensors.std(0, keepdim=True))
+
+    client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
+        torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
+
+    client_tensor, merchant_tensor, transaction_tensor = (client_tensor.view(-1),
+                                                          merchant_tensor.view(-1),
+                                                          transaction_tensor.view(-1))
+
+    edge_list = {
+        ('client', 'buy', 'transaction'): (client_tensor, transaction_tensor),
+        ('transaction', 'bought', 'client'): (transaction_tensor, client_tensor),
+        ('transaction', 'issued', 'merchant'): (transaction_tensor, merchant_tensor),
+        ('merchant', 'sell', 'transaction'): (merchant_tensor, transaction_tensor)
+    }
+
+    graph = dgl.heterograph(edge_list)
+
+    return graph, feature_tensors
+
+
+def prepare_data(training_data, test_data):
+    """Process data for training/inference operation
+
+    Parameters
+    ----------
+    training_data : str
+        path to training data
+    test_data : str
+        path to test/validation data
+
+    Returns
+    -------
+    tuple
+     tuple of (training_data, test_data, train_index, test_index, label, combined data)
+    """
+
+    train_size = training_data.shape[0]
+    cdf = cf.concat([training_data, test_data], axis=0)
+    labels = cdf['fraud_label'].values
+
+    # Drop non-feature columns & reset index
+    cdf.drop(['fraud_label', 'index'], inplace=True, axis=1)
+
+    # Create index of node features
+    cdf.reset_index(inplace=True)
+    meta_cols = ['client_node', 'merchant_node']
+    for col in meta_cols:
+        cdf[col] = cf.CategoricalIndex(cdf[col]).codes
+
+    train_data, test_data, train_index, test_index, all_data = (cdf.iloc[:train_size, :],
+                                                                cdf.iloc[train_size:, :],
+                                                                cdf['index'][:train_size],
+                                                                cdf['index'][train_size:],
+                                                                cdf)
+    return train_data, test_data, train_index, test_index, labels, all_data
