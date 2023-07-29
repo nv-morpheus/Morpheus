@@ -39,13 +39,14 @@ from torchmetrics.functional import accuracy
 from tqdm import trange
 from xgboost import XGBClassifier
 
+import cudf as cf
 from cuml import ForestInference
 
 np.random.seed(1001)
 torch.manual_seed(1001)
 
 
-def get_metrics(pred, labels, name='RGCN'):
+def get_metrics(pred, labels, name='HinSAGE'):
     """Compute evaluation metrics.
 
     Parameters
@@ -133,24 +134,28 @@ def build_fsi_graph(train_data, col_drop):
     >>> graph, features = build_heterograph(train_data, col_drop)
     """
 
+    feature_tensors = train_data.drop(col_drop, axis=1).values
+    feature_tensors = torch.from_dlpack(feature_tensors.toDlpack())
+    feature_tensors = (feature_tensors - feature_tensors.mean(0, keepdim=True)) / (0.0001 +
+                                                                                   feature_tensors.std(0, keepdim=True))
+
+    client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
+        torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
+
+    client_tensor, merchant_tensor, transaction_tensor = (client_tensor.view(-1),
+                                                          merchant_tensor.view(-1),
+                                                          transaction_tensor.view(-1))
+
     edge_list = {
-        ('client', 'buy', 'transaction'): (train_data['client_node'].values, train_data['index'].values),
-        ('transaction', 'bought', 'client'): (train_data['index'].values, train_data['client_node'].values),
-        ('transaction', 'issued', 'merchant'): (train_data['index'].values, train_data['merchant_node'].values),
-        ('merchant', 'sell', 'transaction'): (train_data['merchant_node'].values, train_data['index'].values)
+        ('client', 'buy', 'transaction'): (client_tensor, transaction_tensor),
+        ('transaction', 'bought', 'client'): (transaction_tensor, client_tensor),
+        ('transaction', 'issued', 'merchant'): (transaction_tensor, merchant_tensor),
+        ('merchant', 'sell', 'transaction'): (merchant_tensor, transaction_tensor)
     }
 
     graph = dgl.heterograph(edge_list)
-    feature_tensors = torch.from_numpy(train_data.drop(col_drop, axis=1).values).float()
-    feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
     return graph, feature_tensors
-
-
-def map_node_id(df, col_name):
-    # Convert column node list to integer index for dgl graph.
-    node_index = {j: i for i, j in enumerate(df[col_name].unique())}
-    df[col_name] = df[col_name].map(node_index)
 
 
 def prepare_data(training_data, test_data):
@@ -168,24 +173,24 @@ def prepare_data(training_data, test_data):
     tuple
      tuple of (training_data, test_data, train_index, test_index, label, combined data)
     """
+    df_train = cf.read_csv(training_data)
+    df_test = cf.read_csv(test_data)
+    train_size = df_train.shape[0]
+    cdf = cf.concat([df_train, df_test], axis=0)
+    labels = cdf['fraud_label'].values
+    cdf.drop(['fraud_label', 'index'], inplace=True, axis=1)
 
-    df_train = pd.read_csv(training_data)
-    train_idx_ = df_train.shape[0]
-    df_test = pd.read_csv(test_data)
-    df = pd.concat([df_train, df_test], axis=0)
-    df['tran_id'] = df['index']
-
-    meta_cols = ['tran_id', 'client_node', 'merchant_node']
+    cdf.reset_index(inplace=True)
+    meta_cols = ['client_node', 'merchant_node']
     for col in meta_cols:
-        map_node_id(df, col)
+        cdf[col] = cf.CategoricalIndex(cdf[col]).codes
 
-    train_idx = df['tran_id'][:train_idx_]
-    test_idx = df['tran_id'][train_idx_:]
-
-    df['index'] = df['tran_id']
-    df.index = df['index']
-
-    return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
+    return (cdf.iloc[:train_size, :],
+            cdf.iloc[train_size:, :],
+            cdf['index'][:train_size],
+            cdf['index'][train_size:],
+            labels,
+            cdf)
 
 
 def save_model(graph, model, hyperparameters, xgb_model, model_dir):
@@ -315,14 +320,7 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='tra
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def train(model,
-          loss_func,
-          train_dataloader,
-          labels,
-          optimizer,
-          feature_tensors,
-          target_node='transaction',
-          device='cpu'):
+def train(model, loss_func, train_dataloader, labels, optimizer, feature_tensors, target_node='transaction'):
     """
     Train the specified GNN model using the given training data.
 
@@ -345,9 +343,7 @@ def train(model,
     target_node : str, optional
         The target node for training, indicating the node of interest.
         Defaults to 'transaction'.
-    device : str, optional
-        The device where the model and tensors should be loaded.
-        Default is 'cpu'.
+
     Returns
     -------
     List[float, float]
@@ -358,9 +354,8 @@ def train(model,
     train_loss = 0.0
     for _, (_, output_nodes, blocks) in enumerate(train_dataloader):
         seed = output_nodes[target_node]
-        blocks = [b.to(device) for b in blocks]
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        input_features = feature_tensors[nid].to(device)
+        input_features = feature_tensors[nid]
 
         logits, _ = model(blocks, input_features)
         loss = loss_func(logits, labels[seed])
@@ -375,7 +370,7 @@ def train(model,
 
 
 @torch.no_grad()
-def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
+def evaluate(model, eval_loader, feature_tensors, target_node):
     """Evaluate the specified model on the given evaluation input graph
 
     Parameters
@@ -389,9 +384,6 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
         Shape: (num_samples, num_features).
     target_node : str
         The target node for evaluation, indicating the node of interest.
-    device : str, optional
-        The device where the model and tensors should be loaded.
-        Default is 'cpu'.
 
     Returns
     -------
@@ -408,8 +400,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
         seed = output_nodes[target_node]
 
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        blocks = [b.to(device) for b in blocks]
-        input_features = feature_tensors[nid].to(device)
+        input_features = feature_tensors[nid]
         logits, embedd = model.infer(blocks, input_features)
         eval_logits.append(logits.cpu().detach())
         eval_seeds.append(seed)
@@ -433,6 +424,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
 def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file, model_type):
     from timeit import default_timer as timer
     start = timer()
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     if model_type == "RGCN":
@@ -443,17 +435,17 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     # process training data
     train_data, _, train_idx, inductive_idx,\
         labels, df = prepare_data(training_data, validation_data)
-    meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
+
+    meta_cols = ["client_node", "merchant_node", "index"]
 
     # Build graph
     whole_graph, feature_tensors = build_fsi_graph(df, meta_cols)
     train_graph, _ = build_fsi_graph(train_data, meta_cols)
-    whole_graph = whole_graph.to(device)
 
-    feature_tensors = feature_tensors.to(device)
-    train_idx = torch.from_numpy(train_idx.values).to(device)
-    inductive_idx = torch.from_numpy(inductive_idx.values).to(device)
-    labels = torch.LongTensor(labels).to(device)
+    feature_tensors = feature_tensors.float()
+    train_idx = torch.from_dlpack(train_idx.values.toDlpack()).long()
+    inductive_idx = torch.from_dlpack(inductive_idx.values.toDlpack()).long()
+    labels = torch.from_dlpack(labels.toDlpack()).long()
 
     # Hyperparameters
     in_size, hidden_size, out_size, n_layers,\
@@ -468,13 +460,13 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         "epoch": epochs
     }
 
-    scale_pos_weight = train_data['fraud_label'].sum() / train_data.shape[0]
+    scale_pos_weight = (labels[train_idx].sum() / train_data.shape[0]).item()
     scale_pos_weight = torch.FloatTensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
 
     # Dataloaders
-    train_loader, val_loader, test_loader = init_loaders(train_graph.to(
-        device), train_idx, test_idx=inductive_idx,
-        val_idx=inductive_idx, g_test=whole_graph, batch_size=batch_size)
+    train_loader, val_loader, test_loader = init_loaders(train_graph, train_idx, test_idx=inductive_idx,
+                                                         val_idx=inductive_idx, g_test=whole_graph,
+                                                         batch_size=batch_size)
 
     # Set model variables
     model = gnn_model(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size).to(device)
@@ -483,11 +475,9 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
     for epoch in trange(epochs):
 
-        train_acc, loss = train(
-            model, loss_func, train_loader, labels, optimizer, feature_tensors,
-            target_node, device=device)
+        train_acc, loss = train(model, loss_func, train_loader, labels, optimizer, feature_tensors, target_node)
         print(f"Epoch {epoch}/{epochs} | Train Accuracy: {train_acc} | Train Loss: {loss}")
-        val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node, device=device)
+        val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node)
         val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), "binary").item()
         val_auc = roc_auc_score(
             labels.long()[val_seed].cpu().numpy(),
@@ -496,8 +486,8 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         print(f"Validation Accuracy: {val_accuracy} auc {val_auc}")
 
     # Create embeddings
-    _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node, device=device)
-    test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
+    _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node)
+    test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node)
 
     # compute metrics
     test_acc = accuracy(test_logits.argmax(dim=1), labels.long()[test_seeds].cpu(), "binary").item()
@@ -544,4 +534,5 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
 
 if __name__ == "__main__":
+
     train_model()

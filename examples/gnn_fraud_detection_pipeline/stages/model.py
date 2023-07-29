@@ -300,15 +300,18 @@ class HinSAGE(nn.Module):
         return nn.Sigmoid()(predictions), embedding
 
 
-def load_model(model_dir, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+def load_model(model_dir, gnn_model=HinSAGE, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     """Load trained models from model directory
 
     Parameters
     ----------
     model_dir : str
         models directory path
+    gnn_model: nn.Module
+        GNN model type either HeteroRGCN or HinSAGE. Default HeteroRGCN
     device : _type_, optional
-        _description_, by default torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        The device where the model and tensors should be loaded,
+        by default torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     Returns
     -------
@@ -320,20 +323,20 @@ def load_model(model_dir, device=torch.device("cuda:0" if torch.cuda.is_availabl
         graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
-    model = HinSAGE(graph,
-                    in_size=hyperparameters['in_size'],
-                    hidden_size=hyperparameters['hidden_size'],
-                    out_size=hyperparameters['out_size'],
-                    n_layers=hyperparameters['n_layers'],
-                    embedding_size=hyperparameters['embedding_size'],
-                    target=hyperparameters['target_node']).to(device)
+    model = gnn_model(graph,
+                      in_size=hyperparameters['in_size'],
+                      hidden_size=hyperparameters['hidden_size'],
+                      out_size=hyperparameters['out_size'],
+                      n_layers=hyperparameters['n_layers'],
+                      embedding_size=hyperparameters['embedding_size'],
+                      target=hyperparameters['target_node']).to(device)
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
 
     return model, graph, hyperparameters
 
 
 @torch.no_grad()
-def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
+def evaluate(model, eval_loader, feature_tensors, target_node):
     """Evaluate the specified model on the given evaluation input graph
 
     Parameters
@@ -347,9 +350,6 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
         Shape: (num_samples, num_features).
     target_node : str
         The target node for evaluation, indicating the node of interest.
-    device : str, optional
-        The device where the model and tensors should be loaded.
-        Default is 'cpu'.
 
     Returns
     -------
@@ -367,8 +367,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
         seed = output_nodes[target_node]
 
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        blocks = [b.to(device) for b in blocks]
-        input_features = feature_tensors[nid].to(device)
+        input_features = feature_tensors[nid]
         logits, embedd = model.infer(blocks, input_features)
         eval_logits.append(logits.cpu().detach())
         eval_seeds.append(seed)
@@ -385,8 +384,7 @@ def inference(model: nn.Module,
               feature_tensors: torch.Tensor,
               test_idx: torch.Tensor,
               target_node: str = "transaction",
-              batch_size: int = 100,
-              device: str = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+              batch_size: int = 100):
     """
     Perform inference on a given model using the provided input graph and feature tensors.
 
@@ -404,9 +402,7 @@ def inference(model: nn.Module,
         The type of node for which inference will be performed. By default, it is set to "transaction".
     batch_size : int, optional (default: 100)
         The batch size used during inference to process data in mini-batches.
-    device : str or torch.device, optional (default: "cuda:0" if torch.cuda.is_available() else "cpu")
-        The device where the computation will take place. By default, it uses GPU ("cuda:0") if available,
-        otherwise CPU ("cpu").
+
     Returns
     -------
     test_embedding : torch.Tensor
@@ -421,7 +417,7 @@ def inference(model: nn.Module,
                                                  shuffle=False,
                                                  drop_last=False,
                                                  num_workers=0)
-    _, test_seed, test_embedding = evaluate(model, test_dataloader, feature_tensors, target_node, device=device)
+    _, test_seed, test_embedding = evaluate(model, test_dataloader, feature_tensors, target_node)
 
     return test_embedding, test_seed
 
