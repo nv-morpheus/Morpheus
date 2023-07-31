@@ -36,7 +36,6 @@ void process_failures(const std::string& error_msg,
     }
     message->set_metadata("cm_failed", "true");
     message->set_metadata("cm_failed_reason", error_msg);
-    std::cout << "<<<<<<<<<<<<<<<<<< cm_failed_reason: " << error_msg << std::endl;
 }
 }  // namespace
 

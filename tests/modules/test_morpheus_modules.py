@@ -494,10 +494,6 @@ def test_rest_loader_module_get_without_params():
         def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            print("df")
-            print(df)
-            print("control_msg.payload().df")
-            print(control_msg.payload().df)
             assert control_msg.payload().df.equals(df)
 
         registry = mrc.ModuleRegistry
@@ -515,7 +511,6 @@ def test_rest_loader_module_get_without_params():
                 }
             ]
         }
-        # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module(
             "DataLoader", "morpheus", "ModuleDataLoaderTest", config
         )
@@ -605,7 +600,6 @@ def test_rest_loader_module_get_with_params():
                 }
             ]
         }
-        # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module(
             "DataLoader", "morpheus", "ModuleDataLoaderTest", config
         )

@@ -67,8 +67,7 @@ void extract_query_fields(nlohmann::json& query,
         throw std::runtime_error("'REST loader' receives query with empty endpoint");
     }
 
-    // TODO: change default value to 80 before merge
-    port         = query.value("port", "8081");
+    port         = query.value("port", "80");
     http_version = query.value("http_version", "1.1");
     content_type = query.value("content_type", "");
     body         = query.value("body", "");
@@ -357,18 +356,6 @@ void create_dataframe_from_query(py::object& dataframe,
             create_dataframe_from_response(dataframe, mod_cudf, response, strategy);
         }
     }
-}
-
-void process_failures(const std::string& error_msg,
-                      std::shared_ptr<morpheus::ControlMessage> message,
-                      bool processes_failures_as_errors)
-{
-    if (processes_failures_as_errors)
-    {
-        throw std::runtime_error(error_msg);
-    }
-    message->set_metadata("cm_failed", "true");
-    message->set_metadata("cm_failed_reason", error_msg);
 }
 }  // namespace
 
