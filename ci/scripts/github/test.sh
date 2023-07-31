@@ -50,9 +50,11 @@ if [[ "${LOCAL_CI}" == "" ]]; then
     sccache --show-stats
 fi
 
+rapids-logger "Checking Python stub files"
+
 # Check for git diffs which would mean the build is out of sync with the repo
 if [[ $(git status --short --untracked | grep .pyi) != "" ]]; then
-    rapids-logger "ERROR: Out of sync Python stubs"
+
     echo "The Python stubs (*.pyi) are out of sync with repo. Please rerun the build locally with "
     echo "'-DMORPHEUS_PYTHON_BUILD_STUBS=ON' and commit the stub files into the repo"
     git status
