@@ -106,7 +106,6 @@ def cleanup_dist():
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
 
     world_size = 1
@@ -117,14 +116,19 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
+    from morpheus.utils import seed as seed_utils
+    seed_utils.manual_seed(42)
 
     import torch
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
 
-    preset_cats = json.load(open(PRESET_CATS_FILEPATH, 'r'))
-    preset_numerical_scaler_params = json.load(open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r'))
+    with open(PRESET_CATS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_cats = json.load(fh)
+
+    with open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_numerical_scaler_params = json.load(fh)
 
     # Initializing model
     model = AutoEncoder(
