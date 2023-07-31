@@ -16,7 +16,7 @@
 
 # This must come before torch
 # isort: off
-import cudf  # noqa: F401
+import cudf  # noqa: F401 pylint: disable=unused-import
 # isort: on
 
 import json
@@ -175,9 +175,9 @@ def _run_test(rank, world_size):
         # Make sure model converges (low loss)
         for loss_type in LOSS_TYPES:
             ft_losses = getattr(model.logger, f"{loss_type}_fts")
-            for ft, losses_l in ft_losses.items():
+            for feature, losses_l in ft_losses.items():
                 losses = losses_l[1]
-                assert min(losses) < LOSS_TARGETS[loss_type][ft] * LOSS_TOLERANCE_RATIO
+                assert min(losses) < LOSS_TARGETS[loss_type][feature] * LOSS_TOLERANCE_RATIO
 
         # Inference
         inf_dataset = DatasetFromPath(
