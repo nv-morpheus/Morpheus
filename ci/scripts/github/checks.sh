@@ -46,6 +46,7 @@ if [[ "${LOCAL_CI}" == "" ]]; then
     sccache --show-stats
 fi
 
+rapids-logger "Installing Morpheus"
 pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
 rapids-logger "Checking copyright headers"
