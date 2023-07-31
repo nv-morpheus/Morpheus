@@ -21,6 +21,7 @@
 
 #include <glog/logging.h>
 
+#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -82,8 +83,8 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
             try
             {
                 loader->second->load(control_message, task);
-            } catch (std::runtime_error& e)
-            {
+            } catch (std::exception& e)
+            {   
                 process_failures(e.what(), control_message, processes_failures_as_errors);
             }
         }

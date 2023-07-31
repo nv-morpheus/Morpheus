@@ -377,42 +377,55 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
         mod_cudf           = cache_handle.get_module("cudf");
     }  // release GIL
 
-    auto conf = this->config();
-
-    int max_retry = conf.value("max_retry", 3);
-    if (max_retry < 0)
+    try
     {
-        throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
-    }
+        auto conf = this->config();
 
-    int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
-    if (retry_interval_milliseconds < 0)
-    {
-        throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " +
-                                 std::to_string(retry_interval_milliseconds));
-    }
+        int max_retry = conf.value("max_retry", 3);
+        if (max_retry < 0)
+        {
+            throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
+        }
 
-    if (!task["queries"].is_array() or task.empty())
-    {
-        throw std::runtime_error("'REST Loader' control message specified no queries to load");
-    }
+        int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
+        if (retry_interval_milliseconds < 0)
+        {
+            throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " +
+                                     std::to_string(retry_interval_milliseconds));
+        }
 
-    std::string strategy = task.value("strategy", "aggregate");
-    if (strategy != "aggregate")
-    {
-        throw std::runtime_error("Only 'aggregate' strategy is currently supported");
-    }
+        if (!task["queries"].is_array() or task.empty())
+        {
+            throw std::runtime_error("'REST Loader' control message specified no queries to load");
+        }
 
-    auto queries = task["queries"];
-    for (auto& query : queries)
-    {
-        create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, retry_interval_milliseconds, strategy);
-    }
+        std::string strategy = task.value("strategy", "aggregate");
+        if (strategy != "aggregate")
+        {
+            throw std::runtime_error("Only 'aggregate' strategy is currently supported");
+        }
 
+        auto queries = task["queries"];
+        for (auto& query : queries)
+        {
+            create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, retry_interval_milliseconds, strategy);
+        }
+
+        {
+            py::gil_scoped_acquire gil;
+            message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+        }  // release GIL
+    } catch (...)
     {
         py::gil_scoped_acquire gil;
-        message->payload(MessageMeta::create_from_python(std::move(dataframe)));
-    }  // release GIL
+        auto _handle = dataframe.release();
+        _handle.dec_ref();
+ 
+        _handle = mod_cudf.release();
+        _handle.dec_ref();
+
+        throw;
+    }
 
     return message;
 }
