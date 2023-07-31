@@ -51,8 +51,10 @@ if [[ "${LOCAL_CI}" == "" ]]; then
 fi
 
 # Check for git diffs which would mean the build is out of sync with the repo
-if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]]; then
-    rapids-logger "ERROR: git diff found, build is out of sync with repo"
+if [[ $(git status --short --untracked | grep .pyi) != "" ]]; then
+    rapids-logger "ERROR: Out of sync Python stubs"
+    echo "The Python stubs (*.pyi) are out of sync with repo. Please rerun the build locally with "
+    echo "'-DMORPHEUS_PYTHON_BUILD_STUBS=ON' and commit the stub files into the repo"
     git status
     exit 1
 fi
