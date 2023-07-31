@@ -30,8 +30,8 @@ git submodule update --init --recursive
 
 rapids-logger "Configuring cmake for Morpheus"
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
-CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
+export CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON"
 if [[ "${LOCAL_CI}" == "" ]]; then
     CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
 fi
@@ -47,7 +47,10 @@ if [[ "${LOCAL_CI}" == "" ]]; then
 fi
 
 rapids-logger "Installing Morpheus"
-pip install ${MORPHEUS_ROOT}/build/dist/*.whl
+pip install ./
+
+# Setting this prevents loading of cudf since we don't have a GPU
+export MORPHEUS_IN_SPHINX_BUILD=1
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
