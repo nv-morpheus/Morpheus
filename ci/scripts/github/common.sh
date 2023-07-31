@@ -95,10 +95,11 @@ function update_conda_env() {
         conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}
     fi
 
-    rapids-logger "Checking for updates to conda env"
-
-    # Update the packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
+        rapids-logger "Checking for updates to conda env"
+        # Update the packages
+        rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+    fi
 
     # Finally, reactivate
     conda activate morpheus
@@ -154,6 +155,16 @@ function show_conda_info() {
     conda info
     conda config --show-sources
     conda list --show-channel-urls
+}
+
+function log_toolchain() {
+    rapids-logger "Check versions"
+    python3 --version
+    x86_64-conda-linux-gnu-cc --version
+    x86_64-conda-linux-gnu-c++ --version
+    cmake --version
+    ninja --version
+    sccache --version
 }
 
 function upload_artifact() {

@@ -20,13 +20,7 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
-rapids-logger "Check versions"
-python3 --version
-x86_64-conda-linux-gnu-cc --version
-x86_64-conda-linux-gnu-c++ --version
-cmake --version
-ninja --version
-sccache --version
+log_toolchain
 
 git submodule update --init --recursive
 
