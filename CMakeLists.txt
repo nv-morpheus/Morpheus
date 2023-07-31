@@ -24,7 +24,7 @@ option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or st
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
-option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
+option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" ON)
 option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)
 option(MORPHEUS_PYTHON_BUILD_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
 option(MORPHEUS_PYTHON_BUILD_WHEEL "Whether or not to build the morpheus .whl file" OFF)

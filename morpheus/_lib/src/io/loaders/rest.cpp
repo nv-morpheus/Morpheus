@@ -379,64 +379,54 @@ std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMess
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
-    // If set to false, any exception thrown during the task is caught and the related fields in ControlMessage are set
-    // to indicate the reason of that failure; Otherwise, the exception is thrown
-    bool processes_failures_as_errors = false;
+    py::module_ mod_cudf;
+    py::object dataframe;
 
-    try
     {
-        py::module_ mod_cudf;
-        py::object dataframe;
+        py::gil_scoped_acquire gil;
 
-        {
-            py::gil_scoped_acquire gil;
+        dataframe          = py::none();
+        auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
+        mod_cudf           = cache_handle.get_module("cudf");
+    }  // release GIL
 
-            dataframe          = py::none();
-            auto& cache_handle = mrc::pymrc::PythonObjectCache::get_handle();
-            mod_cudf           = cache_handle.get_module("cudf");
-        }  // release GIL
+    auto conf = this->config();
 
-        auto conf                    = this->config();
-        processes_failures_as_errors = conf.value("processes_failures_as_errors", false);
-
-        int max_retry = conf.value("max_retry", 3);
-        if (max_retry < 0)
-        {
-            throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
-        }
-
-        int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
-        if (retry_interval_milliseconds < 0)
-        {
-            throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " +
-                                     std::to_string(retry_interval_milliseconds));
-        }
-
-        if (!task["queries"].is_array() or task.empty())
-        {
-            throw std::runtime_error("'REST Loader' control message specified no queries to load");
-        }
-
-        std::string strategy = task.value("strategy", "aggregate");
-        if (strategy != "aggregate")
-        {
-            throw std::runtime_error("Only 'aggregate' strategy is currently supported");
-        }
-
-        auto queries = task["queries"];
-        for (auto& query : queries)
-        {
-            create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, retry_interval_milliseconds, strategy);
-        }
-
-        {
-            py::gil_scoped_acquire gil;
-            message->payload(MessageMeta::create_from_python(std::move(dataframe)));
-        }  // release GIL
-    } catch (std::runtime_error& e)
+    int max_retry = conf.value("max_retry", 3);
+    if (max_retry < 0)
     {
-        process_failures(e.what(), message, processes_failures_as_errors);
+        throw std::runtime_error("'REST Loader' receives invalid max_retry value: " + std::to_string(max_retry));
     }
+
+    int retry_interval_milliseconds = conf.value("retry_interval_milliseconds", 1000);
+    if (retry_interval_milliseconds < 0)
+    {
+        throw std::runtime_error("'REST Loader' receives invalid retry_interval_milliseconds value: " +
+                                 std::to_string(retry_interval_milliseconds));
+    }
+
+    if (!task["queries"].is_array() or task.empty())
+    {
+        throw std::runtime_error("'REST Loader' control message specified no queries to load");
+    }
+
+    std::string strategy = task.value("strategy", "aggregate");
+    if (strategy != "aggregate")
+    {
+        throw std::runtime_error("Only 'aggregate' strategy is currently supported");
+    }
+
+    auto queries = task["queries"];
+    for (auto& query : queries)
+    {
+        create_dataframe_from_query(dataframe, mod_cudf, query, max_retry, retry_interval_milliseconds, strategy);
+    }
+
+    {
+        py::gil_scoped_acquire gil;
+        message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    }  // release GIL
+
     return message;
 }
 }  // namespace morpheus
