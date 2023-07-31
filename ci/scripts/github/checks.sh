@@ -22,6 +22,8 @@ update_conda_env
 
 log_toolchain
 
+cd ${MORPHEUS_ROOT}
+
 fetch_base_branch
 
 git submodule update --init --recursive
@@ -43,6 +45,8 @@ if [[ "${LOCAL_CI}" == "" ]]; then
     rapids-logger "sccache usage for source build:"
     sccache --show-stats
 fi
+
+pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
