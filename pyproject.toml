@@ -441,7 +441,6 @@ disable = [
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
-  "no-member", # pylint isn't aware of some of our attrs issue #956
   "protected-access",
   "raw-checker-failed",
   "superfluous-parens",
