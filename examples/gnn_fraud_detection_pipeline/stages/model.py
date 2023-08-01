@@ -426,7 +426,7 @@ def build_fsi_graph(train_data, col_drop):
     """Build a heterogeneous graph from an edgelist and node index.
     Parameters
     ----------
-    train_data : pd.DataFrame
+    train_data : cudf.DataFrame
         Training data containing node features.
     col_drop : list
         List of features to drop from the node features.
@@ -486,10 +486,10 @@ def prepare_data(training_data, test_data):
 
     Parameters
     ----------
-    training_data : str
-        path to training data
-    test_data : str
-        path to test/validation data
+    training_data : cudf.DataFrame
+        training data
+    test_data : cudf.DataFrame
+        test/validation data
 
     Returns
     -------
@@ -501,7 +501,7 @@ def prepare_data(training_data, test_data):
     cdf = cf.concat([training_data, test_data], axis=0)
     labels = cdf['fraud_label'].values
 
-    # Drop non-feature columns & reset index
+    # Drop non-feature columns
     cdf.drop(['fraud_label', 'index'], inplace=True, axis=1)
 
     # Create index of node features
