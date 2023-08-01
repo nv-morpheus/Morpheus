@@ -55,10 +55,11 @@ DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(modu
 
 DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _config) :
   SegmentModule(std::move(module_name), std::move(_config))
-{   
-    if  (config().contains("loader_config")) {
+{
+    if (config().contains("loader_config"))
+    {
         auto loader_config = config()["loader_config"];
-        m_data_loader = DataLoader(loader_config);
+        m_data_loader      = DataLoader(loader_config);
     }
 
     if (config().contains("loaders"))

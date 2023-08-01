@@ -66,10 +66,11 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
     // If set to false, any exception thrown during the task is caught and the related fields in ControlMessage are set
     // to indicate the reason of that failure; Otherwise, the exception is thrown
     bool processes_failures_as_errors = false;
-    if (!m_config.empty()) {
+    if (!m_config.empty())
+    {
         processes_failures_as_errors = m_config.value("processes_failures_as_errors", false);
-    } 
-    
+    }
+
     while (control_message->has_task("load"))
     {
         auto task      = control_message->remove_task("load");
@@ -84,9 +85,10 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
             {
                 loader->second->load(control_message, task);
             } catch (std::exception& e)
-            {   
+            {
                 process_failures(e.what(), control_message, processes_failures_as_errors);
-            } catch (...) {
+            } catch (...)
+            {
                 process_failures("Unknown error", control_message, processes_failures_as_errors);
             }
         }

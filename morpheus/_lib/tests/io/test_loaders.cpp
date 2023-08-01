@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
