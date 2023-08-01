@@ -45,7 +45,6 @@ namespace py = pybind11;
 namespace beast = boost::beast;
 namespace http  = beast::http;
 namespace net   = boost::asio;
-using tcp       = net::ip::tcp;
 
 namespace {
 void extract_query_fields(nlohmann::json& query,
@@ -144,7 +143,7 @@ void get_response_with_retry(http::request<http::string_body>& request,
                              int retry_interval_milliseconds)
 {
     net::io_context ioc;
-    tcp::resolver resolver(ioc);
+    net::ip::tcp::resolver resolver(ioc);
     beast::tcp_stream stream(ioc);
     auto const endpoint_results = resolver.resolve(std::string(request[http::field::host]), port);
     while (max_retry > 0)
@@ -154,7 +153,7 @@ void get_response_with_retry(http::request<http::string_body>& request,
         beast::flat_buffer buffer;
         http::read(stream, buffer, response);
         beast::error_code ec;
-        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+        stream.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
         if (ec && ec != beast::errc::not_connected)
         {
             throw beast::system_error{ec};
