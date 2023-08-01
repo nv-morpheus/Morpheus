@@ -86,7 +86,6 @@ class Pipeline():
         self._is_started = False
 
         self._mrc_executor: mrc.Executor = None
-        self._mrc_pipeline: mrc.Pipeline = None
 
     @property
     def is_built(self) -> bool:
@@ -234,7 +233,7 @@ class Pipeline():
 
         self._mrc_executor = mrc.Executor(self._exec_options)
 
-        self._mrc_pipeline = mrc.Pipeline()
+        mrc_pipeline = mrc.Pipeline()
 
         def inner_build(builder: mrc.Builder, segment_id: str):
             logger.info(f"====Building Segment: {segment_id}====")
@@ -280,9 +279,9 @@ class Pipeline():
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
-                                            [port_info["port_pair"] for port_info in segment_egress_ports],
-                                            segment_inner_build)
+            mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+                                      [port_info["port_pair"] for port_info in segment_egress_ports],
+                                      segment_inner_build)
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True
@@ -290,7 +289,7 @@ class Pipeline():
         # Finally call _on_start
         self._on_start()
 
-        self._mrc_executor.register_pipeline(self._mrc_pipeline)
+        self._mrc_executor.register_pipeline(mrc_pipeline)
 
         self._is_built = True
 
@@ -317,6 +316,7 @@ class Pipeline():
         self._mrc_executor.stop()
 
         logger.info("====Pipeline Stopped====")
+        self._on_stop()
 
     async def join(self):
         """
@@ -345,6 +345,11 @@ class Pipeline():
             # Now call join on all stages
             for s in list(self._stages):
                 await s.join()
+
+            self._on_stop()
+
+    def _on_stop(self):
+        self._mrc_executor = None
 
     async def _build_and_start(self):
 
