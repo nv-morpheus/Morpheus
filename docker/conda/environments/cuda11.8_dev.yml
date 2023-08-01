@@ -96,11 +96,11 @@ dependencies:
     - tqdm=4
     - typing_utils=0.1
     - watchdog=2.1
+    - yapf=0.40.1
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
         - docutils
         - pytest-kafka==0.6.0
-        - yapf==0.40.1
         # Ensure all runtime requirements are installed using the requirements file
         - --requirement requirements.txt
