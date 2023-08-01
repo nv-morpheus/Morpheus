@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
+import typing
+
 import pytest
 
 from morpheus.config import Config
@@ -21,6 +24,27 @@ from morpheus.utils.type_aliases import DataFrameType
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+
+
+class SourceTestStage(InMemorySourceStage):
+
+    def __init__(self,
+                 config,
+                 dataframes: typing.List[DataFrameType],
+                 state_dict: dict,
+                 repeat: int = 1,
+                 state_key: str = "source"):
+        super().__init__(config, dataframes, repeat)
+        self._state_dict = state_dict
+        self._state_key = state_key
+
+    @property
+    def name(self) -> str:
+        return "test-source"
+
+    def __del__(self):
+        self._state_dict[self._state_key] = True
+        self._state_dict = None
 
 
 class SinkTestStage(InMemorySinkStage):
@@ -41,14 +65,19 @@ class SinkTestStage(InMemorySinkStage):
 
 def _run_pipeline(config: Config, filter_probs_df: DataFrameType, state_dict: dict):
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(SourceTestStage(config, [filter_probs_df], state_dict=state_dict))
     pipe.add_stage(SinkTestStage(config, state_dict=state_dict))
     pipe.run()
 
 
 @pytest.mark.use_cudf
 def test_destructors_called(config: Config, filter_probs_df: DataFrameType):
-    state_dict = {"sink": False}
+    """
+    Test to ensure that the destructors of stages are called (issue #1114).
+    """
+    state_dict = {"source": False, "sink": False}
     _run_pipeline(config, filter_probs_df, state_dict)
 
-    assert state_dict["sink"] is True
+    gc.collect()
+    assert state_dict["source"]
+    assert state_dict["sink"]
