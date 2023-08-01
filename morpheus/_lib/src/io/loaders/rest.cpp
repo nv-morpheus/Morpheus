@@ -118,7 +118,7 @@ void construct_request(http::request<http::string_body>& request,
     //     specified in the config.
     if (http_version != "1.1" && http_version != "1.0")
     {
-        throw std::runtime_error("'REST Loader' receives http version not supported: " + http_version);
+        throw std::runtime_error("'REST Loader' received http version not supported: " + http_version);
     }
     unsigned version = http_version == "1.1" ? 11 : 10;
     request.version(version);

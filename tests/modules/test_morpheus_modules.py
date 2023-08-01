@@ -823,7 +823,7 @@ if __name__ == "__main__":
     test_is_version_compatible()
     test_get_module()
     test_payload_loader_module()
-    # test_file_loader_module()
+    test_file_loader_module()
     test_filter_cm_failed()
 
     # Flask service needed for testing RESTDataloader
