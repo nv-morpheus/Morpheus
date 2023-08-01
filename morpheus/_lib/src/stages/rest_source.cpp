@@ -202,6 +202,7 @@ void RestSourceStage::close()
     if (m_server)
     {
         m_server->stop();  // this is a no-op if the server is not running
+        m_server.reset();
     }
     m_queue.close();
 }
