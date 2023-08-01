@@ -136,7 +136,7 @@ limit-inference-results = 100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins = ["pylint.extensions.docparams"]
+load-plugins = ["pylint.extensions.docparams", "morpheus_lib_import_checker"]
 
 # Pickle collected data for later comparisons.
 persistent = true
