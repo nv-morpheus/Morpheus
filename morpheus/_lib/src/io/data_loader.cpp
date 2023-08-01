@@ -87,7 +87,7 @@ std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage>
             {   
                 process_failures(e.what(), control_message, processes_failures_as_errors);
             } catch (...) {
-                VLOG(5) << "DataLoader::load() caught unknown exception" << std::endl;
+                process_failures("Unknown error", control_message, processes_failures_as_errors);
             }
         }
         else

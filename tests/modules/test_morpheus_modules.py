@@ -442,7 +442,6 @@ def test_filter_cm_failed():
 
 
 def test_rest_loader_module_get_without_params():
-    global packets_received
     packets_received = 0
     df1 = cudf.DataFrame(
         {
@@ -462,8 +461,6 @@ def test_rest_loader_module_get_without_params():
 
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
-            global packet_count
-
             config = {
                 "tasks": [
                     {
@@ -492,7 +489,7 @@ def test_rest_loader_module_get_without_params():
             yield msg
 
         def _on_next(control_msg):
-            global packets_received
+            nonlocal packets_received
             packets_received += 1
             assert control_msg.payload().df.equals(df)
 
@@ -534,7 +531,6 @@ def test_rest_loader_module_get_without_params():
 
 
 def test_rest_loader_module_get_with_params():
-    global packets_received
     packets_received = 0
     df1 = cudf.DataFrame(
         {
@@ -554,8 +550,6 @@ def test_rest_loader_module_get_with_params():
 
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
-            global packet_count
-
             config = {
                 "tasks": [
                     {
@@ -581,7 +575,7 @@ def test_rest_loader_module_get_with_params():
             yield msg
 
         def _on_next(control_msg):
-            global packets_received
+            nonlocal packets_received
             packets_received += 1
             assert control_msg.payload().df.equals(df)
 
@@ -623,7 +617,6 @@ def test_rest_loader_module_get_with_params():
 
 
 def test_rest_loader_module_post_with_body():
-    global packets_received
     packets_received = 0
 
     df1 = cudf.DataFrame(
@@ -644,8 +637,6 @@ def test_rest_loader_module_post_with_body():
 
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
-            global packet_count
-
             config = {
                 "tasks": [
                     {
@@ -681,7 +672,7 @@ def test_rest_loader_module_post_with_body():
             yield msg
 
         def _on_next(control_msg):
-            global packets_received
+            nonlocal packets_received
             packets_received += 1
             assert control_msg.payload().df.equals(df)
 
@@ -724,7 +715,6 @@ def test_rest_loader_module_post_with_body():
 
 
 def test_rest_loader_module_x_headers():
-    global packets_received
     packets_received = 0
 
     df1 = cudf.DataFrame(
@@ -745,8 +735,6 @@ def test_rest_loader_module_x_headers():
 
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
-            global packet_count
-
             config = {
                 "tasks": [
                     {
@@ -776,7 +764,7 @@ def test_rest_loader_module_x_headers():
             yield msg
 
         def _on_next(control_msg):
-            global packets_received
+            nonlocal packets_received
             packets_received += 1
             assert control_msg.payload().df.equals(df)
 
@@ -823,11 +811,11 @@ if __name__ == "__main__":
     test_is_version_compatible()
     test_get_module()
     test_payload_loader_module()
-    test_file_loader_module()
+    # test_file_loader_module()
     test_filter_cm_failed()
 
-    # Flask service needed for testing RESTDataloader
-    test_rest_loader_module_get_without_params()
-    test_rest_loader_module_get_with_params()
-    test_rest_loader_module_post_with_body()
-    test_rest_loader_module_x_headers()
+    # Flask service needed for RESTDataloader tests
+    # test_rest_loader_module_get_without_params()
+    # test_rest_loader_module_get_with_params()
+    # test_rest_loader_module_post_with_body()
+    # test_rest_loader_module_x_headers()
