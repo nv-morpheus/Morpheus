@@ -75,19 +75,18 @@ def test_get_module_with_bad_config_no_loader():
     packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             nonlocal packet_count
             for _ in range(packet_count):
                 config = {
-                    "tasks": [
-                        {
-                            "type": "load",
-                            "properties": {
-                                "loader_id": "payload",
-                                "strategy": "aggregate",
-                            },
-                        }
-                    ]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "payload",
+                            "strategy": "aggregate",
+                        },
+                    }]
                 }
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -96,9 +95,7 @@ def test_get_module_with_bad_config_no_loader():
 
         config = {"loaders": []}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
-        data_loader = builder.load_module(
-            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-        )
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
 
@@ -123,19 +120,18 @@ def test_get_module_with_bad_loader_type():
     packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             nonlocal packet_count
             for _ in range(packet_count):
                 config = {
-                    "tasks": [
-                        {
-                            "type": "load",
-                            "properties": {
-                                "loader_id": "payload",
-                                "strategy": "aggregate",
-                            },
-                        }
-                    ]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "payload",
+                            "strategy": "aggregate",
+                        },
+                    }]
                 }
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -143,20 +139,16 @@ def test_get_module_with_bad_loader_type():
         source = builder.make_source("source", gen_data)
 
         config = {
-            "loaders": [
-                {
-                    "id": "not_a_loader(tm)",
-                    "properties": {
-                        "file_types": "something",
-                        "prop2": "something else",
-                    },
-                }
-            ]
+            "loaders": [{
+                "id": "not_a_loader(tm)",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else",
+                },
+            }]
         }
         # This will unpack the config and forward its payload (MessageMeta) to the sink
-        data_loader = builder.load_module(
-            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-        )
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
 
@@ -171,19 +163,18 @@ def test_get_module_with_bad_control_message():
     packet_count = 5
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             nonlocal packet_count
             for _ in range(packet_count):
                 config = {
-                    "tasks": [
-                        {
-                            "type": "load",
-                            "properties": {
-                                "loader_id": "not_a_loader(tm)",
-                                "strategy": "aggregate",
-                            },
-                        }
-                    ]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "not_a_loader(tm)",
+                            "strategy": "aggregate",
+                        },
+                    }]
                 }
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -191,20 +182,16 @@ def test_get_module_with_bad_control_message():
         source = builder.make_source("source", gen_data)
 
         config = {
-            "loaders": [
-                {
-                    "id": "payload",
-                    "properties": {
-                        "file_types": "something",
-                        "prop2": "something else",
-                    },
-                }
-            ]
+            "loaders": [{
+                "id": "payload",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else",
+                },
+            }]
         }
         # This will unpack the config and forward its payload (MessageMeta) to the sink
-        data_loader = builder.load_module(
-            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-        )
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
 
@@ -234,24 +221,22 @@ def test_payload_loader_module():
     assert fn_constructor is not None
 
     def init_wrapper(builder: mrc.Builder):
-        df = cudf.DataFrame(
-            {
-                "col1": [1, 2, 3, 4, 5],
-                "col2": [1.1, 2.2, 3.3, 4.4, 5.5],
-                "col3": ["a", "b", "c", "d", "e"],
-                "col4": [True, False, True, False, True],
-            }
-        )
+        df = cudf.DataFrame({
+            "col1": [1, 2, 3, 4, 5],
+            "col2": [1.1, 2.2, 3.3, 4.4, 5.5],
+            "col3": ["a", "b", "c", "d", "e"],
+            "col4": [True, False, True, False, True],
+        })
 
         def gen_data():
             nonlocal packet_count
             config = {
-                "tasks": [
-                    {
-                        "type": "load",
-                        "properties": {"loader_id": "payload", "strategy": "aggregate"},
-                    }
-                ]
+                "tasks": [{
+                    "type": "load",
+                    "properties": {
+                        "loader_id": "payload", "strategy": "aggregate"
+                    },
+                }]
             }
 
             payload = messages.MessageMeta(df)
@@ -270,20 +255,16 @@ def test_payload_loader_module():
         source = builder.make_source("source", gen_data)
 
         config = {
-            "loaders": [
-                {
-                    "id": "payload",
-                    "properties": {
-                        "file_types": "something",
-                        "prop2": "something else",
-                    },
-                }
-            ]
+            "loaders": [{
+                "id": "payload",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else",
+                },
+            }]
         }
         # This will unpack the config and forward its payload (MessageMeta) to the sink
-        data_loader = builder.load_module(
-            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-        )
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
@@ -333,40 +314,37 @@ def test_file_loader_module(tmp_path):
         files.append((filename, ftype))
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             for f in files:
                 # Check with the file type
                 config = {
-                    "tasks": [
-                        {
-                            "type": "load",
-                            "properties": {
-                                "loader_id": "file",
-                                "strategy": "aggregate",
-                                "files": [{"path": f[0], "type": f[1]}],
-                            },
-                        }
-                    ]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "file",
+                            "strategy": "aggregate",
+                            "files": [{
+                                "path": f[0], "type": f[1]
+                            }],
+                        },
+                    }]
                 }
                 msg = messages.ControlMessage(config)
                 yield msg
 
                 # Make sure we can auto-detect the file type
                 config = {
-                    "tasks": [
-                        {
-                            "type": "load",
-                            "properties": {
-                                "loader_id": "file",
-                                "strategy": "aggregate",
-                                "files": [
-                                    {
-                                        "path": f[0],
-                                    }
-                                ],
-                            },
-                        }
-                    ]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "file",
+                            "strategy": "aggregate",
+                            "files": [{
+                                "path": f[0],
+                            }],
+                        },
+                    }]
                 }
                 msg = messages.ControlMessage(config)
                 yield msg
@@ -384,20 +362,16 @@ def test_file_loader_module(tmp_path):
         source = builder.make_source("source", gen_data)
 
         config = {
-            "loaders": [
-                {
-                    "id": "file",
-                    "properties": {
-                        "file_types": "something",
-                        "prop2": "something else",
-                    },
-                }
-            ]
+            "loaders": [{
+                "id": "file",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else",
+                },
+            }]
         }
         # This will unpack the config and forward its payload (MessageMeta) to the sink
-        data_loader = builder.load_module(
-            "DataLoader", "morpheus", "ModuleDataLoaderTest", config
-        )
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
@@ -425,6 +399,7 @@ def test_filter_cm_failed():
     packets_received = 0
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             msg = messages.ControlMessage()
             msg.set_metadata("cm_failed", "true")
@@ -448,9 +423,7 @@ def test_filter_cm_failed():
         source = builder.make_source("source", gen_data)
 
         config = {}
-        filter_cm_failed_module = builder.load_module(
-            FILTER_CM_FAILED, "morpheus", "filter_cm_failed", config
-        )
+        filter_cm_failed_module = builder.load_module(FILTER_CM_FAILED, "morpheus", "filter_cm_failed", config)
 
         sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
@@ -559,7 +532,6 @@ def test_filter_cm_failed():
 #     executor.join()
 #     assert packets_received == 1
 
-
 # def test_rest_loader_module_get_with_params():
 #     packets_received = 0
 #     df1 = cudf.DataFrame(
@@ -644,7 +616,6 @@ def test_filter_cm_failed():
 #     executor.start()
 #     executor.join()
 #     assert packets_received == 1
-
 
 # def test_rest_loader_module_post_with_body():
 #     packets_received = 0
@@ -743,7 +714,6 @@ def test_filter_cm_failed():
 #     executor.join()
 #     assert packets_received == 1
 
-
 # def test_rest_loader_module_x_headers():
 #     packets_received = 0
 
@@ -834,7 +804,6 @@ def test_filter_cm_failed():
 #     executor.start()
 #     executor.join()
 #     assert packets_received == 1
-
 
 if __name__ == "__main__":
     test_contains_namespace()

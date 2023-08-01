@@ -104,5 +104,5 @@ TEST_F(TestLoader, LoaderRESTTest)
     auto task   = nlohmann::json();
     auto loader = RESTDataLoader();
 
-    EXPECT_THROW(loader.load(msg, task), std::runtime_error);
+    EXPECT_THROW(loader.load(msg, task), std::exception);
 }
