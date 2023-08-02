@@ -60,6 +60,7 @@ class Pipeline():
         self._source_count: int = None  # Maximum number of iterations for progress reporting. None = Unknown/Unlimited
 
         self._id_counter = 0
+        self._num_threads = config.num_threads
 
         # Complete set of nodes across segments in this pipeline
         self._stages: typing.Set[Stage] = set()
@@ -69,10 +70,6 @@ class Pipeline():
 
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
-
-        self._exec_options = mrc.Options()
-        self._exec_options.topology.user_cpuset = f"0-{config.num_threads - 1}"
-        self._exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
         # Set the default channel size
         mrc.Config.default_channel_size = config.edge_buffer_size
@@ -231,7 +228,11 @@ class Pipeline():
 
         logger.info("====Registering Pipeline====")
 
-        self._mrc_executor = mrc.Executor(self._exec_options)
+        exec_options = mrc.Options()
+        exec_options.topology.user_cpuset = f"0-{self._num_threads - 1}"
+        exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
+
+        self._mrc_executor = mrc.Executor(exec_options)
 
         mrc_pipeline = mrc.Pipeline()
 
