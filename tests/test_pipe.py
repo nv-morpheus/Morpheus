@@ -20,10 +20,10 @@ import typing
 import pytest
 
 from morpheus.config import Config
-from morpheus.utils.type_aliases import DataFrameType
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 class SourceTestStage(InMemorySourceStage):
