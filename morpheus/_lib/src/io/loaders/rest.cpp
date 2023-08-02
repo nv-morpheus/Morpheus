@@ -18,14 +18,64 @@
 #include "morpheus/io/loaders/rest.hpp"
 
 #include "morpheus/messages/control.hpp"
+#include "morpheus/messages/meta.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/asio.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
+#include <bits/this_thread_sleep.h>
+#include <boost/asio/basic_stream_socket.hpp>
+#include <boost/asio/detail/impl/epoll_reactor.hpp>
+#include <boost/asio/detail/impl/reactive_socket_service_base.ipp>
+#include <boost/asio/detail/impl/resolver_service_base.ipp>
+#include <boost/asio/detail/impl/service_registry.hpp>
+#include <boost/asio/detail/type_traits.hpp>
+#include <boost/asio/impl/execution_context.hpp>
+#include <boost/asio/impl/io_context.hpp>
+#include <boost/asio/impl/io_context.ipp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/basic_resolver.hpp>
+#include <boost/asio/ip/basic_resolver_iterator.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>  // IWYU pragma: keep
+#include <boost/beast/core/basic_stream.hpp>
+#include <boost/beast/core/buffers_to_string.hpp>
+#include <boost/beast/core/detail/buffers_range_adaptor.hpp>
+#include <boost/beast/core/detail/config.hpp>
+#include <boost/beast/core/detail/impl/temporary_buffer.ipp>
+#include <boost/beast/core/error.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/core/impl/basic_stream.hpp>
+#include <boost/beast/core/impl/buffers_cat.hpp>
+#include <boost/beast/core/impl/buffers_prefix.hpp>
+#include <boost/beast/core/impl/buffers_suffix.hpp>
+#include <boost/beast/core/impl/flat_buffer.hpp>
+#include <boost/beast/core/impl/multi_buffer.hpp>
+#include <boost/beast/core/impl/string.ipp>
+#include <boost/beast/core/string_type.hpp>
+#include <boost/beast/core/tcp_stream.hpp>
+#include <boost/beast/http.hpp>  // IWYU pragma: keep
+#include <boost/beast/http/basic_dynamic_body.hpp>
+#include <boost/beast/http/detail/basic_parsed_list.hpp>
+#include <boost/beast/http/dynamic_body.hpp>
+#include <boost/beast/http/error.hpp>
+#include <boost/beast/http/field.hpp>
+#include <boost/beast/http/fields.hpp>
+#include <boost/beast/http/impl/basic_parser.hpp>
+#include <boost/beast/http/impl/basic_parser.ipp>
+#include <boost/beast/http/impl/fields.hpp>
+#include <boost/beast/http/impl/message.hpp>
+#include <boost/beast/http/impl/read.hpp>
+#include <boost/beast/http/impl/serializer.hpp>
+#include <boost/beast/http/impl/verb.ipp>
+#include <boost/beast/http/impl/write.hpp>
+#include <boost/beast/http/message.hpp>
+#include <boost/beast/http/status.hpp>
+#include <boost/beast/http/string_body.hpp>
+#include <boost/beast/http/verb.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/intrusive/detail/list_iterator.hpp>
+#include <boost/intrusive/detail/tree_iterator.hpp>
+#include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/utility/string_view.hpp>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/cast.h>
@@ -34,11 +84,15 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utilities/object_cache.hpp>
 
+#include <algorithm>
+#include <array>
 #include <cctype>
-#include <exception>
+#include <chrono>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace py = pybind11;
 
@@ -154,7 +208,7 @@ void get_response_with_retry(http::request<http::string_body>& request,
         beast::flat_buffer buffer;
         http::read(stream, buffer, response);
         beast::error_code ec;
-        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+        stream.socket().shutdown(net::ip::tcp::socket::shutdown_both, ec);
         if (ec && ec != beast::errc::not_connected)
         {
             throw beast::system_error{ec};
