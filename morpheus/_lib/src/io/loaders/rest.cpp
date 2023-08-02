@@ -99,7 +99,6 @@ namespace py = pybind11;
 namespace beast = boost::beast;
 namespace http  = beast::http;
 namespace net   = boost::asio;
-// using tcp       = net::ip::tcp;
 
 namespace {
 void extract_query_fields(nlohmann::json& query,
