@@ -69,16 +69,13 @@ class MultiDFPMessage(MultiMessage):
 
     def set_meta_dataframe(self, columns: typing.Union[None, str, typing.List[str]], value):
 
-        df = typing.cast(DFPMessageMeta, self.meta).get_df()
-
-        if (columns is None):
-            # Set all columns
-            df[list(value.columns)] = value
-        else:
-            # If its a single column or list of columns, this is the same
-            df[columns] = value
-
-        typing.cast(DFPMessageMeta, self.meta).set_df(df)
+        with typing.cast(DFPMessageMeta, self.meta).mutable_dataframe() as df:
+            if (columns is None):
+                # Set all columns
+                df[list(value.columns)] = value
+            else:
+                # If its a single column or list of columns, this is the same
+                df[columns] = value
 
     def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
 

@@ -32,6 +32,7 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>       // for CHECK
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/utils/string_utils.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
@@ -77,11 +78,13 @@ MultiMessage::MultiMessage(std::shared_ptr<MessageMeta> meta, TensorIndex offset
 
     if (this->mess_offset < 0 || this->mess_offset >= this->meta->count())
     {
-        throw std::invalid_argument("Invalid message offset value");
+        throw std::invalid_argument(MRC_CONCAT_STR("Invalid message offset value: got " << this->mess_offset << " but expected 0<=x<" << this->meta->count() << "."));
     }
-    if (this->mess_count <= 0 || (this->mess_offset + this->mess_count > this->meta->count()))
+    auto upper = this->mess_offset + this->mess_count;
+    if (this->mess_count <= 0 || (upper > this->meta->count()))
     {
-        throw std::invalid_argument("Invalid message count value");
+        throw std::invalid_argument(MRC_CONCAT_STR("Invalid message count value: got " << this->mess_offset << "but expected 0<x<" << upper << "."));
+        // throw std::invalid_argument("Invalid message count value");
     }
 }
 

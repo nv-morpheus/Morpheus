@@ -151,10 +151,8 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
                 }
             }
 
-            auto new_one = pd_df_cls();
-
             LOG(WARNING) << "Dataframe is not a cudf dataframe, converting to cudf dataframe";
-            data_frame = cudf_df_cls(std::move(new_one));
+            data_frame = cudf_df_cls(std::move(data_frame));
         }
         else
         {

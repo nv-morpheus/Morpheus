@@ -150,7 +150,7 @@ def test_build_window_overlap(
 
     # Create an overlap
     train_df = dfp_message_meta.copy_dataframe()[-5:]
-    train_df['_row_hash'] = pd.util.hash_pandas_object(train_df, index=False)
+    train_df['_row_hash'] = pd.util.hash_pandas_object(train_df.to_pandas(), index=False)
 
     mock_cache = build_mock_user_cache(train_df=train_df)
     stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
@@ -172,7 +172,7 @@ def test_build_window(
 
     # Create an overlap
     train_df = dfp_message_meta.copy_dataframe()
-    train_df['_row_hash'] = pd.util.hash_pandas_object(train_df, index=False)
+    train_df['_row_hash'] = pd.util.hash_pandas_object(train_df.to_pandas(), index=False)
 
     mock_cache = build_mock_user_cache(train_df=train_df)
     stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
@@ -184,6 +184,8 @@ def test_build_window(
         msg = stage._build_window(dfp_message_meta)
 
     assert isinstance(msg, MultiDFPMessage)
+    a = msg.user_id
+    b = dfp_message_meta.user_id
     assert msg.user_id == dfp_message_meta.user_id
     assert msg.meta.user_id == dfp_message_meta.user_id
     assert msg.mess_offset == 0

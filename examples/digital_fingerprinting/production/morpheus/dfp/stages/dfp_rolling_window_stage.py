@@ -140,7 +140,7 @@ class DFPRollingWindowStage(SinglePortStage):
             train_df = user_cache.get_train_df(max_history=self._max_history)
 
             # Hash the incoming data rows to find a match
-            incoming_hash = pd.util.hash_pandas_object(incoming_df.iloc[[0, -1]], index=False)
+            incoming_hash = pd.util.hash_pandas_object(incoming_df.to_pandas().iloc[[0, -1]], index=False)
 
             # Find the index of the first and last row
             match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]

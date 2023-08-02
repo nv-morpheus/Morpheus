@@ -25,7 +25,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import process_dataframe
 
-from ..messages.multi_dfp_message import MultiDFPMessage
+from ..messages.multi_dfp_message import MultiDFPMessage, DFPMessageMeta
 
 logger = logging.getLogger("morpheus.{__name__}")
 
