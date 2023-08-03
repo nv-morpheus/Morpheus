@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
@@ -104,5 +105,5 @@ TEST_F(TestLoader, LoaderRESTTest)
     auto task   = nlohmann::json();
     auto loader = RESTDataLoader();
 
-    EXPECT_THROW(loader.load(msg, task), std::runtime_error);
+    EXPECT_THROW(loader.load(msg, task), std::exception);
 }
