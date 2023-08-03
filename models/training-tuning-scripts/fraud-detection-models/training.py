@@ -433,8 +433,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         gnn_model = HinSAGE
 
     # process training data
-    train_data, _, train_idx, inductive_idx,\
-        labels, df = prepare_data(training_data, validation_data)
+    train_data, _, train_idx, inductive_idx, labels, df = prepare_data(training_data, validation_data)
 
     meta_cols = ["client_node", "merchant_node", "index"]
 
@@ -448,8 +447,7 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     labels = torch.from_dlpack(labels.toDlpack()).long()
 
     # Hyperparameters
-    in_size, hidden_size, out_size, n_layers,\
-        embedding_size = 111, 64, 2, 2, 1
+    in_size, hidden_size, out_size, n_layers, embedding_size = 111, 64, 2, 2, 1
     hyperparameters = {
         "in_size": in_size,
         "hidden_size": hidden_size,

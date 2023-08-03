@@ -475,7 +475,6 @@ def build_fsi_graph(train_data, col_drop):
         ('transaction', 'issued', 'merchant'): (transaction_tensor, merchant_tensor),
         ('merchant', 'sell', 'transaction'): (merchant_tensor, transaction_tensor)
     }
-
     graph = dgl.heterograph(edge_list)
 
     return graph, feature_tensors
