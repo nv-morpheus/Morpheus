@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <gflags/gflags.h>  // for ParseCommandLineFlags
+#include <glog/logging.h>
+#include <gtest/gtest.h>  // IWYU pragma: keep
 
-#include "../test_utils/common.hpp"  // IWYU pragma: associated
-
-namespace morpheus::test {
-
-// TEST_CLASS(DataLoaderRegistry);
-TEST_CLASS(Loader);
-
-using TestDataLoader = TestWithPythonInterpreter;  // NOLINT
-using TestDataLoaderRegistry = TestWithPythonInterpreter;  // NOLINT
-}  // namespace morpheus::test
+int main(int argc, char** argv)
+{
+    FLAGS_alsologtostderr = true;  // Log to console
+    ::google::InitGoogleLogging("morpheus::test_libmorpheus");
+    ::testing::InitGoogleTest(&argc, argv);
+    ::google::ParseCommandLineFlags(&argc, &argv, true);
+    return RUN_ALL_TESTS();
+}
