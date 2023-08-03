@@ -30,30 +30,30 @@ target_link_libraries(test_cuda
     GTest::gtest
     GTest::gtest_main
     matx::matx
-  )
+)
 
 gtest_discover_tests(test_cuda)
 
 set_target_properties(test_cuda
-PROPERTIES
-  INSTALL_RPATH "$ORIGIN/.."
-  CUDA_STANDARD 17
-  CUDA_STANDARD_REQUIRED ON
+  PROPERTIES
+    INSTALL_RPATH "$ORIGIN/.."
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
 )
 
 install(
-TARGETS
-  test_cuda
-RUNTIME DESTINATION
-  "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-COMPONENT Wheel
+  TARGETS
+    test_cuda
+  RUNTIME DESTINATION
+    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+  COMPONENT Wheel
 )
 
-# Morpheus Tests
+# Morpheus Test Utilities
 
 add_library(
-    morpheus_test_utilities
-      test_utils/common.cpp
+  morpheus_test_utilities
+    test_utils/common.cpp
 )
 
 target_link_libraries(
@@ -63,40 +63,42 @@ target_link_libraries(
     morpheus
 )
 
+# Morpheus Tests
+
 function (add_morpheus_test)
   set(options)
   set(oneValueArgs NAME)
   set(multiValueArgs FILES)
-  cmake_parse_arguments(MORPHEUS_TEST "${options}"
-                        "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(
+    MORPHEUS_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
+  )
 
   add_executable(test_${MORPHEUS_TEST_NAME}
     ${MORPHEUS_TEST_FILES}
   )
 
   target_link_libraries(test_${MORPHEUS_TEST_NAME}
-  PRIVATE
-    GTest::gtest_main
-    matx::matx
-    morpheus_test_utilities
-    pybind11::embed
+    PRIVATE
+      GTest::gtest_main
+      morpheus_test_utilities
+      pybind11::embed
   )
 
   gtest_discover_tests(test_${MORPHEUS_TEST_NAME})
 
   set_target_properties(test_${MORPHEUS_TEST_NAME}
-  PROPERTIES
-    INSTALL_RPATH "$ORIGIN/.."
-    CUDA_STANDARD 17
-    CUDA_STANDARD_REQUIRED ON
+    PROPERTIES
+      INSTALL_RPATH "$ORIGIN/.."
+      CUDA_STANDARD 17
+      CUDA_STANDARD_REQUIRED ON
   )
 
   install(
-  TARGETS
-    test_${MORPHEUS_TEST_NAME}
-  RUNTIME DESTINATION
-    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-  COMPONENT Wheel
+    TARGETS
+      test_${MORPHEUS_TEST_NAME}
+    RUNTIME DESTINATION
+      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+    COMPONENT Wheel
   )
 
 endfunction()
