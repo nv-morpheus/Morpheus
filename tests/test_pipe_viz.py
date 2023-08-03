@@ -16,9 +16,11 @@
 
 import imghdr
 import os
+import subprocess
 
 import pytest
 
+from morpheus.cli.commands import RANKDIR_CHOICES
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -26,8 +28,12 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils import compare_df
 from utils import assert_path_exists
 from utils.stages.conv_msg import ConvMsg
+from utils import TEST_DIRS
+from utils import assert_results
+from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_cudf
@@ -72,3 +78,21 @@ def test_png(viz_pipeline: Pipeline, tmp_path):
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("rankdir", RANKDIR_CHOICES)
+def test_from_cli(tmp_path: str, dataset_pandas: DatasetManager, rankdir: str):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+    out_file = os.path.join(tmp_path, 'out.csv')
+    viz_file = os.path.join(tmp_path, 'pipeline.png')
+    cli = (f"morpheus run pipeline-other --viz_file={viz_file} --viz_direction={rankdir} "
+           f"from-file --filename={input_file} to-file --filename={out_file}")
+    subprocess.run(cli, check=True, shell=True)
+
+    assert_path_exists(viz_file)
+    assert imghdr.what(viz_file) == 'png'
+    assert_path_exists(out_file)
+
+    df = dataset_pandas.get_df(out_file, no_cache=True)
+    dataset_pandas.assert_compare_df(df, dataset_pandas['filter_probs.csv'])
