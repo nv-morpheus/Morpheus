@@ -30,7 +30,6 @@ add_executable(test_libmorpheus
   test_deserializers.cpp
   test_dev_mem_info.cpp
   test_file_in_out.cpp
-  test_main.cpp
   test_matx_util.cpp
   test_multi_slices.cpp
   test_tensor.cpp
@@ -41,6 +40,7 @@ add_executable(test_libmorpheus
 target_link_libraries(test_libmorpheus
   PRIVATE
     GTest::gtest
+    GTest::gtest_main
     matx::matx
     morpheus
     pybind11::embed
