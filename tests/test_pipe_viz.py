@@ -28,17 +28,15 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils import compare_df
-from utils import assert_path_exists
-from utils.stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
-from utils import assert_results
+from utils import assert_path_exists
 from utils.dataset_manager import DatasetManager
+from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.use_cudf
-@pytest.fixture(scope="function")
-def viz_pipeline(config, filter_probs_df):
+@pytest.fixture(name="viz_pipeline", scope="function")
+def viz_pipeline_fixture(config, filter_probs_df):
     """
     Creates a quick pipeline.
     """
@@ -50,13 +48,13 @@ def viz_pipeline(config, filter_probs_df):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_stage(InMemorySinkStage(config))
 
     return pipe
 
 
-def test_call_before_run(viz_pipeline: Pipeline, tmp_path):
+def test_call_before_run(viz_pipeline: Pipeline, tmp_path: str):
 
     # Test is necessary to ensure run() is called first. See issue #230
     viz_file = os.path.join(tmp_path, 'pipeline.png')
@@ -66,7 +64,7 @@ def test_call_before_run(viz_pipeline: Pipeline, tmp_path):
         viz_pipeline.visualize(viz_file, rankdir="LR")
 
 
-def test_png(viz_pipeline: Pipeline, tmp_path):
+def test_png(viz_pipeline: Pipeline, tmp_path: str):
 
     viz_file = os.path.join(tmp_path, 'pipeline.png')
 
