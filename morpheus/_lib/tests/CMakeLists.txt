@@ -19,22 +19,23 @@ find_package(pybind11 REQUIRED)
 
 include(GoogleTest)
 
-add_library(
-    morpheus_test_utilities
-      test_utils/common.cpp
-)
+# add_library(
+#     morpheus_test_utilities
+#       test_utils/common.cpp
+# )
 
-target_link_libraries(
-  morpheus_test_utilities
-  PRIVATE
-    GTest::gtest
-    morpheus
-)
+# target_link_libraries(
+#   morpheus_test_utilities
+#   PRIVATE
+#     GTest::gtest
+#     morpheus
+# )
 
 function (add_morpheus_test TEST_NAME TEST_FILES)
 
   add_executable(
     test_${TEST_NAME}
+    test_utils/common.cpp
     ${TEST_FILES}
   )
 
@@ -45,7 +46,10 @@ function (add_morpheus_test TEST_NAME TEST_FILES)
       GTest::gtest_main
       matx::matx
       morpheus
-      morpheus_test_utilities
+      # # for some reason using a shared library for common test utilities causes triton client a
+      # # segfault when initializing libcurl, instead we can add the test utils to every executable
+      # # as a workaround.
+      # morpheus_test_utilities
       pybind11::embed
   )
 
