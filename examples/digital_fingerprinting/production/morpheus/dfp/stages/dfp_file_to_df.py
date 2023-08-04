@@ -79,7 +79,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     schema : `morpheus.utils.column_info.DataFrameInputSchema`
         Input schema for the DataFrame.
@@ -94,13 +94,13 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  schema: DataFrameInputSchema,
                  filter_null: bool = True,
                  file_type: FileTypes = FileTypes.Auto,
                  parser_kwargs: dict = None,
                  cache_dir: str = "./.cache/dfp"):
-        super().__init__(c)
+        super().__init__(config)
 
         self._schema = schema
 
