@@ -13,14 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import types
-
 import pytest
 
 import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from utils.dataset_manager import DatasetManager
 
 
@@ -37,7 +36,12 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    def test_process_message(self, config: Config, model_dir: str, test_data: dict, dataset_pandas: DatasetManager):
+    def test_process_message(self,
+                             config: Config,
+                             training_file: str,
+                             model_dir: str,
+                             test_data: dict,
+                             dataset_pandas: DatasetManager):
         from stages.graph_construction_stage import FraudGraphConstructionStage
         from stages.graph_construction_stage import FraudGraphMultiMessage
         from stages.graph_sage_stage import GraphSAGEMultiMessage
@@ -48,11 +52,12 @@ class TestGraphSageStage:
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))
-        graph = FraudGraphConstructionStage._build_graph_features(df)
-        msg = FraudGraphMultiMessage(meta=meta, graph=graph)
+        multi_msg = MultiMessage(meta=meta)
+        construction_stage = FraudGraphConstructionStage(config, training_file)
+        fgmm_msg = construction_stage._process_message(multi_msg)
 
         stage = GraphSAGEStage(config, model_dir=model_dir)
-        results = stage._process_message(msg)
+        results = stage._process_message(fgmm_msg)
 
         assert isinstance(results, GraphSAGEMultiMessage)
         assert results.meta is meta
