@@ -103,7 +103,7 @@ def build_fsi_graph(train_data, col_drop):
     """Build a heterogeneous graph from an edgelist and node index.
     Parameters
     ----------
-    train_data : pd.DataFrame
+    train_data : cudf.DataFrame
         Training data containing node features.
     col_drop : list
         List of features to drop from the node features.
@@ -117,7 +117,7 @@ def build_fsi_graph(train_data, col_drop):
             Normalized feature tensor after dropping specified columns.
     Notes
     -----
-    This function takes the training data, represented as a pandas DataFrame,
+    This function takes the training data, represented as a cudf DataFrame,
     and constructs a heterogeneous graph (DGLGraph) from the given edgelist
     and node index.
 
@@ -126,8 +126,8 @@ def build_fsi_graph(train_data, col_drop):
 
     Example
     -------
-    >>> import pandas as pd
-    >>> train_data = pd.DataFrame({'node_id': [1, 2, 3],
+    >>> import cudf
+    >>> train_data = cudf.DataFrame({'node_id': [1, 2, 3],
     ...                            'feature1': [0.1, 0.2, 0.3],
     ...                            'feature2': [0.4, 0.5, 0.6]})
     >>> col_drop = ['feature2']
