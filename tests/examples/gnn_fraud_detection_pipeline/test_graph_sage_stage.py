@@ -27,28 +27,19 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(self,
-                         config: Config,
-                         hinsage_model: str,
-                         gnn_fraud_detection_pipeline: types.ModuleType,
-                         tensorflow):
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
-        stage = GraphSAGEStage(config,
-                               model_hinsage_file=hinsage_model,
-                               batch_size=10,
-                               sample_size=[4, 64],
-                               record_id="test_id",
-                               target_node="test_node")
+    def test_constructor(self, dgl: types.ModuleType, config: Config, model_dir: str):
+        from stages.graph_sage_stage import GraphSAGEStage
+        from stages.model import HinSAGE
+        stage = GraphSAGEStage(config, model_dir=model_dir, batch_size=10, record_id="test_id", target_node="test_node")
 
-        assert isinstance(stage._keras_model, tensorflow.keras.models.Model)
+        assert isinstance(stage._dgl_model, HinSAGE)
         assert stage._batch_size == 10
-        assert stage._sample_size == [4, 64]
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
     def test_inductive_step_hinsage(self,
                                     config: Config,
-                                    hinsage_model: str,
+                                    model_dir: str,
                                     gnn_fraud_detection_pipeline: types.ModuleType,
                                     test_data: dict,
                                     dataset_pandas: DatasetManager):
@@ -63,7 +54,7 @@ class TestGraphSageStage:
 
         graph = FraudGraphConstructionStage._build_graph_features(df)
 
-        stage = GraphSAGEStage(config, model_hinsage_file=hinsage_model)
+        stage = GraphSAGEStage(config, model_dir=model_dir)
         results = stage._inductive_step_hinsage(graph, stage._keras_model, test_data['index'])
 
         assert isinstance(results, cudf.DataFrame)
@@ -72,7 +63,7 @@ class TestGraphSageStage:
 
     def test_process_message(self,
                              config: Config,
-                             hinsage_model: str,
+                             model_dir: str,
                              gnn_fraud_detection_pipeline: types.ModuleType,
                              test_data: dict,
                              dataset_pandas: DatasetManager):
@@ -89,7 +80,7 @@ class TestGraphSageStage:
         graph = FraudGraphConstructionStage._build_graph_features(df)
         msg = FraudGraphMultiMessage(meta=meta, graph=graph)
 
-        stage = GraphSAGEStage(config, model_hinsage_file=hinsage_model)
+        stage = GraphSAGEStage(config, model_dir=model_dir)
         results = stage._process_message(msg)
 
         assert isinstance(results, GraphSAGEMultiMessage)

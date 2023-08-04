@@ -63,13 +63,13 @@ def training_file(example_dir: str):
 
 
 @pytest.fixture
-def hinsage_model(example_dir: str):
-    yield os.path.join(example_dir, 'model/hinsage-model.pt')
+def model_dir(example_dir: str):
+    yield os.path.join(example_dir, 'model')
 
 
 @pytest.fixture
-def xgb_model(example_dir: str):
-    yield os.path.join(example_dir, 'model/xgb-model.pt')
+def xgb_model(model_dir: str):
+    yield os.path.join(model_dir, 'xgb.pt')
 
 
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
