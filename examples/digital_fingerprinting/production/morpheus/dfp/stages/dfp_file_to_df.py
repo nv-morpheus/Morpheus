@@ -45,15 +45,15 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
                                 filter_null: bool,
                                 parser_kwargs: dict) -> pd.DataFrame:
     retries = 0
-    s3_df = None
+    df = None
     while (retries < 2):
         try:
             with file_object as f:
-                s3_df = read_file_to_df(f,
-                                        file_type,
-                                        filter_nulls=filter_null,
-                                        df_type="pandas",
-                                        parser_kwargs=parser_kwargs)
+                df = read_file_to_df(f,
+                                     file_type,
+                                     filter_nulls=filter_null,
+                                     df_type="pandas",
+                                     parser_kwargs=parser_kwargs)
 
             break
         except Exception as e:
@@ -64,9 +64,9 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
     # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
     # increases performance significantly)
     if (schema.prep_dataframe is not None):
-        s3_df = schema.prep_dataframe(s3_df)
+        df = schema.prep_dataframe(df)
 
-    return s3_df
+    return df
 
 
 class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
@@ -114,7 +114,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     @property
     def name(self) -> str:
         """Stage name."""
-        return "dfp-s3-to-df"
+        return "dfp-file-to-df"
 
     def supports_cpp_node(self):
         """Whether this stage supports a C++ node."""
@@ -124,7 +124,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         """Accepted input types."""
         return (typing.Any, )
 
-    def _get_or_create_dataframe_from_s3_batch(
+    def _get_or_create_dataframe_from_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 
         if (not file_object_batch):
@@ -192,21 +192,21 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
         return (output_df, False)
 
-    def convert_to_dataframe(self, s3_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
-        """Converts a batch of S3 objects to a DataFrame."""
-        if (not s3_object_batch):
+    def convert_to_dataframe(self, fsspec_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
+        """Converts a batch of fsspec objects to a DataFrame."""
+        if (not fsspec_batch):
             return None
 
         start_time = time.time()
 
         try:
 
-            output_df, cache_hit = self._get_or_create_dataframe_from_s3_batch(s3_object_batch)
+            output_df, cache_hit = self._get_or_create_dataframe_from_batch(fsspec_batch)
 
             duration = (time.time() - start_time) * 1000.0
 
             if (output_df is not None and logger.isEnabledFor(logging.DEBUG)):
-                logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
+                logger.debug("fsspec objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms, Rate: %s rows/s",
                              len(output_df),
                              "hit" if cache_hit else "miss",
                              duration,
@@ -214,7 +214,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
             return output_df
         except Exception:
-            logger.exception("Error while converting S3 buckets to DF.")
+            logger.exception("Error while converting fsspec batch to DF.")
             raise
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
