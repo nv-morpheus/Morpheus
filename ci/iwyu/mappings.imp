@@ -10,11 +10,19 @@
 # stdlib
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
 { "include": [ "<bits/cxxabi_forced.h>", private, "<vector>", "public" ] },
+{ "include": [ "<bits/this_thread_sleep.h>", private, "<thread>", "public" ] },
 { "include": [ "<bits/types/siginfo_t.h>", private, "<csignal>", "public" ] },
 
 # boost
-{ "include": ["@<boost/fiber/future/detail/.*>", "private", "<boost/fiber/future/future.hpp>", "public"] },
 { "include": ["@<boost/algorithm/string/.*>", "private", "<boost/algorithm/string.hpp>", "public" ] },
+{ "include": ["@<boost/asio/detail/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/asio/impl/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/asio/ip/impl/.*>", "private", "<boost/asio.hpp>", "public" ] },
+{ "include": ["@<boost/beast/core/detail/.*>", "private", "<boost/beast/core.hpp>", "public" ] },
+{ "include": ["@<boost/beast/core/impl/.*>", "private", "<boost/beast/core.hpp>", "public" ] },
+{ "include": ["@<boost/beast/http/detail/.*>", "private", "<boost/beast/http.hpp>", "public" ] },
+{ "include": ["@<boost/beast/http/impl/.*>", "private", "<boost/beast/http.hpp>", "public" ] },
+{ "include": ["@<boost/fiber/future/detail/.*>", "private", "<boost/fiber/future/future.hpp>", "public"] },
 
 # cuda
 { "include": ["<cuda_runtime_api.h>", "private", "<cuda_runtime.h>", "public"] },

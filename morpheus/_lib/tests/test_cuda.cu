@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "test_morpheus.hpp"
+#include "./test_utils/common.hpp"
 
 #include <matx.h>
 
