@@ -27,11 +27,11 @@ SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a num
 
 
 @pytest.fixture(autouse=True, scope='session')
-def stellargraph(fail_missing: bool):
+def dgl(fail_missing: bool):
     """
-    All of the tests in this subdir require stellargraph
+    All of the tests in this subdir require dgl
     """
-    yield import_or_skip("stellargraph", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield import_or_skip("dgl", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture(autouse=True, scope='session')
@@ -40,14 +40,6 @@ def cuml(fail_missing: bool):
     All of the tests in this subdir require cuml
     """
     yield import_or_skip("cuml", reason=SKIP_REASON, fail_missing=fail_missing)
-
-
-@pytest.fixture(autouse=True, scope='session')
-def tensorflow(fail_missing: bool):
-    """
-    All of the tests in this subdir require tensorflow
-    """
-    yield import_or_skip("tensorflow", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
 @pytest.fixture
