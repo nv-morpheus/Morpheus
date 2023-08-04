@@ -30,76 +30,19 @@ from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
-@pytest.mark.import_mod(
-    [os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline/stages/graph_construction_stage.py')])
 class TestGraphConstructionStage:
 
-    def test_constructor(self, config: Config, training_file: str, import_mod: typing.List[types.ModuleType]):
-        graph_construction_stage = import_mod[0]
-        stage = graph_construction_stage.FraudGraphConstructionStage(config, training_file)
+    def test_constructor(self, config: Config, training_file: str):
+        from stages.graph_construction_stage import FraudGraphConstructionStage
+        stage = FraudGraphConstructionStage(config, training_file)
         assert isinstance(stage._training_data, cudf.DataFrame)
 
         # The training datafile contains many more columns than this, but these are the four columns
         # that are depended upon in the code
         assert {'client_node', 'index', 'fraud_label', 'merchant_node'}.issubset(stage._column_names)
 
-    def _check_graph(
-            self,
-            stellargraph: types.ModuleType,
-            sg: "stellargraph.StellarGraph",  # noqa: F821
-            expected_nodes,
-            expected_edges):
-        assert isinstance(sg, stellargraph.StellarGraph)
-        sg.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
-        assert not sg.is_directed()
-
-        nodes = sg.nodes()
-        assert set(nodes) == expected_nodes
-
-        edges = sg.edges()
-        assert set(edges) == expected_edges
-
-    def test_graph_construction(self,
-                                import_mod: typing.List[types.ModuleType],
-                                stellargraph: types.ModuleType,
-                                test_data: dict):
-        graph_construction_stage = import_mod[0]
-        df = test_data['df']
-
-        client_features = pd.DataFrame({0: 1}, index=list(set(test_data['client_data'])))
-        merchant_features = pd.DataFrame({0: 1}, index=test_data['merchant_data'])
-
-        # Call _graph_construction
-        sg = graph_construction_stage.FraudGraphConstructionStage._graph_construction(
-            nodes={
-                'client': df.client_node, 'merchant': df.merchant_node, 'transaction': df.index
-            },
-            edges=[
-                zip(df.client_node, df.index),
-                zip(df.merchant_node, df.index),
-            ],
-            node_features={
-                "transaction": df[['client_node', 'merchant_node']],
-                "client": client_features,
-                "merchant": merchant_features
-            })
-
-        self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
-
-    def test_build_graph_features(self,
-                                  import_mod: typing.List[types.ModuleType],
-                                  stellargraph: types.ModuleType,
-                                  test_data: dict):
-        graph_construction_stage = import_mod[0]
-        sg = graph_construction_stage.FraudGraphConstructionStage._build_graph_features(test_data['df'])
-        self._check_graph(stellargraph, sg, test_data['expected_nodes'], test_data['expected_edges'])
-
-    def test_process_message(self,
-                             config: Config,
-                             import_mod: typing.List[types.ModuleType],
-                             stellargraph: types.ModuleType,
-                             test_data: dict):
-        graph_construction_stage = import_mod[0]
+    def test_process_message(self, dgl: types.ModuleType, config: Config, test_data: dict):
+        from stages import graph_construction_stage
         df = test_data['df']
 
         # The stage wants a csv file from the first 5 rows
@@ -116,4 +59,12 @@ class TestGraphConstructionStage:
         assert fgmm.mess_offset == 5
         assert fgmm.mess_count == 5
 
-        self._check_graph(stellargraph, fgmm.graph, test_data['expected_nodes'], test_data['expected_edges'])
+        assert isinstance(fgmm.graph, dgl.DGLGraph)
+        fgmm.graph.check_graph_for_ml(features=True, expensive_check=True)  # this will raise if it doesn't pass
+        assert not fgmm.graph.is_directed()
+
+        nodes = fgmm.graph.nodes()
+        assert set(nodes) == test_data['expected_nodes']
+
+        edges = fgmm.graph.edges()
+        assert set(edges) == test_data['expected_edges']

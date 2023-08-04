@@ -75,11 +75,9 @@ def xgb_model(example_dir: str):
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
-@pytest.fixture
-def gnn_fraud_detection_pipeline(request: pytest.FixtureRequest, restore_sys_path, reset_plugins):
-    sys.path.append(TEST_DIRS.examples_dir)
-    import gnn_fraud_detection_pipeline
-    yield gnn_fraud_detection_pipeline
+@pytest.fixture(autouse=True)
+def gnn_fraud_detection_pipeline_in_sys_path(example_dir: str, restore_sys_path, reset_plugins):
+    sys.path.append(example_dir)
 
 
 @pytest.fixture
