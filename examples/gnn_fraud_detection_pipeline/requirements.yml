@@ -20,6 +20,4 @@ channels:
     - dglteam/label/cu118
 dependencies:
     - cuml=23.06
-    - dask>=2023.1.1
     - dgl=1.0.2
-    - distributed>=2023.1.1
