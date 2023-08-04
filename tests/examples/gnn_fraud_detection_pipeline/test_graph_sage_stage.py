@@ -43,12 +43,11 @@ class TestGraphSageStage:
                              test_data: dict,
                              dataset_pandas: DatasetManager):
         from stages.graph_construction_stage import FraudGraphConstructionStage
-        from stages.graph_construction_stage import FraudGraphMultiMessage
         from stages.graph_sage_stage import GraphSAGEMultiMessage
         from stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
+        expected_df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))

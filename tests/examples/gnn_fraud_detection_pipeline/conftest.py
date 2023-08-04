@@ -26,24 +26,24 @@ SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a num
                "installing these additional dependencies")
 
 
-@pytest.fixture(autouse=True, scope='session')
-def dgl(fail_missing: bool):
+@pytest.fixture(name="dgl", autouse=True, scope='session')
+def dgl_fixture(fail_missing: bool):
     """
     All of the tests in this subdir require dgl
     """
     yield import_or_skip("dgl", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def cuml(fail_missing: bool):
+@pytest.fixture(name="cuml", autouse=True, scope='session')
+def cuml_fixture(fail_missing: bool):
     """
     All of the tests in this subdir require cuml
     """
     yield import_or_skip("cuml", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture
-def config(config):
+@pytest.fixture(name="config")
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """
@@ -52,36 +52,36 @@ def config(config):
     yield config
 
 
-@pytest.fixture
-def example_dir():
+@pytest.fixture(name="example_dir")
+def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
 
 
-@pytest.fixture
-def training_file(example_dir: str):
+@pytest.fixture(name="training_file")
+def training_file_fixture(example_dir: str):
     yield os.path.join(example_dir, 'training.csv')
 
 
-@pytest.fixture
-def model_dir(example_dir: str):
+@pytest.fixture(name="model_dir")
+def model_dir_fixture(example_dir: str):
     yield os.path.join(example_dir, 'model')
 
 
-@pytest.fixture
-def xgb_model(model_dir: str):
+@pytest.fixture(name="xgb_model")
+def xgb_model_fixture(model_dir: str):
     yield os.path.join(model_dir, 'xgb.pt')
 
 
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
-@pytest.fixture(autouse=True)
-def gnn_fraud_detection_pipeline_in_sys_path(example_dir: str, restore_sys_path, reset_plugins):
+@pytest.fixture(name="ex_in_sys_path", autouse=True)
+def ex_in_sys_path_fixture(example_dir: str, restore_sys_path, reset_plugins):  # pylint: disable=unused-argument
     sys.path.append(example_dir)
 
 
-@pytest.fixture
-def test_data():
+@pytest.fixture(name="test_data")
+def test_data_fixture():
     """
     Construct test data, a small DF of 10 rows which we will build a graph from
     The nodes in our graph will be the unique values from each of our three columns, and the index is also
@@ -122,9 +122,11 @@ def test_data():
 
     assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
 
-    yield dict(index=index,
-               client_data=client_data,
-               merchant_data=merchant_data,
-               df=df,
-               expected_nodes=expected_nodes,
-               expected_edges=expected_edges)
+    yield {
+        "index": index,
+        "client_data": client_data,
+        "merchant_data": merchant_data,
+        "df": df,
+        "expected_nodes": expected_nodes,
+        "expected_edges": expected_edges
+    }

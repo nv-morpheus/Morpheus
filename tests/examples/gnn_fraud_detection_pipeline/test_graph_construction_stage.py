@@ -13,12 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import types
-import typing
 from io import StringIO
 
-import pandas as pd
 import pytest
 
 import cudf
@@ -26,7 +23,6 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
@@ -51,8 +47,8 @@ class TestGraphConstructionStage:
 
         # Since we used the first 5 rows as the training data, send the second 5 as inference data
         meta = MessageMeta(cudf.DataFrame(df))
-        mm = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
-        fgmm = stage._process_message(mm)
+        multi_msg = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
+        fgmm = stage._process_message(multi_msg)
 
         assert isinstance(fgmm, graph_construction_stage.FraudGraphMultiMessage)
         assert fgmm.meta is meta
