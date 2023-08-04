@@ -20,6 +20,7 @@ git clone ${GIT_URL} Morpheus
 cd Morpheus/
 git checkout ${GIT_BRANCH}
 git pull
+git checkout ${GIT_COMMIT}
 
 export MORPHEUS_ROOT=$(pwd)
 export WORKSPACE=${MORPHEUS_ROOT}
