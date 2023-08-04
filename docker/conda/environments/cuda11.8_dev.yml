@@ -83,7 +83,7 @@ dependencies:
     - python-graphviz
     - python=3.10
     - pytorch=2.0.1
-    - pytorch-cuda
+    - pytorch-cuda=11.8
     - rapidjson=1.1.0
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
