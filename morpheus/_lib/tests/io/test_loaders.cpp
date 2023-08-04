@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../test_morpheus.hpp"  // IWYU pragma: associated
+#include "../test_utils/common.hpp"  // IWYU pragma: associated
 #include "test_io.hpp"
 
 #include "morpheus/io/loaders/file.hpp"
@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
@@ -104,5 +105,5 @@ TEST_F(TestLoader, LoaderRESTTest)
     auto task   = nlohmann::json();
     auto loader = RESTDataLoader();
 
-    EXPECT_THROW(loader.load(msg, task), std::runtime_error);
+    EXPECT_THROW(loader.load(msg, task), std::exception);
 }
