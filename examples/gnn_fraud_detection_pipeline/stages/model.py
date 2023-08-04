@@ -440,7 +440,7 @@ def build_fsi_graph(train_data, col_drop):
             Normalized feature tensor after dropping specified columns.
     Notes
     -----
-    This function takes the training data, represented as a pandas DataFrame,
+    This function takes the training data, represented as a cudf DataFrame,
     and constructs a heterogeneous graph (DGLGraph) from the given edgelist
     and node index.
 
@@ -449,8 +449,8 @@ def build_fsi_graph(train_data, col_drop):
 
     Example
     -------
-    >>> import pandas as pd
-    >>> train_data = pd.DataFrame({'node_id': [1, 2, 3],
+    >>> import cudf
+    >>> train_data = cudf.DataFrame({'node_id': [1, 2, 3],
     ...                            'feature1': [0.1, 0.2, 0.3],
     ...                            'feature2': [0.4, 0.5, 0.6]})
     >>> col_drop = ['feature2']
@@ -461,7 +461,7 @@ def build_fsi_graph(train_data, col_drop):
     feature_tensors = torch.from_dlpack(feature_tensors.toDlpack())
     feature_tensors = (feature_tensors - feature_tensors.mean(0, keepdim=True)) / (0.0001 +
                                                                                    feature_tensors.std(0, keepdim=True))
-
+    # Create client, merchant, transaction node id tensors & move to torch.tensor
     client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
         torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
 
