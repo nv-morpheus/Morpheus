@@ -17,11 +17,10 @@ channels:
     - rapidsai
     - nvidia
     - conda-forge
+    - dglteam/label/cu118
 dependencies:
     - cuml=23.06
     - dask>=2023.1.1
+    - dgl=1.0.2
     - distributed>=2023.1.1
-    - dgl==1.0.2+cu118
-    - torchmetrics==0.11.4
-    - tqdm==4.65.0
-    - torch==2.0.0+cu118
+    - torchmetrics=0.11.4
