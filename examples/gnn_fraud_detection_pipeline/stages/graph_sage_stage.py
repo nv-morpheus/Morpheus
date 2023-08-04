@@ -63,7 +63,7 @@ class GraphSAGEStage(SinglePortStage):
                  target_node: str = "transaction"):
         super().__init__(config)
 
-        self._dgl_model, _, self.hyperparam = load_model(model_dir)
+        self._dgl_model, _, __ = load_model(model_dir)
         self._batch_size = batch_size
         self._record_id = record_id
         self._target_node = target_node
