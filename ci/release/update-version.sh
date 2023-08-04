@@ -69,7 +69,8 @@ git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/morpheus-visualiza
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} morpheus_utils
 
 if [[ "$(git diff --name-only | grep .gitmodules)" != "" ]]; then
-   # Only update the submodules if setting the branch changed .gitmodules
+   # Only update the submodules if setting the branch changed .gitmodules. Otherwise this will undo the current commit
+   # for any submodules resulting in differences always appearing in CI
    git submodule update --remote --recursive
 fi
 
