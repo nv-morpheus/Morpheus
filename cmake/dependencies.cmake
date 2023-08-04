@@ -17,21 +17,22 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
-if (VERBOSE)
-  morpheus_utils_print_config()
-endif()
+# Show some setup variables (only prints if VERBOSE)
+morpheus_utils_print_config()
 
 # First, load the package_config functions
 include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
 
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
-rapids_find_package(Protobuf
-  REQUIRED
-  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+rapids_find_package(Protobuf REQUIRED
+  BUILD_EXPORT_SET   ${PROJECT_NAME}-core-exports
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
-find_package(CUDAToolkit REQUIRED)
+rapids_find_package(CUDAToolkit REQUIRED
+  BUILD_EXPORT_SET   ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
@@ -39,10 +40,9 @@ if(MORPHEUS_BUILD_BENCHMARKS)
   # ================
   rapids_find_package(benchmark REQUIRED
     GLOBAL_TARGETS      benchmark::benchmark
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    BUILD_EXPORT_SET    ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET  ${PROJECT_NAME}-core-exports
+    FIND_ARGS           CONFIG
   )
 endif()
 
@@ -52,10 +52,9 @@ if(MORPHEUS_BUILD_TESTS)
   # ===========
   rapids_find_package(GTest REQUIRED
     GLOBAL_TARGETS      GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    BUILD_EXPORT_SET    ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET  ${PROJECT_NAME}-core-exports
+    FIND_ARGS           CONFIG
   )
 endif()
 

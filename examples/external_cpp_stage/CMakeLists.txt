@@ -33,7 +33,7 @@ project(morpheus-ex-external-cpp-stage
   LANGUAGES C CXX
 )
 
-morpheus_utils_initialize_cpm(MRC_CACHE_DIR)
+morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
 # Ensure CPM is initialized
 rapids_cpm_init()

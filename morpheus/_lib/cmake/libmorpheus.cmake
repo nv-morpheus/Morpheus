@@ -179,7 +179,7 @@ include(GNUInstallDirs)
 install(
   TARGETS morpheus
   EXPORT
-    ${PROJECT_NAME}-exports
+    ${PROJECT_NAME}-core-exports
   LIBRARY
     DESTINATION ${lib_dir}
   FILE_SET
@@ -202,7 +202,7 @@ set(rapids_project_version_compat SameMinorVersion)
 # Need to explicitly set VERSION ${PROJECT_VERSION} here since rapids_cmake gets
 # confused with the `RAPIDS_VERSION` variable we use
 rapids_export(INSTALL ${PROJECT_NAME}
-  EXPORT_SET ${PROJECT_NAME}-exports
+  EXPORT_SET ${PROJECT_NAME}-core-exports
   GLOBAL_TARGETS morpheus
   VERSION ${PROJECT_VERSION}
   NAMESPACE morpheus::
@@ -213,7 +213,7 @@ rapids_export(INSTALL ${PROJECT_NAME}
 # ##################################################################################################
 # - build export ----------------------------------------------------------------------------------
 rapids_export(BUILD ${PROJECT_NAME}
-  EXPORT_SET ${PROJECT_NAME}-exports
+  EXPORT_SET ${PROJECT_NAME}-core-exports
   GLOBAL_TARGETS morpheus
   VERSION ${PROJECT_VERSION}
   LANGUAGES C CXX CUDA
