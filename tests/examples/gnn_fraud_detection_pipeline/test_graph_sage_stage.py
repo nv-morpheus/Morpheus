@@ -27,7 +27,7 @@ from utils.dataset_manager import DatasetManager
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(self, dgl: types.ModuleType, config: Config, model_dir: str):
+    def test_constructor(self, config: Config, model_dir: str):
         from stages.graph_sage_stage import GraphSAGEStage
         from stages.model import HinSAGE
         stage = GraphSAGEStage(config, model_dir=model_dir, batch_size=10, record_id="test_id", target_node="test_node")
@@ -37,40 +37,11 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    def test_inductive_step_hinsage(self,
-                                    config: Config,
-                                    model_dir: str,
-                                    gnn_fraud_detection_pipeline: types.ModuleType,
-                                    test_data: dict,
-                                    dataset_pandas: DatasetManager):
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
-
-        # The column names in the saved test data will be strings, in the results they will be ints
-        expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: int(x), axis=1, inplace=True)
-
-        df = test_data['df']
-
-        graph = FraudGraphConstructionStage._build_graph_features(df)
-
-        stage = GraphSAGEStage(config, model_dir=model_dir)
-        results = stage._inductive_step_hinsage(graph, stage._keras_model, test_data['index'])
-
-        assert isinstance(results, cudf.DataFrame)
-        assert results.index.to_arrow().to_pylist() == test_data['index']
-        dataset_pandas.assert_compare_df(results, expected_df)
-
-    def test_process_message(self,
-                             config: Config,
-                             model_dir: str,
-                             gnn_fraud_detection_pipeline: types.ModuleType,
-                             test_data: dict,
-                             dataset_pandas: DatasetManager):
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphMultiMessage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
+    def test_process_message(self, config: Config, model_dir: str, test_data: dict, dataset_pandas: DatasetManager):
+        from stages.graph_construction_stage import FraudGraphConstructionStage
+        from stages.graph_construction_stage import FraudGraphMultiMessage
+        from stages.graph_sage_stage import GraphSAGEMultiMessage
+        from stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
         expected_df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
