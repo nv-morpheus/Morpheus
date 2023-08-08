@@ -63,9 +63,11 @@ def mock_requests():
 
 @pytest.fixture
 def mock_mlflow():
-    with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
-          mock.patch("dfp.stages.dfp_mlflow_model_writer.ModelSignature") as mock_model_signature,
-          mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
+    with (mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.MlflowClient") as mock_mlflow_client,
+          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.ModelSignature")
+          as mock_model_signature,
+          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.RunsArtifactRepository")
+          as mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
           mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
@@ -114,9 +116,9 @@ def test_constructor(config: Config):
                                       experiment_name_formatter="/test/{user_id}-{user_md5}-{reg_model_name}",
                                       databricks_permissions={'test': 'this'})
     assert isinstance(stage, SinglePortStage)
-    assert stage._model_name_formatter == "test_model_name-{user_id}-{user_md5}"
-    assert stage._experiment_name_formatter == "/test/{user_id}-{user_md5}-{reg_model_name}"
-    assert stage._databricks_permissions == {'test': 'this'}
+    assert stage._controller.model_name_formatter == "test_model_name-{user_id}-{user_md5}"
+    assert stage._controller.experiment_name_formatter == "/test/{user_id}-{user_md5}-{reg_model_name}"
+    assert stage._controller.databricks_permissions == {'test': 'this'}
 
 
 @pytest.mark.parametrize(
@@ -125,13 +127,15 @@ def test_constructor(config: Config):
      ("test_model_name-{user_id}-{user_md5}", 'test_user',
       "test_model_name-test_user-9da1f8e0aecc9d868bad115129706a77"),
      ("test_model_name-{user_id}", 'test_城安宮川', "test_model_name-test_城安宮川"),
-     ("test_model_name-{user_id}-{user_md5}", 'test_城安宮川', "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
+     ("test_model_name-{user_id}-{user_md5}",
+      'test_城安宮川',
+      "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
      ])
 def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: str, expected_val: str):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 
     stage = DFPMLFlowModelWriterStage(config, model_name_formatter=model_name_formatter)
-    assert stage.user_id_to_model(user_id) == expected_val
+    assert stage._controller.user_id_to_model(user_id) == expected_val
 
 
 @pytest.mark.parametrize("experiment_name_formatter,user_id,expected_val",
@@ -141,7 +145,9 @@ def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: st
                            'test_user',
                            "/test/expr/dfp-test_user-test_user-9da1f8e0aecc9d868bad115129706a77"),
                           ("/test/expr/{reg_model_name}", 'test_城安宮川', "/test/expr/dfp-test_城安宮川"),
-                          ("/test/expr/{reg_model_name}-{user_id}", 'test_城安宮川', "/test/expr/dfp-test_城安宮川-test_城安宮川"),
+                          ("/test/expr/{reg_model_name}-{user_id}",
+                           'test_城安宮川',
+                           "/test/expr/dfp-test_城安宮川-test_城安宮川"),
                           ("/test/expr/{reg_model_name}-{user_id}-{user_md5}",
                            'test_城安宮川',
                            "/test/expr/dfp-test_城安宮川-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")])
@@ -151,7 +157,7 @@ def test_user_id_to_experiment(config: Config, experiment_name_formatter: str, u
     stage = DFPMLFlowModelWriterStage(config,
                                       model_name_formatter="dfp-{user_id}",
                                       experiment_name_formatter=experiment_name_formatter)
-    assert stage.user_id_to_experiment(user_id) == expected_val
+    assert stage._controller.user_id_to_experiment(user_id) == expected_val
 
 
 def verify_apply_model_permissions(mock_requests: MockedRequests,
@@ -162,21 +168,21 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
     mock_requests.get.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/mlflow/databricks/registered-models/get".format(**databricks_env),
         headers=expected_headers,
-        params={"name": experiment_name})
+        params={"name": experiment_name}, timeout=1.0)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/preview/permissions/registered-models/test_id".format(**databricks_env),
         headers=expected_headers,
-        json={'access_control_list': expected_acl})
+        json={'access_control_list': expected_acl}, timeout=1.0)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
     stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
-    stage._apply_model_permissions("test_experiment")
+    stage._controller._apply_model_permissions("test_experiment")
 
     verify_apply_model_permissions(mock_requests, databricks_env, databricks_permissions, 'test_experiment')
 
@@ -204,7 +210,7 @@ def test_apply_model_permissions_no_perms_error(config: Config,
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     stage = DFPMLFlowModelWriterStage(config)
     with pytest.raises(RuntimeError):
-        stage._apply_model_permissions("test_experiment")
+        stage._controller._apply_model_permissions("test_experiment")
 
     mock_requests.get.assert_not_called()
     mock_requests.patch.assert_not_called()
@@ -216,7 +222,7 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
     mock_requests.get.side_effect = RuntimeError("test error")
 
     stage = DFPMLFlowModelWriterStage(config)
-    stage._apply_model_permissions("test_experiment")
+    stage._controller._apply_model_permissions("test_experiment")
 
     # This method just catches and logs any errors
     mock_requests.get.assert_called_once()
@@ -270,7 +276,7 @@ def test_on_data(config: Config,
     msg = MultiAEMessage(meta=meta, model=mock_model)
 
     stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
-    assert stage.on_data(msg) is msg  # Should be a pass-thru
+    assert stage._controller.on_data(msg) is msg  # Should be a pass-thru
 
     # Test mocks in order that they're called
     mock_mlflow.end_run.assert_called_once()

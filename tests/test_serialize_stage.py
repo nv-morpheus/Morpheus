@@ -43,15 +43,15 @@ def test_fixed_columns(config):
     include_re_str = '^app.*'
     include_re = re.compile(include_re_str)
     s = SerializeStage(config, include=[include_re_str], fixed_columns=True)
-    meta1 = s.convert_to_df(mm1, include_columns=include_re, exclude_columns=[])
-    meta2 = s.convert_to_df(mm2, include_columns=include_re, exclude_columns=[])
+    meta1 = s._controller.convert_to_df(mm1, include_columns=include_re, exclude_columns=[])
+    meta2 = s._controller.convert_to_df(mm2, include_columns=include_re, exclude_columns=[])
 
     assert meta1.df.columns.to_list() == ['apples', 'apple_sauce']
     assert meta2.df.columns.to_list() == ['apples', 'apple_sauce']
 
     s = SerializeStage(config, include=[include_re_str], fixed_columns=False)
-    meta1 = s.convert_to_df(mm1, include_columns=include_re, exclude_columns=[])
-    meta2 = s.convert_to_df(mm2, include_columns=include_re, exclude_columns=[])
+    meta1 = s._controller.convert_to_df(mm1, include_columns=include_re, exclude_columns=[])
+    meta2 = s._controller.convert_to_df(mm2, include_columns=include_re, exclude_columns=[])
 
     assert meta1.df.columns.to_list() == ['apples', 'apple_sauce']
     assert meta2.df.columns.to_list() == ['apples', 'applause', 'apple_sauce']

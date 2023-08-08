@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-import re
 import typing
 from functools import partial
 
@@ -27,6 +25,7 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.controllers.serialize_controller import SerializeController
 
 
 @register_stage("serialize")
@@ -56,11 +55,7 @@ class SerializeStage(SinglePortStage):
                  fixed_columns: bool = True):
         super().__init__(c)
 
-        # Make copies of the arrays to prevent changes after the Regex is compiled
-        self._include_columns = copy.copy(include)
-        self._exclude_columns = copy.copy(exclude)
-        self._fixed_columns = fixed_columns
-        self._columns = None
+        self._controller = SerializeController(include=include, exclude=exclude, fixed_columns=fixed_columns)
 
     @property
     def name(self) -> str:
@@ -82,67 +77,23 @@ class SerializeStage(SinglePortStage):
         # Enable support by default
         return True
 
-    def convert_to_df(self,
-                      x: MultiMessage,
-                      include_columns: typing.Pattern,
-                      exclude_columns: typing.List[typing.Pattern]):
-        """
-        Converts dataframe to entries to JSON lines.
-
-        Parameters
-        ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
-            MultiMessage instance that contains data.
-        include_columns : typing.Pattern
-            Columns that are required send to downstream stage.
-        exclude_columns : typing.List[typing.Pattern]
-            Columns that are not required send to downstream stage.
-
-        """
-
-        if self._fixed_columns and self._columns is not None:
-            columns = self._columns
-        else:
-            columns: typing.List[str] = []
-
-            # Minimize access to x.meta.df
-            df_columns = list(x.meta.df.columns)
-
-            # First build up list of included. If no include regex is specified, select all
-            if (include_columns is None):
-                columns = df_columns
-            else:
-                columns = [y for y in df_columns if include_columns.match(y)]
-
-            # Now remove by the ignore
-            for test in exclude_columns:
-                columns = [y for y in columns if not test.match(y)]
-
-            self._columns = columns
-
-        # Get metadata from columns
-        df = x.get_meta(columns)
-
-        return MessageMeta(df=df)
-
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = _stages.SerializeStage(builder,
                                             self.unique_name,
-                                            self._include_columns or [],
-                                            self._exclude_columns,
-                                            self._fixed_columns)
+                                            self._controller.include_columns or [],
+                                            self._controller.exclude_columns,
+                                            self._controller.fixed_columns)
         else:
-            include_columns = None
-
-            if (self._include_columns is not None and len(self._include_columns) > 0):
-                include_columns = re.compile("({})".format("|".join(self._include_columns)))
-
-            exclude_columns = [re.compile(x) for x in self._exclude_columns]
+            include_columns = self._controller.get_include_col_pattern()
+            exclude_columns = self._controller.get_exclude_col_pattern()
 
             stream = builder.make_node(
                 self.unique_name,
-                ops.map(partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns)))
+                ops.map(
+                    partial(self._controller.convert_to_df,
+                            include_columns=include_columns,
+                            exclude_columns=exclude_columns)))
 
         builder.make_edge(input_stream[0], stream)
 
