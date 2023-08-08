@@ -35,7 +35,6 @@ from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
@@ -75,6 +74,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
+    config.ae.timestamp_column_name = "event_dt"
 
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
@@ -98,14 +98,6 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(
-        TimeSeriesStage(config,
-                        resolution="1m",
-                        min_window="12 h",
-                        hot_start=True,
-                        cold_end=False,
-                        filter_percent=90.0,
-                        zscore_threshold=8.0))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(
         ValidationStage(config,
@@ -113,7 +105,8 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
                         results_file_name=results_file_name,
                         index_col="_index_",
                         exclude=("event_dt", "zscore"),
-                        rel_tol=0.15))
+                        rel_tol=0.1))
+
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
@@ -179,14 +172,6 @@ def test_dfp_user123(mock_ae, config, tmp_path):
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(
-        TimeSeriesStage(config,
-                        resolution="1m",
-                        min_window="12 h",
-                        hot_start=True,
-                        cold_end=False,
-                        filter_percent=90.0,
-                        zscore_threshold=8.0))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(
         ValidationStage(config,
@@ -265,15 +250,6 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
     pipe.add_stage(AddScoresStage(config))
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
-    pipe.add_stage(
-        TimeSeriesStage(config,
-                        resolution="1m",
-                        min_window="12 h",
-                        hot_start=True,
-                        cold_end=False,
-                        filter_percent=90.0,
-                        zscore_threshold=8.0))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 6
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(
         ValidationStage(config,
@@ -282,9 +258,9 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
                         index_col="_index_",
                         exclude=("event_dt", "zscore"),
                         rel_tol=0.1))
-    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 7
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 6
     pipe.add_stage(SerializeStage(config, include=[]))
-    pipe.add_segment_boundary(MessageMeta)  # Boundary 9
+    pipe.add_segment_boundary(MessageMeta)  # Boundary 7
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
