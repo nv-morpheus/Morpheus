@@ -259,9 +259,6 @@ class _UserTimeSeries:
 
     def _determine_action(self, is_complete: bool) -> typing.Optional[_TimeSeriesAction]:
 
-        logger.debug("_determine_action")
-        logger.debug("is_complete: %s", is_complete)
-
         # Stop processing on empty queue
         if (len(self._pending_messages) == 0):
             return None
