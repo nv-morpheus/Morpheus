@@ -98,9 +98,9 @@ class WriteToFileController:
         return self._flush
 
     def _convert_to_strings(self, df: DataFrameType):
-        if (self._file_type == FileTypes.JSON or self._file_type == "JSON"):
+        if self._file_type in (FileTypes.JSON, 'JSON'):
             output_strs = serializers.df_to_json(df, include_index_col=self._include_index_col)
-        elif (self._file_type == FileTypes.CSV or self._file_type == "CSV"):
+        elif self._file_type in (FileTypes.CSV, 'CSV'):
             output_strs = serializers.df_to_csv(df,
                                                 include_header=self._is_first,
                                                 include_index_col=self._include_index_col)

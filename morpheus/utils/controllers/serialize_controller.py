@@ -117,7 +117,7 @@ class SerializeController:
         include_columns = None
 
         if (self._include_columns is not None and len(self._include_columns) > 0):
-            include_columns = re.compile("({})".format("|".join(self._include_columns)))
+            include_columns = re.compile(f"({'|'.join(self._include_columns)})")
 
         return include_columns
 

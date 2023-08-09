@@ -152,7 +152,7 @@ class FilterDetectionsController:
         """
 
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
-        if self._filter_source == FilterSource.Auto or self._filter_source == "AUTO":
+        if self._filter_source in (FilterSource.Auto, 'AUTO'):
             if (typing_utils.issubtype(message_type, MultiResponseMessage)):
                 self._filter_source = FilterSource.TENSOR
             else:

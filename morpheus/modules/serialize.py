@@ -58,8 +58,8 @@ def serialize(builder: mrc.Builder):
 
     controller = SerializeController(include=include, exclude=exclude, fixed_columns=fixed_columns)
 
-    include_columns = controller.get_include_col_pattern
-    exclude_columns = controller.get_exclude_col_pattern
+    include_columns = controller.get_include_col_pattern()
+    exclude_columns = controller.get_exclude_col_pattern()
 
     node = builder.make_node(
         SERIALIZE, partial(controller.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))

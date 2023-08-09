@@ -64,10 +64,10 @@ def mock_requests():
 @pytest.fixture
 def mock_mlflow():
     with (mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.MlflowClient") as mock_mlflow_client,
-          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.ModelSignature")
-          as mock_model_signature,
-          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.RunsArtifactRepository")
-          as mock_runs_artifact_repository,
+          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.ModelSignature") as
+          mock_model_signature,
+          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.RunsArtifactRepository") as
+          mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
           mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
@@ -127,9 +127,7 @@ def test_constructor(config: Config):
      ("test_model_name-{user_id}-{user_md5}", 'test_user',
       "test_model_name-test_user-9da1f8e0aecc9d868bad115129706a77"),
      ("test_model_name-{user_id}", 'test_城安宮川', "test_model_name-test_城安宮川"),
-     ("test_model_name-{user_id}-{user_md5}",
-      'test_城安宮川',
-      "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
+     ("test_model_name-{user_id}-{user_md5}", 'test_城安宮川', "test_model_name-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")
      ])
 def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: str, expected_val: str):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
@@ -145,9 +143,7 @@ def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: st
                            'test_user',
                            "/test/expr/dfp-test_user-test_user-9da1f8e0aecc9d868bad115129706a77"),
                           ("/test/expr/{reg_model_name}", 'test_城安宮川', "/test/expr/dfp-test_城安宮川"),
-                          ("/test/expr/{reg_model_name}-{user_id}",
-                           'test_城安宮川',
-                           "/test/expr/dfp-test_城安宮川-test_城安宮川"),
+                          ("/test/expr/{reg_model_name}-{user_id}", 'test_城安宮川', "/test/expr/dfp-test_城安宮川-test_城安宮川"),
                           ("/test/expr/{reg_model_name}-{user_id}-{user_md5}",
                            'test_城安宮川',
                            "/test/expr/dfp-test_城安宮川-test_城安宮川-c9acc3dec97777c8b6fd8ae70a744ea8")])
@@ -168,14 +164,16 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
     mock_requests.get.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/mlflow/databricks/registered-models/get".format(**databricks_env),
         headers=expected_headers,
-        params={"name": experiment_name}, timeout=1.0)
+        params={"name": experiment_name},
+        timeout=1.0)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
         url="{DATABRICKS_HOST}/api/2.0/preview/permissions/registered-models/test_id".format(**databricks_env),
         headers=expected_headers,
-        json={'access_control_list': expected_acl}, timeout=1.0)
+        json={'access_control_list': expected_acl},
+        timeout=1.0)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
@@ -291,10 +289,12 @@ def test_on_data(config: Config,
         "Batch size": 100,
         "Start Epoch": min_time,
         "End Epoch": max_time,
-        "Log Count": len(df)})
+        "Log Count": len(df)
+    })
 
-    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
-                                                     "embedding-test-embedding_dim": 102})
+    mock_mlflow.log_metrics.assert_called_once_with({
+        "embedding-test-num_embeddings": 101, "embedding-test-embedding_dim": 102
+    })
 
     mock_model.prepare_df.assert_called_once()
     mock_model.get_anomaly_score.assert_called_once()

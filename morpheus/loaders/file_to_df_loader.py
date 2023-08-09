@@ -16,6 +16,8 @@
 import logging
 import pickle
 
+import fsspec
+
 import cudf
 
 from morpheus.cli.utils import str_to_file_type
@@ -59,6 +61,8 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
         raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
 
     files = task.get("files", None)
+    n_groups = task.get("n_groups", None)
+
     config = task["batcher_config"]
 
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
@@ -94,7 +98,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
                                     cache_dir=cache_dir,
                                     timestamp_column_name=timestamp_column_name)
 
-    pdf = controller.convert_to_dataframe(file_object_batch=files)
+    pdf = controller.convert_to_dataframe(file_object_batch=(fsspec.open_files(files), n_groups))
 
     df = cudf.from_pandas(pdf)
 
