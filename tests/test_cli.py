@@ -46,7 +46,6 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.drop_null_stage import DropNullStage
@@ -175,11 +174,7 @@ class TestCLI:
             '47',
             'preprocess',
             'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
+            'add-scores'
         ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
@@ -209,8 +204,7 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
-        [cloud_trail, train_ae, process_ae, auto_enc, add_scores, time_series, monitor, validation, serialize,
-         to_file] = stages
+        [cloud_trail, train_ae, process_ae, auto_enc, add_scores, monitor, validation, serialize, to_file] = stages
 
         assert isinstance(cloud_trail, CloudTrailSourceStage)
         assert cloud_trail._watcher._input_glob == "input_glob*.csv"
@@ -222,11 +216,6 @@ class TestCLI:
         assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
         assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(time_series, TimeSeriesStage)
-        assert time_series._resolution == '1m'
-        assert time_series._zscore_threshold == 8.0
-        assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -269,8 +258,7 @@ class TestCLI:
             'preprocess',
             'inf-pytorch',
             'add-scores'
-        ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
-                MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+        ] + INF_TRITON_ARGS + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
         result = runner.invoke(commands.cli, args)
@@ -289,7 +277,6 @@ class TestCLI:
             auto_enc,
             add_scores,
             triton_inf,
-            time_series,
             monitor,
             validation,
             serialize,
@@ -316,11 +303,6 @@ class TestCLI:
         assert triton_inf._kwargs['model_name'] == 'test-model'
         assert triton_inf._kwargs['server_url'] == 'test:123'
         assert triton_inf._kwargs['force_convert_inputs']
-
-        assert isinstance(time_series, TimeSeriesStage)
-        assert time_series._resolution == '1m'
-        assert time_series._zscore_threshold == 8.0
-        assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._mc._description == 'Unittest'
@@ -1059,11 +1041,7 @@ class TestCLI:
             '47',
             'preprocess',
             'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
+            'add-scores'
         ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}

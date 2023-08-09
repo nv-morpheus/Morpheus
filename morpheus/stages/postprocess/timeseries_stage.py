@@ -409,7 +409,6 @@ class _UserTimeSeries:
         return output_messages
 
 
-@register_stage("timeseries", modes=[PipelineModes.AE])
 class TimeSeriesStage(SinglePortStage):
     """
     Perform time series anomaly detection and add prediction.
