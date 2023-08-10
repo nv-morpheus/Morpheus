@@ -89,6 +89,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
     config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -189,6 +190,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
     config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
