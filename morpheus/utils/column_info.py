@@ -581,6 +581,20 @@ class DistinctIncrementColumn(RenameColumn):
 
         return increment_col.astype(self.get_pandas_dtype())
 
+@dataclasses.dataclass
+class PreparedDFInfo:
+    """
+    Represents the result of preparing a DataFrame along with avilable columns to be preserved.
+
+    Attributes
+    ----------
+    df : typing.Union[pd.DataFrame, cudf.DataFrame]
+        The prepared DataFrame.
+    columns_to_preserve : typing.List[str]
+        A list of column names that are to be preserved.
+    """
+    df: typing.Union[pd.DataFrame, cudf.DataFrame]
+    columns_to_preserve: typing.List[str]
 
 def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
                   input_columns: dict[str, str],
@@ -607,9 +621,14 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
         The processed DataFrame.
     """
 
+    columns_to_preserve = []
+
     # Early exit
     if (json_cols is None or len(json_cols) == 0):
-        return df_input
+        if (preserve_re):
+            columns_to_preserve = [col for col in df_input.columns if re.match(preserve_re, col)]
+
+        return PreparedDFInfo(df=df_input, columns_to_preserve=columns_to_preserve)
 
     # Check if we even have any JSON columns to flatten
     if (not df_input.columns.intersection(json_cols).empty):
@@ -620,9 +639,9 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
             df_input = df_input.to_pandas()
 
         json_normalized = []
-        cols_to_keep = list(df_input.columns)
+        columns_to_preserve = list(df_input.columns)
         for col in json_cols:
-            if (col not in cols_to_keep):
+            if (col not in columns_to_preserve):
                 continue
 
             pd_series = df_input[col]
@@ -641,10 +660,10 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
 
             # Remove from the list of remaining columns
             if (preserve_re is None or not preserve_re.match(col)):
-                cols_to_keep.remove(col)
+                columns_to_preserve.remove(col)
 
         # Combine the original DataFrame with the normalized JSON columns
-        df_input = pd.concat([df_input[cols_to_keep]] + json_normalized, axis=1)
+        df_input = pd.concat([df_input[columns_to_preserve]] + json_normalized, axis=1)
 
         if (convert_to_cudf):
             df_input = cudf.from_pandas(df_input).reset_index(drop=True)
@@ -654,7 +673,7 @@ def _json_flatten(df_input: typing.Union[pd.DataFrame, cudf.DataFrame],
 
     df_input = df_input.astype(input_columns)
 
-    return df_input
+    return PreparedDFInfo(df=df_input, columns_to_preserve=columns_to_preserve)
 
 
 def _resolve_json_output_columns(json_cols: list[str], input_cols: dict[str, str]) -> list[tuple[str, str]]:
@@ -682,7 +701,6 @@ def _resolve_json_output_columns(json_cols: list[str], input_cols: dict[str, str
             output_cols.append(col)
 
     return output_cols
-
 
 @dataclasses.dataclass
 class DataFrameInputSchema:

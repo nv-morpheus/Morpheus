@@ -29,6 +29,7 @@ import cudf
 from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import PreparedDFInfo
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.downloader import Downloader
 
@@ -87,9 +88,9 @@ def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
     # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
     # increases performance significantly)
     if (schema.prep_dataframe is not None):
-        s3_df = schema.prep_dataframe(s3_df)
+        prepared_df_info: PreparedDFInfo = schema.prep_dataframe(s3_df)
 
-    return s3_df
+    return prepared_df_info.df
 
 
 class FileToDFController:
