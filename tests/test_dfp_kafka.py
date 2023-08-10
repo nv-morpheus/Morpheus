@@ -36,6 +36,7 @@ from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
@@ -105,6 +106,14 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(
+        TimeSeriesStage(config,
+                        resolution="1m",
+                        min_window="12 h",
+                        hot_start=True,
+                        cold_end=False,
+                        filter_percent=90.0,
+                        zscore_threshold=8.0))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(
@@ -197,6 +206,14 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(
+        TimeSeriesStage(config,
+                        resolution="1m",
+                        min_window="12 h",
+                        hot_start=True,
+                        cold_end=False,
+                        filter_percent=90.0,
+                        zscore_threshold=8.0))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(

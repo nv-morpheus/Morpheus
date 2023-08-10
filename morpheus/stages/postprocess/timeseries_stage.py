@@ -27,7 +27,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages.multi_ae_message import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -479,12 +479,12 @@ class TimeSeriesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiAEMessage, )
+        return (MultiMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _call_timeseries_user(self, x: MultiAEMessage):
+    def _call_timeseries_user(self, x: MultiMessage):
 
         if (x.user_id not in self._timeseries_per_user):
             self._timeseries_per_user[x.user_id] = _UserTimeSeries(user_id=x.user_id,
@@ -503,7 +503,7 @@ class TimeSeriesStage(SinglePortStage):
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def on_next(x: MultiAEMessage):
+        def on_next(x: MultiMessage):
 
             message_list: typing.List[MultiResponseMessage] = self._call_timeseries_user(x)
 
