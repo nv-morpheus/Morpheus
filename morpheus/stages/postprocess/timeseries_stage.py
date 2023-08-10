@@ -25,7 +25,9 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.multi_ae_message import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -406,6 +408,7 @@ class _UserTimeSeries:
         return output_messages
 
 
+@register_stage("timeseries", modes=[PipelineModes.AE])
 class TimeSeriesStage(SinglePortStage):
     """
     Perform time series anomaly detection and add prediction.
