@@ -36,10 +36,16 @@ PyDataTable::~PyDataTable()
 {
     if (m_py_table)
     {
-        pybind11::gil_scoped_acquire gil;
+        if (PyGILState_Check() == 0)
+        {
+            pybind11::gil_scoped_acquire gil;
 
-        // Clear out the python object
-        m_py_table = pybind11::object();
+            pybind11::object tmp = std::move(m_py_table);
+        }
+        else
+        {
+            pybind11::object tmp = std::move(m_py_table);
+        }
     }
 }
 
