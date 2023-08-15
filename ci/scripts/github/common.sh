@@ -97,12 +97,8 @@ function update_conda_env() {
 
     rapids-logger "Checking for updates to conda env"
 
-    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
-        rapids-logger "Checking for updates to conda env"
-        # Update the packages
-        rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
-    fi
-
+    # Update the packages
+    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
 
     # Finally, reactivate
     conda activate morpheus
