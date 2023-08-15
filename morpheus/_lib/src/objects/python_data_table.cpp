@@ -36,6 +36,8 @@ PyDataTable::~PyDataTable()
 {
     if (m_py_table)
     {
+        // Check to see if we need to grab the GIL. If we are being destroyed by the Python GC we actually don't need
+        // to and don't want to aquire the GIL using pybind11 because it will trigger a pybind11 internal error.
         if (PyGILState_Check() == 0)
         {
             pybind11::gil_scoped_acquire gil;
