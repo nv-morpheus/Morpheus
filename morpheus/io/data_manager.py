@@ -49,6 +49,9 @@ class DataManager():
         :param file_format: Specifies the file format to be used. Can be either 'parquet' or 'csv'.
         """
 
+        self._storage_dir = None
+        self._storage_type = None
+
         if (storage_type not in self.VALID_STORAGE_TYPES):
             raise ValueError(f"Invalid storage_type '{storage_type}'")
 
@@ -60,7 +63,6 @@ class DataManager():
         self._fs = fsspec.filesystem('file')
         self._manifest = {}
         self._records = {}
-        self._storage_dir = None
         self._storage_type = storage_type
         self._total_rows = 0
 
