@@ -49,6 +49,8 @@ class DataManager():
         :param file_format: Specifies the file format to be used. Can be either 'parquet' or 'csv'.
         """
 
+        # Define these early so that they are defined even if we raise an exception, this ensures that we don't get an
+        # attribute error in the __del__ method.
         self._storage_dir = None
         self._storage_type = None
 
