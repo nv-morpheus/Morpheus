@@ -43,9 +43,14 @@ Now install Morpheus:
 pip install -e /workspace
 ```
 
-Install `tensorflow` package required by pipelines:
+Install additonal required dependencies:
+
 ```
-pip install tensorflow==2.12.0
+mamba install boto3 s3fs
+```
+
+```
+pip install tensorflow
 ```
 
 Fetch input data for benchmarks:
