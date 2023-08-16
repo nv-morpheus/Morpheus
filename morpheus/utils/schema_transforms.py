@@ -109,7 +109,7 @@ def process_dataframe(
 
     preserve_df = None
 
-    if prepared_df_info.columns_to_preserve:
+    if prepared_df_info is not None:
         preserve_df = df_in[prepared_df_info.columns_to_preserve]
 
     if (convert_to_pd):
