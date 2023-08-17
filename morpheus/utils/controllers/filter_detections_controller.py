@@ -152,23 +152,12 @@ class FilterDetectionsController:
         """
 
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
-        if self._filter_source in (FilterSource.Auto, 'AUTO'):
+        if self._filter_source == FilterSource.Auto:
             if (typing_utils.issubtype(message_type, MultiResponseMessage)):
                 self._filter_source = FilterSource.TENSOR
             else:
                 self._filter_source = FilterSource.DATAFRAME
 
             logger.debug(
-                "filter_source was set to Auto, inferring a filter source of %s based on an input "
-                "message type of %s",
-                self._filter_source,
-                message_type)
-
-        elif self._filter_source == "DATAFRAME":
-            self._filter_source = FilterSource.DATAFRAME
-
-        elif self._filter_source == "TENSOR":
-            self._filter_source = FilterSource.TENSOR
-
-        else:
-            raise ValueError(f"Invalid filter_source: {self._filter_source}")
+                f"filter_source was set to Auto, inferring a filter source of {self._filter_source} based on an input "
+                f"message type of {message_type}")

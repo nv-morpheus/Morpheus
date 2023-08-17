@@ -18,6 +18,8 @@ import pickle
 import mrc
 from mrc.core import operators as ops
 
+import morpheus._lib.stages as _stages
+from morpheus.common import FilterSource
 from morpheus.utils.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -79,6 +81,10 @@ def filter_detections(builder: mrc.Builder):
     field_name = config.get("field_name", "probs")
     threshold = config.get("threshold", 0.5)
     filter_source = config.get("filter_source", "AUTO")
+    use_cpp = config.get("use_cpp", False)
+
+    filter_source_dict = {"AUTO": FilterSource.Auto, "DATAFRAME": FilterSource.DATAFRAME, "TENSOR": FilterSource.TENSOR}
+
     copy = config.get("copy", True)
 
     if ("schema" not in config):
@@ -90,15 +96,27 @@ def filter_detections(builder: mrc.Builder):
 
     message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    controller = FilterDetectionsController(threshold=threshold, filter_source=filter_source, field_name=field_name)
+    controller = FilterDetectionsController(threshold=threshold,
+                                            filter_source=filter_source_dict[filter_source],
+                                            field_name=field_name)
 
     controller.update_filter_source(message_type=message_type)
 
-    if copy:
-        node = builder.make_node(FILTER_DETECTIONS, ops.map(controller.filter_copy))
+    if use_cpp:
+        node = _stages.FilterDetectionsStage(builder,
+                                             FILTER_DETECTIONS,
+                                             controller.threshold,
+                                             copy,
+                                             controller.filter_source,
+                                             controller.field_name)
     else:
-        # Convert list returned by `filter_slice` back to individual messages
-        node = builder.make_node(FILTER_DETECTIONS, ops.map(controller.filter_slice), ops.flatten())
+        if copy:
+            node = builder.make_node(FILTER_DETECTIONS,
+                                     ops.map(controller.filter_copy),
+                                     ops.filter(lambda x: x is not None))
+        else:
+            # Convert list returned by `filter_slice` back to individual messages
+            node = builder.make_node(FILTER_DETECTIONS, ops.map(controller.filter_slice), ops.flatten())
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

@@ -18,6 +18,7 @@ import typing
 
 import nvtabular as nvt
 import pandas as pd
+
 import cudf
 
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -105,12 +106,13 @@ def process_dataframe(
 
         nvt_workflow = input_schema.nvt_workflow
 
-    df_in = prepared_df_info.df
-
     preserve_df = None
 
     if prepared_df_info is not None:
-        preserve_df = df_in[prepared_df_info.columns_to_preserve]
+        df_in = prepared_df_info.df
+
+        if prepared_df_info.columns_to_preserve:
+            preserve_df = df_in[prepared_df_info.columns_to_preserve]
 
     if (convert_to_pd):
         df_in = cudf.DataFrame(df_in)

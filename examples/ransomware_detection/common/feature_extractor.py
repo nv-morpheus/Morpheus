@@ -15,6 +15,7 @@
 import typing
 
 import pandas as pd
+
 from common.data_models import FeatureConfig
 from common.data_models import ProtectionData
 from common.feature_constants import FeatureConstants as fc

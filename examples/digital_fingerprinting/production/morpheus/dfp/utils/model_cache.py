@@ -24,6 +24,7 @@ from mlflow.entities.model_registry import RegisteredModel
 from mlflow.exceptions import MlflowException
 from mlflow.store.entities.paged_list import PagedList
 from mlflow.tracking.client import MlflowClient
+
 from morpheus.models.dfencoder import AutoEncoder
 
 from .logging_timer import log_time
@@ -145,7 +146,9 @@ class UserModelMap:
                     self._last_checked = now
 
                     # Try to load from the manager
-                    model_cache = self._manager.load_model_cache(client=client, reg_model_name=self._reg_model_name, timeout=timeout)
+                    model_cache = self._manager.load_model_cache(client=client,
+                                                                 reg_model_name=self._reg_model_name,
+                                                                 timeout=timeout)
 
                     # If we have a hit, there is nothing else to do
                     if (model_cache is None and len(self._fallback_user_ids) > 0):
@@ -160,7 +163,9 @@ class UserModelMap:
                     return self._child_user_model_cache.load_model_cache(client=client, timeout=timeout)
 
                 # Otherwise load the model
-                model_cache = self._manager.load_model_cache(client=client, reg_model_name=self._reg_model_name, timeout=timeout)
+                model_cache = self._manager.load_model_cache(client=client,
+                                                             reg_model_name=self._reg_model_name,
+                                                             timeout=timeout)
 
                 if (model_cache is None):
                     raise RuntimeError("Model was found but now no longer exists. Model: {}".format(
@@ -241,10 +246,16 @@ class ModelManager:
     def user_id_to_model(self, user_id: str):
         return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
-    def load_user_model(self, client, user_id: str, fallback_user_ids: typing.List[str] = [], timeout: float = 1.0) -> ModelCache:
+    def load_user_model(self,
+                        client,
+                        user_id: str,
+                        fallback_user_ids: typing.List[str] = [],
+                        timeout: float = 1.0) -> ModelCache:
 
         # First get the UserModel
-        user_model_cache = self.load_user_model_cache(user_id=user_id, timeout=timeout, fallback_user_ids=fallback_user_ids)
+        user_model_cache = self.load_user_model_cache(user_id=user_id,
+                                                      timeout=timeout,
+                                                      fallback_user_ids=fallback_user_ids)
 
         return user_model_cache.load_model_cache(client=client, timeout=timeout)
 
@@ -320,7 +331,10 @@ class ModelManager:
             logger.error("Deadlock when trying to acquire model cache lock")
             raise RuntimeError("Deadlock when trying to acquire model cache lock")
 
-    def load_user_model_cache(self, user_id: str, timeout: float, fallback_user_ids: typing.List[str] = []) -> UserModelMap:
+    def load_user_model_cache(self,
+                              user_id: str,
+                              timeout: float,
+                              fallback_user_ids: typing.List[str] = []) -> UserModelMap:
         try:
             with timed_acquire(self._user_model_cache_lock, timeout=timeout):
 
