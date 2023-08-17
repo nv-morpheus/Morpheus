@@ -67,7 +67,6 @@ function sed_runner() {
 # .gitmodules
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/morpheus-visualizations
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} morpheus_utils
-git submodule update --remote --recursive
 
 if [[ "$(git diff --name-only | grep .gitmodules)" != "" ]]; then
    # Only update the submodules if setting the branch changed .gitmodules. Otherwise this will undo the current commit
