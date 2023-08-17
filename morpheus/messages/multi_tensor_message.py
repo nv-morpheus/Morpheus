@@ -60,7 +60,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                  id_tensor_name: str = "seq_ids"):
 
         if memory is None:
-            raise ValueError("Must define `memory` when creating {}".format(self.__class__.__name__))
+            raise ValueError(f"Must define `memory` when creating {self.__class__.__name__}")
 
         # Use the meta count if not supplied
         if (count == -1):
@@ -229,8 +229,8 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         """
         try:
             return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError(f'No attribute named "{name}" exists')
+        except KeyError as e:
+            raise AttributeError(f'No attribute named "{name}" exists') from e
 
     def copy_tensor_ranges(self, ranges, mask=None):
         """
@@ -337,7 +337,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
 
         When creating the new message, all required arguments for the class specified by `cls` will be pulled from
-        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        `message` unless otherwise specified in the `kwargs`. Special handling is performed depending on
         whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
         `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
 
@@ -362,6 +362,8 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
             A new `offset` to use, by default -1
         count : int, optional
             A new `count` to use, by default -1
+        **kwargs : `dict`
+            Keyword arguments to use when creating the new instance.
 
         Returns
         -------

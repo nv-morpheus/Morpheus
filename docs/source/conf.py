@@ -315,6 +315,7 @@ def setup(app):
     app.add_css_file('infoboxes.css')
     app.add_css_file('params.css')
     app.add_css_file('references.css')
+    app.add_css_file('py_properties.css')
 
 
 # The following is used by sphinx.ext.linkcode to provide links to github

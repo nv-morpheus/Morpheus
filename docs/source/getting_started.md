@@ -28,7 +28,7 @@ More advanced users, or those who are interested in using the latest pre-release
 
 ## Requirements
 - Pascal architecture GPU or better
-- NVIDIA driver `450.80.02` or higher
+- NVIDIA driver `520.61.05` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
@@ -245,15 +245,17 @@ morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localh
 
 The output should contain lines similar to:
 ```
-====Pipeline Started====
+====Building Segment: linear_segment_0====
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=('test_pcap',), group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage()>
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
   └─ morpheus.MultiMessage -> morpheus.MessageMeta
-Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=False, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+====Pipeline Started====
 ```
 
 This is important because, when the log level is set to `INFO` and above, it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
@@ -266,13 +268,13 @@ E20221214 14:53:17.425515 452045 controller.cpp:62] exception caught while perfo
 E20221214 14:53:17.425714 452045 context.cpp:125] rank: 0; size: 1; tid: 140065439217216; fid: 0x7f6144041000: set_exception issued; issuing kill to current runnable. Exception msg: RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the `to-file` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.messages.multi_message.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
 
 #### Pipeline Stages
 
 A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
 
-```bash
+```
 $ morpheus run pipeline-nlp --help
 Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -283,9 +285,10 @@ Commands:
   add-scores    Add probability scores to each message.
   buffer        (Deprecated) Buffer results.
   delay         (Deprecated) Delay results for a certain duration.
-  deserialize   Deserialize source data into Dataframes.
+  deserialize   Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna        Drop null data entries from a DataFrame.
   filter        Filter message by a classification threshold.
+  from-doca     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
   from-file     Load messages from a file.
   from-kafka    Load messages from a Kafka cluster.
   gen-viz       (Deprecated) Write out visualization DataFrames.
@@ -295,7 +298,7 @@ Commands:
   mlflow-drift  Report model drift statistics to ML Flow.
   monitor       Display throughput numbers at a specific point in the pipeline.
   preprocess    Prepare NLP input DataFrames for inference.
-  serialize     Include & exclude columns from messages.
+  serialize     Includes & excludes columns from messages.
   to-file       Write all messages to a file.
   to-kafka      Write all messages to a Kafka cluster.
   trigger       Buffer data until the previous stage has completed.
@@ -303,8 +306,7 @@ Commands:
 ```
 
 And for the FIL pipeline:
-
-```bash
+```
 $ morpheus run pipeline-fil --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -315,12 +317,11 @@ Commands:
   add-scores      Add probability scores to each message.
   buffer          (Deprecated) Buffer results.
   delay           (Deprecated) Delay results for a certain duration.
-  deserialize     Deserialize source data into Dataframes.
+  deserialize     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna          Drop null data entries from a DataFrame.
   filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a
-                  dataframe. It normalizes nested json messages and arranges them into a dataframe by
-                  snapshot and source.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them
+                  into a dataframe by snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -329,7 +330,7 @@ Commands:
   mlflow-drift    Report model drift statistics to ML Flow.
   monitor         Display throughput numbers at a specific point in the pipeline.
   preprocess      Prepare FIL input DataFrames for inference.
-  serialize       Include & exclude columns from messages.
+  serialize       Includes & excludes columns from messages.
   to-file         Write all messages to a file.
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
@@ -338,7 +339,7 @@ Commands:
 
 And for the AE pipeline:
 
-```bash
+```
 $ morpheus run pipeline-ae --help
 Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -357,7 +358,7 @@ Commands:
   inf-triton       Perform inference with Triton Inference Server.
   monitor          Display throughput numbers at a specific point in the pipeline.
   preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Include & exclude columns from messages.
+  serialize        Includes & excludes columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
   to-file          Write all messages to a file.
   to-kafka         Write all messages to a Kafka cluster.

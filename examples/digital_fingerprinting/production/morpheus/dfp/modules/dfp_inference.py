@@ -16,7 +16,6 @@ import logging
 import time
 
 import mrc
-import pandas as pd
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
@@ -83,7 +82,6 @@ def dfp_inference(builder: mrc.Builder):
 
         with payload.mutable_dataframe() as dfm:
             df_user = dfm.to_pandas()
-        df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
 
         try:
             model_cache: ModelCache = get_model(user_id)
@@ -102,16 +100,15 @@ def dfp_inference(builder: mrc.Builder):
 
         results_df = cudf.from_pandas(loaded_model.get_results(df_user, return_abs=True))
 
-        include_cols = set(df_user.columns) - set(results_df.columns)
+        results_cols = list(set(results_df.columns) - set(df_user.columns))
 
-        for col in include_cols:
-            results_df[col] = df_user[col].copy(True)
+        output_df = cudf.concat([payload.df, results_df[results_cols]], axis=1)
 
         # Create an output message to allow setting meta
-        dfp_mm = DFPMessageMeta(df=results_df, user_id=user_id)
-        output_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(results_df))
+        output_message = MultiDFPMessage(meta=DFPMessageMeta(output_df, user_id=user_id),
+                                         mess_offset=0,
+                                         mess_count=payload.count)
 
-        output_message.set_meta(list(results_df.columns), results_df)
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):

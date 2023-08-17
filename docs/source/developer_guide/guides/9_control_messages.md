@@ -36,16 +36,9 @@ requirements and use cases.
 
 ## Anatomy of a Control Message
 
-Control Messages a fairly simple objects that contain `tasks`, `metadata`, and possibly `payload` data. Currently,
-tasks can be one of the following: `TRAINING`, `INFERENCE`, or `OTHER`. Metadata is a dictionary of key-value pairs
-that can be used to provide additional information about the message. Payload is a Morpheus MessageMeta object that can
-be used to move raw data. Each of these elements can be accessed via API as the message flows through the pipeline.
-
-## Anatomy of a Control Message
-
 Control Messages are straightforward objects that contain `tasks`, `metadata`, and possibly `payload` data. Tasks can be
 one of the following: `TRAINING`, `INFERENCE`, or `OTHER`. Metadata is a dictionary of key-value pairs that provide
-additional information about the message and must be JSON serializable. Payload is a Morpheus MessageMeta object that
+additional information about the message and must be JSON serializable. Payload is a Morpheus `MessageMeta` object that
 can be used to move raw data. Each of these elements can be accessed via the API as the message flows through the
 pipeline.
 
@@ -84,8 +77,8 @@ if msg.has_metadata("description"):
 
 ### Handling Payloads
 
-The payload of a Control Message is a Morpheus MessageMeta object that can carry raw data. You can set or retrieve the
-payload using the `payload` method, which can accept a MessageMeta instance or return the payload
+The payload of a Control Message is a Morpheus `MessageMeta` object that can carry raw data. You can set or retrieve the
+payload using the `payload` method, which can accept a `MessageMeta` instance or return the payload
 itself.
 
 ```python
@@ -101,5 +94,5 @@ msg.payload(msg_meta)
 
 retrieved_payload = msg.payload()
 
-msg_meta = retrieved_payload # True
+msg_meta == retrieved_payload # True
 ```
