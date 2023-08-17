@@ -29,6 +29,7 @@ git submodule update --init --recursive
 
 rapids-logger "Configuring cmake for Morpheus"
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
 if [[ "${LOCAL_CI}" == "" ]]; then
     CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
 fi
