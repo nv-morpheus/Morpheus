@@ -35,7 +35,7 @@ def _run_cmd(exe: str, *args: str):
     cmd_str = " ".join(cmd_list)
 
     # If we only passed in one executable (could be piping commands together) then use a shell
-    shell = False if len(args) > 0 else True
+    shell = len(args) <= 0
 
     if (shell):
         # For logging purposes, if we only passed in one executable, then clear the exe name to make logging better
@@ -575,6 +575,8 @@ def all_files(*paths, base_ref="HEAD", path_filter: typing.Callable[[str], bool]
 
     Parameters
     ----------
+    paths : typing.List[str]
+        The list of paths to include in the search
     base_ref : str, optional
         The base branch name, by default "HEAD"
     path_filter : typing.Callable[[str], bool], optional
