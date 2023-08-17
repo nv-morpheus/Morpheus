@@ -1,5 +1,18 @@
-import gc
-import os
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import typing
 
 import cupy as cp
@@ -7,15 +20,15 @@ import cupy as cp
 import mrc
 import mrc.core.operators as ops
 
+import pytest
+
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.io.deserializers import read_file_to_df
-
-MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.utils.type_aliases import DataFrameType
 
 
 class FftStage(SinglePortStage):
@@ -35,7 +48,6 @@ class FftStage(SinglePortStage):
 
     def on_next(self, x: typing.Any):
         cp.fft.fft(cp.zeros(10))
-
         return x
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
@@ -44,7 +56,7 @@ class FftStage(SinglePortStage):
         return node, input_stream[1]
 
 
-def run_pipe2(df):
+def run_pipe2(df: DataFrameType):
     config = Config()
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[df]))
@@ -52,7 +64,7 @@ def run_pipe2(df):
     pipe.run()
 
 
-def run_pipe1(df):
+def run_pipe1(df: DataFrameType):
     """
     Simple C++ pipeline where the sink holds on to a reference to the message
     """
@@ -63,16 +75,26 @@ def run_pipe1(df):
     pipe.run()
 
 
-def main():
-    # Disable auto-GC to make collection deterministic
-    gc.set_debug(gc.DEBUG_STATS)
-    gc.disable()
+@pytest.mark.use_cpp
+@pytest.mark.usefixtures("disable_gc")
+def test_gc_tls(filter_probs_df: DataFrameType):
+    """
+    Test for MRC issue #362 where `gc.collect()` is invoked while a thread is being finalized and thus
+    thread-local storage has already been cleared, when this happens and `gc.collect()` collects an object who's
+    destructor makes use of pybind11's `gil_scoped_acquire` then an internal pybind11 error is triggered.
 
-    df = read_file_to_df(os.path.join(MORPHEUS_ROOT, 'tests/tests_data/filter_probs.csv'), df_type='cudf')
+    Specifically the destructor for `PyDataTable` makes use of `gil_scoped_acquire` to release the GIL to allow the
+    underlying dataframe to be freed by the python interpreter.
 
-    run_pipe1(df)
-    run_pipe2(df)
+    The easiest was to reproduce this is to run a pipeline with C++ mode enabled wehre the sink like 
+    `InMemorySinkStage` holds on to a reference to the message not allowing it to be garbage collected until after the
+    pipeline has finished running. Then run a second pipeline in either C++ or Python mode, where once of the stages
+    has a finalizer on the thread which calls `gc.collect` specifically `cupy.fft` does this and I was unable to repro
+    the issue myself, possibly since that code was written in cython.
 
-
-if __name__ == '__main__':
-    main()
+    This only works if the first pipeline and thus the `PyDataTable` are not gargabe collected before the second 
+    pipeline is collected which makes this difficult to reproduce, but it is possible to force the issue by disabling
+    automatic garbage collection.
+    """
+    run_pipe1(filter_probs_df)
+    run_pipe2(filter_probs_df)
