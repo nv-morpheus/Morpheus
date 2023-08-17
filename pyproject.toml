@@ -41,6 +41,17 @@ ignore_patterns = [
   "**/*.pxd",
 ]
 
+
+[tool.mypy]
+# Allow None for argument default values
+implicit_optional = true
+
+
+[tool.pyright]
+# Allow None for argument default values
+strictParameterNoneValue = false
+
+
 [tool.interrogate]
 exclude = ["morpheus/cli"]
 ignore-init-method = true
