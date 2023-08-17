@@ -163,3 +163,12 @@ class FilterDetectionsController:
                 "message type of %s",
                 self._filter_source,
                 message_type)
+
+        elif self._filter_source == "DATAFRAME":
+            self._filter_source = FilterSource.DATAFRAME
+
+        elif self._filter_source == "TENSOR":
+            self._filter_source = FilterSource.TENSOR
+
+        else:
+            raise ValueError(f"Invalid filter_source: {self._filter_source}")
