@@ -31,5 +31,6 @@ accessible to the DataLoader module during module loading.
 ./core/file_to_df_loader.md
 ./core/fsspec_loader.md
 ./core/sql_loader.md
+./core/rest_to_df_loader.md
 
 ```
