@@ -69,9 +69,7 @@ class ControlMessage
     void add_task(const std::string& task_type, const nlohmann::json& task);
 
     /**
-     * @brief Add a task of the given type to the control message.
-     * @param task_type A string indicating the type of the task.
-     * @param task A json object describing the task.
+     * @brief Get the tasks for the control message.
      */
     const nlohmann::json& tasks();
 
