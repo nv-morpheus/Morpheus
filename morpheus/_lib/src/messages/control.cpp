@@ -33,9 +33,11 @@ const std::string ControlMessage::s_config_schema = R"()";
 std::map<std::string, ControlMessageType> ControlMessage::s_task_type_map{{"inference", ControlMessageType::INFERENCE},
                                                                           {"training", ControlMessageType::TRAINING}};
 
-ControlMessage::ControlMessage() : m_config({{"metadata", nlohmann::json::object()}}) {}
+ControlMessage::ControlMessage() : m_config({{"metadata", nlohmann::json::object()}}), m_tasks({}) {}
 
-ControlMessage::ControlMessage(const nlohmann::json& _config) : m_config({{"metadata", nlohmann::json::object()}})
+ControlMessage::ControlMessage(const nlohmann::json& _config) :
+  m_config({{"metadata", nlohmann::json::object()}}),
+  m_tasks({})
 {
     config(_config);
 }
@@ -209,16 +211,7 @@ void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task
 
 py::dict ControlMessageProxy::tasks(ControlMessage& self)
 {
-    auto tasks = self.tasks();
-
-    if (tasks == nullptr)
-    {
-        return {};
-    }
-    else
-    {
-        return mrc::pymrc::cast_from_json(tasks);
-    }
+    return mrc::pymrc::cast_from_json(self.tasks());
 }
 
 py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
