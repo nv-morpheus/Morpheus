@@ -84,6 +84,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         SingleOutputSource.__init__(self, c)
 
+        self._input_glob = input_glob
         self._file_type = file_type
 
         self._feature_columns = c.ae.feature_columns
@@ -110,7 +111,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
     @property
     def input_count(self) -> int:
         """Return None for no max input count"""
-        return self._input_count
+        return self._input_count if self._input_count is not None else 0
 
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""

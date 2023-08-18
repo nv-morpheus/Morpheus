@@ -40,8 +40,8 @@ import morpheus.modules  # noqa: F401 # pylint:disable=unused-import
 from benchmarks.benchmark_conf_generator import BenchmarkConfGenerator
 from benchmarks.benchmark_conf_generator import load_json
 from benchmarks.benchmark_conf_generator import set_mlflow_tracking_uri
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import FilterSource
+from morpheus.common import FileTypes
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
@@ -77,7 +77,7 @@ def remove_cache(cache_dir: str):
 
 
 def dfp_modules_pipeline(pipe_config: Config,
-                         modules_conf: typing.Dict[str, any],
+                         modules_conf: typing.Dict[str, typing.Any],
                          filenames: typing.List[str],
                          reuse_cache=False):
 
@@ -99,7 +99,7 @@ def dfp_modules_pipeline(pipe_config: Config,
 
 
 def dfp_training_pipeline_stages(pipe_config: Config,
-                                 stages_conf: typing.Dict[str, any],
+                                 stages_conf: typing.Dict[str, typing.Any],
                                  source_schema: DataFrameInputSchema,
                                  preprocess_schema: DataFrameInputSchema,
                                  filenames: typing.List[str],
@@ -150,7 +150,7 @@ def dfp_training_pipeline_stages(pipe_config: Config,
 
 
 def dfp_inference_pipeline_stages(pipe_config: Config,
-                                  stages_conf: typing.Dict[str, any],
+                                  stages_conf: typing.Dict[str, typing.Any],
                                   source_schema: DataFrameInputSchema,
                                   preprocess_schema: DataFrameInputSchema,
                                   filenames: typing.List[str],

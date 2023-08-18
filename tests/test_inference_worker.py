@@ -36,6 +36,10 @@ def test_constructor():
 @pytest.mark.use_python
 @pytest.mark.usefixtures("config")
 def test_build_output_message():
+
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     queue = ProducerConsumerQueue()
     worker = IW(queue)
 

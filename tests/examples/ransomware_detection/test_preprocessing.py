@@ -149,6 +149,10 @@ class TestPreprocessingRWStage:
         dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
 
     def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
+
+        # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+        # pylint: disable=no-member
+
         from stages.preprocessing import PreprocessingRWStage
         df = dataset_pandas['examples/ransomware_detection/dask_results.csv']
         df['source_pid_process'] = 'appshield_' + df.pid_process
@@ -158,7 +162,7 @@ class TestPreprocessingRWStage:
 
         sliding_window = 4
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
-        results = stage._pre_process_batch(multi)
+        results: MultiInferenceFILMessage = stage._pre_process_batch(multi)
         assert isinstance(results, MultiInferenceFILMessage)
 
         expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]

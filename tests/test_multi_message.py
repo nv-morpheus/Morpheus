@@ -486,6 +486,9 @@ def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
 
 def test_from_message(filter_probs_df: cudf.DataFrame):
 
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=10)
@@ -708,6 +711,10 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
 
 @pytest.mark.usefixtures("use_cpp")
 def test_tensor_slicing(dataset: DatasetManager):
+
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     filter_probs_df = dataset["filter_probs.csv"]
     mess_len = len(filter_probs_df)
 

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import contextlib
 import ctypes
 import importlib
 import logging
@@ -382,6 +381,10 @@ def restore_sys_path():
 @pytest.fixture(scope="function")
 def import_mod(request: pytest.FixtureRequest,
                restore_sys_path) -> typing.Generator[types.ModuleType | list[types.ModuleType], None, None]:
+    # pylint: disable=missing-param-doc
+    # pylint: disable=differing-param-doc
+    # pylint: disable=missing-type-doc
+    # pylint: disable=differing-type-doc
     """
     Allows direct import of a module by specifying its path. This is useful for testing examples that import modules in
     examples or other non-installed directories.
