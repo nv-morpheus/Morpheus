@@ -28,8 +28,8 @@ import pandas as pd
 
 import cudf
 
-from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
