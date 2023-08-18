@@ -64,6 +64,11 @@ class ControlMessage():
     @typing.overload
     def task_type(self, task_type: ControlMessageType) -> None: ...
     @property
+    def metadata(self) -> dict:
+        """
+        :type: dict
+        """
+    @property
     def tasks(self) -> dict:
         """
         :type: dict

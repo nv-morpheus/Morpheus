@@ -77,6 +77,11 @@ const nlohmann::json& ControlMessage::tasks()
     return m_tasks;
 }
 
+const nlohmann::json& ControlMessage::metadata()
+{
+    return m_config["metadata"];
+}
+
 bool ControlMessage::has_task(const std::string& task_type) const
 {
     return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
@@ -212,6 +217,11 @@ void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task
 py::dict ControlMessageProxy::tasks(ControlMessage& self)
 {
     return mrc::pymrc::cast_from_json(self.tasks());
+}
+
+py::dict ControlMessageProxy::metadata(ControlMessage& self)
+{
+    return mrc::pymrc::cast_from_json(self.metadata());
 }
 
 py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)

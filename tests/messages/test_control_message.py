@@ -71,6 +71,7 @@ def test_control_message_tasks():
     tasks["type_a"] = [{"key_x", "value_x"}]
     assert len(message.tasks) == 0
 
+
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_tasks_a():
     # Ensure multiple task types of the same type can be read
@@ -99,6 +100,31 @@ def test_control_message_tasks_b():
     assert len(message.tasks["type_a"]) == 2
     assert message.tasks["type_a"][0]["key_x"] == "value_x"
     assert message.tasks["type_a"][1]["key_y"] == "value_y"
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_control_message_metadata():
+    message = messages.ControlMessage()
+    message.set_metadata("key_x", "value_x")
+    message.set_metadata("key_y", "value_y")
+    message.set_metadata("key_z", "value_z")
+
+    assert len(message.metadata) == 3
+
+    assert "key_x" in message.metadata
+    assert "key_y" in message.metadata
+    assert "key_z" in message.metadata
+    assert message.metadata["key_x"] == "value_x"
+    assert message.metadata["key_y"] == "value_y"
+    assert message.metadata["key_z"] == "value_z"
+
+    message.set_metadata("key_y", "value_yy")
+
+    assert message.metadata["key_y"] == "value_yy"
+
+    message.metadata["not_mutable"] = 5
+
+    assert "not_mutable" not in message.metadata
 
 
 @pytest.mark.usefixtures("config_only_cpp")

@@ -74,6 +74,11 @@ class ControlMessage
     const nlohmann::json& tasks();
 
     /**
+     * @brief Get the metadata for the control message.
+     */
+    const nlohmann::json& metadata();
+
+    /**
      * @brief Check if a task of the given type exists in the control message.
      * @param task_type A string indicating the type of the task.
      * @return True if a task of the given type exists, false otherwise.
@@ -166,6 +171,7 @@ struct ControlMessageProxy
     static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
     static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
     static pybind11::dict tasks(ControlMessage& self);
+    static pybind11::dict metadata(ControlMessage& self);
 
     /**
      * @brief Set a metadata key-value pair -- value must be json serializable
