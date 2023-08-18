@@ -16,10 +16,8 @@
 import typing
 
 import cupy as cp
-
 import mrc
 import mrc.core.operators as ops
-
 import pytest
 
 from morpheus.config import Config
@@ -86,13 +84,13 @@ def test_gc_tls(filter_probs_df: DataFrameType):
     Specifically the destructor for `PyDataTable` makes use of `gil_scoped_acquire` to release the GIL to allow the
     underlying dataframe to be freed by the python interpreter.
 
-    The easiest was to reproduce this is to run a pipeline with C++ mode enabled wehre the sink like 
+    The easiest was to reproduce this is to run a pipeline with C++ mode enabled wehre the sink like
     `InMemorySinkStage` holds on to a reference to the message not allowing it to be garbage collected until after the
     pipeline has finished running. Then run a second pipeline in either C++ or Python mode, where once of the stages
     has a finalizer on the thread which calls `gc.collect` specifically `cupy.fft` does this and I was unable to repro
     the issue myself, possibly since that code was written in cython.
 
-    This only works if the first pipeline and thus the `PyDataTable` are not gargabe collected before the second 
+    This only works if the first pipeline and thus the `PyDataTable` are not gargabe collected before the second
     pipeline is collected which makes this difficult to reproduce, but it is possible to force the issue by disabling
     automatic garbage collection.
     """
