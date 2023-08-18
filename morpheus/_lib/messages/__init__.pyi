@@ -63,6 +63,11 @@ class ControlMessage():
     def task_type(self) -> ControlMessageType: ...
     @typing.overload
     def task_type(self, task_type: ControlMessageType) -> None: ...
+    @property
+    def tasks(self) -> dict:
+        """
+        :type: dict
+        """
     pass
 class ControlMessageType():
     """

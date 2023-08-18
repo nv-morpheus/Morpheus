@@ -18,6 +18,7 @@
 #include "morpheus/messages/control.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
 #include <ostream>
@@ -67,6 +68,11 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
     }
 
     m_tasks[task_type].push_back(task);
+}
+
+const nlohmann::json& ControlMessage::tasks()
+{
+    return m_tasks;
 }
 
 bool ControlMessage::has_task(const std::string& task_type) const
@@ -199,6 +205,20 @@ std::shared_ptr<ControlMessage> ControlMessageProxy::copy(ControlMessage& self)
 void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task_type, py::dict& task)
 {
     self.add_task(task_type, mrc::pymrc::cast_from_pyobject(task));
+}
+
+py::dict ControlMessageProxy::tasks(ControlMessage& self)
+{
+    auto tasks = self.tasks();
+
+    if (tasks == nullptr)
+    {
+        return {};
+    }
+    else
+    {
+        return mrc::pymrc::cast_from_json(tasks);
+    }
 }
 
 py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)

@@ -383,7 +383,8 @@ PYBIND11_MODULE(messages, _module)
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
-        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload));
+        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def_property_readonly("tasks", &ControlMessageProxy::tasks);
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

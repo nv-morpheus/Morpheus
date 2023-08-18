@@ -26,6 +26,15 @@ def test_control_message_init():
     control_message_one = messages.ControlMessage()  # noqa: F841
     control_message_two = messages.ControlMessage({"test": "test"})  # noqa: F841
 
+@pytest.mark.usefixtures("config_only_cpp")
+def test_control_message_tasks():
+    message = messages.ControlMessage()  # noqa: F841
+    assert len(message.tasks) == 0
+
+    message = messages.ControlMessage()  # noqa: F841
+    message.add_task("x", { "load": "loader_id" })
+    assert len(message.tasks) == 1
+
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_get():
