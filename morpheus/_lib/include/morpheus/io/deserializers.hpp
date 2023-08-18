@@ -48,7 +48,7 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
  * @param filename : Name of the file that should be loaded into a table
  * @return cudf::io::table_with_metadata
  */
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type = FileTypes::Auto);
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type = FileTypes::Auto, std::optional<bool> json_lines = std::nullopt);
 
 /**
  * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
