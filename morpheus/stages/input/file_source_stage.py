@@ -105,7 +105,11 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            out_stream = _stages.FileSourceStage(builder, self.unique_name, self._filename, self._repeat_count, self._parser_kwargs)
+            out_stream = _stages.FileSourceStage(builder,
+                                                 self.unique_name,
+                                                 self._filename,
+                                                 self._repeat_count,
+                                                 self._parser_kwargs)
         else:
             out_stream = builder.make_source(self.unique_name, self._generate_frames())
 

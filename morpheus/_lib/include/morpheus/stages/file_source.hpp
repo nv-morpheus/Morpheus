@@ -27,6 +27,7 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
@@ -95,7 +96,7 @@ struct FileSourceStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
                                                                        const std::string& name,
                                                                        std::string filename,
-                                                                       int repeat = 1,
+                                                                       int repeat                   = 1,
                                                                        pybind11::dict parser_kwargs = pybind11::dict());
 };
 #pragma GCC visibility pop

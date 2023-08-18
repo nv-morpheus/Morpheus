@@ -32,6 +32,7 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
+#include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
@@ -115,7 +116,11 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
 // ************ FileSourceStageInterfaceProxy ************ //
 std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, const std::string& name, std::string filename, int repeat, pybind11::dict parser_kwargs)
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
 {
     std::optional<bool> json_lines = std::nullopt;
 
