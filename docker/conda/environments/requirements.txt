@@ -1,9 +1,0 @@
-####### Pip-only runtime dependencies (keep sorted!) #######
-# Packages listed here should also be listed in setup.py
-ipywidgets
-jupyter-core>=4.11.2,<5.0
-jupyterlab
-nvidia-pyindex
-# Duplicated in conda dev to ensure parity with libprotobuf
-protobuf==4.21.*
-websockets

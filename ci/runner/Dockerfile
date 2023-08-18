@@ -67,6 +67,7 @@ COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/c
 COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
 # Install extra deps needed for gnn_fraud_detection_pipeline & ransomware_detection examples
+# can stellargraph be obtained through conda?
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml && \
     conda clean -afy && \
     source activate ${PROJ_NAME} && \
