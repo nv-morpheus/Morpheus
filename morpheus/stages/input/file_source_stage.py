@@ -68,7 +68,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
                  filter_null: bool = True,
-                 parser_kwargs: dict = {}):
+                 parser_kwargs: dict = None):
 
         super().__init__(c)
 
@@ -77,7 +77,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._filename = filename
         self._file_type = file_type
         self._filter_null = filter_null
-        self._parser_kwargs = parser_kwargs
+        self._parser_kwargs = parser_kwargs or {}
 
         self._input_count = None
         self._max_concurrent = c.num_threads
