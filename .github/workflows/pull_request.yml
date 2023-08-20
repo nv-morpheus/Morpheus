@@ -16,10 +16,7 @@
 name: Build pull request
 
 on:
-  push:
-    branches:
-      - 'pull-request/**'
-      - 'branch-*'
+  pull_request:
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
