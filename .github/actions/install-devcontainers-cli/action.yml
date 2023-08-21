@@ -1,0 +1,17 @@
+name: install-devcontainers-cli
+
+description: Install devcontainers CLI
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+    - name: Install devcontainers CLI
+      shell: bash
+      run: |
+        sudo apt update;
+        sudo apt install -y --no-install-recommends build-essential;
+        npm install -g @devcontainers/cli;
