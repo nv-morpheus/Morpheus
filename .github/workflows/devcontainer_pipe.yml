@@ -42,7 +42,7 @@ jobs:
           cat .devcontainer/devcontainer.json | strip-json-comments | jq "del(.mounts)" > .devcontainer/tmp/devcontainer.json
           devcontainer_args="\
             --workspace-folder . \
-            --config tmp-devcontainer.json \
+            --config .devcontainer/tmp/devcontainer.json \
           "
           devcontainer build $devcontainer_args
           devcontainer_id=$(devcontainer up $devcontainer_args | jq -r .containerId)
