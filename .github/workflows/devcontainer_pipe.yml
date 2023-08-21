@@ -33,8 +33,8 @@ jobs:
 
       - name: "install jq"
         run: |
-          apt-get -y --no-install-recommends update
-          apt-get -y --no-install-recommends install jq
+          sudo apt-get -y --no-install-recommends update
+          sudo apt-get -y --no-install-recommends install jq
 
       - name: "Build devcontainer"
         run: |
