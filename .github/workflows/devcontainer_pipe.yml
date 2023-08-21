@@ -40,7 +40,7 @@ jobs:
         run: |
           devcontainer_args="\
             --workspace-folder . \
-            --config .devcontainer/default/devcontainer.json \
+            --config .devcontainer/devcontainer.json \
           "
           devcontainer build $devcontainer_args
           devcontainer_id=$(devcontainer up $devcontainer_args | jq -r .containerId)
