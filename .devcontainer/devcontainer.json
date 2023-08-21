@@ -93,8 +93,7 @@
             "type": "bind",
             "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
             "target": "/opt/morpheus"
-        },
-
+        }
     ],
 
     "features": {
@@ -121,5 +120,5 @@
                 "python.terminal.activateEnvironment": false
             }
         }
-    },
+    }
 }
