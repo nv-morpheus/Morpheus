@@ -47,3 +47,6 @@ jobs:
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230801
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
+
+  devcontainer_pipe:
+    uses: ./.github/workflows/devcontainer_pipe.yml
