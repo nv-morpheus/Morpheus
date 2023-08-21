@@ -38,7 +38,8 @@ jobs:
 
       - name: "Build devcontainer"
         run: |
-          cat .devcontainer/devcontainer.json | strip-json-comments | jq "del(.mounts)" > tmp-devcontainer.json
+          mkdir -p .devcontainer/tmp
+          cat .devcontainer/devcontainer.json | strip-json-comments | jq "del(.mounts)" > .devcontainer/tmp/devcontainer.json
           devcontainer_args="\
             --workspace-folder . \
             --config tmp-devcontainer.json \
