@@ -16,7 +16,7 @@
 {
     "name": "Morpheus",
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "${localWorkspaceFolder}/.devcontainer/Dockerfile"
     },
 
     "hostRequirements": {
