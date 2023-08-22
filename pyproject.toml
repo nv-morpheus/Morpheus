@@ -112,7 +112,7 @@ fail-under = 10.0
 # from-stdin =
 
 # Files or directories to be skipped. They should be base names, not paths.
-ignore = ["_version.py", "conf.py", "cudf_helpers.pyx", "github_link.py", "sid-models/sid-minibert-20230424-script.py"]
+ignore = ["_version.py", "conf.py", "cudf_helpers.pyx", "github_link.py"]
 
 # Add files or directories matching the regular expressions patterns to the
 # ignore-list. The regex matches against paths and can be in Posix or Windows

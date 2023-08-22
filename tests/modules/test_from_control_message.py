@@ -70,7 +70,7 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    fn_constructor("FromControlMessageTest", config)  # noqa: F841 -- we don't need to use it
+    fn_constructor("FromControlMessageTest", config)
 
 
 @pytest.mark.use_cpp
