@@ -72,12 +72,12 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
     m_tasks[task_type].push_back(task);
 }
 
-const nlohmann::json& ControlMessage::tasks()
+const nlohmann::json& ControlMessage::tasks() const
 {
     return m_tasks;
 }
 
-const nlohmann::json& ControlMessage::metadata()
+const nlohmann::json& ControlMessage::metadata() const
 {
     return m_config["metadata"];
 }

@@ -71,12 +71,12 @@ class ControlMessage
     /**
      * @brief Get the tasks for the control message.
      */
-    const nlohmann::json& tasks();
+    const nlohmann::json& tasks() const;
 
     /**
      * @brief Get the metadata for the control message.
      */
-    const nlohmann::json& metadata();
+    const nlohmann::json& metadata() const;
 
     /**
      * @brief Check if a task of the given type exists in the control message.
