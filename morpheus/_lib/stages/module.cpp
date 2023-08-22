@@ -105,7 +105,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
-             py::arg("repeat"));
+             py::arg("repeat"),
+             py::arg("parser_kwargs"));
 
     py::class_<mrc::segment::Object<FilterDetectionsStage>,
                mrc::segment::ObjectProperties,

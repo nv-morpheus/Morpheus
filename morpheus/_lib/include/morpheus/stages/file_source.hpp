@@ -27,11 +27,13 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>  // for vector
@@ -63,14 +65,16 @@ class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
      *
      * @param filename : Name of the file from which the messages will be read
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
+     * @param json_lines: Whether to force json or jsonlines parsing
      */
-    FileSourceStage(std::string filename, int repeat = 1);
+    FileSourceStage(std::string filename, int repeat = 1, std::optional<bool> json_lines = std::nullopt);
 
   private:
     subscriber_fn_t build();
 
     std::string m_filename;
     int m_repeat{1};
+    std::optional<bool> m_json_lines;
 };
 
 /****** FileSourceStageInterfaceProxy***********************/
@@ -86,12 +90,14 @@ struct FileSourceStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param filename : Name of the file from which the messages will be read.
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
+     * @param parser_kwargs : Optional arguments to pass to the file parser.
      * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
     static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
                                                                        const std::string& name,
                                                                        std::string filename,
-                                                                       int repeat = 1);
+                                                                       int repeat                   = 1,
+                                                                       pybind11::dict parser_kwargs = pybind11::dict());
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
