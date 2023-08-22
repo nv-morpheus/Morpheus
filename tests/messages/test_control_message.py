@@ -26,6 +26,7 @@ def test_control_message_init():
     control_message_one = messages.ControlMessage()  # noqa: F841
     control_message_two = messages.ControlMessage({"test": "test"})  # noqa: F841
 
+
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_tasks():
     message = messages.ControlMessage()
@@ -33,7 +34,7 @@ def test_control_message_tasks():
 
     # Ensure a single task can be read
     message = messages.ControlMessage()
-    message.add_task("type_a", { "key_x": "value_x" })
+    message.add_task("type_a", {"key_x": "value_x"})
 
     assert len(message.tasks) == 1
     assert "type_a" in message.tasks
@@ -42,8 +43,8 @@ def test_control_message_tasks():
 
     # Ensure multiple task types of different types can be read
     message = messages.ControlMessage()
-    message.add_task("type_a", { "key_x": "value_x" })
-    message.add_task("type_b", { "key_y": "value_y" })
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_b", {"key_y": "value_y"})
     assert len(message.tasks) == 2
 
     assert "type_a" in message.tasks
@@ -56,8 +57,8 @@ def test_control_message_tasks():
 
     # Ensure multiple task types of the same type can be read
     message = messages.ControlMessage()
-    message.add_task("type_a", { "key_x": "value_x" })
-    message.add_task("type_a", { "key_y": "value_y" })
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_a", {"key_y": "value_y"})
     assert len(message.tasks) == 1
 
     assert "type_a" in message.tasks
@@ -76,8 +77,8 @@ def test_control_message_tasks():
 def test_control_message_tasks_a():
     # Ensure multiple task types of the same type can be read
     message = messages.ControlMessage()
-    message.add_task("type_a", { "key_x": "value_x" })
-    message.add_task("type_a", { "key_y": "value_y" })
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_a", {"key_y": "value_y"})
     assert len(message.tasks) == 2
 
     assert message.tasks[0].type == "type_a"
@@ -92,8 +93,8 @@ def test_control_message_tasks_a():
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_tasks_b():
     message = messages.ControlMessage()
-    message.add_task("type_a", { "key_x": "value_x" })
-    message.add_task("type_a", { "key_y": "value_y" })
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_a", {"key_y": "value_y"})
     assert len(message.tasks) == 1
 
     assert "type_a" in message.tasks
