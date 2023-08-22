@@ -21,8 +21,8 @@
 
 namespace morpheus::test {
 
-using TestLoader = TestWithPythonInterpreter;  // NOLINT
-using TestDataLoader = TestWithPythonInterpreter;  // NOLINT
+using TestLoader             = TestWithPythonInterpreter;  // NOLINT
+using TestDataLoader         = TestWithPythonInterpreter;  // NOLINT
 using TestDataLoaderRegistry = TestWithPythonInterpreter;  // NOLINT
 
 }  // namespace morpheus::test
