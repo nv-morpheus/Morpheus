@@ -23,12 +23,12 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("pass-thru")
+@register_stage("pass-thru-cpp")
 class PassThruStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "pass-thru"
+        return "pass-thru-cpp"
 
     def accepted_types(self) -> typing.Tuple:
         return (typing.Any, )
