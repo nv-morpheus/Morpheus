@@ -13,84 +13,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import types
-
 import pytest
 
 import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(self,
-                         config: Config,
-                         hinsage_model: str,
-                         gnn_fraud_detection_pipeline: types.ModuleType,
-                         tensorflow):
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
-        stage = GraphSAGEStage(config,
-                               model_hinsage_file=hinsage_model,
-                               batch_size=10,
-                               sample_size=[4, 64],
-                               record_id="test_id",
-                               target_node="test_node")
+    def test_constructor(self, config: Config, model_dir: str):
+        from stages.graph_sage_stage import GraphSAGEStage
+        from stages.model import HinSAGE
+        stage = GraphSAGEStage(config, model_dir=model_dir, batch_size=10, record_id="test_id", target_node="test_node")
 
-        assert isinstance(stage._keras_model, tensorflow.keras.models.Model)
+        assert isinstance(stage._dgl_model, HinSAGE)
         assert stage._batch_size == 10
-        assert stage._sample_size == [4, 64]
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    def test_inductive_step_hinsage(self,
-                                    config: Config,
-                                    hinsage_model: str,
-                                    gnn_fraud_detection_pipeline: types.ModuleType,
-                                    test_data: dict,
-                                    dataset_pandas: DatasetManager):
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
-
-        # The column names in the saved test data will be strings, in the results they will be ints
-        expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: int(x), axis=1, inplace=True)
-
-        df = test_data['df']
-
-        graph = FraudGraphConstructionStage._build_graph_features(df)
-
-        stage = GraphSAGEStage(config, model_hinsage_file=hinsage_model)
-        results = stage._inductive_step_hinsage(graph, stage._keras_model, test_data['index'])
-
-        assert isinstance(results, cudf.DataFrame)
-        assert results.index.to_arrow().to_pylist() == test_data['index']
-        dataset_pandas.assert_compare_df(results, expected_df)
-
     def test_process_message(self,
                              config: Config,
-                             hinsage_model: str,
-                             gnn_fraud_detection_pipeline: types.ModuleType,
+                             training_file: str,
+                             model_dir: str,
                              test_data: dict,
                              dataset_pandas: DatasetManager):
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
-        from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphMultiMessage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
+        from stages.graph_construction_stage import FraudGraphConstructionStage
+        from stages.graph_sage_stage import GraphSAGEMultiMessage
+        from stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
+        expected_df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))
-        graph = FraudGraphConstructionStage._build_graph_features(df)
-        msg = FraudGraphMultiMessage(meta=meta, graph=graph)
+        multi_msg = MultiMessage(meta=meta)
+        construction_stage = FraudGraphConstructionStage(config, training_file)
+        fgmm_msg = construction_stage._process_message(multi_msg)
 
-        stage = GraphSAGEStage(config, model_hinsage_file=hinsage_model)
-        results = stage._process_message(msg)
+        stage = GraphSAGEStage(config, model_dir=model_dir)
+        results = stage._process_message(fgmm_msg)
 
         assert isinstance(results, GraphSAGEMultiMessage)
         assert results.meta is meta
