@@ -20,6 +20,7 @@ import pytest
 
 from utils import TEST_DIRS
 from utils import import_or_skip
+from utils import remove_module
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
@@ -78,6 +79,15 @@ def xgb_model_fixture(model_dir: str):
 @pytest.fixture(name="ex_in_sys_path", autouse=True)
 def ex_in_sys_path_fixture(example_dir: str, restore_sys_path, reset_plugins):  # pylint: disable=unused-argument
     sys.path.append(example_dir)
+
+
+@pytest.fixture(autouse=True)
+def reset_modules():
+    """
+    Other examples have a stages module, ensure it is un-imported after running tests in this subdir
+    """
+    yield
+    remove_module('stages')
 
 
 @pytest.fixture(name="test_data")

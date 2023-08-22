@@ -21,6 +21,7 @@ import yaml
 
 from utils import TEST_DIRS
 from utils import import_or_skip
+from utils import remove_module
 
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `examples/ransomware_detection/README.md` "
@@ -72,5 +73,16 @@ def interested_plugins():
 #    from common....
 # For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
 @pytest.fixture(autouse=True)
-def ransomware_detection_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
+def ransomware_detection_in_sys_path(restore_sys_path, reset_plugins, example_dir):
     sys.path.append(example_dir)
+
+
+@pytest.fixture(autouse=True)
+def reset_modules():
+    """
+    Other examples could potentially have modules with the same name as the modules in this example. Ensure any 
+    modules imported by these tests are removed from sys.modules after the test is completed.
+    """
+    yield
+    for remove_mod in ('common', 'stages'):
+        remove_module(remove_mod)

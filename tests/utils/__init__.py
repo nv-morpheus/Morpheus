@@ -17,6 +17,7 @@
 import collections
 import json
 import os
+import sys
 import time
 import types
 import typing
@@ -161,3 +162,10 @@ def import_or_skip(modname: str,
         if fail_missing:
             raise ImportError(e) from e
         raise
+
+
+def remove_module(mod_to_remove: str):
+    mod_prefix = f"{mod_to_remove}."
+    for mod_name in list(sys.modules.keys()):
+        if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
+            del sys.modules[mod_name]
