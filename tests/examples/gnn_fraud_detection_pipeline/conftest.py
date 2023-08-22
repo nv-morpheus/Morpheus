@@ -104,8 +104,8 @@ def test_data_fixture():
     """
     import pandas as pd
     index = [2, 14, 16, 26, 41, 42, 70, 91, 93, 95]
-    client_data = [795, 2697, 5531, 415, 2580, 3551, 6547, 2697, 3503, 7173]
-    merchant_data = [8567, 4609, 2781, 7844, 629, 6915, 7071, 570, 2446, 8110]
+    client_data = [795.0, 2697.0, 5531.0, 415.0, 2580.0, 3551.0, 6547.0, 2697.0, 3503.0, 7173.0]
+    merchant_data = [8567.0, 4609.0, 2781.0, 7844.0, 629.0, 6915.0, 7071.0, 570.0, 2446.0, 8110.0]
 
     df_data = {
         'index': index,
@@ -118,7 +118,7 @@ def test_data_fixture():
     for i in range(1000, 1113):
         # these two values are skipped, apparently place-holders for client_node & merchant_node
         if i not in (1002, 1003):
-            df_data[str(i)] = [0 for _ in range(len(index))]
+            df_data[str(i)] = [0.0 for _ in range(len(index))]
 
     df = pd.DataFrame(df_data, index=index)
 
