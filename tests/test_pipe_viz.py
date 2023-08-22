@@ -20,8 +20,8 @@ import subprocess
 
 import pytest
 
-from _utils import assert_path_exists
 from _utils import TEST_DIRS
+from _utils import assert_path_exists
 from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli.commands import RANKDIR_CHOICES
