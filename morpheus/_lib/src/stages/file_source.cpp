@@ -25,18 +25,21 @@
 #include "pymrc/node.hpp"
 
 #include "morpheus/io/deserializers.hpp"
+#include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
+#include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <utility>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
@@ -45,16 +48,17 @@
 namespace morpheus {
 // Component public implementations
 // ************ FileSourceStage ************* //
-FileSourceStage::FileSourceStage(std::string filename, int repeat) :
+FileSourceStage::FileSourceStage(std::string filename, int repeat, std::optional<bool> json_lines) :
   PythonSource(build()),
   m_filename(std::move(filename)),
-  m_repeat(repeat)
+  m_repeat(repeat),
+  m_json_lines(json_lines)
 {}
 
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table     = load_table_from_file(m_filename);
+        auto data_table     = load_table_from_file(m_filename, FileTypes::Auto, m_json_lines);
         int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
@@ -112,9 +116,20 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
 // ************ FileSourceStageInterfaceProxy ************ //
 std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, const std::string& name, std::string filename, int repeat)
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::string filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
 {
-    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
+    std::optional<bool> json_lines = std::nullopt;
+
+    if (parser_kwargs.contains("lines"))
+    {
+        json_lines = parser_kwargs["lines"].cast<bool>();
+    }
+
+    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat, json_lines);
 
     return stage;
 }

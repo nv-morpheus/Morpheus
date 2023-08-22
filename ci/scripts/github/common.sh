@@ -51,7 +51,7 @@ export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
 if [[ "${LOCAL_CI}" == "1" ]]; then
     export DISPLAY_ARTIFACT_URL="${LOCAL_CI_TMP}"
 else
-    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
+    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}"
 fi
 
 # Set sccache env vars
@@ -95,10 +95,11 @@ function update_conda_env() {
         conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}
     fi
 
-    rapids-logger "Checking for updates to conda env"
-
-    # Update the packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
+        rapids-logger "Checking for updates to conda env"
+        # Update the packages
+        rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+    fi
 
     # Finally, reactivate
     conda activate morpheus
@@ -156,6 +157,16 @@ function show_conda_info() {
     conda list --show-channel-urls
 }
 
+function log_toolchain() {
+    rapids-logger "Check versions"
+    python3 --version
+    x86_64-conda-linux-gnu-cc --version
+    x86_64-conda-linux-gnu-c++ --version
+    cmake --version
+    ninja --version
+    sccache --version
+}
+
 function upload_artifact() {
     FILE_NAME=$1
     BASE_NAME=$(basename "${FILE_NAME}")
@@ -164,6 +175,7 @@ function upload_artifact() {
         cp ${FILE_NAME} "${LOCAL_CI_TMP}/${BASE_NAME}"
     else
         aws s3 cp --only-show-errors "${FILE_NAME}" "${ARTIFACT_URL}/${BASE_NAME}"
+        echo "- ${DISPLAY_ARTIFACT_URL}/${BASE_NAME}" >> ${GITHUB_STEP_SUMMARY}
     fi
 }
 
@@ -175,4 +187,10 @@ function download_artifact() {
     else
         aws s3 cp --only-show-errors "${ARTIFACT_URL}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
     fi
+}
+
+function set_job_summary_preamble() {
+    msg="Note: NVIDIA VPN access is required to view these URLs."
+    echo $msg >> ${GITHUB_STEP_SUMMARY}
+    rapids-logger $msg
 }

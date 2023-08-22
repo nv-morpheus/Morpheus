@@ -16,7 +16,7 @@
 
 # This must come before torch
 # isort: off
-import cudf  # noqa: F401
+import cudf  # noqa: F401 pylint: disable=unused-import
 # isort: on
 
 import json
@@ -106,7 +106,6 @@ def cleanup_dist():
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
 
     world_size = 1
@@ -117,14 +116,19 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
+    from morpheus.utils import seed as seed_utils
+    seed_utils.manual_seed(42)
 
     import torch
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
 
-    preset_cats = json.load(open(PRESET_CATS_FILEPATH, 'r'))
-    preset_numerical_scaler_params = json.load(open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r'))
+    with open(PRESET_CATS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_cats = json.load(fh)
+
+    with open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_numerical_scaler_params = json.load(fh)
 
     # Initializing model
     model = AutoEncoder(
@@ -171,9 +175,9 @@ def _run_test(rank, world_size):
         # Make sure model converges (low loss)
         for loss_type in LOSS_TYPES:
             ft_losses = getattr(model.logger, f"{loss_type}_fts")
-            for ft, losses_l in ft_losses.items():
+            for feature, losses_l in ft_losses.items():
                 losses = losses_l[1]
-                assert min(losses) < LOSS_TARGETS[loss_type][ft] * LOSS_TOLERANCE_RATIO
+                assert min(losses) < LOSS_TARGETS[loss_type][feature] * LOSS_TOLERANCE_RATIO
 
         # Inference
         inf_dataset = DatasetFromPath(

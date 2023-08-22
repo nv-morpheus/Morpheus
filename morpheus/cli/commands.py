@@ -53,6 +53,9 @@ DEFAULT_CONFIG = Config()
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
+# Graphviz rankdir options ad documented in https://graphviz.org/docs/attr-types/rankdir/
+RANKDIR_CHOICES = ['BT', 'LR', 'RL', 'TB']
+
 ALIASES = {
     "pipeline": "pipeline-nlp",
 }
@@ -317,6 +320,11 @@ def run(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_nlp(ctx: click.Context, **kwargs):
     """
@@ -382,6 +390,11 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_fil(ctx: click.Context, **kwargs):
     """
@@ -464,6 +477,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_ae(ctx: click.Context, **kwargs):
     """
@@ -540,6 +558,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_other(ctx: click.Context, **kwargs):
     """
@@ -604,7 +627,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
 
     # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
     if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
-        pipeline.visualize(kwargs["viz_file"], rankdir="LR")
+        pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
         click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
 
 

@@ -90,7 +90,7 @@ TEST_F(TestFileInOut, RoundTripCSV)
     }
 }
 
-TEST_F(TestFileInOut, RoundTripJSON)
+TEST_F(TestFileInOut, RoundTripJSONLines)
 {
     using nlohmann::json;
     auto input_file      = test::get_morpheus_root() / "tests/tests_data/filter_probs.jsonlines";
