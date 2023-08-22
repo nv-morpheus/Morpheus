@@ -28,6 +28,7 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -62,7 +63,7 @@ def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: 
         # The output data will contain an additional id column that we will need to slice off
         output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
         output_data = output_data[:, 1:]
-    elif output_type in ('json', 'jsonlines'):  # assume json
+    elif output_type in ("json", "jsonlines"):  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
         output_data = df.values
     elif output_type == "parquet":
@@ -74,6 +75,24 @@ def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: 
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == validation_data.tolist()
+
+
+def test_file_read_json(config):
+    src_file = os.path.join(TEST_DIRS.tests_data_dir, "simple.json")
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=src_file, parser_kwargs={"lines": False}))
+    sink_stage = pipe.add_stage(InMemorySinkStage(config))
+    pipe.run()
+
+    messages = sink_stage.get_messages()
+
+    assert (len(messages) == 1)
+
+    meta = messages[0]
+
+    assert (len(meta.df) == 4)
+    assert (len(meta.df.columns) == 3)
 
 
 @pytest.mark.slow

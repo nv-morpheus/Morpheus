@@ -107,18 +107,18 @@ def test_constructor(config: Config):
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
 @mock.patch('morpheus.utils.downloader.Distributed')
 @mock.patch('dfp.stages.dfp_file_to_df.process_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.MagicMock,
-                                                          mock_distributed: mock.MagicMock,
-                                                          mock_obf_to_df: mock.MagicMock,
-                                                          mock_dask_cluster: mock.MagicMock,
-                                                          mock_dask_client: mock.MagicMock,
-                                                          mock_mp_gc: mock.MagicMock,
-                                                          config: Config,
-                                                          dl_type: str,
-                                                          use_convert_to_dataframe: bool,
-                                                          tmp_path: str,
-                                                          single_file_obj: fsspec.core.OpenFile,
-                                                          dataset_pandas: DatasetManager):
+def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
+                                                       mock_distributed: mock.MagicMock,
+                                                       mock_obf_to_df: mock.MagicMock,
+                                                       mock_dask_cluster: mock.MagicMock,
+                                                       mock_dask_client: mock.MagicMock,
+                                                       mock_mp_gc: mock.MagicMock,
+                                                       config: Config,
+                                                       dl_type: str,
+                                                       use_convert_to_dataframe: bool,
+                                                       tmp_path: str,
+                                                       single_file_obj: fsspec.core.OpenFile,
+                                                       dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -168,11 +168,11 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
     batch = fsspec.core.OpenFiles([single_file_obj], fs=single_file_obj.fs)
 
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
         output_df = stage.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._get_or_create_dataframe_from_batch((batch, 1))
         assert not cache_hit
 
     if dl_type in ("multiprocess", "multiprocessing"):
@@ -212,16 +212,16 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str,
-                                                         dataset_pandas: DatasetManager):
+def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      mock_mp_gc: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str,
+                                                      dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -254,11 +254,11 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
     batch = fsspec.core.OpenFiles([file_obj], fs=file_obj.fs)
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
         output_df = stage.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._get_or_create_dataframe_from_batch((batch, 1))
         assert cache_hit
 
     # When we get a cache hit, none of the download methods should be executed
@@ -280,15 +280,15 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str):
+def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      mock_mp_gc: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
@@ -303,7 +303,7 @@ def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.Ma
         assert stage.convert_to_dataframe(None) is None
     else:
         with pytest.raises(RuntimeError, match="No file objects to process"):
-            stage._get_or_create_dataframe_from_s3_batch(None)
+            stage._get_or_create_dataframe_from_batch(None)
 
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
