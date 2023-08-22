@@ -41,6 +41,17 @@ ignore_patterns = [
   "**/*.pxd",
 ]
 
+
+[tool.mypy]
+# Allow None for argument default values
+implicit_optional = true
+
+
+[tool.pyright]
+# Allow None for argument default values
+strictParameterNoneValue = false
+
+
 [tool.interrogate]
 exclude = ["morpheus/cli"]
 ignore-init-method = true
@@ -122,7 +133,13 @@ ignore-patterns = ["^\\.#"]
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-# init-hook =
+init-hook = """
+import sys
+from pylint.config import find_default_config_files
+
+config_file = next(find_default_config_files())
+sys.path.append(str((config_file / "../ci/pylint").resolve()))
+"""
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -136,7 +153,7 @@ limit-inference-results = 100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins = ["pylint.extensions.docparams"]
+load-plugins = ["pylint.extensions.docparams", "morpheus_lib_import_checker"]
 
 # Pickle collected data for later comparisons.
 persistent = true
@@ -441,7 +458,6 @@ disable = [
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
-  "no-member", # pylint isn't aware of some of our attrs issue #956
   "protected-access",
   "raw-checker-failed",
   "superfluous-parens",
