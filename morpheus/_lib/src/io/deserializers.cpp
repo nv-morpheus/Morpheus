@@ -53,7 +53,9 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
     return foreach_map(table.metadata.schema_info, [](auto schema) { return schema.name; });
 }
 
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type)
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
+                                                   FileTypes file_type,
+                                                   std::optional<bool> json_lines)
 {
     if (file_type == FileTypes::Auto)
     {
@@ -65,7 +67,8 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename, 
     switch (file_type)
     {
     case FileTypes::JSON: {
-        auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
+        auto options =
+            cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(json_lines.value_or(true));
         table        = cudf::io::read_json(options.build());
         break;
     }

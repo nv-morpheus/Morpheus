@@ -44,6 +44,7 @@ rapids-logger "Archiving the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+set_job_summary_preamble
 upload_artifact "${WORKSPACE_TMP}/docs.tar.bz"
 
 rapids-logger "Success"

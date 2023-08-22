@@ -269,7 +269,7 @@ def run_pipeline(train_users,
                         watch=kwargs["watch_inputs"],
                         watch_interval=kwargs["watch_interval"]))
 
-    # Batch files into buckets by time. Use the default ISO date extractor from the filename
+    # Batch files into batches by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
         DFPFileBatcherStage(config,
                             period="D",
@@ -278,7 +278,7 @@ def run_pipeline(train_users,
                             start_time=start_time,
                             end_time=end_time))
 
-    # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
+    # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
