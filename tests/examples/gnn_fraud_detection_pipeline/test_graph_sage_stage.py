@@ -23,6 +23,7 @@ from morpheus.messages import MultiMessage
 from utils.dataset_manager import DatasetManager
 
 
+@pytest.mark.usefixtures("manual_seed")
 @pytest.mark.use_python
 class TestGraphSageStage:
 
@@ -47,7 +48,6 @@ class TestGraphSageStage:
         from stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))
