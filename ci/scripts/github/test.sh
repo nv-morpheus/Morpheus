@@ -115,6 +115,7 @@ cd $(dirname ${REPORTS_DIR})
 tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+set_job_summary_preamble
 upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
 
 exit ${TEST_RESULTS}
