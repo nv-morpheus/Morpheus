@@ -16,11 +16,15 @@
 
 import imghdr
 import os
+import subprocess
 
 import pytest
 
 from _utils import assert_path_exists
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from _utils.stages.conv_msg import ConvMsg
+from morpheus.cli.commands import RANKDIR_CHOICES
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -50,7 +54,7 @@ def viz_pipeline_fixture(config, filter_probs_df):
     return pipe
 
 
-def test_call_before_run(viz_pipeline: Pipeline, tmp_path):
+def test_call_before_run(viz_pipeline: Pipeline, tmp_path: str):
 
     # Test is necessary to ensure run() is called first. See issue #230
     viz_file = os.path.join(tmp_path, 'pipeline.png')
@@ -60,7 +64,7 @@ def test_call_before_run(viz_pipeline: Pipeline, tmp_path):
         viz_pipeline.visualize(viz_file, rankdir="LR")
 
 
-def test_png(viz_pipeline: Pipeline, tmp_path):
+def test_png(viz_pipeline: Pipeline, tmp_path: str):
 
     viz_file = os.path.join(tmp_path, 'pipeline.png')
 
@@ -72,3 +76,21 @@ def test_png(viz_pipeline: Pipeline, tmp_path):
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("rankdir", RANKDIR_CHOICES)
+def test_from_cli(tmp_path: str, dataset_pandas: DatasetManager, rankdir: str):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+    out_file = os.path.join(tmp_path, 'out.csv')
+    viz_file = os.path.join(tmp_path, 'pipeline.png')
+    cli = (f"morpheus run pipeline-other --viz_file={viz_file} --viz_direction={rankdir} "
+           f"from-file --filename={input_file} to-file --filename={out_file}")
+    subprocess.run(cli, check=True, shell=True)
+
+    assert_path_exists(viz_file)
+    assert imghdr.what(viz_file) == 'png'
+    assert_path_exists(out_file)
+
+    df = dataset_pandas.get_df(out_file, no_cache=True)
+    dataset_pandas.assert_compare_df(df, dataset_pandas['filter_probs.csv'])

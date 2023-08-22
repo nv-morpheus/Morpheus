@@ -31,6 +31,7 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -74,6 +75,24 @@ def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: 
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == validation_data.tolist()
+
+
+def test_file_read_json(config):
+    src_file = os.path.join(TEST_DIRS.tests_data_dir, "simple.json")
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=src_file, parser_kwargs={"lines": False}))
+    sink_stage = pipe.add_stage(InMemorySinkStage(config))
+    pipe.run()
+
+    messages = sink_stage.get_messages()
+
+    assert (len(messages) == 1)
+
+    meta = messages[0]
+
+    assert (len(meta.df) == 4)
+    assert (len(meta.df.columns) == 3)
 
 
 @pytest.mark.slow
@@ -163,7 +182,7 @@ def test_file_rw_index_pipe(tmp_path, config, input_file):
                              "include_header": True
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
                          ids=["CSV", "CSV_ID", "JSON"])
-def test_file_roundtrip(use_cpp, tmp_path, input_file, extra_kwargs):  # pylint: disable=unused-argument
+def test_file_roundtrip(tmp_path, input_file, extra_kwargs):
 
     # Output file should be same type as input
     out_file = os.path.join(tmp_path, f'results{os.path.splitext(input_file)[1]}')

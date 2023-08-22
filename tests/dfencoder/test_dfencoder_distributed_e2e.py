@@ -16,7 +16,7 @@
 
 # This must come before torch
 # isort: off
-import cudf  # noqa: F401 # pylint: disable=unused-import
+import cudf  # noqa: F401 pylint: disable=unused-import
 # isort: on
 
 import json
@@ -106,7 +106,6 @@ def cleanup_dist():
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
 
     world_size = 1
@@ -117,6 +116,8 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
+    from morpheus.utils import seed as seed_utils
+    seed_utils.manual_seed(42)
 
     import torch
     torch.cuda.set_device(rank)
