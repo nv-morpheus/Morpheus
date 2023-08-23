@@ -63,8 +63,8 @@ class SinglePortStage(_pipeline.Stage):
         # Check the types of all inputs
         for x in in_ports_pairs:
             if (not typing_utils.issubtype(x[1], typing.Union[self.accepted_types()])):
-                raise RuntimeError("The {} stage cannot handle input of {}. Accepted input types: {}".format(
-                    self.name, x[1], self.accepted_types()))
+                raise RuntimeError((f"The {self.name} stage cannot handle input of {x[1]}. "
+                                    f"Accepted input types: {self.accepted_types()}"))
 
         return in_ports_pairs
 
@@ -83,7 +83,7 @@ class SinglePortStage(_pipeline.Stage):
 
         return [self._build_single(builder, in_ports_streams[0])]
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, _: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
 
     @typing.final
@@ -91,8 +91,10 @@ class SinglePortStage(_pipeline.Stage):
 
         ret_val = self._post_build_single(builder, out_ports_pair[0])
 
-        logger.info("Added stage: {}\n  └─ {} -> {}".format(str(self),
-                                                            pretty_print_type_name(self.input_ports[0].in_type),
-                                                            pretty_print_type_name(ret_val[1])))
+        # pylint: disable=logging-format-interpolation
+        logger.info("Added stage: %s\n  └─ %s -> %s",
+                    str(self),
+                    pretty_print_type_name(self.input_ports[0].in_type),
+                    pretty_print_type_name(ret_val[1]))
 
         return [ret_val]

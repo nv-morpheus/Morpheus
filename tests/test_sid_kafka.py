@@ -82,7 +82,7 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
 
-    def async_infer(callback=None, **k):
+    def async_infer(callback=None, **_):
         callback(mock_infer_result, None)
 
     mock_triton_client.async_infer.side_effect = async_infer
@@ -132,7 +132,7 @@ def test_minibert_no_cpp(mock_triton_client: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
@@ -202,7 +202,7 @@ def test_minibert_cpp(dataset_pandas: DatasetManager,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)

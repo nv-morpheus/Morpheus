@@ -182,6 +182,7 @@ def test_file_rw_index_pipe(tmp_path, config, input_file):
                              "include_header": True
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
                          ids=["CSV", "CSV_ID", "JSON"])
+@pytest.mark.usefixtures("use_cpp")
 def test_file_roundtrip(tmp_path, input_file, extra_kwargs):
 
     # Output file should be same type as input
