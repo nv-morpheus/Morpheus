@@ -73,7 +73,7 @@ using payload_parse_fn_t = std::function<parse_status_t(const std::string& /* po
 constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
 
 /**
- * @brief A simple REST server that listens for POST or PUT requests on a given endpoint.
+ * @brief A simple HTTP server that listens for POST or PUT requests on a given endpoint.
  *
  * @details The server is started on a separate thread(s) and will call the provided payload_parse_fn_t
  *          function when an incoming request is received. The payload_parse_fn_t function is expected to
@@ -88,10 +88,10 @@ constexpr std::size_t DefaultMaxPayloadSize{1024 * 1024 * 10};  // 10MB
  * @param max_payload_size The maximum size in bytes of the payload that the server will accept in a single request.
  * @param request_timeout The timeout for a request.
  */
-class RestServer
+class HttpServer
 {
   public:
-    RestServer(payload_parse_fn_t payload_parse_fn,
+    HttpServer(payload_parse_fn_t payload_parse_fn,
                std::string bind_address             = "127.0.0.1",
                unsigned short port                  = 8080,
                std::string endpoint                 = "/message",
@@ -99,7 +99,7 @@ class RestServer
                unsigned short num_threads           = 1,
                std::size_t max_payload_size         = DefaultMaxPayloadSize,
                std::chrono::seconds request_timeout = std::chrono::seconds(30));
-    ~RestServer();
+    ~HttpServer();
     void start();
     void stop();
     bool is_running() const;
@@ -124,7 +124,7 @@ class RestServer
 /**
  * @brief A class that listens for incoming HTTP requests.
  *
- * @details Constructed by the RestServer class and should not be used directly.
+ * @details Constructed by the HttpServer class and should not be used directly.
  */
 class Listener : public std::enable_shared_from_this<Listener>
 {
@@ -160,13 +160,13 @@ class Listener : public std::enable_shared_from_this<Listener>
     std::atomic<bool> m_is_running;
 };
 
-/****** RestServerInterfaceProxy *************************/
+/****** HttpServerInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct RestServerInterfaceProxy
+struct HttpServerInterfaceProxy
 {
-    static std::shared_ptr<RestServer> init(pybind11::function py_parse_fn,
+    static std::shared_ptr<HttpServer> init(pybind11::function py_parse_fn,
                                             std::string bind_address,
                                             unsigned short port,
                                             std::string endpoint,
@@ -174,13 +174,13 @@ struct RestServerInterfaceProxy
                                             unsigned short num_threads,
                                             std::size_t max_payload_size,
                                             int64_t request_timeout);
-    static void start(RestServer& self);
-    static void stop(RestServer& self);
-    static bool is_running(const RestServer& self);
+    static void start(HttpServer& self);
+    static void stop(HttpServer& self);
+    static bool is_running(const HttpServer& self);
 
     // Context manager methods
-    static RestServer& enter(RestServer& self);
-    static void exit(RestServer& self,
+    static HttpServer& enter(HttpServer& self);
+    static void exit(HttpServer& self,
                      const pybind11::object& type,
                      const pybind11::object& value,
                      const pybind11::object& traceback);

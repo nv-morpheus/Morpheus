@@ -28,16 +28,16 @@
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/http_server_source_stage.hpp"
 #include "morpheus/stages/kafka_source.hpp"
 #include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
-#include "morpheus/stages/rest_source.hpp"
 #include "morpheus/stages/serialize.hpp"
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/rest_server.hpp"  // for DefaultMaxPayloadSize
+#include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"
 
 #include <boost/fiber/future/future.hpp>
@@ -205,11 +205,11 @@ PYBIND11_MODULE(stages, _module)
              py::arg("stride"),
              py::arg("column"));
 
-    py::class_<mrc::segment::Object<RestSourceStage>,
+    py::class_<mrc::segment::Object<HttpServerSourceStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<RestSourceStage>>>(
-        _module, "RestSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&RestSourceStageInterfaceProxy::init),
+               std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>>>(
+        _module, "HttpServerSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&HttpServerSourceStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("bind_address")       = "127.0.0.1",

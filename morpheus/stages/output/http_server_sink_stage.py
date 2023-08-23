@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Sink stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint."""
+"""Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint."""
 
 import logging
 import os
@@ -40,10 +40,10 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-rest-server", ignore_args=["df_serializer_fn"])
-class RestServerSinkStage(SinglePortStage):
+@register_stage("to-http-server", ignore_args=["df_serializer_fn"])
+class HttpServerSinkStage(SinglePortStage):
     """
-    Sink stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint.
+    Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 
     Incoming messages are queued up to `max_queue_size`, when an HTTP client makes a request messages are read from the
     queue up to `max_rows_per_response` and returned.
@@ -53,9 +53,9 @@ class RestServerSinkStage(SinglePortStage):
     config : `morpheus.config.Config`
         Pipeline configuration instance.
     bind_address : str, default "127.0.0.1"
-        The address to bind the REST server to.
+        The address to bind the HTTP server to.
     port : int, default 8080
-        The port to bind the REST server to.
+        The port to bind the HTTP server to.
     endpoint : str, default "/"
         The endpoint to listen for requests on.
     method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
@@ -64,7 +64,7 @@ class RestServerSinkStage(SinglePortStage):
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used. Once the queue is full, the incoming edge buffer will begin to fill up.
     num_server_threads : int, default None
-        Number of threads to use for the REST server. If `None` then `os.cpu_count()` will be used.
+        Number of threads to use for the HTTP server. If `None` then `os.cpu_count()` will be used.
     max_rows_per_response : int, optional
         Maximum number of rows to include in a single response, by default 10000.
     overflow_pct: float, optional
@@ -123,7 +123,7 @@ class RestServerSinkStage(SinglePortStage):
     @property
     def name(self) -> str:
         """Unique stage name."""
-        return "to-rest-server"
+        return "to-http-server"
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -142,15 +142,15 @@ class RestServerSinkStage(SinglePortStage):
         return False
 
     def on_start(self):
-        """Starts the REST server."""
-        from morpheus.common import RestServer
-        self._server = RestServer(parse_fn=self._request_handler,
-                                  bind_address=self._bind_address,
-                                  port=self._port,
-                                  endpoint=self._endpoint,
-                                  method=self._method.value,
-                                  num_threads=self._num_server_threads,
-                                  request_timeout=self._request_timeout_secs)
+        """Starts the HTTP server."""
+        from morpheus.common import HttpServer
+        self._server = HtpServer(parse_fn=self._request_handler,
+                                 bind_address=self._bind_address,
+                                 port=self._port,
+                                 endpoint=self._endpoint,
+                                 method=self._method.value,
+                                 num_threads=self._num_server_threads,
+                                 request_timeout=self._request_timeout_secs)
         self._server.start()
 
     def is_running(self) -> bool:

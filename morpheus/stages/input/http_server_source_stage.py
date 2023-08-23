@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Source stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint."""
+"""Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint."""
 
 import logging
 import os
@@ -39,19 +39,19 @@ logger = logging.getLogger(__name__)
 SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 
 
-@register_stage("from-rest")
-class RestSourceStage(PreallocatorMixin, SingleOutputSource):
+@register_stage("from-http")
+class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     """
-    Source stage that starts an HTTP server and listens for incoming REST requests on a specified endpoint.
+    Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 
     Parameters
     ----------
     config : `morpheus.config.Config`
         Pipeline configuration instance.
     bind_address : str, default "127.0.0.1"
-        The address to bind the REST server to.
+        The address to bind the HTTP server to.
     port : int, default 8080
-        The port to bind the REST server to.
+        The port to bind the HTTP server to.
     endpoint : str, default "/"
         The endpoint to listen for requests on.
     method : `morpheus.utils.http_utils.HTTPMethod`, optional, case_sensitive = False
@@ -66,13 +66,13 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
         Maximum number of requests to queue before rejecting requests. If `None` then `config.edge_buffer_size` will be
         used.
     num_server_threads : int, default None
-        Number of threads to use for the REST server. If `None` then `os.cpu_count()` will be used.
+        Number of threads to use for the HTTP server. If `None` then `os.cpu_count()` will be used.
     max_payload_size : int, default 10
         The maximum size in megabytes of the payload that the server will accept in a single request.
     request_timeout_secs : int, default 30
         The maximum amount of time in seconds for any given request.
     lines : bool, default False
-        If False, the REST server will expect each request to be a JSON array of objects. If True, the REST server will
+        If False, the HTTP server will expect each request to be a JSON array of objects. If True, the HTTP server will
         expect each request to be a JSON object per line.
     stop_after : int, default 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
@@ -122,7 +122,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     @property
     def name(self) -> str:
         """Unique name of the stage."""
-        return "from-rest"
+        return "from-http"
 
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports C++ nodes."""
@@ -133,7 +133,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             # engine='cudf' is needed when lines=False to avoid using pandas
             df = cudf.read_json(payload, lines=self._lines, engine='cudf')
         except Exception as e:
-            err_msg = "Error occurred converting REST payload to Dataframe"
+            err_msg = "Error occurred converting HTTP payload to Dataframe"
             logger.error("%s: %s", err_msg, e)
             return (HTTPStatus.BAD_REQUEST.value, MimeTypes.TEXT.value, err_msg, None)
 
@@ -141,7 +141,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
             self._queue.put(df, block=True, timeout=self._queue_timeout)
             return (self._accept_status.value, MimeTypes.TEXT.value, "", None)
         except (queue.Full, Closed) as e:
-            err_msg = "REST payload queue is "
+            err_msg = "HTTP payload queue is "
             if isinstance(e, queue.Full):
                 err_msg += "full"
             else:
@@ -155,17 +155,17 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue
-        from morpheus.common import RestServer
+        from morpheus.common import HttpServer
 
         with (FiberQueue(self._max_queue_size) as self._queue,
-              RestServer(parse_fn=self._parse_payload,
+              HttpServer(parse_fn=self._parse_payload,
                          bind_address=self._bind_address,
                          port=self._port,
                          endpoint=self._endpoint,
                          method=self._method.value,
                          num_threads=self._num_server_threads,
                          max_payload_size=self._max_payload_size_bytes,
-                         request_timeout=self._request_timeout_secs) as rest_server):
+                         request_timeout=self._request_timeout_secs) as http_server):
 
             self._processing = True
             while self._processing:
@@ -176,7 +176,7 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
                 try:
                     df = self._queue.get()
                 except queue.Empty:
-                    if (not rest_server.is_running()):
+                    if (not http_server.is_running()):
                         self._processing = False
                     else:
                         logger.debug("Queue empty, sleeping ...")
@@ -196,21 +196,21 @@ class RestSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            node = _stages.RestSourceStage(builder,
-                                           self.unique_name,
-                                           bind_address=self._bind_address,
-                                           port=self._port,
-                                           endpoint=self._endpoint,
-                                           method=self._method.value,
-                                           accept_status=self._accept_status.value,
-                                           sleep_time=self._sleep_time,
-                                           queue_timeout=self._queue_timeout,
-                                           max_queue_size=self._max_queue_size,
-                                           num_server_threads=self._num_server_threads,
-                                           max_payload_size=self._max_payload_size_bytes,
-                                           request_timeout=self._request_timeout_secs,
-                                           lines=self._lines,
-                                           stop_after=self._stop_after)
+            node = _stages.HttpServerSourceStage(builder,
+                                                 self.unique_name,
+                                                 bind_address=self._bind_address,
+                                                 port=self._port,
+                                                 endpoint=self._endpoint,
+                                                 method=self._method.value,
+                                                 accept_status=self._accept_status.value,
+                                                 sleep_time=self._sleep_time,
+                                                 queue_timeout=self._queue_timeout,
+                                                 max_queue_size=self._max_queue_size,
+                                                 num_server_threads=self._num_server_threads,
+                                                 max_payload_size=self._max_payload_size_bytes,
+                                                 request_timeout=self._request_timeout_secs,
+                                                 lines=self._lines,
+                                                 stop_after=self._stop_after)
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 

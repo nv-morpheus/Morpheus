@@ -29,7 +29,7 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/rest_server.hpp"
+#include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/utils/string_utils.hpp>
@@ -122,8 +122,8 @@ PYBIND11_MODULE(common, _module)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
-    py::class_<RestServer, std::shared_ptr<RestServer>>(_module, "RestServer")
-        .def(py::init<>(&RestServerInterfaceProxy::init),
+    py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
+        .def(py::init<>(&HttpServerInterfaceProxy::init),
              py::arg("parse_fn"),
              py::arg("bind_address")     = "127.0.0.1",
              py::arg("port")             = 8080,
@@ -132,11 +132,11 @@ PYBIND11_MODULE(common, _module)
              py::arg("num_threads")      = 1,
              py::arg("max_payload_size") = DefaultMaxPayloadSize,
              py::arg("request_timeout")  = 30)
-        .def("start", &RestServerInterfaceProxy::start)
-        .def("stop", &RestServerInterfaceProxy::stop)
-        .def("is_running", &RestServerInterfaceProxy::is_running)
-        .def("__enter__", &RestServerInterfaceProxy::enter, py::return_value_policy::reference)
-        .def("__exit__", &RestServerInterfaceProxy::exit);
+        .def("start", &HttpServerInterfaceProxy::start)
+        .def("stop", &HttpServerInterfaceProxy::stop)
+        .def("is_running", &HttpServerInterfaceProxy::is_running)
+        .def("__enter__", &HttpServerInterfaceProxy::enter, py::return_value_policy::reference)
+        .def("__exit__", &HttpServerInterfaceProxy::exit);
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);

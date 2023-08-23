@@ -12,7 +12,7 @@ __all__ = [
     "FiberQueue",
     "FileTypes",
     "FilterSource",
-    "RestServer",
+    "HttpServer",
     "Tensor",
     "TypeId",
     "determine_file_type",
@@ -106,8 +106,8 @@ class FilterSource():
     TENSOR: morpheus._lib.common.FilterSource # value = <FilterSource.TENSOR: 1>
     __members__: dict # value = {'Auto': <FilterSource.Auto: 0>, 'TENSOR': <FilterSource.TENSOR: 1>, 'DATAFRAME': <FilterSource.DATAFRAME: 2>}
     pass
-class RestServer():
-    def __enter__(self) -> RestServer: ...
+class HttpServer():
+    def __enter__(self) -> HttpServer: ...
     def __exit__(self, arg0: object, arg1: object, arg2: object) -> None: ...
     def __init__(self, parse_fn: function, bind_address: str = '127.0.0.1', port: int = 8080, endpoint: str = '/message', method: str = 'POST', num_threads: int = 1, max_payload_size: int = 10485760, request_timeout: int = 30) -> None: ...
     def is_running(self) -> bool: ...

@@ -17,7 +17,7 @@
 
 // TODO(dagardner): add /health & /info endpoints
 
-#include "morpheus/utilities/rest_server.hpp"
+#include "morpheus/utilities/http_server.hpp"
 
 #include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
@@ -219,7 +219,7 @@ class Session : public std::enable_shared_from_this<Session>
 
 namespace morpheus {
 
-RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
+HttpServer::HttpServer(payload_parse_fn_t payload_parse_fn,
                        std::string bind_address,
                        unsigned short port,
                        std::string endpoint,
@@ -255,7 +255,7 @@ RestServer::RestServer(payload_parse_fn_t payload_parse_fn,
     }
 }
 
-void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore)
+void HttpServer::start_listener(std::binary_semaphore& listener_semaphore, std::binary_semaphore& started_semaphore)
 {
     listener_semaphore.acquire();
 
@@ -284,30 +284,30 @@ void RestServer::start_listener(std::binary_semaphore& listener_semaphore, std::
     m_io_context.run();
 }
 
-void RestServer::start()
+void HttpServer::start()
 {
-    CHECK(!is_running()) << "RestServer is already running";
+    CHECK(!is_running()) << "HttpServer is already running";
 
     try
     {
-        DLOG(INFO) << "Starting RestServer on " << m_bind_address << ":" << m_port << " with " << m_num_threads
+        DLOG(INFO) << "Starting HttpServer on " << m_bind_address << ":" << m_port << " with " << m_num_threads
                    << " threads";
         m_listener_threads.reserve(m_num_threads);
 
         std::binary_semaphore listener_semaphore{0};
         std::binary_semaphore started_semaphore{0};
         m_listener_threads.emplace_back(
-            std::thread(&RestServer::start_listener, this, std::ref(listener_semaphore), std::ref(started_semaphore)));
+            std::thread(&HttpServer::start_listener, this, std::ref(listener_semaphore), std::ref(started_semaphore)));
         listener_semaphore.release();
         started_semaphore.acquire();
     } catch (const std::exception& e)
     {
-        LOG(ERROR) << "Caught exception while starting rest server: " << e.what();
+        LOG(ERROR) << "Caught exception while starting HTTP server: " << e.what();
         stop();
     }
 }
 
-void RestServer::stop()
+void HttpServer::stop()
 {
     m_io_context.stop();
     while (!m_io_context.stopped())
@@ -332,12 +332,12 @@ void RestServer::stop()
     m_is_running = false;
 }
 
-bool RestServer::is_running() const
+bool HttpServer::is_running() const
 {
     return m_is_running;
 }
 
-RestServer::~RestServer()
+HttpServer::~HttpServer()
 {
     try
     {
@@ -347,15 +347,15 @@ RestServer::~RestServer()
         }
     } catch (const std::exception& e)
     {
-        LOG(ERROR) << "Caught exception while stopping rest server: " << e.what();
+        LOG(ERROR) << "Caught exception while stopping HTTP server: " << e.what();
     }
 }
 
-/****** RestServerInterfaceProxy *************************/
+/****** HttpServerInterfaceProxy *************************/
 using mrc::pymrc::PyFuncWrapper;
 namespace py = pybind11;
 
-std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse_fn,
+std::shared_ptr<HttpServer> HttpServerInterfaceProxy::init(py::function py_parse_fn,
                                                            std::string bind_address,
                                                            unsigned short port,
                                                            std::string endpoint,
@@ -395,7 +395,7 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse
                                std::move(cb_fn));
     };
 
-    return std::make_shared<RestServer>(std::move(payload_parse_fn),
+    return std::make_shared<HttpServer>(std::move(payload_parse_fn),
                                         std::move(bind_address),
                                         port,
                                         std::move(endpoint),
@@ -405,31 +405,31 @@ std::shared_ptr<RestServer> RestServerInterfaceProxy::init(py::function py_parse
                                         std::chrono::seconds(request_timeout));
 }
 
-void RestServerInterfaceProxy::start(RestServer& self)
+void HttpServerInterfaceProxy::start(HttpServer& self)
 {
     pybind11::gil_scoped_release release;
     self.start();
 }
 
-void RestServerInterfaceProxy::stop(RestServer& self)
+void HttpServerInterfaceProxy::stop(HttpServer& self)
 {
     pybind11::gil_scoped_release release;
     self.stop();
 }
 
-bool RestServerInterfaceProxy::is_running(const RestServer& self)
+bool HttpServerInterfaceProxy::is_running(const HttpServer& self)
 {
     pybind11::gil_scoped_release release;
     return self.is_running();
 }
 
-RestServer& RestServerInterfaceProxy::enter(RestServer& self)
+HttpServer& HttpServerInterfaceProxy::enter(HttpServer& self)
 {
     self.start();
     return self;
 }
 
-void RestServerInterfaceProxy::exit(RestServer& self,
+void HttpServerInterfaceProxy::exit(HttpServer& self,
                                     const pybind11::object& type,
                                     const pybind11::object& value,
                                     const pybind11::object& traceback)

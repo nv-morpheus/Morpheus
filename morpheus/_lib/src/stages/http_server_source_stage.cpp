@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/rest_source.hpp"
+#include "morpheus/stages/http_server_source_stage.hpp"
 
 #include <boost/beast/http/status.hpp>        // for int_to_status, status
 #include <boost/fiber/channel_op_status.hpp>  // for channel_op_status
@@ -38,20 +38,20 @@ class SourceStageStopAfter : public std::exception
 {};
 
 // Component public implementations
-// ************ RestSourceStage ************* //
-RestSourceStage::RestSourceStage(std::string bind_address,
-                                 unsigned short port,
-                                 std::string endpoint,
-                                 std::string method,
-                                 unsigned accept_status,
-                                 float sleep_time,
-                                 long queue_timeout,
-                                 std::size_t max_queue_size,
-                                 unsigned short num_server_threads,
-                                 std::size_t max_payload_size,
-                                 std::chrono::seconds request_timeout,
-                                 bool lines,
-                                 std::size_t stop_after) :
+// ************ HttpServerSourceStage ************* //
+HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
+                                             unsigned short port,
+                                             std::string endpoint,
+                                             std::string method,
+                                             unsigned accept_status,
+                                             float sleep_time,
+                                             long queue_timeout,
+                                             std::size_t max_queue_size,
+                                             unsigned short num_server_threads,
+                                             std::size_t max_payload_size,
+                                             std::chrono::seconds request_timeout,
+                                             bool lines,
+                                             std::size_t stop_after) :
   PythonSource(build()),
   m_sleep_time{sleep_time},
   m_queue_timeout{queue_timeout},
@@ -71,7 +71,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             table        = std::make_unique<cudf::io::table_with_metadata>(cudf::io::read_json(options.build()));
         } catch (const std::exception& e)
         {
-            std::string error_msg = "Error occurred converting REST payload to Dataframe";
+            std::string error_msg = "Error occurred converting HTTP payload to Dataframe";
             LOG(ERROR) << error_msg << ": " << e.what();
             return std::make_tuple(400u, "text/plain", error_msg, nullptr);
         }
@@ -86,7 +86,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                 return std::make_tuple(accept_status, "text/plain", std::string(), nullptr);
             }
 
-            std::string error_msg = "REST payload queue is ";
+            std::string error_msg = "HTTP payload queue is ";
             switch (queue_status)
             {
             case boost::fibers::channel_op_status::full:
@@ -113,7 +113,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
             return std::make_tuple(500u, "text/plain", error_msg, nullptr);
         }
     };
-    m_server = std::make_unique<RestServer>(std::move(parser),
+    m_server = std::make_unique<HttpServer>(std::move(parser),
                                             std::move(bind_address),
                                             port,
                                             std::move(endpoint),
@@ -123,7 +123,7 @@ RestSourceStage::RestSourceStage(std::string bind_address,
                                             request_timeout);
 }
 
-RestSourceStage::subscriber_fn_t RestSourceStage::build()
+HttpServerSourceStage::subscriber_fn_t HttpServerSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> subscriber) -> void {
         try
@@ -135,7 +135,7 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
             DLOG(INFO) << "Completed after emitting " << m_records_emitted << " records";
         } catch (const std::exception& e)
         {
-            LOG(ERROR) << "Encountered error while listening for incoming REST requests: " << e.what() << std::endl;
+            LOG(ERROR) << "Encountered error while listening for incoming HTTP requests: " << e.what() << std::endl;
             subscriber.on_error(std::make_exception_ptr(e));
             return;
         }
@@ -144,7 +144,7 @@ RestSourceStage::subscriber_fn_t RestSourceStage::build()
     };
 }
 
-void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source_type_t> subscriber)
+void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceStage::source_type_t> subscriber)
 {
     // only check if the server is running when the queue is empty, allowing all queued messages to be processed prior
     // to shutting down
@@ -165,7 +165,7 @@ void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source
                 m_records_emitted += num_records;
             } catch (const std::exception& e)
             {
-                LOG(ERROR) << "Error occurred converting REST payload to Dataframe: " << e.what();
+                LOG(ERROR) << "Error occurred converting HTTP payload to Dataframe: " << e.what();
             }
 
             if (m_stop_after > 0 && m_records_emitted >= m_stop_after)
@@ -197,7 +197,7 @@ void RestSourceStage::source_generator(rxcpp::subscriber<RestSourceStage::source
     }
 }
 
-void RestSourceStage::close()
+void HttpServerSourceStage::close()
 {
     if (m_server)
     {
@@ -207,13 +207,13 @@ void RestSourceStage::close()
     m_queue.close();
 }
 
-RestSourceStage::~RestSourceStage()
+HttpServerSourceStage::~HttpServerSourceStage()
 {
     close();
 }
 
-// ************ RestSourceStageInterfaceProxy ************ //
-std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceProxy::init(
+// ************ HttpServerSourceStageInterfaceProxy ************ //
+std::shared_ptr<mrc::segment::Object<HttpServerSourceStage>> HttpServerSourceStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     const std::string& name,
     std::string bind_address,
@@ -230,7 +230,7 @@ std::shared_ptr<mrc::segment::Object<RestSourceStage>> RestSourceStageInterfaceP
     bool lines,
     std::size_t stop_after)
 {
-    return builder.construct_object<RestSourceStage>(
+    return builder.construct_object<HttpServerSourceStage>(
 
         name,
         std::move(bind_address),

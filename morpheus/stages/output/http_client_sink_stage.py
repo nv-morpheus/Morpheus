@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Write all messages to a REST endpoint."""
+"""Write all messages to an HTTP endpoint."""
 
 import logging
 import typing
@@ -35,10 +35,10 @@ from morpheus.utils.type_aliases import DataFrameType
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-rest", ignore_args=["query_params", "headers", "df_to_request_kwargs_fn", "**request_kwargs"])
-class WriteToRestStage(SinglePortStage):
+@register_stage("to-http", ignore_args=["query_params", "headers", "df_to_request_kwargs_fn", "**request_kwargs"])
+class HttpClientSinkStage(SinglePortStage):
     """
-    Write all messages to a REST endpoint.
+    Write all messages to an HTTP endpoint.
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ class WriteToRestStage(SinglePortStage):
     @property
     def name(self) -> str:
         """Unique name of the stage."""
-        return "to-rest"
+        return "to-http"
 
     def accepted_types(self) -> typing.Tuple:
         """

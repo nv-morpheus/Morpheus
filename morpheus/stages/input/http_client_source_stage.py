@@ -34,8 +34,8 @@ from morpheus.utils import http_utils
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-rest-client", ignore_args=["query_params", "headers", "**request_kwargs"])
-class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
+@register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
+class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
 
@@ -140,7 +140,7 @@ class RestClientSourceStage(PreallocatorMixin, SingleOutputSource):
     @property
     def name(self) -> str:
         """Unique name of the stage"""
-        return "from-rest-client"
+        return "from-http-client"
 
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports a C++ implementation"""
