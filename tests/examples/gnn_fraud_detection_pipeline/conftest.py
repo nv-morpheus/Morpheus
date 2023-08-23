@@ -91,7 +91,7 @@ def xgb_model_fixture(model_dir: str):
 @pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
 @pytest.fixture(name="ex_in_sys_path", autouse=True)
 def ex_in_sys_path_fixture(example_dir: str):
-    sys.path.append(example_dir)
+    sys.path.insert(0, example_dir)
 
 
 @pytest.fixture(autouse=True)

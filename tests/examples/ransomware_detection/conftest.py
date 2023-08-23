@@ -77,7 +77,7 @@ def interested_plugins():
 @pytest.fixture(autouse=True)
 @pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
 def ransomware_detection_in_sys_path(example_dir: str):
-    sys.path.append(example_dir)
+    sys.path.insert(0, example_dir)
 
 
 @pytest.fixture(autouse=True)
