@@ -18,13 +18,13 @@ import pytest
 
 import cudf
 
-import morpheus.messages as messages
+from morpheus import messages
 
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
-    control_message_one = messages.ControlMessage()  # noqa: F841
-    control_message_two = messages.ControlMessage({"test": "test"})  # noqa: F841
+    messages.ControlMessage()  # noqa: F841
+    messages.ControlMessage({"test": "test"})  # noqa: F841
 
 
 @pytest.mark.usefixtures("config_only_cpp")
