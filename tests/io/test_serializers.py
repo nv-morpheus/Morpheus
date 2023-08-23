@@ -27,7 +27,7 @@ from morpheus.io.serializers import df_to_parquet
 from morpheus.io.serializers import df_to_stream_csv
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.io.serializers import df_to_stream_parquet
-from utils.dataset_manager import DatasetManager
+from _utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.parametrize(

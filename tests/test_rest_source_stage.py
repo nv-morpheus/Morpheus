@@ -28,8 +28,8 @@ from morpheus.messages import MessageMeta
 from morpheus.stages.input.rest_source_stage import RestSourceStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
-from utils import make_url
-from utils.dataset_manager import DatasetManager
+from _utils import make_url
+from _utils.dataset_manager import DatasetManager
 
 
 class GetNext(threading.Thread):

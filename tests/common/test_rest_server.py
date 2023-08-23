@@ -22,7 +22,7 @@ import requests
 
 from morpheus.common import RestServer
 from morpheus.utils.http_utils import MimeTypes
-from utils import make_url
+from _utils import make_url
 
 
 def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,

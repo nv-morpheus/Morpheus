@@ -27,8 +27,8 @@ from morpheus.stages.output.write_to_rest_stage import WriteToRestStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
-from utils import make_mock_response
-from utils.dataset_manager import DatasetManager
+from _utils import make_mock_response
+from _utils.dataset_manager import DatasetManager
 
 
 def _df_to_buffer(df: DataFrameType, lines: bool) -> StringIO:

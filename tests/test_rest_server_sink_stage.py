@@ -29,8 +29,8 @@ from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.http_utils import request_with_retry
 from morpheus.utils.type_aliases import DataFrameType
-from utils import make_url
-from utils.dataset_manager import DatasetManager
+from _utils import make_url
+from _utils.dataset_manager import DatasetManager
 
 
 async def make_requests(sink: RestServerSinkStage,
