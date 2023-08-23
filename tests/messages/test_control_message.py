@@ -35,7 +35,6 @@ def test_control_message_tasks():
     # Ensure a single task can be read
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
-
     assert len(message.tasks) == 1
     assert "type_a" in message.tasks
     assert len(message.tasks["type_a"]) == 1
@@ -46,11 +45,9 @@ def test_control_message_tasks():
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_b", {"key_y": "value_y"})
     assert len(message.tasks) == 2
-
     assert "type_a" in message.tasks
     assert len(message.tasks["type_a"]) == 1
     assert message.tasks["type_a"][0]["key_x"] == "value_x"
-
     assert "type_b" in message.tasks
     assert len(message.tasks["type_b"]) == 1
     assert message.tasks["type_b"][0]["key_y"] == "value_y"
@@ -60,7 +57,6 @@ def test_control_message_tasks():
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_a", {"key_y": "value_y"})
     assert len(message.tasks) == 1
-
     assert "type_a" in message.tasks
     assert len(message.tasks["type_a"]) == 2
     assert message.tasks["type_a"][0]["key_x"] == "value_x"
@@ -72,31 +68,10 @@ def test_control_message_tasks():
     tasks["type_a"] = [{"key_x", "value_x"}]
     assert len(message.tasks) == 0
 
-
-@pytest.mark.usefixtures("config_only_cpp")
-def test_control_message_tasks_a():
-    # Ensure multiple task types of the same type can be read
-    message = messages.ControlMessage()
-    message.add_task("type_a", {"key_x": "value_x"})
-    message.add_task("type_a", {"key_y": "value_y"})
-    assert len(message.tasks) == 2
-
-    assert message.tasks[0].type == "type_a"
-    assert "key_x" in message.tasks[0].value
-    assert message.tasks[0].value["key_x"] == "value_x"
-
-    assert message.tasks[1].type == "type_a"
-    assert "key_y" in message.tasks[0].value
-    assert message.tasks[1].value["key_y"] == "value_y"
-
-
-@pytest.mark.usefixtures("config_only_cpp")
-def test_control_message_tasks_b():
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_a", {"key_y": "value_y"})
     assert len(message.tasks) == 1
-
     assert "type_a" in message.tasks
     assert len(message.tasks["type_a"]) == 2
     assert message.tasks["type_a"][0]["key_x"] == "value_x"
