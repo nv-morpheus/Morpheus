@@ -20,6 +20,7 @@ import pytest
 
 from utils import TEST_DIRS
 from utils import import_or_skip
+from utils import remove_module
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
@@ -52,6 +53,17 @@ def config_fixture(config):
     yield config
 
 
+@pytest.fixture(name="manual_seed", scope="function")
+def manual_seed_fixture(manual_seed):
+    import dgl
+    def seed_fn(seed=42):
+        manual_seed(seed)
+        dgl.seed(seed)
+
+    seed_fn()
+    yield seed_fn
+
+
 @pytest.fixture(name="example_dir")
 def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
@@ -80,6 +92,15 @@ def ex_in_sys_path_fixture(example_dir: str, restore_sys_path, reset_plugins):  
     sys.path.append(example_dir)
 
 
+@pytest.fixture(autouse=True)
+def reset_modules():
+    """
+    Other examples have a stages module, ensure it is un-imported after running tests in this subdir
+    """
+    yield
+    remove_module('stages')
+
+
 @pytest.fixture(name="test_data")
 def test_data_fixture():
     """
@@ -92,10 +113,10 @@ def test_data_fixture():
     thus we should expect 20 edges, although 2697 is duplicated in the client_node column we should expect two
     unique edges for each entry (2697, 14) & (2697, 91)
     """
-    import pandas as pd
+    import cudf
     index = [2, 14, 16, 26, 41, 42, 70, 91, 93, 95]
-    client_data = [795, 2697, 5531, 415, 2580, 3551, 6547, 2697, 3503, 7173]
-    merchant_data = [8567, 4609, 2781, 7844, 629, 6915, 7071, 570, 2446, 8110]
+    client_data = [795.0, 2697.0, 5531.0, 415.0, 2580.0, 3551.0, 6547.0, 2697.0, 3503.0, 7173.0]
+    merchant_data = [8567.0, 4609.0, 2781.0, 7844.0, 629.0, 6915.0, 7071.0, 570.0, 2446.0, 8110.0]
 
     df_data = {
         'index': index,
@@ -108,10 +129,11 @@ def test_data_fixture():
     for i in range(1000, 1113):
         # these two values are skipped, apparently place-holders for client_node & merchant_node
         if i not in (1002, 1003):
-            df_data[str(i)] = [0 for _ in range(len(index))]
+            df_data[str(i)] = [0.0 for _ in range(len(index))]
 
-    df = pd.DataFrame(df_data, index=index)
+    df = cudf.DataFrame(df_data, index=index)
 
+    # TODO: Tad need some help here, graph data isn't what I was expecting, client nodes appear to be replaced with ints 0-8
     expected_nodes = set(index + client_data + merchant_data)
     assert len(expected_nodes) == 29  # ensuring test data & assumptions are correct
 
