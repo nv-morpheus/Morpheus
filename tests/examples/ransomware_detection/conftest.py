@@ -19,16 +19,11 @@ import sys
 import pytest
 import yaml
 
-<<<<<<< HEAD
-from utils import TEST_DIRS
-from utils import import_or_skip
-from utils import remove_module
-=======
 from _utils import TEST_DIRS
 from _utils import import_or_skip
+from _utils import remove_module
 
 # pylint: disable=redefined-outer-name
->>>>>>> 09395b5e0d4f58917741723fb703c49d1f8c883f
 
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `examples/ransomware_detection/README.md` "

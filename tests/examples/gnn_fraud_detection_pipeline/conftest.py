@@ -18,9 +18,9 @@ import sys
 
 import pytest
 
-from utils import TEST_DIRS
-from utils import import_or_skip
-from utils import remove_module
+from _utils import TEST_DIRS
+from _utils import import_or_skip
+from _utils import remove_module
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "

@@ -20,7 +20,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from utils.dataset_manager import DatasetManager
+from _utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.usefixtures("manual_seed")
