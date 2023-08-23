@@ -16,7 +16,7 @@ import pytest
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.rest_client_source_stage import RestClientSourceStage
+from morpheus.stages.input.http_client_source_stage import HttpClientSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
@@ -25,7 +25,7 @@ from _utils.dataset_manager import DatasetManager
 @pytest.mark.slow
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("lines", [False, True])
-def test_rest_client_source_stage_pipe(config: Config, dataset: DatasetManager, mock_rest_server: str, lines: bool):
+def test_http_client_source_stage_pipe(config: Config, dataset: DatasetManager, mock_rest_server: str, lines: bool):
     if lines:
         endpoint = "data-lines"
     else:
@@ -37,7 +37,7 @@ def test_rest_client_source_stage_pipe(config: Config, dataset: DatasetManager, 
     num_records = len(expected_df)
 
     pipe = LinearPipeline(config)
-    pipe.set_source(RestClientSourceStage(config=config, url=url, max_retries=1, lines=lines, stop_after=num_records))
+    pipe.set_source(HttpClientSourceStage(config=config, url=url, max_retries=1, lines=lines, stop_after=num_records))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 

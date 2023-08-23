@@ -20,7 +20,7 @@ from unittest import mock
 import pytest
 import requests
 
-from morpheus.common import RestServer
+from morpheus.common import HttpServer
 from morpheus.utils.http_utils import MimeTypes
 from _utils import make_url
 
@@ -84,13 +84,13 @@ def test_simple_request(port: int,
         parse_fn.assert_called_once_with(payload)
 
     if use_context_mgr:
-        with RestServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method,
+        with HttpServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method,
                         num_threads=num_threads) as server:
             assert server.is_running()
             check_server()
 
     else:
-        server = RestServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method, num_threads=num_threads)
+        server = HttpServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method, num_threads=num_threads)
         assert not server.is_running()
         server.start()
 
@@ -108,7 +108,7 @@ def test_simple_request(port: int,
 
 def test_constructor_errors():
     with pytest.raises(RuntimeError):
-        RestServer(parse_fn=make_parse_fn(), method="UNSUPPORTED")
+        HttpServer(parse_fn=make_parse_fn(), method="UNSUPPORTED")
 
     with pytest.raises(RuntimeError):
-        RestServer(parse_fn=make_parse_fn(), num_threads=0)
+        HttpServer(parse_fn=make_parse_fn(), num_threads=0)

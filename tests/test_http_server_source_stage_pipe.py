@@ -23,7 +23,7 @@ import pytest
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.rest_source_stage import RestSourceStage
+from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
@@ -46,7 +46,7 @@ async def make_request(pipe: LinearPipeline,
         attempt += 1
 
     if not pipe._is_started:
-        raise RuntimeError("RestSourceStage did not start")
+        raise RuntimeError("HttpServerSourceStage did not start")
 
     # Not strictly needed, but we don't have a good way of knowing when the server is ready to accept requests
     # Adding this sleep here just lowers the likely-hood of seeing a logged warning on the first failed request.
@@ -81,7 +81,7 @@ async def run_pipe_and_request(pipe: LinearPipeline,
 
 @pytest.mark.slow
 @pytest.mark.parametrize("lines", [False, True])
-def test_rest_source_stage_pipe(config: Config, dataset_cudf: DatasetManager, lines: bool):
+def test_http_server_source_stage_pipe(config: Config, dataset_cudf: DatasetManager, lines: bool):
     endpoint = '/test'
     port = 8088
     method = HTTPMethod.POST
@@ -102,13 +102,13 @@ def test_rest_source_stage_pipe(config: Config, dataset_cudf: DatasetManager, li
 
     pipe = LinearPipeline(config)
     pipe.set_source(
-        RestSourceStage(config=config,
-                        port=port,
-                        endpoint=endpoint,
-                        method=method,
-                        accept_status=accept_status,
-                        lines=lines,
-                        stop_after=num_records))
+        HttpServerSourceStage(config=config,
+                              port=port,
+                              endpoint=endpoint,
+                              method=method,
+                              accept_status=accept_status,
+                              lines=lines,
+                              stop_after=num_records))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, df))
 
     response_queue = queue.SimpleQueue()

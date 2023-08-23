@@ -23,7 +23,7 @@ from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.write_to_rest_stage import WriteToRestStage
+from morpheus.stages.output.http_client_sink_stage import HttpClientSinkStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
@@ -50,7 +50,7 @@ def _df_to_url(lines: bool, base_url: str, endpoint: str, df: DataFrameType) -> 
 @pytest.mark.parametrize("use_df_to_url,static_endpoint", [(False, True), (False, False), (True, True)])
 @mock.patch("requests.Session")
 @mock.patch("time.sleep")
-def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
+def test_write_to_http_stage_pipe(mock_sleep: mock.MagicMock,
                                   mock_request_session: mock.MagicMock,
                                   config: Config,
                                   dataset: DatasetManager,
@@ -95,16 +95,16 @@ def test_write_to_rest_stage_pipe(mock_sleep: mock.MagicMock,
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [df]))
     pipe.add_stage(
-        WriteToRestStage(config,
-                         base_url="http://fake.nvidia.com",
-                         endpoint=endpoint,
-                         static_endpoint=static_endpoint,
-                         method=method,
-                         request_timeout_secs=42,
-                         query_params={'unit': 'test'},
-                         lines=lines,
-                         max_rows_per_payload=max_rows_per_payload,
-                         df_to_request_kwargs_fn=df_to_request_kwargs_fn))
+        HttpClientSinkStage(config,
+                            base_url="http://fake.nvidia.com",
+                            endpoint=endpoint,
+                            static_endpoint=static_endpoint,
+                            method=method,
+                            request_timeout_secs=42,
+                            query_params={'unit': 'test'},
+                            lines=lines,
+                            max_rows_per_payload=max_rows_per_payload,
+                            df_to_request_kwargs_fn=df_to_request_kwargs_fn))
     pipe.run()
 
     assert mock_request_session.request.call_count == num_expected_requests

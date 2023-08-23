@@ -24,7 +24,7 @@ from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.rest_server_sink_stage import RestServerSinkStage
+from morpheus.stages.output.http_server_sink_stage import HttpServerSinkStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.http_utils import request_with_retry
@@ -33,7 +33,7 @@ from _utils import make_url
 from _utils.dataset_manager import DatasetManager
 
 
-async def make_requests(sink: RestServerSinkStage,
+async def make_requests(sink: HttpServerSinkStage,
                         response_queue: queue.Queue,
                         method: HTTPMethod,
                         url: str,
@@ -45,7 +45,7 @@ async def make_requests(sink: RestServerSinkStage,
         attempt += 1
 
     if not sink.is_running():
-        raise RuntimeError("RestSourceStage did not start")
+        raise RuntimeError("HttpServerSinkStage did not start")
 
     # Not strictly needed, but we don't have a good way of knowing when the server is ready to accept requests
     # Adding this sleep here just lowers the likely-hood of seeing a logged warning on the first failed request.
@@ -68,7 +68,7 @@ async def make_requests(sink: RestServerSinkStage,
 
 
 async def run_pipe_and_request(pipe: LinearPipeline,
-                               sink: RestServerSinkStage,
+                               sink: HttpServerSinkStage,
                                response_queue: queue.Queue,
                                method: HTTPMethod,
                                url: str,
@@ -93,7 +93,7 @@ def _custom_serializer(df: DataFrameType) -> str:
 @pytest.mark.parametrize("lines", [False, True])
 @pytest.mark.parametrize("max_rows_per_response", [10000, 10])
 @pytest.mark.parametrize("df_serializer_fn", [None, _custom_serializer])
-def test_rest_server_sink_stage_pipe(config: Config,
+def test_http_server_sink_stage_pipe(config: Config,
                                      dataset_cudf: DatasetManager,
                                      lines: bool,
                                      max_rows_per_response: int,
@@ -131,7 +131,7 @@ def test_rest_server_sink_stage_pipe(config: Config,
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [df]))
     sink = pipe.add_stage(
-        RestServerSinkStage(config,
+        HttpServerSinkStage(config,
                             port=port,
                             endpoint=endpoint,
                             method=method,

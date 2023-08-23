@@ -25,7 +25,7 @@ import requests
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.messages import MessageMeta
-from morpheus.stages.input.rest_source_stage import RestSourceStage
+from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from _utils import make_url
@@ -76,12 +76,12 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
 
     payload = buf.read()
 
-    stage = RestSourceStage(config=config,
-                            port=port,
-                            endpoint=endpoint,
-                            method=method,
-                            accept_status=accept_status,
-                            lines=lines)
+    stage = HttpServerSourceStage(config=config,
+                                  port=port,
+                                  endpoint=endpoint,
+                                  method=method,
+                                  accept_status=accept_status,
+                                  lines=lines)
 
     generate_frames = stage._generate_frames()
     msg_queue = queue.SimpleQueue()
@@ -117,10 +117,10 @@ def test_generate_frames(config: Config, dataset_pandas: DatasetManager, lines: 
 @pytest.mark.parametrize("invalid_method", [HTTPMethod.GET, HTTPMethod.PATCH])
 def test_constructor_invalid_method(config: Config, invalid_method: HTTPMethod):
     with pytest.raises(ValueError):
-        RestSourceStage(config=config, method=invalid_method)
+        HttpServerSourceStage(config=config, method=invalid_method)
 
 
 @pytest.mark.parametrize("invalid_accept_status", [HTTPStatus.CONTINUE, HTTPStatus.FOUND])
 def test_constructor_invalid_accept_status(config: Config, invalid_accept_status: HTTPStatus):
     with pytest.raises(ValueError):
-        RestSourceStage(config=config, accept_status=invalid_accept_status)
+        HttpServerSourceStage(config=config, accept_status=invalid_accept_status)
