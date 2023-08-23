@@ -22,6 +22,8 @@ import yaml
 from utils import TEST_DIRS
 from utils import import_or_skip
 
+# pylint: disable=redefined-outer-name
+
 SKIP_REASON = ("Tests for the ransomware_detection example require a number of packages not installed in the Morpheus "
                "development environment. See `examples/ransomware_detection/README.md` "
                "for details on installing these additional dependencies")
@@ -72,5 +74,6 @@ def interested_plugins():
 #    from common....
 # For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
 @pytest.fixture(autouse=True)
-def ransomware_detection_in_sys_path(request: pytest.FixtureRequest, restore_sys_path, reset_plugins, example_dir):
+@pytest.mark.usefixtures("request", "restore_sys_path", "reset_plugins")
+def ransomware_detection_in_sys_path(example_dir):
     sys.path.append(example_dir)

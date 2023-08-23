@@ -34,6 +34,7 @@ from utils.dataset_manager import DatasetManager
 from utils.stages.conv_msg import ConvMsg
 
 
+# pylint: disable=redefined-outer-name
 @pytest.mark.use_cudf
 @pytest.fixture(name="viz_pipeline", scope="function")
 def viz_pipeline_fixture(config, filter_probs_df):

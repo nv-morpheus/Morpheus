@@ -59,7 +59,7 @@ def test_add_scores_stage_pipe(config: Config,
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
@@ -84,7 +84,7 @@ def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: Datas
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddScoresStage(config))
     pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()

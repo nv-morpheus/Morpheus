@@ -134,8 +134,8 @@ class OffsetChecker(SinglePortStage):
         new_offsets = self._client.list_consumer_group_offsets(self._group_id)
 
         if self._offsets is not None:
-            for (tp, prev_offset) in self._offsets.items():
-                new_offset = new_offsets[tp]
+            for (tpoint, prev_offset) in self._offsets.items():
+                new_offset = new_offsets[tpoint]
 
                 assert new_offset.offset >= prev_offset.offset
 
