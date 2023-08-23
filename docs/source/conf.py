@@ -32,13 +32,8 @@ import os
 import sys
 import textwrap
 import warnings
-from unittest import mock
 
 import packaging
-
-# Prevent these from being called when morpheus.utils.schema_transforms is parsed
-mock.patch("morpheus.utils.nvt.extensions.morpheus_ext.register_morpheus_extensions").start()
-mock.patch("morpheus.utils.nvt.patches.patch_numpy_dtype_registry").start()
 
 # Ignore FutureWarnings coming from docutils remove this once we can upgrade to Sphinx 5.0
 # https://github.com/sphinx-doc/sphinx/issues/9777
@@ -172,6 +167,7 @@ autodoc_mock_imports = [
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "nvtabular",
+    "pandas",
     "tensorrt",
     "torch",
     "tqdm",
@@ -311,35 +307,6 @@ intersphinx_mapping = {
     "python": ('https://docs.python.org/', None), "scipy": ('https://docs.scipy.org/doc/scipy/reference', None)
 }
 
-# For classes that inherit from a third-party class, we want to exclude the inherited members from the documentation.
-exclude_inherited_members = ('morpheus.models.dfencoder.dataframe.EncoderDataFrame', )
-
-
-def process_docstrings(app, what, name, obj, options, lines):
-    if what == "class" and name in exclude_inherited_members:
-        options["inherited-members"] = False
-
-    if name == "morpheus.utils.nvt.mutate.MutateOp":
-        # The MutateOp.transform method has a merlin decorator that is being mocked by sphinx. This work-around ensures
-        # that the original function is documented, but not the version decorated by the mocked decorator.
-        cut_begin = None
-        cut_end = None
-        for (i, line) in enumerate(lines):
-            if line.startswith("**transform**"):
-                cut_begin = i
-                cut_end = i + 1
-
-                if cut_begin > 0 and lines[cut_begin - 1].startswith("==="):
-                    cut_begin -= 1
-
-                if cut_end < len(lines) - 1 and lines[cut_end].startswith("==="):
-                    cut_end += 1
-
-                break
-
-        if cut_begin is not None and cut_end is not None:
-            lines[:] = lines[:cut_begin] + lines[cut_end:]
-
 
 def setup(app):
     app.add_css_file('omni-style.css')
@@ -348,7 +315,6 @@ def setup(app):
     app.add_css_file('params.css')
     app.add_css_file('references.css')
     app.add_css_file('py_properties.css')
-    app.connect("autodoc-process-docstring", process_docstrings)
 
 
 # The following is used by sphinx.ext.linkcode to provide links to github

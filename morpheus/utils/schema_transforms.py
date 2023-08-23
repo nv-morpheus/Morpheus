@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import typing
 
 import nvtabular as nvt
@@ -25,16 +26,17 @@ from morpheus.utils.nvt import patches
 from morpheus.utils.nvt.extensions import morpheus_ext
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
-# Apply patches to NVT
-# TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
-# ========================================================================
-patches.patch_numpy_dtype_registry()
-# ========================================================================
+if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
+    # Apply patches to NVT
+    # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
+    # ========================================================================
+    patches.patch_numpy_dtype_registry()
+    # ========================================================================
 
-# Add morpheus conversion mappings
-# ========================================================================
-morpheus_ext.register_morpheus_extensions()
-# =========================================================================
+    # Add morpheus conversion mappings
+    # ========================================================================
+    morpheus_ext.register_morpheus_extensions()
+    # =========================================================================
 
 logger = logging.getLogger(__name__)
 
