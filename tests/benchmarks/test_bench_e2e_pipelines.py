@@ -19,6 +19,7 @@ import os
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
@@ -42,7 +43,6 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
-from utils import TEST_DIRS
 
 E2E_CONFIG_FILE = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
 with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:

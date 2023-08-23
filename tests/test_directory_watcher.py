@@ -18,8 +18,8 @@ import os
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python

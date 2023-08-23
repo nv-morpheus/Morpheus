@@ -25,7 +25,7 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class ControlMessageFileSourceStage(SingleOutputSource):

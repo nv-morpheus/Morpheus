@@ -31,7 +31,7 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPRollingWindowStage(SinglePortStage):
@@ -124,8 +124,8 @@ class DFPRollingWindowStage(SinglePortStage):
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning
-                logger.warn(("Incoming data preceeded existing history. "
-                             "Consider deleting the rolling window cache and restarting."))
+                logger.warning(("Incoming data preceeded existing history. "
+                                "Consider deleting the rolling window cache and restarting."))
                 return None
 
             # Exit early if we dont have enough data

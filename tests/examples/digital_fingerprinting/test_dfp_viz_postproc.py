@@ -18,26 +18,28 @@ import os
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils.dataset_manager import DatasetManager
+
+# pylint: disable=redefined-outer-name
 
 
-@pytest.fixture
-def dfp_multi_message(config, dfp_multi_message):
+@pytest.fixture(name="dfp_multi_message")
+def dfp_multi_message_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
     # Fill in some values for columns that the stage is looking for
     with dfp_multi_message.meta.mutable_dataframe() as df:
         step = (len(df) + 1) * 100
-        df["mean_abs_z"] = [i for i in range(0, len(df) * step, step)]
+        df["mean_abs_z"] = list(range(0, len(df) * step, step))
         for (i, col) in enumerate(sorted(config.ae.feature_columns)):
             step = i + 1 * 100
-            df[f"{col}_z_loss"] = [k for k in range(0, len(df) * step, step)]
+            df[f"{col}_z_loss"] = list(range(0, len(df) * step, step))
 
     yield dfp_multi_message
 
 
-@pytest.fixture
-def expected_df(config, dfp_multi_message):
+@pytest.fixture(name="expected_df")
+def expected_df_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
     df = dfp_multi_message.meta.copy_dataframe()
     expected_df = pd.DataFrame()
     expected_df["user"] = df[config.ae.userid_column_name]
@@ -61,7 +63,7 @@ def test_constructor(config: Config):
     assert stage._period == 'M'
     assert stage._output_dir == '/fake/test/dir'
     assert stage._output_prefix == 'test_prefix'
-    assert stage._output_filenames == []
+    assert not stage._output_filenames
 
 
 def test_postprocess(
@@ -88,7 +90,7 @@ def test_write_to_files(
     from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 
     stage = DFPVizPostprocStage(config, period='min', output_dir=tmp_path, output_prefix='test_prefix_')
-    stage._write_to_files(dfp_multi_message) is dfp_multi_message
+    assert stage._write_to_files(dfp_multi_message) is dfp_multi_message
 
     # The times in the DF have a 30 second step, so the number of unique minutes is half the length of the DF
     num_expected_periods = len(expected_df) // 2
