@@ -179,7 +179,7 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
-    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
     stage._controller._apply_model_permissions("test_experiment")
 
     verify_apply_model_permissions(mock_requests, databricks_env, databricks_permissions, 'test_experiment')
@@ -273,7 +273,7 @@ def test_on_data(config: Config,
     meta = DFPMessageMeta(df, 'Account-123456789')
     msg = MultiAEMessage(meta=meta, model=mock_model)
 
-    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
     assert stage._controller.on_data(msg) is msg  # Should be a pass-thru
 
     # Test mocks in order that they're called
