@@ -18,13 +18,89 @@ import pytest
 
 import cudf
 
-import morpheus.messages as messages
+from morpheus import messages
 
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
-    control_message_one = messages.ControlMessage()  # noqa: F841
-    control_message_two = messages.ControlMessage({"test": "test"})  # noqa: F841
+    messages.ControlMessage()  # noqa: F841
+    messages.ControlMessage({"test": "test"})  # noqa: F841
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_control_message_tasks():
+    message = messages.ControlMessage()
+    assert len(message.get_tasks()) == 0
+
+    # Ensure a single task can be read
+    message = messages.ControlMessage()
+    message.add_task("type_a", {"key_x": "value_x"})
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 1
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+
+    # Ensure multiple task types of different types can be read
+    message = messages.ControlMessage()
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_b", {"key_y": "value_y"})
+    assert len(message.get_tasks()) == 2
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 1
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert "type_b" in message.get_tasks()
+    assert len(message.get_tasks()["type_b"]) == 1
+    assert message.get_tasks()["type_b"][0]["key_y"] == "value_y"
+
+    # Ensure multiple task types of the same type can be read
+    message = messages.ControlMessage()
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_a", {"key_y": "value_y"})
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 2
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
+
+    # Ensure the underlying tasks cannot are not modified
+    message = messages.ControlMessage()
+    tasks = message.get_tasks()
+    tasks["type_a"] = [{"key_x", "value_x"}]
+    assert len(message.get_tasks()) == 0
+
+    message = messages.ControlMessage()
+    message.add_task("type_a", {"key_x": "value_x"})
+    message.add_task("type_a", {"key_y": "value_y"})
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 2
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_control_message_metadata():
+    message = messages.ControlMessage()
+    message.set_metadata("key_x", "value_x")
+    message.set_metadata("key_y", "value_y")
+    message.set_metadata("key_z", "value_z")
+
+    assert len(message.get_metadata()) == 3
+
+    assert "key_x" in message.get_metadata()
+    assert "key_y" in message.get_metadata()
+    assert "key_z" in message.get_metadata()
+    assert message.get_metadata()["key_x"] == "value_x"
+    assert message.get_metadata()["key_y"] == "value_y"
+    assert message.get_metadata()["key_z"] == "value_z"
+
+    message.set_metadata("key_y", "value_yy")
+
+    assert message.get_metadata()["key_y"] == "value_yy"
+
+    message.get_metadata()["not_mutable"] = 5
+
+    assert "not_mutable" not in message.get_metadata()
 
 
 @pytest.mark.usefixtures("config_only_cpp")
