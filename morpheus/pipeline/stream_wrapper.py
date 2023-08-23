@@ -61,8 +61,6 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
         # Save values on self
         self._init_str = ", ".join(init_pairs)
 
-        return
-
     return typing.cast(_DecoratorType, inner)
 
 
@@ -80,9 +78,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
     __ID_COUNTER = AtomicInteger(0)
 
-    def __init__(self, c: Config):
+    def __init__(self, config: Config):
         # Save the config
-        self._config = c
+        self._config = config
 
         self._id = StreamWrapper.__ID_COUNTER.get_and_inc()
         self._pipeline: _pipeline.Pipeline = None
@@ -299,13 +297,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
                     return False
 
             return True
-        else:
-            # Check if we can build based on the input ports. We can build
-            for r in self.input_ports:
-                if (not r.is_partial):
-                    return False
 
-            return True
+        # Check if we can build based on the input ports. We can build
+        for receiver in self.input_ports:
+            if (not receiver.is_partial):
+                return False
+
+        return True
 
     def build(self, builder: mrc.Builder, do_propagate=True):
         """Build this stage.
@@ -380,7 +378,11 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         pass
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(
+        self,
+        builder: mrc.Builder,  # pylint: disable=unused-argument
+        out_ports_pair: typing.List[StreamPair],
+    ) -> typing.List[StreamPair]:
         return out_ports_pair
 
     def _start(self):

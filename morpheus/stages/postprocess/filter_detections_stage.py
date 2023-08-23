@@ -104,8 +104,8 @@ class FilterDetectionsStage(SinglePortStage):
         """
         if self._controller.filter_source == FilterSource.TENSOR:
             return (MultiResponseMessage, )
-        else:
-            return (MultiMessage, )
+
+        return (MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default

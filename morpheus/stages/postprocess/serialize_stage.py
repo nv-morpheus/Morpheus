@@ -41,7 +41,7 @@ class SerializeStage(SinglePortStage):
         Pipeline configuration instance.
     include : typing.List[str], default = [], show_default="All Columns",
         Attributes that are required send to downstream stage.
-    exclude : typing.List[str]
+    exclude : typing.List[str], default = [r'^ID$', r'^_ts_']
         Attributes that are not required send to downstream stage.
     fixed_columns : bool
         When `True` `SerializeStage` will assume that the Dataframe in all messages contain the same columns as the
@@ -49,11 +49,17 @@ class SerializeStage(SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
-                 include: typing.List[str] = [],
-                 exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
+                 config: Config,
+                 include: typing.List[str] = None,
+                 exclude: typing.List[str] = None,
                  fixed_columns: bool = True):
-        super().__init__(c)
+        super().__init__(config)
+
+        if (include is None):
+            include = []
+
+        if (exclude is None):
+            exclude = [r'^ID$', r'^_ts_']
 
         self._controller = SerializeController(include=include, exclude=exclude, fixed_columns=fixed_columns)
 

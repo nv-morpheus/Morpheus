@@ -286,7 +286,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                                  offset=0,
                                  count=sliced_count)
 
-    def get_slice(self, start, stop):
+    def get_slice(self: Self, start, stop) -> Self:
         """
         Perform a slice of the current message from `start`:`stop` (excluding `stop`)
 
@@ -322,7 +322,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         return self.from_message(self, **kwargs)
 
     @classmethod
-    def from_message(cls: typing.Type[Self],
+    def from_message(cls: type[Self],
                      message: "MultiTensorMessage",
                      *,
                      meta: MessageMeta = None,

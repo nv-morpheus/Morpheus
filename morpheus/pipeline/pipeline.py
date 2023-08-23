@@ -16,6 +16,7 @@ import asyncio
 import logging
 import os
 import signal
+import sys
 import time
 import typing
 from collections import OrderedDict
@@ -56,7 +57,7 @@ class Pipeline():
 
     """
 
-    def __init__(self, c: Config):
+    def __init__(self, config: Config):
         self._source_count: int = None  # Maximum number of iterations for progress reporting. None = Unknown/Unlimited
 
         self._id_counter = 0
@@ -71,13 +72,13 @@ class Pipeline():
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
         self._exec_options = mrc.Options()
-        self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
+        self._exec_options.topology.user_cpuset = f"0-{config.num_threads - 1}"
         self._exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
         # Set the default channel size
-        mrc.Config.default_channel_size = c.edge_buffer_size
+        mrc.Config.default_channel_size = config.edge_buffer_size
 
-        self.batch_size = c.pipeline_batch_size
+        self.batch_size = config.pipeline_batch_size
 
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
@@ -126,7 +127,7 @@ class Pipeline():
             segment_nodes.add(stage)
             self._sources.add(stage)
         else:
-            raise NotImplementedError("add_stage() failed. Unknown node type: {}".format(type(stage)))
+            raise NotImplementedError(f"add_stage() failed. Unknown node type: {type(stage)}")
 
         stage._pipeline = self
 
@@ -237,7 +238,7 @@ class Pipeline():
         self._mrc_pipeline = mrc.Pipeline()
 
         def inner_build(builder: mrc.Builder, segment_id: str):
-            logger.info(f"====Building Segment: {segment_id}====")
+            logger.info("====Building Segment: %s====", segment_id)
             segment_graph = self._segment_graphs[segment_id]
 
             # Check if preallocated columns are requested, this needs to happen before the source stages are built
@@ -256,7 +257,7 @@ class Pipeline():
                 if (stage.can_build()):
                     stage.build(builder)
 
-            if (not all([x.is_built for x in segment_graph.nodes()])):
+            if (not all(x.is_built for x in segment_graph.nodes())):
                 logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
 
                 for stage in segment_graph.nodes():
@@ -275,9 +276,9 @@ class Pipeline():
             logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline====")
-        for segment_id in self._segments.keys():
-            segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
-            segment_egress_ports = self._segments[segment_id]["egress_ports"]
+        for segment_id, segment in self._segments.items():
+            segment_ingress_ports = segment["ingress_ports"]
+            segment_egress_ports = segment["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
             self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
@@ -311,8 +312,8 @@ class Pipeline():
         """
 
         logger.info("====Stopping Pipeline====")
-        for s in list(self._sources) + list(self._stages):
-            s.stop()
+        for stage in list(self._sources) + list(self._stages):
+            stage.stop()
 
         self._mrc_executor.stop()
 
@@ -330,21 +331,21 @@ class Pipeline():
             raise
         finally:
             # Make sure these are always shut down even if there was an error
-            for s in list(self._sources):
-                s.stop()
+            for source in list(self._sources):
+                source.stop()
 
             # First wait for all sources to stop. This only occurs after all messages have been processed fully
-            for s in list(self._sources):
-                await s.join()
+            for source in list(self._sources):
+                await source.join()
 
             # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
             # their own worker loop thread)
-            for s in list(self._stages):
-                s.stop()
+            for stage in list(self._stages):
+                stage.stop()
 
             # Now call join on all stages
-            for s in list(self._stages):
-                await s.join()
+            for stage in list(self._stages):
+                await stage.join()
 
     async def _build_and_start(self):
 
@@ -362,8 +363,8 @@ class Pipeline():
     async def _async_start(self):
 
         # Loop over all stages and call on_start if it exists
-        for s in self._stages:
-            await s.start_async()
+        for stage in self._stages:
+            await stage.start_async()
 
     def _on_start(self):
 
@@ -374,11 +375,11 @@ class Pipeline():
         # Stop from running this twice
         self._is_started = True
 
-        logger.debug("Starting! Time: {}".format(time.time()))
+        logger.debug("Starting! Time: %s", time.time())
 
         # Loop over all stages and call on_start if it exists
-        for s in self._stages:
-            s.on_start()
+        for stage in self._stages:
+            stage.on_start()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
@@ -414,11 +415,11 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def has_ports(n: StreamWrapper, is_input):
+        def has_ports(node: StreamWrapper, is_input):
             if (is_input):
-                return len(n.input_ports) > 0
-            else:
-                return len(n.output_ports) > 0
+                return len(node.input_ports) > 0
+
+            return len(node.output_ports) > 0
 
         if not self._is_build_complete:
             raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
@@ -427,31 +428,32 @@ class Pipeline():
                                "be fixed in a future release.")
 
         # Now build up the nodes
-        for idx, segment_id in enumerate(self._segments):
+        for segment_id in self._segments:
             gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
-            for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
-                                        self._segment_graphs[segment_id].nodes).items():
+            for name, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
+                                           self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
                 label = ""
 
-                show_in_ports = has_ports(n, is_input=True)
-                show_out_ports = has_ports(n, is_input=False)
+                show_in_ports = has_ports(name, is_input=True)
+                show_out_ports = has_ports(name, is_input=False)
 
                 # Build the ports for the node. Only show ports if there are any
                 # (Would like to have this not show for one port, but the lines get all messed up)
                 if (show_in_ports):
-                    in_port_label = " {{ {} }} | ".format(" | ".join(
-                        [f"<u{x.port_number}> input_port: {x.port_number}" for x in n.input_ports]))
+                    tmp_str = " | ".join([f"<u{x.port_number}> input_port: {x.port_number}" for x in name.input_ports])
+                    in_port_label = f" {{ {tmp_str} }} | "
                     label += in_port_label
 
-                label += n.unique_name
+                label += name.unique_name
 
                 if (show_out_ports):
-                    out_port_label = " | {{ {} }}".format(" | ".join(
-                        [f"<d{x.port_number}> output_port: {x.port_number}" for x in n.output_ports]))
+                    tmp_str = " | ".join(
+                        [f"<d{x.port_number}> output_port: {x.port_number}" for x in name.output_ports])
+                    out_port_label = f" | {{ {tmp_str} }}"
                     label += out_port_label
 
                 if (show_in_ports or show_out_ports):
@@ -462,9 +464,9 @@ class Pipeline():
                     "shape": "record",
                     "fillcolor": "white",
                 })
-                # TODO: Eventually allow nodes to have different attributes based on type
+                # TODO(MDD): Eventually allow nodes to have different attributes based on type
                 # node_attrs.update(n.get_graphviz_attrs())
-                gv_subgraph.node(n.unique_name, **node_attrs)
+                gv_subgraph.node(name.unique_name, **node_attrs)
 
         # Build up edges
         for segment_id in self._segments:
@@ -522,7 +524,7 @@ class Pipeline():
                               style="dashed",
                               label=f"Segment Port: {egress_port['port_pair'][0]}")
 
-        for key, gv_subgraph in gv_subgraphs.items():
+        for gv_subgraph in gv_subgraphs.values():
             gv_graph.subgraph(gv_subgraph)
 
         file_format = os.path.splitext(filename)[-1].replace(".", "")
@@ -544,7 +546,7 @@ class Pipeline():
 
         def error_handler(_, context: dict):
 
-            msg = "Unhandled exception in async loop! Exception: \n{}".format(context["message"])
+            msg = f"Unhandled exception in async loop! Exception: \n{context['message']}"
             exception = context.get("exception", Exception())
 
             logger.critical(msg, exc_info=exception)
@@ -564,10 +566,10 @@ class Pipeline():
                 self.stop()
             else:
                 tqdm.write("Killing")
-                exit(1)
+                sys.exit(1)
 
-        for s in [signal.SIGINT, signal.SIGTERM]:
-            loop.add_signal_handler(s, term_signal)
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            loop.add_signal_handler(sig, term_signal)
 
         try:
             await self._build_and_start()

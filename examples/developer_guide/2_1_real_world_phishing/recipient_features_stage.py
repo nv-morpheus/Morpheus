@@ -45,7 +45,7 @@ class RecipientFeaturesStage(SinglePortStage):
         if config.mode != PipelineModes.NLP:
             raise RuntimeError("RecipientFeaturesStage must be used in a pipeline configured for NLP")
 
-        if len(sep_token):
+        if len(sep_token) > 0:
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")

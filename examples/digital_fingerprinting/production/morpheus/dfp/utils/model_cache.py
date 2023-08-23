@@ -29,7 +29,7 @@ from morpheus.models.dfencoder import AutoEncoder
 
 from .logging_timer import log_time
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @contextmanager
@@ -92,7 +92,7 @@ class ModelCache:
     def last_checked(self):
         return self._last_checked
 
-    def load_model(self, client) -> AutoEncoder:
+    def load_model(self, _) -> AutoEncoder:
 
         now = datetime.now()
 
@@ -168,13 +168,12 @@ class UserModelMap:
                                                              timeout=timeout)
 
                 if (model_cache is None):
-                    raise RuntimeError("Model was found but now no longer exists. Model: {}".format(
-                        self._reg_model_name))
+                    raise RuntimeError(f"Model was found but now no longer exists. Model: {self._reg_model_name}")
 
                 return model_cache
-        except TimeoutError:
+        except TimeoutError as e:
             logger.error("Deadlock detected while loading model cache. Please report this to the developers.")
-            raise RuntimeError("Deadlock detected while loading model cache")
+            raise RuntimeError("Deadlock detected while loading model cache") from e
 
 
 class ModelManager:
@@ -234,9 +233,9 @@ class ModelManager:
                     # Save the update time
                     self._existing_models_updated = now
 
-            except TimeoutError:
+            except TimeoutError as e:
                 logger.error("Deadlock detected checking for new models. Please report this to the developers.")
-                raise RuntimeError("Deadlock detected checking for new models")
+                raise RuntimeError("Deadlock detected checking for new models") from e
             except Exception:
                 logger.exception("Exception occurred when querying the list of available models", exc_info=True)
                 raise
@@ -321,15 +320,19 @@ class ModelManager:
 
                 # Check if we need to push out a cache entry
                 if (len(self._model_cache) > self._model_cache_size_max):
-                    time_sorted = sorted([(k, v) for k, v in self._model_cache.items()], key=lambda x: x[1].last_used)
+                    time_sorted = sorted(list(self._model_cache.items()), key=lambda x: x[1].last_used)
                     to_delete = time_sorted[0][0]
                     self._model_cache.pop(to_delete)
 
                 return model_cache
 
-        except TimeoutError:
+        except TimeoutError as e:
             logger.error("Deadlock when trying to acquire model cache lock")
-            raise RuntimeError("Deadlock when trying to acquire model cache lock")
+            raise RuntimeError("Deadlock when trying to acquire model cache lock") from e
+
+    def load_user_model_cache(self, user_id: str, fallback_user_ids: typing.List[str] = None) -> UserModelMap:
+        if (fallback_user_ids is None):
+            fallback_user_ids = []
 
     def load_user_model_cache(self,
                               user_id: str,
@@ -344,6 +347,6 @@ class ModelManager:
                                                                    fallback_user_ids=fallback_user_ids)
 
                 return self._user_model_cache[user_id]
-        except TimeoutError:
-            logger.error("Deadlock when trying to acquire user model cache lock")
-            raise RuntimeError("Deadlock when trying to acquire user model cache lock")
+        except TimeoutError as e:
+            logger.error("Deadlock when trying to acquire user model cache lock", exc_info=True)
+            raise RuntimeError("Deadlock when trying to acquire user model cache lock") from e

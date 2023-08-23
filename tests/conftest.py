@@ -21,6 +21,7 @@ import signal
 import subprocess
 import sys
 import time
+import types
 import typing
 import warnings
 from collections import namedtuple
@@ -378,27 +379,104 @@ def restore_sys_path():
 
 
 @pytest.fixture(scope="function")
-def import_mod(request: pytest.FixtureRequest, restore_sys_path):
+def import_mod(request: pytest.FixtureRequest,
+               restore_sys_path) -> typing.Generator[types.ModuleType | list[types.ModuleType], None, None]:
+    # pylint: disable=missing-param-doc
+    # pylint: disable=differing-param-doc
+    # pylint: disable=missing-type-doc
+    # pylint: disable=differing-type-doc
+    """
+    Allows direct import of a module by specifying its path. This is useful for testing examples that import modules in
+    examples or other non-installed directories.
+
+    Parameters
+    ----------
+    modules : str | list[str]
+        The modules to import. Modules can be supplied as a list or multiple arguments.
+    sys_path : str | int,
+        When
+
+    Yields
+    ------
+    Iterator[typing.Generator[types.ModuleType | list[types.ModuleType], None, None]]
+        Imported modules. If more than one module is supplied, or the only argument is a list, the modules will be
+        returned as a list.
+
+    Example
+    -------
+    ```
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'))
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.dirname(TEST_DIRS.examples_dir, 'example/stage.py'))
+        ...
+
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'), sys_path=-2)
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py', '../..'))
+        ...
+
+    @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'example/stage.py')], sys_path=TEST_DIRS.examples_dir)
+    def test_python_test(import_mod: list[types.ModuleType]):
+        # Imported with sys.path.append(TEST_DIRS.examples_dir)
+        ...
+    ```
+    """
+
     marker = request.node.get_closest_marker("import_mod")
     if marker is not None:
-        mod_paths = marker.args[0]
-        if not isinstance(mod_paths, list):
-            mod_paths = [mod_paths]
+        mod_paths = sum([x if isinstance(x, list) else [x] for x in marker.args], [])
+
+        mod_kwargs = marker.kwargs
+
+        is_list = len(marker.args) > 1 or isinstance(marker.args[0], list)
 
         modules = []
         module_names = []
+
         for mod_path in mod_paths:
-            mod_dir, mod_fname = os.path.split(mod_path)
-            mod_name, _ = os.path.splitext(mod_fname)
+            # Ensure everything is absolute to avoid issues with relative paths
+            mod_path = os.path.abspath(mod_path)
 
-            sys.path.append(mod_dir)
-            module_names.append(mod_name)
-            mod = importlib.import_module(mod_name)
-            assert mod.__file__ == mod_path
+            # See if its a file or directory
+            is_file = os.path.isfile(mod_path)
 
-            modules.append(mod)
+            # Get the base directory that we should import from. If not specified, use the directory of the module
+            sys_path = mod_kwargs.get("sys_path", os.path.dirname(mod_path))
 
-        yield modules
+            # If sys_path is an integer, use it to get the path relative to the module by number of directories. i.e. if
+            # sys_path=-1, then sys_path=os.path.dirname(mod_path). If sys_path=-2, then
+            # sys_path=os.path.dirname(os.path.dirname(mod_path))
+            if (isinstance(sys_path, int)):
+                sys_path = os.path.join("/", *mod_path.split(os.path.sep)[:sys_path])
+
+            # Get the path relative to the sys_path, ignore the extension if its a file
+            mod_name = os.path.relpath(mod_path if not is_file else os.path.splitext(mod_path)[0], start=sys_path)
+
+            # Convert all / to .
+            mod_name = mod_name.replace(os.path.sep, ".")
+
+            # Add to the sys path so this can be imported
+            sys.path.append(sys_path)
+
+            try:
+
+                # Import the module
+                mod = importlib.import_module(mod_name)
+
+                if (is_file):
+                    assert mod.__file__ == mod_path
+
+                modules.append(mod)
+                module_names.append(mod_name)
+            except ImportError as e:
+
+                raise ImportError(f"Failed to import module {mod_path} as {mod_name} from path {sys_path}") from e
+
+        # Only yield 1 if we only imported 1
+        if (is_list):
+            yield modules
+        else:
+            yield modules[0]
 
         # Un-import modules we previously imported, this allows for multiple examples to contain a `messages.py`
         for mod in module_names:
@@ -542,12 +620,12 @@ def _camouflage_is_running():
         Whether or not we are using Camouflage or an actual Triton server
     """
 
-    from utils import TEST_DIRS
+    from _utils import TEST_DIRS
 
     logger = logging.getLogger(f"morpheus.{__name__}")
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    startup_timeout = 5
+    startup_timeout = 10
     shutdown_timeout = 5
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
@@ -791,7 +869,7 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
 
     Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type=df_type)
 
 
@@ -816,7 +894,7 @@ def dataset_pandas():
         expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
     ```
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='pandas')
 
 
@@ -830,7 +908,7 @@ def dataset_cudf():
         cdf = dataset_cudf["filter_probs.csv"]
         pdf = dataset_cudf.pandas["filter_probs.csv"]
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='cudf')
 
 

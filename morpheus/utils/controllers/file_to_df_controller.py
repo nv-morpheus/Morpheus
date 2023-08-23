@@ -130,7 +130,7 @@ class FileToDFController:
 
         self._downloader = Downloader()
 
-    def _get_or_create_dataframe_from_s3_batch(
+    def _get_or_create_dataframe_from_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[cudf.DataFrame, bool]:
 
         if (not file_object_batch):
@@ -220,7 +220,7 @@ class FileToDFController:
         start_time = time.time()
 
         try:
-            output_df, cache_hit = self._get_or_create_dataframe_from_s3_batch(file_object_batch)
+            output_df, cache_hit = self._get_or_create_dataframe_from_batch(file_object_batch)
 
             duration = (time.time() - start_time) * 1000.0
 

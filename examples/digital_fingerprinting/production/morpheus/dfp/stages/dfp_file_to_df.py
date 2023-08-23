@@ -75,7 +75,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     @property
     def name(self) -> str:
         """Stage name."""
-        return "dfp-s3-to-df"
+        return "dfp-file-to-df"
 
     def supports_cpp_node(self):
         """Whether this stage supports a C++ node."""

@@ -62,7 +62,7 @@ class SplunkNotableParser(EventParser):
         This function replaces src_ip column with src_ip2, if scr_ip is empty and does the same way for dest_ip column.
         """
         for ip in ["src_ip", "dest_ip"]:
-            log.debug("******* Processing %s *******" % (ip))
+            log.debug("******* Processing %s *******", ip)
             ip2 = ip + "2"
             ip_len = ip + "_len"
             # Calculate ip column value length.
@@ -73,11 +73,11 @@ class SplunkNotableParser(EventParser):
             parsed_dataframe = parsed_dataframe[parsed_dataframe[ip_len] != 0]
 
             if not tmp_dataframe.empty:
-                log.debug("tmp_dataframe size %s" % (str(tmp_dataframe.shape)))
+                log.debug("tmp_dataframe size %s", str(tmp_dataframe.shape))
                 # Assign ip2 column values to empty ip column values.
                 tmp_dataframe[ip] = tmp_dataframe[ip2]
                 if not parsed_dataframe.empty:
-                    log.debug("parsed_dataframe is not empty %s" % (str(parsed_dataframe.shape)))
+                    log.debug("parsed_dataframe is not empty %s", str(parsed_dataframe.shape))
                     # Concat, if both parsed_dataframe and tmp_df are not empty.
                     parsed_dataframe = cudf.concat([parsed_dataframe, tmp_dataframe])
                 else:

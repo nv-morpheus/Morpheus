@@ -22,6 +22,8 @@ import fsspec
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -29,8 +31,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.controllers.file_to_df_controller import single_object_to_dataframe
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture
@@ -41,6 +41,8 @@ def single_file_obj():
                               'threadlist_2022-01-30_10-26-01.670391.json')
     file_specs = fsspec.open_files(input_file)
     assert len(file_specs) == 1
+
+    # pylint: disable=no-member
     yield fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
 
@@ -106,7 +108,7 @@ def test_constructor(config: Config):
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
 @mock.patch('morpheus.utils.downloader.Distributed')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.process_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.MagicMock,
+def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
                                                           mock_distributed: mock.MagicMock,
                                                           mock_obf_to_df: mock.MagicMock,
                                                           mock_dask_cluster: mock.MagicMock,
@@ -167,11 +169,11 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
     batch = fsspec.core.OpenFiles([single_file_obj], fs=single_file_obj.fs)
 
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
         output_df = stage._controller.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_batch((batch, 1))
         assert not cache_hit
 
     if dl_type in ("multiprocess", "multiprocessing"):
@@ -211,7 +213,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
+def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
                                                          mock_dask_client: mock.MagicMock,
                                                          mock_dask_config: mock.MagicMock,
@@ -236,6 +238,8 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
     mock_mp_pool.__exit__.return_value = False
 
     file_specs = fsspec.open_files(os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')))
+
+    # pylint: disable=no-member
     file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
     hash_data = hashlib.md5(json.dumps([{'ukey': file_obj.fs.ukey(file_obj.path)}]).encode()).hexdigest()
@@ -253,11 +257,11 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
     batch = fsspec.core.OpenFiles([file_obj], fs=file_obj.fs)
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
         output_df = stage._controller.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_batch((batch, 1))
         assert cache_hit
 
     # When we get a cache hit, none of the download methods should be executed
@@ -279,7 +283,7 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
+def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                          mock_dask_cluster: mock.MagicMock,
                                                          mock_dask_client: mock.MagicMock,
                                                          mock_dask_config: mock.MagicMock,
@@ -302,7 +306,7 @@ def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.Ma
         assert stage._controller.convert_to_dataframe(None) is None
     else:
         with pytest.raises(RuntimeError, match="No file objects to process"):
-            stage._controller._get_or_create_dataframe_from_s3_batch(None)
+            stage._controller._get_or_create_dataframe_from_batch(None)
 
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()

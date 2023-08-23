@@ -28,7 +28,7 @@ from morpheus.utils.controllers.mlflow_model_writer_controller import MLFlowMode
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.10'), 'pip'],
+    'dependencies': ['python=3.10', 'pip'],
     'pip': ['mlflow'],
     'name': 'mlflow-env'
 }
