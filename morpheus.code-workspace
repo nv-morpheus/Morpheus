@@ -631,6 +631,11 @@
         "files.insertFinalNewline": true,
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
+        "pylint.args": [
+            "--rcfile=${workspaceFolder}/pyproject.toml",
+            "--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")"
+        ],
+        "pylint.importStrategy": "fromEnvironment",
         "python.analysis.extraPaths": [
             "./examples/digital_fingerprinting/production/morpheus"
         ],
@@ -639,11 +644,6 @@
             "--style=${workspaceFolder}/setup.cfg"
         ],
         "python.linting.flake8Enabled": true,
-        "python.linting.pylintArgs": [
-            "--rcfile=${workspaceFolder}/pyproject.toml",
-            "--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")"
-        ],
-        "python.linting.pylintEnabled": true,
         "python.testing.pytestArgs": [
             "-s",
             "tests"

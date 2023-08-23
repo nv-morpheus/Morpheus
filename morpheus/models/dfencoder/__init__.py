@@ -50,7 +50,7 @@
 
 # This package uses torch. We need to guarantee that cudf is loaded first so do that here
 # isort: off
-import cudf  # noqa: F401
+import cudf  # noqa: F401 # pylint:disable=unused-import
 # isort: on
 
 from .ae_module import AEModule

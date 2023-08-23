@@ -27,7 +27,7 @@ from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
-registry = mrc.ModuleRegistry
+Registry = mrc.ModuleRegistry
 mrc_version = [int(i) for i in mrc.__version__.split('.')]
 
 
@@ -56,7 +56,7 @@ def verify_module_registration(func):
         if module_id is None or namespace is None:
             raise TypeError("TypeError: a string-like object is required for module_id and namespace, not 'NoneType'")
 
-        if not registry.contains(module_id, namespace):
+        if not Registry.contains(module_id, namespace):
             raise ValueError(f"Module '{module_id}' doesn't exist in the namespace '{namespace}'")
 
         return func(config, **kwargs)
@@ -83,8 +83,8 @@ def register_module(module_id, namespace):
 
     def inner_func(func):
         # Register a module if not exists in the registry.
-        if not registry.contains(module_id, namespace):
-            registry.register_module(module_id, namespace, mrc_version, func)
+        if not Registry.contains(module_id, namespace):
+            Registry.register_module(module_id, namespace, mrc_version, func)
             logger.debug("Module '%s' was successfully registered with '%s' namespace.", module_id, namespace)
         else:
             logger.debug("Module: '%s' already exists in the given namespace '%s'", module_id, namespace)

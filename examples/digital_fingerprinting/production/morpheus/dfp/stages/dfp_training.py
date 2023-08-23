@@ -28,7 +28,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPTraining(SinglePortStage):
@@ -71,7 +71,7 @@ class DFPTraining(SinglePortStage):
 
         self._epochs = epochs
 
-        if (validation_size >= 0.0 and validation_size < 1.0):
+        if (0.0 <= validation_size < 1.0):
             self._validation_size = validation_size
         else:
             raise ValueError(f"validation_size={validation_size} should be a positive float in the (0, 1) range")

@@ -120,9 +120,9 @@ def test_dfencoder_e2e():
     # Make sure model converges (low loss)
     for loss_type in LOSS_TYPES:
         ft_losses = getattr(model.logger, f"{loss_type}_fts")
-        for ft, losses_l in ft_losses.items():
+        for feature, losses_l in ft_losses.items():
             losses = losses_l[1]
-            assert min(losses) < LOSS_TARGETS[loss_type][ft] * LOSS_TOLERANCE_RATIO
+            assert min(losses) < LOSS_TARGETS[loss_type][feature] * LOSS_TOLERANCE_RATIO
 
     # Inference
     inf_res = model.get_results(inference_df)
@@ -135,5 +135,6 @@ def test_dfencoder_e2e():
     # make sure the user baseline is modeled well enough so the minimum and median z scores
     # from inference are in range
     assert min(inf_res.mean_abs_z) < 1
-    assert (np.median(inf_res.mean_abs_z) < 100
-            )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+
+    # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+    assert (np.median(inf_res.mean_abs_z) < 100)

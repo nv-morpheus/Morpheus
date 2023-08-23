@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ import pytest
 
 
 @pytest.fixture
-def config(config):
+def config(config):  # pylint: disable=redefined-outer-name
     """
     The log_parsing pipelie requires NLP mode. Set this here so all the tests don't need to set it themselves.
     """

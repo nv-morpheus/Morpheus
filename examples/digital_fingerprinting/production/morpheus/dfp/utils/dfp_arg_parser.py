@@ -68,7 +68,7 @@ class DFPArgParser:
         self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
         self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
 
-    def verify_init(func):
+    def verify_init(self, func):
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
@@ -134,7 +134,7 @@ class DFPArgParser:
         return self._experiment_name_formatter
 
     def _set_include_generic(self):
-        self._include_generic = self._train_users == "all" or self._train_users == "generic"
+        self._include_generic = self._train_users in ('all', 'generic')
 
     def _set_include_individual(self):
         self._include_individual = self._train_users != "generic"
@@ -150,9 +150,9 @@ class DFPArgParser:
 
             end_time = self._start_time + duration
 
-        tf = TimeFields(self._start_time, end_time)
+        time_fields = TimeFields(self._start_time, end_time)
 
-        return tf
+        return time_fields
 
     def _set_mlflow_tracking_uri(self):
         if self._tracking_uri is None:

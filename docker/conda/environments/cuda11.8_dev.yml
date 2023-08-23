@@ -82,8 +82,8 @@ dependencies:
     - python-confluent-kafka=1.9.2
     - python-graphviz
     - python=3.10
+    - pytorch-cuda
     - pytorch=2.0.1
-    - pytorch-cuda=11.8
     - rapidjson=1.1.0
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
@@ -91,8 +91,8 @@ dependencies:
     - sphinx_rtd_theme
     - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
     - sysroot_linux-64=2.17
-    - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
     - tqdm=4
+    - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
     - typing_utils=0.1
     - watchdog=2.1
     - yapf=0.40.1

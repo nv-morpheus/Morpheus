@@ -21,10 +21,11 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import modules.multiplexer  # noqa: F401
+import modules.multiplexer  # noqa: F401 # pylint:disable=unused-import
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture(scope="function")
 def unregistered_module_conf():
     unregistered_module_conf = {

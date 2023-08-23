@@ -155,8 +155,8 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         """
         try:
             return self._tensors[name]
-        except KeyError:
-            raise AttributeError
+        except KeyError as e:
+            raise AttributeError from e
 
     def set_tensor(self, name: str, tensor: cp.ndarray):
         """
