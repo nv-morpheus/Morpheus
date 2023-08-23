@@ -240,7 +240,7 @@ py::object ControlMessageProxy::get_metadata(ControlMessage& self, std::optional
     {
         return mrc::pymrc::cast_from_json(self.get_metadata());
     }
-    
+
     return mrc::pymrc::cast_from_json(self.get_metadata(key.value()));
 }
 
