@@ -121,7 +121,7 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
         mock_infer_result = mock.MagicMock()
         mock_infer_result.as_numpy.side_effect = inf_results
 
-        def async_infer(callback=None, **k):
+        def async_infer(callback=None, **_):
             callback(mock_infer_result, None)
 
         mock_triton_client.async_infer.side_effect = async_infer

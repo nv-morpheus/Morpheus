@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "test_morpheus.hpp"
+#include "./common.hpp"
 
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/io/loaders/file.hpp"

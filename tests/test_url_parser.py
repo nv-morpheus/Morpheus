@@ -18,27 +18,31 @@ from cudf import DataFrame
 
 from morpheus.parsers import url_parser
 
-input_df = DataFrame({
-    "url": [
-        "http://www.google.com",
-        "gmail.com",
-        "github.com",
-        "https://pandas.pydata.org",
-        "http://www.worldbank.org.kg/",
-        "waiterrant.blogspot.com",
-        "http://forums.news.cnn.com.ac/",
-        "http://forums.news.cnn.ac/",
-        "ftp://b.cnn.com/",
-        "a.news.uk",
-        "a.news.co.uk",
-        "https://a.news.co.uk",
-        "107-193-100-2.lightspeed.cicril.sbcglobal.net",
-        "a23-44-13-2.deploy.static.akamaitechnologies.com",
-    ]
-})
+# pylint: disable=redefined-outer-name
 
 
-@pytest.mark.parametrize("input_df", [input_df])
+@pytest.fixture
+def input_df():
+    return DataFrame({
+        "url": [
+            "http://www.google.com",
+            "gmail.com",
+            "github.com",
+            "https://pandas.pydata.org",
+            "http://www.worldbank.org.kg/",
+            "waiterrant.blogspot.com",
+            "http://forums.news.cnn.com.ac/",
+            "http://forums.news.cnn.ac/",
+            "ftp://b.cnn.com/",
+            "a.news.uk",
+            "a.news.co.uk",
+            "https://a.news.co.uk",
+            "107-193-100-2.lightspeed.cicril.sbcglobal.net",
+            "a23-44-13-2.deploy.static.akamaitechnologies.com",
+        ]
+    })
+
+
 def test_parse_1(input_df):
     expected_output_df = DataFrame({
         "domain": [
@@ -79,7 +83,6 @@ def test_parse_1(input_df):
     assert expected_output_df.equals(output_df)
 
 
-@pytest.mark.parametrize("input_df", [input_df])
 def test_parse_2(input_df):
     expected_output_df = DataFrame({
         "hostname": [
@@ -152,10 +155,9 @@ def test_parse_2(input_df):
     assert expected_output_df.equals(output_df)
 
 
-@pytest.mark.parametrize("input_df", [input_df])
 def test_parse_invalid_req_cols(input_df):
-    expected_error = ValueError("Given req_cols must be subset of %s" %
-                                ('["hostname", "subdomain", "domain", "suffix"]'))
+    expected_error = ValueError(
+        "Given req_cols must be subset of [\"hostname\", \"subdomain\", \"domain\", \"suffix\"]")
     with pytest.raises(ValueError) as actual_error:
         url_parser.parse(input_df["url"], req_cols={"test"})
         assert actual_error == expected_error

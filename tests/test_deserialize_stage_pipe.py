@@ -28,7 +28,8 @@ from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_cudf
-def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_fixing_non_unique_indexes(dataset: DatasetManager):
     # Set 2 ids equal to others
     df = dataset.dup_index(dataset["filter_probs.csv"], count=2)
 

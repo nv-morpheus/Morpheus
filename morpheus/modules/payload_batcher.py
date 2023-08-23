@@ -21,8 +21,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.messages import ControlMessage
-from morpheus._lib.messages import MessageMeta
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.utils.control_message_utils import cm_default_failure_context_manager
 from morpheus.utils.control_message_utils import cm_skip_processing_if_failed
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE

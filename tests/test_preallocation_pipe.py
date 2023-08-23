@@ -61,13 +61,13 @@ class CheckPreAlloc(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _check_prealloc(self, m):
-        df = m.get_meta()
+    def _check_prealloc(self, message):
+        df = message.get_meta()
         for label in self._class_labels:
             assert label in df.columns
             assert df[label].dtype == self._expected_type
 
-        return m
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, ops.map(self._check_prealloc))
@@ -89,7 +89,7 @@ def test_preallocation(config, filter_probs_df, probs_type):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=probs_np_type))
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
     assert len(mem_src.get_needed_columns()) == 0
@@ -125,7 +125,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
@@ -134,7 +134,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     pipe.run()
 
     assert len(mem_src.get_needed_columns()) == 0
-    boundary_ingress.get_needed_columns() == {
+    assert boundary_ingress.get_needed_columns() == {
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
@@ -153,7 +153,7 @@ def test_preallocation_error(config, filter_probs_df):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type='f4'))
     add_scores = pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     mem_sink = pipe.add_stage(InMemorySinkStage(config))
 
     assert len(mem_src.get_needed_columns()) == 0
