@@ -95,7 +95,7 @@ class MutateOp(Operator):
 
         try:
             # otherwise get the lambda source code from the inspect module if possible
-            source = getsourcelines(self.f)[0][0]
+            source = getsourcelines(self.f)[0][0]  # pylint: disable=no-member
             lambdas = [op.strip() for op in source.split(">>") if "lambda " in op]
             if len(lambdas) == 1 and lambdas[0].count("lambda") == 1:
                 return lambdas[0]

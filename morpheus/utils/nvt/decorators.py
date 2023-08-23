@@ -104,7 +104,7 @@ def sync_df_as_pandas(df_arg_name='df'):
 
 # Avoid using the annotate decorator in sphinx builds, instead define a simple pass-through decorator
 if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
-    from merlin.core.dispatch import annotate  # pylint: disable=ungrouped-imports
+    from merlin.core.dispatch import annotate  # pylint: disable=unused-import
 else:
 
     def annotate(*args, **kwargs):  # pylint: disable=unused-argument
