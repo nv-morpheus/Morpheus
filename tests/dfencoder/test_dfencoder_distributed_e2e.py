@@ -25,11 +25,11 @@ import os
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from morpheus.models.dfencoder.multiprocessing import start_processes
-from utils import TEST_DIRS
 
 # import torch
 

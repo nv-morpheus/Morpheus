@@ -20,6 +20,9 @@ import pytest
 
 import cudf
 
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -30,9 +33,6 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
-from utils.dataset_manager import DatasetManager
-from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.slow

@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from utils import TEST_DIRS
 
 INFERENCE_START_DATE = "2022-11-01"
 VALIDATION_SET_SIZE = 3000  # around 1/10 of the train set
@@ -130,7 +130,7 @@ def test_dfencoder_e2e():
     # Assert the consistency of output rows and columns
     assert len(inf_res) == len(inference_df)
     assert sorted(inf_res.columns) == sorted(
-        [ft + col_suffix for ft in FEATURE_COLUMNS
+        [feature + col_suffix for feature in FEATURE_COLUMNS
          for col_suffix in ["", "_pred", "_loss", "_z_loss"]] + ["max_abs_z", "mean_abs_z", "z_loss_scaler_type"])
     # make sure the user baseline is modeled well enough so the minimum and median z scores
     # from inference are in range

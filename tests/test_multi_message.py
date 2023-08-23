@@ -27,6 +27,7 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -41,7 +42,6 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python
@@ -144,6 +144,10 @@ def _test_get_meta(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
 
 def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     _test_get_meta(filter_probs_df)
+
+
+# Ignore unused arguments warnigns due to using the `use_cpp` fixture
+# pylint:disable=unused-argument
 
 
 @pytest.mark.usefixtures("use_cpp")
@@ -266,9 +270,9 @@ def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
 def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     meta = MessageMeta(df)
 
-    multi = MultiMessage(meta=meta)
+    mm1 = MultiMessage(meta=meta)
 
-    mm2 = multi.copy_ranges([(2, 6)])
+    mm2 = mm1.copy_ranges([(2, 6)])
     assert len(mm2.meta.df) == 4
     assert mm2.meta.count == 4
     assert len(mm2.get_meta()) == 4
@@ -279,7 +283,7 @@ def _test_copy_ranges(df: typing.Union[cudf.DataFrame, pd.DataFrame]):
     DatasetManager.assert_df_equal(mm2.get_meta(), df.iloc[2:6])
 
     # slice two different ranges of rows
-    mm3 = multi.copy_ranges([(2, 6), (12, 15)])
+    mm3 = mm1.copy_ranges([(2, 6), (12, 15)])
     assert len(mm3.meta.df) == 7
     assert mm3.meta.count == 7
     assert len(mm3.get_meta()) == 7
@@ -728,8 +732,8 @@ def test_tensor_slicing(dataset: DatasetManager):
     probs = cp.random.rand(tensor_count, 2)
     seq_ids = cp.zeros((tensor_count, 3), dtype=cp.int32)
 
-    for i, repeat in enumerate(repeat_counts):
-        seq_ids[sum(repeat_counts[:i]):sum(repeat_counts[:i]) + repeat] = cp.ones((repeat, 3), int) * i
+    for i, repeat_count in enumerate(repeat_counts):
+        seq_ids[sum(repeat_counts[:i]):sum(repeat_counts[:i]) + repeat_count] = cp.ones((repeat_count, 3), int) * i
 
     # First with no offsets
     memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})

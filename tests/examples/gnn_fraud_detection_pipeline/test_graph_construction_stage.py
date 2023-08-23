@@ -23,10 +23,10 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
@@ -108,8 +108,8 @@ class TestGraphConstructionStage:
 
         # Since we used the first 5 rows as the training data, send the second 5 as inference data
         meta = MessageMeta(cudf.DataFrame(df))
-        multi = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
-        fgmm = stage._process_message(multi)
+        multi_mesg = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
+        fgmm = stage._process_message(multi_mesg)
 
         assert isinstance(fgmm, graph_construction_stage.FraudGraphMultiMessage)
         assert fgmm.meta is meta

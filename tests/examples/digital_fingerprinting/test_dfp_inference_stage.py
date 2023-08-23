@@ -19,23 +19,23 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
-from utils.dataset_manager import DatasetManager
 
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(autouse=True)
-def mock_mlflow_client():
+@pytest.fixture(name="mock_mlflow_client", autouse=True)
+def mock_mlflow_client_fixture():
     with mock.patch("dfp.stages.dfp_inference_stage.MlflowClient") as mock_mlflow_client:
         mock_mlflow_client.return_value = mock_mlflow_client
         yield mock_mlflow_client
 
 
-@pytest.fixture(autouse=True)
-def mock_model_manager():
+@pytest.fixture(name="mock_model_manager", autouse=True)
+def mock_model_manager_fixture():
     with mock.patch("dfp.stages.dfp_inference_stage.ModelManager") as mock_model_manager:
         mock_model_manager.return_value = mock_model_manager
         yield mock_model_manager

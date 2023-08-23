@@ -620,7 +620,7 @@ def _camouflage_is_running():
         Whether or not we are using Camouflage or an actual Triton server
     """
 
-    from utils import TEST_DIRS
+    from _utils import TEST_DIRS
 
     logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -869,7 +869,7 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
 
     Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type=df_type)
 
 
@@ -894,7 +894,7 @@ def dataset_pandas():
         expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
     ```
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='pandas')
 
 
@@ -908,7 +908,7 @@ def dataset_cudf():
         cdf = dataset_cudf["filter_probs.csv"]
         pdf = dataset_cudf.pandas["filter_probs.csv"]
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='cudf')
 
 

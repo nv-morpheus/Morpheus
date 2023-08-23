@@ -20,14 +20,12 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import CppConfig
-from utils.dataset_manager import DatasetManager
-
-# pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(scope="function")
-def cpp_from_marker(request: pytest.FixtureRequest) -> bool:
+@pytest.fixture(name="cpp_from_marker", scope="function")
+def cpp_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
 
     use_cpp = len([x for x in request.node.iter_markers("use_cpp") if "added_by" in x.kwargs]) > 0
     use_python = len([x for x in request.node.iter_markers("use_python") if "added_by" in x.kwargs]) > 0
@@ -37,8 +35,8 @@ def cpp_from_marker(request: pytest.FixtureRequest) -> bool:
     return use_cpp
 
 
-@pytest.fixture(scope="function")
-def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
+@pytest.fixture(name="df_type_from_marker", scope="function")
+def df_type_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
 
     use_cudf = len([x for x in request.node.iter_markers("use_cudf") if "added_by" in x.kwargs]) > 0
     use_pandas = len([x for x in request.node.iter_markers("use_pandas") if "added_by" in x.kwargs]) > 0
@@ -75,15 +73,15 @@ def test_dataset_both(dataset: DatasetManager):
 
 
 def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
-    dataset_manager = DatasetManager(df_type=df_type)
-    assert dataset_manager.default_df_type == df_type
-    assert getattr(dataset_manager, df_type) is dataset_manager
-    assert DatasetManager(df_type=df_type) is dataset_manager
+    dataset = DatasetManager(df_type=df_type)
+    assert dataset.default_df_type == df_type
+    assert getattr(dataset, df_type) is dataset
+    assert DatasetManager(df_type=df_type) is dataset
 
     alt_type = DatasetManager.get_alt_df_type(df_type=df_type)
     assert df_type != alt_type
-    assert DatasetManager(alt_type) is not dataset_manager
-    assert getattr(dataset_manager, alt_type) is not dataset_manager
+    assert DatasetManager(alt_type) is not dataset
+    assert getattr(dataset, alt_type) is not dataset
 
 
 def test_dataset_dftype(dataset: DatasetManager):

@@ -17,12 +17,12 @@ import cupy as cp
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python

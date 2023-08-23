@@ -19,21 +19,22 @@ from unittest import mock
 
 import pytest
 
+from _utils import TEST_DIRS
+from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("flush", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_pipe(tmp_path, config, output_type, flush):
+def test_file_rw_pipe(tmp_path: str, config: Config, output_type: str, flush: bool):
     """
     Test the flush functionality of the WriteToFileStage.
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+    out_file = os.path.join(tmp_path, f'results.{output_type}')
 
     # This currently works because the FileSourceStage doesn't use the builtin open function, but WriteToFileStage does
     mock_open = mock.mock_open()

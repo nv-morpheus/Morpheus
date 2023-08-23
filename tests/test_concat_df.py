@@ -16,10 +16,10 @@
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.usefixtures("config")
