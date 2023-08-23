@@ -26,7 +26,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import importlib
 import os
 import sys
@@ -166,9 +166,8 @@ autodoc_mock_imports = [
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "morpheus.utils.nvt.mutate.annotate",
     "nvtabular",
-    "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
+    "pandas",
     "tensorrt",
     "torch",
     "tqdm",
