@@ -21,6 +21,8 @@ import pytest
 from utils import TEST_DIRS
 from utils import import_or_skip
 
+# pylint: disable=unused-argument, redefined-outer-name
+
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
                "installing these additional dependencies")
@@ -132,9 +134,11 @@ def test_data():
 
     assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
 
-    yield dict(index=index,
-               client_data=client_data,
-               merchant_data=merchant_data,
-               df=df,
-               expected_nodes=expected_nodes,
-               expected_edges=expected_edges)
+    yield {
+        "index": index,
+        "client_data": client_data,
+        "merchant_data": merchant_data,
+        "df": df,
+        "expected_nodes": expected_nodes,
+        "expected_edges": expected_edges
+    }

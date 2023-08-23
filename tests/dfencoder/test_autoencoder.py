@@ -30,6 +30,8 @@ from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
 from utils.dataset_manager import DatasetManager
 
+# pylint: disable=redefined-outer-name
+
 # Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
 
@@ -83,13 +85,13 @@ def train_df(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
 
 def compare_numeric_features(features, expected_features):
     assert sorted(features.keys()) == sorted(expected_features.keys())
-    for (ft, expected_vals) in expected_features.items():
-        ae_vals = features[ft]
+    for (feature, expected_vals) in expected_features.items():
+        ae_vals = features[feature]
         assert round(ae_vals['mean'], 2) == expected_vals['mean'], \
-            f"Mean value of feature:{ft} does not match {round(ae_vals['mean'], 2)}!= {expected_vals['mean']}"
+            f"Mean value of feature:{feature} does not match {round(ae_vals['mean'], 2)}!= {expected_vals['mean']}"
 
         assert round(ae_vals['std'], 2) == expected_vals['std'], \
-            f"Mean value of feature:{ft} does not match {round(ae_vals['std'], 2)}!= {expected_vals['std']}"
+            f"Mean value of feature:{feature} does not match {round(ae_vals['std'], 2)}!= {expected_vals['std']}"
 
         assert isinstance(ae_vals['scaler'], expected_vals['scaler_cls'])
 
@@ -107,58 +109,58 @@ def test_ohe():
 
 
 def test_compute_embedding_size():
-    for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert ae_module._compute_embedding_size(input) == expected
+    for (inp, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
+        assert ae_module._compute_embedding_size(inp) == expected
 
 
 def test_complete_layer_constructor():
-    cc = ae_module.CompleteLayer(4, 5)
-    assert len(cc.layers) == 1
-    assert isinstance(cc.layers[0], torch.nn.Linear)
-    assert cc.layers[0].in_features == 4
-    assert cc.layers[0].out_features == 5
+    layer = ae_module.CompleteLayer(4, 5)
+    assert len(layer.layers) == 1
+    assert isinstance(layer.layers[0], torch.nn.Linear)
+    assert layer.layers[0].in_features == 4
+    assert layer.layers[0].out_features == 5
 
-    cc = ae_module.CompleteLayer(4, 5, activation='tanh')
-    assert len(cc.layers) == 2
-    assert cc.layers[1] is torch.tanh
+    layer = ae_module.CompleteLayer(4, 5, activation='tanh')
+    assert len(layer.layers) == 2
+    assert layer.layers[1] is torch.tanh
 
-    cc = ae_module.CompleteLayer(4, 5, dropout=0.2)
-    assert len(cc.layers) == 2
-    assert isinstance(cc.layers[1], torch.nn.Dropout)
-    assert cc.layers[1].p == 0.2
+    layer = ae_module.CompleteLayer(4, 5, dropout=0.2)
+    assert len(layer.layers) == 2
+    assert isinstance(layer.layers[1], torch.nn.Dropout)
+    assert layer.layers[1].p == 0.2
 
-    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
-    assert len(cc.layers) == 3
-    assert isinstance(cc.layers[0], torch.nn.Linear)
-    assert cc.layers[0].in_features == 6
-    assert cc.layers[0].out_features == 11
-    assert cc.layers[1] is torch.sigmoid
-    assert isinstance(cc.layers[2], torch.nn.Dropout)
-    assert cc.layers[2].p == 0.3
+    layer = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    assert len(layer.layers) == 3
+    assert isinstance(layer.layers[0], torch.nn.Linear)
+    assert layer.layers[0].in_features == 6
+    assert layer.layers[0].out_features == 11
+    assert layer.layers[1] is torch.sigmoid
+    assert isinstance(layer.layers[2], torch.nn.Dropout)
+    assert layer.layers[2].p == 0.3
 
 
 def test_complete_layer_interpret_activation():
-    cc = ae_module.CompleteLayer(4, 5)
-    assert cc.interpret_activation('elu') is torch.nn.functional.elu
+    layer = ae_module.CompleteLayer(4, 5)
+    assert layer.interpret_activation('elu') is torch.nn.functional.elu
 
     # Test for bad activation, this really does raise the base Exception class.
     with pytest.raises(Exception):
-        cc.interpret_activation()
+        layer.interpret_activation()
 
     with pytest.raises(Exception):
-        cc.interpret_activation("does_not_exist")
+        layer.interpret_activation("does_not_exist")
 
-    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid')
-    cc.interpret_activation() is torch.sigmoid
+    layer = ae_module.CompleteLayer(6, 11, activation='sigmoid')
+    assert layer.interpret_activation() is torch.sigmoid
 
 
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
     # Setting dropout probability to 0. The results of dropout our deterministic, but are only
     # consistent when run on the same GPU.
-    cc = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
-    t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
-    results = cc.forward(t)
+    layer = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
+    tensor = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
+    results = layer.forward(tensor)
     expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
                              [1.0000, 0.9995, 1.0000, 0.9417, 1.0000], [1.0000, 1.0000, 1.0000, 0.9806, 1.0000]],
                             dtype=torch.float32)
@@ -274,13 +276,13 @@ def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFr
     all_feature_names = sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS)
 
     assert sorted(train_ae.feature_loss_stats.keys()) == all_feature_names
-    for ft in train_ae.feature_loss_stats.values():
-        assert isinstance(ft['scaler'], scalers.StandardScaler)
+    for feature in train_ae.feature_loss_stats.values():
+        assert isinstance(feature['scaler'], scalers.StandardScaler)
 
     assert isinstance(train_ae.optim, torch.optim.SGD)
     assert isinstance(train_ae.lr_decay, torch.optim.lr_scheduler.ExponentialLR)
     assert train_ae.lr_decay.gamma == 0.99
-    train_ae.optim is train_ae.lr_decay.optimizer
+    assert train_ae.optim is train_ae.lr_decay.optimizer
 
 
 def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
@@ -299,7 +301,8 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
         """A helper class for mocking the `_validate_dataframe` method in the `AutoEncoder` class."""
 
         def __init__(self, orig_losses, swapped_loss=1.0):
-            """ Initialization.
+            """
+            Initialization.
 
             Parameters:
             -----------
@@ -314,7 +317,7 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
             # counter to keep track of the number of times the mocked `_validate_dataframe` method has been called
             self.count = 0
 
-        def mocked_validate_dataframe(self, *args, **kwargs):
+        def mocked_validate_dataframe(self, *args, **kwargs):  # pylint: disable=unused-argument
             """
             A mocked version of the `_validate_dataframe` method in the `AutoEncoder` class for testing early stopping.
 
@@ -361,7 +364,7 @@ def test_auto_encoder_get_anomaly_score_losses(train_ae: autoencoder.AutoEncoder
     row_cnt = 10
     # create a dummy DataFrame with categorical features
     data = {
-        'num_1': [i for i in range(row_cnt)],
+        'num_1': list(range(row_cnt)),
         'num_2': [i / 2 for i in range(row_cnt)],
         'num_3': [i / 2 for i in range(row_cnt)],
         'bool_1': [i % 2 == 0 for i in range(row_cnt)],
@@ -385,7 +388,7 @@ def test_auto_encoder_get_anomaly_score_losses_no_cat_feats(train_ae: autoencode
     # create a dummy DataFrame with numerical and boolean features only
     row_cnt = 10
     data = {
-        'num_1': [i for i in range(row_cnt)],
+        'num_1': list(range(row_cnt)),
         'bool_1': [i % 2 == 0 for i in range(row_cnt)],
         'bool_2': [i % 3 == 0 for i in range(row_cnt)]
     }
@@ -410,13 +413,13 @@ def test_auto_encoder_prepare_df(train_ae: autoencoder.AutoEncoder, train_df: pd
 
     assert isinstance(prepared_df, EncoderDataFrame)
 
-    for (i, ft) in enumerate(NUMERIC_COLS):
+    for feature in NUMERIC_COLS:
         scaler = scalers.StandardScaler()
-        scaler.fit(train_df[ft].values)
-        expected_values = scaler.transform(train_df[ft].values.copy())
+        scaler.fit(train_df[feature].values)
+        expected_values = scaler.transform(train_df[feature].values.copy())
 
-        assert (prepared_df[ft].values == expected_values).all(), \
-            f"Values for feature {ft} do not match {prepared_df[ft]} != {expected_values}"
+        assert (prepared_df[feature].values == expected_values).all(), \
+            f"Values for feature {feature} do not match {prepared_df[feature]} != {expected_values}"
 
     # Bin features should remain the same when the input is already boolean, this DF only has one
     assert (prepared_df.ts_anomaly == train_df.ts_anomaly).all()
@@ -447,11 +450,11 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     train_ae.fit(train_df, epochs=1)
     results = train_ae.get_results(train_df)
 
-    for ft in sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS):
-        assert ft in results.columns
-        assert f'{ft}_pred' in results.columns
-        assert f'{ft}_loss' in results.columns
-        assert f'{ft}_z_loss' in results.columns
+    for feature in sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS):
+        assert feature in results.columns
+        assert f'{feature}_pred' in results.columns
+        assert f'{feature}_loss' in results.columns
+        assert f'{feature}_z_loss' in results.columns
 
     assert 'max_abs_z' in results.columns
     assert 'mean_abs_z' in results.columns

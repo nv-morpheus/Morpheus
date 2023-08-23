@@ -31,7 +31,9 @@ from utils import TEST_DIRS
 def test_constructor(config: Config):
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
-    date_conversion_func = lambda x: x  # noqa E731
+    def date_conversion_func(x):
+        return x
+
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
                                 'M',
@@ -77,7 +79,7 @@ def test_on_data(config: Config):
 
     stage = DFPFileBatcherStage(config, date_conversion_func)
 
-    assert stage.on_data([]) == []
+    assert not stage.on_data([])
 
     test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1')
     file_specs = fsspec.open_files(os.path.join(test_data_dir, '*.json'))
@@ -100,12 +102,13 @@ def test_on_data(config: Config):
     expected_10_26_files = sorted(f.path
                                   for f in fsspec.open_files(os.path.join(test_data_dir, '*_2022-01-30_10-26*.json')))
 
-    (b1, b2) = batches
-    assert sorted(f.path for f in b1[0]) == expected_10_25_files
-    assert b1[1] == 2
+    batch1 = batches[0]
+    batch2 = batches[1]
+    assert sorted(f.path for f in batch1[0]) == expected_10_25_files
+    assert batch1[1] == 2
 
-    assert sorted(f.path for f in b2[0]) == expected_10_26_files
-    assert b2[1] == 2
+    assert sorted(f.path for f in batch2[0]) == expected_10_26_files
+    assert batch2[1] == 2
 
     # Test with a start time that excludes some files
     stage = DFPFileBatcherStage(config,
