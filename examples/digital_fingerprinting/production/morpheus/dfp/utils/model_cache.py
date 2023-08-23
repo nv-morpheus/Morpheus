@@ -330,14 +330,13 @@ class ModelManager:
             logger.error("Deadlock when trying to acquire model cache lock")
             raise RuntimeError("Deadlock when trying to acquire model cache lock") from e
 
-    def load_user_model_cache(self, user_id: str, fallback_user_ids: typing.List[str] = None) -> UserModelMap:
-        if (fallback_user_ids is None):
-            fallback_user_ids = []
-
     def load_user_model_cache(self,
                               user_id: str,
                               timeout: float,
                               fallback_user_ids: typing.List[str] = []) -> UserModelMap:
+        if (fallback_user_ids is None):
+            fallback_user_ids = []
+
         try:
             with timed_acquire(self._user_model_cache_lock, timeout=timeout):
 
