@@ -192,20 +192,18 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("manual_seed")
+@pytest.mark.usefixtures("manual_seed", "config")
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py')
 ])
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
-def test_log_parsing_inference_stage_convert_one_response(
-        config: Config,  # pylint: disable=unused-argument
-        import_mod: typing.List[types.ModuleType],
-        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-        mess_offset,
-        mess_count,
-        offset,
-        count):
+def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.List[types.ModuleType],
+                                                          filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
+                                                          mess_offset,
+                                                          mess_count,
+                                                          offset,
+                                                          count):
     inference_mod, messages_mod = import_mod
 
     ttl_count = len(filter_probs_df)

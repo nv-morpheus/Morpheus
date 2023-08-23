@@ -30,5 +30,5 @@ class IW(inference_stage.InferenceWorker):
         super().calc_output_dims(_)
         return (1, 2)
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
-        pass
+    def process(self, _: MultiInferenceMessage, __: typing.Callable[[TensorMemory], None]):
+        raise NotImplementedError

@@ -162,14 +162,16 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
     mock_requests.get.assert_called_once_with(
         url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/mlflow/databricks/registered-models/get",
         headers=expected_headers,
-        params={"name": experiment_name})
+        params={"name": experiment_name},
+        timeout=10)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
         url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/preview/permissions/registered-models/test_id",
         headers=expected_headers,
-        json={'access_control_list': expected_acl})
+        json={'access_control_list': expected_acl},
+        timeout=10)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):

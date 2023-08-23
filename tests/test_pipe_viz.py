@@ -34,6 +34,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
+# pylint: disable=redefined-outer-name
 @pytest.mark.use_cudf
 @pytest.fixture(name="viz_pipeline", scope="function")
 def viz_pipeline_fixture(config, filter_probs_df):

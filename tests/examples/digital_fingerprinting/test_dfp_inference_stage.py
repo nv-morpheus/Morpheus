@@ -24,6 +24,8 @@ from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.logger import set_log_level
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(name="mock_mlflow_client", autouse=True)
 def mock_mlflow_client_fixture():
@@ -47,7 +49,7 @@ def test_constructor(config: Config, mock_mlflow_client: mock.MagicMock, mock_mo
     assert isinstance(stage, SinglePortStage)
     assert stage._client is mock_mlflow_client
     assert stage._fallback_user == config.ae.fallback_username
-    assert stage._model_cache == {}
+    assert not stage._model_cache
     assert stage._model_manager is mock_model_manager
 
     mock_mlflow_client.assert_called_once()

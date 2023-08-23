@@ -50,7 +50,9 @@ def file_specs_fixture(test_data_dir: str):
 def test_constructor(config: Config):
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 
-    date_conversion_func = lambda x: x  # noqa E731 # pylint: disable=unnecessary-lambda-assignment
+    def date_conversion_func(x):
+        return x
+
     stage = DFPFileBatcherStage(config,
                                 date_conversion_func,
                                 'M',

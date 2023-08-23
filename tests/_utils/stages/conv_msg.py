@@ -72,7 +72,7 @@ class ConvMsg(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _conv_message(self, msg: MultiMessage) -> MultiResponseMessage:
+    def _conv_message(self, message: MultiMessage) -> MultiResponseMessage:
         if self._expected_data is not None:
             if (isinstance(self._expected_data, cudf.DataFrame)):
                 df = self._expected_data.copy(deep=True)
@@ -81,9 +81,9 @@ class ConvMsg(SinglePortStage):
 
         else:
             if self._columns is not None:
-                df = msg.get_meta(self._columns)
+                df = message.get_meta(self._columns)
             else:
-                df = msg.get_meta()
+                df = message.get_meta()
 
         if self._empty_probs:
             probs = cp.zeros([len(df), 3], 'float')
@@ -91,7 +91,7 @@ class ConvMsg(SinglePortStage):
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
-        return MultiResponseMessage.from_message(msg, memory=memory)
+        return MultiResponseMessage.from_message(message, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name, ops.map(self._conv_message))

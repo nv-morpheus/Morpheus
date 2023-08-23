@@ -150,7 +150,8 @@ def test_get_meta(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]):
 # pylint:disable=unused-argument
 
 
-def test_get_meta_dup_index(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_get_meta_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 1, 5: 4})
@@ -159,7 +160,8 @@ def test_get_meta_dup_index(use_cpp: bool, dataset: DatasetManager):
     _test_get_meta(df)
 
 
-def test_set_meta(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_set_meta(dataset: DatasetManager):
     df_saved = dataset.pandas["filter_probs.csv"]
 
     meta = MessageMeta(dataset["filter_probs.csv"])
@@ -233,11 +235,13 @@ def _test_set_meta_new_column(df: typing.Union[cudf.DataFrame, pd.DataFrame], df
     DatasetManager.assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-def test_set_meta_new_column(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_set_meta_new_column(dataset: DatasetManager):
     _test_set_meta_new_column(dataset["filter_probs.csv"], dataset.default_df_type)
 
 
-def test_set_meta_new_column_dup_index(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_set_meta_new_column_dup_index(dataset: DatasetManager):
     # Duplicate some indices before creating the meta
     df = dataset.replace_index(dataset["filter_probs.csv"], replace_ids={3: 4, 5: 4})
 
@@ -304,7 +308,8 @@ def test_copy_ranges(filter_probs_df: typing.Union[cudf.DataFrame, pd.DataFrame]
     _test_copy_ranges(filter_probs_df)
 
 
-def test_copy_ranges_dup_index(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_copy_ranges_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
@@ -427,7 +432,8 @@ def test_get_slice_values(filter_probs_df: cudf.DataFrame):
     _test_get_slice_values(filter_probs_df)
 
 
-def test_get_slice_values_dup_index(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_get_slice_values_dup_index(dataset: DatasetManager):
 
     # Duplicate some indices before creating the meta
     df = dataset.dup_index(dataset["filter_probs.csv"], count=4)
@@ -483,6 +489,9 @@ def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
 
 
 def test_from_message(filter_probs_df: cudf.DataFrame):
+
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
 
     meta = MessageMeta(filter_probs_df)
 
@@ -704,7 +713,12 @@ def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-def test_tensor_slicing(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_tensor_slicing(dataset: DatasetManager):
+
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     filter_probs_df = dataset["filter_probs.csv"]
     mess_len = len(filter_probs_df)
 

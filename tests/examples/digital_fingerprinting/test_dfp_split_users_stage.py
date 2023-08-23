@@ -32,9 +32,9 @@ def test_constructor(config: Config):
     assert isinstance(stage, SinglePortStage)
     assert not stage._include_generic
     assert stage._include_individual
-    assert stage._skip_users == []
-    assert stage._only_users == []
-    assert stage._user_index_map == {}
+    assert not stage._skip_users
+    assert not stage._only_users
+    assert not stage._user_index_map
 
     stage = DFPSplitUsersStage(config,
                                include_generic=True,
@@ -46,7 +46,7 @@ def test_constructor(config: Config):
     assert not stage._include_individual
     assert stage._skip_users == ['a', 'b']
     assert stage._only_users == ['c', 'd']
-    assert stage._user_index_map == {}
+    assert not stage._user_index_map
 
 
 @pytest.mark.parametrize('include_generic', [True, False])
@@ -117,4 +117,4 @@ def test_extract_users_none_to_empty(config: Config):
     from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
 
     stage = DFPSplitUsersStage(config, include_generic=True, include_individual=True)
-    assert stage.extract_users(None) == []
+    assert not stage.extract_users(None)

@@ -135,24 +135,27 @@ def test_mark_both(cpp_from_marker: bool):
 
 
 # === Marks and Config ===
-# pylint: disable=unused-argument
 @pytest.mark.use_cpp
-def test_mark_and_config_use_cpp(config: Config):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_use_cpp():
     assert CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.use_python
-def test_mark_and_config_use_python(config: Config):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_use_python():
     assert not CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.use_cpp
 @pytest.mark.use_python
-def test_mark_and_config_both(config: Config, cpp_from_marker: bool):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_both(cpp_from_marker: bool):
     assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
-def test_mark_and_config_neither(config: Config, cpp_from_marker: bool):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_neither(cpp_from_marker: bool):
     assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
@@ -180,11 +183,13 @@ def test_fixture_neither(use_cpp: bool):
 
 
 # === Config Fixture ===
-def test_config_fixture_no_cpp(config_no_cpp: Config):
+@pytest.mark.usefixtures("config_no_cpp")
+def test_config_fixture_no_cpp():
     assert not CppConfig.get_should_use_cpp()
 
 
-def test_config_fixture_only_cpp(config_only_cpp: Config):
+@pytest.mark.usefixtures("config_only_cpp")
+def test_config_fixture_only_cpp():
     assert CppConfig.get_should_use_cpp()
 
 

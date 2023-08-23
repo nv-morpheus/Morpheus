@@ -49,7 +49,7 @@ def test_constructor(config: Config):
     assert stage._min_increment == 7
     assert stage._max_history == 100
     assert stage._cache_dir.startswith('/test/path/cache')
-    assert stage._user_cache_map == {}
+    assert not stage._user_cache_map
 
 
 def test_get_user_cache_hit(config: Config):

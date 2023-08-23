@@ -299,7 +299,8 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
         """A helper class for mocking the `_validate_dataframe` method in the `AutoEncoder` class."""
 
         def __init__(self, orig_losses, swapped_loss=1.0):
-            """ Initialization.
+            """
+            Initialization.
 
             Parameters:
             -----------

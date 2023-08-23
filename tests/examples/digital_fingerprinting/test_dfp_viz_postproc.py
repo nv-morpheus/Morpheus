@@ -22,6 +22,8 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(name="dfp_multi_message")
 def dfp_multi_message_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
@@ -61,7 +63,7 @@ def test_constructor(config: Config):
     assert stage._period == 'M'
     assert stage._output_dir == '/fake/test/dir'
     assert stage._output_prefix == 'test_prefix'
-    assert stage._output_filenames == []
+    assert not stage._output_filenames
 
 
 def test_postprocess(

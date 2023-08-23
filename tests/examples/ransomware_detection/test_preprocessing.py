@@ -36,7 +36,7 @@ class TestPreprocessingRWStage:
         assert isinstance(stage, PreprocessBaseStage)
         assert stage._feature_columns == rwd_conf['model_features']
         assert stage._features_len == len(rwd_conf['model_features'])
-        assert stage._snapshot_dict == {}
+        assert not stage._snapshot_dict
         assert len(stage._padding_data) == len(rwd_conf['model_features']) * 6
         for i in stage._padding_data:
             assert i == 0
@@ -59,7 +59,7 @@ class TestPreprocessingRWStage:
 
         window = 3
         ids = [17, 19, 21, 23, 31, 33]
-        assert stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window) == []
+        assert len(stage._sliding_window_offsets(list(reversed(ids)), len(ids), window=window)) == 0
 
     def test_sliding_window_offsets_errors(self, config: Config, rwd_conf: dict):
         from stages.preprocessing import PreprocessingRWStage
@@ -149,16 +149,20 @@ class TestPreprocessingRWStage:
         dataset_pandas.assert_compare_df(df.fillna(''), expected_df)
 
     def test_pre_process_batch(self, config: Config, rwd_conf: dict, dataset_pandas: DatasetManager):
+
+        # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+        # pylint: disable=no-member
+
         from stages.preprocessing import PreprocessingRWStage
         df = dataset_pandas['examples/ransomware_detection/dask_results.csv']
         df['source_pid_process'] = 'appshield_' + df.pid_process
         expected_df = df.copy(deep=True).fillna('')
         meta = AppShieldMessageMeta(df=df, source='tests')
-        multi_message = MultiMessage(meta=meta)
+        multi = MultiMessage(meta=meta)
 
         sliding_window = 4
         stage = PreprocessingRWStage(config, feature_columns=rwd_conf['model_features'], sliding_window=sliding_window)
-        results = stage._pre_process_batch(multi_message)
+        results: MultiInferenceFILMessage = stage._pre_process_batch(multi)
         assert isinstance(results, MultiInferenceFILMessage)
 
         expected_df['sequence'] = ['dummy' for _ in range(len(expected_df))]

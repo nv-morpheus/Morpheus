@@ -135,10 +135,10 @@ def test_data():
     assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
 
     yield {
-        'index': index,
-        'client_data': client_data,
-        'merchant_data': merchant_data,
-        'df': df,
-        'expected_nodes': expected_nodes,
-        'expected_edges': expected_edges
+        "index": index,
+        "client_data": client_data,
+        "merchant_data": merchant_data,
+        "df": df,
+        "expected_nodes": expected_nodes,
+        "expected_edges": expected_edges
     }
