@@ -7,13 +7,13 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/duo-inference-data/*.json"
+				"../../../../examples/data/dfp/duo-inference-data/*.json"
 			  ]
 			}
 		  }
 		],
 		"metadata": {
-		  "data_type": "streaming"
+		  "data_type": "payload"
 		}
 	  }
 	]

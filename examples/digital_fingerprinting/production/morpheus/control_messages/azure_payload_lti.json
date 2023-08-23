@@ -7,7 +7,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/duo-training-data/*.json"
+				"../../../../examples/data/dfp/azure-training-data/*.json"
 			  ]
 			}
 		  },
@@ -34,7 +34,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/duo-inference-data/*.json"
+				"../../../../examples/data/dfp/azure-inference-data/*.json"
 			  ]
 			}
 		  },
@@ -46,12 +46,12 @@
 		],
 		"metadata": {
 		  "data_type": "payload",
-		  "batching_options": {"period": "T", "start_time": "2022-08-01", "end_time": "2022-08-31"},
+		  "batching_options": {"period": "D", "start_time": "2022-08-01", "end_time": "2022-08-31"},
 		  "file_to_df_options":{
 				"parser_kwargs": {
 					"lines": false, "orient": "records"
 				}
-			}
+			  }
 		}
 	  }
 	]

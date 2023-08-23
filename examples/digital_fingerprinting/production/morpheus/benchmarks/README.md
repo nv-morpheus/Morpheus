@@ -36,7 +36,7 @@ To provide your own calibration or use other `pytest-benchmark` features with th
 Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `dfp_modules_duo_payload_inference`:
 ```
 "test_dfp_modules_duo_payload_inference_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_inference.json",
+		"message_path": "../control_messages/duo_payload_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
