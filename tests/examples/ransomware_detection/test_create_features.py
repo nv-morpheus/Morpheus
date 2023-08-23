@@ -21,13 +21,13 @@ from unittest import mock
 
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python

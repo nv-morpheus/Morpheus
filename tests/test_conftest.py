@@ -20,13 +20,12 @@ import pytest
 
 import cudf
 
-from morpheus.config import Config
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import CppConfig
-from utils.dataset_manager import DatasetManager
 
 
-@pytest.fixture(scope="function")
-def cpp_from_marker(request: pytest.FixtureRequest) -> bool:
+@pytest.fixture(name="cpp_from_marker", scope="function")
+def cpp_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
 
     use_cpp = len([x for x in request.node.iter_markers("use_cpp") if "added_by" in x.kwargs]) > 0
     use_python = len([x for x in request.node.iter_markers("use_python") if "added_by" in x.kwargs]) > 0
@@ -36,8 +35,8 @@ def cpp_from_marker(request: pytest.FixtureRequest) -> bool:
     return use_cpp
 
 
-@pytest.fixture(scope="function")
-def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
+@pytest.fixture(name="df_type_from_marker", scope="function")
+def df_type_from_marker_fixture(request: pytest.FixtureRequest) -> bool:
 
     use_cudf = len([x for x in request.node.iter_markers("use_cudf") if "added_by" in x.kwargs]) > 0
     use_pandas = len([x for x in request.node.iter_markers("use_pandas") if "added_by" in x.kwargs]) > 0
@@ -74,15 +73,15 @@ def test_dataset_both(dataset: DatasetManager):
 
 
 def test_dataset_manager_singleton(df_type: typing.Literal["cudf", "pandas"]):
-    dm = DatasetManager(df_type=df_type)
-    assert dm.default_df_type == df_type
-    assert getattr(dm, df_type) is dm
-    assert DatasetManager(df_type=df_type) is dm
+    dataset = DatasetManager(df_type=df_type)
+    assert dataset.default_df_type == df_type
+    assert getattr(dataset, df_type) is dataset
+    assert DatasetManager(df_type=df_type) is dataset
 
     alt_type = DatasetManager.get_alt_df_type(df_type=df_type)
     assert df_type != alt_type
-    assert DatasetManager(alt_type) is not dm
-    assert getattr(dm, alt_type) is not dm
+    assert DatasetManager(alt_type) is not dataset
+    assert getattr(dataset, alt_type) is not dataset
 
 
 def test_dataset_dftype(dataset: DatasetManager):
@@ -136,22 +135,26 @@ def test_mark_both(cpp_from_marker: bool):
 
 # === Marks and Config ===
 @pytest.mark.use_cpp
-def test_mark_and_config_use_cpp(config: Config):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_use_cpp():
     assert CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.use_python
-def test_mark_and_config_use_python(config: Config):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_use_python():
     assert not CppConfig.get_should_use_cpp()
 
 
 @pytest.mark.use_cpp
 @pytest.mark.use_python
-def test_mark_and_config_both(config: Config, cpp_from_marker: bool):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_both(cpp_from_marker: bool):
     assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
-def test_mark_and_config_neither(config: Config, cpp_from_marker: bool):
+@pytest.mark.usefixtures("config")
+def test_mark_and_config_neither(cpp_from_marker: bool):
     assert CppConfig.get_should_use_cpp() == cpp_from_marker
 
 
@@ -179,11 +182,13 @@ def test_fixture_neither(use_cpp: bool):
 
 
 # === Config Fixture ===
-def test_config_fixture_no_cpp(config_no_cpp: Config):
+@pytest.mark.usefixtures("config_no_cpp")
+def test_config_fixture_no_cpp():
     assert not CppConfig.get_should_use_cpp()
 
 
-def test_config_fixture_only_cpp(config_only_cpp: Config):
+@pytest.mark.usefixtures("config_only_cpp")
+def test_config_fixture_only_cpp():
     assert CppConfig.get_should_use_cpp()
 
 

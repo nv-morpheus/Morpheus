@@ -21,7 +21,6 @@ import numpy as np
 
 import cudf
 
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config
@@ -98,17 +97,17 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         df["timestamp"] = x.get_meta("timestamp").astype("int64")
 
         def round_time_kernel(timestamp, rollup_time, secs):
-            for i, ts in enumerate(timestamp):
-                x = ts % secs
+            for i, time in enumerate(timestamp):
+                x = time % secs
                 y = 1 - (x / secs)
                 delta = y * secs
-                rollup_time[i] = ts + delta
+                rollup_time[i] = time + delta
 
         df = df.apply_rows(
             round_time_kernel,
             incols=["timestamp"],
-            outcols=dict(rollup_time=np.int64),
-            kwargs=dict(secs=60000000),
+            outcols={"rollup_time": np.int64},
+            kwargs={"secs": 60000000},
         )
 
         df["rollup_time"] = cudf.to_datetime(df["rollup_time"], unit="us").dt.strftime("%Y-%m-%d %H:%M")
@@ -149,7 +148,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         # syn/all - Number of flows with SYN flag to all flows
         # fin/all - Number of flows with FIN flag to all flows
         for col in ["rst", "syn", "fin"]:
-            dst_col = "{}/all".format(col)
+            dst_col = f"{col}/all"
             grouped_df[dst_col] = grouped_df[col] / grouped_df["all"]
 
         # Adding index column to retain the order of input messages.
@@ -197,4 +196,4 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
                        req_cols=self.req_cols)
 
     def _get_preprocess_node(self, builder: mrc.Builder):
-        return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)
+        raise NotImplementedError("C++ node not implemented for this stage")

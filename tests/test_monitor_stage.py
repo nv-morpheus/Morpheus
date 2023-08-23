@@ -27,6 +27,7 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
@@ -35,7 +36,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import set_log_level
-from utils import TEST_DIRS
 
 
 def test_constructor(config):
