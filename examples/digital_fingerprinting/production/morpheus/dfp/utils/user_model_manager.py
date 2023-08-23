@@ -22,7 +22,7 @@ from morpheus.config import Config
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.seed import manual_seed
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPDataLoader:
@@ -92,26 +92,29 @@ class InsufficientDataError(RuntimeError):
     pass
 
 
-class UserModelManager(object):
+class UserModelManager:
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  user_id: str,
                  save_model: bool,
                  epochs: int,
                  min_history: int,
                  max_history: int,
                  seed: int = None,
-                 batch_files: typing.List = [],
+                 batch_files: typing.List = None,
                  model_class=AutoEncoder) -> None:
         super().__init__()
+
+        if (batch_files is None):
+            batch_files = []
 
         self._user_id = user_id
         self._history: pd.DataFrame = None
         self._min_history: int = min_history
         self._max_history: int = max_history
         self._seed: int = seed
-        self._feature_columns = c.ae.feature_columns
+        self._feature_columns = config.ae.feature_columns
         self._epochs = epochs
         self._save_model = save_model
         self._model_class = model_class
@@ -178,7 +181,7 @@ class UserModelManager(object):
 
             return model, loader.get_sample_frame()
         except InsufficientDataError:
-            logger.debug(f"Training AE model for user: '{self._user_id}... Skipped")
+            logger.debug("Training AE model for user: '%s... Skipped", self._user_id)
             return None, None
         except Exception:
             logger.exception("Error during training for user: %s", self._user_id, exc_info=True)

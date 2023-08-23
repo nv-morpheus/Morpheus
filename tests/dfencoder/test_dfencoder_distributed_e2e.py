@@ -25,11 +25,11 @@ import os
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from morpheus.models.dfencoder.multiprocessing import start_processes
-from utils import TEST_DIRS
 
 # import torch
 
@@ -200,7 +200,8 @@ def _run_test(rank, world_size):
         # make sure the user baseline is modeled well enough so the minimum and median z scores
         # from inference are in range
         assert min(inf_res.mean_abs_z) < 1
-        assert (np.median(inf_res.mean_abs_z) < 100
-                )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+
+        # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+        assert (np.median(inf_res.mean_abs_z) < 100)
 
     cleanup_dist()

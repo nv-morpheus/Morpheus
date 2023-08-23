@@ -16,9 +16,9 @@ import pandas as pd
 import pytest
 from nvtabular.ops.operator import ColumnSelector
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.utils.nvt.transforms import json_flatten
 from morpheus.utils.type_aliases import DataFrameType
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture(name="data")

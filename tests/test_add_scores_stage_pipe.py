@@ -20,6 +20,9 @@ import pytest
 
 import cudf
 
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -30,9 +33,6 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
-from utils.dataset_manager import DatasetManager
-from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.slow
@@ -59,7 +59,7 @@ def test_add_scores_stage_pipe(config: Config,
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
@@ -84,7 +84,7 @@ def test_add_scores_stage_multi_segment_pipe(config: Config, dataset_cudf: Datas
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddScoresStage(config))
     pipe.add_segment_boundary(MultiResponseMessage)
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()

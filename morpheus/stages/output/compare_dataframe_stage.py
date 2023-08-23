@@ -26,7 +26,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.utils import compare_df
+from morpheus.utils import compare_df as compare_df_module
 from morpheus.utils import concat_df
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -121,13 +121,13 @@ class CompareDataFrameStage(InMemorySinkStage):
         if self._reset_index:
             combined_df.reset_index(inplace=True)
 
-        results = compare_df.compare_df(self._compare_df,
-                                        combined_df,
-                                        include_columns=self._include_columns,
-                                        exclude_columns=self._exclude_columns,
-                                        replace_idx=self._index_col,
-                                        abs_tol=self._abs_tol,
-                                        rel_tol=self._rel_tol)
+        results = compare_df_module.compare_df(self._compare_df,
+                                               combined_df,
+                                               include_columns=self._include_columns,
+                                               exclude_columns=self._exclude_columns,
+                                               replace_idx=self._index_col,
+                                               abs_tol=self._abs_tol,
+                                               rel_tol=self._rel_tol)
 
         if clear:
             self.clear()

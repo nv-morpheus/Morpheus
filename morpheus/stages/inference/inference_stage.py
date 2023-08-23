@@ -105,7 +105,7 @@ class InferenceWorker:
         pass
 
     @abstractmethod
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         Main inference processing function. This function will be called once for each mini-batch. Once the inference is
         complete, the `cb` parameter should be used to set the response value. The callback can be called
@@ -115,7 +115,7 @@ class InferenceWorker:
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Mini-batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
+        callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
 
         """
@@ -236,17 +236,17 @@ class InferenceStage(MultiMessageStage):
 
                     completion_future = mrc.Future()
 
-                    def set_output_fut(resp: TensorMemory, b, batch_future: mrc.Future):
+                    def set_output_fut(resp: TensorMemory, inner_batch, batch_future: mrc.Future):
                         nonlocal outstanding_requests
-                        m = self._convert_one_response(output_message, b, resp)
+                        mess = self._convert_one_response(output_message, inner_batch, resp)
 
                         outstanding_requests -= 1
 
-                        batch_future.set_result(m)
+                        batch_future.set_result(mess)
 
                     fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
+                    worker.process(batch, partial(set_output_fut, inner_batch=batch, batch_future=completion_future))
 
                 for f in fut_list:
                     f.result()
@@ -270,17 +270,13 @@ class InferenceStage(MultiMessageStage):
 
         return stream, out_type
 
-    def _start(self):
-
-        return super()._start()
-
     def stop(self):
         """
         Stops the inference workers and closes the inference queue.
         """
 
-        for w in self._workers:
-            w.stop()
+        for worker in self._workers:
+            worker.stop()
 
         # Now stop the _inf_queue to unblock workers
         self._inf_queue.close()
@@ -294,8 +290,8 @@ class InferenceStage(MultiMessageStage):
         self._inf_queue.join()
 
         # Join all workers
-        for w in self._workers:
-            await w.join()
+        for worker in self._workers:
+            await worker.join()
 
         return await super().join()
 
@@ -337,7 +333,8 @@ class InferenceStage(MultiMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_response(x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]):
+    def _convert_response(
+            x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]) -> MultiResponseMessage:
 
         # Convert a MultiInferenceMessage into a MultiResponseMessage
         in_message = x[0]

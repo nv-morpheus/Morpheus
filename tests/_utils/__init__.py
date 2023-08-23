@@ -22,6 +22,7 @@ import types
 import typing
 from unittest import mock
 
+import numpy as np
 import pytest
 
 from morpheus.io.deserializers import read_file_to_df
@@ -186,3 +187,13 @@ def make_mock_response(mock_request_session: mock.MagicMock,
     mock_request_session.return_value = mock_request_session
     mock_request_session.request.return_value = mock_response
     return mock_response
+
+
+def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
+    mock_infer_result = mock.MagicMock()
+    mock_infer_result.as_numpy.side_effect = inf_results
+
+    def async_infer(callback=None, **_):
+        callback(mock_infer_result, None)
+
+    return async_infer

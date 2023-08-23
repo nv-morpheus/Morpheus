@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=invalid-name
 """
 Example Usage:
 python sid-minibert-20230424-script.py \
@@ -21,11 +23,11 @@ python sid-minibert-20230424-script.py \
 """
 
 import argparse
+
+import torch
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import multilabel_confusion_matrix
-
-import torch
 from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
@@ -152,7 +154,7 @@ def train_model(model_dir, train_dataloader, idx2label):
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        print("Train loss: {}".format(tr_loss / nb_tr_steps))
+        print(f"Train loss: {tr_loss / nb_tr_steps}")
     return model
 
 
@@ -198,9 +200,9 @@ def model_eval(model, val_dataloader, idx2label):
     print('F1 Macro Validation Accuracy: ', val_f1_accuracy)
     print('Flat Validation Accuracy: ', val_flat_accuracy)
 
-    for label, cf in zip(list(idx2label.values()), multilabel_confusion_matrix(true_bools, pred_bools)):
+    for label, cfm in zip(list(idx2label.values()), multilabel_confusion_matrix(true_bools, pred_bools)):
         print(label)
-        print(cf)
+        print(cfm)
 
 
 def main():

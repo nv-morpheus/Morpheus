@@ -80,9 +80,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  bootstrap_servers: str,
-                 input_topic: typing.List[str] = ["test_pcap"],
+                 input_topic: typing.List[str] = None,
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
@@ -91,7 +91,10 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                  auto_offset_reset: AutoOffsetReset = AutoOffsetReset.LATEST,
                  stop_after: int = 0,
                  async_commits: bool = True):
-        super().__init__(c)
+        super().__init__(config)
+
+        if (input_topic is None):
+            input_topic = ["test_pcap"]
 
         if isinstance(auto_offset_reset, AutoOffsetReset):
             auto_offset_reset = auto_offset_reset.value
@@ -110,8 +113,8 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # Remove duplicate topics if there are any.
         self._topics = list(set(input_topic))
-        self._max_batch_size = c.pipeline_batch_size
-        self._max_concurrent = c.num_threads
+        self._max_batch_size = config.pipeline_batch_size
+        self._max_concurrent = config.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
         self._stop_after = stop_after
@@ -160,7 +163,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                 buffer.seek(0)
                 df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
             except Exception as e:
-                logger.error("Error parsing payload into a dataframe : {}".format(e))
+                logger.error("Error parsing payload into a dataframe : %s", e)
             finally:
                 if (not self._disable_commit):
                     for msg in batch:
