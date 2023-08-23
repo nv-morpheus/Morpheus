@@ -30,52 +30,52 @@ def test_control_message_init():
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_tasks():
     message = messages.ControlMessage()
-    assert len(message.tasks) == 0
+    assert len(message.get_tasks()) == 0
 
     # Ensure a single task can be read
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
-    assert len(message.tasks) == 1
-    assert "type_a" in message.tasks
-    assert len(message.tasks["type_a"]) == 1
-    assert message.tasks["type_a"][0]["key_x"] == "value_x"
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 1
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
 
     # Ensure multiple task types of different types can be read
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_b", {"key_y": "value_y"})
-    assert len(message.tasks) == 2
-    assert "type_a" in message.tasks
-    assert len(message.tasks["type_a"]) == 1
-    assert message.tasks["type_a"][0]["key_x"] == "value_x"
-    assert "type_b" in message.tasks
-    assert len(message.tasks["type_b"]) == 1
-    assert message.tasks["type_b"][0]["key_y"] == "value_y"
+    assert len(message.get_tasks()) == 2
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 1
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert "type_b" in message.get_tasks()
+    assert len(message.get_tasks()["type_b"]) == 1
+    assert message.get_tasks()["type_b"][0]["key_y"] == "value_y"
 
     # Ensure multiple task types of the same type can be read
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_a", {"key_y": "value_y"})
-    assert len(message.tasks) == 1
-    assert "type_a" in message.tasks
-    assert len(message.tasks["type_a"]) == 2
-    assert message.tasks["type_a"][0]["key_x"] == "value_x"
-    assert message.tasks["type_a"][1]["key_y"] == "value_y"
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 2
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
 
     # Ensure the underlying tasks cannot are not modified
     message = messages.ControlMessage()
-    tasks = message.tasks
+    tasks = message.get_tasks()
     tasks["type_a"] = [{"key_x", "value_x"}]
-    assert len(message.tasks) == 0
+    assert len(message.get_tasks()) == 0
 
     message = messages.ControlMessage()
     message.add_task("type_a", {"key_x": "value_x"})
     message.add_task("type_a", {"key_y": "value_y"})
-    assert len(message.tasks) == 1
-    assert "type_a" in message.tasks
-    assert len(message.tasks["type_a"]) == 2
-    assert message.tasks["type_a"][0]["key_x"] == "value_x"
-    assert message.tasks["type_a"][1]["key_y"] == "value_y"
+    assert len(message.get_tasks()) == 1
+    assert "type_a" in message.get_tasks()
+    assert len(message.get_tasks()["type_a"]) == 2
+    assert message.get_tasks()["type_a"][0]["key_x"] == "value_x"
+    assert message.get_tasks()["type_a"][1]["key_y"] == "value_y"
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -85,22 +85,22 @@ def test_control_message_metadata():
     message.set_metadata("key_y", "value_y")
     message.set_metadata("key_z", "value_z")
 
-    assert len(message.metadata) == 3
+    assert len(message.get_metadata()) == 3
 
-    assert "key_x" in message.metadata
-    assert "key_y" in message.metadata
-    assert "key_z" in message.metadata
-    assert message.metadata["key_x"] == "value_x"
-    assert message.metadata["key_y"] == "value_y"
-    assert message.metadata["key_z"] == "value_z"
+    assert "key_x" in message.get_metadata()
+    assert "key_y" in message.get_metadata()
+    assert "key_z" in message.get_metadata()
+    assert message.get_metadata()["key_x"] == "value_x"
+    assert message.get_metadata()["key_y"] == "value_y"
+    assert message.get_metadata()["key_z"] == "value_z"
 
     message.set_metadata("key_y", "value_yy")
 
-    assert message.metadata["key_y"] == "value_yy"
+    assert message.get_metadata()["key_y"] == "value_yy"
 
-    message.metadata["not_mutable"] = 5
+    message.get_metadata()["not_mutable"] = 5
 
-    assert "not_mutable" not in message.metadata
+    assert "not_mutable" not in message.get_metadata()
 
 
 @pytest.mark.usefixtures("config_only_cpp")

@@ -21,6 +21,7 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 
@@ -72,19 +73,14 @@ void ControlMessage::add_task(const std::string& task_type, const nlohmann::json
     m_tasks[task_type].push_back(task);
 }
 
-const nlohmann::json& ControlMessage::tasks() const
-{
-    return m_tasks;
-}
-
-const nlohmann::json& ControlMessage::metadata() const
-{
-    return m_config["metadata"];
-}
-
 bool ControlMessage::has_task(const std::string& task_type) const
 {
     return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
+}
+
+const nlohmann::json& ControlMessage::get_tasks() const
+{
+    return m_tasks;
 }
 
 const nlohmann::json ControlMessage::list_metadata() const
@@ -112,6 +108,11 @@ void ControlMessage::set_metadata(const std::string& key, const nlohmann::json& 
 bool ControlMessage::has_metadata(const std::string& key) const
 {
     return m_config["metadata"].contains(key);
+}
+
+const nlohmann::json& ControlMessage::get_metadata() const
+{
+    return m_config["metadata"];
 }
 
 const nlohmann::json ControlMessage::get_metadata(const std::string& key) const
@@ -214,21 +215,16 @@ void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task
     self.add_task(task_type, mrc::pymrc::cast_from_pyobject(task));
 }
 
-py::dict ControlMessageProxy::tasks(ControlMessage& self)
-{
-    return mrc::pymrc::cast_from_json(self.tasks());
-}
-
-py::dict ControlMessageProxy::metadata(ControlMessage& self)
-{
-    return mrc::pymrc::cast_from_json(self.metadata());
-}
-
 py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
 {
     auto task = self.remove_task(task_type);
 
     return mrc::pymrc::cast_from_json(task);
+}
+
+py::dict ControlMessageProxy::get_tasks(ControlMessage& self)
+{
+    return mrc::pymrc::cast_from_json(self.get_tasks());
 }
 
 py::dict ControlMessageProxy::config(ControlMessage& self)
@@ -238,11 +234,14 @@ py::dict ControlMessageProxy::config(ControlMessage& self)
     return dict;
 }
 
-py::object ControlMessageProxy::get_metadata(ControlMessage& self, const std::string& key)
+py::object ControlMessageProxy::get_metadata(ControlMessage& self, std::optional<std::string> const& key)
 {
-    auto dict = mrc::pymrc::cast_from_json(self.get_metadata(key));
-
-    return dict;
+    if (key == std::nullopt)
+    {
+        return mrc::pymrc::cast_from_json(self.get_metadata());
+    }
+    
+    return mrc::pymrc::cast_from_json(self.get_metadata(key.value()));
 }
 
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)

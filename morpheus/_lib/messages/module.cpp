@@ -378,14 +378,13 @@ PYBIND11_MODULE(messages, _module)
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
+        .def("get_tasks", &ControlMessageProxy::get_tasks)
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
-        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))
+        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key")=py::none())
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
-        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
-        .def_property_readonly("tasks", &ControlMessageProxy::tasks)
-        .def_property_readonly("metadata", &ControlMessageProxy::metadata);
+        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))
