@@ -14,9 +14,9 @@
 # limitations under the License.
 
 import pandas as pd
+import pytest
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df

@@ -21,7 +21,6 @@ import pytest
 import cudf
 
 from _utils.dataset_manager import DatasetManager
-from morpheus.config import Config
 from morpheus.config import CppConfig
 
 
