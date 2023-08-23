@@ -22,6 +22,7 @@ from morpheus.messages import MessageMeta
 from utils.dataset_manager import DatasetManager
 
 
+@pytest.mark.usefixtures("manual_seed")
 @pytest.mark.use_python
 class TestClassificationStage:
 
