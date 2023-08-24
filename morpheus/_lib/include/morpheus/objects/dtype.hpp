@@ -79,7 +79,7 @@ enum class TypeId : int32_t
 };
 
 /****** DType****************************************/
-struct DType  // TODO(dagardner): move to dtype.hpp
+struct DType
 {
     DType(TypeId tid);
     DType(const DType& dtype) = default;
