@@ -31,6 +31,7 @@ from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.http_utils import HTTPMethod
+from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.producer_consumer_queue import Closed
 
@@ -128,18 +129,21 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports C++ nodes."""
         return True
 
-    def _parse_payload(self, payload: str) -> typing.Tuple[int, str]:
+    def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
             # engine='cudf' is needed when lines=False to avoid using pandas
             df = cudf.read_json(payload, lines=self._lines, engine='cudf')
         except Exception as e:
             err_msg = "Error occurred converting HTTP payload to Dataframe"
             logger.error("%s: %s", err_msg, e)
-            return (HTTPStatus.BAD_REQUEST.value, MimeTypes.TEXT.value, err_msg, None)
+            return HttpParseResponse(status_code=HTTPStatus.BAD_REQUEST.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
 
         try:
             self._queue.put(df, block=True, timeout=self._queue_timeout)
-            return (self._accept_status.value, MimeTypes.TEXT.value, "", None)
+            return HttpParseResponse(status_code=self._accept_status.value, content_type=MimeTypes.TEXT.value, body="")
+
         except (queue.Full, Closed) as e:
             err_msg = "HTTP payload queue is "
             if isinstance(e, queue.Full):
@@ -147,11 +151,16 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
             else:
                 err_msg += "closed"
             logger.error(err_msg)
-            return (HTTPStatus.SERVICE_UNAVAILABLE.value, MimeTypes.TEXT.value, err_msg, None)
+            return HttpParseResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
+
         except Exception as e:
             err_msg = "Error occurred while pushing payload to queue"
             logger.error("%s: %s", err_msg, e)
-            return (HTTPStatus.INTERNAL_SERVER_ERROR.value, MimeTypes.TEXT.value, err_msg, None)
+            return HttpParseResponse(status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         from morpheus.common import FiberQueue

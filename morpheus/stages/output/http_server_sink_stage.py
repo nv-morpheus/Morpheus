@@ -34,6 +34,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.http_utils import HTTPMethod
+from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -182,7 +183,7 @@ class HttpServerSinkStage(SinglePortStage):
         except Exception as e:
             logger.error("Unknown error in request callback: %s", e)
 
-    def _request_handler(self, _: str) -> typing.Tuple[int, str]:
+    def _request_handler(self, _: str) -> HttpParseResponse:
         num_rows = 0
         data_frames = []
         try:
@@ -195,7 +196,9 @@ class HttpServerSinkStage(SinglePortStage):
         except Exception as e:
             err_msg = "Unknown error processing request"
             logger.error(f"{err_msg}: %s", e)
-            return (HTTPStatus.INTERNAL_SERVER_ERROR.value, MimeTypes.TEXT.value, err_msg, None)
+            return HttpParseResponse(status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                                     content_type=MimeTypes.TEXT.value,
+                                     body=err_msg)
 
         if (len(data_frames) > 0):
             df = data_frames[0]
@@ -203,12 +206,12 @@ class HttpServerSinkStage(SinglePortStage):
                 cat_fn = pd.concat if isinstance(df, pd.DataFrame) else cudf.concat
                 df = cat_fn(data_frames)
 
-            return (HTTPStatus.OK.value,
-                    self._content_type,
-                    self._df_serializer_fn(df),
-                    partial(self._request_callback, df, len(data_frames)))
+            return HttpParseResponse(status_code=HTTPStatus.OK.value,
+                                     content_type=self._content_type,
+                                     body=self._df_serializer_fn(df),
+                                     on_complete_callback=partial(self._request_callback, df, len(data_frames)))
 
-        return (HTTPStatus.NO_CONTENT.value, MimeTypes.TEXT.value, "", None)
+        return HttpParseResponse(status_code=HTTPStatus.NO_CONTENT.value, content_type=MimeTypes.TEXT.value, body="")
 
     def _partition_df(self, df: DataFrameType) -> typing.Iterable[DataFrameType]:
         """

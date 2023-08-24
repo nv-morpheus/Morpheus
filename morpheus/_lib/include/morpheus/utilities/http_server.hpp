@@ -50,7 +50,7 @@ using on_complete_cb_fn_t = std::function<void(const boost::system::error_code& 
 
 /**
  * @brief A tuple consisting of the HTTP status code, mime type to be used for the Content-Type header, and the body of
- * the response.
+ * the response and optionally a callback function.
  */
 using parse_status_t = std::tuple<unsigned /*http status code*/,
                                   std::string /* Content-Type of response */,

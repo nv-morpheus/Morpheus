@@ -39,9 +39,43 @@ class HTTPMethod(Enum):
     PUT = "PUT"
 
 
+HttpOnCompleteCallbackFn = typing.Callable[[bool, str], None]
+"""
+Optional callback function invoked by `morpheus.common.HttpServer` once a response is completed,
+either successfully or encountered a failure.
+
+Parameters
+----------
+has_error: bool
+    `False` if the response was successfully sent to the client, `True` if an error was encountered.
+
+error_message: str
+    When `has_error` is `True`, this will contain the error message. Otherwise, it will be an empty string.
+"""
+
+
+class HttpParseResponse(typing.NamedTuple):
+    """
+    A tuple consisting of the HTTP status code, mime type to be used for the Content-Type header, the body of the
+    response and an optional callback function to be invoked once the response is completed.
+
+    The values for `status_code` and `content_type` are strings rather than `http.HTTPStatus` and `MimeTypes` because
+    these are intended to be consumed directly by the C++ implementation of `morpheus.common.HttpServer`. Instead these
+    enums should be used to construct `HttpParseResponse` instances:
+
+    >>> http_parse_response = HttpParseResponse(status_code=HTTPStatus.OK.value,
+    ...                                         content_type=MimeTypes.TEXT.value,
+    ...                                         body="OK",
+    ...                                         on_complete_callback=None)
+    >>>
+    """
+    status_code: int
+    content_type: str
+    body: str
+    on_complete_callback: typing.Optional[HttpOnCompleteCallbackFn] = None
+
+
 # pylint: disable=inconsistent-return-statements
-
-
 def request_with_retry(
     request_kwargs: dict,
     requests_session: typing.Optional[requests.Session] = None,
