@@ -55,7 +55,6 @@ class DFPTraining(SinglePortStage):
         self._model_kwargs = {
             "encoder_layers": [512, 500],  # layers of the encoding part
             "decoder_layers": [512],  # layers of the decoding part
-            "distributed_training": False,
             "activation": 'relu',  # activation function
             "swap_p": 0.2,  # noise parameter
             "lr": 0.001,  # learning rate
@@ -66,7 +65,7 @@ class DFPTraining(SinglePortStage):
             "scaler": 'standard',  # feature scaling method
             "min_cats": 1,  # cut off for minority categories
             "progress_bar": False,
-            "device": "cuda",
+            "device": "cuda"
         }
 
         # Update the defaults
