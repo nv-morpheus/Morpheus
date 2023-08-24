@@ -263,7 +263,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   TensorIndex stop_after,
+                                   std::size_t stop_after,
                                    bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
@@ -282,7 +282,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   TensorIndex stop_after,
+                                   std::size_t stop_after,
                                    bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
@@ -298,7 +298,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> sub) -> void {
-        TensorIndex records_emitted = 0;
+        std::size_t records_emitted = 0;
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
             [this]() { return this->batch_timeout_ms(); },
@@ -618,7 +618,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commit,
     bool disable_pre_filtering,
-    TensorIndex stop_after,
+    std::size_t stop_after,
     bool async_commits)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(name,
@@ -643,7 +643,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commit,
     bool disable_pre_filtering,
-    TensorIndex stop_after,
+    std::size_t stop_after,
     bool async_commits)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(name,

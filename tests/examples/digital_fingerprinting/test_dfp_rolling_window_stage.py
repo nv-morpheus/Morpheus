@@ -19,9 +19,9 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils.dataset_manager import DatasetManager
 
 
 def build_mock_user_cache(user_id: str = 'test_user',

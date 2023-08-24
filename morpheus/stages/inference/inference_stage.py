@@ -333,7 +333,8 @@ class InferenceStage(MultiMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_response(x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]):
+    def _convert_response(
+            x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[TensorMemory]]) -> MultiResponseMessage:
 
         # Convert a MultiInferenceMessage into a MultiResponseMessage
         in_message = x[0]

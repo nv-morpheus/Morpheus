@@ -16,12 +16,12 @@
 
 import pytest
 
+from _utils import assert_results
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils import assert_results
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions

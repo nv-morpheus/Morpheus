@@ -18,15 +18,15 @@ import os
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils.dataset_manager import DatasetManager
 
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture
-def dfp_multi_message(config, dfp_multi_message):
+@pytest.fixture(name="dfp_multi_message")
+def dfp_multi_message_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
     # Fill in some values for columns that the stage is looking for
     with dfp_multi_message.meta.mutable_dataframe() as df:
         step = (len(df) + 1) * 100
@@ -38,8 +38,8 @@ def dfp_multi_message(config, dfp_multi_message):
     yield dfp_multi_message
 
 
-@pytest.fixture
-def expected_df(config, dfp_multi_message):
+@pytest.fixture(name="expected_df")
+def expected_df_fixture(config: Config, dfp_multi_message: "MultiDFPMessage"):  # noqa F821
     df = dfp_multi_message.meta.copy_dataframe()
     expected_df = pd.DataFrame()
     expected_df["user"] = df[config.ae.userid_column_name]

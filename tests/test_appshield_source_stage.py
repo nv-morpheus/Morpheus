@@ -22,10 +22,10 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from _utils import TEST_DIRS
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from utils import TEST_DIRS
 
 
 @pytest.mark.parametrize('cols_include',

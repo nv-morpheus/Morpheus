@@ -20,6 +20,9 @@ import os
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import assert_path_exists
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
@@ -32,9 +35,6 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import assert_path_exists
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.slow

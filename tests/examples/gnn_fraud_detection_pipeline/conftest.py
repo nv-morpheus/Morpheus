@@ -18,10 +18,8 @@ import sys
 
 import pytest
 
-from utils import TEST_DIRS
-from utils import import_or_skip
-
-# pylint: disable=unused-argument, redefined-outer-name
+from _utils import TEST_DIRS
+from _utils import import_or_skip
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
@@ -52,8 +50,8 @@ def tensorflow(fail_missing: bool):
     yield import_or_skip("tensorflow", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture
-def config(config):
+@pytest.fixture(name="config")
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """
@@ -62,8 +60,8 @@ def config(config):
     yield config
 
 
-@pytest.fixture
-def example_dir():
+@pytest.fixture(name="example_dir")
+def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
 
 
@@ -85,8 +83,10 @@ def xgb_model(example_dir: str):
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
-@pytest.fixture
-def gnn_fraud_detection_pipeline(request: pytest.FixtureRequest, restore_sys_path, reset_plugins):
+@pytest.fixture(name="gnn_fraud_detection_pipeline")
+def gnn_fraud_detection_pipeline_fixture(
+        restore_sys_path,  # pylint: disable=unused-argument
+        reset_plugins):  # pylint: disable=unused-argument
     sys.path.append(TEST_DIRS.examples_dir)
     import gnn_fraud_detection_pipeline
     yield gnn_fraud_detection_pipeline

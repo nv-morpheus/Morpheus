@@ -21,13 +21,11 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
-
-# pylint: disable=redefined-outer-name
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
 MockedMLFlow = namedtuple("MockedMLFlow",
@@ -47,15 +45,15 @@ MockedMLFlow = namedtuple("MockedMLFlow",
                           ])
 
 
-@pytest.fixture
-def databricks_env(restore_environ):  # pylint: disable=unused-argument
+@pytest.fixture(name="databricks_env")
+def databricks_env_fixture(restore_environ):  # pylint: disable=unused-argument
     env = {'DATABRICKS_HOST': 'https://test_host', 'DATABRICKS_TOKEN': 'test_token'}
     os.environ.update(env)
     yield env
 
 
-@pytest.fixture
-def mock_requests():
+@pytest.fixture(name="mock_requests")
+def mock_requests_fixture():
     with mock.patch("requests.get") as mock_requests_get, mock.patch("requests.patch") as mock_requests_patch:
         mock_response = mock.MagicMock(status_code=200)
         mock_response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
@@ -63,8 +61,8 @@ def mock_requests():
         yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
 
 
-@pytest.fixture
-def mock_mlflow():
+@pytest.fixture(name="mock_mlflow")
+def mock_mlflow_fixture():
     with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
           mock.patch("dfp.stages.dfp_mlflow_model_writer.ModelSignature") as mock_model_signature,
           mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
