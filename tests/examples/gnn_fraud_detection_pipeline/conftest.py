@@ -135,16 +135,29 @@ def test_data_fixture():
 
     df = cudf.DataFrame(df_data, index=index)
 
-    # TODO: Tad need some help here, graph data isn't what I was expecting, client nodes appear to be replaced with ints 0-8
-    expected_nodes = set(index + client_data + merchant_data)
-    assert len(expected_nodes) == 29  # ensuring test data & assumptions are correct
+    # Create indexed nodeId
+    meta_cols = ['index','client_node', 'merchant_node']
+    for col in meta_cols:
+        df[col] = cudf.CategoricalIndex(df[col]).codes
 
-    expected_edges = set()
-    for data in (client_data, merchant_data):
-        for (i, val) in enumerate(data):
-            expected_edges.add((val, index[i]))
+    # Collect expected nodes, since hetero nodes could share same index
+    # We use dict of node_name:index
+    expected_nodes = {}
+    for col in meta_cols:
+        expected_nodes[col] = set(df[col].to_arrow().tolist())
 
-    assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
+    # ensuring test data & assumptions are correct
+    assert sum(len(expected_nodes[node]) for node in expected_nodes) == 29
+
+
+    expected_edges = {'buy':[], 'sell':[]}
+    for i in range(df.shape[0]):
+        for key,val in {'sell': 'client_node','buy':'merchant_node'}.items():
+            expected_edges[key].append([df[val].iloc[i],i])
+
+    # ensuring test data & assumptions are correct
+    assert sum(len(expected_edges[edge]) for edge in expected_edges) == 20
+
 
     yield {
         "index": index,
