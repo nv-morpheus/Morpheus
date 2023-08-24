@@ -150,10 +150,10 @@ def test_data_fixture():
     assert sum(len(expected_nodes[node]) for node in expected_nodes) == 29
 
 
-    expected_edges = {'buy':[], 'sell':[]}
+    expected_edges = {'buy': [], 'sell':[]}
     for i in range(df.shape[0]):
         for key,val in {'sell': 'client_node','buy':'merchant_node'}.items():
-            expected_edges[key].append([df[val].iloc[i],i])
+            expected_edges[key].append([df[val].iloc[i], i])
 
     # ensuring test data & assumptions are correct
     assert sum(len(expected_edges[edge]) for edge in expected_edges) == 20
@@ -161,8 +161,8 @@ def test_data_fixture():
 
     yield {
         "index": index,
-        "client_data": client_data,
-        "merchant_data": merchant_data,
+        "client_data": df['client_node'].to_arrow().tolist(),
+        "merchant_data": df['merchant_node'].to_arrow().tolist(),
         "df": df,
         "expected_nodes": expected_nodes,
         "expected_edges": expected_edges
