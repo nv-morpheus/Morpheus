@@ -179,7 +179,6 @@ ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
 COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -237,8 +236,6 @@ ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-# Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
@@ -257,7 +254,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia \
         -c pytorch \
         -c conda-forge morpheus &&\
-    # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
 
 # Only copy specific files/folders over that are necessary for runtime

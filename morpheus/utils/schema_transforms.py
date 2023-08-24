@@ -23,20 +23,20 @@ import cudf
 
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import PreparedDFInfo
-from morpheus.utils.nvt import register_morpheus_extensions
-from morpheus.utils.nvt.patches import patch_numpy_dtype_registry
+from morpheus.utils.nvt import patches
+from morpheus.utils.nvt.extensions import morpheus_ext
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
     # Apply patches to NVT
     # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
     # ========================================================================
-    patch_numpy_dtype_registry()
+    patches.patch_numpy_dtype_registry()
     # ========================================================================
 
     # Add morpheus conversion mappings
     # ========================================================================
-    register_morpheus_extensions()
+    morpheus_ext.register_morpheus_extensions()
     # =========================================================================
 
 logger = logging.getLogger(__name__)

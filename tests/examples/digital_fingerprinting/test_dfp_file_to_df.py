@@ -109,17 +109,17 @@ def test_constructor(config: Config):
 @mock.patch('morpheus.utils.downloader.Distributed')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.process_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
-                                                          mock_distributed: mock.MagicMock,
-                                                          mock_obf_to_df: mock.MagicMock,
-                                                          mock_dask_cluster: mock.MagicMock,
-                                                          mock_dask_client: mock.MagicMock,
-                                                          mock_mp_gc: mock.MagicMock,
-                                                          config: Config,
-                                                          dl_type: str,
-                                                          use_convert_to_dataframe: bool,
-                                                          tmp_path: str,
-                                                          single_file_obj: fsspec.core.OpenFile,
-                                                          dataset_pandas: DatasetManager):
+                                                       mock_distributed: mock.MagicMock,
+                                                       mock_obf_to_df: mock.MagicMock,
+                                                       mock_dask_cluster: mock.MagicMock,
+                                                       mock_dask_client: mock.MagicMock,
+                                                       mock_mp_gc: mock.MagicMock,
+                                                       config: Config,
+                                                       dl_type: str,
+                                                       use_convert_to_dataframe: bool,
+                                                       tmp_path: str,
+                                                       single_file_obj: fsspec.core.OpenFile,
+                                                       dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -214,15 +214,15 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str,
-                                                         dataset_pandas: DatasetManager):
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      mock_mp_gc: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str,
+                                                      dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -284,14 +284,14 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str):
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      mock_mp_gc: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client

@@ -219,7 +219,7 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     mock_requests.get.side_effect = RuntimeError("test error")
 
-    stage = DFPMLFlowModelWriterStage(config)
+    stage = DFPMLFlowModelWriterStage(config, timeout=10)
     stage._controller._apply_model_permissions("test_experiment")
 
     # This method just catches and logs any errors
