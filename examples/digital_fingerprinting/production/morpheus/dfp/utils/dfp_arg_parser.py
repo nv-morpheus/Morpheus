@@ -36,6 +36,7 @@ class TimeFields:
 class DFPArgParser:
 
     class Decorators:
+
         @classmethod
         def verify_init(cls, func):
 
