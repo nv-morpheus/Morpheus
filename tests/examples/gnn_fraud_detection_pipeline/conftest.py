@@ -18,9 +18,9 @@ import sys
 
 import pytest
 
-from utils import TEST_DIRS
-from utils import import_or_skip
-from utils import remove_module
+from _utils import TEST_DIRS
+from _utils import import_or_skip
+from _utils import remove_module
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
@@ -56,6 +56,7 @@ def config_fixture(config):
 @pytest.fixture(name="manual_seed", scope="function")
 def manual_seed_fixture(manual_seed):
     import dgl
+
     def seed_fn(seed=42):
         manual_seed(seed)
         dgl.seed(seed)
@@ -87,9 +88,10 @@ def xgb_model_fixture(model_dir: str):
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
+@pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
 @pytest.fixture(name="ex_in_sys_path", autouse=True)
-def ex_in_sys_path_fixture(example_dir: str, restore_sys_path, reset_plugins):  # pylint: disable=unused-argument
-    sys.path.append(example_dir)
+def ex_in_sys_path_fixture(example_dir: str):
+    sys.path.insert(0, example_dir)
 
 
 @pytest.fixture(autouse=True)

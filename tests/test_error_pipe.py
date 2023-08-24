@@ -21,6 +21,7 @@ import mrc
 import pandas as pd
 import pytest
 
+from _utils.stages.error_raiser import ErrorRaiserStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -28,7 +29,6 @@ from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils.stages.error_raiser import ErrorRaiserStage
 
 
 class InMemSourceXStage(SingleOutputSource):

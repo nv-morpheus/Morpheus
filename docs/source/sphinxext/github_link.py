@@ -100,7 +100,11 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 
     # Unwrap the object to get the correct source
     # file in case that is wrapped by a decorator
-    obj = inspect.unwrap(obj)
+    # Note: objects mocked by autodoc_mock_imports will raise an exception when we try to unwrap them
+    try:
+        obj = inspect.unwrap(obj)
+    except:  # noqa: E722
+        return
 
     fn: str = None
     lineno: str = None

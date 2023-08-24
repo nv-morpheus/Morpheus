@@ -24,3 +24,5 @@ sudo apt install -y openjdk-11-jre-headless
 
 # Download kafka
 python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py
+
+pip install pytest-kafka==0.6.0

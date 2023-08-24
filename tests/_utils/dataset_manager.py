@@ -24,11 +24,11 @@ import pandas as pd
 
 import cudf as cdf  # rename to avoid clash with property method
 
+from _utils import TEST_DIRS
+from _utils import assert_results
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils import compare_df
 from morpheus.utils.type_aliases import DataFrameType
-from utils import TEST_DIRS
-from utils import assert_results
 
 
 class DatasetManager:

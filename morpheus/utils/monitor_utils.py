@@ -69,9 +69,10 @@ class MorpheusTqdmMonitor(TMonitor):
                     # Remove accidental long-lived strong reference
                     del instance
                 if instances != self.get_instances():  # pragma: nocover
-                    logging.warn("Set changed size during iteration" + " (see https://github.com/tqdm/tqdm/issues/481)",
-                                 TqdmSynchronisationWarning,
-                                 stacklevel=2)
+                    logging.warning("Set changed size during iteration" +
+                                    " (see https://github.com/tqdm/tqdm/issues/481)",
+                                    TqdmSynchronisationWarning,
+                                    stacklevel=2)
                 # Remove accidental long-lived strong references
                 del instances
 
@@ -194,7 +195,7 @@ class MonitorController:
         self._determine_count_fn = determine_count_fn
         self._tqdm_class = tqdm_class if tqdm_class else MorpheusTqdm
 
-        if isinstance(log_level, LogLevels):
+        if isinstance(log_level, LogLevels):  # pylint: disable=isinstance-second-argument-not-valid-type
             log_level = log_level.value
 
         self._log_level = log_level
@@ -268,9 +269,9 @@ class MonitorController:
             return x
 
         # Do our best to determine the count
-        n = self._determine_count_fn(x)
+        count = self._determine_count_fn(x)
 
-        self._progress.update(n=n)
+        self._progress.update(n=count)
 
         return x
 
@@ -290,6 +291,8 @@ class MonitorController:
 
         """
 
+        # pylint: disable=too-many-return-statements
+
         if (x is None):
             return None
 
@@ -299,29 +302,35 @@ class MonitorController:
 
         if (isinstance(x, cudf.DataFrame)):
             return lambda y: len(y.index)
-        elif (isinstance(x, MultiMessage)):
+
+        if (isinstance(x, MultiMessage)):
             return lambda y: y.mess_count
-        elif (isinstance(x, MessageMeta)):
+
+        if (isinstance(x, MessageMeta)):
             return lambda y: y.count
-        elif isinstance(x, ControlMessage):
+
+        if isinstance(x, ControlMessage):
 
             def check_df(y):
                 df = y.payload().df
                 if df is not None:
                     return len(df)
-                else:
-                    return 0
+
+                return 0
 
             return check_df
-        elif (isinstance(x, list)):
+
+        if (isinstance(x, list)):
             item_count_fn = self.auto_count_fn(x[0])
             return lambda y: reduce(lambda sum, z, item_count_fn=item_count_fn: sum + item_count_fn(z), y, 0)
-        elif (isinstance(x, (str, fsspec.core.OpenFile))):
+
+        if (isinstance(x, (str, fsspec.core.OpenFile))):
             return lambda y: 1
-        elif (hasattr(x, "__len__")):
+
+        if (hasattr(x, "__len__")):
             return len  # Return len directly (same as `lambda y: len(y)`)
-        else:
-            raise NotImplementedError(f"Unsupported type: {type(x)}")
+
+        raise NotImplementedError(f"Unsupported type: {type(x)}")
 
     def sink_on_completed(self):
         """

@@ -23,14 +23,14 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiMessage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 def check_inf_message(msg: MultiInferenceFILMessage,

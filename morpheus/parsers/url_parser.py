@@ -129,7 +129,7 @@ def _verify_req_cols(req_cols, allowed_output_cols):
     """
     if req_cols is not None:
         if not req_cols.issubset(allowed_output_cols):
-            raise ValueError("Given req_cols must be subset of %s" % (allowed_output_cols))
+            raise ValueError(f"Given req_cols must be subset of {allowed_output_cols}")
     else:
         req_cols = allowed_output_cols
     return req_cols

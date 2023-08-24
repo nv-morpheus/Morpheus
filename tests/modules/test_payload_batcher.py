@@ -19,8 +19,7 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-# pylint: disable=unused-import
-import morpheus.modules  # noqa: F401
+import morpheus.modules  # noqa: F401 # pylint: disable=unused-import
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
