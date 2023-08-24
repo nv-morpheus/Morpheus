@@ -19,6 +19,7 @@ from io import StringIO
 import pytest
 
 import cudf
+import torch
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -40,8 +41,8 @@ class TestGraphConstructionStage:
     def test_process_message(self, dgl: types.ModuleType, config: Config, test_data: dict):
         from stages import graph_construction_stage
         df = test_data['df']
-        expected_nodes = test_data['exptected_nodes']
-        expected_edges = test_data['exptected_edges']
+        expected_nodes = test_data['expected_nodes']
+        expected_edges = test_data['expected_edges']
 
         # The stage wants a csv file from the first 5 rows
         training_data = StringIO(df.to_csv(index=False))
@@ -59,7 +60,6 @@ class TestGraphConstructionStage:
 
         assert isinstance(fgmm.graph, dgl.DGLGraph)
 
-
         # Since the graph has a reverse edge for each edge, one edge comparison is enough.
         buy_edges = fgmm.graph.edges(etype='buy')
         sell_edges = fgmm.graph.edges(etype='sell')
@@ -68,10 +68,10 @@ class TestGraphConstructionStage:
         exp_buy_edges = [torch.LongTensor(e).cuda() for e in zip(*expected_edges['buy'])]
         exp_sell_edges = [torch.LongTensor(e).cuda() for e in zip(*expected_edges['sell'])]
 
-        # Compare all edges types agree.
-        assert all(exp_buy_edges[0] ==buy_edges[0]) & all(exp_buy_edges[1]==buy_edges[1]) # buy edge
-        assert all(exp_sell_edges[0] == sell_edges[0]) & all(exp_sell_edges[1] == sell_edges[1]) # sell edge
+        # # Compare all edges types agree.
+        assert all(exp_buy_edges[0] == buy_edges[0]) & all(exp_buy_edges[1] == buy_edges[1])
+        assert all(exp_sell_edges[0] == sell_edges[0]) & all(exp_sell_edges[1] == sell_edges[1])
 
-        # Compare nodes.
+        # # Compare nodes.
         for node in ['client', 'merchant']:
-            assert fmm.graph.nodes(node).tolist() == list(expected_nodes[node + "_node"])
+            assert fgmm.graph.nodes(node).tolist() == list(expected_nodes[node + "_node"])
