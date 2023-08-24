@@ -19,8 +19,8 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.utils.controllers.rss_controller import RSSController
-from utils import TEST_DIRS
 
 test_urls = ["https://realpython.com/atom.xml", "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"]
 
@@ -65,7 +65,7 @@ def test_parse_feed_invalid_input(feed_input):
 
 
 @pytest.mark.parametrize("feed_input", test_urls + test_file_paths)
-def test_fetch_message_metas(feed_input):
+def test_fetch_dataframes(feed_input):
     controller = RSSController(feed_input=feed_input)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)

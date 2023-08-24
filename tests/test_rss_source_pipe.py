@@ -18,10 +18,10 @@ import os
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.rss_source_stage import RSSSourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python

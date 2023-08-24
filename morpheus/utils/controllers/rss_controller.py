@@ -105,6 +105,8 @@ class RSSController:
             if entry_accumulator:
                 df = self.create_dataframe(entry_accumulator)
                 yield df
+            else:
+                logger.debug("No new entries found.")
 
         except Exception as exc:
             raise Exception("Error fetching or processing feed entries: %s", exc)
