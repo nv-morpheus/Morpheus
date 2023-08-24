@@ -21,7 +21,9 @@ import sys
 import time
 import types
 import typing
+from unittest import mock
 
+import numpy as np
 import pytest
 
 from morpheus.io.deserializers import read_file_to_df
@@ -169,3 +171,13 @@ def remove_module(mod_to_remove: str):
     for mod_name in list(sys.modules.keys()):
         if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
             del sys.modules[mod_name]
+
+
+def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
+    mock_infer_result = mock.MagicMock()
+    mock_infer_result.as_numpy.side_effect = inf_results
+
+    def async_infer(callback=None, **_):
+        callback(mock_infer_result, None)
+
+    return async_infer

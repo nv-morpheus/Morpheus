@@ -16,7 +16,7 @@
 import typing
 
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import TensorMemory
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference import inference_stage
 
 

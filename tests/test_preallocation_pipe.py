@@ -22,6 +22,8 @@ from mrc.core import operators as ops
 
 import cudf
 
+from _utils import assert_results
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import MessageMeta
@@ -35,8 +37,6 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
-from utils.stages.conv_msg import ConvMsg
 
 
 class CheckPreAlloc(SinglePortStage):
@@ -61,13 +61,13 @@ class CheckPreAlloc(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _check_prealloc(self, message):
-        df = message.get_meta()
+    def _check_prealloc(self, msg: MultiMessage):
+        df = msg.get_meta()
         for label in self._class_labels:
             assert label in df.columns
             assert df[label].dtype == self._expected_type
 
-        return message
+        return msg
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, ops.map(self._check_prealloc))

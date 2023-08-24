@@ -19,19 +19,23 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
-from utils.dataset_manager import DatasetManager
+
+
+@pytest.fixture(name='config')
+def fixture_config(config: Config):
+    config.class_labels = ['frogs', 'lizards', 'toads']
+    config.feature_length = 12
+    yield config
 
 
 def test_constructor(config: Config):
-    config.class_labels = ['frogs', 'lizards', 'toads']
-    config.feature_length = 12
-
     stage = AddScoresStage(config)
     assert stage._class_labels == ['frogs', 'lizards', 'toads']
     assert stage._labels == ['frogs', 'lizards', 'toads']
@@ -43,11 +47,15 @@ def test_constructor(config: Config):
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
+
+def test_constructor_explicit_labels(config: Config):
     stage = AddScoresStage(config, labels=['lizards'], prefix='test_')
     assert stage._class_labels == ['frogs', 'lizards', 'toads']
     assert stage._labels == ['lizards']
     assert stage._idx2label == {1: 'test_lizards'}
 
+
+def test_constructor_errors(config: Config):
     with pytest.raises(AssertionError):
         AddScoresStage(config, labels=['missing'])
 

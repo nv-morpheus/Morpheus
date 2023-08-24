@@ -22,15 +22,13 @@ import pandas as pd
 import pytest
 import torch
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import AEFeatureScalar
 from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
-
-# pylint: disable=redefined-outer-name
 
 # Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
@@ -57,8 +55,8 @@ CAT_COLS = [
 NUMERIC_COLS = ['eventID', 'ae_anomaly_score']
 
 
-@pytest.fixture(scope="function")
-def train_ae():
+@pytest.fixture(name="train_ae", scope="function")
+def train_ae_fixture():
     """
     Construct an AutoEncoder instance with the same values used by `train_ae_stage`
     """
@@ -78,8 +76,8 @@ def train_ae():
     )
 
 
-@pytest.fixture(scope="function")
-def train_df(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
+@pytest.fixture(name="train_df", scope="function")
+def train_df_fixture(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
     yield dataset_pandas[os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")]
 
 
@@ -108,59 +106,59 @@ def test_ohe():
     assert torch.equal(results, expected.to("cuda", copy=True)), f"{results} != {expected}"
 
 
-def test_compute_embedding_size():
-    for (inp, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert ae_module._compute_embedding_size(inp) == expected
+@pytest.mark.parametrize("num_cats,expected", [(0, 0), (5, 4), (20, 9), (40000, 600)])
+def test_compute_embedding_size(num_cats: int, expected: int):
+    assert ae_module._compute_embedding_size(num_cats) == expected
 
 
 def test_complete_layer_constructor():
-    layer = ae_module.CompleteLayer(4, 5)
-    assert len(layer.layers) == 1
-    assert isinstance(layer.layers[0], torch.nn.Linear)
-    assert layer.layers[0].in_features == 4
-    assert layer.layers[0].out_features == 5
+    complete_layer = ae_module.CompleteLayer(4, 5)
+    assert len(complete_layer.layers) == 1
+    assert isinstance(complete_layer.layers[0], torch.nn.Linear)
+    assert complete_layer.layers[0].in_features == 4
+    assert complete_layer.layers[0].out_features == 5
 
-    layer = ae_module.CompleteLayer(4, 5, activation='tanh')
-    assert len(layer.layers) == 2
-    assert layer.layers[1] is torch.tanh
+    complete_layer = ae_module.CompleteLayer(4, 5, activation='tanh')
+    assert len(complete_layer.layers) == 2
+    assert complete_layer.layers[1] is torch.tanh
 
-    layer = ae_module.CompleteLayer(4, 5, dropout=0.2)
-    assert len(layer.layers) == 2
-    assert isinstance(layer.layers[1], torch.nn.Dropout)
-    assert layer.layers[1].p == 0.2
+    complete_layer = ae_module.CompleteLayer(4, 5, dropout=0.2)
+    assert len(complete_layer.layers) == 2
+    assert isinstance(complete_layer.layers[1], torch.nn.Dropout)
+    assert complete_layer.layers[1].p == 0.2
 
-    layer = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
-    assert len(layer.layers) == 3
-    assert isinstance(layer.layers[0], torch.nn.Linear)
-    assert layer.layers[0].in_features == 6
-    assert layer.layers[0].out_features == 11
-    assert layer.layers[1] is torch.sigmoid
-    assert isinstance(layer.layers[2], torch.nn.Dropout)
-    assert layer.layers[2].p == 0.3
+    complete_layer = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    assert len(complete_layer.layers) == 3
+    assert isinstance(complete_layer.layers[0], torch.nn.Linear)
+    assert complete_layer.layers[0].in_features == 6
+    assert complete_layer.layers[0].out_features == 11
+    assert complete_layer.layers[1] is torch.sigmoid
+    assert isinstance(complete_layer.layers[2], torch.nn.Dropout)
+    assert complete_layer.layers[2].p == 0.3
 
 
 def test_complete_layer_interpret_activation():
-    layer = ae_module.CompleteLayer(4, 5)
-    assert layer.interpret_activation('elu') is torch.nn.functional.elu
+    complete_layer = ae_module.CompleteLayer(4, 5)
+    assert complete_layer.interpret_activation('elu') is torch.nn.functional.elu
 
     # Test for bad activation, this really does raise the base Exception class.
     with pytest.raises(Exception):
-        layer.interpret_activation()
+        complete_layer.interpret_activation()
 
     with pytest.raises(Exception):
-        layer.interpret_activation("does_not_exist")
+        complete_layer.interpret_activation("does_not_exist")
 
-    layer = ae_module.CompleteLayer(6, 11, activation='sigmoid')
-    assert layer.interpret_activation() is torch.sigmoid
+    complete_layer = ae_module.CompleteLayer(6, 11, activation='sigmoid')
+    assert complete_layer.interpret_activation() is torch.sigmoid
 
 
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
     # Setting dropout probability to 0. The results of dropout our deterministic, but are only
     # consistent when run on the same GPU.
-    layer = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
+    complete_layer = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
     tensor = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
-    results = layer.forward(tensor)
+    results = complete_layer.forward(tensor)
     expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
                              [1.0000, 0.9995, 1.0000, 0.9417, 1.0000], [1.0000, 1.0000, 1.0000, 0.9806, 1.0000]],
                             dtype=torch.float32)

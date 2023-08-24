@@ -22,6 +22,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace morpheus {
@@ -83,6 +84,11 @@ class ControlMessage
     const nlohmann::json remove_task(const std::string& task_type);
 
     /**
+     * @brief Get the tasks for the control message.
+     */
+    const nlohmann::json& get_tasks() const;
+
+    /**
      * @brief Add a key-value pair to the metadata for the control message.
      * @param key A string key for the metadata value.
      * @param value A json object describing the metadata value.
@@ -95,6 +101,11 @@ class ControlMessage
      * @return True if the metadata key exists, false otherwise.
      */
     bool has_metadata(const std::string& key) const;
+
+    /**
+     * @brief Get the metadata for the control message.
+     */
+    const nlohmann::json& get_metadata() const;
 
     /**
      * @brief Get the metadata value for the given key from the control message.
@@ -160,6 +171,7 @@ struct ControlMessageProxy
 
     static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
     static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
+    static pybind11::dict get_tasks(ControlMessage& self);
 
     /**
      * @brief Set a metadata key-value pair -- value must be json serializable
@@ -168,7 +180,7 @@ struct ControlMessageProxy
      * @param value
      */
     static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
-    static pybind11::object get_metadata(ControlMessage& self, const std::string& key);
+    static pybind11::object get_metadata(ControlMessage& self, std::optional<std::string> const& key);
 
     static pybind11::dict list_metadata(ControlMessage& self);
 };

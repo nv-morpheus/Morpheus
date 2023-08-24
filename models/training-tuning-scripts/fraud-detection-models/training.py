@@ -12,14 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-<<<<<<< HEAD
-=======
-"""
-# EXample usage:
-python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv \
-     --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
-         --epoch 10 --output-xgb model/xgb.pt --output-hinsage model/hinsage.pt
->>>>>>> upstream/branch-23.11
 """
 python training.py --training-data ../../datasets/training-data/fraud-detection-training-data.csv\
       --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
@@ -54,7 +46,6 @@ np.random.seed(1001)
 torch.manual_seed(1001)
 
 
-<<<<<<< HEAD
 def get_metrics(pred, labels, name='HinSAGE'):
     """Compute evaluation metrics.
 
@@ -265,152 +256,6 @@ def load_model(model_dir, gnn_model=HinSAGE):
     xgb_model = ForestInference.load(os.path.join(model_dir, 'xgb.pt'), output_class=True)
 
     return model, xgb_model, graph
-=======
-def graph_construction(nodes, edges, node_features):
-
-    g_nx = nx.Graph()
-    # add nodes
-    for key, values in nodes.items():
-        g_nx.add_nodes_from(values, ntype=key)
-    # add edges
-    for edge in edges:
-        g_nx.add_edges_from(edge)
-
-    return StellarGraph(g_nx, node_type_name="ntype", node_features=node_features)
-
-
-def build_graph_features(dataset):
-
-    transaction_node_data = dataset.drop(["client_node", "merchant_node", "fraud_label", "index"], axis=1)
-    client_node_data = pd.DataFrame([1] * len(dataset.client_node.unique())).set_index(dataset.client_node.unique())
-    merchant_node_data = pd.DataFrame([1] * len(dataset.merchant_node.unique())).set_index(
-        dataset.merchant_node.unique())
-
-    nodes = {"client": dataset.client_node, "merchant": dataset.merchant_node, "transaction": dataset.index}
-    edges = [zip(dataset.client_node, dataset.index), zip(dataset.merchant_node, dataset.index)]
-    features = {"transaction": transaction_node_data, 'client': client_node_data, 'merchant': merchant_node_data}
-    graph = graph_construction(nodes, edges, features)
-
-    return graph
-
-
-def split_train_test(df, ratio=0.7, train_anom_prop=0.1, test_anom_prop=0.1):
-    cutoff = round(ratio * len(df))
-    train_data = df.head(cutoff)
-    test_data = df.tail(len(df) - cutoff)
-
-    train_fraud = np.random.choice(train_data[train_data.fraud_label == 1].index,
-                                   int((1 - train_anom_prop) * train_data.shape[0]))
-    test_fraud = np.random.choice(test_data[test_data.fraud_label == 1].index,
-                                  int((1 - test_anom_prop) * test_data.shape[0]))
-
-    train_data, test_data = train_data[~train_data.index.isin(
-        train_fraud)], test_data[~test_data.index.isin(test_fraud)]
-    return train_data, test_data, train_data.index, test_data.index
-
-
-def data_preprocessing(training_dataset):
-
-    # Load dataset
-    df = pd.read_csv(training_dataset)
-    train_data, test_data, train_data_index, test_data_index = split_train_test(df, 0.7, 1.0, 0.7)
-    return train_data, test_data, train_data_index, test_data_index
-
-
-def train_model(train_graph, node_identifiers, label):
-    # train_graph: Stellar graph structure.
-    # Train graphsage and GBT model.
-
-    # Global parameters:
-    batch_size = 5
-    xgb_n_estimator = 100
-    n_samples = [2, 32]
-
-    # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_node_identifiers = node_identifiers[:round(0.8 * len(node_identifiers))]
-    train_labels = label.loc[train_node_identifiers]
-
-    validation_node_identifiers = node_identifiers[round(0.8 * len(node_identifiers)):]
-    validation_labels = label.loc[validation_node_identifiers]
-    generator = HinSAGENodeGenerator(train_graph, batch_size, n_samples, head_node_type=EMBEDDING_NODE_TYPE)
-    train_gen = generator.flow(train_node_identifiers, train_labels, shuffle=True)
-    test_gen = generator.flow(validation_node_identifiers, validation_labels)
-
-    # HinSAGE model
-    model = HinSAGE(layer_sizes=[embedding_size] * len(n_samples), generator=generator, dropout=0)
-    x_inp, x_out = model.build()
-
-    # Final estimator layer
-    prediction = layers.Dense(units=1, activation="sigmoid", dtype='float32')(x_out)
-
-    # Create Keras model for training
-    model = Model(inputs=x_inp, outputs=prediction)
-    model.compile(
-        optimizer=optimizers.Adam(lr=1e-3),
-        loss=binary_crossentropy,
-    )
-
-    # Train Model
-    model.fit(train_gen, epochs=epochs, verbose=1, validation_data=test_gen, shuffle=False)
-
-    hinsage_model = Model(inputs=x_inp, outputs=x_out)
-    train_gen_not_shuffled = generator.flow(node_identifiers, label, shuffle=False)
-    embeddings_train = hinsage_model.predict(train_gen_not_shuffled)
-
-    inductive_embedding = pd.DataFrame(embeddings_train, index=node_identifiers)
-
-    xgb_model = XGBClassifier(n_estimators=xgb_n_estimator)
-    xgb_model.fit(inductive_embedding, label)
-
-    return {"hinsage": hinsage_model, "xgb": xgb_model}
-
-
-def save_model(model, output_xgboost, output_hinsage):
-    # model: dict of xgb & hsg model
-    # Save as tensorflow model file
-
-    model['hinsage'].save(output_hinsage)
-    model['xgb'].save_model(output_xgboost)
-
-
-def inductive_step_hinsage(graph: StellarGraph, trained_model, inductive_node_identifiers: list, batch_size: int):
-    """
-
-    This function generates embeddings for unseen nodes using a trained hinsage model.
-    It returns the embeddings for these unseen nodes.
-
-    Parameters
-    ----------
-    graph : StellarGraph Object
-        The graph on which HinSAGE is deployed.
-    trained_model: Model
-        The trained hinsage model, containing the trained and optimized aggregation functions per depth.
-    inductive_node_identifiers : list
-        Defines the nodes that HinSAGE needs to generate embeddings for
-    batch_size: int
-        batch size for the neural network in which HinSAGE is implemented.
-
-    """
-
-    # The mapper feeds data from sampled subgraph to HinSAGE model
-    generator = HinSAGENodeGenerator(graph, batch_size, num_samples, head_node_type="transaction")
-    test_gen_not_shuffled = generator.flow(inductive_node_identifiers, shuffle=False)
-
-    inductive_emb = np.concatenate([trained_model.predict(row[0], verbose=1) for row in test_gen_not_shuffled])
-    inductive_emb = pd.DataFrame(inductive_emb, index=inductive_node_identifiers)
-
-    return inductive_emb
-
-
-def model_eval(trained_model, graph, node_identifier, label):
-
-    inductive_emb = inductive_step_hinsage(graph, trained_model['hinsage'], node_identifier, batch_size=5)
-    predictions = trained_model['xgb'].predict_proba(inductive_emb)
-    # evaluate performance.
-    eval_obj = Evaluation(predictions, label, "GraphSAGE+features")
-    eval_obj.f1_ap_rec()
-    print(f"AUC -- {eval_obj.roc_curve()}")
->>>>>>> upstream/branch-23.11
 
 
 def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='transaction', batch_size=100):
@@ -438,7 +283,6 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='tra
     List[tuple]
         List of data loaders consisting of (DataLoader, DataLoader, DataLoader).
 
-<<<<<<< HEAD
 
     Example
     -------
@@ -685,45 +529,8 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
     end = timer()
     print(end - start)
-=======
-    print("Graph construction")
-    s_graph = build_graph_features(train_data)
-    print("Model Training...")
-    model = train_model(s_graph, node_identifiers=list(train_data.index), label=train_data['fraud_label'])
-    # print(model)
-    print("Save trained model")
-    if args.save_model:
-        save_model(model, args.output_xgb, args.output_hinsage)
-    # Save graph info
-    print("Model Evaluation...")
-    inductive_data = pd.concat((train_data, val_data))
-    s_graph = build_graph_features(inductive_data)
-    model_eval(model, s_graph, node_identifier=list(val_data.index), label=val_data['fraud_label'])
->>>>>>> upstream/branch-23.11
 
 
 if __name__ == "__main__":
 
-<<<<<<< HEAD
     train_model()
-=======
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--training-data", required=True, help="CSV with fraud_label")
-    parser.add_argument("--validation-data", required=False, help="CSV with fraud_label")
-    parser.add_argument("--epochs", help="Number of epochs", type=int, default=10)
-    parser.add_argument("--node_type", required=False, help="Target node type", default="transaction")
-    parser.add_argument("--output-xgb", required=False, help="output file to save xgboost model")
-    parser.add_argument("--output-hinsage", required=False, help="output file to save GraphHinSage model")
-    parser.add_argument("--save_model", type=bool, default=False, help="Save models to give filenames")
-    parser.add_argument("--embedding_size", required=False, default=64, help="output file to save new model")
-
-    args = parser.parse_args()
-
-    # Global parameters:
-    embedding_size = int(args.embedding_size)
-    epochs = int(args.epochs)
-    EMBEDDING_NODE_TYPE = str(args.node_type)
-    num_samples = [2, 32]
-
-    main()
->>>>>>> upstream/branch-23.11

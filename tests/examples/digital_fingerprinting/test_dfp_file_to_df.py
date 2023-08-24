@@ -22,14 +22,14 @@ import fsspec
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture
@@ -40,6 +40,8 @@ def single_file_obj():
                               'threadlist_2022-01-30_10-26-01.670391.json')
     file_specs = fsspec.open_files(input_file)
     assert len(file_specs) == 1
+
+    # pylint: disable=no-member
     yield fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
 
@@ -237,6 +239,8 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
     mock_mp_pool.__exit__.return_value = False
 
     file_specs = fsspec.open_files(os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')))
+
+    # pylint: disable=no-member
     file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
     hash_data = hashlib.md5(json.dumps([{'ukey': file_obj.fs.ukey(file_obj.path)}]).encode()).hexdigest()
