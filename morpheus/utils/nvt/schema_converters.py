@@ -42,8 +42,8 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
 from morpheus.utils.column_info import create_increment_col
-from morpheus.utils.nvt import MutateOp
 from morpheus.utils.nvt.decorators import sync_df_as_pandas
+from morpheus.utils.nvt.mutate import MutateOp
 from morpheus.utils.nvt.transforms import json_flatten
 
 

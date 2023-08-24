@@ -19,7 +19,6 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -40,9 +39,6 @@ class TriggerStage(SinglePortStage):
         Pipeline configuration instance.
 
     """
-
-    def __init__(self, c: Config):
-        super().__init__(c)
 
     @property
     def name(self) -> str:

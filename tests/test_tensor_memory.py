@@ -22,6 +22,7 @@ import cupy as cp
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
@@ -32,7 +33,6 @@ from morpheus.messages.memory.response_memory import ResponseMemoryAE
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.utils.type_aliases import DataFrameType
-from utils import TEST_DIRS
 
 INPUT_FILE = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
 

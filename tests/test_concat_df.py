@@ -14,15 +14,16 @@
 # limitations under the License.
 
 import pandas as pd
+import pytest
 
-from morpheus.config import Config
+from _utils.dataset_manager import DatasetManager
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.utils import concat_df
-from utils.dataset_manager import DatasetManager
 
 
-def test_concat_df(config: Config, dataset: DatasetManager):
+@pytest.mark.usefixtures("config")
+def test_concat_df(dataset: DatasetManager):
     meta = MessageMeta(dataset["filter_probs.csv"])
     messages = [
         meta,

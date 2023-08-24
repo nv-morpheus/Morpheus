@@ -183,7 +183,7 @@ def filter_detections(builder: mrc.Builder):
     elif filter_source == "DATAFRAME":
         filter_source = FilterSource.DATAFRAME
     else:
-        raise Exception(f"Unknown filter source: {filter_source}")
+        raise RuntimeError(f"Unknown filter source: {filter_source}")
 
     if copy:
         node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_copy))

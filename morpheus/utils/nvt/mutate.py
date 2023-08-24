@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
-import os
 import typing
 from inspect import getsourcelines
 
@@ -24,18 +22,7 @@ from merlin.schema import Schema
 from nvtabular.ops.operator import ColumnSelector
 from nvtabular.ops.operator import Operator
 
-# Avoid using the annotate decorator in sphinx builds, instead define a simple pass-through decorator
-if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
-    from merlin.core.dispatch import annotate  # pylint: disable=ungrouped-imports
-else:
-
-    def annotate(func, *args, **kwargs):  # pylint: disable=unused-argument
-
-        @functools.wraps(func)
-        def decorator(func):
-            return func
-
-        return decorator
+from morpheus.utils.nvt.decorators import annotate
 
 
 class MutateOp(Operator):
@@ -108,7 +95,7 @@ class MutateOp(Operator):
 
         try:
             # otherwise get the lambda source code from the inspect module if possible
-            source = getsourcelines(self.f)[0][0]
+            source = getsourcelines(self.f)[0][0]  # pylint: disable=no-member
             lambdas = [op.strip() for op in source.split(">>") if "lambda " in op]
             if len(lambdas) == 1 and lambdas[0].count("lambda") == 1:
                 return lambdas[0]

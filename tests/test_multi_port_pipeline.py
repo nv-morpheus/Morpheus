@@ -18,12 +18,12 @@ import pytest
 
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
-import modules.multiplexer  # noqa: F401
+import modules.multiplexer  # noqa: F401 # pylint: disable=unused-import
+from _utils.dataset_manager import DatasetManager
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.multi_port_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.parametrize("source_count, expected_count", [(1, 1), (2, 2), (3, 3)])

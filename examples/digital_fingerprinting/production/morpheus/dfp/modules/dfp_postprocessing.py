@@ -53,7 +53,7 @@ def dfp_postprocessing(builder: mrc.Builder):
         # df = message.get_meta()
         # df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         # df.replace(np.nan, 'NaN', regex=True, inplace=True)
-        # TODO figure out why we are not able to set meta for a whole dataframe, but works for single column.
+        # TODO(Devin): figure out why we are not able to set meta for a whole dataframe, but works for single column.
         # message.set_meta(None, df)
         message.set_meta("event_time", datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
