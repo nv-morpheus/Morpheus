@@ -22,14 +22,14 @@ from io import StringIO
 import pytest
 import requests
 
+from _utils import make_url
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.messages import MessageMeta
 from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
-from _utils import make_url
-from _utils.dataset_manager import DatasetManager
 
 
 class GetNext(threading.Thread):

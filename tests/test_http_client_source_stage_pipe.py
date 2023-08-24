@@ -14,12 +14,12 @@
 
 import pytest
 
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.http_client_source_stage import HttpClientSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from _utils import assert_results
-from _utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.slow

@@ -20,6 +20,7 @@ from io import BytesIO
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.io.serializers import df_to_csv
 from morpheus.io.serializers import df_to_json
@@ -27,7 +28,6 @@ from morpheus.io.serializers import df_to_parquet
 from morpheus.io.serializers import df_to_stream_csv
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.io.serializers import df_to_stream_parquet
-from _utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.parametrize(

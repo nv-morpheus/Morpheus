@@ -20,6 +20,9 @@ from io import StringIO
 
 import pytest
 
+from _utils import assert_results
+from _utils import make_url
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
@@ -28,9 +31,6 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.http_utils import request_with_retry
-from _utils import assert_results
-from _utils import make_url
-from _utils.dataset_manager import DatasetManager
 
 
 async def make_request(pipe: LinearPipeline,

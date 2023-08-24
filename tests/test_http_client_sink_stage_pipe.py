@@ -19,6 +19,8 @@ from unittest import mock
 
 import pytest
 
+from _utils import make_mock_response
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
@@ -27,8 +29,6 @@ from morpheus.stages.output.http_client_sink_stage import HttpClientSinkStage
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import MimeTypes
 from morpheus.utils.type_aliases import DataFrameType
-from _utils import make_mock_response
-from _utils.dataset_manager import DatasetManager
 
 
 def _df_to_buffer(df: DataFrameType, lines: bool) -> StringIO:

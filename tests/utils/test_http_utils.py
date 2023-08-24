@@ -16,8 +16,8 @@ from unittest import mock
 
 import pytest
 
-from morpheus.utils import http_utils
 from _utils import make_mock_response
+from morpheus.utils import http_utils
 
 
 @pytest.mark.parametrize("url,expected",

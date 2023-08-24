@@ -20,9 +20,9 @@ from unittest import mock
 import pytest
 import requests
 
+from _utils import make_url
 from morpheus.common import HttpServer
 from morpheus.utils.http_utils import MimeTypes
-from _utils import make_url
 
 
 def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
