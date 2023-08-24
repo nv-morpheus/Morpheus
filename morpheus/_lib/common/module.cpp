@@ -29,12 +29,14 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/http_server.hpp"
 #include "morpheus/version.hpp"
 
 #include <mrc/utils/string_utils.hpp>
 #include <nlohmann/json.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>  // for return_value_policy::reference
 
 #include <memory>
 #include <sstream>
@@ -75,7 +77,10 @@ PYBIND11_MODULE(common, _module)
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
-        .def("close", &FiberQueueInterfaceProxy::close);
+        .def("close", &FiberQueueInterfaceProxy::close)
+        .def("is_closed", &FiberQueueInterfaceProxy::is_closed)
+        .def("__enter__", &FiberQueueInterfaceProxy::enter, py::return_value_policy::reference)
+        .def("__exit__", &FiberQueueInterfaceProxy::exit);
 
     py::enum_<TypeId>(_module, "TypeId", "Supported Morpheus types")
         .value("EMPTY", TypeId::EMPTY)
@@ -116,6 +121,22 @@ PYBIND11_MODULE(common, _module)
         .value("Auto", FilterSource::Auto)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
+
+    py::class_<HttpServer, std::shared_ptr<HttpServer>>(_module, "HttpServer")
+        .def(py::init<>(&HttpServerInterfaceProxy::init),
+             py::arg("parse_fn"),
+             py::arg("bind_address")     = "127.0.0.1",
+             py::arg("port")             = 8080,
+             py::arg("endpoint")         = "/message",
+             py::arg("method")           = "POST",
+             py::arg("num_threads")      = 1,
+             py::arg("max_payload_size") = DefaultMaxPayloadSize,
+             py::arg("request_timeout")  = 30)
+        .def("start", &HttpServerInterfaceProxy::start)
+        .def("stop", &HttpServerInterfaceProxy::stop)
+        .def("is_running", &HttpServerInterfaceProxy::is_running)
+        .def("__enter__", &HttpServerInterfaceProxy::enter, py::return_value_policy::reference)
+        .def("__exit__", &HttpServerInterfaceProxy::exit);
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
