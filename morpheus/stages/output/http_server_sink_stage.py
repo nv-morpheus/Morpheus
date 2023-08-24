@@ -144,13 +144,13 @@ class HttpServerSinkStage(SinglePortStage):
     def on_start(self):
         """Starts the HTTP server."""
         from morpheus.common import HttpServer
-        self._server = HtpServer(parse_fn=self._request_handler,
-                                 bind_address=self._bind_address,
-                                 port=self._port,
-                                 endpoint=self._endpoint,
-                                 method=self._method.value,
-                                 num_threads=self._num_server_threads,
-                                 request_timeout=self._request_timeout_secs)
+        self._server = HttpServer(parse_fn=self._request_handler,
+                                  bind_address=self._bind_address,
+                                  port=self._port,
+                                  endpoint=self._endpoint,
+                                  method=self._method.value,
+                                  num_threads=self._num_server_threads,
+                                  request_timeout=self._request_timeout_secs)
         self._server.start()
 
     def is_running(self) -> bool:
