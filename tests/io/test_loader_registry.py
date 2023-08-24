@@ -17,8 +17,8 @@
 import cudf
 
 # Morpheus.common is required to register pre-made loaders
-import morpheus.common  # noqa: F401
-import morpheus.messages as messages
+import morpheus.common  # noqa: F401 # pylint:disable=unused-import
+from morpheus import messages
 from morpheus.messages import DataLoaderRegistry
 
 

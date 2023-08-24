@@ -16,6 +16,7 @@ import asyncio
 import logging
 import os
 import signal
+import sys
 import time
 import typing
 from collections import OrderedDict
@@ -237,7 +238,7 @@ class Pipeline():
         mrc_pipeline = mrc.Pipeline()
 
         def inner_build(builder: mrc.Builder, segment_id: str):
-            logger.info("====Building Segment: %s ====", segment_id)
+            logger.info("====Building Segment: %s====", segment_id)
             segment_graph = self._segment_graphs[segment_id]
 
             # Check if preallocated columns are requested, this needs to happen before the source stages are built
@@ -275,7 +276,7 @@ class Pipeline():
             logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline====")
-        for (segment_id, segment) in self._segments.items():
+        for segment_id, segment in self._segments.items():
             segment_ingress_ports = segment["ingress_ports"]
             segment_egress_ports = segment["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
@@ -311,8 +312,8 @@ class Pipeline():
         """
 
         logger.info("====Stopping Pipeline====")
-        for src in list(self._sources) + list(self._stages):
-            src.stop()
+        for stage in list(self._sources) + list(self._stages):
+            stage.stop()
 
         self._mrc_executor.stop()
 
@@ -331,12 +332,12 @@ class Pipeline():
             raise
         finally:
             # Make sure these are always shut down even if there was an error
-            for src in list(self._sources):
-                src.stop()
+            for source in list(self._sources):
+                source.stop()
 
             # First wait for all sources to stop. This only occurs after all messages have been processed fully
-            for src in list(self._sources):
-                await src.join()
+            for source in list(self._sources):
+                await source.join()
 
             # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
             # their own worker loop thread)
@@ -437,27 +438,28 @@ class Pipeline():
             gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
-            for node, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
+            for name, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
                                            self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
                 label = ""
 
-                show_in_ports = has_ports(node, is_input=True)
-                show_out_ports = has_ports(node, is_input=False)
+                show_in_ports = has_ports(name, is_input=True)
+                show_out_ports = has_ports(name, is_input=False)
 
                 # Build the ports for the node. Only show ports if there are any
                 # (Would like to have this not show for one port, but the lines get all messed up)
                 if (show_in_ports):
-                    in_port_label = " {{ {} }} | ".format(" | ".join(  # pylint: disable=consider-using-f-string
-                        [f"<u{x.port_number}> input_port: {x.port_number}" for x in node.input_ports]))
+                    tmp_str = " | ".join([f"<u{x.port_number}> input_port: {x.port_number}" for x in name.input_ports])
+                    in_port_label = f" {{ {tmp_str} }} | "
                     label += in_port_label
 
-                label += node.unique_name
+                label += name.unique_name
 
                 if (show_out_ports):
-                    out_port_label = " | {{ {} }}".format(" | ".join(  # pylint: disable=consider-using-f-string
-                        [f"<d{x.port_number}> output_port: {x.port_number}" for x in node.output_ports]))
+                    tmp_str = " | ".join(
+                        [f"<d{x.port_number}> output_port: {x.port_number}" for x in name.output_ports])
+                    out_port_label = f" | {{ {tmp_str} }}"
                     label += out_port_label
 
                 if (show_in_ports or show_out_ports):
@@ -468,8 +470,9 @@ class Pipeline():
                     "shape": "record",
                     "fillcolor": "white",
                 })
-
-                gv_subgraph.node(node.unique_name, **node_attrs)
+                # TODO(MDD): Eventually allow nodes to have different attributes based on type
+                # node_attrs.update(n.get_graphviz_attrs())
+                gv_subgraph.node(name.unique_name, **node_attrs)
 
         # Build up edges
         for segment_id in self._segments:
@@ -569,7 +572,7 @@ class Pipeline():
                 self.stop()
             else:
                 tqdm.write("Killing")
-                exit(1)  # pylint: disable=consider-using-sys-exit
+                sys.exit(1)
 
         for sig in [signal.SIGINT, signal.SIGTERM]:
             loop.add_signal_handler(sig, term_signal)

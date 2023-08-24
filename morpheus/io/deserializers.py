@@ -73,13 +73,13 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
         # The opener objects are subclasses of io.IOBase, which avoids introducing fsspec to this part of the API
         if (isinstance(file_name, io.IOBase)):
             if (hasattr(file_name, 'path')):  # This attr is not in the base
-                fp = file_name.path
+                filepath = file_name.path
             else:
                 raise ValueError("Unable to determine file type from instance of io.IOBase,"
                                  " set `file_type` to a value other than Auto")
         else:
-            fp = file_name
-        mode = determine_file_type(fp)
+            filepath = file_name
+        mode = determine_file_type(filepath)
 
     # Special args for JSON
     kwargs = {}
@@ -107,7 +107,7 @@ def read_file_to_df(file_name: typing.Union[str, io.IOBase],
         df = df_class.read_parquet(file_name, **kwargs)
 
     else:
-        assert False, "Unsupported file type mode: {}".format(mode)
+        assert False, f"Unsupported file type mode: {mode}"
 
     assert df is not None
 

@@ -17,9 +17,9 @@ import types
 
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python
