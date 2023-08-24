@@ -26,6 +26,9 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("lines", [False, True])
 def test_http_client_source_stage_pipe(config: Config, dataset: DatasetManager, mock_rest_server: str, lines: bool):
+    """
+    The data is read from the mock REST server and compared against the expected data.
+    """
     if lines:
         endpoint = "data-lines"
     else:
