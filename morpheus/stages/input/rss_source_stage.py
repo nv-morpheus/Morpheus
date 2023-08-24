@@ -13,26 +13,23 @@
 # limitations under the License.
 
 import logging
-import feedparser
-import cudf
-from morpheus.utils.controllers.rss_controller import RSSController
-import mrc
-from morpheus.cli import register_stage
 import time
-import feedparser
-import pandas as pd
-from datetime import datetime, timedelta
+
+import mrc
+
+from morpheus.cli import register_stage
 from morpheus.config import Config
-from morpheus.config import PipelineModes
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-
+from morpheus.utils.controllers.rss_controller import RSSController
 
 logger = logging.getLogger(__name__)
 
-@register_stage("from-rss", modes=[PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+
+@register_stage("from-rss")
 class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load RSS feed items into a pandas DataFrame.
@@ -42,7 +39,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     c : morpheus.config.Config
         Pipeline configuration instance.
     feed_input : str
-        The URL of the RSS feed.
+        The URL or file path of the RSS feed.
     interval_secs : float, optional, default = 600
         Interval in seconds between fetching new feed items.
     stop_after: int, default = 0
@@ -50,13 +47,20 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     max_retries : int, optional, default = 3
         Maximum number of retries for fetching entries on exception.
     """
-    def __init__(self, c: Config, feed_input: str, interval_secs: float = 600, stop_after: int = 0, max_retries: int = 5):
+
+    def __init__(self,
+                 c: Config,
+                 feed_input: str,
+                 interval_secs: float = 600,
+                 stop_after: int = 0,
+                 max_retries: int = 5):
         super().__init__(c)
         self._stop_requested = False
-        self._records_emitted = 0
         self._stop_after = stop_after
         self._interval_secs = interval_secs
         self._max_retries = max_retries
+
+        self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input, batch_size=c.pipeline_batch_size)
 
     @property
@@ -73,23 +77,23 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _fetch_feeds(self):
+    def _fetch_feeds(self) -> ControlMessage:
         """
-        Fetch RSS feed entries and yield as MessageMeta messages.
+        Fetch RSS feed entries and yield as ControlMessage object.
         """
         retries = 0
 
         while (not self._stop_requested) and (retries < self._max_retries):
             try:
-                for entry_accumulator in self._controller.fetch_entries():
-                    if entry_accumulator is not None and entry_accumulator:
-                        logger.debug("Processing %d new entries...", len(entry_accumulator))
-                        df = self._controller.create_dataframe(entry_accumulator)
-                        self._records_emitted += len(df)
+                for df in self._controller.fetch_dataframes():
+                    df_size = len(df)
+                    self._records_emitted += df_size
+
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Received %d new entries...", df_size)
                         logger.debug("Emitted %d records so far.", self._records_emitted)
-                        yield MessageMeta(df=df)
-                        continue
-                    logger.debug("New entries not found.")
+
+                    yield MessageMeta(df=df)
 
                 if not self._controller.run_indefinitely:
                     self._stop_requested = True
@@ -112,7 +116,6 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 if retries == self._max_retries:  # Check if retries exceeded the limit
                     logger.error("Max retries reached. Unable to fetch feed entries.")
                     raise Exception("Failed to fetch feed entries after max retries: %s", exc)
-
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         source = builder.make_source(self.unique_name, self._fetch_feeds)

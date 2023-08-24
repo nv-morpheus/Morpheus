@@ -13,14 +13,18 @@
 # limitations under the License.
 
 import logging
-import feedparser
-import cudf
 import typing
 from urllib.parse import urlparse
 
+import feedparser
+
+import cudf
+
 logger = logging.getLogger(__name__)
 
+
 class RSSController:
+
     def __init__(self, feed_input: str, batch_size: int = 128):
         """
         RSSController handles fetching and processing of RSS feed entries.
@@ -63,8 +67,7 @@ class RSSController:
         else:
             raise Exception(f"Invalid feed input: {self._feed_input}. No entries found.")
 
-
-    def fetch_entries(self) -> typing.Union[typing.List[typing.Tuple], typing.List]:
+    def fetch_dataframes(self) -> cudf.DataFrame:
         """
         Fetch and process RSS feed entries.
 
@@ -93,12 +96,15 @@ class RSSController:
                     entry_accumulator.append(entry)
 
                     if len(entry_accumulator) >= self._batch_size:
-                        yield entry_accumulator
+                        yield self.create_dataframe(entry_accumulator)
                         entry_accumulator.clear()
 
             self._previous_entires = current_entries
 
-            yield entry_accumulator
+            # Yield any remaining entries.
+            if entry_accumulator:
+                df = self.create_dataframe(entry_accumulator)
+                yield df
 
         except Exception as exc:
             raise Exception("Error fetching or processing feed entries: %s", exc)
