@@ -21,11 +21,13 @@ from mrc.core import operators as ops
 from sklearn.model_selection import train_test_split
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
+from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -53,6 +55,7 @@ class DFPTraining(SinglePortStage):
         self._model_kwargs = {
             "encoder_layers": [512, 500],  # layers of the encoding part
             "decoder_layers": [512],  # layers of the decoding part
+            "distributed_training": False,
             "activation": 'relu',  # activation function
             "swap_p": 0.2,  # noise parameter
             "lr": 0.001,  # learning rate
@@ -63,7 +66,7 @@ class DFPTraining(SinglePortStage):
             "scaler": 'standard',  # feature scaling method
             "min_cats": 1,  # cut off for minority categories
             "progress_bar": False,
-            "device": "cuda"
+            "device": "cuda",
         }
 
         # Update the defaults
@@ -87,10 +90,39 @@ class DFPTraining(SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Indicate which input message types this stage accepts."""
-        return (MultiDFPMessage, )
+        return (ControlMessage, MultiDFPMessage,)
 
+    def _dfp_mm_from_cm(self, control_message: ControlMessage) -> MultiDFPMessage:
+        """Create a MultiDFPMessage from a ControlMessage."""
+        user_id = control_message.get_metadata("user_id")
+        message_meta = control_message.payload()
+
+        if (user_id is None or message_meta is None):
+            return None
+
+        with message_meta.mutable_dataframe() as dfm:
+            mm_df = dfm.to_pandas()
+
+        dfp_mm = DFPMessageMeta(mm_df, user_id=str(user_id))
+        message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(mm_df))
+
+        return message
+
+    @typing.overload
+    def on_data(self, message: ControlMessage) -> ControlMessage:
+        ...
+
+    @typing.overload
     def on_data(self, message: MultiDFPMessage) -> MultiAEMessage:
+        ...
+
+    def on_data(self, message):
         """Train the model and attach it to the output message."""
+        to_cm = False
+        if (isinstance(message, ControlMessage)):
+            message = self._dfp_mm_from_cm(message)
+            to_cm = True
+
         if (message is None or message.mess_count == 0):
             return None
 
@@ -114,10 +146,14 @@ class DFPTraining(SinglePortStage):
         model.fit(train_df, epochs=self._epochs, val_data=validation_df, run_validation=run_validation)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        output_message = MultiAEMessage(meta=message.meta,
-                                        mess_offset=message.mess_offset,
-                                        mess_count=message.mess_count,
-                                        model=model)
+        if (to_cm):
+            output_message = ControlMessage(message.meta)
+            output_message.set_metadata("user_id", user_id)
+        else:
+            output_message = MultiAEMessage(meta=message.meta,
+                                            mess_offset=message.mess_offset,
+                                            mess_count=message.mess_count,
+                                            model=model)
 
         return output_message
 
@@ -125,4 +161,8 @@ class DFPTraining(SinglePortStage):
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], stream)
 
-        return stream, MultiAEMessage
+        rdtype = input_stream[1]
+        if (rdtype == MultiDFPMessage):
+            rdtype = MultiAEMessage
+
+        return stream, rdtype
