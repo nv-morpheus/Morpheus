@@ -58,6 +58,8 @@ import pandas as pd
 import torch
 import tqdm
 
+from torch.utils.data import DataLoader
+
 from .ae_module import AEModule
 from .dataframe import EncoderDataFrame
 from .dataloader import DatasetFromDataframe
@@ -572,11 +574,11 @@ class AutoEncoder(torch.nn.Module):
         )
 
     def preprocess_data(
-        self,
-        df,
-        shuffle_rows_in_batch,
-        include_original_input_tensor,
-        include_swapped_input_by_feature_type,
+            self,
+            df,
+            shuffle_rows_in_batch,
+            include_original_input_tensor,
+            include_swapped_input_by_feature_type,
     ):
         """Preprocesses a pandas dataframe `df` for input into the autoencoder model.
 
@@ -727,7 +729,8 @@ class AutoEncoder(torch.nn.Module):
             dim = len(feature['cats']) + 1
             pred = _ohe(cd, dim, device=self.device) * 5
             codes_pred.append(pred)
-        mse_loss, bce_loss, cce_loss, net_loss = self.compute_loss(num_pred, bin_pred, codes_pred, out_, should_log=False)
+        mse_loss, bce_loss, cce_loss, net_loss = self.compute_loss(num_pred, bin_pred, codes_pred, out_,
+                                                                   should_log=False)
         if isinstance(self.logger, BasicLogger):
             self.logger.baseline_loss = net_loss
         return net_loss
@@ -738,14 +741,14 @@ class AutoEncoder(torch.nn.Module):
         return {'scaler': scaler}
 
     def fit(
-        self,
-        train_data,
-        epochs=1,
-        val_data=None,
-        run_validation=False,
-        use_val_for_loss_stats=False,
-        rank=None,
-        world_size=None,
+            self,
+            train_data,
+            epochs=1,
+            val_data=None,
+            run_validation=False,
+            use_val_for_loss_stats=False,
+            rank=None,
+            world_size=None,
     ):
         """ Does training in the specified mode (indicated by self.distrivuted_training).
 
@@ -776,6 +779,7 @@ class AutoEncoder(torch.nn.Module):
             If train_data is not a pandas dataframe or a torch.utils.data.DataLoader or a torch.utils.data.Dataset in distributed training mode.
         """
         if not self.distributed_training:
+            # TODO(Devin)
             if not isinstance(train_data, pd.DataFrame):
                 raise TypeError("`train_data` needs to be a pandas dataframe in centralized training mode."
                                 f" `train_data` is currently of type: {type(train_data)}")
@@ -832,97 +836,84 @@ class AutoEncoder(torch.nn.Module):
             raise ValueError("Validation set is required if either run_validation or \
                 use_val_for_loss_stats is set to True.")
 
-        if use_val_for_loss_stats:
-            df_for_loss_stats = val.copy()
-        else:
-            # use train loss
-            df_for_loss_stats = df.copy()
-
-        if run_validation and val is not None:
+        # TODO(Devin)
+        if run_validation:
             val = val.copy()
 
-        if self.optim is None:
-            self._build_model(df)
+        val_dset = None
+        if run_validation:
+            val_dset = DatasetFromDataframe(
+                df=val,
+                batch_size=self.batch_size,
+                preprocess_fn=self.preprocess_validation_data,
+                shuffle_rows_in_batch=False,
+            )
 
-        if self.n_megabatches == 1:
-            df = self.prepare_df(df)
+        # Turn our training data into a torch dataset
+        dset = DatasetFromDataframe(
+            df=df,
+            batch_size=self.batch_size,
+            preprocess_fn=self.preprocess_train_data,
+            shuffle_rows_in_batch=True,
+        )
+
+        # Set the dataset used to compute loss statistics
+        loss_dset = val_dset if use_val_for_loss_stats else dset
+
+        if self.optim is None:
+            self._build_model(df, rank=None)
 
         if run_validation and val is not None:
-            val_df = self.prepare_df(val)
-            val_in = val_df.swap(likelihood=self.swap_p)
-            msg = "Validating during training.\n"
-            msg += "Computing baseline performance..."
-            baseline = self.compute_baseline_performance(val_in, val_df)
-            LOG.debug(msg)
+            LOG.debug('Validating during training. Computing baseline performance...')
+            baseline = self._compute_baseline_performance_from_dataset(val_dset)
 
-        n_updates = len(df) // self.batch_size
-        if len(df) % self.batch_size > 0:
-            n_updates += 1
-        last_loss = 5000
+            if isinstance(self.logger, BasicLogger):
+                self.logger.baseline_loss = baseline
 
+            LOG.debug(f'Baseline loss: {round(baseline, 4)}')
+
+
+        # Early stopping
         count_es = 0
-        for i in range(epochs):
-            self.train()
+        last_val_loss = float('inf')
+        for epoch in range(epochs):
+            LOG.debug(f'training epoch {epoch + 1}...')
 
-            LOG.debug(f'training epoch {i + 1}...')
-            df = df.sample(frac=1.0)
-            df = EncoderDataFrame(df)
-            if self.n_megabatches > 1:
-                self.train_megabatch_epoch(n_updates, df)
-            else:
-                input_df = df.swap(likelihood=self.swap_p)
-                self.train_epoch(n_updates, input_df, df)
+            train_loss_sum = 0
+            train_loss_count = 0
+            for data_d in dset:
+                loss = self._fit_batch(**data_d['data'])
 
+                train_loss_count += 1
+                train_loss_sum += loss
+
+            # Try decay after each epoch
             if self.lr_decay is not None:
                 self.lr_decay.step()
 
-            if run_validation and val is not None:
-                self.eval()
-                with torch.no_grad():
-                    mean_id_loss, mean_swapped_loss = self._validate_dataframe(orig_df=val_df, swapped_df=val_in)
+            if run_validation:
+                curr_val_loss = self._validate_dataset(val_dset)
 
-                    # Early stopping
-                    current_net_loss = mean_id_loss
-                    LOG.debug('The Current Net Loss: %s', current_net_loss)
+                # Early stopping
+                LOG.debug(f'Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
 
-                    if current_net_loss > last_loss:
-                        count_es += 1
-                        LOG.debug('Early stop count: %s', count_es)
+                if curr_val_loss > last_val_loss:
+                    count_es += 1
+                    LOG.debug(f'Loss went up. Early stop count: {count_es}')
 
-                        if count_es >= self.patience:
-                            LOG.debug('Early stopping: early stop count(%s) >= patience(%s)', count_es, self.patience)
-                            break
+                    if count_es >= self.patience:
+                        LOG.debug(f'Early stopping: early stop count({count_es}) >= patience({self.patience})')
 
-                    else:
-                        LOG.debug('Set count for earlystop: 0')
-                        count_es = 0
+                else:
+                    LOG.debug(f'Loss went down. Reset count for earlystop to 0')
+                    count_es = 0
 
-                    last_loss = current_net_loss
+                last_val_loss = curr_val_loss
 
-                    self.logger.end_epoch()
+            self.logger.end_epoch()
 
-                    if self.verbose:
-                        msg = '\n'
-                        msg += 'net validation loss, swapped input: \n'
-                        msg += f"{round(mean_swapped_loss, 4)} \n\n"
-                        msg += 'baseline validation loss: '
-                        msg += f"{round(baseline, 4)} \n\n"
-                        msg += 'net validation loss, unaltered input: \n'
-                        msg += f"{round(mean_id_loss, 4)} \n\n\n"
-                        LOG.debug(msg)
-
-        #Getting training loss statistics
-        # mse_loss, bce_loss, cce_loss, _ = self.get_anomaly_score(pdf) if pdf_val is None else self.get_anomaly_score(pd.concat([pdf, pdf_val]))
-        mse_loss, bce_loss, cce_loss, _ = self.get_anomaly_score_with_losses(df_for_loss_stats)
-        for i, ft in enumerate(self.numeric_fts):
-            i_loss = mse_loss[:, i]
-            self.feature_loss_stats[ft] = self._create_stat_dict(i_loss)
-        for i, ft in enumerate(self.binary_fts):
-            i_loss = bce_loss[:, i]
-            self.feature_loss_stats[ft] = self._create_stat_dict(i_loss)
-        for i, ft in enumerate(self.categorical_fts):
-            i_loss = cce_loss[:, i]
-            self.feature_loss_stats[ft] = self._create_stat_dict(i_loss)
+        loss_dset.convert_to_validation(self)
+        self._populate_loss_stats_from_dataset(loss_dset)
 
     def _validate_dataframe(self, orig_df, swapped_df):
         """Runs a validation loop on the given validation pandas DataFrame, computing and returning the average loss of
@@ -972,14 +963,14 @@ class AutoEncoder(torch.nn.Module):
         return mean_id_loss, mean_swapped_loss
 
     def _fit_distributed(
-        self,
-        train_data,
-        rank,
-        world_size,
-        epochs=1,
-        val_data=None,
-        run_validation=False,
-        use_val_for_loss_stats=False,
+            self,
+            train_data,
+            rank,
+            world_size,
+            epochs=1,
+            val_data=None,
+            run_validation=False,
+            use_val_for_loss_stats=False,
     ):
         """Fit the model in the distributed fashion with early stopping based on validation loss.
         If run_validation is True, the val_dataset will be used for validation during training and early stopping
@@ -1152,6 +1143,7 @@ class AutoEncoder(torch.nn.Module):
         self.do_backward(mse, bce, cce)
         self.optim.step()
         self.optim.zero_grad()
+
         return net_loss
 
     def _compute_baseline_performance_from_dataset(self, val_dataset):
@@ -1415,6 +1407,29 @@ class AutoEncoder(torch.nn.Module):
 
         return result
 
+    def train_epoch_dl(self, data_loader, pbar=None):
+        """Run regular epoch."""
+
+        if pbar is None and self.progress_bar:
+            close = True
+            pbar = tqdm.tqdm(total=n_updates)
+        else:
+            close = False
+
+        for batch in data_loader:
+            in_sample_tensor = self.build_input_tensor(batch)
+            target_sample = df.iloc[start:stop]  # What do we do here?
+            num, bin, cat = self.model(in_sample_tensor)  # forward
+            mse, bce, cce, net_loss = self.compute_loss(num, bin, cat, target_sample, should_log=True)
+            self.do_backward(mse, bce, cce)
+            self.optim.step()
+            self.optim.zero_grad()
+
+            if self.progress_bar:
+                pbar.update(1)
+        if close:
+            pbar.close()
+
     def train_epoch(self, n_updates, input_df, df, pbar=None):
         """Run regular epoch."""
 
@@ -1667,7 +1682,7 @@ class AutoEncoder(torch.nn.Module):
                     # merge the tensors into one (n_records * n_features) tensor
                     cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat, dim=1)
                 else:
-                    cce_loss_slice = torch.empty((len(df_slice), 0))
+                    cce_loss_slice = torch.empty((len(df_slice), 0), device=self.device)
 
                 mse_loss_slices.append(mse_loss_slice)
                 bce_loss_slices.append(bce_loss_slice)
