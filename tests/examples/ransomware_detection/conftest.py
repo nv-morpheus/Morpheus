@@ -83,7 +83,7 @@ def ransomware_detection_in_sys_path(example_dir: str):
 @pytest.fixture(autouse=True)
 def reset_modules():
     """
-    Other examples could potentially have modules with the same name as the modules in this example. Ensure any 
+    Other examples could potentially have modules with the same name as the modules in this example. Ensure any
     modules imported by these tests are removed from sys.modules after the test is completed.
     """
     yield
