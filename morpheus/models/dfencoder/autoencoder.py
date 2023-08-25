@@ -1405,29 +1405,6 @@ class AutoEncoder(torch.nn.Module):
 
         return result
 
-    def train_epoch_dl(self, data_loader, pbar=None):
-        """Run regular epoch."""
-
-        if pbar is None and self.progress_bar:
-            close = True
-            pbar = tqdm.tqdm(total=n_updates)
-        else:
-            close = False
-
-        for batch in data_loader:
-            in_sample_tensor = self.build_input_tensor(batch)
-            target_sample = df.iloc[start:stop]  # What do we do here?
-            num, bin, cat = self.model(in_sample_tensor)  # forward
-            mse, bce, cce, net_loss = self.compute_loss(num, bin, cat, target_sample, should_log=True)
-            self.do_backward(mse, bce, cce)
-            self.optim.step()
-            self.optim.zero_grad()
-
-            if self.progress_bar:
-                pbar.update(1)
-        if close:
-            pbar.close()
-
     def train_epoch(self, n_updates, input_df, df, pbar=None):
         """Run regular epoch."""
 

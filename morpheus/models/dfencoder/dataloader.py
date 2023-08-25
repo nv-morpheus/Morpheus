@@ -23,22 +23,6 @@ from torch.utils.data import Dataset
 from torch.utils.data.distributed import DistributedSampler
 
 
-class BatchedPandasDataset(Dataset):
-
-    def __init__(self, dataframe: pd.DataFrame):
-        self.dataframe = dataframe
-
-    def __len__(self):
-        return len(self.dataframe)
-
-    def __getitem__(self, index):
-        row = self.dataframe.iloc[index]
-        # Assuming your DataFrame has columns "feature1", "feature2", and "label"
-        features = torch.tensor([row['feature1'], row['feature2']], dtype=torch.float)
-        label = torch.tensor(row['label'], dtype=torch.long)
-        return features, label
-
-
 class DFEncoderDataLoader(DataLoader):
 
     def __init__(self, *args, **kwargs):
