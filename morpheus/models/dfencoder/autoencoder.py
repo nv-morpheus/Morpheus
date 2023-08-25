@@ -57,7 +57,6 @@ import numpy as np
 import pandas as pd
 import torch
 import tqdm
-
 from torch.utils.data import DataLoader
 
 from .ae_module import AEModule
@@ -574,11 +573,11 @@ class AutoEncoder(torch.nn.Module):
         )
 
     def preprocess_data(
-            self,
-            df,
-            shuffle_rows_in_batch,
-            include_original_input_tensor,
-            include_swapped_input_by_feature_type,
+        self,
+        df,
+        shuffle_rows_in_batch,
+        include_original_input_tensor,
+        include_swapped_input_by_feature_type,
     ):
         """Preprocesses a pandas dataframe `df` for input into the autoencoder model.
 
@@ -741,14 +740,14 @@ class AutoEncoder(torch.nn.Module):
         return {'scaler': scaler}
 
     def fit(
-            self,
-            train_data,
-            epochs=1,
-            val_data=None,
-            run_validation=False,
-            use_val_for_loss_stats=False,
-            rank=None,
-            world_size=None,
+        self,
+        train_data,
+        epochs=1,
+        val_data=None,
+        run_validation=False,
+        use_val_for_loss_stats=False,
+        rank=None,
+        world_size=None,
     ):
         """ Does training in the specified mode (indicated by self.distrivuted_training).
 
@@ -872,7 +871,6 @@ class AutoEncoder(torch.nn.Module):
 
             LOG.debug(f'Baseline loss: {round(baseline, 4)}')
 
-
         # Early stopping
         count_es = 0
         last_val_loss = float('inf')
@@ -963,14 +961,14 @@ class AutoEncoder(torch.nn.Module):
         return mean_id_loss, mean_swapped_loss
 
     def _fit_distributed(
-            self,
-            train_data,
-            rank,
-            world_size,
-            epochs=1,
-            val_data=None,
-            run_validation=False,
-            use_val_for_loss_stats=False,
+        self,
+        train_data,
+        rank,
+        world_size,
+        epochs=1,
+        val_data=None,
+        run_validation=False,
+        use_val_for_loss_stats=False,
     ):
         """Fit the model in the distributed fashion with early stopping based on validation loss.
         If run_validation is True, the val_dataset will be used for validation during training and early stopping

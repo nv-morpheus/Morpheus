@@ -24,6 +24,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 
 class BatchedPandasDataset(Dataset):
+
     def __init__(self, dataframe: pd.DataFrame):
         self.dataframe = dataframe
 
@@ -36,6 +37,7 @@ class BatchedPandasDataset(Dataset):
         features = torch.tensor([row['feature1'], row['feature2']], dtype=torch.float)
         label = torch.tensor(row['label'], dtype=torch.long)
         return features, label
+
 
 class DFEncoderDataLoader(DataLoader):
 
