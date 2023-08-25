@@ -89,7 +89,10 @@ class DFPTraining(SinglePortStage):
 
     def accepted_types(self) -> typing.Tuple:
         """Indicate which input message types this stage accepts."""
-        return (ControlMessage, MultiDFPMessage,)
+        return (
+            ControlMessage,
+            MultiDFPMessage,
+        )
 
     def _dfp_mm_from_cm(self, control_message: ControlMessage) -> MultiDFPMessage:
         """Create a MultiDFPMessage from a ControlMessage."""

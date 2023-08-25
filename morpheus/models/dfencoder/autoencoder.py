@@ -1092,7 +1092,7 @@ class AutoEncoder(torch.nn.Module):
 
             # sync early stopping info so the early stopping decision can be passed from the main process to other processes
             early_stopping_state = [None for _ in range(world_size)
-                                   ]  # we have to create enough room to store the collected objects
+                                    ]  # we have to create enough room to store the collected objects
             torch.distributed.all_gather_object(early_stopping_state, should_early_stop)
             should_early_stop_synced = early_stopping_state[0]  # take the state of the main process
             if should_early_stop_synced is True:
