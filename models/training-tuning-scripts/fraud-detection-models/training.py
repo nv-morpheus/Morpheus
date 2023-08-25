@@ -39,20 +39,37 @@ from torchmetrics.functional import accuracy
 from tqdm import trange
 from xgboost import XGBClassifier
 
+import cudf as cf
+from cuml import ForestInference
+
 np.random.seed(1001)
 torch.manual_seed(1001)
 
 
-def get_metrics(pred, labels, name='RGCN'):
-    """Compute evaluation metrics
+def get_metrics(pred, labels, name='HinSAGE'):
+    """Compute evaluation metrics.
 
-    Args:
-        pred (np.array) : prediction
-        labels (np.array): groundtruth label
-        name (str, optional): model name. Defaults to 'RGCN'.
+    Parameters
+    ----------
+    pred : numpy.ndarray
+        Predictions made by the model.
+    labels : numpy.ndarray
+        Groundtruth labels.
+    name : str, optional
+        Model name. Defaults to 'RGCN'.
 
-    Returns:
-        List[List]: List of metrics f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
+    Returns
+    -------
+    List[List]
+        List of evaluation metrics including:
+        - f1: F1-score
+        - precision: Precision score
+        - recall: Recall score
+        - roc_auc: Area under the Receiver Operating Characteristic curve
+        - pr_auc: Area under the Precision-Recall curve
+        - ap: Average Precision
+        - confusion_matrix: Confusion matrix as a list of lists
+        - auc_r: AUC-ROC (Area Under the ROC curve)
     """
 
     pred, pred_proba = pred.argmax(1), pred[:, 1]
@@ -83,39 +100,62 @@ def get_metrics(pred, labels, name='RGCN'):
 
 
 def build_fsi_graph(train_data, col_drop):
-    """Build heterograph from edglist and node index.
+    """Build a heterogeneous graph from an edgelist and node index.
+    Parameters
+    ----------
+    train_data : cudf.DataFrame
+        Training data containing node features.
+    col_drop : list
+        List of features to drop from the node features.
+    Returns
+    -------
+    tuple
+        A tuple containing the following elements:
+        DGLGraph
+            The built DGL graph representing the heterogeneous graph.
+        torch.tensor
+            Normalized feature tensor after dropping specified columns.
+    Notes
+    -----
+    This function takes the training data, represented as a cudf DataFrame,
+    and constructs a heterogeneous graph (DGLGraph) from the given edgelist
+    and node index.
 
-    Args:
-        train_data (pd.DataFrame): training data for node features.
-        col_drop (list): features to drop from node features.
+    The `col_drop` list specifies which features should be dropped from the
+    node features to build the normalized feature tensor.
 
-    Returns:
-       Tuple[DGLGraph, torch.tensor]: dlg graph, normalized feature tensor
+    Example
+    -------
+    >>> import cudf
+    >>> train_data = cudf.DataFrame({'node_id': [1, 2, 3],
+    ...                            'feature1': [0.1, 0.2, 0.3],
+    ...                            'feature2': [0.4, 0.5, 0.6]})
+    >>> col_drop = ['feature2']
+    >>> graph, features = build_heterograph(train_data, col_drop)
     """
 
+    feature_tensors = train_data.drop(col_drop, axis=1).values
+    feature_tensors = torch.from_dlpack(feature_tensors.toDlpack())
+    feature_tensors = (feature_tensors - feature_tensors.mean(0, keepdim=True)) / (0.0001 +
+                                                                                   feature_tensors.std(0, keepdim=True))
+
+    client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
+        torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
+
+    client_tensor, merchant_tensor, transaction_tensor = (client_tensor.view(-1),
+                                                          merchant_tensor.view(-1),
+                                                          transaction_tensor.view(-1))
+
     edge_list = {
-        ('client', 'buy', 'transaction'): (train_data['client_node'].values, train_data['index'].values),
-        ('transaction', 'bought', 'client'): (train_data['index'].values, train_data['client_node'].values),
-        ('transaction', 'issued', 'merchant'): (train_data['index'].values, train_data['merchant_node'].values),
-        ('merchant', 'sell', 'transaction'): (train_data['merchant_node'].values, train_data['index'].values)
+        ('client', 'buy', 'transaction'): (client_tensor, transaction_tensor),
+        ('transaction', 'bought', 'client'): (transaction_tensor, client_tensor),
+        ('transaction', 'issued', 'merchant'): (transaction_tensor, merchant_tensor),
+        ('merchant', 'sell', 'transaction'): (merchant_tensor, transaction_tensor)
     }
 
     graph = dgl.heterograph(edge_list)
-    feature_tensors = torch.from_numpy(train_data.drop(col_drop, axis=1).values).float()
-    feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
     return graph, feature_tensors
-
-
-def map_node_id(df, col_name):
-    """ Convert column node list to integer index for dgl graph.
-
-    Args:
-        df (pd.DataFrame): dataframe
-        col_name (list) : column list
-    """
-    node_index = {j: i for i, j in enumerate(df[col_name].unique())}
-    df[col_name] = df[col_name].map(node_index)
 
 
 def prepare_data(training_data, test_data):
@@ -133,36 +173,48 @@ def prepare_data(training_data, test_data):
     tuple
      tuple of (training_data, test_data, train_index, test_index, label, combined data)
     """
+    df_train = cf.read_csv(training_data)
+    df_test = cf.read_csv(test_data)
+    train_size = df_train.shape[0]
+    cdf = cf.concat([df_train, df_test], axis=0)
+    labels = cdf['fraud_label'].values
+    cdf.drop(['fraud_label', 'index'], inplace=True, axis=1)
 
-    df_train = pd.read_csv(training_data)
-    train_idx_ = df_train.shape[0]
-    df_test = pd.read_csv(test_data)
-    df = pd.concat([df_train, df_test], axis=0)
-    df['tran_id'] = df['index']
-
-    meta_cols = ['tran_id', 'client_node', 'merchant_node']
+    cdf.reset_index(inplace=True)
+    meta_cols = ['client_node', 'merchant_node']
     for col in meta_cols:
-        map_node_id(df, col)
+        cdf[col] = cf.CategoricalIndex(cdf[col]).codes
 
-    train_idx = df['tran_id'][:train_idx_]
-    test_idx = df['tran_id'][train_idx_:]
-
-    df['index'] = df['tran_id']
-    df.index = df['index']
-
-    return (df.iloc[train_idx, :], df.iloc[test_idx, :], train_idx, test_idx, df['fraud_label'].values, df)
+    return (cdf.iloc[:train_size, :],
+            cdf.iloc[train_size:, :],
+            cdf['index'][:train_size],
+            cdf['index'][train_size:],
+            labels,
+            cdf)
 
 
 def save_model(graph, model, hyperparameters, xgb_model, model_dir):
-    """Save trained model with graph & hyperparameters dict
+    """ Save the trained model and associated data to the specified directory.
 
-    Args:
-        graph (DGLHeteroGraph): dgl graph
-        model (HeteroRGCN): trained RGCN model
-        hyperparameters (dict): hyperparameter for model training.
-        xgb_model (XGBoost): XGBoost trained model.
-        model_dir (str): directory to save
+    Parameters
+    ----------
+    graph : dgl.DGLGraph
+        The graph object representing the data used for training the model.
+
+    model : nn.Module
+        The trained model object to be saved.
+
+    hyperparameters : dict
+        A dictionary containing the hyperparameters used for training the model.
+
+    xgb_model : XGBoost
+        The trained XGBoost model associated with the main model.
+
+    model_dir : str
+        The directory path where the model and associated data will be saved.
+
     """
+
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
@@ -173,16 +225,21 @@ def save_model(graph, model, hyperparameters, xgb_model, model_dir):
     xgb_model.save_model(os.path.join(model_dir, "xgb.pt"))
 
 
-def load_model(model_dir, gnn_model=HeteroRGCN):
-    """Load trained model, graph structure from given directory
+def load_model(model_dir, gnn_model=HinSAGE):
+    """Load trained models from model directory
 
-    Args:
-        model_dir (str path):directory path for trained model obj.
+    Parameters
+    ----------
+    model_dir : str
+        models directory path
+    gnn_model: nn.Module
+        GNN model type to load either HinSAGE or HeteroRGCN
 
-    Returns:
-        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
+    Returns
+    -------
+    (nn.Module, dgl.DGLHeteroGraph, dict)
+        model, training graph, hyperparameter
     """
-    from cuml import ForestInference
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
         graph = pickle.load(f)
@@ -202,19 +259,35 @@ def load_model(model_dir, gnn_model=HeteroRGCN):
 
 
 def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='transaction', batch_size=100):
-    """Initialize dataloader and graph sampler. For training use neighbor sampling.
+    """
+    Initialize dataloader and graph sampler. For training, use neighbor sampling.
 
-    Args:
-        g_train (DGLHeteroGraph): train graph
-        train_idx (list): train feature index
-        test_idx (list): test feature index
-        val_idx (list): validation index
-        g_test (DGLHeteroGraph): test graph
-        target_node (str, optional): target node. Defaults to 'authentication'.
-        batch_size (int): batchsize for inference.
+    Parameters
+    ----------
+    g_train : DGLHeteroGraph
+        Train graph.
+    train_idx : list
+        Train feature index.
+    test_idx : list
+        Test feature index.
+    val_idx : list
+        Validation index.
+    g_test : DGLHeteroGraph
+        Test graph.
+    target_node : str, optional
+        Target node. Defaults to 'transaction'.
+    batch_size : int
+        Batch size for inference.
+    Returns
+    -------
+    List[tuple]
+        List of data loaders consisting of (DataLoader, DataLoader, DataLoader).
 
-    Returns:
-        List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
+
+    Example
+    -------
+    >>> train_loader, test_loader, val_loader = initialize_dataloader(g_train, train_idx, test_idx,
+            val_idx, g_test, target_node='authentication', batch_size=32)
     """
 
     neighbor_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
@@ -247,36 +320,42 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='tra
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def train(model,
-          loss_func,
-          train_dataloader,
-          labels,
-          optimizer,
-          feature_tensors,
-          target_node='transaction',
-          device='cpu'):
-    """Train RGCN model
-
-    Args:
-        model(HeteroRGCN): RGCN model
-        loss_func (nn.loss) : loss function
-        train_dataloader (NodeDataLoader) : train dataloader class
-        labels (list): training label
-        optimizer (nn.optimizer) : optimizer for training
-        feature_tensors (torch.from_numpy) : node features
-        target_node (str, optional): target node embedding. Defaults to 'transaction'.
-        device (str, optional): host device. Defaults to 'cpu'.
-
-    Returns:
-        _type_: training accuracy and training loss
+def train(model, loss_func, train_dataloader, labels, optimizer, feature_tensors, target_node='transaction'):
     """
+    Train the specified GNN model using the given training data.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The PyTorch model to be trained.
+    loss_func : callable
+        The loss function to compute the training loss.
+    train_dataloader : dgl.dataloading.DataLoader
+        DataLoader containing the training dataset.
+    labels : torch.Tensor
+        The ground truth labels for the training data.
+        Shape: (num_samples, num_classes).
+    optimizer : torch.optim.Optimizer
+        The optimizer used to update the model's parameters during training.
+    feature_tensors : torch.Tensor
+        The feature tensors corresponding to the training data.
+        Shape: (num_samples, num_features).
+    target_node : str, optional
+        The target node for training, indicating the node of interest.
+        Defaults to 'transaction'.
+
+    Returns
+    -------
+    List[float, float]
+        Training accuracy and training loss
+    """
+
     model.train()
     train_loss = 0.0
     for _, (_, output_nodes, blocks) in enumerate(train_dataloader):
         seed = output_nodes[target_node]
-        blocks = [b.to(device) for b in blocks]
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        input_features = feature_tensors[nid].to(device)
+        input_features = feature_tensors[nid]
 
         logits, _ = model(blocks, input_features)
         loss = loss_func(logits, labels[seed])
@@ -291,18 +370,25 @@ def train(model,
 
 
 @torch.no_grad()
-def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
-    """Takes trained RGCN model and input dataloader & produce logits and embedding.
+def evaluate(model, eval_loader, feature_tensors, target_node):
+    """Evaluate the specified model on the given evaluation input graph
 
-    Args:
-        model (HeteroRGCN): trained HeteroRGCN model object
-        eval_loader (NodeDataLoader): evaluation dataloader
-        feature_tensors (torch.Tensor) : test feature tensor
-        target_node (str): target node encoding.
-        device (str, optional): device runtime. Defaults to 'cpu'.
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The PyTorch model to be evaluated.
+    eval_loader : dgl.dataloading.DataLoader
+        DataLoader containing the evaluation dataset.
+    feature_tensors : torch.Tensor
+        The feature tensors corresponding to the evaluation data.
+        Shape: (num_samples, num_features).
+    target_node : str
+        The target node for evaluation, indicating the node of interest.
 
-    Returns:
-        List: logits, index & output embedding.
+    Returns
+    -------
+    (torch.Tensor, torch.Tensor, torch.Tensor)
+        A tuple containing numpy arrays of logits, eval seed and embeddings
     """
     model.eval()
     eval_logits = []
@@ -314,8 +400,7 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
         seed = output_nodes[target_node]
 
         nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        blocks = [b.to(device) for b in blocks]
-        input_features = feature_tensors[nid].to(device)
+        input_features = feature_tensors[nid]
         logits, embedd = model.infer(blocks, input_features)
         eval_logits.append(logits.cpu().detach())
         eval_seeds.append(seed)
@@ -337,6 +422,8 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
 @click.option('--output-file', help="Path to csv inference result", default="debug/out.csv")
 @click.option('--model-type', help="Model type either RGCN/Graphsage", default="RGCN")
 def train_model(training_data, validation_data, model_dir, target_node, epochs, batch_size, output_file, model_type):
+    from timeit import default_timer as timer
+    start = timer()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -346,23 +433,21 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         gnn_model = HinSAGE
 
     # process training data
-    train_data, _, train_idx, inductive_idx,\
-        labels, df = prepare_data(training_data, validation_data)
-    meta_cols = ["client_node", "merchant_node", "fraud_label", "index", "tran_id"]
+    train_data, _, train_idx, inductive_idx, labels, df = prepare_data(training_data, validation_data)
+
+    meta_cols = ["client_node", "merchant_node", "index"]
 
     # Build graph
     whole_graph, feature_tensors = build_fsi_graph(df, meta_cols)
     train_graph, _ = build_fsi_graph(train_data, meta_cols)
-    whole_graph = whole_graph.to(device)
 
-    feature_tensors = feature_tensors.to(device)
-    train_idx = torch.from_numpy(train_idx.values).to(device)
-    inductive_idx = torch.from_numpy(inductive_idx.values).to(device)
-    labels = torch.LongTensor(labels).to(device)
+    feature_tensors = feature_tensors.float()
+    train_idx = torch.from_dlpack(train_idx.values.toDlpack()).long()
+    inductive_idx = torch.from_dlpack(inductive_idx.values.toDlpack()).long()
+    labels = torch.from_dlpack(labels.toDlpack()).long()
 
     # Hyperparameters
-    in_size, hidden_size, out_size, n_layers,\
-        embedding_size = 111, 64, 2, 2, 1
+    in_size, hidden_size, out_size, n_layers, embedding_size = 111, 64, 2, 2, 1
     hyperparameters = {
         "in_size": in_size,
         "hidden_size": hidden_size,
@@ -373,15 +458,14 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         "epoch": epochs
     }
 
-    scale_pos_weight = train_data['fraud_label'].sum() / train_data.shape[0]
+    scale_pos_weight = (labels[train_idx].sum() / train_data.shape[0]).item()
     scale_pos_weight = torch.FloatTensor([scale_pos_weight, 1 - scale_pos_weight]).to(device)
 
     # Dataloaders
-    train_loader, val_loader, test_loader = init_loaders(train_graph.to(
-        device), train_idx, test_idx=inductive_idx,
-        val_idx=inductive_idx, g_test=whole_graph, batch_size=batch_size)
+    train_loader, val_loader, test_loader = init_loaders(train_graph, train_idx, test_idx=inductive_idx,
+                                                         val_idx=inductive_idx, g_test=whole_graph,
+                                                         batch_size=batch_size)
 
-    # Set model variables
     # Set model variables
     model = gnn_model(whole_graph, in_size, hidden_size, out_size, n_layers, embedding_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
@@ -389,11 +473,9 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
 
     for epoch in trange(epochs):
 
-        train_acc, loss = train(
-            model, loss_func, train_loader, labels, optimizer, feature_tensors,
-            target_node, device=device)
+        train_acc, loss = train(model, loss_func, train_loader, labels, optimizer, feature_tensors, target_node)
         print(f"Epoch {epoch}/{epochs} | Train Accuracy: {train_acc} | Train Loss: {loss}")
-        val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node, device=device)
+        val_logits, val_seed, _ = evaluate(model, val_loader, feature_tensors, target_node)
         val_accuracy = accuracy(val_logits.argmax(1), labels.long()[val_seed].cpu(), "binary").item()
         val_auc = roc_auc_score(
             labels.long()[val_seed].cpu().numpy(),
@@ -402,8 +484,8 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
         print(f"Validation Accuracy: {val_accuracy} auc {val_auc}")
 
     # Create embeddings
-    _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node, device=device)
-    test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node, device=device)
+    _, train_seeds, train_embedding = evaluate(model, train_loader, feature_tensors, target_node)
+    test_logits, test_seeds, test_embedding = evaluate(model, test_loader, feature_tensors, target_node)
 
     # compute metrics
     test_acc = accuracy(test_logits.argmax(dim=1), labels.long()[test_seeds].cpu(), "binary").item()
@@ -445,6 +527,10 @@ def train_model(training_data, validation_data, model_dir, target_node, epochs, 
     pd.DataFrame(metrics_result).to_csv(output_file)
     save_model(whole_graph, model, hyperparameters, classifier, model_dir)
 
+    end = timer()
+    print(end - start)
+
 
 if __name__ == "__main__":
+
     train_model()

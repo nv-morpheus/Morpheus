@@ -64,7 +64,7 @@ def test_build_single_before_module_registration(config):
 def register_test_module():
     registry = mrc.ModuleRegistry
 
-    def module_init_fn(builder: mrc.Builder):
+    def module_init_fn(_: mrc.Builder):
         pass
 
     registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)

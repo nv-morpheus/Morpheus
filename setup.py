@@ -51,8 +51,7 @@ setup(
     include_package_data=True,
     packages=find_packages(include=["morpheus*"], exclude=['tests']),
     install_requires=[
-        # Only list the packages which cannot be installed via conda here. Should mach the requirements in
-        # docker/conda/environments/requirements.txt
+        # Only list the packages which cannot be installed via conda here.
     ],
     license="Apache",
     python_requires='>=3.10, <4',

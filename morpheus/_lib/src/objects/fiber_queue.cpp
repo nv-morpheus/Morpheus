@@ -18,12 +18,14 @@
 #include "morpheus/objects/fiber_queue.hpp"
 
 #include <boost/fiber/channel_op_status.hpp>
+#include <glog/logging.h>  // for LOG, FATAL
 #include <pybind11/gil.h>  // for gil_scoped_release
 #include <pybind11/pybind11.h>
 
 #include <chrono>
 #include <functional>  // for ref, reference_wrapper
 #include <memory>
+#include <ostream>    // needed by GLOG
 #include <ratio>      // for ratio needed for std::chrono::duration
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <utility>
@@ -112,17 +114,12 @@ void FiberQueueInterfaceProxy::put(morpheus::FiberQueue& self, pybind11::object 
     case boost::fibers::channel_op_status::success:
         return;
     case boost::fibers::channel_op_status::empty: {
-        // Raise queue.Empty
-        pybind11::object exc_class = pybind11::module_::import("queue").attr("Empty");
-
-        PyErr_SetNone(exc_class.ptr());
-
-        throw pybind11::error_already_set();
+        LOG(FATAL) << "FiberQueue::put should never return empty.";
     }
     case boost::fibers::channel_op_status::full:
     case boost::fibers::channel_op_status::timeout: {
         // Raise queue.Full
-        pybind11::object exc_class = pybind11::module_::import("queue").attr("Empty");
+        pybind11::object exc_class = pybind11::module_::import("queue").attr("Full");
 
         PyErr_SetNone(exc_class.ptr());
 
@@ -190,4 +187,23 @@ void FiberQueueInterfaceProxy::close(morpheus::FiberQueue& self)
 {
     self.close();
 }
+
+bool FiberQueueInterfaceProxy::is_closed(morpheus::FiberQueue& self)
+{
+    return self.is_closed();
+}
+
+morpheus::FiberQueue& FiberQueueInterfaceProxy::enter(morpheus::FiberQueue& self)
+{
+    return self;
+}
+
+void FiberQueueInterfaceProxy::exit(morpheus::FiberQueue& self,
+                                    const pybind11::object& type,
+                                    const pybind11::object& value,
+                                    const pybind11::object& traceback)
+{
+    self.close();
+}
+
 }  // namespace morpheus

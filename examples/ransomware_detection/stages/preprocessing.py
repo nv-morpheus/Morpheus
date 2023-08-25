@@ -18,7 +18,7 @@ import cupy as cp
 import mrc
 import pandas as pd
 
-from common.data_models import SnapshotData
+from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import TypeId
 from morpheus.config import Config

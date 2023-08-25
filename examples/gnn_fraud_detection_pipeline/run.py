@@ -126,7 +126,7 @@ def run_pipeline(num_threads,
     pipeline.add_stage(DeserializeStage(config))
 
     # Add the graph construction stage.
-    pipeline.add_stage(FraudGraphConstructionStage(config, training_file, input_file))
+    pipeline.add_stage(FraudGraphConstructionStage(config, training_file))
     pipeline.add_stage(MonitorStage(config, description="Graph construction rate"))
 
     # Add a sage inference stage.

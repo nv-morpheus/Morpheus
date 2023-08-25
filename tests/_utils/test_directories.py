@@ -18,7 +18,7 @@ import os
 import morpheus
 
 
-class TestDirectories(object):
+class TestDirectories:
 
     def __init__(self, cur_file=__file__) -> None:
         self.tests_dir = os.path.dirname(os.path.dirname(cur_file))
@@ -31,3 +31,4 @@ class TestDirectories(object):
         self.validation_data_dir = os.path.join(self.datasets_dir, 'validation-data')
         self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
         self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
+        self.mock_rest_server = os.path.join(self.tests_dir, 'mock_rest_server')

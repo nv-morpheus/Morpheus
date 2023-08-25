@@ -18,8 +18,8 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.parsers.windows_event_parser import WindowsEventParser
-from utils import TEST_DIRS
 
 
 def validate_4624(parsed_rec):

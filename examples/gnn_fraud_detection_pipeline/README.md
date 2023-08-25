@@ -24,10 +24,6 @@ Prior to running the GNN fraud detection pipeline, additional requirements must 
 mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
 ```
 
-<!--
-pip install --ignore-requires-python stellargraph==1.2.1
-> **Note**: The `--ignore-requires-python` is needed because Stellargraph only officially supports Python versions prior to 3.9 ([stellargraph/stellargraph#1960](https://github.com/stellargraph/stellargraph/issues/1960)).
--->
 ## Running
 
 ##### Setup Env Variable
@@ -73,16 +69,16 @@ python run.py
 ```
 ====Registering Pipeline====
 ====Building Pipeline====
-====Building Pipeline Complete!====
-Graph construction rate: 0 messages [00:00, ? me====Registering Pipeline Complete!====
-====Starting Pipeline====s [00:00, ? messages/s]
+Graph construction rate: 0 messages [00:00, ? me====Building Pipeline Complete!====
+Inference rate: 0 messages [00:00, ? messages/s]====Registering Pipeline Complete!====
+====Starting Pipeline====
 ====Pipeline Started==== 0 messages [00:00, ? messages/s]
 ====Building Segment: linear_segment_0====ges/s]
 Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=False)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <fraud-graph-construction-2; FraudGraphConstructionStage(training_file=training.csv, input_file=validation.csv)>
+Added stage: <fraud-graph-construction-2; FraudGraphConstructionStage(training_file=training.csv)>
   └─ morpheus.MultiMessage -> stages.FraudGraphMultiMessage
 Added stage: <monitor-3; MonitorStage(description=Graph construction rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ stages.FraudGraphMultiMessage -> stages.FraudGraphMultiMessage
@@ -98,13 +94,13 @@ Added stage: <serialize-8; SerializeStage(include=[], exclude=['^ID$', '^_ts_'],
   └─ morpheus.MultiMessage -> morpheus.MessageMeta
 Added stage: <monitor-9; MonitorStage(description=Serialize rate, smoothing=0.05, unit=messages, delayed_start=False, determine_count_fn=None, log_level=LogLevels.INFO)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
-Added stage: <to-file-10; WriteToFileStage(filename=result.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
+Added stage: <to-file-10; WriteToFileStage(filename=output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Segment Complete!====
-Graph construction rate[Complete]: 265 messages [00:00, 4130.83 messages/s]
-Inference rate[Complete]: 265 messages [00:01, 185.37 messages/s]
-Add classification rate[Complete]: 265 messages [00:01, 180.41 messages/s]
-Serialize rate[Complete]: 265 messages [00:01, 178.19 messages/s]
+Graph construction rate[Complete]: 265 messages [00:00, 1218.88 messages/s]
+Inference rate[Complete]: 265 messages [00:01, 174.04 messages/s]
+Add classification rate[Complete]: 265 messages [00:01, 170.69 messages/s]
+Serialize rate[Complete]: 265 messages [00:01, 166.36 messages/s]
 ====Pipeline Complete====
 ```
 

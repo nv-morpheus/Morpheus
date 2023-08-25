@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "./test_morpheus.hpp"  // IWYU pragma: associated
+#include "./test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/objects/dtype.hpp"              // for DType
 #include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor

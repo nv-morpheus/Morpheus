@@ -25,13 +25,13 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
-from utils import TEST_DIRS
 
 
 def build_response_mem(messages_mod, log_test_data_dir: str):
@@ -192,14 +192,13 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
 
 
 @pytest.mark.use_python
-@pytest.mark.usefixtures("manual_seed")
+@pytest.mark.usefixtures("manual_seed", "config")
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py')
 ])
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
-def test_log_parsing_inference_stage_convert_one_response(config: Config,
-                                                          import_mod: typing.List[types.ModuleType],
+def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.List[types.ModuleType],
                                                           filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
                                                           mess_offset,
                                                           mess_count,
