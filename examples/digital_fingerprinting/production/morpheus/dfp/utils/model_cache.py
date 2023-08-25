@@ -245,6 +245,7 @@ class ModelManager:
     def user_id_to_model(self, user_id: str):
         return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
+    # pylint: disable=dangerous-default-value
     def load_user_model(self,
                         client,
                         user_id: str,
@@ -330,6 +331,7 @@ class ModelManager:
             logger.error("Deadlock when trying to acquire model cache lock")
             raise RuntimeError("Deadlock when trying to acquire model cache lock") from e
 
+    # pylint: disable=dangerous-default-value
     def load_user_model_cache(self,
                               user_id: str,
                               timeout: float,

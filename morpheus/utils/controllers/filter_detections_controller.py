@@ -159,5 +159,7 @@ class FilterDetectionsController:
                 self._filter_source = FilterSource.DATAFRAME
 
             logger.debug(
-                f"filter_source was set to Auto, inferring a filter source of {self._filter_source} based on an input "
-                f"message type of {message_type}")
+                "filter_source was set to Auto, inferring a filter source of %s based on an input "
+                "message type of %s",
+                self._filter_source,
+                message_type)

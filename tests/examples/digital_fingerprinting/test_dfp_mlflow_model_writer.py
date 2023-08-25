@@ -229,13 +229,14 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
 
 @pytest.mark.parametrize("databricks_permissions", [None, {}])
 @pytest.mark.parametrize("tracking_uri", ['file:///home/user/morpheus/mlruns', "databricks"])
-def test_on_data(config: Config,
-                 mock_mlflow: MockedMLFlow,
-                 mock_requests: MockedRequests,
-                 dataset_pandas: DatasetManager,
-                 databricks_env: dict,
-                 databricks_permissions: dict,
-                 tracking_uri: str):
+def test_on_data(
+        config: Config,
+        mock_mlflow: MockedMLFlow,  # pylint: disable=redefined-outer-name
+        mock_requests: MockedRequests,
+        dataset_pandas: DatasetManager,
+        databricks_env: dict,
+        databricks_permissions: dict,
+        tracking_uri: str):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     from dfp.stages.dfp_mlflow_model_writer import conda_env
