@@ -1,0 +1,4 @@
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=UTF-8
+
+{{file path="../tests_data/filter_probs.jsonlines"}}

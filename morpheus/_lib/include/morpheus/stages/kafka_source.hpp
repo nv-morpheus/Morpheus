@@ -33,6 +33,7 @@
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
+#include <cstddef>  // for size_t
 #include <cstdint>  // for uuint32_t
 #include <map>
 #include <memory>
@@ -83,7 +84,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
                      bool disable_pre_filtering = false,
-                     TensorIndex stop_after     = 0,
+                     std::size_t stop_after     = 0,
                      bool async_commits         = true);
 
     /**
@@ -107,7 +108,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
                      bool disable_pre_filtering = false,
-                     TensorIndex stop_after     = 0,
+                     std::size_t stop_after     = 0,
                      bool async_commits         = true);
 
     ~KafkaSourceStage() override = default;
@@ -172,7 +173,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
     bool m_async_commits{true};
-    TensorIndex m_stop_after{0};
+    std::size_t m_stop_after{0};
 
     void* m_rebalancer;
 };
@@ -209,7 +210,7 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        TensorIndex stop_after = 0,
+        std::size_t stop_after = 0,
         bool async_commits     = true);
 
     /**
@@ -238,7 +239,7 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        TensorIndex stop_after = 0,
+        std::size_t stop_after = 0,
         bool async_commits     = true);
 };
 #pragma GCC visibility pop

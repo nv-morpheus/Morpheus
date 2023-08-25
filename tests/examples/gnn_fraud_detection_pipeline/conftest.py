@@ -152,7 +152,7 @@ def test_data_fixture():
 
     expected_edges = {'buy': [], 'sell':[]}
     for i in range(df.shape[0]):
-        for key,val in {'sell': 'client_node','buy':'merchant_node'}.items():
+        for key,val in {'sell': 'client_node', 'buy':'merchant_node'}.items():
             expected_edges[key].append([df[val].iloc[i], i])
 
     # ensuring test data & assumptions are correct
