@@ -17,9 +17,9 @@ import types
 from io import StringIO
 
 import pytest
+import torch
 
 import cudf
-import torch
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -68,10 +68,10 @@ class TestGraphConstructionStage:
         exp_buy_edges = [torch.LongTensor(e).cuda() for e in zip(*expected_edges['buy'])]
         exp_sell_edges = [torch.LongTensor(e).cuda() for e in zip(*expected_edges['sell'])]
 
-        # # Compare all edges types agree.
+        # Compare all edges types agree.
         assert all(exp_buy_edges[0] == buy_edges[0]) & all(exp_buy_edges[1] == buy_edges[1])
         assert all(exp_sell_edges[0] == sell_edges[0]) & all(exp_sell_edges[1] == sell_edges[1])
 
-        # # Compare nodes.
+        # Compare nodes.
         for node in ['client', 'merchant']:
             assert fgmm.graph.nodes(node).tolist() == list(expected_nodes[node + "_node"])

@@ -136,7 +136,7 @@ def test_data_fixture():
     df = cudf.DataFrame(df_data, index=index)
 
     # Create indexed nodeId
-    meta_cols = ['index','client_node', 'merchant_node']
+    meta_cols = ['index', 'client_node', 'merchant_node']
     for col in meta_cols:
         df[col] = cudf.CategoricalIndex(df[col]).codes
 
@@ -147,17 +147,15 @@ def test_data_fixture():
         expected_nodes[col] = set(df[col].to_arrow().tolist())
 
     # ensuring test data & assumptions are correct
-    assert sum(len(expected_nodes[node]) for node in expected_nodes) == 29
+    assert sum(len(nodes) for _, nodes in expected_nodes.items()) == 29
 
-
-    expected_edges = {'buy': [], 'sell':[]}
+    expected_edges = {'buy': [], 'sell': []}
     for i in range(df.shape[0]):
-        for key,val in {'sell': 'client_node', 'buy':'merchant_node'}.items():
+        for key, val in {'sell': 'client_node', 'buy': 'merchant_node'}.items():
             expected_edges[key].append([df[val].iloc[i], i])
 
     # ensuring test data & assumptions are correct
-    assert sum(len(expected_edges[edge]) for edge in expected_edges) == 20
-
+    assert sum(len(edges) for _, edges in expected_edges.items()) == 20
 
     yield {
         "index": index,

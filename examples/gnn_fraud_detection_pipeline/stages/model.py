@@ -238,8 +238,9 @@ class HinSAGE(nn.Module):
         self.layers.append(
             dglnn.HeteroGraphConv(
                 {
-                    rel: dglnn.SAGEConv(
-                        (in_feats[src_type], in_feats[v_type]), hidden_size, aggregator_type=aggregator_type)
+                    rel:
+                        dglnn.SAGEConv(
+                            (in_feats[src_type], in_feats[v_type]), hidden_size, aggregator_type=aggregator_type)
                     for src_type,
                     rel,
                     v_type in g.canonical_etypes
@@ -463,7 +464,7 @@ def build_fsi_graph(train_data, col_drop):
                                                                                    feature_tensors.std(0, keepdim=True))
     # Create client, merchant, transaction node id tensors & move to torch.tensor
     # col_drop column expected to be in ['client','merchant', 'transaction'] order to match
-    # the torch.tensor_split order
+    # torch.tensor_split order
     client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
         torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
 
