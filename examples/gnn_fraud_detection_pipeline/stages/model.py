@@ -462,6 +462,8 @@ def build_fsi_graph(train_data, col_drop):
     feature_tensors = (feature_tensors - feature_tensors.mean(0, keepdim=True)) / (0.0001 +
                                                                                    feature_tensors.std(0, keepdim=True))
     # Create client, merchant, transaction node id tensors & move to torch.tensor
+    # col_drop column expected to be in ['client','merchant', 'transaction'] order to match
+    # the torch.tensor_split order
     client_tensor, merchant_tensor, transaction_tensor = torch.tensor_split(
         torch.from_dlpack(train_data[col_drop].values.toDlpack()).long(), 3, dim=1)
 
