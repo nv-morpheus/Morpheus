@@ -45,7 +45,7 @@ from ..utils.model_cache import user_to_model_name
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
-    'dependencies': ['python={}'.format('3.10'), 'pip'],
+    'dependencies': ['python=3.10', 'pip'],
     'pip': ['mlflow'],
     'name': 'mlflow-env'
 }
@@ -131,7 +131,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
             get_registered_model_response = requests.get(url=get_registered_model_url,
                                                          headers=headers,
-                                                         params={"name": reg_model_name})
+                                                         params={"name": reg_model_name},
+                                                         timeout=10)
 
             registered_model_response = get_registered_model_response.json()
 
@@ -150,7 +151,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
             requests.patch(url=patch_registered_model_permissions_url,
                            headers=headers,
-                           json=patch_registered_model_permissions_body)
+                           json=patch_registered_model_permissions_body,
+                           timeout=10)
 
         except Exception:
             logger.exception("Error occurred trying to apply model permissions to model: %s",
@@ -194,14 +196,14 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                 metrics_dict: typing.Dict[str, float] = {}
 
                 # Add info on the embeddings
-                for k, v in model.categorical_fts.items():
-                    embedding = v.get("embedding", None)
+                for key, value in model.categorical_fts.items():
+                    embedding = value.get("embedding", None)
 
                     if (embedding is None):
                         continue
 
-                    metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
-                    metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
+                    metrics_dict[f"embedding-{key}-num_embeddings"] = embedding.num_embeddings
+                    metrics_dict[f"embedding-{key}-embedding_dim"] = embedding.embedding_dim
 
                 mlflow.log_metrics(metrics_dict)
 
@@ -252,12 +254,12 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                 }
 
                 # Now create the model version
-                mv = client.create_model_version(name=reg_model_name,
-                                                 source=model_src,
-                                                 run_id=run.info.run_id,
-                                                 tags=tags)
+                model_version = client.create_model_version(name=reg_model_name,
+                                                            source=model_src,
+                                                            run_id=run.info.run_id,
+                                                            tags=tags)
 
-                logger.debug("ML Flow model upload complete: %s:%s:%s", user, reg_model_name, mv.version)
+                logger.debug("ML Flow model upload complete: %s:%s:%s", user, reg_model_name, model_version.version)
 
         except Exception:
             logger.exception("Error uploading model to ML Flow", exc_info=True)

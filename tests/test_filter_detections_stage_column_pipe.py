@@ -16,6 +16,8 @@
 
 import pytest
 
+from _utils import assert_results
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import FilterSource
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -23,8 +25,6 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
-from utils.stages.conv_msg import ConvMsg
 
 
 @pytest.mark.slow

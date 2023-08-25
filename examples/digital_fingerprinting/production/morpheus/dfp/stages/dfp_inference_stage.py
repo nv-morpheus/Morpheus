@@ -30,7 +30,7 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
 from ..utils.model_cache import ModelManager
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPInferenceStage(SinglePortStage):
@@ -93,12 +93,12 @@ class DFPInferenceStage(SinglePortStage):
             model_cache = self.get_model(user_id)
 
             if (model_cache is None):
-                raise RuntimeError("Could not find model for user {}".format(user_id))
+                raise RuntimeError(f"Could not find model for user {user_id}")
 
             loaded_model = model_cache.load_model(self._client)
 
-        except Exception:  # TODO
-            logger.exception("Error trying to get model")
+        except Exception:
+            logger.exception("Error trying to get model", exc_info=True)
             return None
 
         post_model_time = time.time()

@@ -58,7 +58,7 @@ class Receiver():
         """
         A receiver is complete if all input senders are also complete.
         """
-        return all([x.is_complete for x in self._input_senders])
+        return all(x.is_complete for x in self._input_senders)
 
     @property
     def is_partial(self):
@@ -67,7 +67,7 @@ class Receiver():
         there is a circular pipeline.
         """
         # Its partially complete if any input sender is complete
-        return any([x.is_complete for x in self._input_senders])
+        return any(x.is_complete for x in self._input_senders)
 
     @property
     def in_pair(self):
@@ -114,7 +114,7 @@ class Receiver():
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
                 if (great_ancestor is None):
-                    # TODO: Add stage, port, and type info to message
+                    # TODO(MDD): Add stage, port, and type info to message
                     raise RuntimeError(("Cannot determine single type for senders of input port. "
                                         "Use a merge stage to handle different types of inputs."))
 
@@ -140,7 +140,7 @@ class Receiver():
         great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
         if (not typing_utils.issubtype(great_ancestor, self._input_type)):
-            # TODO: Add stage, port, and type info to message
+            # TODO(MDD): Add stage, port, and type info to message
             raise RuntimeError(
                 "Invalid linking phase. Input port type does not match predicted type determined during build phase")
 

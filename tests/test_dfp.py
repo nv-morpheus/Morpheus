@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -39,8 +41,6 @@ from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
-from utils import TEST_DIRS
-from utils import calc_error_val
 
 # End-to-end test intended to imitate the DFP validation test
 

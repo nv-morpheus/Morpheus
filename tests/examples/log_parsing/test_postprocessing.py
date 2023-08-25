@@ -21,10 +21,10 @@ import cupy as cp
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test_data_dir: str):

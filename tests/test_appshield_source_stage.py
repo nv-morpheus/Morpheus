@@ -22,10 +22,10 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from _utils import TEST_DIRS
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from utils import TEST_DIRS
 
 
 @pytest.mark.parametrize('cols_include',
@@ -137,8 +137,8 @@ def test_read_file_to_df(cols_exclude, expected_df):
                               'appshield',
                               'snapshot-1',
                               'envars_2022-01-30_10-26-01.017250.json')
-    file = open(input_file, 'r', encoding='latin1')
-    output_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
+    with open(input_file, 'r', encoding='latin1') as file:
+        output_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
 
     assert list(output_df.columns) == ['PID', 'Process']
     assert_frame_equal(output_df, expected_df)
@@ -175,7 +175,8 @@ def test_load_meta_cols(plugin, expected_new_columns):
                               'envars_2022-01-30_10-26-01.017250.json')
     filepath_split = input_file.split('/')
 
-    data = json.load(open(input_file, 'r', encoding='latin1'))
+    with open(input_file, 'r', encoding='latin1') as file:
+        data = json.load(file)
     input_df = pd.DataFrame(columns=data['titles'], data=data['data'])
     output_df = AppShieldSourceStage.load_meta_cols(filepath_split, plugin, input_df)
 

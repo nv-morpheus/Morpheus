@@ -54,12 +54,12 @@ def round_seconds(obj: pd.Timestamp) -> pd.Timestamp:
     return obj.round(freq="S")
 
 
-def calc_bin(stop_ts: pd.Timestamp, start_ts: pd.Timestamp, resolution_sec: float) -> int:
+def calc_bin(obj: pd.Timestamp, time0: pd.Timestamp, resolution_sec: float) -> int:
     """
     Calculates the bin spacing between the start and stop timestamp at a specified resolution.
     """
 
-    return round((round_seconds(stop_ts) - start_ts).total_seconds()) // resolution_sec
+    return round((round_seconds(obj) - time0).total_seconds()) // resolution_sec
 
 
 def zscore(data):
@@ -105,7 +105,7 @@ def to_periodogram(signal_cp: cp.ndarray):
     return prdg
 
 
-def fft_ad(signalvalues: cp.ndarray, filter_pct=90, z_thresh=8, lowpass=None):
+def fftAD(signalvalues: cp.ndarray, percentile=90, zthresh=8, lowpass=None):  # pylint: disable=invalid-name
     """
     Detect anomalies with fast fourier transform.
 
@@ -113,9 +113,9 @@ def fft_ad(signalvalues: cp.ndarray, filter_pct=90, z_thresh=8, lowpass=None):
     ----------
     signalvalues : cupy.ndarray
         Values of time signal (real valued).
-    filter_pct : int, optional
+    percentile : int, optional
         Filtering percentile for spectral density based filtering, by default 90.
-    z_thresh : int, optional
+    zthresh : int, optional
         Z-score threshold, can be tuned for datasets and sensitivity, by default 8.
     lowpass : _type_, optional
         Filtering percentile for frequency based filtering, by default None.
@@ -134,11 +134,11 @@ def fft_ad(signalvalues: cp.ndarray, filter_pct=90, z_thresh=8, lowpass=None):
     # lowpass: percentile to keep
     if lowpass:
         freqs = cp.arange(len(periodogram))
-        lowpass_bar = int(cp.percentile(freqs, lowpass))
-        indices_mask[lowpass_bar:] = True
+        freq_perct = int(cp.percentile(freqs, lowpass))
+        indices_mask[freq_perct:] = True
     # p: percentile to delete
     else:
-        threshold = cp.percentile(periodogram, filter_pct).item()
+        threshold = cp.percentile(periodogram, percentile).item()
 
         indices_mask = (periodogram < threshold)
 
@@ -150,7 +150,7 @@ def fft_ad(signalvalues: cp.ndarray, filter_pct=90, z_thresh=8, lowpass=None):
 
     z_score = zscore(err)
 
-    return cp.arange(len(signalvalues))[z_score >= z_thresh]
+    return cp.arange(len(signalvalues))[z_score >= zthresh]
 
 
 @dataclasses.dataclass
@@ -213,10 +213,10 @@ class _UserTimeSeries:
 
         self._t0_epoch: float = None
 
-    def _calc_bin_series(self, timestamp_col: pd.Series) -> pd.Series:
+    def _calc_bin_series(self, timeseries: pd.Series) -> pd.Series:
 
         return round(
-            (timestamp_col.dt.round(freq="S") - self._t0_epoch).dt.total_seconds()).astype(int) // self._resolution_sec
+            (timeseries.dt.round(freq="S") - self._t0_epoch).dt.total_seconds()).astype(int) // self._resolution_sec
 
     def _calc_outliers(self, action: _TimeSeriesAction):
 
@@ -230,7 +230,7 @@ class _UserTimeSeries:
         # TODO(MDD): Take this out after testing
         assert cp.sum(signal_cp) == len(action.window), "All points in window are not accounted for in histogram"
 
-        is_anomaly = fft_ad(signal_cp, filter_pct=self._filter_percent, z_thresh=self._zscore_threshold)
+        is_anomaly = fftAD(signal_cp, percentile=self._filter_percent, zthresh=self._zscore_threshold)
 
         if (len(is_anomaly) > 0):
 
@@ -247,7 +247,8 @@ class _UserTimeSeries:
             idx = action.message.get_meta().index
 
             # Find anomalies that are in the active message
-            paired_anomalies = anomalies[anomalies].index.intersection(idx)  # noqa: E712
+            # pylint: disable=singleton-comparison
+            paired_anomalies = anomalies[anomalies == True].index.intersection(idx)  # noqa: E712
 
             # Return the anomalies for priting. But only if the current message has anomalies that will get flagged
             if (len(paired_anomalies) > 0):
@@ -308,18 +309,13 @@ class _UserTimeSeries:
                 # Last message, so stop processing
                 logger.debug("not is_complete, no pending")
                 return None
-            if (not is_complete and len(self._pending_messages) > 1):
-                # Not shutting down, so hold message
-                logger.debug("not is_complete, more pending")
-                return _TimeSeriesAction(send_message=False, message=self._pending_messages.popleft())
             if (is_complete and self._cold_end):
                 # Shutting down and we have a cold ending, just empty the message
                 logger.debug("is_complete and self._cold_end")
                 return _TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
 
             # Shutting down and hot end
-            logger.debug("Hot End. Processing. TS: %s", timeseries_start)
-            pass
+            # logger.debug("Hot End. Processing. TS: %s", timeseries_start._repr_base)
 
         # By this point we have both a front and back buffer. So get ready for a calculation
         logger.debug("Perform Calc.  TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s.",
