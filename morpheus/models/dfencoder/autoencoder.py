@@ -835,10 +835,6 @@ class AutoEncoder(torch.nn.Module):
             raise ValueError("Validation set is required if either run_validation or \
                 use_val_for_loss_stats is set to True.")
 
-        # TODO(Devin)
-        if run_validation:
-            val = val.copy()
-
         val_dset = None
         if run_validation:
             val_dset = DatasetFromDataframe(
