@@ -21,6 +21,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import compare_class_to_scores
+from _utils import mk_async_infer
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -34,9 +38,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from utils import TEST_DIRS
-from utils import calc_error_val
-from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
@@ -141,12 +142,7 @@ def _run_minibert(config, tmp_path, model_name, truncated, data_col_name: str = 
         data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_sid_inf_results.csv'), delimiter=',')
         inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-        mock_infer_result = mock.MagicMock()
-        mock_infer_result.as_numpy.side_effect = inf_results
-
-        def async_infer(callback=None, **k):
-            callback(mock_infer_result, None)
-
+        async_infer = mk_async_infer(inf_results)
         mock_triton_client.async_infer.side_effect = async_infer
 
         return _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name)

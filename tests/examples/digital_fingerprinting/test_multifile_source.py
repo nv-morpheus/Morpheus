@@ -19,9 +19,9 @@ from unittest import mock
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from utils import TEST_DIRS
 
 
 def test_constructor(config: Config):

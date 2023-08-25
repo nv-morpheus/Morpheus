@@ -365,7 +365,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         return self.from_message(self, meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=len(sliced_rows))
 
     @classmethod
-    def from_message(cls: typing.Type[Self],
+    def from_message(cls: type[Self],
                      message: "MultiMessage",
                      *,
                      meta: MessageMeta = None,

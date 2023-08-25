@@ -58,13 +58,16 @@ class GraphSAGEStage(SinglePortStage):
                  c: Config,
                  model_hinsage_file: str,
                  batch_size: int = 5,
-                 sample_size: typing.List[int] = [2, 32],
+                 sample_size: typing.List[int] = None,
                  record_id: str = "index",
                  target_node: str = "transaction"):
         super().__init__(c)
 
+        if (sample_size is None):
+            sample_size = [2, 32]
+
         # Must import stellargraph before loading the model
-        import stellargraph.mapper  # noqa
+        import stellargraph.mapper  # noqa: F401 # pylint:disable=unused-import
         import tensorflow as tf
 
         self._keras_model = tf.keras.models.load_model(model_hinsage_file)

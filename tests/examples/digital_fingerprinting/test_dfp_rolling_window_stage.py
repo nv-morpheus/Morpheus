@@ -19,9 +19,9 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils.dataset_manager import DatasetManager
 
 
 def build_mock_user_cache(user_id: str = 'test_user',
@@ -49,7 +49,7 @@ def test_constructor(config: Config):
     assert stage._min_increment == 7
     assert stage._max_history == 100
     assert stage._cache_dir.startswith('/test/path/cache')
-    assert stage._user_cache_map == {}
+    assert not stage._user_cache_map
 
 
 def test_get_user_cache_hit(config: Config):
@@ -78,7 +78,7 @@ def test_get_user_cache_miss(config: Config):
         assert results.timestamp_column == 'test_timestamp_col'
 
     with stage._get_user_cache('test_user') as results2:
-        results2 is results
+        assert results2 is results
 
 
 def test_build_window_no_new(
@@ -92,7 +92,7 @@ def test_build_window_no_new(
     mock_cache = build_mock_user_cache()
     mock_cache.append_dataframe.return_value = False
     stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    stage._build_window(dfp_message_meta) is None
+    assert stage._build_window(dfp_message_meta) is None
 
 
 def test_build_window_not_enough_data(
@@ -105,7 +105,7 @@ def test_build_window_not_enough_data(
 
     mock_cache = build_mock_user_cache(count=3)
     stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    stage._build_window(dfp_message_meta) is None
+    assert stage._build_window(dfp_message_meta) is None
 
 
 def test_build_window_min_increment(
@@ -118,7 +118,7 @@ def test_build_window_min_increment(
 
     mock_cache = build_mock_user_cache(count=5, total_count=30, last_train_count=25)
     stage._user_cache_map[dfp_message_meta.user_id] = mock_cache
-    stage._build_window(dfp_message_meta) is None
+    assert stage._build_window(dfp_message_meta) is None
 
 
 def test_build_window_invalid(

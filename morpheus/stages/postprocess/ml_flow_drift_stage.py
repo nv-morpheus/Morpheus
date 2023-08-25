@@ -134,8 +134,8 @@ class MLFlowDriftStage(SinglePortStage):
         shifted = cp.abs(x.get_probs_tensor() - 0.5) + 0.5
 
         # Make sure the labels list is long enough
-        for x in range(len(self._labels), shifted.shape[1]):
-            self._labels.append(str(x))
+        for label in range(len(self._labels), shifted.shape[1]):
+            self._labels.append(str(label))
 
         for i in list(range(0, x.count, self._batch_size)):
             start = i

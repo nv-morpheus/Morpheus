@@ -14,90 +14,90 @@
 
 import cudf
 
-import morpheus.parsers.ip as ip
+from morpheus.parsers import ip
 
 
 def test_ip_to_int():
-    input = cudf.Series(["5.79.97.178", "94.130.74.45"])
+    input_df = cudf.Series(["5.79.97.178", "94.130.74.45"])
     expected = cudf.Series([89088434, 1585596973])
-    actual = ip.ip_to_int(input)
+    actual = ip.ip_to_int(input_df)
     assert actual.equals(expected)
 
 
 def test_int_to_ip():
-    input = cudf.Series([89088434, 1585596973])
+    input_df = cudf.Series([89088434, 1585596973])
     expected = cudf.Series(["5.79.97.178", "94.130.74.45"])
-    actual = ip.int_to_ip(input)
+    actual = ip.int_to_ip(input_df)
     assert actual.equals(expected)
 
 
 def test_is_ip():
-    input = cudf.Series(["5.79.97.178", "1.2.3.4", "5", "5.79", "5.79.97", "5.79.97.178.100"])
+    input_df = cudf.Series(["5.79.97.178", "1.2.3.4", "5", "5.79", "5.79.97", "5.79.97.178.100"])
     expected = cudf.Series([True, True, False, False, False, False])
-    actual = ip.is_ip(input)
+    actual = ip.is_ip(input_df)
     assert actual.equals(expected)
 
 
 def test_is_reserved():
-    input = cudf.Series(["240.0.0.0", "255.255.255.255", "5.79.97.178"])
+    input_df = cudf.Series(["240.0.0.0", "255.255.255.255", "5.79.97.178"])
     expected = cudf.Series([True, True, False])
-    actual = ip.is_reserved(input)
+    actual = ip.is_reserved(input_df)
     assert actual.equals(expected)
 
 
 def test_is_loopback():
-    input = cudf.Series(["127.0.0.1", "5.79.97.178"])
+    input_df = cudf.Series(["127.0.0.1", "5.79.97.178"])
     expected = cudf.Series([True, False])
-    actual = ip.is_loopback(input)
+    actual = ip.is_loopback(input_df)
     assert actual.equals(expected)
 
 
 def test_is_link_local():
-    input = cudf.Series(["169.254.0.0", "5.79.97.178"])
+    input_df = cudf.Series(["169.254.0.0", "5.79.97.178"])
     expected = cudf.Series([True, False])
-    actual = ip.is_link_local(input)
+    actual = ip.is_link_local(input_df)
     assert actual.equals(expected)
 
 
 def test_is_unspecified():
-    input = cudf.Series(["0.0.0.0", "5.79.97.178"])
+    input_df = cudf.Series(["0.0.0.0", "5.79.97.178"])
     expected = cudf.Series([True, False])
-    actual = ip.is_unspecified(input)
+    actual = ip.is_unspecified(input_df)
     assert actual.equals(expected)
 
 
 def test_is_multicast():
-    input = cudf.Series(["224.0.0.0", "239.255.255.255", "5.79.97.178"])
+    input_df = cudf.Series(["224.0.0.0", "239.255.255.255", "5.79.97.178"])
     expected = cudf.Series([True, True, False])
-    actual = ip.is_multicast(input)
+    actual = ip.is_multicast(input_df)
     assert actual.equals(expected)
 
 
 def test_is_private():
-    input = cudf.Series(["0.0.0.0", "5.79.97.178"])
+    input_df = cudf.Series(["0.0.0.0", "5.79.97.178"])
     expected = cudf.Series([True, False])
-    actual = ip.is_private(input)
+    actual = ip.is_private(input_df)
     assert actual.equals(expected)
 
 
 def test_is_global():
-    input = cudf.Series(["0.0.0.0", "5.79.97.178"])
+    input_df = cudf.Series(["0.0.0.0", "5.79.97.178"])
     expected = cudf.Series([False, True])
-    actual = ip.is_global(input)
+    actual = ip.is_global(input_df)
     assert actual.equals(expected)
 
 
 def test_netmask():
-    input = cudf.Series(["5.79.97.178", "94.130.74.45"])
+    input_df = cudf.Series(["5.79.97.178", "94.130.74.45"])
     expected = cudf.Series(["255.255.128.0", "255.255.128.0"])
-    actual = ip.netmask(input, 17)
+    actual = ip.netmask(input_df, 17)
     assert actual.equals(expected)
 
 
 def test_hostmask():
-    input = cudf.Series(["5.79.97.178", "94.130.74.45"])
+    input_df = cudf.Series(["5.79.97.178", "94.130.74.45"])
     expected = cudf.Series(["0.0.127.255", "0.0.127.255"])
-    actual = ip.hostmask(input, 17)
+    actual = ip.hostmask(input_df, 17)
     assert actual.equals(expected)
 
 
