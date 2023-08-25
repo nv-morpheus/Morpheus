@@ -108,6 +108,11 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 time.sleep(self._interval_secs)
 
             except Exception as exc:
+                if not self._controller.run_indefinitely:
+                    logger.error("The input provided is not a URL or a valid path, therefore, the maximum " +
+                                 "retries are being overridden, and early exiting is triggered.")
+                    raise Exception(f"Failed to fetch feed entries : {exc}") from exc  # pylint: disable=W0719
+
                 retries += 1
                 logger.warning("Error fetching feed entries. Retrying (%d/%d)...", retries, self._max_retries)
                 logger.debug("Waiting for 5 secs before retrying...")
@@ -115,7 +120,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                 if retries == self._max_retries:  # Check if retries exceeded the limit
                     logger.error("Max retries reached. Unable to fetch feed entries.")
-                    raise Exception("Failed to fetch feed entries after max retries: %s", exc)
+                    # pylint: disable=W0719
+                    raise Exception(f"Failed to fetch feed entries after max retries: {exc}") from exc
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         source = builder.make_source(self.unique_name, self._fetch_feeds)

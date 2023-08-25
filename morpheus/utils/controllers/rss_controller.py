@@ -40,13 +40,13 @@ class RSSController:
         self._batch_size = batch_size
         self._previous_entires = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
         # If feed_input is URL. Runs indefinitely
-        self._run_indefinitely = True if RSSController.is_url(feed_input) else False
+        self._run_indefinitely = RSSController.is_url(feed_input)
 
     @property
     def run_indefinitely(self):
         return self._run_indefinitely
 
-    def parse_feed(self):
+    def parse_feed(self) -> typing.List:
         """
         Parse the RSS feed using the feedparser library.
 
@@ -64,14 +64,14 @@ class RSSController:
 
         if feed.entries:
             return feed
-        else:
-            raise Exception(f"Invalid feed input: {self._feed_input}. No entries found.")
+
+        raise Exception(f"Invalid feed input: {self._feed_input}. No entries found.")  # pylint: disable=W0719
 
     def fetch_dataframes(self) -> cudf.DataFrame:
         """
         Fetch and process RSS feed entries.
 
-        Returns
+        Yeilds
         -------
         typing.Union[typing.List[typing.Tuple], typing.List]
             List of feed entries or None if no new entries are available.
@@ -109,7 +109,7 @@ class RSSController:
                 logger.debug("No new entries found.")
 
         except Exception as exc:
-            raise Exception("Error fetching or processing feed entries: %s", exc)
+            raise Exception(f"Error fetching or processing feed entries: {exc}") from exc  # pylint: disable=W0719
 
     def create_dataframe(self, entries: typing.List[typing.Tuple]) -> cudf.DataFrame:
         """
@@ -129,6 +129,7 @@ class RSSController:
             return cudf.DataFrame(entries)
         except Exception as exc:
             logger.error("Error creating DataFrame: %s", exc)
+            raise Exception(f"Error creating DataFrame: {exc}") from exc  # pylint: disable=W0719
 
     @classmethod
     def is_url(cls, feed_input: str) -> bool:
