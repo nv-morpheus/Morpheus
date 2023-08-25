@@ -63,32 +63,26 @@ def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
     """
 
     retries = 0
-    s3_df = None
+    df = None
     while (retries < 2):
         try:
             with file_object as f:
-                s3_df = read_file_to_df(f,
-                                        file_type,
-                                        filter_nulls=filter_null,
-                                        df_type="pandas",
-                                        parser_kwargs=parser_kwargs)
+                df = read_file_to_df(f,
+                                     file_type,
+                                     filter_nulls=filter_null,
+                                     df_type="pandas",
+                                     parser_kwargs=parser_kwargs)
 
             break
         except Exception as e:
             if (retries < 2):
-                logger.warning("Refreshing S3 credentials")
+                logger.warning("Error fetching %s: %s\nRetrying...", file_object, e)
                 retries += 1
-            else:
-                raise e
-
-    # Run the pre-processing before returning
-    if (s3_df is None):
-        return s3_df
 
     # Optimistaclly prep the dataframe (Not necessary since this will happen again in process_dataframe, but it
     # increases performance significantly)
     if (schema.prep_dataframe is not None):
-        prepared_df_info: PreparedDFInfo = schema.prep_dataframe(s3_df)
+        prepared_df_info: PreparedDFInfo = schema.prep_dataframe(df)
 
     return prepared_df_info.df
 
