@@ -16,6 +16,7 @@ import ctypes
 import multiprocessing
 import signal
 import sys
+import time
 
 
 def _wrap(fn, i, args, error_queue):
@@ -62,4 +63,4 @@ def start_processes(fn, args=(), nprocs=1, join=True, daemon=False, start_method
 
     # Loop on join until it returns True or raises an exception.
     while not context.join():
-        pass
+        time.sleep(0.1)

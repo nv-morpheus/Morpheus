@@ -21,11 +21,11 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
 MockedMLFlow = namedtuple("MockedMLFlow",
@@ -45,15 +45,15 @@ MockedMLFlow = namedtuple("MockedMLFlow",
                           ])
 
 
-@pytest.fixture
-def databricks_env(restore_environ):
+@pytest.fixture(name="databricks_env")
+def databricks_env_fixture(restore_environ):  # pylint: disable=unused-argument
     env = {'DATABRICKS_HOST': 'https://test_host', 'DATABRICKS_TOKEN': 'test_token'}
     os.environ.update(env)
     yield env
 
 
-@pytest.fixture
-def mock_requests():
+@pytest.fixture(name="mock_requests")
+def mock_requests_fixture():
     with mock.patch("requests.get") as mock_requests_get, mock.patch("requests.patch") as mock_requests_patch:
         mock_response = mock.MagicMock(status_code=200)
         mock_response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
@@ -61,8 +61,8 @@ def mock_requests():
         yield MockedRequests(mock_requests_get, mock_requests_patch, mock_response)
 
 
-@pytest.fixture
-def mock_mlflow():
+@pytest.fixture(name="mock_mlflow")
+def mock_mlflow_fixture():
     with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
           mock.patch("dfp.stages.dfp_mlflow_model_writer.ModelSignature") as mock_model_signature,
           mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
@@ -158,18 +158,20 @@ def verify_apply_model_permissions(mock_requests: MockedRequests,
                                    databricks_env: dict,
                                    databricks_permissions: OrderedDict,
                                    experiment_name: str):
-    expected_headers = {"Authorization": "Bearer {DATABRICKS_TOKEN}".format(**databricks_env)}
+    expected_headers = {"Authorization": f"Bearer {databricks_env['DATABRICKS_TOKEN']}"}
     mock_requests.get.assert_called_once_with(
-        url="{DATABRICKS_HOST}/api/2.0/mlflow/databricks/registered-models/get".format(**databricks_env),
+        url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/mlflow/databricks/registered-models/get",
         headers=expected_headers,
-        params={"name": experiment_name})
+        params={"name": experiment_name},
+        timeout=10)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
-        url="{DATABRICKS_HOST}/api/2.0/preview/permissions/registered-models/test_id".format(**databricks_env),
+        url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/preview/permissions/registered-models/test_id",
         headers=expected_headers,
-        json={'access_control_list': expected_acl})
+        json={'access_control_list': expected_acl},
+        timeout=10)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
@@ -285,10 +287,12 @@ def test_on_data(config: Config,
         "Batch size": 100,
         "Start Epoch": min_time,
         "End Epoch": max_time,
-        "Log Count": len(df)})
+        "Log Count": len(df)
+    })
 
-    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
-                                                     "embedding-test-embedding_dim": 102})
+    mock_mlflow.log_metrics.assert_called_once_with({
+        "embedding-test-num_embeddings": 101, "embedding-test-embedding_dim": 102
+    })
 
     mock_model.prepare_df.assert_called_once()
     mock_model.get_anomaly_score.assert_called_once()

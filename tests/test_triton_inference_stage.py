@@ -23,6 +23,8 @@ import pytest
 
 import cudf
 
+from _utils import assert_results
+from _utils import mk_async_infer
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -34,7 +36,6 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
-from utils import assert_results
 
 MODEL_MAX_BATCH_SIZE = 1024
 
@@ -45,34 +46,34 @@ def test_resource_pool():
     # If called a third time this will raise a StopIteration exception
     create_fn.side_effect = range(2)
 
-    rp = ResourcePool[int](create_fn=create_fn, max_size=2)
+    pool = ResourcePool[int](create_fn=create_fn, max_size=2)
 
-    assert rp._queue.qsize() == 0
+    assert pool._queue.qsize() == 0
 
     # Check for normal allocation
-    assert rp.borrow_obj() == 0
-    assert rp._queue.qsize() == 0
-    assert rp.added_count == 1
+    assert pool.borrow_obj() == 0
+    assert pool._queue.qsize() == 0
+    assert pool.added_count == 1
     create_fn.assert_called_once()
 
-    assert rp.borrow_obj() == 1
-    assert rp._queue.qsize() == 0
-    assert rp.added_count == 2
+    assert pool.borrow_obj() == 1
+    assert pool._queue.qsize() == 0
+    assert pool.added_count == 2
     assert create_fn.call_count == 2
 
-    rp.return_obj(0)
-    assert rp._queue.qsize() == 1
-    rp.return_obj(1)
-    assert rp._queue.qsize() == 2
+    pool.return_obj(0)
+    assert pool._queue.qsize() == 1
+    pool.return_obj(1)
+    assert pool._queue.qsize() == 2
 
-    assert rp.borrow_obj() == 0
-    assert rp._queue.qsize() == 1
-    assert rp._added_count == 2
+    assert pool.borrow_obj() == 0
+    assert pool._queue.qsize() == 1
+    assert pool._added_count == 2
     assert create_fn.call_count == 2
 
-    assert rp.borrow_obj() == 1
-    assert rp._queue.qsize() == 0
-    assert rp._added_count == 2
+    assert pool.borrow_obj() == 1
+    assert pool._queue.qsize() == 0
+    assert pool._added_count == 2
     assert create_fn.call_count == 2
 
 
@@ -82,25 +83,25 @@ def test_resource_pool_overallocate():
     # If called a third time this will raise a StopIteration exception
     create_fn.side_effect = range(5)
 
-    rp = ResourcePool[int](create_fn=create_fn, max_size=2)
+    pool = ResourcePool[int](create_fn=create_fn, max_size=2)
 
-    assert rp.borrow_obj() == 0
-    assert rp.borrow_obj() == 1
+    assert pool.borrow_obj() == 0
+    assert pool.borrow_obj() == 1
 
     with pytest.raises(queue.Empty):
-        rp.borrow_obj(timeout=0)
+        pool.borrow_obj(timeout=0)
 
 
 def test_resource_pool_large_count():
     create_fn = mock.MagicMock()
     create_fn.side_effect = range(10000)
 
-    rp = ResourcePool[int](create_fn=create_fn, max_size=10000)
+    pool = ResourcePool[int](create_fn=create_fn, max_size=10000)
 
     for _ in range(10000):
-        rp.borrow_obj(timeout=0)
+        pool.borrow_obj(timeout=0)
 
-    assert rp._queue.qsize() == 0
+    assert pool._queue.qsize() == 0
     assert create_fn.call_count == 10000
 
 
@@ -108,14 +109,14 @@ def test_resource_pool_create_raises_error():
     create_fn = mock.MagicMock()
     create_fn.side_effect = (10, RuntimeError, 20)
 
-    rp = ResourcePool[int](create_fn=create_fn, max_size=10)
+    pool = ResourcePool[int](create_fn=create_fn, max_size=10)
 
-    assert rp.borrow_obj() == 10
+    assert pool.borrow_obj() == 10
 
     with pytest.raises(RuntimeError):
-        rp.borrow_obj()
+        pool.borrow_obj()
 
-    assert rp.borrow_obj() == 20
+    assert pool.borrow_obj() == 20
 
 
 @pytest.mark.slow
@@ -145,12 +146,7 @@ def test_triton_stage_pipe(mock_triton_client, config, num_records):
 
     inf_results = np.split(input_df.values, range(MODEL_MAX_BATCH_SIZE, len(input_df), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
-
+    async_infer = mk_async_infer(inf_results)
     mock_triton_client.async_infer.side_effect = async_infer
 
     config.mode = PipelineModes.FIL

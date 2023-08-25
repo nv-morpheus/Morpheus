@@ -17,13 +17,13 @@ import os
 
 import pytest
 
+from _utils import assert_path_exists
+from _utils import assert_results
+from _utils import calc_error_val
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_path_exists
-from utils import assert_results
-from utils import calc_error_val
 
 
 @pytest.mark.use_cudf

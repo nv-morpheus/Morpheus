@@ -22,6 +22,11 @@ import pandas as pd
 import pytest
 from mrc.core import operators as ops
 
+from _utils import TEST_DIRS
+from _utils import assert_results
+from _utils import write_data_to_kafka
+from _utils import write_file_to_kafka
+from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -30,11 +35,6 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import assert_results
-from utils import write_data_to_kafka
-from utils import write_file_to_kafka
-from utils.stages.dfp_length_checker import DFPLengthChecker
 
 
 @pytest.mark.kafka
@@ -134,8 +134,8 @@ class OffsetChecker(SinglePortStage):
         new_offsets = self._client.list_consumer_group_offsets(self._group_id)
 
         if self._offsets is not None:
-            for (tp, prev_offset) in self._offsets.items():
-                new_offset = new_offsets[tp]
+            for (topic_partition, prev_offset) in self._offsets.items():
+                new_offset = new_offsets[topic_partition]
 
                 assert new_offset.offset >= prev_offset.offset
 

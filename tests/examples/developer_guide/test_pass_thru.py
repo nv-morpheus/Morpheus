@@ -22,35 +22,36 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
 
 
 def _check_pass_thru(config: Config,
                      filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     PassThruStageCls: SinglePortStage):
-    stage = PassThruStageCls(config)
+                     pass_thru_stage_cls: SinglePortStage):
+    stage = pass_thru_stage_cls(config)
 
     meta = MessageMeta(filter_probs_df)
-    mm = MultiMessage(meta=meta)
+    multi = MultiMessage(meta=meta)
 
-    assert stage.on_data(mm) is mm
+    assert stage.on_data(multi) is multi
 
 
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py'))
 def test_pass_thru_ex1(config: Config,
                        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[types.ModuleType]):
-    pass_thru = import_mod[0]
+                       import_mod: types.ModuleType):
+    pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
 
 
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py')])
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/_lib/pass_thru.py'),
+                        sys_path=-2)
 def test_pass_thru_ex3(config: Config,
                        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[types.ModuleType]):
-    pass_thru = import_mod[0]
+                       import_mod: types.ModuleType):
+    pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)

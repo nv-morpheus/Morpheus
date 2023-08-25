@@ -36,10 +36,10 @@ from morpheus.utils.seed import manual_seed
 logger = logging.getLogger(__name__)
 
 
-class _UserModelManager(object):
+class _UserModelManager:
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  user_id: str,
                  save_model: bool,
                  epochs: int,
@@ -51,8 +51,8 @@ class _UserModelManager(object):
         self._history: pd.DataFrame = None
         self._max_history: int = max_history
         self._seed: int = seed
-        self._feature_columns = c.ae.feature_columns
-        self._feature_scaler = c.ae.feature_scaler
+        self._feature_columns = config.ae.feature_columns
+        self._feature_scaler = config.ae.feature_scaler
         self._epochs = epochs
         self._save_model = save_model
 

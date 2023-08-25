@@ -19,11 +19,11 @@ import typing
 
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 EXPECTED_NEW_COLS = ['to_count', 'bcc_count', 'cc_count', 'total_recipients', 'data']
 

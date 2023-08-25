@@ -19,10 +19,10 @@ import typing
 
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 def test_constructor(config: Config):
@@ -32,9 +32,9 @@ def test_constructor(config: Config):
     assert isinstance(stage, SinglePortStage)
     assert not stage._include_generic
     assert stage._include_individual
-    assert stage._skip_users == []
-    assert stage._only_users == []
-    assert stage._user_index_map == {}
+    assert not stage._skip_users
+    assert not stage._only_users
+    assert not stage._user_index_map
 
     stage = DFPSplitUsersStage(config,
                                include_generic=True,
@@ -46,7 +46,7 @@ def test_constructor(config: Config):
     assert not stage._include_individual
     assert stage._skip_users == ['a', 'b']
     assert stage._only_users == ['c', 'd']
-    assert stage._user_index_map == {}
+    assert not stage._user_index_map
 
 
 @pytest.mark.parametrize('include_generic', [True, False])
@@ -76,8 +76,8 @@ def test_extract_users(config: Config,
     expected_data = {}
     with open(input_file, encoding='UTF-8') as fh:
         for line in fh:
-            d = json.loads(line)
-            user_id = d['From']
+            json_data = json.loads(line)
+            user_id = json_data['From']
             if user_id in skip_users:
                 continue
 
@@ -85,10 +85,10 @@ def test_extract_users(config: Config,
                 continue
 
             if include_generic:
-                all_data.append(d)
+                all_data.append(json_data)
 
             if include_individual:
-                expected_data[user_id] = [d]
+                expected_data[user_id] = [json_data]
 
     if include_generic:
         expected_data[config.ae.fallback_username] = all_data
@@ -117,4 +117,4 @@ def test_extract_users_none_to_empty(config: Config):
     from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
 
     stage = DFPSplitUsersStage(config, include_generic=True, include_individual=True)
-    assert stage.extract_users(None) == []
+    assert not stage.extract_users(None)

@@ -108,8 +108,8 @@ class FilterDetectionsStage(SinglePortStage):
         """
         if self._filter_source == FilterSource.TENSOR:
             return (MultiResponseMessage, )
-        else:
-            return (MultiMessage, )
+
+        return (MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default
@@ -198,9 +198,10 @@ class FilterDetectionsStage(SinglePortStage):
             else:
                 self._filter_source = FilterSource.DATAFRAME
 
-            logger.debug(
-                f"filter_source was set to Auto, inferring a filter source of {self._filter_source} based on an input "
-                f"message type of {message_type}")
+            logger.debug(("filter_source was set to Auto, inferring a filter source of %s based on an input "
+                          "message type of %s"),
+                         self._filter_source,
+                         message_type)
 
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,

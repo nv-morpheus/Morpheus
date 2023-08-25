@@ -59,7 +59,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
 
     # on_data is a thin wrapper around process_events, tests should be the same for non-empty messages
     if use_on_data:
-        stage.on_data(dfp_multi_ae_message) is dfp_multi_ae_message
+        assert stage.on_data(dfp_multi_ae_message) is dfp_multi_ae_message
     else:
         stage._process_events(dfp_multi_ae_message)
 
@@ -69,10 +69,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
     assert result_df['v2'][10] == 'NaN'
 
 
-def test_on_data_none(
-        config: Config,
-        dfp_message_meta: "DFPMessageMeta"  # noqa: F821
-):
+def test_on_data_none(config: Config):
     from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
     stage = DFPPostprocessingStage(config)
     assert stage.on_data(None) is None
