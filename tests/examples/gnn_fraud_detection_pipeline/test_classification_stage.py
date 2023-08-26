@@ -21,6 +21,8 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 
+# pylint: disable=no-name-in-module
+
 
 @pytest.mark.usefixtures("manual_seed")
 @pytest.mark.use_python
