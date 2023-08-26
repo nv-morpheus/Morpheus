@@ -117,6 +117,7 @@ def test_data_fixture():
     """
     import cudf
     index = [2, 14, 16, 26, 41, 42, 70, 91, 93, 95]
+
     client_data = [795.0, 2697.0, 5531.0, 415.0, 2580.0, 3551.0, 6547.0, 2697.0, 3503.0, 7173.0]
     merchant_data = [8567.0, 4609.0, 2781.0, 7844.0, 629.0, 6915.0, 7071.0, 570.0, 2446.0, 8110.0]
 
@@ -139,6 +140,7 @@ def test_data_fixture():
     meta_cols = ['index', 'client_node', 'merchant_node']
     for col in meta_cols:
         df[col] = cudf.CategoricalIndex(df[col]).codes
+    df.index = df['index']
 
     # Collect expected nodes, since hetero nodes could share same index
     # We use dict of node_name:index
@@ -151,7 +153,7 @@ def test_data_fixture():
 
     expected_edges = {'buy': [], 'sell': []}
     for i in range(df.shape[0]):
-        for key, val in {'sell': 'client_node', 'buy': 'merchant_node'}.items():
+        for key, val in {'buy': 'client_node', 'sell': 'merchant_node'}.items():
             expected_edges[key].append([df[val].iloc[i], i])
 
     # ensuring test data & assumptions are correct

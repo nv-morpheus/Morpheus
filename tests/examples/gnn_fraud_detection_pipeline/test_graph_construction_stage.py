@@ -47,18 +47,18 @@ class TestGraphConstructionStage:
         expected_edges = test_data['expected_edges']
 
         # The stage wants a csv file from the first 5 rows
-        training_data = StringIO(df.to_csv(index=False))
+        training_data = StringIO(df.head(5).to_csv(index=False))
         stage = graph_construction_stage.FraudGraphConstructionStage(config, training_data)
 
         # Since we used the first 5 rows as the training data, send the second 5 as inference data
-        meta = MessageMeta(cudf.DataFrame(df))
+        meta = MessageMeta(cudf.DataFrame(df).tail(5))
         multi_msg = MultiMessage(meta=meta)
         fgmm = stage._process_message(multi_msg)
 
         assert isinstance(fgmm, graph_construction_stage.FraudGraphMultiMessage)
         assert fgmm.meta is meta
         assert fgmm.mess_offset == 0
-        assert fgmm.mess_count == 10
+        assert fgmm.mess_count == 5
 
         assert isinstance(fgmm.graph, dgl.DGLGraph)
 
