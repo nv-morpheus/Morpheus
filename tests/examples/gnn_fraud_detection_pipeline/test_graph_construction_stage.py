@@ -25,6 +25,8 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 
+# pylint: disable=no-name-in-module
+
 
 @pytest.mark.use_python
 class TestGraphConstructionStage:
