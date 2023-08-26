@@ -158,7 +158,7 @@ def test_data_fixture():
     assert sum(len(edges) for _, edges in expected_edges.items()) == 20
 
     yield {
-        "index": index,
+        "index": df['index'].to_arrow().tolist(),
         "client_data": df['client_node'].to_arrow().tolist(),
         "merchant_data": df['merchant_node'].to_arrow().tolist(),
         "df": df,
