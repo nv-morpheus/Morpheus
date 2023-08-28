@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import dataclasses
-import typing
 
 import mrc
 from mrc.core import operators as ops
@@ -36,16 +35,16 @@ from .model import load_model
 
 @dataclasses.dataclass
 class GraphSAGEMultiMessage(MultiMessage):
-    node_identifiers: typing.List[int]
-    inductive_embedding_column_names: typing.List[str]
+    node_identifiers: list[int]
+    inductive_embedding_column_names: list[str]
 
     def __init__(self,
                  *,
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 node_identifiers: typing.List[int],
-                 inductive_embedding_column_names: typing.List[str]):
+                 node_identifiers: list[int],
+                 inductive_embedding_column_names: list[str]):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
         self.node_identifiers = node_identifiers
@@ -72,13 +71,13 @@ class GraphSAGEStage(SinglePortStage):
     def name(self) -> str:
         return "gnn-fraud-sage"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (FraudGraphMultiMessage, ):
         return (FraudGraphMultiMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: FraudGraphMultiMessage):
+    def _process_message(self, message: FraudGraphMultiMessage) -> GraphSAGEMultiMessage:
 
         node_identifiers = list(message.get_meta(self._record_id).to_pandas())
 

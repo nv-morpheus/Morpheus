@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -55,13 +53,13 @@ class ClassificationStage(SinglePortStage):
     def name(self) -> str:
         return "gnn-fraud-classification"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (GraphSAGEMultiMessage, ):
         return (GraphSAGEMultiMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: GraphSAGEMultiMessage):
+    def _process_message(self, message: GraphSAGEMultiMessage) -> GraphSAGEMultiMessage:
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
         message.set_meta("node_id", message.node_identifiers)
 
