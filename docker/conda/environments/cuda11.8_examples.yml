@@ -34,5 +34,3 @@ dependencies:
     - mlflow>=2.2.1,<3
     - papermill=2.3.4
     - s3fs>=2023.6
-    - pip
-    - wrapt=1.14.1 # ver 1.15 breaks the keras model used by the gnn_fraud_detection_pipeline
