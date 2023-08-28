@@ -46,31 +46,31 @@ class BaseHeteroGraph(nn.Module):
         self._target = target
 
         # categorical embeding
-        self._hetro_embedding = dglnn.HeteroEmbedding(
+        self.hetro_embedding = dglnn.HeteroEmbedding(
             {ntype: input_graph.number_of_nodes(ntype)
              for ntype in input_graph.ntypes if ntype != self._target},
             embedding_size)
 
-        self._layers = nn.ModuleList()
+        self.layers = nn.ModuleList()
 
     def forward(self, input_graph: dgl.DGLHeteroGraph, features: torch.tensor) -> (torch.tensor, torch.tensor):
 
         # Get embeddings for all none target node types.
-        h_dict = self._hetro_embedding(
+        h_dict = self.hetro_embedding(
             {ntype: input_graph[0].nodes(ntype)
-             for ntype in self._hetro_embedding.embeds.keys()})
+             for ntype in self.hetro_embedding.embeds.keys()})
 
         h_dict[self._target] = features
 
         # Forward pass to layers.
-        for i, layer in enumerate(self._layers[:-1]):
+        for i, layer in enumerate(self.layers[:-1]):
             if i != 0:
                 h_dict = {k: F.leaky_relu(h) for k, h in h_dict.items()}
             h_dict = layer(input_graph[i], h_dict)
 
         embedding = h_dict[self._target]
 
-        return self._layers[-1](embedding), embedding
+        return self.layers[-1](embedding), embedding
 
     def infer(self, input_graph: dgl.DGLHeteroGraph, features: torch.tensor) -> (torch.tensor, torch.tensor):
         """Perform inference through forward pass
@@ -175,19 +175,19 @@ class HeteroRGCN(BaseHeteroGraph):
             _ in input_graph.canonical_etypes
         }
 
-        self._layers.append(
+        self.layers.append(
             dglnn.HeteroGraphConv({rel: dglnn.GraphConv(in_sizes[rel], hidden_size)
                                    for rel in input_graph.etypes},
                                   aggregate='sum'))
 
         for _ in range(n_layers - 1):
-            self._layers.append(
+            self.layers.append(
                 dglnn.HeteroGraphConv({rel: dglnn.GraphConv(hidden_size, hidden_size)
                                        for rel in input_graph.etypes},
                                       aggregate='sum'))
 
         # output layer
-        self._layers.append(nn.Linear(hidden_size, out_size))
+        self.layers.append(nn.Linear(hidden_size, out_size))
 
 
 class HinSAGE(BaseHeteroGraph):
@@ -256,7 +256,7 @@ class HinSAGE(BaseHeteroGraph):
         # create input features
         in_feats = {rel: embedding_size if rel != self._target else in_size for rel in input_graph.ntypes}
 
-        self._layers.append(
+        self.layers.append(
             dglnn.HeteroGraphConv(
                 {
                     rel:
@@ -269,7 +269,7 @@ class HinSAGE(BaseHeteroGraph):
                 aggregate='sum'))
 
         for _ in range(n_layers - 1):
-            self._layers.append(
+            self.layers.append(
                 dglnn.HeteroGraphConv(
                     {
                         rel: dglnn.SAGEConv(
@@ -282,7 +282,7 @@ class HinSAGE(BaseHeteroGraph):
                     aggregate='sum'))
 
         # output layer
-        self._layers.append(nn.Linear(hidden_size, out_size))
+        self.layers.append(nn.Linear(hidden_size, out_size))
 
 
 def load_model(model_dir: str,
