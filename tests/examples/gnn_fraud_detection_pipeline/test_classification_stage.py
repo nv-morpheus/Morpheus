@@ -24,7 +24,6 @@ from morpheus.messages import MessageMeta
 # pylint: disable=no-name-in-module
 
 
-@pytest.mark.usefixtures("manual_seed")
 @pytest.mark.use_python
 class TestClassificationStage:
 
@@ -34,6 +33,7 @@ class TestClassificationStage:
         stage = ClassificationStage(config, xgb_model)
         assert isinstance(stage._xgb_model, cuml.ForestInference)
 
+    @pytest.mark.usefixtures("manual_seed")
     def test_process_message(self, config: Config, xgb_model: str, dataset_cudf: DatasetManager):
         from stages.classification_stage import ClassificationStage
         from stages.graph_sage_stage import GraphSAGEMultiMessage
