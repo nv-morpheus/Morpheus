@@ -120,9 +120,8 @@ morpheus --log_level INFO \
 	deserialize \
 	fraud-graph-construction --training_file examples/gnn_fraud_detection_pipeline/training.csv \
 	monitor --description "Graph construction rate" \
-	gnn-fraud-sage --model_hinsage_file examples/gnn_fraud_detection_pipeline/model/hinsage-model.pt \
+	gnn-fraud-sage --model_dir  examples/gnn_fraud_detection_pipeline/model/ \
 	monitor --description "Inference rate" \
-	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb-model.pt \
 	monitor --description "Add classification rate" \
 	serialize \
 	to-file --filename "output.csv" --overwrite
