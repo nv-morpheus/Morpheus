@@ -60,7 +60,7 @@ def test_parse_feed_valid_url(feed_input):
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths)
 def test_parse_feed_invalid_input(feed_input):
     controller = RSSController(feed_input=feed_input)
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         controller.parse_feed()
 
 

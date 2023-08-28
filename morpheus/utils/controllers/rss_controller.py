@@ -46,7 +46,7 @@ class RSSController:
     def run_indefinitely(self):
         return self._run_indefinitely
 
-    def parse_feed(self) -> typing.List:
+    def parse_feed(self) -> list[dict]:
         """
         Parse the RSS feed using the feedparser library.
 
@@ -57,7 +57,7 @@ class RSSController:
 
         Raises
         ------
-        Exception
+        RuntimeError
             If the feed input is invalid or does not contain any entries.
         """
         feed = feedparser.parse(self._feed_input)
@@ -65,7 +65,7 @@ class RSSController:
         if feed.entries:
             return feed
 
-        raise Exception(f"Invalid feed input: {self._feed_input}. No entries found.")  # pylint: disable=W0719
+        raise RuntimeError(f"Invalid feed input: {self._feed_input}. No entries found.")
 
     def fetch_dataframes(self) -> cudf.DataFrame:
         """
@@ -78,7 +78,7 @@ class RSSController:
 
         Raises
         ------
-        Exception
+        RuntimeError
             If there is error fetching or processing feed entries.
         """
         entry_accumulator = []
@@ -109,7 +109,7 @@ class RSSController:
                 logger.debug("No new entries found.")
 
         except Exception as exc:
-            raise Exception(f"Error fetching or processing feed entries: {exc}") from exc  # pylint: disable=W0719
+            raise RuntimeError(f"Error fetching or processing feed entries: {exc}") from exc
 
     def create_dataframe(self, entries: typing.List[typing.Tuple]) -> cudf.DataFrame:
         """
@@ -124,12 +124,16 @@ class RSSController:
         -------
         cudf.DataFrame
             A DataFrame containing feed entry data.
+        Raises
+        ------
+        RuntimeError
+            Error creating DataFrame.
         """
         try:
             return cudf.DataFrame(entries)
         except Exception as exc:
             logger.error("Error creating DataFrame: %s", exc)
-            raise Exception(f"Error creating DataFrame: {exc}") from exc  # pylint: disable=W0719
+            raise RuntimeError(f"Error creating DataFrame: {exc}") from exc
 
     @classmethod
     def is_url(cls, feed_input: str) -> bool:

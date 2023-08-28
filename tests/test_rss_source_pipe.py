@@ -25,20 +25,12 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 
 
 @pytest.mark.use_python
-def test_constructor(config):
+def test_constructor_with_feed_url(config):
 
     url_feed_input = "https://realpython.com/atom.xml"
     rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)
 
-    file_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")
-    rss_source_stage_2 = RSSSourceStage(config,
-                                        feed_input=file_feed_input,
-                                        interval_secs=5,
-                                        stop_after=10,
-                                        max_retries=2)
-
     ctlr = rss_source_stage._controller
-    ctlr_2 = rss_source_stage_2._controller
 
     assert ctlr._feed_input == "https://realpython.com/atom.xml"
     assert ctlr._run_indefinitely is True
@@ -47,15 +39,28 @@ def test_constructor(config):
     assert rss_source_stage._stop_after == 0
     assert rss_source_stage._max_retries == 5
 
-    assert ctlr_2._feed_input == file_feed_input
-    assert ctlr_2._run_indefinitely is False
-    assert ctlr_2._batch_size == config.pipeline_batch_size
-    assert rss_source_stage_2._interval_secs == 5
-    assert rss_source_stage_2._stop_after == 10
-    assert rss_source_stage_2._max_retries == 2
+
+@pytest.mark.use_python
+def test_constructor_with_feed_file(config):
+    file_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")
+    rss_source_stage = RSSSourceStage(config, feed_input=file_feed_input, interval_secs=5, stop_after=10, max_retries=2)
+
+    ctlr = rss_source_stage._controller
+
+    assert ctlr._feed_input == file_feed_input
+    assert ctlr._run_indefinitely is False
+    assert ctlr._batch_size == config.pipeline_batch_size
+    assert rss_source_stage._interval_secs == 5
+    assert rss_source_stage._stop_after == 10
+    assert rss_source_stage._max_retries == 2
+
+
+@pytest.mark.use_python
+def test_support_cpp_node(config):
+    url_feed_input = "https://realpython.com/atom.xml"
+    rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)
 
     assert rss_source_stage.supports_cpp_node() is False
-    assert rss_source_stage_2.supports_cpp_node() is False
 
 
 @pytest.mark.use_python
@@ -89,5 +94,5 @@ def test_invalid_input_rss_source_stage_pipe(config) -> None:
 
     pipe.add_edge(rss_source_stage, sink_stage)
 
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         pipe.run()

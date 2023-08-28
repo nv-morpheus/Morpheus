@@ -19,7 +19,6 @@ import mrc
 
 from morpheus.cli import register_stage
 from morpheus.config import Config
-from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -77,9 +76,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _fetch_feeds(self) -> ControlMessage:
+    def _fetch_feeds(self) -> MessageMeta:
         """
-        Fetch RSS feed entries and yield as ControlMessage object.
+        Fetch RSS feed entries and yield as MessageMeta object.
         """
         retries = 0
 
@@ -111,7 +110,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 if not self._controller.run_indefinitely:
                     logger.error("The input provided is not a URL or a valid path, therefore, the maximum " +
                                  "retries are being overridden, and early exiting is triggered.")
-                    raise Exception(f"Failed to fetch feed entries : {exc}") from exc  # pylint: disable=W0719
+                    raise RuntimeError(f"Failed to fetch feed entries : {exc}") from exc
 
                 retries += 1
                 logger.warning("Error fetching feed entries. Retrying (%d/%d)...", retries, self._max_retries)
@@ -120,8 +119,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                 if retries == self._max_retries:  # Check if retries exceeded the limit
                     logger.error("Max retries reached. Unable to fetch feed entries.")
-                    # pylint: disable=W0719
-                    raise Exception(f"Failed to fetch feed entries after max retries: {exc}") from exc
+                    raise RuntimeError(f"Failed to fetch feed entries after max retries: {exc}") from exc
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         source = builder.make_source(self.unique_name, self._fetch_feeds)
