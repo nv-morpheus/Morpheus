@@ -124,6 +124,7 @@ class RSSController:
         -------
         cudf.DataFrame
             A DataFrame containing feed entry data.
+
         Raises
         ------
         RuntimeError
