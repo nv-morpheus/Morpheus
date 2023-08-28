@@ -599,10 +599,9 @@ class AutoEncoder(torch.nn.Module):
         Dict[str, Union[int, torch.Tensor]]
             A dict containing the preprocessed input data and targets by feature type.
         """
-        df = self.prepare_df(df)
         if shuffle_rows_in_batch:
             df = df.sample(frac=1.0)
-        df = EncoderDataFrame(df)
+        df = self.prepare_df(df)
         swapped_df = df.swap(likelihood=self.swap_p)
         swapped_input_tensor = self.build_input_tensor(swapped_df)
         num_target, bin_target, codes = self.compute_targets(df)
