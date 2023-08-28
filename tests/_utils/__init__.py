@@ -190,13 +190,6 @@ def make_mock_response(mock_request_session: mock.MagicMock,
     return mock_response
 
 
-def remove_module(mod_to_remove: str):
-    mod_prefix = f"{mod_to_remove}."
-    for mod_name in list(sys.modules.keys()):
-        if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
-            del sys.modules[mod_name]
-
-
 def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
@@ -205,3 +198,15 @@ def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
         callback(mock_infer_result, None)
 
     return async_infer
+
+
+def remove_module(mod_to_remove: str):
+    """
+    Remove a module, and all sub-modules from `sys.modules`. This is needed when testing examples which may import
+    modules with common names such as `stages` which need to be removed from `sys.modules` before running tests for
+    another example which might also contain its own `stages` module.
+    """
+    mod_prefix = f"{mod_to_remove}."
+    for mod_name in list(sys.modules.keys()):
+        if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
+            del sys.modules[mod_name]

@@ -55,6 +55,9 @@ def config_fixture(config):
 
 @pytest.fixture(name="manual_seed", scope="function")
 def manual_seed_fixture(manual_seed):
+    """
+    Extends the base `manual_seed` fixture to also set the seed for dgl, ensuring deterministic results in tests
+    """
     import dgl
 
     def seed_fn(seed=42):
