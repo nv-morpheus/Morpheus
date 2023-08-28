@@ -78,7 +78,7 @@ from stages.graph_sage_stage import GraphSAGEStage
     type=click.Path(exists=True, readable=True, file_okay=False, dir_okay=True),
     default="model",
     required=True,
-    help="Trained Hinsage & XGB model directory path.",
+    help="Path to trained Hinsage & XGB models.",
 )
 @click.option(
     "--output_file",
