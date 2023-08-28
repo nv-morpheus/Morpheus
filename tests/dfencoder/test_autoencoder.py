@@ -298,7 +298,7 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
     class MockHelper:
         """A helper class for mocking the `_validate_dataframe` method in the `AutoEncoder` class."""
 
-        def __init__(self, orig_losses, swapped_loss=1.0):
+        def __init__(self, orig_losses):
             """
             Initialization.
 
@@ -310,12 +310,11 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
                 A fixed loss value to be returned by the mocked `_validate_dataframe` method as the `swapped_loss`.
                 Fixed as it's unrelated to the early-stopping functionality being tested here.
             """
-            self.swapped_loss = swapped_loss
             self.orig_losses = orig_losses
             # counter to keep track of the number of times the mocked `_validate_dataframe` method has been called
             self.count = 0
 
-        def mocked_validate_dataframe(self, *args, **kwargs):  # pylint: disable=unused-argument
+        def mocked_validate_dataset(self, *args, **kwargs):  # pylint: disable=unused-argument
             """
             A mocked version of the `_validate_dataframe` method in the `AutoEncoder` class for testing early stopping.
 
@@ -324,9 +323,9 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
             tuple of (float, float)
                 A tuple of original validation loss and swapped loss values for each epoch.
             """
-            orig_loss = self.orig_losses[self.count]
+            mean_loss = self.orig_losses[self.count]
             self.count += 1
-            return orig_loss, self.swapped_loss
+            return mean_loss
 
     # Test early stopping
     orig_losses = [0.1, 0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
@@ -334,7 +333,7 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
     ae = autoencoder.AutoEncoder(
         patience=3)  # should stop at epoch 3 as the first 3 losses are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
-    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
+    with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
         ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 3
@@ -342,7 +341,7 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
     ae = autoencoder.AutoEncoder(
         patience=5)  # should stop at epoch 9 as losses from epoch 5-9 are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
-    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
+    with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
         ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 9
