@@ -19,19 +19,20 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_python
 class TestGraphSageStage:
 
-    def test_constructor(self,
-                         config: Config,
-                         hinsage_model: str,
-                         gnn_fraud_detection_pipeline: types.ModuleType,
-                         tensorflow):
+    def test_constructor(
+            self,
+            config: Config,
+            hinsage_model: str,
+            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
+            tensorflow):
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
         stage = GraphSAGEStage(config,
                                model_hinsage_file=hinsage_model,
@@ -46,12 +47,13 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    def test_inductive_step_hinsage(self,
-                                    config: Config,
-                                    hinsage_model: str,
-                                    gnn_fraud_detection_pipeline: types.ModuleType,
-                                    test_data: dict,
-                                    dataset_pandas: DatasetManager):
+    def test_inductive_step_hinsage(
+            self,
+            config: Config,
+            hinsage_model: str,
+            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
+            test_data: dict,
+            dataset_pandas: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
 
@@ -70,19 +72,20 @@ class TestGraphSageStage:
         assert results.index.to_arrow().to_pylist() == test_data['index']
         dataset_pandas.assert_compare_df(results, expected_df)
 
-    def test_process_message(self,
-                             config: Config,
-                             hinsage_model: str,
-                             gnn_fraud_detection_pipeline: types.ModuleType,
-                             test_data: dict,
-                             dataset_pandas: DatasetManager):
+    def test_process_message(
+            self,
+            config: Config,
+            hinsage_model: str,
+            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
+            test_data: dict,
+            dataset_pandas: DatasetManager):
         from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphConstructionStage
         from gnn_fraud_detection_pipeline.stages.graph_construction_stage import FraudGraphMultiMessage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
         from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEStage
 
         expected_df = dataset_pandas['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
-        expected_df.rename(lambda x: "ind_emb_{}".format(x), axis=1, inplace=True)
+        expected_df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)
 
         df = test_data['df']
         meta = MessageMeta(cudf.DataFrame(df))

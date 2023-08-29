@@ -26,6 +26,7 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -35,7 +36,6 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
-from utils import TEST_DIRS
 
 
 @pytest.mark.use_python

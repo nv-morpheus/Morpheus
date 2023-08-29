@@ -22,8 +22,8 @@ import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
-from messages import MultiPostprocLogParsingMessage
-from messages import MultiResponseLogParsingMessage
+from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
+from messages import MultiResponseLogParsingMessage  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes

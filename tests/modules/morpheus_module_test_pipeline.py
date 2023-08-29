@@ -18,8 +18,7 @@ import typing
 
 import mrc
 
-# pylint: disable=unused-import
-import morpheus.modules  # noqa: F401
+import morpheus.modules  # noqa: F401 # pylint: disable=unused-import
 
 
 class MorpheusModuleTestPipeline:
