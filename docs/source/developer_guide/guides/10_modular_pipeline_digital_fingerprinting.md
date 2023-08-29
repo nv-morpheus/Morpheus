@@ -560,7 +560,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Duo Training Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source duo \
@@ -572,7 +572,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Duo Inference Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source duo \
@@ -582,7 +582,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Duo Training + Inference Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source duo \
@@ -594,7 +594,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Azure Training Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source azure \
@@ -606,7 +606,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Azure Inference Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source azure \
@@ -616,7 +616,7 @@ To run the DFP pipelines with the example datasets within the container, run:
 
 * Azure Training + Inference Pipeline
     ```bash
-    python dfp_modules_batch_pipeline.py \
+    python dfp_integrated_training_batch_pipeline.py \
         --log_level DEBUG \
         --use_cpp=true \
         --source azure \
