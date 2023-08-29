@@ -44,13 +44,9 @@ pip install -e /workspace
 ```
 
 Install additonal required dependencies:
-
 ```
-mamba install boto3 s3fs
-```
-
-```
-pip install tensorflow
+export CUDA_VER=11.8
+mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_examples.yml
 ```
 
 Fetch input data for benchmarks:
