@@ -35,18 +35,6 @@ class TimeFields:
 
 class DFPArgParser:
 
-    class Decorators:
-
-        @classmethod
-        def verify_init(cls, func):
-
-            def wrapper(self, *args, **kwargs):
-                if not self._initialized:
-                    raise RuntimeError('Instance not initialized')
-                return func(self, *args, **kwargs)
-
-            return wrapper
-
     def __init__(self,
                  skip_user: str,
                  only_user: str,
@@ -80,13 +68,26 @@ class DFPArgParser:
         self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
         self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
 
+    @staticmethod
+    def verify_init(func):
+        """
+        Decorator function that verifies DFPArgParser instance has been initialized.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            if not self._initialized:
+                raise RuntimeError('Instance not initialized')
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
     def _configure_logging(self):
         configure_logging(log_level=self._log_level)
         # To prevent unnecessary logs from the mlflow.tracking.fluent module, explicitly set the log level to WARN.
         logging.getLogger("mlflow").setLevel(logging.WARN)
 
     @property
-    @Decorators.verify_init
+    @verify_init
     def time_fields(self):
         return self._time_fields
 
@@ -94,8 +95,7 @@ class DFPArgParser:
     def silence_monitors(self):
         return self._silence_monitors
 
-    @property
-    @Decorators.verify_init
+    @verify_init
     def include_generic(self):
         return self._include_generic
 
@@ -104,7 +104,7 @@ class DFPArgParser:
         return self._duration
 
     @property
-    @Decorators.verify_init
+    @verify_init
     def include_individual(self):
         return self._include_individual
 
