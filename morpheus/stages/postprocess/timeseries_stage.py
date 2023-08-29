@@ -386,7 +386,6 @@ class _UserTimeSeries:
         while action := self._determine_action(is_complete):
 
             if (action.perform_calc):
-                logger.debug("action.perform_calc")
                 # Actually do the calc
                 anomalies = self._calc_outliers(action)
 
@@ -397,7 +396,6 @@ class _UserTimeSeries:
                         logger.debug("Found anomalies: %s", list(anomalies))
 
             if (action.send_message):
-                logger.debug("action.send_message")
                 # Now send the message
                 output_messages.append(action.message)
 
