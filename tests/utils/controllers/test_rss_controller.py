@@ -76,7 +76,7 @@ def test_fetch_dataframes(feed_input):
 @pytest.mark.parametrize("feed_input", test_file_paths)
 def test_create_dataframe(feed_input):
     controller = RSSController(feed_input=feed_input)
-    entries = [{'id': '1', 'title': 'Entry 1'}, {'id': '2', 'title': 'Entry 2'}]
+    entries = [{"id": "1", "title": "Entry 1"}, {"id": "2", "title": "Entry 2"}]
     df = controller.create_dataframe(entries)
     assert len(df) == len(entries)
 

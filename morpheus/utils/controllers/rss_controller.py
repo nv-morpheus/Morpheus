@@ -24,18 +24,19 @@ logger = logging.getLogger(__name__)
 
 
 class RSSController:
+    """
+    RSSController handles fetching and processing of RSS feed entries.
+
+    Parameters
+    ----------
+    feed_input : str
+        The URL or file path of the RSS feed.
+    batch_size : int, optional, default = 128
+        Number of feed items to accumulate before creating a DataFrame.
+    """
 
     def __init__(self, feed_input: str, batch_size: int = 128):
-        """
-        RSSController handles fetching and processing of RSS feed entries.
 
-        Parameters
-        ----------
-        feed_input : str
-            The URL or file path of the RSS feed.
-        batch_size : int, optional, default = 128
-            Number of feed items to accumulate before creating a DataFrame.
-        """
         self._feed_input = feed_input
         self._batch_size = batch_size
         self._previous_entires = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
@@ -44,6 +45,7 @@ class RSSController:
 
     @property
     def run_indefinitely(self):
+        """Property that determines to run the source indefinitely"""
         return self._run_indefinitely
 
     def parse_feed(self) -> list[dict]:
