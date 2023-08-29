@@ -88,7 +88,8 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
-    downloader = Downloader()
+    if not hasattr(file_to_df_loader, "downloader"):
+        file_to_df_loader.downloader = Downloader()
 
     if (cache_dir is None):
         cache_dir = "./.cache"
@@ -174,7 +175,7 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
 
         # Loop over dataframes and concat into one
         try:
-            dfs = downloader.download(download_buckets, download_method_func)
+            dfs = file_to_df_loader.downloader.download(download_buckets, download_method_func)
         except Exception:
             logger.exception("Failed to download logs. Error: ", exc_info=True)
             raise
