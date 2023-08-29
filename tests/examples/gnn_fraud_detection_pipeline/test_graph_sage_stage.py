@@ -22,8 +22,9 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 
+# pylint: disable=no-name-in-module
 
-@pytest.mark.usefixtures("manual_seed")
+
 @pytest.mark.use_python
 class TestGraphSageStage:
 
@@ -37,6 +38,7 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
+    @pytest.mark.usefixtures("manual_seed")
     def test_process_message(self,
                              config: Config,
                              training_file: str,
@@ -63,7 +65,8 @@ class TestGraphSageStage:
         assert results.mess_offset == 0
         assert results.mess_count == len(df)
         assert results.node_identifiers == test_data['index']
-        assert sorted(results.inductive_embedding_column_names) == sorted(expected_df.columns)
 
-        ind_emb_df = results.get_meta(results.inductive_embedding_column_names)
+        cols = results.inductive_embedding_column_names + ['index']
+        assert sorted(cols) == sorted(expected_df.columns)
+        ind_emb_df = results.get_meta(cols)
         dataset_pandas.assert_compare_df(ind_emb_df.to_pandas(), expected_df)

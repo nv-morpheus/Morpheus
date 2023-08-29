@@ -15,7 +15,6 @@
 
 import dataclasses
 import pathlib
-import typing
 
 import dgl
 import mrc
@@ -76,13 +75,13 @@ class FraudGraphConstructionStage(SinglePortStage):
     def name(self) -> str:
         return "fraud-graph-construction"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (MultiMessage, ):
         return (MultiMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: MultiMessage):
+    def _process_message(self, message: MultiMessage) -> FraudGraphMultiMessage:
 
         _, _, _, test_index, _, graph_data = prepare_data(self._training_data, message.get_meta(self._column_names))
 

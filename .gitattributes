@@ -7,3 +7,7 @@ tests/mock_triton_server/payloads/** filter=lfs diff=lfs merge=lfs -text
 tests/tests_data/** filter=lfs diff=lfs merge=lfs -text
 examples/basic_usage/img/** filter=lfs diff=lfs merge=lfs -text
 docs/source/img/* filter=lfs diff=lfs merge=lfs -text
+git filter=lfs diff=lfs merge=lfs -text
+status filter=lfs diff=lfs merge=lfs -text
+examples/gnn_fraud_detection_pipeline/validation.csv filter=lfs diff=lfs merge=lfs -text
+examples/gnn_fraud_detection_pipeline/training.csv filter=lfs diff=lfs merge=lfs -text

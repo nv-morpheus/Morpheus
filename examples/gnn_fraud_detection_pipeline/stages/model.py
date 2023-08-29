@@ -16,6 +16,7 @@
 import os
 import pickle
 
+import cupy
 import dgl
 import torch
 from dgl import nn as dglnn
@@ -25,7 +26,73 @@ from torch.nn import functional as F
 import cudf as cf
 
 
-class HeteroRGCN(nn.Module):
+class BaseHeteroGraph(nn.Module):
+    """
+    Base class for Heterogeneous Graph Neural Network (GNN) models.
+
+    Parameters
+    ----------
+    input_graph : dgl.DGLHeteroGraph
+        The input graph on which the HeteroRGCN operates. It should be a heterogeneous graph.
+    embedding_size : int
+        The size of the node embeddings learned during training.
+    target : str, optional
+        The target attribute for which the node representations are learned.
+    """
+
+    def __init__(self, input_graph: dgl.DGLHeteroGraph, embedding_size: int, target: str):
+
+        super().__init__()
+        self._target = target
+
+        # categorical embeding
+        self.hetro_embedding = dglnn.HeteroEmbedding(
+            {ntype: input_graph.number_of_nodes(ntype)
+             for ntype in input_graph.ntypes if ntype != self._target},
+            embedding_size)
+
+        self.layers = nn.ModuleList()
+
+    def forward(self, input_graph: dgl.DGLHeteroGraph, features: torch.tensor) -> (torch.tensor, torch.tensor):
+
+        # Get embeddings for all none target node types.
+        h_dict = self.hetro_embedding(
+            {ntype: input_graph[0].nodes(ntype)
+             for ntype in self.hetro_embedding.embeds.keys()})
+
+        h_dict[self._target] = features
+
+        # Forward pass to layers.
+        for i, layer in enumerate(self.layers[:-1]):
+            if i != 0:
+                h_dict = {k: F.leaky_relu(h) for k, h in h_dict.items()}
+            h_dict = layer(input_graph[i], h_dict)
+
+        embedding = h_dict[self._target]
+
+        return self.layers[-1](embedding), embedding
+
+    def infer(self, input_graph: dgl.DGLHeteroGraph, features: torch.tensor) -> (torch.tensor, torch.tensor):
+        """Perform inference through forward pass
+
+        Parameters
+        ----------
+        input_graph : dgl.DGLHeteroGraph
+            input inference graph
+        features : torch.tensor
+            node features
+
+        Returns
+        -------
+        torch.tensor, torch.tensor
+            prediction, feature embedding
+        """
+
+        predictions, embedding = self(input_graph, features)
+        return nn.Sigmoid()(predictions), embedding
+
+
+class HeteroRGCN(BaseHeteroGraph):
     """
     Heterogeneous Relational Graph Convolutional Network (HeteroRGCN) model.
 
@@ -89,25 +156,24 @@ class HeteroRGCN(nn.Module):
     >>> model = HeteroRGCN(input_graph, in_size, hidden_size, out_size, n_layers, embedding_size, target='transaction')
     """
 
-    def __init__(self, input_graph, in_size, hidden_size, out_size, n_layers, embedding_size, target='transaction'):
+    def __init__(self,
+                 input_graph: dgl.DGLHeteroGraph,
+                 in_size: int,
+                 hidden_size: int,
+                 out_size: int,
+                 n_layers: int,
+                 embedding_size: int,
+                 target: str = 'transaction'):
 
-        super().__init__()
-
-        self.target = target
-
-        # categorical embeding
-        self.hetro_embedding = dglnn.HeteroEmbedding(
-            {ntype: input_graph.number_of_nodes(ntype)
-             for ntype in input_graph.ntypes if ntype != self.target},
-            embedding_size)
+        super().__init__(input_graph=input_graph, embedding_size=embedding_size, target=target)
 
         # input size
         in_sizes = {
-            rel: in_size if src_type == target else embedding_size
-            for src_type, rel, _ in input_graph.canonical_etypes
+            rel: in_size if src_type == self._target else self._embedding_size
+            for src_type,
+            rel,
+            _ in input_graph.canonical_etypes
         }
-
-        self.layers = nn.ModuleList()
 
         self.layers.append(
             dglnn.HeteroGraphConv({rel: dglnn.GraphConv(in_sizes[rel], hidden_size)
@@ -123,46 +189,8 @@ class HeteroRGCN(nn.Module):
         # output layer
         self.layers.append(nn.Linear(hidden_size, out_size))
 
-    def forward(self, input_graph, features):
 
-        # Get embeddings for all none target node types.
-        h_dict = self.hetro_embedding(
-            {ntype: input_graph[0].nodes(ntype)
-             for ntype in self.hetro_embedding.embeds.keys()})
-
-        h_dict[self.target] = features
-
-        # Forward pass to layers.
-        for i, layer in enumerate(self.layers[:-1]):
-            if i != 0:
-                h_dict = {k: F.leaky_relu(h) for k, h in h_dict.items()}
-            h_dict = layer(input_graph[i], h_dict)
-
-        embedding = h_dict[self.target]
-
-        return self.layers[-1](embedding), embedding
-
-    def infer(self, input_graph, features):
-        """Perform inference through forward pass
-
-        Parameters
-        ----------
-        input_graph : dgl.DGLHeteroGraph
-            input inference graph
-        features : torch.tensor
-            node features
-
-        Returns
-        -------
-        torch.tensor, torch.tensor
-            prediction, feature embedding
-        """
-
-        predictions, embedding = self(input_graph, features)
-        return nn.Sigmoid()(predictions), embedding
-
-
-class HinSAGE(nn.Module):
+class HinSAGE(BaseHeteroGraph):
     """
     Heterogeneous GraphSAGE (HinSAGE) module for graph-based semi-supervised learning.
 
@@ -185,6 +213,8 @@ class HinSAGE(nn.Module):
         The size of the final node embeddings after aggregation. This will be used as input for the downstream task.
     target : str, optional
         The target node type for the downstream task. Default is 'transaction'.
+    aggregator_type : str, optional
+        The type of aggregator to use for aggregation. Default is 'mean'.
 
     Methods
     -------
@@ -212,28 +242,19 @@ class HinSAGE(nn.Module):
     """
 
     def __init__(self,
-                 g,
-                 in_size,
-                 hidden_size,
-                 out_size,
-                 n_layers,
-                 embedding_size,
-                 target='transaction',
-                 aggregator_type='mean'):
+                 input_graph: dgl.DGLHeteroGraph,
+                 in_size: int,
+                 hidden_size: int,
+                 out_size: int,
+                 n_layers: int,
+                 embedding_size: int,
+                 target: str = 'transaction',
+                 aggregator_type: str = 'mean'):
 
-        super().__init__()
-
-        self.target = target
-
-        # Categorical embedding
-        self.hetro_embedding = dglnn.HeteroEmbedding(
-            {ntype: g.number_of_nodes(ntype)
-             for ntype in g.ntypes if ntype != self.target}, embedding_size)
-
-        self.layers = nn.ModuleList()
+        super().__init__(input_graph=input_graph, embedding_size=embedding_size, target=target)
 
         # create input features
-        in_feats = {rel: embedding_size if rel != self.target else in_size for rel in g.ntypes}
+        in_feats = {rel: embedding_size if rel != self._target else in_size for rel in input_graph.ntypes}
 
         self.layers.append(
             dglnn.HeteroGraphConv(
@@ -243,7 +264,7 @@ class HinSAGE(nn.Module):
                             (in_feats[src_type], in_feats[v_type]), hidden_size, aggregator_type=aggregator_type)
                     for src_type,
                     rel,
-                    v_type in g.canonical_etypes
+                    v_type in input_graph.canonical_etypes
                 },
                 aggregate='sum'))
 
@@ -256,61 +277,26 @@ class HinSAGE(nn.Module):
                             hidden_size,
                             aggregator_type=aggregator_type,
                         )
-                        for rel in g.etypes
+                        for rel in input_graph.etypes
                     },
                     aggregate='sum'))
 
         # output layer
         self.layers.append(nn.Linear(hidden_size, out_size))
 
-    def forward(self, input_graph, features):
 
-        h_dict = self.hetro_embedding(
-            {ntype: input_graph[0].nodes(ntype)
-             for ntype in self.hetro_embedding.embeds.keys()})
-
-        h_dict[self.target] = features
-
-        # Forward pass to layers.
-        for i, layer in enumerate(self.layers[:-1]):
-            if i != 0:
-                h_dict = {k: F.leaky_relu(h) for k, h in h_dict.items()}
-            h_dict = layer(input_graph[i], h_dict)
-
-        embedding = h_dict[self.target]
-        out = self.layers[-1](embedding)
-        return out, embedding
-
-    def infer(self, input_graph, features):
-        """Perform inference through forward pass
-
-        Parameters
-        ----------
-        input_graph : dgl.DGLHeteroGraph
-            input inference graph
-        features : torch.tensor
-            node features
-
-        Returns
-        -------
-        torch.tensor, torch.tensor
-            prediction, feature embedding
-        """
-
-        predictions, embedding = self(input_graph, features)
-        return nn.Sigmoid()(predictions), embedding
-
-
-def load_model(model_dir, gnn_model=HinSAGE, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+def load_model(model_dir: str,
+               gnn_model: BaseHeteroGraph = HinSAGE,
+               device: torch.device = None) -> (BaseHeteroGraph, dgl.DGLHeteroGraph, dict):
     """Load trained models from model directory
 
     Parameters
     ----------
     model_dir : str
         models directory path
-    gnn_model: nn.Module
-        GNN model type either HeteroRGCN or HinSAGE. Default HeteroRGCN
-    device : _type_, optional
+    gnn_model: BaseHeteroGraph
+        GNN model type either HeteroRGCN or HinSAGE. Default HinSAGE
+    device : torch.device, optional
         The device where the model and tensors should be loaded,
         by default torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -324,6 +310,10 @@ def load_model(model_dir, gnn_model=HinSAGE, device=torch.device("cuda:0" if tor
         graph = pickle.load(f)
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'rb') as f:
         hyperparameters = pickle.load(f)
+
+    if device is None:
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     model = gnn_model(graph,
                       in_size=hyperparameters['in_size'],
                       hidden_size=hyperparameters['hidden_size'],
@@ -337,13 +327,16 @@ def load_model(model_dir, gnn_model=HinSAGE, device=torch.device("cuda:0" if tor
 
 
 @torch.no_grad()
-def evaluate(model, eval_loader, feature_tensors, target_node):
+def evaluate(model: BaseHeteroGraph,
+             eval_loader: dgl.dataloading.DataLoader,
+             feature_tensors: torch.Tensor,
+             target_node: str) -> (torch.Tensor, torch.Tensor, torch.Tensor):
     """Evaluate the specified model on the given evaluation input graph
 
     Parameters
     ----------
-    model : torch.nn.Module
-        The PyTorch model to be evaluated.
+    model : BaseHeteroGraph
+        The hetero graph model to be evaluated.
     eval_loader : dgl.dataloading.DataLoader
         DataLoader containing the evaluation dataset.
     feature_tensors : torch.Tensor
@@ -380,19 +373,19 @@ def evaluate(model, eval_loader, feature_tensors, target_node):
     return eval_logits, eval_seeds, embedding
 
 
-def inference(model: nn.Module,
+def inference(model: BaseHeteroGraph,
               input_graph: dgl.DGLHeteroGraph,
               feature_tensors: torch.Tensor,
               test_idx: torch.Tensor,
               target_node: str = "transaction",
-              batch_size: int = 100):
+              batch_size: int = 100) -> (torch.Tensor, torch.Tensor):
     """
     Perform inference on a given model using the provided input graph and feature tensors.
 
     Parameters
     ----------
-    model : nn.Module
-        The neural network model to be used for inference.
+    model : BaseHeteroGraph
+        The hetero graph model to be used for inference.
     input_graph : dgl.DGLHeteroGraph
         The input heterogeneous graph in DGL format. It represents the graph structure.
     feature_tensors : torch.Tensor
@@ -408,6 +401,8 @@ def inference(model: nn.Module,
     -------
     test_embedding : torch.Tensor
         The embedding of for the target nodes obtained from the model's inference.
+    test_seed: torch.Tensor
+        The seed of the target nodes used for inference.
     """
 
     # create sampler and test dataloaders
@@ -423,7 +418,7 @@ def inference(model: nn.Module,
     return test_embedding, test_seed
 
 
-def build_fsi_graph(train_data, col_drop):
+def build_fsi_graph(train_data: cf.DataFrame, col_drop: list[str]) -> (dgl.DGLHeteroGraph, torch.Tensor):
     """Build a heterogeneous graph from an edgelist and node index.
     Parameters
     ----------
@@ -435,7 +430,7 @@ def build_fsi_graph(train_data, col_drop):
     -------
     tuple
         A tuple containing the following elements:
-        DGLGraph
+        dgl.DGLHeteroGraph
             The built DGL graph representing the heterogeneous graph.
         torch.tensor
             Normalized feature tensor after dropping specified columns.
@@ -483,7 +478,9 @@ def build_fsi_graph(train_data, col_drop):
     return graph, feature_tensors
 
 
-def prepare_data(training_data, test_data):
+def prepare_data(
+        training_data: cf.DataFrame,
+        test_data: cf.DataFrame) -> (cf.DataFrame, cf.DataFrame, cf.Series, cf.Series, cupy.ndarray, cf.DataFrame):
     """Process data for training/inference operation
 
     Parameters

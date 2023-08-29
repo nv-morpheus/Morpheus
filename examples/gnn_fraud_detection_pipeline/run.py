@@ -27,6 +27,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
+# pylint: disable=no-name-in-module
 from stages.classification_stage import ClassificationStage
 from stages.graph_construction_stage import FraudGraphConstructionStage
 from stages.graph_sage_stage import GraphSAGEStage
@@ -60,27 +61,28 @@ from stages.graph_sage_stage import GraphSAGEStage
 )
 @click.option(
     "--input_file",
-    type=click.Path(exists=True, readable=True),
+    type=click.Path(exists=True, readable=True, dir_okay=False),
     default="validation.csv",
     required=True,
     help="Input data filepath.",
 )
 @click.option(
     "--training_file",
-    type=click.Path(exists=True, readable=True),
+    type=click.Path(exists=True, readable=True, dir_okay=False),
     default="training.csv",
     required=True,
     help="Training data filepath.",
 )
 @click.option(
     "--model_dir",
-    type=click.Path(exists=True, readable=True),
+    type=click.Path(exists=True, readable=True, file_okay=False, dir_okay=True),
     default="model",
     required=True,
-    help="Trained hinsage model directory path.",
+    help="Path to trained Hinsage & XGB models.",
 )
 @click.option(
     "--output_file",
+    type=click.Path(dir_okay=False),
     default="output.csv",
     help="The path to the file where the inference output will be saved.",
 )
