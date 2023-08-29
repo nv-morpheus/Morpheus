@@ -25,8 +25,8 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import mk_async_infer
-from _utils.kafka import write_file_to_kafka
 from _utils.dataset_manager import DatasetManager
+from _utils.kafka import write_file_to_kafka
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes

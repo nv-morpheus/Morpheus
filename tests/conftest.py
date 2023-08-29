@@ -28,19 +28,20 @@ import warnings
 import pytest
 import requests
 
-from _utils.kafka import init_pytest_kafka
+from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
-PYTEST_KAFKA_DATA = init_pytest_kafka()
-if PYTEST_KAFKA_DATA['avail']:
+(PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
+if PYTEST_KAFKA_AVAIL:
     # Pull out the fixtures into this namespace
-    zookeeper_proc = PYTEST_KAFKA_DATA['zookeeper_proc']
-    kafka_server = PYTEST_KAFKA_DATA['kafka_server']
-    kafka_consumer = PYTEST_KAFKA_DATA['kafka_consumer']
-    kafka_topics = PYTEST_KAFKA_DATA['kafka_topics']
-    kafka_bootstrap_servers = PYTEST_KAFKA_DATA['kafka_bootstrap_servers']
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -154,9 +155,8 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     To support old unittest style tests, try to determine the mark from the name
     """
 
-    if config.getoption("--run_kafka") and not PYTEST_KAFKA_DATA['avail']:
-        raise RuntimeError(
-            f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_DATA['setup_error']}")
+    if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:

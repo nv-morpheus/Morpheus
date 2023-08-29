@@ -23,8 +23,20 @@ from functools import partial
 
 import pytest
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
+# Amount of seconds we will wait for the Kafka consumer to be assigned partitions
+PARTITION_ASSIGNMENT_TIMEOUT = 15
+
 # actual topic names not important, but we will need two of them.
 KafkaTopics = namedtuple('KafkaTopics', ['input_topic', 'output_topic'])
+
+# pylint: disable=invalid-name
+_kafka_consumer = None
+kafka_server = None
+zookeeper_proc = None
+# pylint: enable=invalid-name
 
 
 @pytest.fixture(name='kafka_topics', scope='function')
@@ -32,8 +44,8 @@ def kafka_topics_fixture():
     yield KafkaTopics(f'morpheus_unittest_input_{time.time()}', f'morpheus_unittest_output_{time.time()}')
 
 
-@pytest.fixture(scope="function")
-def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
+@pytest.fixture(name='kafka_bootstrap_servers', scope="function")
+def kafka_bootstrap_servers_fixture(kafka_server: (subprocess.Popen, int)):  # pylint: disable=redefined-outer-name
     """
     Used by tests that require both an input and an output topic
     """
@@ -41,44 +53,33 @@ def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
     yield f"localhost:{kafka_port}"
 
 
-def _wait_until(cond: typing.Callable[[], bool], timeout: float = 15, interval: float = 0.1):
-    """Poll until the condition is True."""
+@pytest.fixture(name='kafka_consumer', scope='function')
+def kafka_consumer_fixture(kafka_topics: KafkaTopics, _kafka_consumer: "KafkaConsumer"):
+    _kafka_consumer.subscribe([kafka_topics.output_topic])
+
+    # Wait until we have assigned partitions
     start = time.time()
-    end = start + timeout
-    while time.time() <= end:
-        if cond() is True:
-            return
-        time.sleep(interval)
+    end = start + PARTITION_ASSIGNMENT_TIMEOUT
+    partitions_assigned = False
+    while not partitions_assigned and time.time() <= end:
+        _kafka_consumer.poll(timeout_ms=20)
+        partitions_assigned = len(_kafka_consumer.assignment()) > 0
+        if not partitions_assigned:
+            time.sleep(0.1)
 
-    raise AssertionError(f"Condition not true in {timeout} seconds")
+    assert partitions_assigned
 
+    _kafka_consumer.seek_to_beginning()
 
-@pytest.fixture(scope='function')
-def kafka_consumer(kafka_bootstrap_servers: str, kafka_topics: KafkaTopics):
-    import pytest_kafka
-    from kafka import KafkaConsumer
-
-    consumer = KafkaConsumer(kafka_topics.output_topic,
-                             bootstrap_servers=kafka_bootstrap_servers,
-                             consumer_timeout_ms=500,
-                             group_id=f'morpheus_unittest_reader_{time.time()}',
-                             client_id=f'morpheus_unittest_reader_{time.time()}')
-
-    def partitions_assigned():
-        consumer.poll(timeout_ms=20)
-        return len(consumer.assignment()) > 0
-
-    _wait_until(partitions_assigned)
-
-    consumer.seek_to_beginning()
-
-    yield consumer
+    yield _kafka_consumer
 
 
-def init_pytest_kafka() -> dict:
+def _init_pytest_kafka() -> (bool, Exception):
     """
     Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
+    This should only be called once by the root conftest.py
     """
+    global kafka_server, _kafka_consumer, zookeeper_proc  # pylint: disable=global-statement
     try:
         import pytest_kafka
         os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
@@ -102,23 +103,16 @@ def init_pytest_kafka() -> dict:
                                                       'zookeeper_proc',
                                                       teardown_fn=teardown_fn,
                                                       scope='session')
+        _kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server', scope='function')
 
-        return {
-            "avail": True,
-            "setup_error": "",
-            "zookeeper_proc": zookeeper_proc,
-            "kafka_server": kafka_server,
-            "kafka_consumer": kafka_consumer,
-            "kafka_topics": kafka_topics_fixture,
-            "kafka_bootstrap_servers": kafka_bootstrap_servers
-        }
+        return (True, None)
     except Exception as e:
-        return {"avail": False, "setup_error": e}
+        return (False, e)
 
 
 def write_data_to_kafka(bootstrap_servers: str,
                         kafka_topic: str,
-                        data: typing.List[typing.Union[str, dict]],
+                        data: list[str | dict],
                         client_id: str = 'morpheus_unittest_writer') -> int:
     """
     Writes `data` into a given Kafka topic, emitting one message for each line int he file. Returning the number of
