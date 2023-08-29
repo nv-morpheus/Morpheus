@@ -91,6 +91,90 @@ class BaseHeteroGraph(nn.Module):
         predictions, embedding = self(input_graph, features)
         return nn.Sigmoid()(predictions), embedding
 
+    @torch.no_grad()
+    def evaluate(self, eval_loader: dgl.dataloading.DataLoader, feature_tensors: torch.Tensor,
+                 target_node: str) -> (torch.Tensor, torch.Tensor, torch.Tensor):
+        """Evaluate the specified model on the given evaluation input graph
+
+        Parameters
+        ----------
+        eval_loader : dgl.dataloading.DataLoader
+            DataLoader containing the evaluation dataset.
+        feature_tensors : torch.Tensor
+            The feature tensors corresponding to the evaluation data.
+            Shape: (num_samples, num_features).
+        target_node : str
+            The target node for evaluation, indicating the node of interest.
+
+        Returns
+        -------
+        (torch.Tensor, torch.Tensor, torch.Tensor)
+            A tuple containing numpy arrays of logits, eval seed and embeddings
+        """
+
+        self.eval()
+        eval_logits = []
+        eval_seeds = []
+        embedding = []
+
+        for _, output_nodes, blocks in eval_loader:
+
+            seed = output_nodes[target_node]
+
+            nid = blocks[0].srcnodes[target_node].data[dgl.NID]
+            input_features = feature_tensors[nid]
+            logits, embedd = self.infer(blocks, input_features)
+            eval_logits.append(logits.cpu().detach())
+            eval_seeds.append(seed)
+            embedding.append(embedd)
+
+        eval_logits = torch.cat(eval_logits)
+        eval_seeds = torch.cat(eval_seeds)
+        embedding = torch.cat(embedding)
+        return eval_logits, eval_seeds, embedding
+
+    def inference(self,
+                  input_graph: dgl.DGLHeteroGraph,
+                  feature_tensors: torch.Tensor,
+                  test_idx: torch.Tensor,
+                  target_node: str = "transaction",
+                  batch_size: int = 100) -> (torch.Tensor, torch.Tensor):
+        """
+        Perform inference on a given model using the provided input graph and feature tensors.
+
+        Parameters
+        ----------
+        input_graph : dgl.DGLHeteroGraph
+            The input heterogeneous graph in DGL format. It represents the graph structure.
+        feature_tensors : torch.Tensor
+            The input feature tensors for nodes in the input graph. Each row corresponds to the features of a single node.
+        test_idx : torch.Tensor
+            The indices of the nodes in the input graph that are used for testing and evaluation.
+        target_node : str, optional (default: "transaction")
+            The type of node for which inference will be performed. By default, it is set to "transaction".
+        batch_size : int, optional (default: 100)
+            The batch size used during inference to process data in mini-batches.
+
+        Returns
+        -------
+        test_embedding : torch.Tensor
+            The embedding of for the target nodes obtained from the model's inference.
+        test_seed: torch.Tensor
+            The seed of the target nodes used for inference.
+        """
+
+        # create sampler and test dataloaders
+        full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
+        test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
+                                                     full_sampler,
+                                                     batch_size=batch_size,
+                                                     shuffle=False,
+                                                     drop_last=False,
+                                                     num_workers=0)
+        _, test_seed, test_embedding = self.evaluate(test_dataloader, feature_tensors, target_node)
+
+        return test_embedding, test_seed
+
 
 class HeteroRGCN(BaseHeteroGraph):
     """
@@ -324,98 +408,6 @@ def load_model(model_dir: str,
     model.load_state_dict(torch.load(os.path.join(model_dir, 'model.pt')))
 
     return model, graph, hyperparameters
-
-
-@torch.no_grad()
-def evaluate(model: BaseHeteroGraph,
-             eval_loader: dgl.dataloading.DataLoader,
-             feature_tensors: torch.Tensor,
-             target_node: str) -> (torch.Tensor, torch.Tensor, torch.Tensor):
-    """Evaluate the specified model on the given evaluation input graph
-
-    Parameters
-    ----------
-    model : BaseHeteroGraph
-        The hetero graph model to be evaluated.
-    eval_loader : dgl.dataloading.DataLoader
-        DataLoader containing the evaluation dataset.
-    feature_tensors : torch.Tensor
-        The feature tensors corresponding to the evaluation data.
-        Shape: (num_samples, num_features).
-    target_node : str
-        The target node for evaluation, indicating the node of interest.
-
-    Returns
-    -------
-    (torch.Tensor, torch.Tensor, torch.Tensor)
-        A tuple containing numpy arrays of logits, eval seed and embeddings
-    """
-
-    model.eval()
-    eval_logits = []
-    eval_seeds = []
-    embedding = []
-
-    for _, output_nodes, blocks in eval_loader:
-
-        seed = output_nodes[target_node]
-
-        nid = blocks[0].srcnodes[target_node].data[dgl.NID]
-        input_features = feature_tensors[nid]
-        logits, embedd = model.infer(blocks, input_features)
-        eval_logits.append(logits.cpu().detach())
-        eval_seeds.append(seed)
-        embedding.append(embedd)
-
-    eval_logits = torch.cat(eval_logits)
-    eval_seeds = torch.cat(eval_seeds)
-    embedding = torch.cat(embedding)
-    return eval_logits, eval_seeds, embedding
-
-
-def inference(model: BaseHeteroGraph,
-              input_graph: dgl.DGLHeteroGraph,
-              feature_tensors: torch.Tensor,
-              test_idx: torch.Tensor,
-              target_node: str = "transaction",
-              batch_size: int = 100) -> (torch.Tensor, torch.Tensor):
-    """
-    Perform inference on a given model using the provided input graph and feature tensors.
-
-    Parameters
-    ----------
-    model : BaseHeteroGraph
-        The hetero graph model to be used for inference.
-    input_graph : dgl.DGLHeteroGraph
-        The input heterogeneous graph in DGL format. It represents the graph structure.
-    feature_tensors : torch.Tensor
-        The input feature tensors for nodes in the input graph. Each row corresponds to the features of a single node.
-    test_idx : torch.Tensor
-        The indices of the nodes in the input graph that are used for testing and evaluation.
-    target_node : str, optional (default: "transaction")
-        The type of node for which inference will be performed. By default, it is set to "transaction".
-    batch_size : int, optional (default: 100)
-        The batch size used during inference to process data in mini-batches.
-
-    Returns
-    -------
-    test_embedding : torch.Tensor
-        The embedding of for the target nodes obtained from the model's inference.
-    test_seed: torch.Tensor
-        The seed of the target nodes used for inference.
-    """
-
-    # create sampler and test dataloaders
-    full_sampler = dgl.dataloading.MultiLayerNeighborSampler(fanouts=[4, 3])
-    test_dataloader = dgl.dataloading.DataLoader(input_graph, {target_node: test_idx},
-                                                 full_sampler,
-                                                 batch_size=batch_size,
-                                                 shuffle=False,
-                                                 drop_last=False,
-                                                 num_workers=0)
-    _, test_seed, test_embedding = evaluate(model, test_dataloader, feature_tensors, target_node)
-
-    return test_embedding, test_seed
 
 
 def build_fsi_graph(train_data: cf.DataFrame, col_drop: list[str]) -> (dgl.DGLHeteroGraph, torch.Tensor):
