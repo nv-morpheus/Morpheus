@@ -32,7 +32,6 @@ import torch
 from model import HeteroRGCN
 from model import HinSAGE
 from model import build_fsi_graph
-from model import inference
 from model import load_model
 from model import prepare_data
 
@@ -77,7 +76,7 @@ def main(training_data, validation_data, model_dir, target_node, output_file, mo
     input_graph = input_graph.to(device)
 
     # Perform inference
-    test_embedding, test_seeds = inference(model, input_graph, feature_tensors.float(), test_index, target_node)
+    test_embedding, test_seeds = model.inference(input_graph, feature_tensors.float(), test_index, target_node)
 
     # collect result . XGBoost predict_proba(test_embedding)[:, 1]
     #  indicates probability score of negative class using XGBoost.

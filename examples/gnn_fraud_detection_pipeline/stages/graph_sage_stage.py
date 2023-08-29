@@ -29,7 +29,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 from .graph_construction_stage import FraudGraphMultiMessage
-from .model import inference
 from .model import load_model
 
 
@@ -82,10 +81,10 @@ class GraphSAGEStage(SinglePortStage):
         node_identifiers = list(message.get_meta(self._record_id).to_pandas())
 
         # Perform inference
-        inductive_embedding, _ = inference(self._dgl_model, message.graph,
-                                           message.node_features,
-                                           message.test_index,
-                                           batch_size=self._batch_size)
+        inductive_embedding, _ = self._dgl_model.inference(message.graph,
+                                                           message.node_features,
+                                                           message.test_index,
+                                                           batch_size=self._batch_size)
 
         inductive_embedding = cudf.DataFrame(inductive_embedding)
 
