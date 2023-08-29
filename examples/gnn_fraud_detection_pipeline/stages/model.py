@@ -147,7 +147,8 @@ class BaseHeteroGraph(nn.Module):
         input_graph : dgl.DGLHeteroGraph
             The input heterogeneous graph in DGL format. It represents the graph structure.
         feature_tensors : torch.Tensor
-            The input feature tensors for nodes in the input graph. Each row corresponds to the features of a single node.
+            The input feature tensors for nodes in the input graph. Each row corresponds to the features of a single
+            node.
         test_idx : torch.Tensor
             The indices of the nodes in the input graph that are used for testing and evaluation.
         target_node : str, optional (default: "transaction")
