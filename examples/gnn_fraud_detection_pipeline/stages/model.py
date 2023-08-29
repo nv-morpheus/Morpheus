@@ -254,7 +254,7 @@ class HeteroRGCN(BaseHeteroGraph):
 
         # input size
         in_sizes = {
-            rel: in_size if src_type == self._target else self._embedding_size
+            rel: in_size if src_type == self._target else embedding_size
             for src_type,
             rel,
             _ in input_graph.canonical_etypes
