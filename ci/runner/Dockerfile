@@ -66,13 +66,6 @@ RUN apt update && \
 COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
 COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
-# Install extra deps needed for gnn_fraud_detection_pipeline & ransomware_detection examples
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml && \
-    conda clean -afy && \
-    source activate ${PROJ_NAME} && \
-    pip install --ignore-requires-python stellargraph==1.2.1 && \
-    rm -rf /tmp/conda
-
 # Install camouflage needed for unittests to mock a triton server
 RUN source activate ${PROJ_NAME} && \
     npm install -g camouflage-server@0.9 && \
