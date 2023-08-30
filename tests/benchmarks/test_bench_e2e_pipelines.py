@@ -35,7 +35,6 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
@@ -112,14 +111,6 @@ def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file
     pipeline.add_stage(PreprocessAEStage(config))
     pipeline.add_stage(AutoEncoderInferenceStage(config))
     pipeline.add_stage(AddScoresStage(config))
-    pipeline.add_stage(
-        TimeSeriesStage(config,
-                        resolution="1m",
-                        min_window=" 12 h",
-                        hot_start=True,
-                        cold_end=False,
-                        filter_percent=90.0,
-                        zscore_threshold=8.0))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))

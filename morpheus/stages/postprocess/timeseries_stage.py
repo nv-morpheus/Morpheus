@@ -28,8 +28,8 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages.multi_ae_message import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -174,6 +174,7 @@ class _UserTimeSeries:
 
     def __init__(self,
                  user_id: str,
+                 timestamp_col: str,
                  resolution: str,
                  min_window: str,
                  hot_start: bool,
@@ -183,6 +184,7 @@ class _UserTimeSeries:
         super().__init__()
 
         self._user_id = user_id
+        self._timestamp_col = timestamp_col
 
         # Size of bins
         self._resolution_sec = int(round(pd.Timedelta(resolution).total_seconds()))
@@ -206,7 +208,8 @@ class _UserTimeSeries:
 
         # Stateful members
         self._pending_messages: deque[MultiResponseMessage] = deque()  # Holds the existing messages pending
-        self._timeseries_data: pd.DataFrame = pd.DataFrame(columns=["event_dt"])  # Holds all available timeseries data
+        self._timeseries_data: pd.DataFrame = pd.DataFrame(columns=[self._timestamp_col
+                                                                    ])  # Holds all available timeseries data
 
         self._t0_epoch: float = None
 
@@ -268,22 +271,22 @@ class _UserTimeSeries:
         x: MultiResponseMessage = self._pending_messages[0]
 
         # Get the first message timestamp
-        message_start = calc_bin(x.get_meta("event_dt").iloc[0], self._t0_epoch, self._resolution_sec)
-        message_end = calc_bin(x.get_meta("event_dt").iloc[-1], self._t0_epoch, self._resolution_sec)
+        message_start = calc_bin(x.get_meta(self._timestamp_col).iloc[0], self._t0_epoch, self._resolution_sec)
+        message_end = calc_bin(x.get_meta(self._timestamp_col).iloc[-1], self._t0_epoch, self._resolution_sec)
 
         window_start = message_start - self._half_window_bins
         window_end = message_end + self._half_window_bins
 
         # Check left buffer
         if (timeseries_start > window_start):
-            # logger.debug("Warming up.    TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s. Delta: %s",
-            #              timeseries_start._repr_base,
-            #              window_start._repr_base,
-            #              message_start._repr_base,
-            #              message_end._repr_base,
-            #              window_end._repr_base,
-            #              timeseries_end._repr_base,
-            #              timeseries_start - window_start)
+            logger.debug("Warming up.    TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s. Delta: %s",
+                         timeseries_start,
+                         window_start,
+                         message_start,
+                         message_end,
+                         window_end,
+                         timeseries_end,
+                         timeseries_start - window_start)
 
             # Not shutting down and we arent warm, send through
             if (not self._is_warm and not is_complete):
@@ -293,34 +296,35 @@ class _UserTimeSeries:
 
         # Check the right buffer
         if (timeseries_end < window_end):
-            # logger.debug("Filling front. TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s. Delta: %s",
-            #              timeseries_start._repr_base,
-            #              window_start._repr_base,
-            #              message_start._repr_base,
-            #              message_end._repr_base,
-            #              window_end._repr_base,
-            #              timeseries_end._repr_base,
-            #              window_end - timeseries_end)
+            logger.debug("Filling front. TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s. Delta: %s",
+                         timeseries_start,
+                         window_start,
+                         message_start,
+                         message_end,
+                         window_end,
+                         timeseries_end,
+                         window_end - timeseries_end)
 
-            if (not is_complete):
-                # Not shutting down, so hold message
+            if (not is_complete and len(self._pending_messages) == 1):
+                # Last message, so stop processing
+                logger.debug("not is_complete, no pending")
                 return None
-
             if (is_complete and self._cold_end):
                 # Shutting down and we have a cold ending, just empty the message
+                logger.debug("is_complete and self._cold_end")
                 return _TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
 
             # Shutting down and hot end
             # logger.debug("Hot End. Processing. TS: %s", timeseries_start._repr_base)
 
         # By this point we have both a front and back buffer. So get ready for a calculation
-        # logger.debug("Perform Calc.  TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s.",
-        #              timeseries_start._repr_base,
-        #              window_start._repr_base,
-        #              message_start._repr_base,
-        #              message_end._repr_base,
-        #              window_end._repr_base,
-        #              timeseries_end._repr_base)
+        logger.debug("Perform Calc.  TS: %s, WS: %s, MS: %s, ME: %s, WE: %s, TE: %s.",
+                     timeseries_start,
+                     window_start,
+                     message_start,
+                     message_end,
+                     window_end,
+                     timeseries_end)
 
         # First, remove elements in the front queue that are too old
         self._timeseries_data.drop(self._timeseries_data[self._timeseries_data["event_bin"] < window_start].index,
@@ -347,7 +351,7 @@ class _UserTimeSeries:
             # Save this message in the pending queue
             self._pending_messages.append(x)
 
-            new_timedata = x.get_meta(["event_dt"])
+            new_timedata = x.get_meta([self._timestamp_col])
 
             # Save this message event times in the event list. Ensure the values are always sorted
             self._timeseries_data = pd.concat([self._timeseries_data, new_timedata]).sort_index()
@@ -363,13 +367,13 @@ class _UserTimeSeries:
 
         # If this is our first time data, set the t0 time
         if (self._t0_epoch is None):
-            self._t0_epoch = self._timeseries_data["event_dt"].iloc[0]
+            self._t0_epoch = self._timeseries_data[self._timestamp_col].iloc[0]
 
             # TODO(MDD): Floor to the day to unsure all buckets are always aligned with val data
             self._t0_epoch = self._t0_epoch.floor(freq="D")
 
         # Calc the bins for the timeseries data
-        self._timeseries_data["event_bin"] = self._calc_bin_series(self._timeseries_data["event_dt"])
+        self._timeseries_data["event_bin"] = self._calc_bin_series(self._timeseries_data[self._timestamp_col])
 
         # At this point there are 3 things that can happen
         # 1. We are warming up to build a front buffer. Save the current message times and send the message on
@@ -441,6 +445,8 @@ class TimeSeriesStage(SinglePortStage):
                  zscore_threshold: float = 8.0):
         super().__init__(c)
 
+        self._timestamp_col = c.ae.timestamp_column_name
+
         self._feature_length = c.feature_length
 
         self._resolution = resolution
@@ -470,15 +476,16 @@ class TimeSeriesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiResponseMessage, )
+        return (MultiMessage, )
 
     def supports_cpp_node(self):
         return False
 
-    def _call_timeseries_user(self, x: MultiResponseAEMessage):
+    def _call_timeseries_user(self, x: MultiMessage):
 
         if (x.user_id not in self._timeseries_per_user):
             self._timeseries_per_user[x.user_id] = _UserTimeSeries(user_id=x.user_id,
+                                                                   timestamp_col=self._timestamp_col,
                                                                    resolution=self._resolution,
                                                                    min_window=self._min_window,
                                                                    hot_start=self._hot_start,
@@ -493,7 +500,7 @@ class TimeSeriesStage(SinglePortStage):
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def on_next(x: MultiResponseAEMessage):
+        def on_next(x: MultiMessage):
 
             message_list: typing.List[MultiResponseMessage] = self._call_timeseries_user(x)
 
@@ -503,8 +510,8 @@ class TimeSeriesStage(SinglePortStage):
 
             to_send = []
 
-            for ts in self._timeseries_per_user.values():
-                message_list: typing.List[MultiResponseMessage] = ts._calc_timeseries(None, True)
+            for timestamp in self._timeseries_per_user.values():
+                message_list: typing.List[MultiResponseMessage] = timestamp._calc_timeseries(None, True)
 
                 to_send = to_send + message_list
 
