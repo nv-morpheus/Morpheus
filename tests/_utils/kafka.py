@@ -140,8 +140,8 @@ def write_file_to_kafka(bootstrap_servers: str,
                         input_file: str,
                         client_id: str = 'morpheus_unittest_writer') -> int:
     """
-    Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
-    Returning the number of messages written
+    Writes data from `input_file` into a given Kafka topic, emitting one message for each line in the file, 
+    and returns the number of messages written.
     """
     with open(input_file, encoding='UTF-8') as fh:
         data = [line.strip() for line in fh]
