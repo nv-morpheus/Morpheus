@@ -27,6 +27,7 @@ from morpheus.messages import MultiMessage
 
 @pytest.mark.use_python
 class TestGraphSageStage:
+
     def test_constructor(self, config: Config, model_dir: str):
         from stages.graph_sage_stage import GraphSAGEStage
         from stages.model import HinSAGE

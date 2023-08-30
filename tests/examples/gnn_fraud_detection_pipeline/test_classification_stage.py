@@ -26,6 +26,7 @@ from morpheus.messages import MessageMeta
 
 @pytest.mark.use_python
 class TestClassificationStage:
+
     def test_constructor(self, config: Config, xgb_model: str, cuml: types.ModuleType):
         from stages.classification_stage import ClassificationStage
 
