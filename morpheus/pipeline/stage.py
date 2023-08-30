@@ -14,6 +14,7 @@
 
 import logging
 import typing
+from abc import abstractmethod
 
 import mrc
 
@@ -35,14 +36,24 @@ class Stage(_pipeline.StreamWrapper):
 
     """
 
-    def __init__(self, c: Config):
-        super().__init__(c)
-
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: list[StreamPair]) -> list[StreamPair]:
 
         return out_ports_pair
 
     def _start(self):
+        pass
+
+    #@abstractmethod
+    def output_types(self, parent_output_types: list[type]) -> list[type]:
+        """
+        Return the output types for this stage. Derived classes should override this method.
+
+        Returns
+        -------
+        list
+            Output types.
+
+        """
         pass
 
     def on_start(self):

@@ -19,13 +19,14 @@ import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
+from morpheus.pipeline.single_output_mixin import SingleOutputMixin
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
 
-class SingleOutputSource(_pipeline.SourceStage):
+class SingleOutputSource(SingleOutputMixin, _pipeline.SourceStage):
     """
     Subclass of SourceStage for building source stages that generate output for single port.
 

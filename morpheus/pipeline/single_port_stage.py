@@ -21,13 +21,14 @@ import typing_utils
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
+from morpheus.pipeline.single_output_mixin import SingleOutputMixin
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
 
-class SinglePortStage(_pipeline.Stage):
+class SinglePortStage(SingleOutputMixin, _pipeline.Stage):
     """
     Class used for building stages with single input port and single output port.
 
@@ -57,7 +58,7 @@ class SinglePortStage(_pipeline.Stage):
         """
         pass
 
-    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
+    def _pre_build(self, builder: mrc.Builder) -> list[StreamPair]:
         in_ports_pairs = super()._pre_build(builder=builder)
 
         # Check the types of all inputs
@@ -72,7 +73,7 @@ class SinglePortStage(_pipeline.Stage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         pass
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, in_ports_streams: list[StreamPair]) -> list[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
@@ -87,7 +88,7 @@ class SinglePortStage(_pipeline.Stage):
         return out_pair
 
     @typing.final
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: list[StreamPair]) -> list[StreamPair]:
 
         ret_val = self._post_build_single(builder, out_ports_pair[0])
 

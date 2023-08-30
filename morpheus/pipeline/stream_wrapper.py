@@ -90,8 +90,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         self._is_built = False
 
         # Input/Output ports used for connecting stages
-        self._input_ports: typing.List[_pipeline.Receiver] = []
-        self._output_ports: typing.List[_pipeline.Sender] = []
+        self._input_ports: list[_pipeline.Receiver] = []
+        self._output_ports: list[_pipeline.Sender] = []
 
         # Mapping of {`column_name`: `TyepId`}
         self._needed_columns = collections.OrderedDict()
@@ -153,24 +153,24 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return self._is_built
 
     @property
-    def input_ports(self) -> typing.List[_pipeline.Receiver]:
+    def input_ports(self) -> list[_pipeline.Receiver]:
         """Input ports to this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.Receiver`]
+        list[`morpheus.pipeline.pipeline.Receiver`]
             Input ports to this stage.
         """
         return self._input_ports
 
     @property
-    def output_ports(self) -> typing.List[_pipeline.Sender]:
+    def output_ports(self) -> list[_pipeline.Sender]:
         """
         Output ports from this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.Sender`]
+        list[`morpheus.pipeline.pipeline.Sender`]
             Output ports from this stage.
         """
         return self._output_ports
@@ -199,13 +199,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         return len(self._output_ports) > 1
 
-    def get_all_inputs(self) -> typing.List[_pipeline.Sender]:
+    def get_all_inputs(self) -> list[_pipeline.Sender]:
         """
         Get all input senders to this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.Sender`]
+        list[`morpheus.pipeline.pipeline.Sender`]
             All input senders.
         """
 
@@ -216,24 +216,24 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         return senders
 
-    def get_all_input_stages(self) -> typing.List["StreamWrapper"]:
+    def get_all_input_stages(self) -> list["StreamWrapper"]:
         """
         Get all input stages to this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.StreamWrapper`]
+        list[`morpheus.pipeline.pipeline.StreamWrapper`]
             All input stages.
         """
         return [x.parent for x in self.get_all_inputs()]
 
-    def get_all_outputs(self) -> typing.List[_pipeline.Receiver]:
+    def get_all_outputs(self) -> list[_pipeline.Receiver]:
         """
         Get all output receivers from this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.Receiver`]
+        list[`morpheus.pipeline.pipeline.Receiver`]
             All output receivers.
         """
         receivers = []
@@ -243,13 +243,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         return receivers
 
-    def get_all_output_stages(self) -> typing.List["StreamWrapper"]:
+    def get_all_output_stages(self) -> list["StreamWrapper"]:
         """
         Get all output stages from this stage.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.pipeline.StreamWrapper`]
+        list[`morpheus.pipeline.pipeline.StreamWrapper`]
             All output stages.
         """
         return [x.parent for x in self.get_all_outputs()]
@@ -346,13 +346,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             dep.build(builder, do_propagate=do_propagate)
 
-    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
-        in_pairs: typing.List[StreamPair] = [x.get_input_pair(builder=builder) for x in self.input_ports]
+    def _pre_build(self, builder: mrc.Builder) -> list[StreamPair]:
+        in_pairs: list[StreamPair] = [x.get_input_pair(builder=builder) for x in self.input_ports]
 
         return in_pairs
 
     @abstractmethod
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, in_ports_streams: list[StreamPair]) -> list[StreamPair]:
         """
         This function is responsible for constructing this stage's internal `mrc.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
@@ -372,7 +372,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         Returns
         -------
-        `typing.List[morpheus.pipeline.pipeline.StreamPair]`
+        `list[morpheus.pipeline.pipeline.StreamPair]`
             List of tuples containing the output `mrc.SegmentObject` object from this stage and the message data type.
 
         """
@@ -381,8 +381,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     def _post_build(
         self,
         builder: mrc.Builder,  # pylint: disable=unused-argument
-        out_ports_pair: typing.List[StreamPair],
-    ) -> typing.List[StreamPair]:
+        out_ports_pair: list[StreamPair],
+    ) -> list[StreamPair]:
         return out_ports_pair
 
     def _start(self):
@@ -415,3 +415,16 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         allocated and populated with null values.
         """
         return self._needed_columns.copy()
+
+    @abstractmethod
+    def output_types(self) -> list[type]:
+        """
+        Return the output types for this stage. Derived classes should override this method.
+
+        Returns
+        -------
+        list
+            Output types.
+
+        """
+        pass

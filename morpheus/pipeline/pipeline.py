@@ -297,6 +297,76 @@ class Pipeline():
 
         logger.info("====Registering Pipeline Complete!====")
 
+    def _build_mrc(self):
+        """
+        This function sequentially activates all the Morpheus pipeline stages passed by the users to execute a
+        pipeline. For the `Source` and all added `Stage` objects, `StreamWrapper.build` will be called sequentially to
+        construct the pipeline.
+
+        Once the pipeline has been constructed, this will start the pipeline by calling `Source.start` on the source
+        object.
+        """
+        exec_options = mrc.Options()
+        exec_options.topology.user_cpuset = f"0-{self._num_threads - 1}"
+        exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
+
+        self._mrc_executor = mrc.Executor(exec_options)
+
+        mrc_pipeline = mrc.Pipeline()
+
+        def inner_build(builder: mrc.Builder, segment_id: str):
+            logger.info("====Building Segment: %s====", segment_id)
+            segment_graph = self._segment_graphs[segment_id]
+
+            # Check if preallocated columns are requested, this needs to happen before the source stages are built
+            needed_columns = OrderedDict()
+            for stage in networkx.topological_sort(segment_graph):
+                needed_columns.update(stage.get_needed_columns())
+
+            if (len(needed_columns) > 0):
+                for stage in segment_graph.nodes():
+                    if (isinstance(stage, PreallocatorMixin)):
+                        stage.set_needed_columns(needed_columns)
+
+            # This should be a BFS search from each source nodes; but, since we don't have source stage loops
+            # topo_sort provides a reasonable approximation.
+            for stage in networkx.topological_sort(segment_graph):
+                if (stage.can_build()):
+                    stage.build(builder)
+
+            if (not all(x.is_built for x in segment_graph.nodes())):
+                logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
+
+                for stage in segment_graph.nodes():
+                    if (stage.can_build(check_ports=True)):
+                        stage.build()
+
+            if (not all(x.is_built for x in segment_graph.nodes())):
+                raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
+
+            # Finally, execute the link phase (only necessary for circular pipelines)
+            # for s in source_and_stages:
+            for stage in segment_graph.nodes():
+                for port in typing.cast(StreamWrapper, stage).input_ports:
+                    port.link(builder=builder)
+
+            logger.info("====Building Segment Complete!====")
+
+        for segment_id, segment in self._segments.items():
+            segment_ingress_ports = segment["ingress_ports"]
+            segment_egress_ports = segment["egress_ports"]
+            segment_inner_build = partial(inner_build, segment_id=segment_id)
+
+            mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+                                      [port_info["port_pair"] for port_info in segment_egress_ports],
+                                      segment_inner_build)
+
+        self._is_build_complete = True
+
+        # Finally call _on_start
+        self._on_start()
+        self._mrc_executor.register_pipeline(mrc_pipeline)
+
     def _start(self):
         assert self._is_built, "Pipeline must be built before starting"
 
@@ -361,6 +431,12 @@ class Pipeline():
             except Exception:
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
+
+        # try:
+        #     self._build_mrc()
+        # except Exception:
+        #     logger.exception("Error occurred during Pipeline._build_mrc(). Exiting.", exc_info=True)
+        #     return
 
         await self._async_start()
 
