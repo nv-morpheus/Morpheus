@@ -27,7 +27,6 @@ from morpheus.messages import MultiMessage
 
 @pytest.mark.use_python
 class TestGraphSageStage:
-
     def test_constructor(self, config: Config, model_dir: str):
         from stages.graph_sage_stage import GraphSAGEStage
         from stages.model import HinSAGE
@@ -38,7 +37,6 @@ class TestGraphSageStage:
         assert stage._record_id == "test_id"
         assert stage._target_node == "test_node"
 
-    @pytest.mark.usefixtures("manual_seed")
     def test_process_message(self,
                              config: Config,
                              training_file: str,
