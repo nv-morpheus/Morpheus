@@ -130,7 +130,7 @@ def write_data_to_kafka(bootstrap_servers: str,
 
     producer.flush()
 
-    assert num_records > 0
+    assert num_records == len(data)
 
     return num_records
 
