@@ -24,65 +24,24 @@ import time
 import types
 import typing
 import warnings
-from collections import namedtuple
-from functools import partial
 
 import pytest
 import requests
 
-# actual topic names not important, but we will need two of them.
-KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
-                                                                           'morpheus_output_topic')
-
-# pylint: disable=invalid-name
-zookeeper_proc = None
-kafka_server = None
-kafka_consumer = None
-pytest_kafka_setup_error = None
-# pylint: enable=invalid-name
+from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
-
-def init_pytest_kafka():
-    """
-    Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-    """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
-    try:
-        import pytest_kafka
-        os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
-        # Initialize pytest_kafka fixtures following the recomendations in:
-        # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        kafka_scripts = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
-        if not os.path.exists(kafka_scripts):
-            # check the old location
-            kafka_scripts = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-
-        kafka_bin = os.path.join(kafka_scripts, 'kafka-server-start.sh')
-        zookeeper_bin = os.path.join(kafka_scripts, 'zookeeper-server-start.sh')
-
-        for kafka_script in (kafka_bin, zookeeper_bin):
-            if not os.path.exists(kafka_script):
-                raise RuntimeError(f"Required Kafka script not found: {kafka_script}")
-
-        teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(zookeeper_bin, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(kafka_bin, 'zookeeper_proc', teardown_fn=teardown_fn)
-        kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
-                                                          group_id='morpheus_unittest_reader',
-                                                          client_id='morpheus_unittest_reader',
-                                                          seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
-
-        return True
-    except Exception as e:
-        pytest_kafka_setup_error = e
-        return False
-
-
-PYTEST_KAFKA_AVAIL = init_pytest_kafka()
+(PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
+if PYTEST_KAFKA_AVAIL:
+    # Pull out the fixtures into this namespace
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -197,7 +156,7 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     """
 
     if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
-        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {pytest_kafka_setup_error}")
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
@@ -338,23 +297,6 @@ def config(use_cpp: bool):
     from morpheus.config import Config
 
     yield Config()
-
-
-@pytest.fixture(scope="function")
-def kafka_topics():
-    """
-    Returns a named tuple of Kafka topic names in the form of (input_topic, output_topic)
-    """
-    yield KAFKA_TOPICS
-
-
-@pytest.fixture(scope="function")
-def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
-    """
-    Used by tests that require both an input and an output topic
-    """
-    kafka_port = kafka_server[1]
-    yield f"localhost:{kafka_port}"
 
 
 @pytest.fixture(scope="function")
