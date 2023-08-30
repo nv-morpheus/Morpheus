@@ -50,6 +50,9 @@ class ControlMessageFileSourceStage(SingleOutputSource):
     def name(self) -> str:
         return "from-message-control"
 
+    def output_type(self) -> type:
+        return fsspec.core.OpenFiles
+
     def supports_cpp_node(self):
         return True
 

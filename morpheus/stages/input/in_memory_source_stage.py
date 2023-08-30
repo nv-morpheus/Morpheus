@@ -52,6 +52,9 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):
             for k, df in enumerate(self._dataframes):

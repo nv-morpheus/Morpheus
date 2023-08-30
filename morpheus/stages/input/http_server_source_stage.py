@@ -129,6 +129,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports C++ nodes."""
         return True
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
             # engine='cudf' is needed when lines=False to avoid using pandas

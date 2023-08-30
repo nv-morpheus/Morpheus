@@ -113,6 +113,9 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max input count"""
         return self._input_count if self._input_count is not None else 0
 
+    def output_type(self) -> type:
+        return UserMessageMeta
+
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""
         dir_to_watch = os.path.dirname(glob_split[0])

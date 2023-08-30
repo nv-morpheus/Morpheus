@@ -146,6 +146,9 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:
         """
         Returns a DataFrame parsed from the response payload. If the response payload is empty, then `None` is returned.

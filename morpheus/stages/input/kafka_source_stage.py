@@ -137,6 +137,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def stop(self):
         """
         Performs cleanup steps when pipeline is stopped.

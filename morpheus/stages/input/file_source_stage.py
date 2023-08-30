@@ -101,6 +101,9 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return True
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():

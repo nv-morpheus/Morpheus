@@ -126,6 +126,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
+    def output_type(self) -> type:
+        return ControlMessage
+
     def _process_msg(self, consumer, msg):
         control_messages = []
 

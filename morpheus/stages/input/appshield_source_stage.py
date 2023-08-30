@@ -122,6 +122,9 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
+    def output_type(self) -> type:
+        return AppShieldMessageMeta
+
     @staticmethod
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
         """
