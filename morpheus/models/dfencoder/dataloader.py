@@ -520,7 +520,7 @@ class DatasetFromDataframe(Dataset):
         start = idx * self._batch_size
         end = (idx + 1) * self._batch_size
 
-        data = self._df[start:end].copy()
+        data = self._df[start:end]
         return self._preprocess(data, batch_index=idx)
 
     def _preprocess(self, df, batch_index):
