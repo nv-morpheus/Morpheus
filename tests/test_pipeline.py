@@ -27,6 +27,7 @@ from morpheus.utils.type_aliases import DataFrameType
 
 
 class SourceTestStage(InMemorySourceStage):
+
     def __init__(self,
                  config,
                  dataframes: typing.List[DataFrameType],
@@ -44,6 +45,7 @@ class SourceTestStage(InMemorySourceStage):
 
 
 class SinkTestStage(InMemorySinkStage):
+
     def __init__(self, config, destructor_cb: typing.Callable[[], None]):
         super().__init__(config)
         self._destructor_cb = destructor_cb

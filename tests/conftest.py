@@ -614,6 +614,7 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     """
     Helper function to ensure once parent process exits, its child processes will automatically die
     """
+
     def prctl_fn():
         libc = ctypes.CDLL("libc.so.6")
         return libc.prctl(1, sig)
