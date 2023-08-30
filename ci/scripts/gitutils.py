@@ -280,7 +280,7 @@ class GithubWrapper:
 
             logging.debug("Github CLI is installed. Using repo: %s", repo_name)
             return True
-        except subprocess.CalledProcessError:
+        except (FileNotFoundError, subprocess.CalledProcessError):
             logging.debug("Github CLI is not installed")
             return False
 
