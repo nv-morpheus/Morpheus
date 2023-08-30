@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import ctypes
+import gc
 import importlib
 import logging
 import os
@@ -501,6 +502,19 @@ def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
     called more than once for the same stage.
     """
     yield
+
+
+@pytest.fixture(scope="function")
+def disable_gc():
+    """
+    Disable automatic garbage collection and enables debug stats for garbage collection for the duration of the test.
+    This is useful for tests that require explicit control over when garbage collection occurs.
+    """
+    gc.set_debug(gc.DEBUG_STATS)
+    gc.disable()
+    yield
+    gc.set_debug(0)
+    gc.enable()
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
