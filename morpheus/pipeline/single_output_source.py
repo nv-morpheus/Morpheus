@@ -14,19 +14,19 @@
 
 import logging
 import typing
+from abc import abstractmethod
 
 import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.pipeline.single_output_mixin import SingleOutputMixin
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
 
-class SingleOutputSource(SingleOutputMixin, _pipeline.SourceStage):
+class SingleOutputSource(_pipeline.SourceStage):
     """
     Subclass of SourceStage for building source stages that generate output for single port.
 
@@ -52,3 +52,28 @@ class SingleOutputSource(SingleOutputMixin, _pipeline.SourceStage):
         logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_print_type_name(ret_val[1])))
 
         return [ret_val]
+
+    def output_types(self) -> list[type]:
+        """
+        Return the output type for this stage.
+
+        Returns
+        -------
+        list
+            Output types.
+
+        """
+        return [self.output_type()]
+
+    @abstractmethod
+    def output_type(self) -> type:
+        """
+        Return the output type for this stage. Derived classes should override this method.
+
+        Returns
+        -------
+        type
+            Output type.
+
+        """
+        pass

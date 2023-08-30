@@ -21,14 +21,13 @@ import typing_utils
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.pipeline.single_output_mixin import SingleOutputMixin
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
 
-class SinglePortStage(SingleOutputMixin, _pipeline.Stage):
+class SinglePortStage(_pipeline.Stage):
     """
     Class used for building stages with single input port and single output port.
 
@@ -54,6 +53,37 @@ class SinglePortStage(SingleOutputMixin, _pipeline.Stage):
         -------
         typing.Tuple
             Accepted input types.
+
+        """
+        pass
+
+    def output_types(self, parent_output_types: list[type]) -> list[type]:
+        """
+        Return the output type for this stage.
+
+        Returns
+        -------
+        list
+            Output types.
+
+        """
+        accepted_types = typing.Union[self.accepted_types()]
+        for parent_output_type in parent_output_types:
+            if (not typing_utils.issubtype(parent_output_type, accepted_types)):
+                raise RuntimeError((f"The {self.name} stage cannot handle input of {parent_output_type}. "
+                                    f"Accepted input types: {self.accepted_types()}"))
+
+        return [self.output_type(parent_output_types)]
+
+    @abstractmethod
+    def output_type(self, parent_output_types: list[type]) -> type:
+        """
+        Return the output type for this stage. Derived classes should override this method.
+
+        Returns
+        -------
+        type
+            Output type.
 
         """
         pass

@@ -43,10 +43,12 @@ class Stage(_pipeline.StreamWrapper):
     def _start(self):
         pass
 
-    #@abstractmethod
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
+    @abstractmethod
+    def output_types(self, parent_output_types: list[type]) -> list[type]:  # pylint: disable=arguments-differ
         """
-        Return the output types for this stage. Derived classes should override this method.
+        Return the output types for this stage based on the incoming types of parent stages. Derived classes should
+        override this method, if the `parent_output_types` are incompatible then the stage should rase a
+        `RuntimeError` exception.
 
         Returns
         -------
