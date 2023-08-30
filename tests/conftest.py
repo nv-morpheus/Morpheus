@@ -564,6 +564,10 @@ def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
 
 @pytest.fixture(scope="function")
 def disable_gc():
+    """
+    Disable automatic garbage collection and enables debug stats for garbage collection for the duration of the test.
+    This is useful for tests that require explicit control over when garbage collection occurs.
+    """
     gc.set_debug(gc.DEBUG_STATS)
     gc.disable()
     yield
@@ -610,7 +614,6 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     """
     Helper function to ensure once parent process exits, its child processes will automatically die
     """
-
     def prctl_fn():
         libc = ctypes.CDLL("libc.so.6")
         return libc.prctl(1, sig)

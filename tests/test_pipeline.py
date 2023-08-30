@@ -27,46 +27,39 @@ from morpheus.utils.type_aliases import DataFrameType
 
 
 class SourceTestStage(InMemorySourceStage):
-
     def __init__(self,
                  config,
                  dataframes: typing.List[DataFrameType],
-                 state_dict: dict,
-                 repeat: int = 1,
-                 state_key: str = "source"):
+                 destructor_cb: typing.Callable[[], None],
+                 repeat: int = 1):
         super().__init__(config, dataframes, repeat)
-        self._state_dict = state_dict
-        self._state_key = state_key
+        self._destructor_cb = destructor_cb
 
     @property
     def name(self) -> str:
         return "test-source"
 
     def __del__(self):
-        self._state_dict[self._state_key] = True
-        self._state_dict = None
+        self._destructor_cb()
 
 
 class SinkTestStage(InMemorySinkStage):
-
-    def __init__(self, config, state_dict: dict, state_key: str = "sink"):
+    def __init__(self, config, destructor_cb: typing.Callable[[], None]):
         super().__init__(config)
-        self._state_dict = state_dict
-        self._state_key = state_key
+        self._destructor_cb = destructor_cb
 
     @property
     def name(self) -> str:
         return "test-sink"
 
     def __del__(self):
-        self._state_dict[self._state_key] = True
-        self._state_dict = None
+        self._destructor_cb()
 
 
-def _run_pipeline(config: Config, filter_probs_df: DataFrameType, state_dict: dict):
+def _run_pipeline(config: Config, filter_probs_df: DataFrameType, update_state_dict: typing.Callable[[str], None]):
     pipe = LinearPipeline(config)
-    pipe.set_source(SourceTestStage(config, [filter_probs_df], state_dict=state_dict))
-    pipe.add_stage(SinkTestStage(config, state_dict=state_dict))
+    pipe.set_source(SourceTestStage(config, [filter_probs_df], destructor_cb=lambda: update_state_dict("source")))
+    pipe.add_stage(SinkTestStage(config, destructor_cb=lambda: update_state_dict("sink")))
     pipe.run()
 
 
@@ -76,7 +69,12 @@ def test_destructors_called(config: Config, filter_probs_df: DataFrameType):
     Test to ensure that the destructors of stages are called (issue #1114).
     """
     state_dict = {"source": False, "sink": False}
-    _run_pipeline(config, filter_probs_df, state_dict)
+
+    def update_state_dict(key: str):
+        nonlocal state_dict
+        state_dict[key] = True
+
+    _run_pipeline(config, filter_probs_df, update_state_dict)
 
     gc.collect()
     assert state_dict["source"]
