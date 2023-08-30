@@ -738,126 +738,163 @@ class AutoEncoder(torch.nn.Module):
         scaler.fit(a)
         return {'scaler': scaler}
 
-    def fit(
-        self,
-        train_data,
-        epochs=1,
-        val_data=None,
-        run_validation=False,
-        use_val_for_loss_stats=False,
-        rank=None,
-        world_size=None,
-    ):
-        """ Does training in the specified mode (indicated by self.distrivuted_training).
-
-        Parameters
-        ----------
-        train_data : pandas.DataFrame (centralized) or torch.utils.data.DataLoader (distributed)
-            Data for training.
-        epochs : int, optional
-            Number of epochs to run training, by default 1.
-        val_data : pandas.DataFrame (centralized) or torch.utils.data.DataLoader (distributed), optional
-            Data for validation and computing loss stats, by default None.
-        run_validation : bool, optional
-            Whether to collect validation loss for each epoch during training, by default False.
-        use_val_for_loss_stats : bool, optional
-            whether to use the validation set for loss statistics collection (for z score calculation), by default False.
-        rank : int, optional
-            The rank of the current process, by default None. Required for distributed training.
-        world_size : int, optional
-            The total number of processes, by default None. Required for distributed training.
-
-        Raises
-        ------
-        TypeError
-            If train_data is not a pandas dataframe in centralized training mode.
-        ValueError
-            If rank and world_size not provided in distributed training mode.
-        TypeError
-            If train_data is not a pandas dataframe or a torch.utils.data.DataLoader or a torch.utils.data.Dataset in distributed training mode.
-        """
-        if not self.distributed_training:
-            # TODO(Devin)
-            if not isinstance(train_data, pd.DataFrame):
-                raise TypeError("`train_data` needs to be a pandas dataframe in centralized training mode."
-                                f" `train_data` is currently of type: {type(train_data)}")
-
-            self._fit_centralized(
-                df=train_data,
-                epochs=epochs,
-                val=val_data,
-                run_validation=run_validation,
-                use_val_for_loss_stats=use_val_for_loss_stats,
-            )
-        else:
-            # distributed training requires rank and world_size
-            if rank is None or world_size is None:
-                raise ValueError('`rank` and `world_size` must be provided for distributed training.')
-
-            if not isinstance(train_data, (pd.DataFrame, torch.utils.data.DataLoader, torch.utils.data.Dataset)):
-                raise TypeError(
-                    "`train_data` needs to be a pandas DataFrame, a DataLoader, or a Dataset in distributed training mode."
-                    f" `train_data` is currently of type: {type(train_data)}")
-
-            self._fit_distributed(
-                train_data=train_data,
-                epochs=epochs,
-                val_data=val_data,
-                run_validation=run_validation,
-                use_val_for_loss_stats=use_val_for_loss_stats,
-                rank=rank,
-                world_size=world_size,
-            )
-
-    def _fit_centralized(self, df, epochs=1, val=None, run_validation=False, use_val_for_loss_stats=False):
-        """Does training in a single process on a single GPU.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            Data used for training.
-        epochs : int, optional
-            Number of epochs to run training, by default 1.
-        val : pandas.DataFrame, optional
-            Optional pandas dataframe for validation or loss stats, by default None.
-        run_validation : bool, optional
-            Whether to collect validation loss for each epoch during training, by default False.
-        use_val_for_loss_stats : bool, optional
-            Whether to use the validation set for loss statistics collection (for z score calculation), by default False.
-
-        Raises
-        ------
-        ValueError
-            If run_validation or use_val_for_loss_stats is True but val is not provided.
-        """
-        if (run_validation or use_val_for_loss_stats) and val is None:
-            raise ValueError("Validation set is required if either run_validation or \
-                use_val_for_loss_stats is set to True.")
-
+    def _build_training_datasets(self, train_data, val_data, run_validation, use_val_for_loss_stats):
         val_dset = None
-        if run_validation:
+        if (isinstance(val_data, pd.DataFrame) and run_validation):
             val_dset = DatasetFromDataframe(
-                df=val,
+                df=val_data,
                 batch_size=self.batch_size,
                 preprocess_fn=self.preprocess_validation_data,
                 shuffle_rows_in_batch=False,
             )
 
         # Turn our training data into a torch dataset
-        dset = DatasetFromDataframe(
-            df=df,
-            batch_size=self.batch_size,
-            preprocess_fn=self.preprocess_train_data,
-            shuffle_rows_in_batch=True,
-        )
+        if (isinstance(train_data, pd.DataFrame)):
+            train_dset = DatasetFromDataframe(
+                df=train_data,
+                batch_size=self.batch_size,
+                preprocess_fn=self.preprocess_train_data,
+                shuffle_rows_in_batch=True,
+            )
+        else:
+            train_dset = train_data
 
-        # Set the dataset used to compute loss statistics
-        loss_dset = val_dset if use_val_for_loss_stats else dset
+        if (use_val_for_loss_stats):
+            loss_dset = val_dset
+        else:
+            if isinstance(train_data, torch.utils.data.DataLoader):
+                loss_dset = train_data.dataset
+            else:
+                loss_dset = train_dset
 
-        if self.optim is None:
-            self._build_model(df, rank=None)
+        return train_dset, val_dset, loss_dset
 
-        if run_validation and val is not None:
+    def _train_for_epochs(self, train_data, val_dset, epochs, rank, world_size, run_validation, is_main_process):
+        # Batched Training loop with early stopping
+        count_es = 0
+        last_val_loss = float('inf')
+        should_early_stop = False
+        for epoch in range(epochs):
+            LOG.debug(f'[Rank{rank}] training epoch {epoch + 1}...')
+
+            # if we are using DistributedSampler, we have to tell it which epoch this is
+            if (self.distributed_training
+                    and isinstance(train_data.sampler, torch.utils.data.distributed.DistributedSampler)):
+                train_data.sampler.set_epoch(epoch)
+
+            train_loss_sum = 0
+            train_loss_count = 0
+            for data_batch in train_data:
+                loss = self._fit_batch(**data_batch['data'])
+
+                train_loss_count += 1
+                train_loss_sum += loss
+
+            if (self.lr_decay is not None):
+                self.lr_decay.step()
+
+            if (is_main_process and run_validation):
+                # run validation
+                curr_val_loss = self._validate_dataset(val_dset, rank)
+                LOG.debug(f'Rank{rank} Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
+
+                if self.patience:  # early stopping
+                    if curr_val_loss > last_val_loss:
+                        count_es += 1
+                        LOG.debug(f'Rank{rank} Loss went up. Early stop count: {count_es}')
+
+                        if count_es >= self.patience:
+                            LOG.debug(f'Early stopping: early stop count({count_es}) >= patience({self.patience})')
+                            should_early_stop = True
+                    else:
+                        LOG.debug(f'Rank{rank} Loss went down. Reset count for early stopping to 0')
+                        count_es = 0
+
+                    last_val_loss = curr_val_loss
+
+            # Sync early stopping info across processes if distributed training is enabled
+            if (self.distributed_training):
+                # we have to create enough room to store the collected objects
+                early_stopping_state = [None for _ in range(world_size)]
+                torch.distributed.all_gather_object(early_stopping_state, should_early_stop)
+                should_early_stop_synced = early_stopping_state[0]  # take the state of the main process
+                if should_early_stop_synced is True:
+                    LOG.debug(f'Rank{rank} Early stopped.')
+                    break
+            else:
+                if (should_early_stop):
+                    break
+
+            self.logger.end_epoch()
+
+    def fit(
+        self,
+        train_data,
+        rank=0,
+        world_size=1,
+        epochs=1,
+        val_data=None,
+        run_validation=False,
+        use_val_for_loss_stats=False,
+    ):
+        """
+        Fit the model in a distributed or centralized fashion, depending on self.distributed_training with early
+        stopping based on validation loss.
+        If run_validation is True, the val_dataset will be used for validation during training and early stopping
+        will be applied based on patience argument.
+
+        Parameters
+        ----------
+        train_data : pandas.DataFrame or torch.utils.data.Dataset or torch.utils.data.DataLoader
+            data object of training data
+        rank : int
+            the rank of the current process
+        world_size : int
+            the total number of processes
+        epochs : int, optional
+            the number of epochs to train for, by default 1
+        val_data : torch.utils.data.Dataset or torch.utils.data.DataLoader, optional
+            the validation data object (with __iter__() that yields a batch at a time), by default None
+        run_validation : bool, optional
+            whether to perform validation during training, by default False
+        use_val_for_loss_stats : bool, optional
+            whether to populate loss stats in the main process (rank 0) for z-score calculation using the validation set.
+            If set to False, loss stats would be populated using the train_dataloader, which can be slow due to data size.
+            By default False, but using the validation set to populate loss stats is strongly recommended (for both efficiency
+            and model efficacy).
+
+        Raises
+        ------
+        ValueError
+            If run_validation or use_val_for_loss_stats is True but val is not provided.
+        """
+
+        if not isinstance(train_data, (pd.DataFrame, torch.utils.data.DataLoader, torch.utils.data.Dataset)):
+            raise TypeError(
+                "`train_data` needs to be a pandas DataFrame, a DataLoader, or a Dataset in distributed training mode."
+                f" `train_data` is currently of type: {type(train_data)}")
+
+        if ((run_validation or use_val_for_loss_stats) and val_data is None):
+            raise ValueError("Validation set is required if either run_validation or \
+                use_val_for_loss_stats is set to True.")
+
+        if (self.optim is None):
+            self._build_model(df=train_data, rank=rank)
+
+        train_dset, val_dset, loss_dset = self._build_training_datasets(train_data, val_data, run_validation,
+                                                                        use_val_for_loss_stats)
+
+        is_main_process = (rank == 0)
+
+        # Early stopping warning
+        if (self.patience and not run_validation):
+            LOG.warning(
+                f"Not going to perform early-stopping. self.patience(={self.patience}) is provided for early-stopping"
+                " but validation is not enabled. Please set `run_validation` to True and provide a `val_dataset` to"
+                " enable early-stopping.")
+
+        # Check if we're running validation, and compute baseline performance if we are
+        if (is_main_process and run_validation):
             LOG.debug('Validating during training. Computing baseline performance...')
             baseline = self._compute_baseline_performance_from_dataset(val_dset)
 
@@ -866,47 +903,12 @@ class AutoEncoder(torch.nn.Module):
 
             LOG.debug(f'Baseline loss: {round(baseline, 4)}')
 
-        # Early stopping
-        count_es = 0
-        last_val_loss = float('inf')
-        for epoch in range(epochs):
-            LOG.debug(f'training epoch {epoch + 1}...')
+        # Training loop
+        self._train_for_epochs(train_dset, val_dset, epochs, rank, world_size, run_validation, is_main_process)
 
-            train_loss_sum = 0
-            train_loss_count = 0
-            for data_d in dset:
-                loss = self._fit_batch(**data_d['data'])
-
-                train_loss_count += 1
-                train_loss_sum += loss
-
-            # Try decay after each epoch
-            if self.lr_decay is not None:
-                self.lr_decay.step()
-
-            if run_validation:
-                curr_val_loss = self._validate_dataset(val_dset)
-
-                # Early stopping
-                LOG.debug(f'Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
-
-                if curr_val_loss > last_val_loss:
-                    count_es += 1
-                    LOG.debug(f'Loss went up. Early stop count: {count_es}')
-
-                    if count_es >= self.patience:
-                        LOG.debug(f'Early stopping: early stop count({count_es}) >= patience({self.patience})')
-                        break
-                else:
-                    LOG.debug(f'Loss went down. Reset count for earlystop to 0')
-                    count_es = 0
-
-                last_val_loss = curr_val_loss
-
-            self.logger.end_epoch()
-
-        loss_dset.convert_to_validation(self)
-        self._populate_loss_stats_from_dataset(loss_dset)
+        if (is_main_process):
+            loss_dset.convert_to_validation(self)
+            self._populate_loss_stats_from_dataset(loss_dset)
 
     def _validate_dataframe(self, orig_df, swapped_df):
         """Runs a validation loop on the given validation pandas DataFrame, computing and returning the average loss of
@@ -954,152 +956,6 @@ class AutoEncoder(torch.nn.Module):
         mean_id_loss = np.array(id_loss).mean()
 
         return mean_id_loss, mean_swapped_loss
-
-    def _fit_distributed(
-        self,
-        train_data,
-        rank,
-        world_size,
-        epochs=1,
-        val_data=None,
-        run_validation=False,
-        use_val_for_loss_stats=False,
-    ):
-        """Fit the model in the distributed fashion with early stopping based on validation loss.
-        If run_validation is True, the val_dataset will be used for validation during training and early stopping
-        will be applied based on patience argument.
-
-        Parameters
-        ----------
-        train_data : pandas.DataFrame or torch.utils.data.Dataset or torch.utils.data.DataLoader
-            data object of training data
-        rank : int
-            the rank of the current process
-        world_size : int
-            the total number of processes
-        epochs : int, optional
-            the number of epochs to train for, by default 1
-        val_data : torch.utils.data.Dataset or torch.utils.data.DataLoader, optional
-            the validation data object (with __iter__() that yields a batch at a time), by default None
-        run_validation : bool, optional
-            whether to perform validation during training, by default False
-        use_val_for_loss_stats : bool, optional
-            whether to populate loss stats in the main process (rank 0) for z-score calculation using the validation set.
-            If set to False, loss stats would be populated using the train_dataloader, which can be slow due to data size.
-            By default False, but using the validation set to populate loss stats is strongly recommended (for both efficiency
-            and model efficacy).
-
-        Raises
-        ------
-        ValueError
-            If run_validation or use_val_for_loss_stats is True but val is not provided.
-        """
-        if run_validation and val_data is None:
-            raise ValueError("`run_validation` is set to True but the validation set (val_dataset) is not provided.")
-
-        if use_val_for_loss_stats and val_data is None:
-            raise ValueError("Validation set is required if either run_validation or \
-                use_val_for_loss_stats is set to True.")
-
-        # If train_data is in the format of a pandas df, wrap it by a dataset
-        train_df = None
-        if isinstance(train_data, pd.DataFrame):
-            train_df = train_data  # keep the dataframe for model-building
-            train_data = DatasetFromDataframe(
-                df=train_data,
-                batch_size=self.batch_size,
-                preprocess_fn=self.preprocess_train_data,
-                shuffle_rows_in_batch=True,
-            )
-
-        if self.optim is None:
-            self._build_model(df=train_df, rank=rank)
-
-        is_main_process = rank == 0
-        should_run_validation = (run_validation and val_data is not None)
-        if self.patience and not should_run_validation:
-            LOG.warning(
-                f"Not going to perform early-stopping. self.patience(={self.patience}) is provided for early-stopping"
-                " but validation is not enabled. Please set `run_validation` to True and provide a `val_dataset` to"
-                " enable early-stopping.")
-
-        if is_main_process and should_run_validation:
-            LOG.debug('Validating during training. Computing baseline performance...')
-            baseline = self._compute_baseline_performance_from_dataset(val_data)
-
-            if isinstance(self.logger, BasicLogger):
-                self.logger.baseline_loss = baseline
-
-            LOG.debug(f'Baseline loss: {round(baseline, 4)}')
-
-        # early stopping
-        count_es = 0
-        last_val_loss = float('inf')
-        should_early_stop = False
-        for epoch in range(epochs):
-            LOG.debug(f'Rank{rank} training epoch {epoch + 1}...')
-
-            # if we are using DistributedSampler, we have to tell it which epoch this is
-            train_data.sampler.set_epoch(epoch)
-
-            train_loss_sum = 0
-            train_loss_count = 0
-            for data_d in train_data:
-                loss = self._fit_batch(**data_d['data'])
-
-                train_loss_count += 1
-                train_loss_sum += loss
-
-            if self.lr_decay is not None:
-                self.lr_decay.step()
-
-            if is_main_process and should_run_validation:
-                # run validation
-                curr_val_loss = self._validate_dataset(val_data, rank)
-                LOG.debug(f'Rank{rank} Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
-
-                if self.patience:  # early stopping
-                    if curr_val_loss > last_val_loss:
-                        count_es += 1
-                        LOG.debug(f'Rank{rank} Loss went up. Early stop count: {count_es}')
-
-                        if count_es >= self.patience:
-                            LOG.debug(f'Early stopping: early stop count({count_es}) >= patience({self.patience})')
-                            should_early_stop = True
-                    else:
-                        LOG.debug(f'Rank{rank} Loss went down. Reset count for earlystop to 0')
-                        count_es = 0
-
-                    last_val_loss = curr_val_loss
-
-            self.logger.end_epoch()
-
-            # sync early stopping info so the early stopping decision can be passed from the main process to other processes
-            early_stopping_state = [None for _ in range(world_size)
-                                    ]  # we have to create enough room to store the collected objects
-            torch.distributed.all_gather_object(early_stopping_state, should_early_stop)
-            should_early_stop_synced = early_stopping_state[0]  # take the state of the main process
-            if should_early_stop_synced is True:
-                LOG.debug(f'Rank{rank} Early stopped.')
-                break
-
-        if is_main_process:
-            # Run loss collection only on the main process (currently do not support distributed loss collection)
-            if use_val_for_loss_stats:
-                dataset_for_loss_stats = val_data
-
-            else:
-                # use training set for loss stats collection
-                if isinstance(train_data, torch.utils.data.DataLoader):
-                    # grab only the dataset to avoid distriburted sampling
-                    dataset_for_loss_stats = train_data.dataset
-                else:
-                    # train_data is a Dataset
-                    dataset_for_loss_stats = train_data
-
-                # converts to validation mode to get the extra target tensors from the preprocessing function
-                dataset_for_loss_stats.convert_to_validation(self)
-            self._populate_loss_stats_from_dataset(dataset_for_loss_stats)
 
     def _fit_batch(self, input_swapped, num_target, bin_target, cat_target, **kwargs):
         """Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets, performs
@@ -1399,67 +1255,6 @@ class AutoEncoder(torch.nn.Module):
         result['z_loss_scaler_type'] = output_scaled_loss_str
 
         return result
-
-    def train_epoch(self, n_updates, input_df, df, pbar=None):
-        """Run regular epoch."""
-
-        if pbar is None and self.progress_bar:
-            close = True
-            pbar = tqdm.tqdm(total=n_updates)
-        else:
-            close = False
-
-        for j in range(n_updates):
-            start = j * self.batch_size
-            stop = (j + 1) * self.batch_size
-            in_sample = input_df.iloc[start:stop]
-            in_sample_tensor = self.build_input_tensor(in_sample)
-            target_sample = df.iloc[start:stop]
-            num, bin, cat = self.model(in_sample_tensor)  # forward
-            mse, bce, cce, net_loss = self.compute_loss(num, bin, cat, target_sample, should_log=True)
-            self.do_backward(mse, bce, cce)
-            self.optim.step()
-            self.optim.zero_grad()
-
-            if self.progress_bar:
-                pbar.update(1)
-        if close:
-            pbar.close()
-
-    def train_megabatch_epoch(self, n_updates, df):
-        """
-        Run epoch doing 'megabatch' updates, preprocessing data in large
-        chunks.
-        """
-        if self.progress_bar:
-            pbar = tqdm.tqdm(total=n_updates)
-        else:
-            pbar = None
-
-        n_rows = len(df)
-        n_megabatches = self.n_megabatches
-        batch_size = self.batch_size
-        res = n_rows / n_megabatches
-        batches_per_megabatch = (res // batch_size) + 1
-        megabatch_size = batches_per_megabatch * batch_size
-        final_batch_size = n_rows - (n_megabatches - 1) * megabatch_size
-
-        for i in range(n_megabatches):
-            megabatch_start = int(i * megabatch_size)
-            megabatch_stop = int((i + 1) * megabatch_size)
-            megabatch = df.iloc[megabatch_start:megabatch_stop]
-            megabatch = self.prepare_df(megabatch)
-            input_df = megabatch.swap(self.swap_p)
-            if i == (n_megabatches - 1):
-                n_updates = int(final_batch_size // batch_size)
-                if final_batch_size % batch_size > 0:
-                    n_updates += 1
-            else:
-                n_updates = int(batches_per_megabatch)
-            self.train_epoch(n_updates, input_df, megabatch, pbar=pbar)
-            del megabatch
-            del input_df
-            gc.collect()
 
     def get_representation(self, df, layer=0):
         """
