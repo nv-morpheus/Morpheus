@@ -41,16 +41,13 @@ ignore_patterns = [
   "**/*.pxd",
 ]
 
-
 [tool.mypy]
 # Allow None for argument default values
 implicit_optional = true
 
-
 [tool.pyright]
 # Allow None for argument default values
 strictParameterNoneValue = false
-
 
 [tool.interrogate]
 exclude = ["morpheus/cli"]
@@ -624,8 +621,8 @@ contextmanager-decorators = ["contextlib.contextmanager"]
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 
-# Add pytorch members to the list of dynamically set members. Only until pylint 3.0 supports pyi files
-generated-members = "torch.*"
+# Add pytorch & dgl members to the list of dynamically set members. Only until pylint 3.0 supports pyi files
+generated-members = "torch.*,dgl.*"
 
 # Tells whether missing members accessed in mixin class should be ignored. A
 # class is considered mixin if its name matches the mixin-class-rgx option.
