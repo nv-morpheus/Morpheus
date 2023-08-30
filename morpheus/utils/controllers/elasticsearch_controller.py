@@ -1,0 +1,166 @@
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import logging
+import pickle
+import time
+
+from elasticsearch import ConnectionError as ESConnectionError
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import parallel_bulk
+
+logger = logging.getLogger(__name__)
+
+
+class ElasticsearchController:
+    """
+    ElasticsearchController to perform read and write operations using Elasticsearch service.
+
+    Parameters
+    ----------
+    index : str
+        The name of the index to interact with.
+    connection_kwargs : dict
+        Keyword arguments to configure the Elasticsearch connection.
+    raise_on_exception : bool, optional
+        Whether to raise exceptions on Elasticsearch errors.
+    refresh_period_secs : int, optional
+        The refresh period in seconds for client refreshing.
+    pickled_func_config : dict, optional
+        Configuration for a pickled function to modify connection parameters.
+    """
+
+    def __init__(self,
+                 index: str,
+                 connection_kwargs: dict,
+                 raise_on_exception: bool = False,
+                 refresh_period_secs: int = 2400,
+                 pickled_func_config: dict = None):
+
+        self._index = index
+        self._connection_kwargs = connection_kwargs
+        self._raise_on_exception = raise_on_exception
+        self._refresh_period_secs = refresh_period_secs
+        self._apply_derive_params_func(pickled_func_config)
+
+        logger.debug("Creating Elasticsearch client with configuration: %s", connection_kwargs)
+
+        # Create ElasticSearch client
+        self._client = Elasticsearch(**self._connection_kwargs)
+
+        # Check if the client is connected
+        is_connected = self._client.ping()
+
+        if is_connected:
+            logger.debug("Elasticsearch client is connected.")
+        else:
+            logger.debug("Elasticsearch client is not connected.")
+            raise ESConnectionError("Elasticsearch client is not connected.")
+
+        self._last_refresh_time = time.time()
+
+        logger.debug("Elasticsearch cluster info: %s", self._client.info)
+        logger.debug("Creating Elasticsearch client... Done!")
+
+    @property
+    def client(self) -> Elasticsearch:
+        """
+        Get the active Elasticsearch client instance.
+
+        Returns
+        -------
+        Elasticsearch
+            The active Elasticsearch client.
+        """
+        return self._client
+
+    def _apply_derive_params_func(self, pickled_func_config) -> None:
+        if pickled_func_config:
+            pickled_func_str = pickled_func_config["pickled_func_str"]
+            encoding = pickled_func_config["encoding"]
+            func = pickle.loads(bytes(pickled_func_str, encoding))
+            self._connection_kwargs = func(self._connection_kwargs)
+
+    def refresh_client(self, force=False) -> None:
+        """
+        Refresh the Elasticsearch client instance.
+
+        Parameters
+        ----------
+        force : bool, optional
+            Force a client refresh.
+        """
+        if force or self._client is None or time.time() - self._last_refresh_time >= self._refresh_period_secs:
+            if not force and self._client:
+                try:
+                    # Close the existing client
+                    self.close_client()
+                except Exception as ex:
+                    logger.warning("Ignoring client close error: %s", ex)
+            logger.debug("Refreshing Elasticsearch client....")
+            self._client = Elasticsearch(**self._connection_kwargs)
+            logger.debug("Refreshing Elasticsearch client.... Done!")
+
+            self._last_refresh_time = time.time()
+
+    def parallel_bulk_write(self, actions) -> None:
+        """
+        Perform parallel bulk writes to Elasticsearch.
+
+        Parameters
+        ----------
+        actions : list
+            List of actions to perform in parallel.
+        """
+
+        for success, info in parallel_bulk(self._client, actions=actions, raise_on_exception=self._raise_on_exception):
+            if not success:
+                logger.error("Error writing to ElasticSearch: %s", str(info))
+
+    def search_documents(self, query: dict, index: str = None, **kwargs) -> dict:
+        """
+        Search for documents in Elasticsearch based on the given query.
+
+        Parameters
+        ----------
+        query : dict
+            The query DSL (Domain Specific Language) for the search.
+        index : str, optional
+            The name of the index to search. If not provided, the instance's index will be used.
+        **kwargs
+            Additional keyword arguments that are supported by the Elasticsearch search method.
+
+        Returns
+        -------
+        dict
+            The search result returned by Elasticsearch.
+        """
+        if index is None:
+            index = self._index
+
+        try:
+            result = self._client.search(index=index, query=query, **kwargs)
+            return result
+        except Exception as exc:
+            logger.error("Error searching documents: %s", exc)
+            if self._raise_on_exception:
+                raise RuntimeError(f"Error searching documents: {exc}") from exc
+
+            return {}
+
+    def close_client(self):
+        """
+        Close the Elasticsearch client connection.
+        """
+        self._client.close()
