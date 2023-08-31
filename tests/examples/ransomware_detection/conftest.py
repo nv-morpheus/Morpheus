@@ -21,6 +21,7 @@ import yaml
 
 from _utils import TEST_DIRS
 from _utils import import_or_skip
+from _utils import remove_module
 
 # pylint: disable=redefined-outer-name
 
@@ -73,8 +74,18 @@ def interested_plugins():
 # Some of the code inside ransomware_detection performs imports in the form of:
 #    from common....
 # For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
-# pylint: disable=unused-argument
 @pytest.fixture(autouse=True)
-@pytest.mark.usefixtures("request", "restore_sys_path", "reset_plugins")
-def ransomware_detection_in_sys_path(example_dir):
-    sys.path.append(example_dir)
+@pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
+def ransomware_detection_in_sys_path(example_dir: str):
+    sys.path.insert(0, example_dir)
+
+
+@pytest.fixture(autouse=True)
+def reset_modules():
+    """
+    Other examples could potentially have modules with the same name as the modules in this example. Ensure any
+    modules imported by these tests are removed from sys.modules after the test is completed.
+    """
+    yield
+    for remove_mod in ('common', 'stages'):
+        remove_module(remove_mod)

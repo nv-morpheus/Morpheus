@@ -25,8 +25,8 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import mk_async_infer
-from _utils import write_file_to_kafka
 from _utils.dataset_manager import DatasetManager
+from _utils.kafka import write_file_to_kafka
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -47,7 +47,7 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 # End-to-end test intended to imitate the ABP validation test
-FEATURE_LENGTH = 29
+FEATURE_LENGTH = 18
 MODEL_MAX_BATCH_SIZE = 1024
 
 
