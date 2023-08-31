@@ -36,20 +36,24 @@ class ExplicitPassThruTypeMixin(ABC):
         if len(accepted_types) != 1:
             raise RuntimeError(self.ERROR_MSG)
 
+        # We should use greatest_ancestor here, if the accepted_type is a base class, we should be able to receive
+        # multiple child types.
         if len(set(parent_output_types)) != 1:
             raise RuntimeError(self.ERROR_MSG)
 
         accepted_type = accepted_types[0]
 
         # using `typing_utils.issubtype` since `issubclass` does not work with `types.UnionType`
-        if (accepted_type is typing.Any or typing_utils.issubtype(accepted_type, types.UnionType)):
+        if (accepted_type is typing.Any or is_union_type(accepted_type)):
             raise RuntimeError(self.ERROR_MSG)
 
-        # Using != rather than `is not` since `int | float == typing.Union[int, float]` is True but
-        # `int | float is typing.Union[int, float]` is False.
+        # TODO: change this to issubtype
         if (accepted_type != parent_output_types[0]):
             raise RuntimeError(self.ERROR_MSG)
 
+        # This might cause an issue, as some stages like `TimeSeriesStage` report a return type of `MultiMessage` even
+        # if its receiving instances of `MultiResponseMessage`, if a downstream stage only accepts instances of
+        # `MultiResponseMessage` this could cause an unnescesarry error.
         return accepted_type
 
 

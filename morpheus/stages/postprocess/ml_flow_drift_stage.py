@@ -25,6 +25,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("mlflow-drift", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class MLFlowDriftStage(SinglePortStage):
+class MLFlowDriftStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     Report model drift statistics to ML Flow.
 

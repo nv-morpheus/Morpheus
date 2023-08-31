@@ -27,6 +27,7 @@ from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("filter")
-class FilterDetectionsStage(SinglePortStage):
+class FilterDetectionsStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     Filter message by a classification threshold.
 

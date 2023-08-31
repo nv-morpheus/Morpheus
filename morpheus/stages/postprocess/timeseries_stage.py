@@ -30,6 +30,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.multi_ae_message import MultiMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -403,7 +404,7 @@ class _UserTimeSeries:
 
 
 @register_stage("timeseries", modes=[PipelineModes.AE])
-class TimeSeriesStage(SinglePortStage):
+class TimeSeriesStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     Perform time series anomaly detection and add prediction.
 

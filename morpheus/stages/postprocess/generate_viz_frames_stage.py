@@ -33,6 +33,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
@@ -42,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
-class GenerateVizFramesStage(SinglePortStage):
+class GenerateVizFramesStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     Write out visualization DataFrames.
 

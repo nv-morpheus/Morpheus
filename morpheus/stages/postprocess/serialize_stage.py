@@ -84,6 +84,9 @@ class SerializeStage(SinglePortStage):
         """
         return (MultiMessage, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MessageMeta
+
     def supports_cpp_node(self):
         # Enable support by default
         return True
