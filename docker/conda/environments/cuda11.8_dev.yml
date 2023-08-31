@@ -43,6 +43,7 @@ dependencies:
     - dill
     - docker-py=5.0
     - docutils
+    - elasticsearch==8.9.0
     - faker=12.3.0
     - flake8
     - flatbuffers=2.0
