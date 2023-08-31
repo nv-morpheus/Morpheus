@@ -102,10 +102,10 @@ def save_model(model):
 
 def main():
     print('Preprocessing...')
-    (X_train, X_test, y_train, y_test) = \
+    (x_train, x_test, y_train, y_test) = \
         train_val_split(preprocess(args.trainingdata))
     print('Model Training...')
-    model = train(X_train, X_test, y_train, y_test)
+    model = train(x_train, x_test, y_train, y_test)
     print('Saving Model')
     save_model(model)
 
