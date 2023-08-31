@@ -18,7 +18,7 @@ import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
-from _utils.split_stage import SplitStage
+from _utils.stages.split_stage import SplitStage
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
