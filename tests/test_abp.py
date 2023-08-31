@@ -45,7 +45,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.utils.file_utils import load_labels_file
 
 # End-to-end test intended to imitate the ABP validation test
-FEATURE_LENGTH = 29
+FEATURE_LENGTH = 18
 MODEL_MAX_BATCH_SIZE = 1024
 
 
