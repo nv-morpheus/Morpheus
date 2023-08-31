@@ -26,11 +26,11 @@ from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.controllers.file_to_df_controller import single_object_to_dataframe
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.controllers.file_to_df_controller import single_object_to_dataframe
 
 
 @pytest.fixture
@@ -105,9 +105,9 @@ def test_constructor(config: Config):
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 @mock.patch('morpheus.utils.downloader.Distributed')
-@mock.patch('morpheus.utils.controllers.file_to_df_controller.process_dataframe')
+@mock.patch('morpheus.controllers.file_to_df_controller.process_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
                                                        mock_distributed: mock.MagicMock,
                                                        mock_obf_to_df: mock.MagicMock,
@@ -212,7 +212,7 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
                                                       mock_dask_cluster: mock.MagicMock,
                                                       mock_dask_client: mock.MagicMock,
@@ -282,7 +282,7 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('morpheus.utils.controllers.file_to_df_controller.single_object_to_dataframe')
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
                                                       mock_dask_cluster: mock.MagicMock,
                                                       mock_dask_client: mock.MagicMock,

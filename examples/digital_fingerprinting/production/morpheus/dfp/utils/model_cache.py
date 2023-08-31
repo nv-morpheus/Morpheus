@@ -335,7 +335,7 @@ class ModelManager:
     def load_user_model_cache(self,
                               user_id: str,
                               timeout: float,
-                              fallback_user_ids: typing.List[str] = []) -> UserModelMap:
+                              fallback_user_ids: typing.List[str] = None) -> UserModelMap:
         if (fallback_user_ids is None):
             fallback_user_ids = []
 

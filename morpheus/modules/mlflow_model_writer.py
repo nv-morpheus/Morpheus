@@ -17,7 +17,7 @@ import logging
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.utils.controllers.mlflow_model_writer_controller import MLFlowModelWriterController
+from morpheus.controllers.mlflow_model_writer_controller import MLFlowModelWriterController
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module

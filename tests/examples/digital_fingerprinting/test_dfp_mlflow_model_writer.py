@@ -63,10 +63,9 @@ def mock_requests_fixture():
 
 @pytest.fixture
 def mock_mlflow():
-    with (mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.MlflowClient") as mock_mlflow_client,
-          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.ModelSignature") as
-          mock_model_signature,
-          mock.patch("morpheus.utils.controllers.mlflow_model_writer_controller.RunsArtifactRepository") as
+    with (mock.patch("morpheus.controllers.mlflow_model_writer_controller.MlflowClient") as mock_mlflow_client,
+          mock.patch("morpheus.controllers.mlflow_model_writer_controller.ModelSignature") as mock_model_signature,
+          mock.patch("morpheus.controllers.mlflow_model_writer_controller.RunsArtifactRepository") as
           mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,

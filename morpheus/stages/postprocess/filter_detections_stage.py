@@ -22,11 +22,11 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
+from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.controllers.filter_detections_controller import FilterDetectionsController
 
 logger = logging.getLogger(__name__)
 

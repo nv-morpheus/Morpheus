@@ -18,7 +18,7 @@ import logging
 import mrc
 
 from morpheus.common import FileTypes
-from morpheus.utils.controllers.write_to_file_controller import WriteToFileController
+from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import register_module

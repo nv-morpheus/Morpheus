@@ -21,9 +21,9 @@ import fsspec
 import cudf
 
 from morpheus.cli.utils import str_to_file_type
+from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.utils.controllers.file_to_df_controller import FileToDFController
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
 

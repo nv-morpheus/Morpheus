@@ -22,10 +22,10 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.controllers.write_to_file_controller import WriteToFileController
 
 
 @register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})

@@ -22,11 +22,11 @@ from mrc.core import operators as ops
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.controllers.file_to_df_controller import FileToDFController
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -41,7 +41,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     schema : `morpheus.utils.column_info.DataFrameInputSchema`
         Input schema for the DataFrame.
@@ -56,21 +56,20 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  schema: DataFrameInputSchema,
                  filter_null: bool = True,
                  file_type: FileTypes = FileTypes.Auto,
                  parser_kwargs: dict = None,
                  cache_dir: str = "./.cache/dfp"):
-        super().__init__(c)
+        super().__init__(config)
 
-        timestamp_column_name = c.ae.timestamp_column_name
         self._controller = FileToDFController(schema=schema,
                                               filter_null=filter_null,
                                               file_type=file_type,
                                               parser_kwargs=parser_kwargs,
                                               cache_dir=cache_dir,
-                                              timestamp_column_name=timestamp_column_name)
+                                              timestamp_column_name=config.ae.timestamp_column_name)
 
     @property
     def name(self) -> str:

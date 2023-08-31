@@ -381,8 +381,7 @@ class FeatureExtractor():
         """
         page_execute_writecopy_count = 0
 
-        # pylint: disable=consider-iterating-dictionary
-        for protection in fc.PROTECTIONS.keys():
+        for protection, _ in fc.PROTECTIONS.items():
 
             p_data = self._get_protection_data(x, protection, vadinfo_df_size, vadsinfo_size, vadinfo_size)
 

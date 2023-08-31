@@ -21,11 +21,11 @@ from mrc.core import operators as ops
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.controllers.serialize_controller import SerializeController
 
 
 @register_stage("serialize")

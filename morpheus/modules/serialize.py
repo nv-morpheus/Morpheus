@@ -17,7 +17,7 @@ from functools import partial
 
 import mrc
 
-from morpheus.utils.controllers.serialize_controller import SerializeController
+from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_utils import register_module

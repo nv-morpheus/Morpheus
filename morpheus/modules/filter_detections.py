@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.common import FilterSource
-from morpheus.utils.controllers.filter_detections_controller import FilterDetectionsController
+from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module

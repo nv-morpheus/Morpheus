@@ -20,7 +20,7 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.utils import str_to_file_type
-from morpheus.utils.controllers.file_to_df_controller import FileToDFController
+from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
