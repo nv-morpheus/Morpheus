@@ -573,11 +573,11 @@ class AutoEncoder(torch.nn.Module):
         )
 
     def preprocess_data(
-        self,
-        df,
-        shuffle_rows_in_batch,
-        include_original_input_tensor,
-        include_swapped_input_by_feature_type,
+            self,
+            df,
+            shuffle_rows_in_batch,
+            include_original_input_tensor,
+            include_swapped_input_by_feature_type,
     ):
         """Preprocesses a pandas dataframe `df` for input into the autoencoder model.
 
@@ -738,26 +738,22 @@ class AutoEncoder(torch.nn.Module):
         scaler.fit(a)
         return {'scaler': scaler}
 
-    def _build_training_datasets(self, train_data, val_data, run_validation, use_val_for_loss_stats):
-        val_dset = None
-        if (isinstance(val_data, pd.DataFrame) and run_validation):
-            val_dset = DatasetFromDataframe(
-                df=val_data,
+    def _data_to_dset(self, data):
+        if (isinstance(data, pd.DataFrame)):
+            dset = DatasetFromDataframe(
+                df=data,
                 batch_size=self.batch_size,
                 preprocess_fn=self.preprocess_validation_data,
                 shuffle_rows_in_batch=False,
             )
-
-        # Turn our training data into a torch dataset
-        if (isinstance(train_data, pd.DataFrame)):
-            train_dset = DatasetFromDataframe(
-                df=train_data,
-                batch_size=self.batch_size,
-                preprocess_fn=self.preprocess_train_data,
-                shuffle_rows_in_batch=True,
-            )
         else:
-            train_dset = train_data
+            dset = data
+
+        return dset
+
+    def _build_training_datasets(self, train_data, val_data, use_val_for_loss_stats):
+        val_dset = self._data_to_dset(val_data)
+        train_dset = self._data_to_dset(train_data)
 
         if (use_val_for_loss_stats):
             loss_dset = val_dset
@@ -828,14 +824,14 @@ class AutoEncoder(torch.nn.Module):
             self.logger.end_epoch()
 
     def fit(
-        self,
-        train_data,
-        rank=0,
-        world_size=1,
-        epochs=1,
-        val_data=None,
-        run_validation=False,
-        use_val_for_loss_stats=False,
+            self,
+            train_data,
+            rank=0,
+            world_size=1,
+            epochs=1,
+            val_data=None,
+            run_validation=False,
+            use_val_for_loss_stats=False,
     ):
         """
         Fit the model in a distributed or centralized fashion, depending on self.distributed_training with early
@@ -881,8 +877,7 @@ class AutoEncoder(torch.nn.Module):
         if (self.optim is None):
             self._build_model(df=train_data, rank=rank)
 
-        train_dset, val_dset, loss_dset = self._build_training_datasets(train_data, val_data, run_validation,
-                                                                        use_val_for_loss_stats)
+        train_dset, val_dset, loss_dset = self._build_training_datasets(train_data, val_data, use_val_for_loss_stats)
 
         is_main_process = (rank == 0)
 

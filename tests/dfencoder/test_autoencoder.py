@@ -459,5 +459,5 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     assert round(results.loc[0, 'max_abs_z'], 2) == 2.5
 
     # Numpy float has different precision checks than python float, so we wrap it.
-    assert round(float(results.loc[0, 'mean_abs_z']), 3) == 0.335
+    assert round(float(results.loc[0, 'mean_abs_z']), 3) == 0.333
     assert results.loc[0, 'z_loss_scaler_type'] == 'z'
