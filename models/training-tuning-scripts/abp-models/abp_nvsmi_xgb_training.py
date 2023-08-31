@@ -14,7 +14,7 @@
 # limitations under the License.
 """
 Example Usage:
-python abp-nvsmi-xgb-20230831.py \
+python abp_nvsmi_xgb_training.py \
        --trainingdata \
        ../../datasets/training-data/abp-sample-nvsmi-training-data.json
 """
