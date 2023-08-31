@@ -36,17 +36,6 @@ def write_to_elasticsearch(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         An mrc Builder object.
-
-    Notes
-    -----
-    Configurable Parameters:
-        - index               (str): Elastic search index.
-        - connection_kwargs   (dict): Elastic search connection kwrags configuration.
-        - pickled_func_config (str): Pickled custom function configuration to updated connection_kwargs as needed
-        to established client connection. Custom function should return connection_kwargs; default: None.
-        - refresh_period_secs (int): Time in seconds to refresh the client connection; default: 2400.
-        - raise_on_exception  (bool): It is used to raise or supress exceptions when writing to Elasticsearch;
-        deafult: False
     """
 
     config = builder.get_current_module_config()
