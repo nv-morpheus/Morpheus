@@ -19,12 +19,14 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.pass_thru_type_mixin import InferredPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+# TODO: Document the InferredPassThruTypeMixin
 @register_stage("pass-thru")
-class PassThruStage(SinglePortStage):
+class PassThruStage(InferredPassThruTypeMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """
