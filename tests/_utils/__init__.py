@@ -17,6 +17,7 @@
 import collections
 import json
 import os
+import sys
 import time
 import types
 import typing
@@ -42,49 +43,6 @@ def calc_error_val(results_file):
     total_rows = results['total_rows']
     diff_rows = results['diff_rows']
     return Results(total_rows=total_rows, diff_rows=diff_rows, error_pct=(diff_rows / total_rows) * 100)
-
-
-def write_data_to_kafka(bootstrap_servers: str,
-                        kafka_topic: str,
-                        data: typing.List[typing.Union[str, dict]],
-                        client_id: str = 'morpheus_unittest_writer') -> int:
-    """
-    Writes `data` into a given Kafka topic, emitting one message for each line int he file. Returning the number of
-    messages written
-    """
-    # pylint: disable=import-error
-    from kafka import KafkaProducer
-    num_records = 0
-    producer = KafkaProducer(bootstrap_servers=bootstrap_servers, client_id=client_id)
-    for row in data:
-        if isinstance(row, dict):
-            row = json.dumps(row)
-        producer.send(kafka_topic, row.encode('utf-8'))
-        num_records += 1
-
-    producer.flush()
-
-    assert num_records > 0
-    time.sleep(1)
-
-    return num_records
-
-
-def write_file_to_kafka(bootstrap_servers: str,
-                        kafka_topic: str,
-                        input_file: str,
-                        client_id: str = 'morpheus_unittest_writer') -> int:
-    """
-    Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
-    Returning the number of messages written
-    """
-    with open(input_file, encoding='UTF-8') as fh:
-        data = [line.strip() for line in fh]
-
-    return write_data_to_kafka(bootstrap_servers=bootstrap_servers,
-                               kafka_topic=kafka_topic,
-                               data=data,
-                               client_id=client_id)
 
 
 def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
@@ -165,6 +123,30 @@ def import_or_skip(modname: str,
         raise
 
 
+def make_url(port: int, endpoint: str) -> str:
+    if not endpoint.startswith("/"):
+        endpoint = "/" + endpoint
+
+    return f"http://127.0.0.1:{port}{endpoint}"
+
+
+def make_mock_response(mock_request_session: mock.MagicMock,
+                       status_code: int = 200,
+                       content_type: str = "text/plain",
+                       text: str = "test") -> mock.MagicMock:
+    """
+    Given a mocked `requests.Session` object, returns a mocked `requests.Response` object with the given status code
+    """
+    mock_response = mock.MagicMock()
+    mock_response.status_code = status_code
+    mock_response.headers = {"Content-Type": content_type}
+    mock_response.text = text
+
+    mock_request_session.return_value = mock_request_session
+    mock_request_session.request.return_value = mock_response
+    return mock_response
+
+
 def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
@@ -173,3 +155,15 @@ def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
         callback(mock_infer_result, None)
 
     return async_infer
+
+
+def remove_module(mod_to_remove: str):
+    """
+    Remove a module, and all sub-modules from `sys.modules`. This is needed when testing examples which may import
+    modules with common names such as `stages` which need to be removed from `sys.modules` before running tests for
+    another example which might also contain its own `stages` module.
+    """
+    mod_prefix = f"{mod_to_remove}."
+    for mod_name in list(sys.modules.keys()):
+        if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
+            del sys.modules[mod_name]

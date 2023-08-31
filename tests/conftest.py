@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import ctypes
+import gc
 import importlib
 import logging
 import os
@@ -24,65 +25,24 @@ import time
 import types
 import typing
 import warnings
-from collections import namedtuple
-from functools import partial
 
 import pytest
 import requests
 
-# actual topic names not important, but we will need two of them.
-KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
-                                                                           'morpheus_output_topic')
-
-# pylint: disable=invalid-name
-zookeeper_proc = None
-kafka_server = None
-kafka_consumer = None
-pytest_kafka_setup_error = None
-# pylint: enable=invalid-name
+from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
-
-def init_pytest_kafka():
-    """
-    Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-    """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
-    try:
-        import pytest_kafka
-        os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
-        # Initialize pytest_kafka fixtures following the recomendations in:
-        # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        kafka_scripts = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
-        if not os.path.exists(kafka_scripts):
-            # check the old location
-            kafka_scripts = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-
-        kafka_bin = os.path.join(kafka_scripts, 'kafka-server-start.sh')
-        zookeeper_bin = os.path.join(kafka_scripts, 'zookeeper-server-start.sh')
-
-        for kafka_script in (kafka_bin, zookeeper_bin):
-            if not os.path.exists(kafka_script):
-                raise RuntimeError(f"Required Kafka script not found: {kafka_script}")
-
-        teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(zookeeper_bin, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(kafka_bin, 'zookeeper_proc', teardown_fn=teardown_fn)
-        kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
-                                                          group_id='morpheus_unittest_reader',
-                                                          client_id='morpheus_unittest_reader',
-                                                          seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
-
-        return True
-    except Exception as e:
-        pytest_kafka_setup_error = e
-        return False
-
-
-PYTEST_KAFKA_AVAIL = init_pytest_kafka()
+(PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
+if PYTEST_KAFKA_AVAIL:
+    # Pull out the fixtures into this namespace
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -197,7 +157,7 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     """
 
     if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
-        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {pytest_kafka_setup_error}")
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
@@ -338,23 +298,6 @@ def config(use_cpp: bool):
     from morpheus.config import Config
 
     yield Config()
-
-
-@pytest.fixture(scope="function")
-def kafka_topics():
-    """
-    Returns a named tuple of Kafka topic names in the form of (input_topic, output_topic)
-    """
-    yield KAFKA_TOPICS
-
-
-@pytest.fixture(scope="function")
-def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
-    """
-    Used by tests that require both an input and an output topic
-    """
-    kafka_port = kafka_server[1]
-    yield f"localhost:{kafka_port}"
 
 
 @pytest.fixture(scope="function")
@@ -561,6 +504,19 @@ def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
     yield
 
 
+@pytest.fixture(scope="function")
+def disable_gc():
+    """
+    Disable automatic garbage collection and enables debug stats for garbage collection for the duration of the test.
+    This is useful for tests that require explicit control over when garbage collection occurs.
+    """
+    gc.set_debug(gc.DEBUG_STATS)
+    gc.disable()
+    yield
+    gc.set_debug(0)
+    gc.enable()
+
+
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
 
     start_time = time.time()
@@ -608,32 +564,18 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-@pytest.fixture(scope="session")
-def _camouflage_is_running():
-    """
-    Responsible for actually starting and shutting down Camouflage. This has the scope of 'session' so we only
-    start/stop Camouflage once per testing session. Should not be used directly. Instead use `launch_mock_triton`
-
-    Yields
-    ------
-    bool
-        Whether or not we are using Camouflage or an actual Triton server
-    """
-
-    from _utils import TEST_DIRS
-
+def _start_camouflage(root_dir: str,
+                      host: str = "localhost",
+                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-
-    root_dir = TEST_DIRS.mock_triton_servers_dir
-    startup_timeout = 10
-    shutdown_timeout = 5
+    startup_timeout = 5
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
 
     # First, check to see if camoflage is already open
     if (launch_camouflage):
-        is_running = wait_for_camouflage(timeout=0.0)
+        is_running = wait_for_camouflage(host=host, port=port, timeout=0.0)
 
         if (is_running):
             logger.warning("Camoflage already running. Skipping startup")
@@ -654,7 +596,7 @@ def _camouflage_is_running():
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-            if not wait_for_camouflage(timeout=startup_timeout):
+            if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
 
                 if popen.poll() is not None:
                     camouflage_log = os.path.join(root_dir, 'camouflage.log')
@@ -664,38 +606,87 @@ def _camouflage_is_running():
                 raise RuntimeError("Failed to launch camouflage server")
 
             # Must have been started by this point
-            yield True
+            return (True, popen)
 
         except Exception:
             # Log the error and rethrow
             logger.exception("Error launching camouflage")
-            raise
-        finally:
             if popen is not None:
-                logger.info("Killing camouflage with pid %s", popen.pid)
-
-                elapsed_time = 0.0
-                sleep_time = 0.1
-                stopped = False
-
-                # It takes a little while to shutdown
-                while not stopped and elapsed_time < shutdown_timeout:
-                    popen.kill()
-                    stopped = (popen.poll() is not None)
-                    if not stopped:
-                        time.sleep(sleep_time)
-                        elapsed_time += sleep_time
+                _stop_camouflage(popen)
+            raise
 
     else:
 
-        yield is_running
+        return (is_running, None)
+
+
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
+    logger.info("Killing camouflage with pid %s", popen.pid)
+
+    elapsed_time = 0.0
+    sleep_time = 0.1
+    stopped = False
+
+    # It takes a little while to shutdown
+    while not stopped and elapsed_time < shutdown_timeout:
+        popen.kill()
+        stopped = (popen.poll() is not None)
+        if not stopped:
+            time.sleep(sleep_time)
+            elapsed_time += sleep_time
+
+
+@pytest.fixture(scope="session")
+def _triton_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_triton_server`
+    dir. This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should
+    not be used directly. Instead use `launch_mock_triton`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Triton server
+    """
+
+    from _utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_triton_servers_dir
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
+
+
+@pytest.fixture(scope="session")
+def _rest_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_rest_server` dir.
+    This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should not
+    be used directly. Instead use `launch_mock_rest`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Rest server
+    """
+
+    from _utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_rest_server
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
+
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
 
 @pytest.fixture(scope="function")
-def launch_mock_triton(_camouflage_is_running):
+def launch_mock_triton(_triton_camouflage_is_running):
     """
-    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/) with a package
-    rooted at `root_dir` and configured with `config`.
+    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/).
 
     This function will wait for up to `timeout` seconds for camoflauge to startup
 
@@ -704,13 +695,32 @@ def launch_mock_triton(_camouflage_is_running):
     """
 
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
-    if _camouflage_is_running:
+    if _triton_camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
         resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
         assert resp.ok, "Failed to reset Camouflage server state"
 
     yield
+
+
+@pytest.fixture(scope="function")
+def mock_rest_server(_rest_camouflage_is_running):
+    """
+    Launches a mock rest server using camouflage (https://testinggospels.github.io/camouflage/).
+
+    This function will wait for up to `timeout` seconds for camoflauge to startup
+
+    This function is a no-op if the `MORPHEUS_NO_LAUNCH_CAMOUFLAGE` environment variable is defined, which can
+    be useful during test development to run camouflage by hand.
+
+    yields url to the mock rest server
+    """
+
+    # Check if we are using Camouflage or not.
+    assert _rest_camouflage_is_running
+
+    yield "http://localhost:8080"
 
 
 @pytest.fixture(scope="session", autouse=True)
