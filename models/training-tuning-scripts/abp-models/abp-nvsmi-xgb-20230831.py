@@ -14,9 +14,9 @@
 # limitations under the License.
 """
 Example Usage:
-python abp-nvsmi-xgb-20210310.py \
+python abp-nvsmi-xgb-20230831.py \
        --trainingdata \
-       ../../datasets/training-data/abp-sample-nvsmi-training-data.json \
+       ../../datasets/training-data/abp-sample-nvsmi-training-data.json
 """
 
 import argparse
@@ -33,12 +33,16 @@ def preprocess(trainingdata):
 
     df = cudf.read_json(trainingdata)
 
-    # print list of columns
+    with open("../../../morpheus/data/columns_fil.txt", "r", encoding='UTF-8') as fh:
+        feat_cols = [x.strip() for x in fh.readlines()]
 
-    print(list(df))
+    feat_cols.append("label")
+    df = df[feat_cols]
+
+    # print list of columns
+    print(feat_cols)
 
     # print labels
-
     print(df['label'].unique())
 
     return df
@@ -46,20 +50,20 @@ def preprocess(trainingdata):
 
 def train_val_split(df):
 
-    (X_train, X_test, y_train, y_test) = \
-        train_test_split(df.drop(['label', 'nvidia_smi_log.timestamp'],
+    (x_train, x_test, y_train, y_test) = \
+        train_test_split(df.drop(['label'],
                          axis=1), df['label'], train_size=0.8,
                          random_state=1)
 
-    return (X_train, X_test, y_train, y_test)
+    return (x_train, x_test, y_train, y_test)
 
 
-def train(X_train, X_test, y_train, y_test):
+def train(x_train, x_test, y_train, y_test):
 
     # move to Dmatrix
 
-    dmatrix_train = xgb.DMatrix(X_train, label=y_train)
-    dmatrix_validation = xgb.DMatrix(X_test, label=y_test)
+    dmatrix_train = xgb.DMatrix(x_train, label=y_train)
+    dmatrix_validation = xgb.DMatrix(x_test, label=y_test)
 
     # Set parameters
 
@@ -75,6 +79,7 @@ def train(X_train, X_test, y_train, y_test):
 
     # Train the model
 
+    # pylint: disable=too-many-function-args
     bst = xgb.train(params, dmatrix_train, num_round, evallist)
     return bst
 
