@@ -77,6 +77,9 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max input count"""
         return None
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def supports_cpp_node(self):
         return True
 
