@@ -209,6 +209,9 @@ class TrainAEStage(MultiMessageStage):
         """
         return (UserMessageMeta, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MultiAEMessage
+
     def supports_cpp_node(self):
         return False
 

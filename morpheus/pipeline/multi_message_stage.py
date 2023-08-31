@@ -46,6 +46,9 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
         super().__init__(c)
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MultiMessage
+
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         # Check if we are debug and should log timestamps. Disable for C++ nodes
