@@ -88,6 +88,9 @@ class LinearModulesStage(SinglePortStage):
         """
         return (self._input_type, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return self._ouput_type
+
     def _get_cpp_module_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")
 
