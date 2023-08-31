@@ -22,7 +22,7 @@ from unittest.mock import patch
 import pytest
 from elasticsearch import Elasticsearch
 
-from morpheus.utils.controllers.elasticsearch_controller import ElasticsearchController
+from morpheus.controllers.elasticsearch_controller import ElasticsearchController
 
 # pylint: disable=W0621
 
@@ -37,7 +37,7 @@ def mock_derive_params(kwargs):
 
 @pytest.fixture(scope="module")
 def mock_es_controller(connection_kwargs):
-    with patch("morpheus.utils.controllers.elasticsearch_controller.Elasticsearch", Mock(spec=Elasticsearch)):
+    with patch("morpheus.controllers.elasticsearch_controller.Elasticsearch", Mock(spec=Elasticsearch)):
         controller = ElasticsearchController("test_index", connection_kwargs, refresh_period_secs=10)
         yield controller
 
@@ -122,7 +122,7 @@ def test_refresh_client_needed(mock_es_controller):
 
 
 @pytest.mark.use_python
-@patch("morpheus.utils.controllers.elasticsearch_controller.parallel_bulk", return_value=[(True, None)])
+@patch("morpheus.controllers.elasticsearch_controller.parallel_bulk", return_value=[(True, None)])
 def test_parallel_bulk_write(mock_parallel_bulk, mock_es_controller):
     # Define your mock actions
     mock_actions = [{"_index": "test_index", "_id": 1, "_source": {"field1": "value1"}}]

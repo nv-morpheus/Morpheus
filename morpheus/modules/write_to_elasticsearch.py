@@ -17,8 +17,8 @@ import logging
 import mrc
 from mrc.core import operators as ops
 
+from morpheus.controllers.elasticsearch_controller import ElasticsearchController
 from morpheus.messages import ControlMessage
-from morpheus.utils.controllers.elasticsearch_controller import ElasticsearchController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_ELASTICSEARCH
 from morpheus.utils.module_utils import register_module
