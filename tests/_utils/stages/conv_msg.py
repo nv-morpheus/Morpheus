@@ -69,6 +69,9 @@ class ConvMsg(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MultiResponseMessage
+
     def supports_cpp_node(self) -> bool:
         return False
 

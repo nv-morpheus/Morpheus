@@ -21,13 +21,14 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
 @register_stage("unittest-dfp-length-check")
-class DFPLengthChecker(SinglePortStage):
+class DFPLengthChecker(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     Verifies that the incoming MessageMeta classes are of a specific length
 
