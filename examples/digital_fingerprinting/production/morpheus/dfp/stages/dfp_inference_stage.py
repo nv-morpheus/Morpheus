@@ -72,7 +72,7 @@ class DFPInferenceStage(SinglePortStage):
         """Accepted input types."""
         return (MultiDFPMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MultiAEMessage
 
     def get_model(self, user: str) -> ModelCache:

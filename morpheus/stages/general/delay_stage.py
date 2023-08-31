@@ -19,7 +19,7 @@ import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.pipeline.pass_thru_type_mixin import InferredPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.logger import deprecated_stage_warning
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("delay", command_args={"deprecated": True})
-class DelayStage(InferredPassThruTypeMixin, SinglePortStage):
+class DelayStage(PassThruTypeMixin, SinglePortStage):
     """
     Delay results for a certain duration.
 

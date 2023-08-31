@@ -78,7 +78,7 @@ class FraudGraphConstructionStage(SinglePortStage):
     def accepted_types(self) -> (MultiMessage, ):
         return (MultiMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return FraudGraphMultiMessage
 
     def supports_cpp_node(self) -> bool:

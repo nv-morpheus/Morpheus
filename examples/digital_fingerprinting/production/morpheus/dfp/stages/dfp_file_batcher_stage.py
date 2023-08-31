@@ -108,7 +108,7 @@ class DFPFileBatcherStage(SinglePortStage):
         """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return typing.Tuple[fsspec.core.OpenFiles, int]
 
     def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:

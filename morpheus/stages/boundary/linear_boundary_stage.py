@@ -72,7 +72,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         """
         return (self.output_type, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return self.output_type
 
     def supports_cpp_node(self):
@@ -128,7 +128,7 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
         """
         return (self.output_type, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return self.output_type
 
     def supports_cpp_node(self):

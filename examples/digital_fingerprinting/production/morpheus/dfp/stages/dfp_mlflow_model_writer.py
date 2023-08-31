@@ -37,7 +37,7 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -54,7 +54,7 @@ conda_env = {
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPMLFlowModelWriterStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class DFPMLFlowModelWriterStage(PassThruTypeMixin, SinglePortStage):
     """
     This stage publishes trained models into MLflow.
 

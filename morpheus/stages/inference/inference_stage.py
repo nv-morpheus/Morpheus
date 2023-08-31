@@ -182,7 +182,7 @@ class InferenceStage(MultiMessageStage):
         """
         return (MultiInferenceMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MultiResponseMessage
 
     def supports_cpp_node(self):

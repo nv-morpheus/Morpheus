@@ -46,13 +46,28 @@ def greatest_ancestor(*cls_list):
     return None  # or raise, if that's more appropriate
 
 
-def is_union_type(type_: typing.Type) -> bool:
+def is_union_type(type_: type) -> bool:
     """
     Returns True if the type is a `typing.Union` or a `types.UnionType`.
     """
     # Unions in the form of `(float | int)` are instances of `types.UnionType`.
     # However, unions in the form of `typing.Union[float, int]` are instances of `typing._UnionGenericAlias`.
     return isinstance(type_, (types.UnionType, typing._UnionGenericAlias))
+
+
+def flatten_types(type_list: list[type]) -> list[type]:
+    """
+    Flattens a list of types, removing any union and `typing.Any` types.
+    """
+    flattened_types = []
+    for type_ in type_list:
+        if type_ is typing.Any:
+            type_ = object
+
+        if is_union_type(type_):
+            flattened_types.extend(typing.get_args(type_))
+        else:
+            flattened_types.append(type_)
 
 
 @typing.overload

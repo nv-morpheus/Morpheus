@@ -21,11 +21,11 @@ import cudf
 
 from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class CheckPreAlloc(ExplicitPassThruTypeMixin, SinglePortStage):
+class CheckPreAlloc(PassThruTypeMixin, SinglePortStage):
     """
     Acts like add-class/add-scores in that it requests a preallocation, the node will assert that the preallocation
     occurred with the correct type.

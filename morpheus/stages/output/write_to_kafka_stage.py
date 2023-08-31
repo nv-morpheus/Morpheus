@@ -24,7 +24,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-kafka")
-class WriteToKafkaStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class WriteToKafkaStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a Kafka cluster.
 

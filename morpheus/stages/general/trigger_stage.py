@@ -19,7 +19,7 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.pipeline.pass_thru_type_mixin import InferredPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("trigger")
-class TriggerStage(InferredPassThruTypeMixin, SinglePortStage):
+class TriggerStage(PassThruTypeMixin, SinglePortStage):
     """
     Buffer data until the previous stage has completed.
 

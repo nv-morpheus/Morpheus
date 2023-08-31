@@ -20,7 +20,7 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -31,7 +31,7 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 logger = logging.getLogger("morpheus.{__name__}")
 
 
-class DFPPreprocessingStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class DFPPreprocessingStage(PassThruTypeMixin, SinglePortStage):
     """
     This stage performs preprocessing on incoming DataFrame as defined by `input_schema` before training or inference.
 

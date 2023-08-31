@@ -31,7 +31,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.http_utils import HTTPMethod
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-http-server", ignore_args=["df_serializer_fn"])
-class HttpServerSinkStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
     """
     Sink stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
 

@@ -68,15 +68,17 @@ class SinglePortStage(_pipeline.Stage):
 
         """
         accepted_types = typing.Union[self.accepted_types()]
-        for parent_output_type in parent_output_types:
-            if (not typing_utils.issubtype(parent_output_type, accepted_types)):
-                raise RuntimeError((f"The {self.name} stage cannot handle input of {parent_output_type}. "
-                                    f"Accepted input types: {self.accepted_types()}"))
 
-        return [self.output_type(parent_output_types)]
+        assert len(parent_output_types) == 1, "SinglePortStage must have 1 input port and 1 output port"
+        parent_output_type = parent_output_types[0]
+        if (not typing_utils.issubtype(parent_output_type, accepted_types)):
+            raise RuntimeError((f"The {self.name} stage cannot handle input of {parent_output_type}. "
+                                f"Accepted input types: {self.accepted_types()}"))
+
+        return [self.output_type(parent_output_type)]
 
     @abstractmethod
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         """
         Return the output type for this stage. Derived classes should override this method.
 
@@ -91,11 +93,12 @@ class SinglePortStage(_pipeline.Stage):
     def _pre_build(self, builder: mrc.Builder) -> list[StreamPair]:
         in_ports_pairs = super()._pre_build(builder=builder)
 
+        assert len(in_ports_pairs) == 1, "SinglePortStage must have 1 input port and 1 output port"
         # Check the types of all inputs
-        for x in in_ports_pairs:
-            if (not typing_utils.issubtype(x[1], typing.Union[self.accepted_types()])):
-                raise RuntimeError((f"The {self.name} stage cannot handle input of {x[1]}. "
-                                    f"Accepted input types: {self.accepted_types()}"))
+        stream_pair = in_ports_pairs[0]
+        if (not typing_utils.issubtype(stream_pair[1], typing.Union[self.accepted_types()])):
+            raise RuntimeError((f"The {self.name} stage cannot handle input of {stream_pair[1]}. "
+                                f"Accepted input types: {self.accepted_types()}"))
 
         return in_ports_pairs
 

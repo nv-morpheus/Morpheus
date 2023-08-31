@@ -73,7 +73,7 @@ class GraphSAGEStage(SinglePortStage):
     def accepted_types(self) -> (FraudGraphMultiMessage, ):
         return (FraudGraphMultiMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return GraphSAGEMultiMessage
 
     def supports_cpp_node(self) -> bool:

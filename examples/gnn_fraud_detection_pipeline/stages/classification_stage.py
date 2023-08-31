@@ -56,7 +56,7 @@ class ClassificationStage(SinglePortStage):
     def accepted_types(self) -> (GraphSAGEMultiMessage, ):
         return (GraphSAGEMultiMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MultiMessage
 
     def supports_cpp_node(self) -> bool:

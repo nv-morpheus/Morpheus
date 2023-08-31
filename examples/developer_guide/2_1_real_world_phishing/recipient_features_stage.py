@@ -23,13 +23,13 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 

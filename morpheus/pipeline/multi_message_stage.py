@@ -46,7 +46,7 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
         super().__init__(c)
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MultiMessage
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:

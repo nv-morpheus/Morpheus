@@ -12,14 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Simple pass-thru stages for the purposes of testing ExplicitPassThruTypeMixin and InferredPassThruTypeMixin"""
+"""Simple pass-thru stages for the purposes of testing PassThruTypeMixin and InferredPassThruTypeMixin"""
 
 import mrc
 from mrc.core import operators as ops
 
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
-from morpheus.pipeline.pass_thru_type_mixin import InferredPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -42,14 +42,14 @@ class BasePassThruStage(SinglePortStage):
         return node, input_stream[1]
 
 
-class MultiMessagePassThruStage(ExplicitPassThruTypeMixin, BasePassThruStage):
+class MultiMessagePassThruStage(PassThruTypeMixin, BasePassThruStage):
 
     @property
     def name(self) -> str:
         return "mm-pass-thru"
 
 
-class InferredMultiMessagePassThruStage(InferredPassThruTypeMixin, BasePassThruStage):
+class InferredMultiMessagePassThruStage(PassThruTypeMixin, BasePassThruStage):
 
     @property
     def name(self) -> str:

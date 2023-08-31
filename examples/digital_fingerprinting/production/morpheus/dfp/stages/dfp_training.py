@@ -89,7 +89,7 @@ class DFPTraining(SinglePortStage):
         """Indicate which input message types this stage accepts."""
         return (MultiDFPMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MultiAEMessage
 
     def on_data(self, message: MultiDFPMessage) -> MultiAEMessage:

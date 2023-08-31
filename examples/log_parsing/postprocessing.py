@@ -76,7 +76,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiResponseLogParsingMessage, )
 
-    def output_type(self, parent_output_types: list[type]) -> type:
+    def output_type(self, parent_output_type: type) -> type:
         return MessageMeta
 
     def _postprocess(self, x: MultiPostprocLogParsingMessage):

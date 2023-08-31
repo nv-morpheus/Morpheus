@@ -26,14 +26,14 @@ from morpheus.common import determine_file_type
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_aliases import DataFrameType
 
 
 @register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
-class WriteToFileStage(ExplicitPassThruTypeMixin, SinglePortStage):
+class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.
 
