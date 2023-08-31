@@ -85,10 +85,10 @@ jobs:
         run: |
           # If it's not a draft and it's an opened trigger, the status should be "Ready for Review", otherwise "In Progress"
           if [ ${{ github.event.pull_request.draft }} == false ] && [ ${{ github.event.action }} == "opened" ]; then
-            echo "PR is not a draft, setting status to 'In Review'"
+            echo "Setting status to 'In Review'"
             echo "STATUS_OPTION_ID=$IN_REVIEW_PROJECT_OPTION_ID" >> $GITHUB_ENV
           else
-            echo "PR is a draft, setting status to 'In Progress'"
+            echo "Setting status to 'In Progress'"
             echo "STATUS_OPTION_ID=$IN_PROGRESS_PROJECT_OPTION_ID" >> $GITHUB_ENV
           fi
         continue-on-error: true
