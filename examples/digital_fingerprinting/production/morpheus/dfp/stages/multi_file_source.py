@@ -77,6 +77,9 @@ class MultiFileSource(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def output_type(self) -> type:
+        return fsspec.core.OpenFiles
+
     def supports_cpp_node(self):
         """Indicates whether this stage supports C++ nodes."""
         return False

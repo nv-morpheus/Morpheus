@@ -25,13 +25,14 @@ from mrc.core import operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPPostprocessingStage(SinglePortStage):
+class DFPPostprocessingStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the
     anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.

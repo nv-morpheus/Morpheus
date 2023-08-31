@@ -85,6 +85,9 @@ class DFPSplitUsersStage(SinglePortStage):
         """Input types accepted by this stage."""
         return (cudf.DataFrame, pd.DataFrame)
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return DFPMessageMeta
+
     def extract_users(self, message: DataFrameType) -> typing.List[DFPMessageMeta]:
         """
         Extract users from a message, splitting the incoming data into unique messages on a per-user basis, and

@@ -72,6 +72,9 @@ class DFPInferenceStage(SinglePortStage):
         """Accepted input types."""
         return (MultiDFPMessage, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MultiAEMessage
+
     def get_model(self, user: str) -> ModelCache:
         """
         Return the model for the given user. If a model doesn't exist for the given user, the model for the generic

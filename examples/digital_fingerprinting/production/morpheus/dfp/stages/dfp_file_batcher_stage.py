@@ -108,6 +108,9 @@ class DFPFileBatcherStage(SinglePortStage):
         """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return typing.Tuple[fsspec.core.OpenFiles, int]
+
     def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
         """
         Batches incoming data according to date, period and sampling, potentially filtering data based on file dates.

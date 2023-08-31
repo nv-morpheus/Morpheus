@@ -91,6 +91,9 @@ class DFPRollingWindowStage(SinglePortStage):
         """Input types accepted by this stage."""
         return (DFPMessageMeta, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return MultiDFPMessage
+
     @contextmanager
     def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
 

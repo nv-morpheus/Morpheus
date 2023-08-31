@@ -18,11 +18,12 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import InferredPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-class WriteToS3Stage(SinglePortStage):
+class WriteToS3Stage(InferredPassThruTypeMixin, SinglePortStage):
     """
     This class writes messages to an s3 bucket.
 

@@ -124,6 +124,9 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         """Accepted input types."""
         return (typing.Any, )
 
+    def output_type(self, parent_output_types: list[type]) -> type:
+        return pd.DataFrame
+
     def _get_or_create_dataframe_from_batch(
             self, file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]) -> typing.Tuple[pd.DataFrame, bool]:
 

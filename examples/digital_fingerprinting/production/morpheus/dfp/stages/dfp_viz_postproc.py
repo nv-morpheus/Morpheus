@@ -24,13 +24,14 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.pass_thru_type_mixin import ExplicitPassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class DFPVizPostprocStage(SinglePortStage):
+class DFPVizPostprocStage(ExplicitPassThruTypeMixin, SinglePortStage):
     """
     DFPVizPostprocStage performs post-processing on DFP inference output. The inference output is converted
     to input format expected by the DFP Visualization and saves to multiple files based on specified time
