@@ -84,7 +84,6 @@ body:
 
        </pre></details>
 
-
   - type: textarea
     id: misc
     attributes:
