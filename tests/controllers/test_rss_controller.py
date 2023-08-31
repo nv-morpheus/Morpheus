@@ -20,7 +20,7 @@ import pytest
 import cudf
 
 from _utils import TEST_DIRS
-from morpheus.utils.controllers.rss_controller import RSSController
+from morpheus.controllers.rss_controller import RSSController
 
 test_urls = ["https://realpython.com/atom.xml", "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"]
 
