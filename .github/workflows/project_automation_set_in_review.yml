@@ -34,7 +34,7 @@ env:
  IN_REVIEW_PROJECT_OPTION_ID: "eb7a6302"
 
 jobs:
-  query_and_mutate_project_fields:
+  project_automation_in_review:
     runs-on: ubuntu-latest
     
     steps:

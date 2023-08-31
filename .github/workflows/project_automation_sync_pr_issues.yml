@@ -34,7 +34,7 @@ env:
  START_SPRINT_FIELD_ID: "PVTIF_lADOBkAsks4ACeiozgI90p0"
 
 jobs:
-  query_and_mutate_project_fields:
+  project_automation_sync_pr_with_issues:
     runs-on: ubuntu-latest
 
     steps:

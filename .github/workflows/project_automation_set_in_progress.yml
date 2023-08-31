@@ -41,7 +41,7 @@ env:
  IN_REVIEW_PROJECT_OPTION_ID: "eb7a6302"
 
 jobs:
-  query_and_mutate_project_fields:
+  project_automation_in_progress:
     runs-on: ubuntu-latest
 
     # We use the default GitHub token to perform the draft update because
