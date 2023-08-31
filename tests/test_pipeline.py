@@ -19,10 +19,18 @@ import typing
 
 import pytest
 
+from _utils import assert_results
+from _utils.stages.conv_msg import ConvMsg
+from _utils.stages.multi_message_pass_thru import InferredMultiMessagePassThruStage
+from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.type_aliases import DataFrameType
 
 
@@ -81,3 +89,30 @@ def test_destructors_called(config: Config, filter_probs_df: DataFrameType):
     gc.collect()
     assert state_dict["source"]
     assert state_dict["sink"]
+
+
+@pytest.mark.use_cudf
+@pytest.mark.parametrize("PassThruStage", [MultiMessagePassThruStage, InferredMultiMessagePassThruStage])
+def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType, PassThruStage: type):
+    """
+    Test to ensure that we aren't narrowing the types of messages in the pipeline.
+
+    In this case, `ConvMsg` emits `MultiResponseMessage` messages which are a subclass of `MultiMessage`,
+    which is the accepted type for `MultiMessagePassThruStage`. We want to ensure that the type is retained allowing us to
+    place a stage after `MultiMessagePassThruStage` requring `MultiResponseMessage` like `AddScoresStage`.
+    """
+    config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    expected_df = filter_probs_df.to_pandas()
+    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(ConvMsg(config))
+    pipe.add_stage(PassThruStage(config))
+    pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
+    compare_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
+    pipe.run()
+
+    assert_results(compare_stage.get_results())
