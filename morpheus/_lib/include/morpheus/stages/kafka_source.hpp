@@ -82,10 +82,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::string topic,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit        = false,
-                     bool disable_pre_filtering = false,
-                     std::size_t stop_after     = 0,
-                     bool async_commits         = true);
+                     bool disable_commit                         = false,
+                     bool disable_pre_filtering                  = false,
+                     std::size_t stop_after                      = 0,
+                     bool async_commits                          = true,
+                     const std::function<void()>& oauth_callback = nullptr);
 
     /**
      * @brief Construct a new Kafka Source Stage object
@@ -106,10 +107,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::vector<std::string> topics,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit        = false,
-                     bool disable_pre_filtering = false,
-                     std::size_t stop_after     = 0,
-                     bool async_commits         = true);
+                     bool disable_commit                         = false,
+                     bool disable_pre_filtering                  = false,
+                     std::size_t stop_after                      = 0,
+                     bool async_commits                          = true,
+                     const std::function<void()>& oauth_callback = nullptr);
 
     ~KafkaSourceStage() override = default;
 
@@ -210,8 +212,9 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        std::size_t stop_after = 0,
-        bool async_commits     = true);
+        std::size_t stop_after            = 0,
+        bool async_commits                = true,
+        pybind11::function oauth_callback = pybind11::none());
 
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
@@ -239,8 +242,9 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        std::size_t stop_after = 0,
-        bool async_commits     = true);
+        std::size_t stop_after            = 0,
+        bool async_commits                = true,
+        pybind11::function oauth_callback = pybind11::none());
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

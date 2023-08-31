@@ -264,7 +264,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
                                    std::size_t stop_after,
-                                   bool async_commits) :
+                                   bool async_commits,
+                                   const std::function<void()>& oauth_callback) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::vector<std::string>{std::move(topic)}),
@@ -283,7 +284,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
                                    std::size_t stop_after,
-                                   bool async_commits) :
+                                   bool async_commits,
+                                   const std::function<void()>& oauth_callback) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::move(topics)),
@@ -619,7 +621,8 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool disable_commit,
     bool disable_pre_filtering,
     std::size_t stop_after,
-    bool async_commits)
+    bool async_commits,
+    pybind11::function oauth_callback)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
@@ -629,7 +632,8 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_commit,
                                                             disable_pre_filtering,
                                                             stop_after,
-                                                            async_commits);
+                                                            async_commits,
+                                                            oauth_callback);
 
     return stage;
 }
@@ -644,7 +648,8 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool disable_commit,
     bool disable_pre_filtering,
     std::size_t stop_after,
-    bool async_commits)
+    bool async_commits,
+    pybind11::function oauth_callback)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
@@ -654,7 +659,8 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_commit,
                                                             disable_pre_filtering,
                                                             stop_after,
-                                                            async_commits);
+                                                            async_commits,
+                                                            oauth_callback);
 
     return stage;
 }
