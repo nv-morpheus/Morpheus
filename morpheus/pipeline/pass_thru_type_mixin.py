@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
 # limitations under the License.
 """Mixins for stages which receicve and emit the same type."""
 
-import types
 import typing
 from abc import ABC
-
-import typing_utils
 
 from morpheus.utils.type_utils import greatest_ancestor
 from morpheus.utils.type_utils import is_union_type
