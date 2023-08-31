@@ -53,7 +53,7 @@ def config_fixture(config):
     yield config
 
 
-@pytest.fixture(name="manual_seed", scope="function")
+@pytest.fixture(name="manual_seed", scope="function", autouse=True)
 def manual_seed_fixture(manual_seed):
     """
     Extends the base `manual_seed` fixture to also set the seed for dgl, ensuring deterministic results in tests
