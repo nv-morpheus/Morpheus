@@ -42,10 +42,11 @@ class Receiver():
         self._parent = parent
         self.port_number = port_number
 
-        self._is_linked = False
+        self._is_type_linked = False
+        self._is_node_linked = False
 
-        self._input_type = None
-        self._input_stream = None
+        self._input_type: type = None
+        self._input_node: mrc.SegmentObject = None
 
         self._input_senders: typing.List[_pipeline.Sender] = []
 
@@ -71,11 +72,11 @@ class Receiver():
 
     @property
     def in_pair(self):
-        return (self.in_stream, self.in_pair)
+        return (self.in_node, self.in_pair)
 
     @property
-    def in_stream(self):
-        return self._input_stream
+    def in_node(self):
+        return self._input_node
 
     @property
     def in_type(self):
@@ -89,26 +90,26 @@ class Receiver():
         assert self.is_partial, "Must be partially complete to get the input pair!"
 
         # Build the input from the senders
-        if (self._input_stream is None and self._input_type is None):
+        if (self._input_node is None and self._input_type is None):
             # First check if we only have 1 input sender
             if (len(self._input_senders) == 1):
                 # In this case, our input stream/type is determined from the sole Sender
                 sender = self._input_senders[0]
 
-                self._input_stream = sender.out_stream
+                self._input_node = sender.out_node
                 self._input_type = sender.out_type
-                self._is_linked = True
+                self._is_type_linked = True
             else:
                 # We have multiple senders. Create a dummy stream to connect all senders
-                self._input_stream = builder.make_node_component(
+                self._input_node = builder.make_node_component(
                     f"{self.parent.unique_name}-reciever[{self.port_number}]", mrc.core.operators.map(lambda x: x))
 
                 if (self.is_complete):
                     # Connect all streams now
                     for input_sender in self._input_senders:
-                        builder.make_edge(input_sender.out_stream, self._input_stream)
+                        builder.make_edge(input_sender.out_node, self._input_node)
 
-                    self._is_linked = True
+                    self._is_type_linked = True
 
                 # Now determine the output type from what we have
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
@@ -120,9 +121,40 @@ class Receiver():
 
                 self._input_type = great_ancestor
 
-        return (self._input_stream, self._input_type)
+        return (self._input_node, self._input_type)
 
-    def link(self, builder: mrc.Builder):
+    def get_input_type(self) -> type:
+        """
+        Returns the the parent node's output type.
+        """
+
+        assert self.is_partial, "Must be partially complete to get the input type!"
+
+        # Build the input from the senders
+        if (self._input_type is None):
+            # First check if we only have 1 input sender
+            if (len(self._input_senders) == 1):
+                # In this case, our input stream/type is determined from the sole Sender
+                sender = self._input_senders[0]
+                self._input_type = sender.out_type
+                self._is_type_linked = True  #???
+            else:
+                # TODO: get_input_pair would use the mrc builder to create a dummy stream to connect all senders
+                # Not sure if we need to do that
+
+                # Now determine the output type from what we have
+                great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
+
+                if (great_ancestor is None):
+                    # TODO(MDD): Add stage, port, and type info to message
+                    raise RuntimeError(("Cannot determine single type for senders of input port. "
+                                        "Use a merge stage to handle different types of inputs."))
+
+                self._input_type = great_ancestor
+
+        return self._input_type
+
+    def link_type(self):
         """
         The linking phase determines the final type of the `Receiver` and connects all underlying stages.
 
@@ -133,18 +165,32 @@ class Receiver():
 
         assert self.is_complete, "Must be complete before linking!"
 
-        if (self._is_linked):
+        if (self._is_type_linked):
             return
 
         # Check that the types still work
         great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
         if (not typing_utils.issubtype(great_ancestor, self._input_type)):
-            # TODO(MDD): Add stage, port, and type info to message
-            raise RuntimeError(
-                "Invalid linking phase. Input port type does not match predicted type determined during build phase")
+            raise RuntimeError(f"Input port type {great_ancestor} does not match {self._input_type} for {self._parent}")
+
+        self._is_type_linked = True
+
+    def link_node(self, builder: mrc.Builder):
+        """
+        The linking phase determines the final type of the `Receiver` and connects all underlying stages.
+
+        Raises:
+            RuntimeError: Throws a `RuntimeError` if the predicted input port type determined during the build phase is
+            different than the current port type.
+        """
+
+        assert self.is_complete, "Must be complete before linking!"
+
+        if (self._is_node_linked):
+            return
 
         for out_stream in [x.out_stream for x in self._input_senders]:
-            builder.make_edge(out_stream, self._input_stream)
+            builder.make_edge(out_stream, self._input_node)
 
-        self._is_linked = True
+        self._is_node_linked = True

@@ -43,7 +43,7 @@ class Stage(_pipeline.StreamWrapper):
 
     # TODO : pipeline should assert that the length of the output types matches the number of output ports
     @abstractmethod
-    def output_types(self, parent_output_types: list[type]) -> list[type]:  # pylint: disable=arguments-differ
+    def output_types(self, parent_output_types: list[type]) -> list[type]:
         """
         Return the output types for this stage based on the incoming types of parent stages. Derived classes should
         override this method, if the `parent_output_types` are incompatible then the stage should rase a

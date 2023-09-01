@@ -90,18 +90,6 @@ class SinglePortStage(_pipeline.Stage):
         """
         pass
 
-    def _pre_build(self, builder: mrc.Builder) -> list[StreamPair]:
-        in_ports_pairs = super()._pre_build(builder=builder)
-
-        assert len(in_ports_pairs) == 1, "SinglePortStage must have 1 input port and 1 output port"
-        # Check the types of all inputs
-        stream_pair = in_ports_pairs[0]
-        if (not typing_utils.issubtype(stream_pair[1], typing.Union[self.accepted_types()])):
-            raise RuntimeError((f"The {self.name} stage cannot handle input of {stream_pair[1]}. "
-                                f"Accepted input types: {self.accepted_types()}"))
-
-        return in_ports_pairs
-
     @abstractmethod
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         pass

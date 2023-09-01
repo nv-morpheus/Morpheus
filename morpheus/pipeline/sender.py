@@ -15,8 +15,9 @@
 import logging
 import typing
 
+import mrc
+
 import morpheus.pipeline as _pipeline
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ class Sender():
 
         self._output_receivers: typing.List[_pipeline.Receiver] = []
 
-        self._out_stream_pair: StreamPair = (None, None)
+        self._out_type: type = None
+        self._out_node: mrc.SegmentObject = None
 
     @property
     def parent(self):
@@ -49,16 +51,12 @@ class Sender():
     @property
     def is_complete(self):
         # Sender is complete when the type or stream has been set
-        return self._out_stream_pair != (None, None)
-
-    @property
-    def out_pair(self):
-        return self._out_stream_pair
-
-    @property
-    def out_stream(self):
-        return self._out_stream_pair[0]
+        return self._out_type is not None
 
     @property
     def out_type(self):
-        return self._out_stream_pair[1]
+        return self._out_type
+
+    @property
+    def out_node(self):
+        return self._out_node

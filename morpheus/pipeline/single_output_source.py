@@ -53,7 +53,7 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         return [ret_val]
 
-    def output_types(self) -> list[type]:
+    def output_types(self, parent_output_types: list[type]) -> list[type]:
         """
         Return the output type for this stage.
 
@@ -63,6 +63,7 @@ class SingleOutputSource(_pipeline.SourceStage):
             Output types.
 
         """
+        assert len(parent_output_types) == 0, "Source stages should not have any parent stages."
         return [self.output_type()]
 
     @abstractmethod

@@ -75,6 +75,11 @@ class SourceStage(_pipeline.StreamWrapper):
         pass
 
     @typing.final
+    def _pre_build(self) -> list[type]:
+        assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
+        return super()._pre_build()
+
+    @typing.final
     def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,

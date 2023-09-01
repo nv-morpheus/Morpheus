@@ -100,7 +100,7 @@ class MultiPortModulesStage(Stage):
         return (typing.Any, )
 
     def output_types(self, parent_output_types: list[type]) -> list[type]:
-        return [self._ouput_type]
+        return [self._ouput_type for _ in range(self._num_out_ports)]
 
     def _validate_ports(self, module) -> None:
 
