@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("to-databricks-deltalake")
-class DeltaLakeSinkStage(SinglePortStage):
+class DataBricksDeltaLakeSinkStage(SinglePortStage):
     """
     Sink stage used to write messages to a DeltaLake table.
 

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-databricks-deltalake")
-class DeltaLakeSourceStage(SingleOutputSource):
+class DataBricksDeltaLakeSourceStage(SingleOutputSource):
     """
     Source stage used to load messages from a DeltaLake table.
 
