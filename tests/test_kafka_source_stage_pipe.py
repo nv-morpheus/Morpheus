@@ -24,8 +24,8 @@ from mrc.core import operators as ops
 
 from _utils import TEST_DIRS
 from _utils import assert_results
-from _utils import write_data_to_kafka
-from _utils import write_file_to_kafka
+from _utils.kafka import write_data_to_kafka
+from _utils.kafka import write_file_to_kafka
 from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
