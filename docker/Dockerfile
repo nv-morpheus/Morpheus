@@ -45,7 +45,7 @@ ARG CUDA_VER
 # Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
-    DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-8-jdk openjdk-8-jre &&\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-11-jre-headless &&\
     curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
         build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
