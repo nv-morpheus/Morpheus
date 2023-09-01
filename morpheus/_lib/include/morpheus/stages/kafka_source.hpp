@@ -37,6 +37,7 @@
 #include <cstdint>  // for uuint32_t
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -53,6 +54,17 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+
+class KafkaOAuthCallback : public RdKafka::OAuthBearerTokenRefreshCb
+{
+  public:
+    KafkaOAuthCallback(const std::function<std::map<std::string, std::string>()>& oauth_callback);
+
+    void oauthbearer_token_refresh_cb(RdKafka::Handle* handle, const std::string& oauthbearer_config) override;
+
+  private:
+    const std::function<std::map<std::string, std::string>()>& m_oauth_callback;
+};
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
@@ -82,11 +94,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::string topic,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit                         = false,
-                     bool disable_pre_filtering                  = false,
-                     std::size_t stop_after                      = 0,
-                     bool async_commits                          = true,
-                     const std::function<void()>& oauth_callback = nullptr);
+                     bool disable_commit                                = false,
+                     bool disable_pre_filtering                         = false,
+                     std::size_t stop_after                             = 0,
+                     bool async_commits                                 = true,
+                     std::unique_ptr<KafkaOAuthCallback> oauth_callback = nullptr);
 
     /**
      * @brief Construct a new Kafka Source Stage object
@@ -107,11 +119,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::vector<std::string> topics,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit                         = false,
-                     bool disable_pre_filtering                  = false,
-                     std::size_t stop_after                      = 0,
-                     bool async_commits                          = true,
-                     const std::function<void()>& oauth_callback = nullptr);
+                     bool disable_commit                                = false,
+                     bool disable_pre_filtering                         = false,
+                     std::size_t stop_after                             = 0,
+                     bool async_commits                                 = true,
+                     std::unique_ptr<KafkaOAuthCallback> oauth_callback = nullptr);
 
     ~KafkaSourceStage() override = default;
 
@@ -178,6 +190,8 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     std::size_t m_stop_after{0};
 
     void* m_rebalancer;
+
+    std::unique_ptr<KafkaOAuthCallback> m_oauth_callback;
 };
 
 /****** KafkaSourceStageInferenceProxy**********************/
@@ -212,9 +226,9 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        std::size_t stop_after            = 0,
-        bool async_commits                = true,
-        pybind11::function oauth_callback = pybind11::none());
+        std::size_t stop_after                           = 0,
+        bool async_commits                               = true,
+        std::optional<pybind11::function> oauth_callback = std::nullopt);
 
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
@@ -242,9 +256,9 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        std::size_t stop_after            = 0,
-        bool async_commits                = true,
-        pybind11::function oauth_callback = pybind11::none());
+        std::size_t stop_after                           = 0,
+        bool async_commits                               = true,
+        std::optional<pybind11::function> oauth_callback = std::nullopt);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

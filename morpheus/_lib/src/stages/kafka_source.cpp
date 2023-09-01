@@ -35,6 +35,8 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 
 #include <algorithm>  // for find, min, transform
@@ -74,6 +76,24 @@
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace morpheus {
+
+KafkaOAuthCallback::KafkaOAuthCallback(const std::function<std::map<std::string, std::string>()>& oauth_callback) :
+  m_oauth_callback(oauth_callback)
+{}
+
+void KafkaOAuthCallback::oauthbearer_token_refresh_cb(RdKafka::Handle* handle, const std::string& oauthbearer_config)
+{
+    auto response = m_oauth_callback();
+    // Build parameters to pass to librdkafka
+    std::string token         = response["token"];
+    int64_t token_lifetime_ms = std::stoll(response["token_expiration_in_epoch"]);
+    std::list<std::string> extensions;  // currently not supported
+    std::string errstr;
+    CUDF_EXPECTS(RdKafka::ErrorCode::ERR_NO_ERROR ==
+                     handle->oauthbearer_set_token(token, token_lifetime_ms, "kafka", extensions, errstr),
+                 "Error occurred while setting the oauthbearer token");
+}
+
 // Component-private classes.
 // ************ KafkaSourceStage__UnsubscribedException**************//
 class KafkaSourceStageUnsubscribedException : public std::exception
@@ -265,7 +285,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    bool disable_pre_filtering,
                                    std::size_t stop_after,
                                    bool async_commits,
-                                   const std::function<void()>& oauth_callback) :
+                                   std::unique_ptr<KafkaOAuthCallback> oauth_callback) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::vector<std::string>{std::move(topic)}),
@@ -274,7 +294,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
   m_stop_after{stop_after},
-  m_async_commits(async_commits)
+  m_async_commits(async_commits),
+  m_oauth_callback(std::move(oauth_callback))
 {}
 
 KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
@@ -285,7 +306,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    bool disable_pre_filtering,
                                    std::size_t stop_after,
                                    bool async_commits,
-                                   const std::function<void()>& oauth_callback) :
+                                   std::unique_ptr<KafkaOAuthCallback> oauth_callback) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::move(topics)),
@@ -294,7 +315,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
   m_stop_after{stop_after},
-  m_async_commits(async_commits)
+  m_async_commits(async_commits),
+  m_oauth_callback(std::move(oauth_callback))
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
@@ -453,6 +475,15 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
     if (RdKafka::Conf::ConfResult::CONF_OK != kafka_conf->set("rebalance_cb", &rebalancer, errstr))
     {
         LOG(FATAL) << "Error occurred while setting Kafka rebalance function. Error: " << errstr;
+    }
+
+    if (m_oauth_callback != nullptr)
+    {
+        if (RdKafka::Conf::ConfResult::CONF_OK !=
+            kafka_conf->set("oauthbearer_token_refresh_cb", m_oauth_callback.get(), errstr))
+        {
+            LOG(FATAL) << "Error occurred while setting Kafka OAuth Callback function. Error: " << errstr;
+        }
     }
 
     auto consumer = std::unique_ptr<RdKafka::KafkaConsumer>(RdKafka::KafkaConsumer::create(kafka_conf.get(), errstr));
@@ -622,8 +653,25 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool disable_pre_filtering,
     std::size_t stop_after,
     bool async_commits,
-    pybind11::function oauth_callback)
+    std::optional<pybind11::function> oauth_callback)
 {
+    auto oauth_callback_cpp = [&oauth_callback]() {
+        if (!oauth_callback.has_value())
+        {
+            return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
+        }
+
+        return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
+            auto kvp_cpp       = std::map<std::string, std::string>();
+            pybind11::dict kvp = oauth_callback.value()();
+            for (auto [key, value] : kvp)
+            {
+                kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
+            }
+            return kvp_cpp;
+        });
+    }();
+
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
                                                             topic,
@@ -633,7 +681,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_pre_filtering,
                                                             stop_after,
                                                             async_commits,
-                                                            oauth_callback);
+                                                            std::move(oauth_callback_cpp));
 
     return stage;
 }
@@ -649,8 +697,25 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool disable_pre_filtering,
     std::size_t stop_after,
     bool async_commits,
-    pybind11::function oauth_callback)
+    std::optional<pybind11::function> oauth_callback)
 {
+    auto oauth_callback_cpp = [&oauth_callback]() {
+        if (!oauth_callback.has_value())
+        {
+            return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
+        }
+
+        return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
+            auto kvp_cpp       = std::map<std::string, std::string>();
+            pybind11::dict kvp = oauth_callback.value()();
+            for (auto [key, value] : kvp)
+            {
+                kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
+            }
+            return kvp_cpp;
+        });
+    }();
+
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
                                                             topics,
@@ -660,7 +725,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_pre_filtering,
                                                             stop_after,
                                                             async_commits,
-                                                            oauth_callback);
+                                                            std::move(oauth_callback_cpp));
 
     return stage;
 }
