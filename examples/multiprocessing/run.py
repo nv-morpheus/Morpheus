@@ -14,11 +14,15 @@
 # limitations under the License.
 
 import multiprocessing as mp
+import threading as mt
+from multiprocessing.connection import Connection
 
 import mrc
 from mrc.core.subscriber import Observer
 
 import cudf
+import time
+import os
 
 from morpheus.config import Config
 from morpheus.messages.multi_message import MultiMessage
@@ -48,16 +52,57 @@ class MyMultiprocessingStage(SinglePortStage):
 
         # generate is called on subscribe
 
-        def on_next(message: MultiMessage):
-            sub.on_next(message)
+        def child_receive(conn: Connection):
+            print("===== Started child receive =====", os.getppid(), os.getpid())
+            while True:
+                while not conn.poll():
+                    print("child: waiting...")
+                    time.sleep(10)
+                print("child: receiving...")
+                message: MultiMessage = conn.recv()
+                print("received something in child!")
+                conn.send(message)
 
-        def on_error(error: Exception):
+        def parent_receive(conn: Connection):
+            print("===== Started parent receive =====", os.getpid())
+            while True:
+                while not conn.poll():
+                    print("parent: waiting...")
+                    time.sleep(1)
+                message: MultiMessage = conn.recv()
+                sub.on_next(message)
+
+        [parent_conn, child_conn] = mp.Pipe()
+
+        my_process = mp.Process(target=child_receive, args=(child_conn,))
+        my_thread = mt.Thread(target=parent_receive, args=(parent_conn,))
+
+        def on_next(message: MultiMessage):
+            print("obs on next", os.getpid())
+            try:
+                parent_conn.send(cudf.DataFrame({"a": "b"}))
+            except Exception as error:
+                print(error) # can't pickle a MultiMessage
+                my_process.kill()
+                my_thread.kill()
+
+        def on_error(error: BaseException):
+            print("obs on error", os.getpid())
+            my_process.kill()
+            my_thread.kill()
             sub.on_error(error)
 
+
         def on_completed():
-            sub.on_completed()
+            print("obs on completed", os.getpid())
+            # my_process.kill()
+            # my_thread.kill()
+            # sub.on_completed()
 
         # forward the subscribe call
+
+        my_process.start()
+        my_thread.start()
 
         obs.subscribe(Observer.make_observer(on_next, on_error, on_completed))
 
@@ -82,10 +127,11 @@ def run_pipeline():
 
     pipeline.run()
 
-    df_output = sink.get_messages()[0].copy_dataframe()
+    messages = sink.get_messages()
 
-    print(df_output)
+    if len(messages) > 0:
+        print(messages[0].copy_dataframe())
 
 
-if __name__ == f"__main__":
+if __name__ == "__main__":
     run_pipeline()
