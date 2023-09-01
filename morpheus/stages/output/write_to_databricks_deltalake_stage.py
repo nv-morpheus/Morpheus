@@ -122,7 +122,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
                 elif isinstance(x.df, cudf.DataFrame):
                     df = x.df.to_pandas()
                 else:
-                    raise Exception("DataFrame type not supported")
+                    raise 
                 schema = self._extract_schema_from_pandas_dataframe(df)
                 spark_df = self.spark.createDataFrame(df, schema=schema)
                 spark_df.write.format('delta')\

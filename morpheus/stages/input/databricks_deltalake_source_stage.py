@@ -104,4 +104,4 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
                 yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"],axis=1)))
         except Exception as e:
             logger.exception("Error occurred reading data from feature store and converting to Dataframe: {}".format(e))
-            raise Exception(e)
+            raise 
