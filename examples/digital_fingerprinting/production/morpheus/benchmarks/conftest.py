@@ -28,7 +28,7 @@ def get_json_lines_count(filename):
     return len(lines)
 
 
-def pytest_benchmark_update_json(_, __, output_json):
+def pytest_benchmark_update_json(config, benchmarks, output_json):  # pylint:disable=unused-argument
 
     curr_dir = path.dirname(path.abspath(__file__))
 
