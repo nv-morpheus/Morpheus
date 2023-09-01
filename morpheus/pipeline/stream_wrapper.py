@@ -352,6 +352,20 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         return True
 
+    def _pre_build(self):
+        assert not self.is_built, "build called prior to _pre_build"
+        assert not self.is_pre_built, "Can only pre-build stages once!"
+        in_types: list[type] = [x.get_input_type() for x in self.input_ports]
+        out_types: list[type] = self.output_types(in_types)
+
+        assert len(out_types) == len(self.output_ports), \
+            "output_types must return the same number of output types as output ports"
+
+        for (port_idx, out_type) in enumerate(out_types):
+            self.output_ports[port_idx]._out_type = out_type
+
+        self._is_pre_built = True
+
     def build(self, builder: mrc.Builder, do_propagate=True):
         """Build this stage.
 
@@ -367,8 +381,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert not self.is_built, "Can only build stages once!"
         assert self._pipeline is not None, "Must be attached to a pipeline before building!"
 
-        # Pre-Build returns the input pairs for each port
-        #in_ports_pairs = self._pre_build(builder=builder)
+        # TODO: determine if we still neede to build these as pairs
+        in_ports_pairs = [x.get_input_pair(builder=builder) for x in self.input_ports]
 
         out_ports_pair = self._build(builder=builder, in_ports_streams=in_ports_pairs)
 
@@ -380,7 +394,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         # Assign the output ports
         for port_idx, out_pair in enumerate(out_ports_pair):
-            self.output_ports[port_idx]._out_stream_pair = out_pair
+            self.output_ports[port_idx]._out_node = out_pair[0]
 
         self._is_built = True
 
@@ -393,20 +407,6 @@ class StreamWrapper(ABC, collections.abc.Hashable):
                 continue
 
             dep.build(builder, do_propagate=do_propagate)
-
-    def _pre_build(self):
-        assert not self.is_built, "build called prior to _pre_build"
-        assert not self.is_pre_built, "Can only pre-build stages once!"
-        in_types: list[type] = [x.get_input_type() for x in self.input_ports]
-        out_types: list[type] = self.output_types(in_types)
-
-        assert len(out_types) == len(self.output_ports), \
-            "output_types must return the same number of output types as output ports"
-
-        for (port_idx, out_type) in enumerate(out_types):
-            self.output_ports[port_idx]._out_type = out_type
-
-        self._is_pre_built = True
 
     @abstractmethod
     def _build(self, builder: mrc.Builder, in_ports_streams: list[StreamPair]) -> list[StreamPair]:

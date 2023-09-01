@@ -90,7 +90,7 @@ class Receiver():
         assert self.is_partial, "Must be partially complete to get the input pair!"
 
         # Build the input from the senders
-        if (self._input_node is None and self._input_type is None):
+        if (self._input_node is None):
             # First check if we only have 1 input sender
             if (len(self._input_senders) == 1):
                 # In this case, our input stream/type is determined from the sole Sender
@@ -190,7 +190,7 @@ class Receiver():
         if (self._is_node_linked):
             return
 
-        for out_stream in [x.out_stream for x in self._input_senders]:
-            builder.make_edge(out_stream, self._input_node)
+        for sender in self._input_senders:
+            builder.make_edge(sender.out_node, self._input_node)
 
         self._is_node_linked = True
