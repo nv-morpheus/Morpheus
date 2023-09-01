@@ -41,10 +41,7 @@ class DFEncoderDataLoader(DataLoader):
             if self.batch_size == 1:
                 # unbatch to get rid of the first dimention of 1 intorduced by DataLoaders batching
                 # (if batch size is set to 1)
-                data_d["data"] = {
-                    k: v[0] if type(v) != list else [_v[0] for _v in v]
-                    for k, v in data_d["data"].items()
-                }
+                data_d["data"] = {k: v[0] if type(v) != list else [_v[0] for _v in v] for k, v in data_d["data"].items()}
             yield data_d
 
     @staticmethod
