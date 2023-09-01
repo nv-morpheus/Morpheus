@@ -50,6 +50,7 @@
 
 import gc
 import logging
+import typing
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -61,7 +62,9 @@ from torch.utils.data import DataLoader
 
 from .ae_module import AEModule
 from .dataframe import EncoderDataFrame
-from .dataloader import DatasetFromDataframe
+from .dataloader import DataframeDataset
+from .dataloader import DFEncoderDataLoader
+from .dataloader import FileSystemDataset
 from .distributed_ae import DistributedAutoEncoder
 from .logging import BasicLogger
 from .logging import IpynbLogger
@@ -573,11 +576,11 @@ class AutoEncoder(torch.nn.Module):
         )
 
     def preprocess_data(
-            self,
-            df,
-            shuffle_rows_in_batch,
-            include_original_input_tensor,
-            include_swapped_input_by_feature_type,
+        self,
+        df,
+        shuffle_rows_in_batch,
+        include_original_input_tensor,
+        include_swapped_input_by_feature_type,
     ):
         """Preprocesses a pandas dataframe `df` for input into the autoencoder model.
 
@@ -738,34 +741,62 @@ class AutoEncoder(torch.nn.Module):
         scaler.fit(a)
         return {'scaler': scaler}
 
-    def _data_to_dset(self, data):
+    def _transform_dataset_for_training(self, dataset):
+        dataset.batch_size = self.batch_size
+        dataset.preprocess_fn = self.preprocess_train_data
+        dataset.shuffle_batch_indices = True
+        dataset.shuffle_rows_in_batch = True
+
+        return dataset
+
+    def _transform_dataset_for_validation(self, dataset):
+        dataset.batch_size = self.eval_batch_size
+        dataset.preprocess_fn = self.preprocess_validation_data
+        dataset.shuffle_batch_indices = False
+        dataset.shuffle_rows_in_batch = False
+
+        return dataset
+
+    def _data_to_dset(
+        self,
+        data: typing.Union[pd.DataFrame, DataframeDataset, FileSystemDataset, DFEncoderDataLoader],
+        train: bool = True,
+    ):
+        if (data is None):
+            return None
+
+        is_loader = isinstance(data, torch.utils.data.DataLoader)
+
         if (isinstance(data, pd.DataFrame)):
-            dset = DatasetFromDataframe(
-                df=data,
-                batch_size=self.batch_size,
-                preprocess_fn=self.preprocess_validation_data,
-                shuffle_rows_in_batch=False,
-            )
+            dset = DataframeDataset(df=data)
+        elif (isinstance(data, DFEncoderDataLoader)):
+            dset = data.dataset
         else:
             dset = data
 
-        return dset
+        if (train):
+            dset = self._transform_dataset_for_training(dset)
+        else:
+            dset = self._transform_dataset_for_validation(dset)
 
-    def _build_training_datasets(self, train_data, val_data, use_val_for_loss_stats):
-        val_dset = self._data_to_dset(val_data)
-        train_dset = self._data_to_dset(train_data)
+        return dset if not is_loader else data
+
+    def _build_or_configure_datasets(self, train_data, val_data, use_val_for_loss_stats):
+        # Construct validation and trianing datasets or modify the DataLoader's dataset and return it
+        train_data = self._data_to_dset(train_data)
+        val_data = self._data_to_dset(val_data, train=False)
 
         if (use_val_for_loss_stats):
-            loss_dset = val_dset
+            loss_dset = val_data
         else:
-            if isinstance(train_data, torch.utils.data.DataLoader):
-                loss_dset = train_data.dataset
-            else:
-                loss_dset = train_dset
+            loss_dset = train_data
 
-        return train_dset, val_dset, loss_dset
+        if isinstance(loss_dset, torch.utils.data.DataLoader):
+            loss_dset = train_data.dataset
 
-    def _train_for_epochs(self, train_data, val_dset, epochs, rank, world_size, run_validation, is_main_process):
+        return train_data, val_data, loss_dset
+
+    def _train_for_epochs(self, train_data, val_data, epochs, rank, world_size, run_validation, is_main_process):
         # Batched Training loop with early stopping
         count_es = 0
         last_val_loss = float('inf')
@@ -791,15 +822,15 @@ class AutoEncoder(torch.nn.Module):
 
             if (is_main_process and run_validation):
                 # run validation
-                curr_val_loss = self._validate_dataset(val_dset, rank)
+                curr_val_loss = self._validate_dataset(val_data, rank)
                 LOG.debug(f'Rank{rank} Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
 
-                if self.patience:  # early stopping
-                    if curr_val_loss > last_val_loss:
+                if (self.patience):  # early stopping
+                    if (curr_val_loss > last_val_loss):
                         count_es += 1
                         LOG.debug(f'Rank{rank} Loss went up. Early stop count: {count_es}')
 
-                        if count_es >= self.patience:
+                        if (count_es >= self.patience):
                             LOG.debug(f'Early stopping: early stop count({count_es}) >= patience({self.patience})')
                             should_early_stop = True
                     else:
@@ -824,14 +855,14 @@ class AutoEncoder(torch.nn.Module):
             self.logger.end_epoch()
 
     def fit(
-            self,
-            train_data,
-            rank=0,
-            world_size=1,
-            epochs=1,
-            val_data=None,
-            run_validation=False,
-            use_val_for_loss_stats=False,
+        self,
+        train_data: typing.Union[pd.DataFrame, DataframeDataset, FileSystemDataset],
+        rank=0,
+        world_size=1,
+        epochs=1,
+        val_data=None,
+        run_validation=False,
+        use_val_for_loss_stats=False,
     ):
         """
         Fit the model in a distributed or centralized fashion, depending on self.distributed_training with early
@@ -865,7 +896,7 @@ class AutoEncoder(torch.nn.Module):
             If run_validation or use_val_for_loss_stats is True but val is not provided.
         """
 
-        if not isinstance(train_data, (pd.DataFrame, torch.utils.data.DataLoader, torch.utils.data.Dataset)):
+        if not isinstance(train_data, (pd.DataFrame, DataframeDataset, FileSystemDataset, DFEncoderDataLoader)):
             raise TypeError(
                 "`train_data` needs to be a pandas DataFrame, a DataLoader, or a Dataset in distributed training mode."
                 f" `train_data` is currently of type: {type(train_data)}")
@@ -877,7 +908,8 @@ class AutoEncoder(torch.nn.Module):
         if (self.optim is None):
             self._build_model(df=train_data, rank=rank)
 
-        train_dset, val_dset, loss_dset = self._build_training_datasets(train_data, val_data, use_val_for_loss_stats)
+        train_data, val_data, loss_dset = self._build_or_configure_datasets(train_data, val_data,
+                                                                            use_val_for_loss_stats)
 
         is_main_process = (rank == 0)
 
@@ -891,7 +923,7 @@ class AutoEncoder(torch.nn.Module):
         # Check if we're running validation, and compute baseline performance if we are
         if (is_main_process and run_validation):
             LOG.debug('Validating during training. Computing baseline performance...')
-            baseline = self._compute_baseline_performance_from_dataset(val_dset)
+            baseline = self._compute_baseline_performance_from_dataset(val_data)
 
             if isinstance(self.logger, BasicLogger):
                 self.logger.baseline_loss = baseline
@@ -899,58 +931,11 @@ class AutoEncoder(torch.nn.Module):
             LOG.debug(f'Baseline loss: {round(baseline, 4)}')
 
         # Training loop
-        self._train_for_epochs(train_dset, val_dset, epochs, rank, world_size, run_validation, is_main_process)
+        self._train_for_epochs(train_data, val_data, epochs, rank, world_size, run_validation, is_main_process)
 
         if (is_main_process):
-            loss_dset.convert_to_validation(self)
+            self._transform_dataset_for_validation(loss_dset)
             self._populate_loss_stats_from_dataset(loss_dset)
-
-    def _validate_dataframe(self, orig_df, swapped_df):
-        """Runs a validation loop on the given validation pandas DataFrame, computing and returning the average loss of
-        both the original input and the input with swapped values.
-
-        Parameters
-        ----------
-        orig_df : pandas.DataFrame, the original validation data
-        swapped_df: pandas.DataFrame, the swapped validation data
-
-        Returns
-        -------
-        Tuple[float]
-            A tuple containing two floats:
-            - mean_id_loss: the average net loss when passing the original df through the model
-            - mean_swapped_loss: the average net loss when passing the swapped df through the model
-        """
-        val_batches = len(orig_df) // self.eval_batch_size
-        if len(orig_df) % self.eval_batch_size != 0:
-            val_batches += 1
-
-        swapped_loss = []
-        id_loss = []
-        for i in range(val_batches):
-            start = i * self.eval_batch_size
-            stop = (i + 1) * self.eval_batch_size
-
-            # calculate the loss of the swapped tensor compared to the target (original) tensor
-            slc_in = swapped_df.iloc[start:stop]
-            slc_in_tensor = self.build_input_tensor(slc_in)
-
-            slc_out = orig_df.iloc[start:stop]
-            slc_out_tensor = self.build_input_tensor(slc_out)
-
-            num, bin, cat = self.model(slc_in_tensor)
-            _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out)
-            swapped_loss.append(net_loss)
-
-            # calculate the loss of the original tensor
-            num, bin, cat = self.model(slc_out_tensor)
-            _, _, _, net_loss = self.compute_loss(num, bin, cat, slc_out, _id=True)
-            id_loss.append(net_loss)
-
-        mean_swapped_loss = np.array(swapped_loss).mean()
-        mean_id_loss = np.array(id_loss).mean()
-
-        return mean_id_loss, mean_swapped_loss
 
     def _fit_batch(self, input_swapped, num_target, bin_target, cat_target, **kwargs):
         """Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets, performs
