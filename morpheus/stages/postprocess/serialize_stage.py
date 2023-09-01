@@ -18,6 +18,7 @@ import typing
 from functools import partial
 
 import mrc
+from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -41,7 +42,7 @@ class SerializeStage(SinglePortStage):
         Pipeline configuration instance.
     include : typing.List[str], default = [], show_default="All Columns",
         Attributes that are required send to downstream stage.
-    exclude : typing.List[str]
+    exclude : typing.List[str], default = [r'^ID$', r'^_ts_']
         Attributes that are not required send to downstream stage.
     fixed_columns : bool
         When `True` `SerializeStage` will assume that the Dataframe in all messages contain the same columns as the
@@ -49,11 +50,17 @@ class SerializeStage(SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
-                 include: typing.List[str] = [],
-                 exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
+                 config: Config,
+                 include: typing.List[str] = None,
+                 exclude: typing.List[str] = None,
                  fixed_columns: bool = True):
-        super().__init__(c)
+        super().__init__(config)
+
+        if (include is None):
+            include = []
+
+        if (exclude is None):
+            exclude = [r'^ID$', r'^_ts_']
 
         # Make copies of the arrays to prevent changes after the Regex is compiled
         self._include_columns = copy.copy(include)
@@ -135,13 +142,13 @@ class SerializeStage(SinglePortStage):
             include_columns = None
 
             if (self._include_columns is not None and len(self._include_columns) > 0):
-                include_columns = re.compile("({})".format("|".join(self._include_columns)))
+                include_columns = re.compile(f"({'|'.join(self._include_columns)})")
 
             exclude_columns = [re.compile(x) for x in self._exclude_columns]
 
             stream = builder.make_node(
                 self.unique_name,
-                partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))
+                ops.map(partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns)))
 
         builder.make_edge(input_stream[0], stream)
 

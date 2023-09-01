@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MODULE_NAMESPACE = "morpheus_modules"
+MORPHEUS_MODULE_NAMESPACE = "morpheus"
 
+DATA_LOADER = "DataLoader"
 FILE_BATCHER = "FileBatcher"
 FILE_TO_DF = "FileToDF"
+FILTER_CONTROL_MESSAGE = "FilterControlMessage"
+FILTER_DETECTIONS = "FilterDetections"
+FROM_CONTROL_MESSAGE = "FromControlMessage"
 MLFLOW_MODEL_WRITER = "MLFlowModelWriter"
+MULTIPLEXER = "Multiplexer"
+SERIALIZE = "Serialize"
+TO_CONTROL_MESSAGE = "ToControlMessage"
+WRITE_TO_FILE = "WriteToFile"
+FILTER_CM_FAILED = "FilterCmFailed"
+PAYLOAD_BATCHER = "PayloadBatcher"

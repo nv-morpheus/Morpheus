@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ limitations under the License.
 
 # Example Ransomware Detection Morpheus Pipeline for AppShield Data
 
-Example Morpheus pipeline using Triton Inference server and Morpheus.
+Example of a Morpheus Pipeline using Triton Inference server.
 
 ## Setup Triton Inference Server
 
@@ -27,7 +27,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:22.08-py3
+docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 ##### Setup Env Variable
 ```bash
@@ -39,7 +39,7 @@ Run the following from the `examples/ransomware_detection` directory to launch T
 
 ```bash
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.08-py3 \
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:23.06-py3 \
    tritonserver --model-repository=/models/triton-model-repo \
                 --exit-on-error=false \
                 --model-control-mode=explicit \
@@ -63,7 +63,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 > **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
 ```bash
-conda install dask==2022.7.0 distributed==2022.7.0
+mamba install 'dask>=2023.1.1' 'distributed>=2023.1.1'
 ```
 
 ## Run Ransomware Detection Pipeline

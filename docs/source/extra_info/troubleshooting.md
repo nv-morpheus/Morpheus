@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,11 +31,11 @@ rm -rf ${MORPHEUS_ROOT}/build
 ```
 **Debugging Python Code**
 
-To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure that Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
+To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
 
 **Debugging C++ Code**
 
-Similar to the Python launch configurations, several C++ launch configurations can be found in the Visual Studio Code workspace file. However, unlike the Python configuration, it's necessary to ensure morpheus was compiled in Debug mode in order for breakpoints to work correctly. To build Morpheus in Debug mode, use the following:
+Similar to the Python launch configurations, several C++ launch configurations can be found in the Visual Studio Code workspace file. However, unlike the Python configuration, it's necessary to ensure Morpheus was compiled in Debug mode in order for breakpoints to work correctly. To build Morpheus in Debug mode, use the following:
 
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DCMAKE_BUILD_TYPE=Debug" ./scripts/compile.sh

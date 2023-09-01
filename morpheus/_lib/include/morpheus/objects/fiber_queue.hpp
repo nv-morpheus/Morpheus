@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -53,7 +53,7 @@ class FiberQueue
      * @param timeout
      * @return boost::fibers::channel_op_status
      */
-    boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
+    boost::fibers::channel_op_status put(pybind11::object&& item, bool block = true, float timeout = 0.0);
 
     /**
      * @brief Retrieves item from head of the queue.
@@ -63,7 +63,7 @@ class FiberQueue
      * @param timeout
      * @return boost::fibers::channel_op_status
      */
-    boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
+    boost::fibers::channel_op_status get(pybind11::object& item, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
@@ -102,17 +102,26 @@ struct FiberQueueInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static void put(morpheus::FiberQueue &self, pybind11::object item, bool block = true, float timeout = 0.0);
+    static void put(morpheus::FiberQueue& self, pybind11::object item, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
      */
-    static pybind11::object get(morpheus::FiberQueue &self, bool block = true, float timeout = 0.0);
+    static pybind11::object get(morpheus::FiberQueue& self, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
      */
-    static void close(morpheus::FiberQueue &self);
+    static void close(morpheus::FiberQueue& self);
+
+    static bool is_closed(morpheus::FiberQueue& self);
+
+    // Context manager methods
+    static morpheus::FiberQueue& enter(morpheus::FiberQueue& self);
+    static void exit(morpheus::FiberQueue& self,
+                     const pybind11::object& type,
+                     const pybind11::object& value,
+                     const pybind11::object& traceback);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

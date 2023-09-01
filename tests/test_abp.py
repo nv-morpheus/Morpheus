@@ -20,13 +20,17 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import compare_class_to_scores
+from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -38,12 +42,10 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
-from utils import TEST_DIRS
-from utils import calc_error_val
-from utils import compare_class_to_scores
+from morpheus.utils.file_utils import load_labels_file
 
 # End-to-end test intended to imitate the ABP validation test
-FEATURE_LENGTH = 29
+FEATURE_LENGTH = 18
 MODEL_MAX_BATCH_SIZE = 1024
 
 
@@ -71,11 +73,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 
@@ -88,9 +86,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -129,9 +125,7 @@ def test_abp_cpp(config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -185,11 +179,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 
@@ -202,9 +192,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -223,17 +211,17 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 3
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
 
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 4
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 5
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 
@@ -259,9 +247,7 @@ def test_abp_multi_segment_cpp(config, tmp_path):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
-    with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-        config.fil.feature_columns = [x.strip() for x in fh.readlines()]
+    config.fil.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -283,17 +269,17 @@ def test_abp_multi_segment_cpp(config, tmp_path):
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
                              force_convert_inputs=True))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 3
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
 
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 4
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 5
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 

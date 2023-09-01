@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,25 +28,27 @@ More advanced users, or those who are interested in using the latest pre-release
 
 ## Requirements
 - Pascal architecture GPU or better
-- NVIDIA driver `450.80.02` or higher
+- NVIDIA driver `520.61.05` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
+- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `23.06` or higher
 
-#### Note about Docker:
+> **Note about Docker:**
+>
 > The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post install step has been performed allowing Docker commands to be executed by a non-root user. This is not strictly necessary so long as the current user has `sudo` privileges to execute Docker commands.
 
 ## Using pre-built Docker containers
 ### Pull the Morpheus Image
 1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
-1. Download the selected version, for example for `22.11`:
+1. Download the selected version, for example for `23.11`:
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
+docker pull nvcr.io/nvidia/morpheus/morpheus:23.11-runtime
 ```
 
-#### Note about Morpheus versions:
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v22.11.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v22.11.01-runtime`, `v22.11.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
+> **Note about Morpheus versions:**
+>
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v23.11.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v23.11.01-runtime`, `v23.11.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
@@ -54,14 +56,14 @@ docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
 1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
 1. Start the container downloaded from the previous section:
 ```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:22.11-runtime bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host -v /var/run/docker.sock:/var/run/docker.sock nvcr.io/nvidia/morpheus/morpheus:23.11-runtime bash
 ```
 
 Note about some of the flags above:
 | Flag | Description |
 | ---- | ----------- |
 | `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--gpus=all` | Specify which GPUs the container has access to.  Alternately, a specific GPU could be chosen with `--gpus=<gpu-id>` |
 | `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
 | `-v /var/run/docker.sock:/var/run/docker.sock` | Enables access to the Docker socket file from within the running container, this allows launching other Docker containers from within the Morpheus container. This flag is required for launching Triton with access to the included Morpheus models, users with their own models can omit this. |
 
@@ -131,10 +133,10 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v22.11.00a` use the following:
+The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v23.11.00` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v23.11.00-runtime" ./docker/run_container_release.sh
 ```
 
 ## Launching Triton Server
@@ -144,7 +146,7 @@ Many of the validation tests and example workflows require a Triton server to fu
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -158,7 +160,7 @@ Note: The above command is useful for testing out Morpheus, however it does load
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -231,7 +233,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found in the [Basic Usage](./examples/basic_usage/README.md) guide along with the other [Morpheus Examples](./examples.md).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 
@@ -243,15 +245,17 @@ morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localh
 
 The output should contain lines similar to:
 ```
-====Pipeline Started====
-Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
+====Building Segment: linear_segment_0====
+Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=('test_pcap',), group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
-Added stage: <deserialize-1; DeserializeStage()>
+Added stage: <deserialize-1; DeserializeStage(ensure_sliceable_index=True)>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
   └─ morpheus.MultiMessage -> morpheus.MessageMeta
-Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=False, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True, flush=False)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Segment Complete!====
+====Pipeline Started====
 ```
 
 This is important because, when the log level is set to `INFO` and above, it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
@@ -264,13 +268,13 @@ E20221214 14:53:17.425515 452045 controller.cpp:62] exception caught while perfo
 E20221214 14:53:17.425714 452045 context.cpp:125] rank: 0; size: 1; tid: 140065439217216; fid: 0x7f6144041000: set_exception issued; issuing kill to current runnable. Exception msg: RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
+This indicates that the `to-file` stage cannot accept the input type of `morpheus.messages.multi_message.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, examine at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.messages.multi_message.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
 
 #### Pipeline Stages
 
 A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
 
-```bash
+```
 $ morpheus run pipeline-nlp --help
 Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -281,9 +285,10 @@ Commands:
   add-scores    Add probability scores to each message.
   buffer        (Deprecated) Buffer results.
   delay         (Deprecated) Delay results for a certain duration.
-  deserialize   Deserialize source data into Dataframes.
+  deserialize   Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna        Drop null data entries from a DataFrame.
   filter        Filter message by a classification threshold.
+  from-doca     A source stage used to receive raw packet data from a ConnectX-6 Dx NIC.
   from-file     Load messages from a file.
   from-kafka    Load messages from a Kafka cluster.
   gen-viz       (Deprecated) Write out visualization DataFrames.
@@ -293,7 +298,7 @@ Commands:
   mlflow-drift  Report model drift statistics to ML Flow.
   monitor       Display throughput numbers at a specific point in the pipeline.
   preprocess    Prepare NLP input DataFrames for inference.
-  serialize     Include & exclude columns from messages.
+  serialize     Includes & excludes columns from messages.
   to-file       Write all messages to a file.
   to-kafka      Write all messages to a Kafka cluster.
   trigger       Buffer data until the previous stage has completed.
@@ -301,8 +306,7 @@ Commands:
 ```
 
 And for the FIL pipeline:
-
-```bash
+```
 $ morpheus run pipeline-fil --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -313,12 +317,11 @@ Commands:
   add-scores      Add probability scores to each message.
   buffer          (Deprecated) Buffer results.
   delay           (Deprecated) Delay results for a certain duration.
-  deserialize     Deserialize source data into Dataframes.
+  deserialize     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
   dropna          Drop null data entries from a DataFrame.
   filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a
-                  dataframe. It normalizes nested json messages and arranges them into a dataframe by
-                  snapshot and source.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them
+                  into a dataframe by snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -327,7 +330,7 @@ Commands:
   mlflow-drift    Report model drift statistics to ML Flow.
   monitor         Display throughput numbers at a specific point in the pipeline.
   preprocess      Prepare FIL input DataFrames for inference.
-  serialize       Include & exclude columns from messages.
+  serialize       Includes & excludes columns from messages.
   to-file         Write all messages to a file.
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
@@ -336,7 +339,7 @@ Commands:
 
 And for the AE pipeline:
 
-```bash
+```
 $ morpheus run pipeline-ae --help
 Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
@@ -355,7 +358,7 @@ Commands:
   inf-triton       Perform inference with Triton Inference Server.
   monitor          Display throughput numbers at a specific point in the pipeline.
   preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Include & exclude columns from messages.
+  serialize        Includes & excludes columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
   to-file          Write all messages to a file.
   to-kafka         Write all messages to a Kafka cluster.
@@ -363,9 +366,9 @@ Commands:
   trigger          Buffer data until the previous stage has completed.
   validate         Validate pipeline output for testing.
 ```
-Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
+Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Check the CLI help for the most up-to-date information during development.
 
 ## Next Steps
 * [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
-* [Morpheus Pretrained Models](./models_and_datasets.md) - Pretrained models with corresponding training, validation scripts, and datasets
+* [Morpheus Pretrained Models](./models_and_datasets.md) - Pre-trained models with corresponding training, validation scripts, and datasets
 * [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs

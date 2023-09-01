@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ docker run --rm -it --hostname my-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3-
 The image can be verified with the web management console by opening http://localhost:15672 in a web browser. Enter "guest" for both the username and the password.
 
 ## Launch the reader
-In a second terminal from the root of the morpheus repo execute:
+In a second terminal from the root of the Morpheus repo execute:
 ```bash
 python examples/developer_guide/4_rabbitmq_cpp_stage/read_simple.py
 ```
@@ -39,11 +39,11 @@ This will read from a RabbitMQ exchange named 'logs', and write the results to `
 If no exchange named 'logs' exists in RabbitMQ it will be created.
 
 ## Launch the writer
-In a third terminal from the root of the morpheus repo execute:
+In a third terminal from the root of the Morpheus repo execute:
 ```bash
 python examples/developer_guide/4_rabbitmq_cpp_stage/write_simple.py
 ```
 
-This will read json data from the `examples/data/email.jsonlines` file and publish the data into the 'logs' RabbitMQ exchange as a single message.
+This will read JSON data from the `examples/data/email.jsonlines` file and publish the data into the 'logs' RabbitMQ exchange as a single message.
 
-The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script on the otherhand will continue reading from the queue until explicitly shut down with a control-C.
+The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script will continue reading from the queue until explicitly shut down with a control-C.

@@ -16,26 +16,22 @@ import dataclasses
 
 import cupy as cp
 
+from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.multi_inference_message import InferenceMemory
-from morpheus.messages.multi_inference_message import get_input
-from morpheus.messages.multi_inference_message import set_input
-from morpheus.messages.multi_response_message import get_output
-from morpheus.messages.multi_response_message import set_output
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class ResponseMemoryLogParsing(ResponseMemory, cpp_class=None):
 
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
+    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop,
+                                                                 ResponseMemory.set_output)
+    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
 
-    def __post_init__(self, confidences, labels):
-        self.confidences = confidences
-        self.labels = labels
+    def __init__(self, *, count: int, confidences: cp.ndarray, labels: cp.ndarray):
+        super().__init__(count=count, tensors={'confidences': confidences, 'labels': labels})
 
 
 @dataclasses.dataclass
@@ -103,7 +99,7 @@ class MultiResponseLogParsingMessage(MultiResponseMessage, cpp_class=None):
         return self.get_output("seq_ids")
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class PostprocMemoryLogParsing(InferenceMemory):
     """
     This is a container class for data that needs to be submitted to the inference server for NLP category
@@ -123,16 +119,25 @@ class PostprocMemoryLogParsing(InferenceMemory):
 
     """
 
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
+    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                                 InferenceMemory.set_input)
+    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop, InferenceMemory.set_input)
+    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                               InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                             InferenceMemory.set_input)
 
-    def __post_init__(self, confidences, labels, input_ids, seq_ids):
-        self.confidences = confidences
-        self.labels = labels
-        self.input_ids = input_ids
-        self.seq_ids = seq_ids
+    def __init__(self,
+                 *,
+                 count: int,
+                 confidences: cp.ndarray,
+                 labels: cp.ndarray,
+                 input_ids: cp.ndarray,
+                 seq_ids: cp.ndarray):
+        super().__init__(count=count,
+                         tensors={
+                             'confidences': confidences, 'labels': labels, 'input_ids': input_ids, 'seq_ids': seq_ids
+                         })
 
 
 @dataclasses.dataclass

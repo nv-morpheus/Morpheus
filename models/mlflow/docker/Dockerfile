@@ -13,43 +13,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FROM_IMAGE=gpuci/miniforge-cuda
-ARG CUDA_VER=11.5
-ARG LINUX_VER=ubuntu20.04
-ARG PYTHON_VER=3.8
-FROM ${FROM_IMAGE}:${CUDA_VER}-runtime-${LINUX_VER} AS base
+ARG FROM_IMAGE="condaforge/miniforge-pypy3"
+ARG PYTHON_VER=3.11
+ARG TAG=23.1.0-1
+FROM ${FROM_IMAGE}:${TAG} AS base
 
 WORKDIR /mlflow
 
 COPY . ./
 
-# need to do an upgrade in case gpuci is stale for whatever reason
-RUN apt-get update && apt upgrade -y && apt-get install -y procps vim
-# but pin python version to avoid some newer CVE
-RUN source /etc/profile.d/conda.sh && conda deactivate && conda install python=${PYTHON_VER}
+# Enables "source activate conda"
+SHELL ["/bin/bash", "-c"]
+
+# need to do an upgrade in case the base is stale for whatever reason
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt update && \
+    apt upgrade -y && \
+    apt install --no-install-recommends -y \
+    git \
+    procps && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN source /opt/conda/etc/profile.d/conda.sh && conda deactivate \
+    && conda update conda python=${PYTHON_VER} && conda install "tini=0.19" \
+    && conda clean --all
 RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r22.10
+ARG TRITON_VER=r23.05
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \
-    git clone -b ${TRITON_VER} --depth 1 https://github.com/triton-inference-server/server && \
+    git clone -b ${TRITON_VER} --depth 1 -n --filter=tree:0 https://github.com/triton-inference-server/server && \
     source activate mlflow && \
-    cd ${TRITON_DIR}/server/deploy/mlflow-triton-plugin && \
+    cd ${TRITON_DIR}/server && \
+    git sparse-checkout set --no-cone deploy/mlflow-triton-plugin && \
+    cd deploy/mlflow-triton-plugin && \
     pip install .
 
 RUN ln -sf ${TRITON_DIR}/server/deploy/mlflow-triton-plugin/scripts/publish_model_to_mlflow.py /mlflow && \
     mkdir /mlflow/artifacts
-
-# remedy for CVE-2015-20107
-RUN find / -name '*mailcap*.*py*' | xargs rm
-
-# remedy for CVE-2022-42919
-RUN find / -path '*multiprocessing/util.py' -exec sed -i 's/=\s*_platform_supports_abstract_sockets()/= False/g' {} +
 
 EXPOSE 5000
 

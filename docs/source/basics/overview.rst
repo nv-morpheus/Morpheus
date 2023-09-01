@@ -1,5 +1,5 @@
 ..
-   SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
    SPDX-License-Identifier: Apache-2.0
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,13 +75,15 @@ Similar to the run command, we can get help on the tools:
    $ morpheus tools --help
    Usage: morpheus tools [OPTIONS] COMMAND [ARGS]...
 
+   Tools subcommand
+
    Options:
-     --help  Show this message and exit.  [default: False]
+   --help  Show this message and exit.
 
    Commands:
-     autocomplete  Utility for installing/updating/removing shell completion for
-                   Morpheus
-     onnx-to-trt   Converts an ONNX model to a TRT engine
+   autocomplete  Utility for installing/updating/removing shell completion for Morpheus
+   onnx-to-trt   Converts an ONNX model to a TRT engine
+
 
 The help text will show arguments, options and all possible sub-commands. Help for each of these sub-commands can be
 queried in the same manner:
@@ -91,14 +93,15 @@ queried in the same manner:
    $ morpheus tools onnx-to-trt --help
    Usage: morpheus tools onnx-to-trt [OPTIONS]
 
+   Converts an ONNX model to a TRT engine
+
    Options:
-     --input_model PATH              [required]
-     --output_model PATH             [required]
-     --batches <INTEGER INTEGER>...  [required]
-     --seq_length INTEGER            [required]
-     --max_workspace_size INTEGER    [default: 16000]
-     --help                          Show this message and exit.  [default:
-                                     False]
+   --input_model PATH              [required]
+   --output_model PATH             [required]
+   --batches <INTEGER INTEGER>...  [required]
+   --seq_length INTEGER            [required]
+   --max_workspace_size INTEGER    [default: 16000]
+   --help                          Show this message and exit.
 
 AutoComplete
 ------------

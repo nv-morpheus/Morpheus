@@ -90,7 +90,7 @@ class WriteToKafkaStage(SinglePortStage):
             def on_next(x: MessageMeta):
                 nonlocal outstanding_requests
 
-                def cb(_, msg):
+                def callback(_, msg):
                     if msg is not None and msg.value() is not None:
                         pass
                     else:
@@ -103,13 +103,13 @@ class WriteToKafkaStage(SinglePortStage):
                         sub.on_error(msg.error())
 
                 records = serializers.df_to_json(x.df, strip_newlines=True)
-                for m in records:
+                for mess in records:
 
                     # Push all of the messages
                     while True:
                         try:
                             # this runs asynchronously, in C-K's thread
-                            producer.produce(self._output_topic, m, callback=cb)
+                            producer.produce(self._output_topic, mess, callback=callback)
                             break
                         except BufferError:
                             time.sleep(self._poll_time)
@@ -117,7 +117,7 @@ class WriteToKafkaStage(SinglePortStage):
                             logger.exception(("Error occurred in `to-kafka` stage with broker '%s' "
                                               "while committing message:\n%s"),
                                              self._kafka_conf["bootstrap.servers"],
-                                             m)
+                                             mess)
                             break
                         finally:
                             # Try and process some
@@ -137,7 +137,7 @@ class WriteToKafkaStage(SinglePortStage):
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         # Write to kafka
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.build(node_fn))
         builder.make_edge(stream, node)
         # node.launch_options.pe_count = self._max_concurrent
 

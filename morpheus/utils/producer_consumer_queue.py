@@ -58,6 +58,11 @@ class ProducerConsumerQueue(queue.Queue, typing.Generic[_T]):
                 self.all_tasks_done.wait()
 
     def put(self, item: _T, block: bool = True, timeout: typing.Optional[float] = None) -> None:
+        """
+        Put an item into the back of the queue. When `block` is `True` and the queue is full it will block up to
+        `timeout` seconds, raising a  `queue.Full` when either `block` is `False` or the `timeout` has exceeded. A
+        `Closed` exception is raised if the queue is closed.
+        """
         with self.not_full:
             if self.maxsize > 0:
                 if not block:
@@ -84,6 +89,11 @@ class ProducerConsumerQueue(queue.Queue, typing.Generic[_T]):
             self.not_empty.notify()
 
     def get(self, block: bool = True, timeout: typing.Optional[float] = None) -> _T:
+        """
+        Remove and return an item from the front of the queue. When `block` is `True` and the queue is empty it will
+        block up to `timeout` seconts, raising a  `queue.Empty` when either `block` is `False` or the `timeout` has
+        exceeded. A `Closed` exception is raised if the queue is closed.
+        """
         with self.not_empty:
             if not block:
                 if not self._qsize() and not self._is_closed:
@@ -109,6 +119,7 @@ class ProducerConsumerQueue(queue.Queue, typing.Generic[_T]):
             return item
 
     def close(self):
+        """Close the queue."""
         with self.mutex:
             if (not self._is_closed):
                 self._is_closed = True
@@ -116,7 +127,8 @@ class ProducerConsumerQueue(queue.Queue, typing.Generic[_T]):
                 self.not_empty.notify_all()
                 self.all_tasks_done.notify_all()
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
+        """Check if the queue is closed."""
         with self.mutex:
             return self._is_closed
 
@@ -126,10 +138,10 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
     Custom queue.Queue implementation which supports closing and uses recursive locks
     """
 
-    def __init__(self, maxsize=0, *, loop=None) -> None:
-        super().__init__(maxsize=maxsize, loop=loop)
+    def __init__(self, maxsize=0) -> None:
+        super().__init__(maxsize=maxsize)
 
-        self._closed = asyncio.Event(loop=loop)
+        self._closed = asyncio.Event()
         self._is_closed = False
 
     async def join(self):
@@ -154,7 +166,7 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
         slot is available before adding item.
         """
         while self.full() and not self._is_closed:
-            putter = self._loop.create_future()
+            putter = self._get_loop().create_future()
             self._putters.append(putter)
             try:
                 await putter
@@ -184,7 +196,7 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
         If queue is empty, wait until an item is available.
         """
         while self.empty() and not self._is_closed:
-            getter = self._loop.create_future()
+            getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
                 await getter
@@ -209,7 +221,7 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
         return self.get_nowait()
 
     async def close(self):
-
+        """Close the queue."""
         if (not self._is_closed):
             self._is_closed = True
 
@@ -219,5 +231,6 @@ class AsyncIOProducerConsumerQueue(asyncio.Queue, typing.Generic[_T]):
             self._wakeup_next(self._putters)
             self._wakeup_next(self._getters)
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
+        """Check if the queue is closed."""
         return self._is_closed

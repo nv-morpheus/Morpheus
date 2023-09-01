@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
+from mrc.core import operators as ops
 
 import cuml
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
@@ -47,22 +47,25 @@ class ClassificationStage(SinglePortStage):
         super().__init__(c)
 
         self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
+        self._needed_columns.update({'node_id': TypeId.INT64, 'prediction': TypeId.FLOAT32})
 
     @property
     def name(self) -> str:
         return "gnn-fraud-classification"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (GraphSAGEMultiMessage, ):
         return (GraphSAGEMultiMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _process_message(self, message: GraphSAGEMultiMessage):
+    def _process_message(self, message: GraphSAGEMultiMessage) -> GraphSAGEMultiMessage:
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
-
         message.set_meta("node_id", message.node_identifiers)
 
+        # The XGBoost model is returning two probabilities for the binary classification. The first (column 0) is
+        # probability that the transaction is in the benign class, and the second (column 1) is the probability that
+        # the transaction is in the fraudulent class. Added together the two values will always equal 1.
         prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
 
         message.set_meta("prediction", prediction)
@@ -70,6 +73,6 @@ class ClassificationStage(SinglePortStage):
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._process_message)
+        node = builder.make_node(self.unique_name, ops.map(self._process_message))
         builder.make_edge(input_stream[0], node)
         return node, MultiMessage

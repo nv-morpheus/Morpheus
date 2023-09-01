@@ -26,7 +26,7 @@ from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
 from watchdog.utils.dirsnapshot import EmptyDirectorySnapshot
 from watchdog.utils.patterns import filter_paths
 
-from morpheus._lib.common import FiberQueue
+from morpheus.common import FiberQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
@@ -91,6 +91,9 @@ class DirectoryWatcher():
         self._watcher = None
 
     def build_node(self, name: str, builder: mrc.Builder):
+        """
+        Build and return the MRC source node
+        """
 
         # The first source just produces filenames
         return builder.make_source(name, self._generate_via_polling())

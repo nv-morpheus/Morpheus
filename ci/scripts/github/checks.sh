@@ -20,24 +20,46 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
+log_toolchain
+
+cd ${MORPHEUS_ROOT}
+
 fetch_base_branch
-
-rapids-logger "Checking copyright headers"
-python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
-
-rapids-logger "Runing Python style checks"
-${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 git submodule update --init --recursive
 
 rapids-logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
+CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=OFF"
+export CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_INPLACE_BUILD=ON"
+if [[ "${LOCAL_CI}" == "" ]]; then
+    CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
+fi
 
-rapids-logger "Building targets that generate source code"
-cmake --build build --target morpheus_style_checks --parallel ${PARALLEL_LEVEL}
+cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
-rapids-logger "sccache usage for source build:"
-sccache --show-stats
+rapids-logger "Building Morpheus"
+cmake --build build --parallel ${PARALLEL_LEVEL}
+
+if [[ "${LOCAL_CI}" == "" ]]; then
+    rapids-logger "sccache usage for source build:"
+    sccache --show-stats
+fi
+
+rapids-logger "Installing Morpheus"
+pip install ./
+
+# Setting this prevents loading of cudf since we don't have a GPU
+export MORPHEUS_IN_SPHINX_BUILD=1
+
+rapids-logger "Checking copyright headers"
+python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
+
+rapids-logger "Running Python style checks"
+${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
+
+rapids-logger "Checking versions"
+${MORPHEUS_ROOT}/ci/scripts/version_checks.sh
 
 rapids-logger "Runing C++ style checks"
 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh

@@ -47,8 +47,7 @@ inspect.isfunction = isfunction
 
 REVISION_CMD = 'git rev-parse --short HEAD'
 
-source_regex = re.compile(r"^File: (.*?) \(starting at line ([0-9]*?)\)$",
-                          re.MULTILINE)
+source_regex = re.compile(r"^File: (.*?) \(starting at line ([0-9]*?)\)$", re.MULTILINE)
 
 
 def _get_git_revision():
@@ -83,17 +82,29 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
         return
 
     class_name = info['fullname'].split('.')[0]
+    attr_name = info['fullname'].split('.')[-1]
     module = __import__(info['module'], fromlist=[class_name])
 
     try:
         obj = attrgetter(info['fullname'])(module)
     except Exception as ex:
+
+        class_type = getattr(module, class_name)
+
+        if (attr_name in inspect.get_annotations(class_type)):
+            # This is a ClassVar. Just exit because we can't get the source
+            return
+
         logger.exception("Error in github_link. Message: {}".format(ex), exc_info=ex, stack_info=True)
         return
 
     # Unwrap the object to get the correct source
     # file in case that is wrapped by a decorator
-    obj = inspect.unwrap(obj)
+    # Note: objects mocked by autodoc_mock_imports will raise an exception when we try to unwrap them
+    try:
+        obj = inspect.unwrap(obj)
+    except:  # noqa: E722
+        return
 
     fn: str = None
     lineno: str = None
@@ -118,9 +129,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 
             # fn is expected to be the absolute path.
             fn = os.path.relpath(source_file, start=package)
-            print("{}:{}".format(
-                os.path.abspath(os.path.join("..", "python", "cuml", fn)),
-                lineno))
+            print("{}:{}".format(os.path.abspath(os.path.join("..", "python", "cuml", fn)), lineno))
         else:
             return
     else:
@@ -130,9 +139,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
             fn = os.path.abspath(os.path.join("..", "python", fn))
 
         # Convert to relative from module root
-        fn = os.path.relpath(fn,
-                             start=os.path.dirname(
-                                 __import__(package).__file__))
+        fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
 
     # Get the line number if we need it. (Can work without it)
     if (lineno is None):
@@ -145,10 +152,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
                 lineno = obj.__code__.co_firstlineno
             else:
                 lineno = ''
-    return url_fmt.format(revision=revision,
-                          package=package,
-                          path=fn,
-                          lineno=lineno)
+    return url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
 
 
 def make_linkcode_resolve(package, url_fmt):
@@ -163,7 +167,4 @@ def make_linkcode_resolve(package, url_fmt):
                                    '{path}#L{lineno}')
     """
     revision = _get_git_revision()
-    return partial(_linkcode_resolve,
-                   revision=revision,
-                   package=package,
-                   url_fmt=url_fmt)
+    return partial(_linkcode_resolve, revision=revision, package=package, url_fmt=url_fmt)

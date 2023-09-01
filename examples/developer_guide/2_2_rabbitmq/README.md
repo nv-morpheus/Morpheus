@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,7 @@ pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
 ```
 
 ## Launch the reader
-In a second terminal from the root of the morpheus repo execute:
+In a second terminal from the root of the Morpheus repo execute:
 ```bash
 python examples/developer_guide/2_2_rabbitmq/read_simple.py
 ```
@@ -43,18 +43,18 @@ This will read from a RabbitMQ exchange named 'logs', and write the results to `
 If no exchange named 'logs' exists in RabbitMQ it will be created.
 
 ## Launch the writer
-In a third terminal from the root of the morpheus repo execute:
+In a third terminal from the root of the Morpheus repo execute:
 ```bash
 python examples/developer_guide/2_2_rabbitmq/write_simple.py
 ```
 
-This will read json data from the `examples/data/email.jsonlines` file and publish the data into the 'logs' RabbitMQ exchange as a single message.
+This will read JSON data from the `examples/data/email.jsonlines` file and publish the data into the 'logs' RabbitMQ exchange as a single message.
 
-The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script on the otherhand will continue reading from the queue until explicitly shut down with a control-C.
+The `write_simple.py` script will exit as soon as the message is written to the queue. The `read_simple.py` script will continue reading from the queue until explicitly shut down with a control-C.
 
 
 ## Alternate Morpheus CLI usage
-In the above examples we defined the pipeline using the Python API in the `read_simple.py` and `write_simple.py` scripts. Alternately we could have defined the same pipelines using the Morpheus CLI tool.
+In the above examples we defined the pipeline using the Python API in the `read_simple.py` and `write_simple.py` scripts. Alternately, we could have defined the same pipelines using the Morpheus CLI tool.
 
 ### Read Pipeline
 From the  Morpheus repo root directory run:

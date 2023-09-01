@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,11 +21,15 @@
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/filter_source.hpp"
 
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <boost/fiber/context.hpp>
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/segment/object.hpp>
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
@@ -33,6 +37,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {
@@ -47,9 +52,9 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
- * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
- * equal to `threshold`.
+ * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
+ * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
+ * indicated by `field_name` is less than or equal to `threshold`.
  *
  * This stage can operate in two different modes set by the `copy` argument.
  * When the `copy` argument is `true` (default), rows that meet the filter criteria are copied into a new dataframe.
@@ -84,6 +89,9 @@ class FilterDetectionsStage
      *
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      */
     FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
@@ -113,6 +121,9 @@ struct FilterDetectionStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,

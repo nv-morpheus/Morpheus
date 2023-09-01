@@ -18,7 +18,7 @@ import os
 
 from rabbitmq_source_stage import RabbitMQSourceStage
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage

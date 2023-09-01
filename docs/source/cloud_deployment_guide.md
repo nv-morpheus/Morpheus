@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,7 +105,7 @@ The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components requi
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -147,7 +147,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -182,10 +182,10 @@ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 
 ### Install Morpheus MLflow
 
-The Morpheus MLflow Helm chart offers MLFlow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
+The Morpheus MLflow Helm chart offers MLflow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -403,10 +403,10 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
 
-> **Note**: Before running the example pipelines, ensure that the criteria below are met:
--   Ensure that models specific to the pipeline are deployed.
+> **Note**: Before running the example pipelines, ensure the criteria below are met:
+-   Ensure models specific to the pipeline are deployed.
 -   Input and Output Kafka topics have been created.
 -   Recommended to create an output directory under  `/opt/morpheus/common/data` which is bound to `/common/data` (pod/container) for storing inference or validation results.
 -   Replace **<YOUR_OUTPUT_DIR>** with your directory name.
@@ -462,7 +462,7 @@ helm install --set ngc.apiKey="$API_KEY" \
     morpheus-sdk-client
 ```
 
-For more information on the Digital Fingerprint use cases, please refer to the starter example and a more production-ready example that can be found in the `examples` source directory.
+For more information on the Digital Fingerprint use cases, refer to the starter example and a more production-ready example that can be found in the `examples` source directory.
 
 ### Run NLP Phishing Detection Pipeline
 
@@ -636,7 +636,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
         --use_cpp=True \
-        pipeline-fil \
+        pipeline-fil --columns_file=data/columns_fil.txt \
           from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
@@ -661,7 +661,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --pipeline_batch_size=1024 \
         --model_max_batch_size=64 \
         --use_cpp=True \
-        pipeline-fil \
+        pipeline-fil --columns_file=data/columns_fil.txt \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
@@ -782,8 +782,8 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.01/docs/source/developer_guide)
-- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.01/examples)
+- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/docs/source/developer_guide)
+- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/examples)
 
 
 ## Troubleshooting
@@ -794,7 +794,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 - Models Unloaded After Reboot
   - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLflow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
 - AI Engine CPU Only Mode
-  - After a server restart, the ai-engine pod on k8s can start up before the gpu operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
+  - After a server restart, the ai-engine pod on k8s can start up before the GPU operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
 - Improve Pipeline Message Processing Rate
   - Below settings need to be considered
     - Provide the workflow with the optimal number of threads (`—num threads`), as having more or fewer threads can have an impact on pipeline performance.

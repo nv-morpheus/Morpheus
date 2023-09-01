@@ -37,7 +37,6 @@ def test_constructor(config):
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
-    print(accepted_types)
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
     assert accepted_types[0] == typing.Any
@@ -54,7 +53,7 @@ def test_build_single_before_module_registration(config):
     mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
 
@@ -65,7 +64,7 @@ def test_build_single_before_module_registration(config):
 def register_test_module():
     registry = mrc.ModuleRegistry
 
-    def module_init_fn(builder: mrc.Builder):
+    def module_init_fn(_: mrc.Builder):
         pass
 
     registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)
@@ -82,7 +81,7 @@ def test_build_single_after_module_registration(config):
     mock_input_stream = mock.MagicMock()
 
     mock_segment.load_module.return_value = mock_module
-    mock_segment.make_node_full.return_value = mock_node
+    mock_segment.make_node.return_value = mock_node
 
     mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
 

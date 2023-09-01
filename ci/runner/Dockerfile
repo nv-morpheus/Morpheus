@@ -17,13 +17,13 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci"
-ARG CUDA_PKG_VER=11-5
-ARG CUDA_SHORT_VER=11.5
-ARG CUDA_VER=11.5.1
+ARG CUDA_PKG_VER=11-8
+ARG CUDA_SHORT_VER=11.8
+ARG CUDA_VER=11.8.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PROJ_NAME=morpheus
-ARG PYTHON_VER=3.8
+ARG PYTHON_VER=3.10
 
 # Configure the base docker img
 FROM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
@@ -33,62 +33,45 @@ ARG CUDA_SHORT_VER
 
 SHELL ["/bin/bash",  "-c"]
 
-# OS deps
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y \
-        libnuma1 && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Create conda environment
 COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
+    /opt/conda/bin/mamba install -n morpheus -c conda-forge "conda-merge>=0.2" && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
     rm -rf /tmp/conda
 
 
-# ============ driver ==================
-FROM base as driver
+# ============ build ==================
+FROM base as build
 
-ARG CUDA_PKG_VER
-
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y \
-    libcublas-dev-${CUDA_PKG_VER} \
-    libcufft-dev-${CUDA_PKG_VER} \
-    libcurand-dev-${CUDA_PKG_VER} \
-    libcusolver-dev-${CUDA_PKG_VER} \
-    libnvidia-compute-520 && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
+# Add any build only dependencies here.
 
 # ============ test ==================
 FROM base as test
 
+# Add any test only dependencies here.
+
 ARG PROJ_NAME
+ARG CUDA_SHORT_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        nodejs \
-        npm \
-        openjdk-11-jdk && \
+        openjdk-11-jre-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
+COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
+
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server@0.9 && \
+RUN source activate ${PROJ_NAME} && \
+    npm install -g camouflage-server@0.9 && \
     npm cache clean --force
 
-# Install pytest-kafka
-# Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
-# https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
-RUN git clone https://gitlab.com/karolinepauls/pytest-kafka.git /opt/pytest-kafka && \
-    cd /opt/pytest-kafka && \
-    source activate ${PROJ_NAME} && \
-    python setup.py develop
+# Install Kafka
+RUN source activate ${PROJ_NAME} && \
+    python /tmp/scripts/download_kafka.py && \
+    rm -rf /tmp/scripts

@@ -19,7 +19,6 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -40,9 +39,6 @@ class TriggerStage(SinglePortStage):
         Pipeline configuration instance.
 
     """
-
-    def __init__(self, c: Config):
-        super().__init__(c)
 
     @property
     def name(self) -> str:
@@ -66,11 +62,7 @@ class TriggerStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            obs.pipe(ops.to_list(), ops.flatten()).subscribe(sub)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
+        node = builder.make_node(self.unique_name, ops.to_list(), ops.flatten())
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

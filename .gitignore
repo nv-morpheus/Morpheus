@@ -1,7 +1,4 @@
-./build
-*.engine
-.Dockerfile
-
+# Put new items at the bottom of this list!!!
 
 # Created by https://www.gitignore.io/api/vim,c++,cmake,python,synology
 
@@ -181,28 +178,38 @@ tags
 
 
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
+
+./build
+.conda-bld
+.Dockerfile
 .tmp
-examples/data/dfp
-examples/digital_fingerprinting/**/dfp_detections_*.csv
-viz_frames*
-notebooks/output
-dask-worker-space
 *.dirlock
+*.engine
 *.lock
-triton_models/**/*.onnx
-triton_models/**/*.engine
-docs/source/_lib
-docs/source/_modules
-data/*
-mlruns/*
 /build*/
 /conda-build/
-.conda-bld
+dask-worker-space
+data/*
+docs/source/_lib
+docs/source/_modules
+examples/data/dfp
+examples/digital_fingerprinting/**/dfp_detections_*.csv
+mlruns/*
+notebooks/output
+triton_models/**/*.engine
+triton_models/**/*.onnx
+viz_frames*
 
-# Ignore generated pyi files for pybind and cython modules
-morpheus/_lib/**/*.pyi
+# Explicitly ignore .vscode/. Shared settings should go in morpheus.code-workspace
+# and user settings will go in .vscode/
+.vscode/
 
-# Explicitly ignore .vscode/settings.json and .vscode/launch.json. Shared settings should go in morpheus.code-workspace
-# and user settings will go in .vscode/launch.json and .vscode/settings.json
-.vscode/settings.json
-.vscode/launch.json
+# Ignore user-defined clangd settings
+.clangd
+
+# Ignore DFP Visualization output dirs
+examples/digital_fingerprinting/visualization/*-dfp-output/
+
+# Ignore saved benchmark data
+tests/benchmarks/.benchmarks/
+examples/digital_fingerprinting/production/benchmarks/.benchmarks/

@@ -1,6 +1,7 @@
----
 # Refer to the following link for the explanation of each params:
 #   https://releases.llvm.org/14.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+
+---
 Language: Cpp
 # BasedOnStyle: Google
 AccessModifierOffset: -2
@@ -164,3 +165,7 @@ StatementMacros:
 # Be consistent with indent-width, even for people who use tab for indentation!
 TabWidth: 4
 UseTab: Never
+
+---
+Language: Json
+TabWidth: 2

@@ -14,68 +14,35 @@
 # limitations under the License.
 
 import ctypes
+import gc
 import importlib
 import logging
 import os
 import signal
 import subprocess
+import sys
 import time
+import types
 import typing
 import warnings
-from collections import namedtuple
-from functools import partial
 
 import pytest
 import requests
 
-# actual topic names not important, but we will need two of them.
-KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
-                                                                           'morpheus_output_topic')
+from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
-zookeeper_proc = None
-kafka_server = None
-kafka_consumer = None
-pytest_kafka_setup_error = None
+# Don't let pylint complain about pytest fixtures
+# pylint: disable=redefined-outer-name,unused-argument
 
-
-def init_pytest_kafka():
-    """
-    pytest_kafka is currently required to be installed manually, along with a download of Kafka and a functional JDK.
-    Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-
-    Issue #9 should make the instalation of Kafka simpler:
-    https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
-    """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error
-    try:
-        import pytest_kafka
-        os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
-        # Initialize pytest_kafka fixtures following the recomendations in:
-        # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-        KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
-        ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
-
-        for kafka_script in (KAFKA_BIN, ZOOKEEPER_BIN):
-            if not os.path.exists(kafka_script):
-                raise RuntimeError("Required Kafka script not found: {}".format(kafka_script))
-
-        teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
-        kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
-                                                          group_id='morpheus_unittest_reader',
-                                                          client_id='morpheus_unittest_reader',
-                                                          seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
-
-        return True
-    except Exception as e:
-        pytest_kafka_setup_error = e
-        return False
-
-
-pytest_kafka_avail = init_pytest_kafka()
+(PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
+if PYTEST_KAFKA_AVAIL:
+    # Pull out the fixtures into this namespace
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -103,6 +70,22 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run benchmark tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
+        dest="log_level",
+        help="A specific log level to use during testing. Defaults to WARNING if not set.",
+    )
+
+    parser.addoption(
+        "--fail_missing",
+        action="store_true",
+        dest="fail_missing",
+        help=("Tests requiring unmet dependencies are normally skipped. "
+              "Setting this flag will instead cause them to be reported as a failure"),
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
@@ -110,25 +93,48 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     supports
     """
 
-    # Only care about the config fixture
-    if ("config" not in metafunc.fixturenames):
-        return
-
+    # === use_cpp Parameterize ===
     use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
     use_python = metafunc.definition.get_closest_marker("use_python") is not None
 
-    if (use_cpp and use_python):
-        raise RuntimeError(
-            "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".format(
-                metafunc.definition.nodeid))
-    elif (not use_cpp and not use_python):
-        # Add the markers to the parameters
-        metafunc.parametrize("config",
-                             [
-                                 pytest.param(True, marks=pytest.mark.use_cpp, id="use_cpp"),
-                                 pytest.param(False, marks=pytest.mark.use_python, id="use_python")
-                             ],
-                             indirect=True)
+    use_cpp_param = pytest.param(True, marks=pytest.mark.use_cpp(added_by="generate_tests"), id="use_cpp")
+    use_python_param = pytest.param(False, marks=pytest.mark.use_python(added_by="generate_tests"), id="use_python")
+
+    _set_use_cpp_params = []
+
+    if ("use_cpp" in metafunc.fixturenames):
+        # Need to add some params since the fixture was requested
+
+        # Add cpp unless use_cpp == True and use_python == False
+        if not (use_python and not use_cpp):
+            _set_use_cpp_params.append(use_cpp_param)
+
+        # Add python unless use_cpp == False and use_python == True
+        if not (not use_python and use_cpp):
+            _set_use_cpp_params.append(use_python_param)
+
+    elif (use_cpp and use_python):
+        # Need to parameterize since we have multiple
+        _set_use_cpp_params.extend([use_cpp_param, use_python_param])
+
+    if (len(_set_use_cpp_params) > 0):
+        metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
+
+    # === df_type Parameterize ===
+    if ("df_type" in metafunc.fixturenames):
+        # df_type fixture was requested. Only parameterize if both marks or neither marks are found. Otherwise, the
+        # fixture will determine it from the mark
+        use_cudf = metafunc.definition.get_closest_marker("use_cudf") is not None
+        use_pandas = metafunc.definition.get_closest_marker("use_pandas") is not None
+
+        if (use_pandas == use_cudf):
+            metafunc.parametrize(
+                "df_type",
+                [
+                    pytest.param("cudf", marks=pytest.mark.use_cudf(added_by="generate_tests"), id="use_cudf"),
+                    pytest.param("pandas", marks=pytest.mark.use_pandas(added_by="generate_tests"), id="use_pandas")
+                ],
+                indirect=True)
 
 
 def pytest_runtest_setup(item):
@@ -145,32 +151,80 @@ def pytest_runtest_setup(item):
             pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
     To support old unittest style tests, try to determine the mark from the name
     """
 
-    if config.getoption("--run_kafka") and not pytest_kafka_avail:
-        raise RuntimeError(
-            "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
+    if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
     for item in items:
-        if "no_cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_python)
-        elif "cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_cpp)
+        if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
+            item.add_marker(pytest.mark.use_python(added_in="collection_modifyitems"))
+        elif "cpp" in item.nodeid and item.get_closest_marker("use_cpp") is None:
+            item.add_marker(pytest.mark.use_cpp(added_in="collection_modifyitems"))
+
+    def should_filter_test(item: pytest.Item):
+
+        use_cpp = item.get_closest_marker("use_cpp")
+        use_pandas = item.get_closest_marker("use_pandas")
+
+        if (use_cpp and use_pandas):
+            return False
+
+        return True
+
+    # Now delete tests with incompatible markers
+    items[:] = [x for x in items if should_filter_test(x)]
 
 
 def clear_handlers(logger):
     handlers = logger.handlers.copy()
-    for h in handlers:
-        logger.removeHandler(h)
+    for handler in handlers:
+        logger.removeHandler(handler)
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
     clear_handlers(logging.getLogger("morpheus"))
     clear_handlers(logging.getLogger())
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+
+    do_use_cpp: bool = True
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param") and isinstance(request.param, bool)):
+        do_use_cpp = request.param
+    else:
+        # If not, check for the marker and use that
+        use_cpp = request.node.get_closest_marker("use_cpp") is not None
+        use_python = request.node.get_closest_marker("use_python") is not None
+
+        if (use_cpp and use_python):
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to True or follow use_cpp
+        do_use_cpp = not use_python
+
+    from morpheus.config import CppConfig
+
+    CppConfig.set_should_use_cpp(do_use_cpp)
+
+    yield do_use_cpp
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function")
+def use_cpp(_set_use_cpp: bool):
+
+    # Just return the set value
+    yield _set_use_cpp
 
 
 @pytest.fixture(scope="function")
@@ -204,7 +258,32 @@ def config_no_cpp():
 
 
 @pytest.fixture(scope="function")
-def config(request: pytest.FixtureRequest):
+def df_type(request: pytest.FixtureRequest):
+
+    df_type_str: typing.Literal["cudf", "pandas"]
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param")):
+        assert request.param in ["pandas", "cudf"], "Invalid parameter for df_type"
+
+        df_type_str = request.param
+    else:
+        # If not, check for the marker and use that
+        use_pandas = request.node.get_closest_marker("use_pandas") is not None
+        use_cudf = request.node.get_closest_marker("use_cudf") is not None
+
+        if (use_pandas and use_cudf):
+            raise RuntimeError(f"Both markers (use_cpp and use_python) were added to function {request.node.nodeid}. "
+                               "Remove markers to support both.")
+
+        # This will default to "cudf" or follow use_pandas
+        df_type_str = "cudf" if not use_pandas else "pandas"
+
+    yield df_type_str
+
+
+@pytest.fixture(scope="function")
+def config(use_cpp: bool):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -217,37 +296,8 @@ def config(request: pytest.FixtureRequest):
     """
 
     from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    if (not hasattr(request, "param")):
-        use_cpp = request.node.get_closest_marker("use_cpp") is not None
-        use_python = request.node.get_closest_marker("use_python") is not None
-
-        assert use_cpp != use_python, "Invalid config"
-
-        CppConfig.set_should_use_cpp(True if use_cpp else False)
-
-    else:
-        CppConfig.set_should_use_cpp(True if request.param else False)
 
     yield Config()
-
-
-@pytest.fixture(scope="function")
-def kafka_topics():
-    """
-    Returns a named tuple of Kafka topic names in the form of (input_topic, output_topic)
-    """
-    yield KAFKA_TOPICS
-
-
-@pytest.fixture(scope="function")
-def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
-    """
-    Used by tests that require both an input and an output topic
-    """
-    kafka_port = kafka_server[1]
-    yield "localhost:{}".format(kafka_port)
 
 
 @pytest.fixture(scope="function")
@@ -265,17 +315,158 @@ def restore_environ():
 
 
 @pytest.fixture(scope="function")
+def restore_sys_path():
+    orig_vars = sys.path.copy()
+    yield sys.path
+    sys.path = orig_vars
+
+
+@pytest.fixture(scope="function")
+def import_mod(request: pytest.FixtureRequest,
+               restore_sys_path) -> typing.Generator[types.ModuleType | list[types.ModuleType], None, None]:
+    # pylint: disable=missing-param-doc
+    # pylint: disable=differing-param-doc
+    # pylint: disable=missing-type-doc
+    # pylint: disable=differing-type-doc
+    """
+    Allows direct import of a module by specifying its path. This is useful for testing examples that import modules in
+    examples or other non-installed directories.
+
+    Parameters
+    ----------
+    modules : str | list[str]
+        The modules to import. Modules can be supplied as a list or multiple arguments.
+    sys_path : str | int,
+        When
+
+    Yields
+    ------
+    Iterator[typing.Generator[types.ModuleType | list[types.ModuleType], None, None]]
+        Imported modules. If more than one module is supplied, or the only argument is a list, the modules will be
+        returned as a list.
+
+    Example
+    -------
+    ```
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'))
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.dirname(TEST_DIRS.examples_dir, 'example/stage.py'))
+        ...
+
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'), sys_path=-2)
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py', '../..'))
+        ...
+
+    @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'example/stage.py')], sys_path=TEST_DIRS.examples_dir)
+    def test_python_test(import_mod: list[types.ModuleType]):
+        # Imported with sys.path.append(TEST_DIRS.examples_dir)
+        ...
+    ```
+    """
+
+    marker = request.node.get_closest_marker("import_mod")
+    if marker is not None:
+        mod_paths = sum([x if isinstance(x, list) else [x] for x in marker.args], [])
+
+        mod_kwargs = marker.kwargs
+
+        is_list = len(marker.args) > 1 or isinstance(marker.args[0], list)
+
+        modules = []
+        module_names = []
+
+        for mod_path in mod_paths:
+            # Ensure everything is absolute to avoid issues with relative paths
+            mod_path = os.path.abspath(mod_path)
+
+            # See if its a file or directory
+            is_file = os.path.isfile(mod_path)
+
+            # Get the base directory that we should import from. If not specified, use the directory of the module
+            sys_path = mod_kwargs.get("sys_path", os.path.dirname(mod_path))
+
+            # If sys_path is an integer, use it to get the path relative to the module by number of directories. i.e. if
+            # sys_path=-1, then sys_path=os.path.dirname(mod_path). If sys_path=-2, then
+            # sys_path=os.path.dirname(os.path.dirname(mod_path))
+            if (isinstance(sys_path, int)):
+                sys_path = os.path.join("/", *mod_path.split(os.path.sep)[:sys_path])
+
+            # Get the path relative to the sys_path, ignore the extension if its a file
+            mod_name = os.path.relpath(mod_path if not is_file else os.path.splitext(mod_path)[0], start=sys_path)
+
+            # Convert all / to .
+            mod_name = mod_name.replace(os.path.sep, ".")
+
+            # Add to the sys path so this can be imported
+            sys.path.append(sys_path)
+
+            try:
+
+                # Import the module
+                mod = importlib.import_module(mod_name)
+
+                if (is_file):
+                    assert mod.__file__ == mod_path
+
+                modules.append(mod)
+                module_names.append(mod_name)
+            except ImportError as e:
+
+                raise ImportError(f"Failed to import module {mod_path} as {mod_name} from path {sys_path}") from e
+
+        # Only yield 1 if we only imported 1
+        if (is_list):
+            yield modules
+        else:
+            yield modules[0]
+
+        # Un-import modules we previously imported, this allows for multiple examples to contain a `messages.py`
+        for mod in module_names:
+            sys.modules.pop(mod, None)
+
+    else:
+        raise ValueError("import_mod fixture requires setting paths in markers: "
+                         "`@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing/messages.py')])`")
+
+
+def _reload_modules(modules: typing.List[typing.Any]):
+    for mod in modules:
+        importlib.reload(mod)
+
+
+@pytest.fixture(scope="function")
 def reload_modules(request: pytest.FixtureRequest):
     marker = request.node.get_closest_marker("reload_modules")
-    yield
-
+    modules = []
     if marker is not None:
         modules = marker.args[0]
         if not isinstance(modules, list):
             modules = [modules]
 
-        for mod in modules:
-            importlib.reload(mod)
+    _reload_modules(modules)
+    yield
+    _reload_modules(modules)
+
+
+@pytest.fixture(scope="function")
+def manual_seed():
+    """
+    Seeds the random number generators for the stdlib, PyTorch and NumPy.
+    By default this will seed with a value of `42`, however this fixture also yields the seed function allowing tests to
+    call this a second time, or seed with a different value.
+
+    Use this fixture to ensure repeatability of a test that depends on randomness.
+    Note: PyTorch only garuntees determanism on a per-GPU basis, resulting in some tests that might not be portable
+    across GPU models.
+    """
+    from morpheus.utils import seed as seed_utils
+
+    def seed_fn(seed=42):
+        seed_utils.manual_seed(seed)
+
+    seed_fn()
+    yield seed_fn
 
 
 @pytest.fixture(scope="function")
@@ -288,28 +479,66 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(request.config.invocation_dir)
 
 
+@pytest.fixture(scope="function")
+def reset_plugin_manger():
+    from morpheus.cli.plugin_manager import PluginManager
+    PluginManager._singleton = None
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_global_stage_registry():
+    from morpheus.cli.stage_registry import GlobalStageRegistry
+    from morpheus.cli.stage_registry import StageRegistry
+    GlobalStageRegistry._global_registry = StageRegistry()
+    yield
+
+
+@pytest.fixture(scope="function")
+def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
+    """
+    Reset both the plugin manager and the global stage gregistry.
+    Some of the tests for examples import modules dynamically, which in some cases can cause register_stage to be
+    called more than once for the same stage.
+    """
+    yield
+
+
+@pytest.fixture(scope="function")
+def disable_gc():
+    """
+    Disable automatic garbage collection and enables debug stats for garbage collection for the duration of the test.
+    This is useful for tests that require explicit control over when garbage collection occurs.
+    """
+    gc.set_debug(gc.DEBUG_STATS)
+    gc.disable()
+    yield
+    gc.set_debug(0)
+    gc.enable()
+
+
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
 
     start_time = time.time()
     cur_time = start_time
     end_time = start_time + timeout
 
-    url = "http://{}:{}/ping".format(host, port)
+    url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
         timeout_epoch = min(cur_time + 1.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
-            r = requests.get(url, timeout=request_timeout)
+            resp = requests.get(url, timeout=request_timeout)
 
-            if (r.status_code == 200):
-                if (r.json()['message'] == 'I am alive.'):
+            if (resp.status_code == 200):
+                if (resp.json()['message'] == 'I am alive.'):
                     return True
-                else:
-                    warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. "
-                                   "Continuing to wait. Response JSON:\n%s"),
-                                  r.json())
+
+                warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. "
+                               "Response JSON:\n%s"),
+                              resp.json())
 
         except Exception:
             pass
@@ -335,11 +564,86 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
+def _start_camouflage(root_dir: str,
+                      host: str = "localhost",
+                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
+    logger = logging.getLogger(f"morpheus.{__name__}")
+    startup_timeout = 5
+
+    launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
+    is_running = False
+
+    # First, check to see if camoflage is already open
+    if (launch_camouflage):
+        is_running = wait_for_camouflage(host=host, port=port, timeout=0.0)
+
+        if (is_running):
+            logger.warning("Camoflage already running. Skipping startup")
+            launch_camouflage = False
+            is_running = True
+
+    # Actually launch camoflague
+    if launch_camouflage:
+        popen = None
+        try:
+            # pylint: disable=subprocess-popen-preexec-fn,consider-using-with
+            popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
+                                     cwd=root_dir,
+                                     stderr=subprocess.DEVNULL,
+                                     stdout=subprocess.DEVNULL,
+                                     preexec_fn=_set_pdeathsig(signal.SIGTERM))
+            # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
+
+            logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
+
+            if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
+
+                if popen.poll() is not None:
+                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                    raise RuntimeError(
+                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
+
+                raise RuntimeError("Failed to launch camouflage server")
+
+            # Must have been started by this point
+            return (True, popen)
+
+        except Exception:
+            # Log the error and rethrow
+            logger.exception("Error launching camouflage")
+            if popen is not None:
+                _stop_camouflage(popen)
+            raise
+
+    else:
+
+        return (is_running, None)
+
+
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
+    logger.info("Killing camouflage with pid %s", popen.pid)
+
+    elapsed_time = 0.0
+    sleep_time = 0.1
+    stopped = False
+
+    # It takes a little while to shutdown
+    while not stopped and elapsed_time < shutdown_timeout:
+        popen.kill()
+        stopped = (popen.poll() is not None)
+        if not stopped:
+            time.sleep(sleep_time)
+            elapsed_time += sleep_time
+
+
 @pytest.fixture(scope="session")
-def _camouflage_is_running():
+def _triton_camouflage_is_running():
     """
-    Responsible for actually starting and shutting down Camouflage. This has the scope of 'session' so we only
-    start/stop Camouflage once per testing session. Should not be used directly. Instead use `launch_mock_triton`
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_triton_server`
+    dir. This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should
+    not be used directly. Instead use `launch_mock_triton`
 
     Yields
     ------
@@ -347,69 +651,42 @@ def _camouflage_is_running():
         Whether or not we are using Camouflage or an actual Triton server
     """
 
-    from utils import TEST_DIRS
+    from _utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    startup_timeout = 5
-    shutdown_timeout = 5
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
-    launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
-    is_running = False
 
-    # First, check to see if camoflage is already open
-    if (launch_camouflage):
-        is_running = wait_for_camouflage(timeout=0.0)
+@pytest.fixture(scope="session")
+def _rest_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_rest_server` dir.
+    This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should not
+    be used directly. Instead use `launch_mock_rest`
 
-        if (is_running):
-            logging.warning("Camoflage already running. Skipping startup")
-            launch_camouflage = False
-            is_running = True
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Rest server
+    """
 
-    # Actually launch camoflague
-    if launch_camouflage:
-        popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
-                                 cwd=root_dir,
-                                 stderr=subprocess.DEVNULL,
-                                 stdout=subprocess.DEVNULL,
-                                 preexec_fn=_set_pdeathsig(signal.SIGTERM))
+    from _utils import TEST_DIRS
 
-        logging.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
+    root_dir = TEST_DIRS.mock_rest_server
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
 
-        if not wait_for_camouflage(timeout=startup_timeout):
-
-            if popen.poll() is not None:
-                raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                    popen.poll(), os.path.join(root_dir, 'camouflage.log')))
-
-            raise RuntimeError("Failed to launch camouflage server")
-
-        # Must have been started by this point
-        yield True
-
-        logging.info("Killing pid {}".format(popen.pid))
-
-        elapsed_time = 0.0
-        sleep_time = 0.1
-        stopped = False
-
-        # It takes a little while to shutdown
-        while not stopped and elapsed_time < shutdown_timeout:
-            popen.kill()
-            stopped = (popen.poll() is not None)
-            if not stopped:
-                time.sleep(sleep_time)
-                elapsed_time += sleep_time
-
-    else:
-
-        yield is_running
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
 
 @pytest.fixture(scope="function")
-def launch_mock_triton(_camouflage_is_running):
+def launch_mock_triton(_triton_camouflage_is_running):
     """
-    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/) with a package
-    rooted at `root_dir` and configured with `config`.
+    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/).
 
     This function will wait for up to `timeout` seconds for camoflauge to startup
 
@@ -418,26 +695,43 @@ def launch_mock_triton(_camouflage_is_running):
     """
 
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
-    if _camouflage_is_running:
+    if _triton_camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
-        r = requests.post("http://localhost:8000/reset", timeout=2.0)
+        resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
-        assert r.ok, "Failed to reset Camouflage server state"
+        assert resp.ok, "Failed to reset Camouflage server state"
 
     yield
 
 
+@pytest.fixture(scope="function")
+def mock_rest_server(_rest_camouflage_is_running):
+    """
+    Launches a mock rest server using camouflage (https://testinggospels.github.io/camouflage/).
+
+    This function will wait for up to `timeout` seconds for camoflauge to startup
+
+    This function is a no-op if the `MORPHEUS_NO_LAUNCH_CAMOUFLAGE` environment variable is defined, which can
+    be useful during test development to run camouflage by hand.
+
+    yields url to the mock rest server
+    """
+
+    # Check if we are using Camouflage or not.
+    assert _rest_camouflage_is_running
+
+    yield "http://localhost:8080"
+
+
 @pytest.fixture(scope="session", autouse=True)
-def configure_tests_logging():
+def configure_tests_logging(pytestconfig: pytest.Config):
     """
     Sets the base logging settings for the entire test suite to ensure logs are generated. Automatically detects if a
     debugger is attached and lowers the logging level to DEBUG.
     """
-    import sys
-
     from morpheus.utils.logger import configure_logging
 
-    log_level = logging.WARN
+    log_level = logging.WARNING
 
     # Check if a debugger is attached. If so, choose DEBUG for the logging level. Otherwise, only WARN
     trace_func = sys.gettrace()
@@ -448,6 +742,12 @@ def configure_tests_logging():
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
 
+    config_log_level = pytestconfig.getoption("log_level")
+
+    # Overwrite the logging level if specified
+    if (config_log_level is not None):
+        log_level = logging.getLevelName(config_log_level)
+
     configure_logging(log_level=log_level)
 
 
@@ -456,6 +756,32 @@ def _wrap_set_log_level(log_level: int):
 
     # Save the previous logging level
     old_level = set_log_level(log_level)
+
+    yield
+
+    set_log_level(old_level)
+
+
+@pytest.fixture(scope="session")
+def fail_missing(pytestconfig: pytest.Config) -> bool:
+    """
+    Returns the value of the `fail_missing` flag, when false tests requiring unmet dependencies will be skipped, when
+    True they will fail.
+    """
+    yield pytestconfig.getoption("fail_missing")
+
+
+# ==== Logging Fixtures ====
+@pytest.fixture(scope="function")
+def reset_loglevel():
+    """
+    Fixture restores the log level after running the given test.
+    """
+    import mrc
+
+    from morpheus.utils.logger import set_log_level
+
+    old_level = mrc.logging.get_level()
 
     yield
 
@@ -500,3 +826,109 @@ def loglevel_fatal():
     Sets the logging level to `logging.FATAL` for this function only.
     """
     _wrap_set_log_level(logging.FATAL)
+
+
+# ==== DataFrame Fixtures ====
+@pytest.fixture(scope="function")
+def dataset(df_type: typing.Literal['cudf', 'pandas']):
+    """
+    Yields a DatasetLoader instance with `df_type` as the default DataFrame type.
+    Users of this fixture can still explicitly request either a cudf or pandas dataframe with the `cudf` and `pandas`
+    properties:
+    ```
+    def test_something(dataset: DatasetManager):
+        df = dataset["filter_probs.csv"]  # type will match the df_type parameter
+        if dataset.default_df_type == 'pandas':
+            assert isinstance(df, pd.DataFrame)
+        else:
+            assert isinstance(df, cudf.DataFrame)
+
+        pdf = dataset.pandas["filter_probs.csv"]
+        cdf = dataset.cudf["filter_probs.csv"]
+
+    ```
+
+    A test that requests this fixture will parameterize on the type of DataFrame returned by the DatasetManager.
+    If a test requests both this fixture and the `use_cpp` fixture, or indirectly via the `config` fixture, then
+    the test will parameterize over both df_type:[cudf, pandas] and use_cpp[True, False]. However it will remove the
+    df_type=pandas & use_cpp=True combinations as this will cause an unsupported usage of Pandas dataframes with the
+    C++ implementation of message classes.
+
+    This behavior can also be overridden by using the `use_cudf`, `use_pandas`, `use_cpp` or `use_pandas` marks ex:
+    ```
+    # This test will only run once with C++ enabled and cudf dataframes
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ...
+    # This test will run once for each dataframe type, with C++ disabled both times
+    @pytest.mark.use_python
+    import sysdf dataframes both times
+    @pytest.mark.use_cudf
+    def test something(use_cpp: bool, dataset: DatasetManager):
+    ...
+    # This test will run only once
+    @pytest.mark.use_cudf
+    @pytest.mark.use_python
+    def test something(dataset: DatasetManager):
+    ...
+    # This test creates an incompatible combination and will raise a RuntimeError without being executed
+    @pytest.mark.use_pandas
+    @pytest.mark.use_cpp
+    def test something(dataset: DatasetManager):
+    ```
+
+    Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
+    """
+    from _utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type=df_type)
+
+
+@pytest.fixture(scope="function")
+def dataset_pandas():
+    """
+    Yields a DatasetLoader instance with pandas as the default DataFrame type.
+
+    Note: This fixture won't prevent a user from writing a test requiring C++ mode execution and requesting Pandas
+    dataframes. This is quite useful for tests like `tests/test_add_scores_stage_pipe.py` where we want to test with
+    both Python & C++ executions, but we use Pandas to build up the expected DataFrame to validate the test against.
+
+    In addition to this, users can use this fixture to explicitly request a cudf Dataframe as well, allowing for a test
+    that looks like:
+    ```
+    @pytest.mark.use_cpp
+    def test_something(dataset_pandas: DatasetManager):
+        input_df = dataset_pandas.cudf["filter_probs.csv"] # Feed our source stage a cudf DF
+
+        # Perform pandas transformations to mimic the add scores stage
+        expected_df = dataset["filter_probs.csv"]
+        expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
+    ```
+    """
+    from _utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='pandas')
+
+
+@pytest.fixture(scope="function")
+def dataset_cudf():
+    """
+    Yields a DatasetLoader instance with cudf as the default DataFrame type.
+
+    Users who wish to have both cudf and pandas DataFrames can do so with this fixture and using the `pandas` property:
+    def test_something(dataset_cudf: DatasetManager):
+        cdf = dataset_cudf["filter_probs.csv"]
+        pdf = dataset_cudf.pandas["filter_probs.csv"]
+    """
+    from _utils import dataset_manager
+    yield dataset_manager.DatasetManager(df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(dataset, use_cpp: bool):
+    """
+    Shortcut fixture for loading the filter_probs.csv dataset.
+
+    Unless your test uses the `use_pandas` or `use_cudf` marks this fixture will parametarize over the two dataframe
+    types. Similarly unless your test uses the `use_cpp` or `use_python` marks this fixture will also parametarize over
+    that as well, while excluding the combination of C++ execution and Pandas dataframes.
+    """
+    yield dataset["filter_probs.csv"]

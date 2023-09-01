@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,21 +18,28 @@
 #pragma once
 
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/types.hpp"
 
+#include <boost/fiber/context.hpp>
+#include <boost/fiber/future/future.hpp>
 #include <http_client.h>
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/segment/object.hpp>
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace morpheus {
@@ -51,11 +58,11 @@ namespace morpheus {
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
 class InferenceClientStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
     using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -85,7 +92,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    bool is_default_grpc_port(std::string &server_url);
+    bool is_default_grpc_port(std::string& server_url);
 
     /**
      * TODO(Documentation)
@@ -109,7 +116,7 @@ class InferenceClientStage
     std::vector<TritonInOut> m_model_inputs;
     std::vector<TritonInOut> m_model_outputs;
     triton::client::InferOptions m_options;
-    int m_max_batch_size{-1};
+    TensorIndex m_max_batch_size{-1};
 };
 
 /****** InferenceClientStageInferenceProxy******************/

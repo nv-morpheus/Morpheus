@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2019-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -131,8 +132,8 @@ def list_all_src_files(file_regex, ignore_regex, srcfiles, srcdirs, dstdir, inpl
     for srcdir in srcdirs:
         for root, dirs, files in os.walk(srcdir):
             for f in files:
-                if re.search(file_regex, f):
-                    src = os.path.join(root, f)
+                src = os.path.join(root, f)
+                if re.search(file_regex, src):
                     if ignore_regex is not None and re.search(ignore_regex, src):
                         continue
                     if inplace:
@@ -197,7 +198,7 @@ def main():
         print(" 1. Look at formatting differences above and fix them manually")
         print(" 2. Or run the below command to bulk-fix all these at once")
         print("Bulk-fix command: ")
-        print("  python scripts/run-clang-format.py %s -inplace" % " ".join(sys.argv[1:]))
+        print("  python %s -inplace" % " ".join(sys.argv))
         sys.exit(-1)
     return
 

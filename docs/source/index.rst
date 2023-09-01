@@ -1,5 +1,5 @@
 ..
-   SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
    SPDX-License-Identifier: Apache-2.0
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,6 +78,7 @@ Deploying Morpheus
    getting_started
    basics/overview
    basics/building_a_pipeline
+   models_and_datasets
    examples/index
    developer_guide/guides/index
 
@@ -94,7 +95,6 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-   getting_started
    cloud_deployment_guide
 
 .. toctree::
@@ -104,6 +104,27 @@ Deploying Morpheus
 
    py_api
    _lib/index
+
+.. toctree::
+   :caption: Morpheus Stages
+   :maxdepth: 20
+   :hidden:
+
+   stages/morpheus_stages
+
+.. toctree::
+   :caption: Morpheus Modules
+   :maxdepth: 20
+   :hidden:
+
+   modules/index
+
+.. toctree::
+   :caption: Morpheus Loaders
+   :maxdepth: 20
+   :hidden:
+
+   loaders/index
 
 .. toctree::
    :maxdepth: 20

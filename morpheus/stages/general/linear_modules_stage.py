@@ -70,7 +70,11 @@ class LinearModulesStage(SinglePortStage):
         return False
 
     def input_types(self) -> typing.Tuple:
-        return (typing.Any, )
+        """
+        Returns input type for the current stage.
+        """
+
+        return (self._input_type, )
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -89,7 +93,7 @@ class LinearModulesStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        # Laod module from registry.
+        # Load module from the registry.
         module = load_module(self._module_config, builder=builder)
 
         mod_in_stream = module.input_port(self._input_port_name)

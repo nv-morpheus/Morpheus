@@ -4,6 +4,7 @@
 
 .. automodule:: {{ fullname }}
    :members:
+   :undoc-members:
    :exclude-members: {{ classes | join(", ") }}
 
    {% block attributes %}

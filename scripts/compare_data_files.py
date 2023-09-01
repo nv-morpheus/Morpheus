@@ -18,7 +18,7 @@ import argparse
 import logging
 import sys
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.logger import configure_logging

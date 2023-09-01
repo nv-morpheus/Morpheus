@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # MLflow Triton
 
 MLflow plugin for deploying your models from MLflow to Triton Inference Server. Scripts
@@ -60,9 +77,10 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_mode
 
 ## MLflow container
 
-Build MLflow image from Dockerfile:
+Build MLflow image from Dockerfile from the root of the Morpheus repo:
 
 ```bash
+cd models/mlflow
 docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
@@ -71,6 +89,7 @@ Create an MLflow container with a volume mounting the Triton model repository:
 ```bash
 docker run -it -v /opt/triton_models:/triton_models \
 --env TRITON_MODEL_REPO=/triton_models \
+--env MLFLOW_TRACKING_URI=localhost:5000 \
 --gpus '"device=0"' \
 --net=host \
 --rm \
@@ -103,7 +122,7 @@ python publish_model_to_mlflow.py \
 ## Deployments
 
 The Triton `mlflow-triton-plugin` is installed on this container and can be used to deploy your models from MLflow to Triton Inference Server. The following are examples of how the plugin is used with the `sid-minibert-onnx` model that we published to MLflow above. For more information about the
-`mlflow-triton-plugin`, please see Triton's [documentation](https://github.com/triton-inference-server/server/tree/r22.09/deploy/mlflow-triton-plugin)
+`mlflow-triton-plugin`, refer to Triton's [documentation](https://github.com/triton-inference-server/server/tree/r23.01/deploy/mlflow-triton-plugin)
 
 ### Create Deployment
 

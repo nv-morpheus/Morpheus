@@ -23,19 +23,17 @@ import tritonclient.grpc as tritonclient
 from mrc.core import operators as ops
 from scipy.special import softmax
 
-from messages import MultiPostprocLogParsingMessage
-from messages import MultiResponseLogParsingMessage
-from messages import PostprocMemoryLogParsing
-from messages import ResponseMemoryLogParsing
+from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
+from messages import MultiResponseLogParsingMessage  # pylint: disable=no-name-in-module
+from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
+from messages import ResponseMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.stages.inference.triton_inference_stage import InputWrapper
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -97,7 +95,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         # Some models use different names for the same thing. Set that here but allow user customization
         return {"attention_mask": "input_mask"}
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseLogParsingMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
 
         memory = PostprocMemoryLogParsing(
             count=x.count,
@@ -111,7 +109,7 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                                                         mess_offset=x.mess_offset,
                                                         mess_count=x.mess_count,
                                                         memory=memory,
-                                                        offset=x.offset,
+                                                        offset=0,
                                                         count=x.count)
         return output_message
 
@@ -130,25 +128,6 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         )
 
         return mem
-
-    def _infer_callback(self,
-                        cb: typing.Callable[[ResponseMemoryLogParsing], None],
-                        m: InputWrapper,
-                        b: MultiInferenceMessage,
-                        result: tritonclient.InferResult,
-                        error: tritonclient.InferenceServerException):
-
-        # If its an error, return that here
-        if (error is not None):
-            raise error
-
-        # Build response
-        response_mem = self._build_response(b, result)
-
-        # Call the callback with the memory
-        cb(response_mem)
-
-        self._mem_pool.return_obj(m)
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
@@ -226,17 +205,17 @@ class LogParsingInferenceStage(InferenceStage):
 
                     fut = mrc.Future()
 
-                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: mrc.Future):
+                    def set_output_fut(resp: ResponseMemoryLogParsing, inner_b, inner_f: mrc.Future):
                         nonlocal outstanding_requests
-                        m = self._convert_one_response(memory, b, resp)
+                        inner_memory = self._convert_one_response(memory, inner_b, resp)
 
-                        f.set_result(m)
+                        inner_f.set_result(inner_memory)
 
                         outstanding_requests -= 1
 
                     fut_list.append(fut)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, f=fut))
+                    worker.process(batch, partial(set_output_fut, inner_b=batch, inner_f=fut))
 
                 for f in fut_list:
                     f.result()
@@ -250,7 +229,7 @@ class LogParsingInferenceStage(InferenceStage):
         if (self._build_cpp_node()):
             node = self._get_cpp_inference_node(builder)
         else:
-            node = builder.make_node_full(self.unique_name, py_inference_fn)
+            node = builder.make_node(self.unique_name, ops.build(py_inference_fn))
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
@@ -261,15 +240,17 @@ class LogParsingInferenceStage(InferenceStage):
         return stream, out_type
 
     @staticmethod
-    def _convert_one_response(memory: InferenceMemory, inf: MultiInferenceMessage, res: ResponseMemoryLogParsing):
+    def _convert_one_response(output: PostprocMemoryLogParsing,
+                              inf: MultiInferenceMessage,
+                              res: ResponseMemoryLogParsing):
 
-        memory.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
-        memory.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
+        output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
+        output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            memory.confidences[inf.offset:inf.count + inf.offset, :] = res.confidences
-            memory.labels[inf.offset:inf.count + inf.offset, :] = res.labels
+            output.confidences[inf.offset:inf.count + inf.offset, :] = res.confidences
+            output.labels[inf.offset:inf.count + inf.offset, :] = res.labels
         else:
             assert inf.count == res.count
 
@@ -277,15 +258,10 @@ class LogParsingInferenceStage(InferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                memory.confidences[idx, :] = cp.maximum(memory.confidences[idx, :], res.confidences[i, :])
-                memory.labels[idx, :] = cp.maximum(memory.labels[idx, :], res.labels[i, :])
+                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.confidences[i, :])
+                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.labels[i, :])
 
-        return MultiPostprocLogParsingMessage(meta=inf.meta,
-                                              mess_offset=inf.mess_offset,
-                                              mess_count=inf.mess_count,
-                                              memory=memory,
-                                              offset=inf.offset,
-                                              count=inf.count)
+        return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 

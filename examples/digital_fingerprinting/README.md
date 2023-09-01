@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ This example is designed to illustrate a full-scale, production-ready, DFP deplo
 Key Differences:
  * Multiple pipelines are specialized to perform either training or inference
  * Requires setting up a model store to allow the training and inference pipelines to communicate
- * Organized into a docker-compose deployment for easy startup
+ * Organized into a `docker compose` deployment for easy startup
  * Contains a Jupyter notebook service to ease development and debugging
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.

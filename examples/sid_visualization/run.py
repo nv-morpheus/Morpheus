@@ -19,13 +19,14 @@ import typing
 import click
 import mrc
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.messages import MessageMeta
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -39,7 +40,7 @@ from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
-class NLPVizFileSource(SingleOutputSource):
+class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
     testing performance and accuracy of a pipeline.
@@ -53,7 +54,7 @@ class NLPVizFileSource(SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus._lib.common.FileTypes`, default = 'auto'
+    file_type : `morpheus.common.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -166,6 +167,7 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
     config.num_threads = num_threads
     config.pipeline_batch_size = max_batch_size
     config.feature_length = 256
+    config.model_max_batch_size = 32
     config.class_labels = load_labels_file(get_data_file_path("data/labels_nlp.txt"))
 
     # Create a linear pipeline object.

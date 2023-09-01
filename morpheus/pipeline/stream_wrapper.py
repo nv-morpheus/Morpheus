@@ -61,8 +61,6 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
         # Save values on self
         self._init_str = ", ".join(init_pairs)
 
-        return
-
     return typing.cast(_DecoratorType, inner)
 
 
@@ -80,9 +78,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
     __ID_COUNTER = AtomicInteger(0)
 
-    def __init__(self, c: Config):
+    def __init__(self, config: Config):
         # Save the config
-        self._config = c
+        self._config = config
 
         self._id = StreamWrapper.__ID_COUNTER.get_and_inc()
         self._pipeline: _pipeline.Pipeline = None
@@ -94,6 +92,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         # Input/Output ports used for connecting stages
         self._input_ports: typing.List[_pipeline.Receiver] = []
         self._output_ports: typing.List[_pipeline.Sender] = []
+
+        # Mapping of {`column_name`: `TyepId`}
+        self._needed_columns = collections.OrderedDict()
 
     def __init_subclass__(cls) -> None:
 
@@ -296,13 +297,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
                     return False
 
             return True
-        else:
-            # Check if we can build based on the input ports. We can build
-            for r in self.input_ports:
-                if (not r.is_partial):
-                    return False
 
-            return True
+        # Check if we can build based on the input ports. We can build
+        for receiver in self.input_ports:
+            if (not receiver.is_partial):
+                return False
+
+        return True
 
     def build(self, builder: mrc.Builder, do_propagate=True):
         """Build this stage.
@@ -319,12 +320,12 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert self._pipeline is not None, "Must be attached to a pipeline before building!"
 
         # Pre-Build returns the input pairs for each port
-        in_ports_pairs = self._pre_build()
+        in_ports_pairs = self._pre_build(builder=builder)
 
-        out_ports_pair = self._build(builder, in_ports_pairs)
+        out_ports_pair = self._build(builder=builder, in_ports_streams=in_ports_pairs)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_pair = self._post_build(builder, out_ports_pair)
+        out_ports_pair = self._post_build(builder=builder, out_ports_pair=out_ports_pair)
 
         assert len(out_ports_pair) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
@@ -345,8 +346,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             dep.build(builder, do_propagate=do_propagate)
 
-    def _pre_build(self) -> typing.List[StreamPair]:
-        in_pairs: typing.List[StreamPair] = [x.get_input_pair() for x in self.input_ports]
+    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
+        in_pairs: typing.List[StreamPair] = [x.get_input_pair(builder=builder) for x in self.input_ports]
 
         return in_pairs
 
@@ -377,14 +378,12 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         pass
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(
+        self,
+        builder: mrc.Builder,  # pylint: disable=unused-argument
+        out_ports_pair: typing.List[StreamPair],
+    ) -> typing.List[StreamPair]:
         return out_ports_pair
-
-    def start(self):
-
-        assert self.is_built, "Must build before starting!"
-
-        self._start()
 
     def _start(self):
         pass
@@ -396,6 +395,11 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         pass
 
     async def join(self):
+        """
+        Awaitable method that stages can implement this to perform cleanup steps when pipeline is stopped.
+        Typically this is called after `stop` during a graceful shutdown, but may not be called if the pipeline is
+        terminated.
+        """
         pass
 
     def _create_ports(self, input_count: int, output_count: int):
@@ -403,3 +407,11 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         self._input_ports = [_pipeline.Receiver(parent=self, port_number=i) for i in range(input_count)]
         self._output_ports = [_pipeline.Sender(parent=self, port_number=i) for i in range(output_count)]
+
+    def get_needed_columns(self):
+        """
+        Stages which need to have columns inserted into the dataframe, should populate the `self._needed_columns`
+        dictionary with mapping of column names to `morpheus.common.TypeId`. This will ensure that the columns are
+        allocated and populated with null values.
+        """
+        return self._needed_columns.copy()

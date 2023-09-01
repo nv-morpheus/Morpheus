@@ -15,7 +15,7 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
-set(RABBITMQ_VERSION "0.11.0" CACHE STRING "Version of RabbitMQ-C to use")
+set(RABBITMQ_VERSION "0.12.0" CACHE STRING "Version of RabbitMQ-C to use")
 include(Configure_rabbitmq)
 
 set(SIMPLE_AMQP_CLIENT_VERSION "2.5.1" CACHE STRING "Version of SimpleAmqpClient to use")

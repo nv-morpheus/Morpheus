@@ -1,11 +1,25 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 This document walks through manual testing of the Kafka functionality in Morpheus. There are also several automated tests which are run as part of the CI process. To run the tests locally we will need to install a few dependencies needed for the tests:
 ```bash
 mamba install -c conda-forge "openjdk=11.0.15"
 npm install -g camouflage-server@0.9
-mkdir -p ${MORPHEUS_ROOT}/.cache
-git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${MORPHEUS_ROOT}/.cache/pytest-kafka
-cd ${MORPHEUS_ROOT}/.cache/pytest-kafka
-python setup.py develop
+python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py
 cd ${MORPHEUS_ROOT}
 ```
 
@@ -199,6 +213,6 @@ ulimit -n 4096
 1. Exit the Kafka terminal.
 1. From the root of the `kafka-docker` repo run (in the host OS not inside a container):
     ```bash
-    docker-compose stop
-    docker-compose rm
+    docker compose stop
+    docker compose rm
     ```

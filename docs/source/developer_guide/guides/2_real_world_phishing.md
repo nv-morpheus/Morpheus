@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@ limitations under the License.
 -->
 
 # Real-World Application: Phishing Detection
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_1_real_world_phishing` directory of the Morpheus repository.
 
 ## Data Preprocessing
 
@@ -26,7 +27,7 @@ As part of this process, we might want to use a classification model trained on 
 For this task, we'll need to define a new stage, which we will call our `RecipientFeaturesStage`, that will:
 1. Receive an input corresponding to an email.
 1. Count the number of recipients in the email's metadata.
-1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
+1. Emit a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
 For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
@@ -39,8 +40,46 @@ Next, we will update our `on_data` method to perform the actual work. We grab a 
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
-    # Get the DataFrame from the incoming message
-    df = message.df
+    # Open the DataFrame from the incoming message for in-place modification
+    with message.mutable_dataframe() as df:
+        df['to_count'] = df['To'].str.count('@')
+        df['bcc_count'] = df['BCC'].str.count('@')
+        df['cc_count'] = df['CC'].str.count('@')
+        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+
+        # Attach features to string data
+        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                            df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
+                            '[SEP]' + df['Message'])
+
+    # Return the message for the next stage
+    return message
+```
+
+In the above example we added five new fields to the DataFrame. Since these fields and their types are known to us ahead of time, as an optimization we can ask Morpheus to pre-allocate these new fields when the DataFrame is first constructed. To do this we populate the `_needed_columns` attribute in our constructor:
+```python
+def __init__(self, config: Config):
+    super().__init__(config)
+
+    # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+    # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+    # stage defining this attribute.
+    self._needed_columns.update({
+        'to_count': TypeId.INT32,
+        'bcc_count': TypeId.INT32,
+        'cc_count': TypeId.INT32,
+        'total_recipients': TypeId.INT32,
+        'data': TypeId.STRING
+    })
+```
+
+Refer to the [Stage Constructors](#stage-constructors) section for more details.
+
+If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note, however, that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
+```python
+def on_data(self, message: MessageMeta) -> MessageMeta:
+    # Get a copy of the DataFrame from the incoming message
+    df = message.copy_dataframe()
 
     df['to_count'] = df['To'].str.count('@')
     df['bcc_count'] = df['BCC'].str.count('@')
@@ -48,25 +87,12 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
     df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
     # Attach features to string data
-    df['data'] = (df['to_count'].astype(str) + '[SEP]' +
-                    df['bcc_count'].astype(str) + '[SEP]' +
-                    df['cc_count'].astype(str) + '[SEP]' +
-                    df['total_recipients'].astype(str) + '[SEP]' +
+    df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                    df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
                     df['Message'])
 
-    # Return the message for the next stage
-    return message
-```
-
-If mutating the data frame in place is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the first and last lines of the `on_data` method to:
-
-```python
-def on_data(self, message: MessageMeta) -> MessageMeta:
-    # Take a copy of the DataFrame from the incoming message
-    df = message.df.copy(True)
-    ...
-    # Construct and return a new message containing our DataFrame
-    return MessageMeta(df=df)
+    # Return a new message with our updated DataFrame for the next stage
+    return MessageMeta(df)
 ```
 
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
@@ -83,8 +109,12 @@ Our `_build_single` method remains unchanged from the previous example; even tho
 import typing
 
 import mrc
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -94,7 +124,25 @@ from morpheus.pipeline.stream_pair import StreamPair
 class RecipientFeaturesStage(SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
     """
+
+    def __init__(self, config: Config):
+        super().__init__(config)
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
 
     @property
     def name(self) -> str:
@@ -107,24 +155,23 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get the DataFrame from the incoming message
-        df = message.df
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
-
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
+            # Attach features to string data
+            df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                              df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
+                              '[SEP]' + df['Message'])
 
         # Return the message for the next stage
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self.on_data)
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
@@ -147,7 +194,7 @@ From the root of the Morpheus project we will launch a Triton Docker container w
 ```shell
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
   -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  nvcr.io/nvidia/tritonserver:23.06-py3 \
   tritonserver --model-repository=/models/triton-model-repo \
     --exit-on-error=false \
     --log-info=true \
@@ -357,7 +404,7 @@ In addition to providing the `Config` object that we defined above, we also conf
 
 Note that the tokenizer parameters and vocabulary hash file should exactly match what was used for tokenization during the training of the NLP model.
 
-At this point, we have a pipeline that reads in a set of records and preprocesses them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
+At this point, we have a pipeline that reads in a set of records and pre-processes them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
 
 Next we will add a monitor stage to measure the inference rate as well as a filter stage to filter out any results below a probability threshold of `0.9`.
 ```python
@@ -388,12 +435,12 @@ pipeline.add_stage(SerializeStage(config))
 pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
 ```
 
-Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`
+Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`.
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus._lib.common.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus.common.FileTypes`. Supported values are:
 * `FileTypes.Auto`
-* `FileTypes.JSON`
 * `FileTypes.CSV`
+* `FileTypes.JSON`
 
 ### The Completed Pipeline
 
@@ -503,26 +550,22 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
   inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
-  filter --threshold=0.9 \
+  filter --threshold=0.9 --filter_source=TENSOR \
   serialize \
   to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
 
 ## Stage Constructors
 
-In our previous examples, we didn't define a constructor for the Python classes that we were building for our stages. However, there are many cases where we will need to receive configuration parameters. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments.
+In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the details. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
-Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
-
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
 Note: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
 Our refactored class definition is now:
 
 ```python
-from morpheus.config import Config
-
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(SinglePortStage):
     """
@@ -545,13 +588,56 @@ class RecipientFeaturesStage(SinglePortStage):
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
+
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
+
+    @property
+    def name(self) -> str:
+        return "recipient-features"
+
+    def accepted_types(self) -> typing.Tuple:
+        return (MessageMeta, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def on_data(self, message: MessageMeta) -> MessageMeta:
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+
+            # Attach features to string data
+            df['data'] = (df['to_count'].astype(str) + self._sep_token + df['bcc_count'].astype(str) +
+                              self._sep_token + df['cc_count'].astype(str) + self._sep_token +
+                              df['total_recipients'].astype(str) + self._sep_token + df['Message'])
+
+        # Return the message for the next stage
+        return message
+
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        builder.make_edge(input_stream[0], node)
+
+        return node, input_stream[1]
 ```
 
 If we were to make the above changes, we can view the resulting help string with:
 ```bash
 morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
 ```
-```
+```console
 Configuring Pipeline via CLI
 Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
 
@@ -564,11 +650,15 @@ Options:
 
 ## Defining a New Source Stage
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
+> **Note**: The code for this guide can be found in the `examples/developer_guide/2_2_rabbitmq` directory of the Morpheus repository.
+
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
-The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
+The `PreallocatorMixin` when added to a stage class, typically a source stage, indicates that the stage emits newly constructed DataFrames either directly or contained in a `MessageMeta` instance into the pipeline. Adding this mixin allows any columns needed by other stages to be inserted into the DataFrame.
+
+The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. Instead of building our node with `make_node`, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -600,9 +690,7 @@ def source_generator(self):
         self._connection.close()
 ```
 
-Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed.
-
-Note also that we acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
+Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
 ### The Completed Source Stage
 
@@ -611,14 +699,16 @@ import logging
 import time
 from io import StringIO
 
-import cudf
+import mrc
 import pandas as pd
 import pika
-import mrc
+
+import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -626,7 +716,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -730,11 +820,11 @@ def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> Strea
     return (node, input_stream[1])
 ```
 
-Note that in this case, while we created an edge from the parent node to our new node. The return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
+Note the return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could, hypothetically, have a pipeline where we emit the results to both RabbitMQ and a file.
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
-Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.8/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
+Similar to our previous examples, most of the actual business logic of the stage is contained in the `on_data` method. In this case, we grab a reference to the [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html) attached to the incoming message. We then serialize to an [io.StringIO](https://docs.python.org/3.10/library/io.html?highlight=stringio#io.StringIO) buffer, which is then sent to RabbitMQ.
 
 ```python
 def on_data(self, message: MessageMeta):
@@ -746,8 +836,9 @@ def on_data(self, message: MessageMeta):
     return message
 ```
 
-The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure that the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
-Note: we didn't close the channel object since closing the connection will also close any associated channel objects.
+The two new methods introduced in this example are the `on_error` and `on_complete` methods. For both methods, we want to make sure  the [connection](https://pika.readthedocs.io/en/stable/modules/connection.html) object is properly closed.
+
+Note: We didn't close the channel object since closing the connection will also close any associated channel objects.
 
 ```python
 def on_error(self, ex: Exception):
@@ -841,4 +932,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [`examples/developer_guide/2_2_rabbitmq/README.md`](../../../../examples/developer_guide/2_2_rabbitmq/README.md) in the root of the Morpheus repo.
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the root of the Morpheus repo.

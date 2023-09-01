@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,18 @@ Each line in the output represents the GPU metrics at a single point in time. As
 
 In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
+#### Generating your own dataset
+
+This example can be easily applied to datasets generated from your own NVIDIA GPU devices. If NetQ is not deployed in your environment, the `nvsmi_data_extract.py` script is provided which uses [pyNVML](https://pypi.org/project/nvidia-ml-py/) and [pandas](https://pandas.pydata.org/) to generate data similar to NetQ. `pyNVML` contains the Python bindings for NVIDIA Management Library (NVML), the same library used by `nvidia-smi`.
+
+`pyNVML` and `pandas` come already installed on the Morpheus release and development Docker images. Otherwise, they will need to be installed before running the script.
+
+Run the following to start generating your dataset:
+```
+python nvsmi_data_extract.py
+```
+This will write a new entry to an output file named `nvsmi.jsonlines` once per second until you press Ctrl+C to exit.
+
 ## Pipeline Architecture
 
 The pipeline we will be using in this example is a simple feed-forward linear pipeline where the data from each stage flows on to the next. Simple linear pipelines with no custom stages, like this example, can be configured via the Morpheus CLI or using the Python library. In this example we will be using the Morpheus CLI.
@@ -65,12 +77,12 @@ This example utilizes the Triton Inference Server to perform inference.
 
 Pull the Docker image for Triton:
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:22.08-py3
+docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -93,7 +105,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way (you can copy/paste the entire command with comments).
 
-From the  Morpheus repo root directory run:
+From the  Morpheus repo root directory, run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
@@ -101,7 +113,7 @@ morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil \
+   pipeline-fil --columns_file=${MORPHEUS_ROOT}/morpheus/data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
@@ -123,7 +135,7 @@ morpheus --log_level=DEBUG \
 If successful, the following should be displayed:
 ```bash
 Configuring Pipeline via CLI
-Loaded columns. Current columns: [['nvidia_smi_log.gpu.pci.tx_util', 'nvidia_smi_log.gpu.pci.rx_util', 'nvidia_smi_log.gpu.fb_memory_usage.used', 'nvidia_smi_log.gpu.fb_memory_usage.free', 'nvidia_smi_log.gpu.bar1_memory_usage.total', 'nvidia_smi_log.gpu.bar1_memory_usage.used', 'nvidia_smi_log.gpu.bar1_memory_usage.free', 'nvidia_smi_log.gpu.utilization.gpu_util', 'nvidia_smi_log.gpu.utilization.memory_util', 'nvidia_smi_log.gpu.temperature.gpu_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold', 'nvidia_smi_log.gpu.temperature.memory_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold', 'nvidia_smi_log.gpu.power_readings.power_draw', 'nvidia_smi_log.gpu.clocks.graphics_clock', 'nvidia_smi_log.gpu.clocks.sm_clock', 'nvidia_smi_log.gpu.clocks.mem_clock', 'nvidia_smi_log.gpu.clocks.video_clock', 'nvidia_smi_log.gpu.applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.applications_clocks.mem_clock', 'nvidia_smi_log.gpu.default_applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.default_applications_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.graphics_clock', 'nvidia_smi_log.gpu.max_clocks.sm_clock', 'nvidia_smi_log.gpu.max_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.video_clock', 'nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock']]
+Loaded columns. Current columns: [['nvidia_smi_log.gpu.fb_memory_usage.used', 'nvidia_smi_log.gpu.fb_memory_usage.free', 'nvidia_smi_log.gpu.utilization.gpu_util', 'nvidia_smi_log.gpu.utilization.memory_util', 'nvidia_smi_log.gpu.temperature.gpu_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold', 'nvidia_smi_log.gpu.power_readings.power_draw', 'nvidia_smi_log.gpu.clocks.graphics_clock', 'nvidia_smi_log.gpu.clocks.sm_clock', 'nvidia_smi_log.gpu.clocks.mem_clock', 'nvidia_smi_log.gpu.applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.applications_clocks.mem_clock', 'nvidia_smi_log.gpu.default_applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.default_applications_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.graphics_clock', 'nvidia_smi_log.gpu.max_clocks.sm_clock', 'nvidia_smi_log.gpu.max_clocks.mem_clock']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
@@ -133,7 +145,7 @@ Config:
   ],
   "debug": false,
   "edge_buffer_size": 128,
-  "feature_length": 29,
+  "feature_length": 18,
   "fil": {
     "feature_columns": [
       "nvidia_smi_log.gpu.pci.tx_util",
@@ -187,13 +199,13 @@ Added stage: <deserialize-1; DeserializeStage()>
 Added stage: <preprocess-fil-2; PreprocessFILStage()>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8000, force_convert_inputs=False, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
@@ -204,7 +216,7 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 
 The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
 
-```json
+```
 ...
 {"mining": 0}
 {"mining": 0}

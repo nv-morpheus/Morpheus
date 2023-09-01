@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ Once the model is capable of identifying even the new root causes, it can also b
 
 ### The Dataset
 
-The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 or root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
+The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 for root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
 
 ## Pipeline Architecture
 
@@ -46,10 +46,10 @@ This example utilizes the Triton Inference Server to perform inference. The bina
 From the Morpheus repo root directory, run the following to launch Triton and load the `root-cause-binary-onnx` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
 ```
 
-Where `22.08-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+Where `23.06-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the model required by our example pipeline. The model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
@@ -94,7 +94,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch a root cause analysis pipeline which uses binary sequence classification. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
-From the Morpheus repo root directory run:
+From the Morpheus repo root directory, run:
 
 ```bash
 export MORPHEUS_ROOT=$(pwd)
@@ -167,13 +167,13 @@ Added stage: <deserialize-1; DeserializeStage()>
 Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseMessage
 Added stage: <monitor-4; MonitorStage(description=Inference rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]

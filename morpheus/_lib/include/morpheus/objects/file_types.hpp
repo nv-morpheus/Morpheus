@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,6 +18,8 @@
 #pragma once
 
 #include <cstdint>
+#include <ostream>
+#include <stdexcept>
 #include <string>
 
 namespace morpheus {
@@ -33,15 +35,55 @@ enum class FileTypes : int32_t
 {
     Auto,
     JSON,
-    CSV
+    CSV,
+    PARQUET
 };
 
+/**
+ * @brief Converts a `FilesTypes` enum to a string
+ *
+ * @param f
+ * @return std::string
+ */
+inline std::string filetypes_to_str(const FileTypes& f)
+{
+    switch (f)
+    {
+    case FileTypes::Auto:
+        return "Auto";
+    case FileTypes::JSON:
+        return "JSON";
+    case FileTypes::CSV:
+        return "CSV";
+    case FileTypes::PARQUET:
+        return "PARQUET";
+    default:
+        throw std::logic_error("Unsupported FileTypes enum. Was a new value added recently?");
+    }
+}
+
+/**
+ * @brief Stream operator for `FileTypes`
+ *
+ * @param os
+ * @param f
+ * @return std::ostream&
+ */
+static inline std::ostream& operator<<(std::ostream& os, const FileTypes& f)
+{
+    os << filetypes_to_str(f);
+    return os;
+}
+
+/**
+ * @brief Determines the file type from a filename based on extension. For example, my_file.json would return
+ * `FileTypes::JSON`.
+ *
+ * @param filename String to a file. Does not need to exist
+ * @return FileTypes
+ */
 FileTypes determine_file_type(const std::string& filename);
 
-struct FileTypesInterfaceProxy
-{
-    static FileTypes determine_file_type(const std::string& filename);
-};
 #pragma GCC visibility pop
 
 /** @} */  // end of group

@@ -26,22 +26,37 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import importlib
 import os
 import sys
 import textwrap
+import warnings
 
 import packaging
 
+# Ignore FutureWarnings coming from docutils remove this once we can upgrade to Sphinx 5.0
+# https://github.com/sphinx-doc/sphinx/issues/9777
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+# Get the morpheus root from the environment variable or default to finding it relative to this file
+morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+# Make sure we can access the digital fingerprinting example
+sys.path.append(os.path.join(morpheus_root, 'examples/digital_fingerprinting/production/morpheus'))
+
+# Add the Sphinx extensions directory to sys.path to allow for the github_link extension to be found
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
 from github_link import make_linkcode_resolve  # noqa
 
+# Set an environment variable we can use to determine ifuncf we are building docs
+os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
+
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2022, NVIDIA'
+copyright = '2023, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -113,8 +128,8 @@ exhale_args = {
         BRIEF_MEMBER_DESC = YES
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
-        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
-        EXCLUDE_SYMBOLS = "@85" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
+        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/* */doca/*
+        EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
         EXTENSION_MAPPING = cu=C++ cuh=C++
         EXTRACT_ALL = YES
         FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
@@ -147,9 +162,19 @@ autodoc_typehints_description_target = "documented"  # Dont double up on type hi
 add_module_names = False  # Remove namespaces from class/method signatures
 myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
+    "cudf",  # Avoid loading GPU libraries during the documentation build
+    "cupy",  # Avoid loading GPU libraries during the documentation build
+    "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "tqdm",
+    "nvtabular",
+    "pandas",
     "tensorrt",
+    "torch",
+    "tqdm",
+]
+
+suppress_warnings = [
+    "myst.header"  # Allow header increases from h2 to h4 (skipping h3)
 ]
 
 # Config numpydoc
@@ -173,7 +198,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -289,12 +314,13 @@ def setup(app):
     app.add_css_file('infoboxes.css')
     app.add_css_file('params.css')
     app.add_css_file('references.css')
+    app.add_css_file('py_properties.css')
 
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
     'morpheus', 'https://github.com/nv-morpheus/Morpheus'
-    'morpheus/-/blob/{revision}/'
+    '/blob/{revision}/'
     '{package}/{path}#L{lineno}')
 
 # Set the default role for interpreted code (anything surrounded in `single

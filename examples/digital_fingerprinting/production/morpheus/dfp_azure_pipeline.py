@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DFP training & inference pipelines for Azure Active Directory logs."""
 
 import functools
 import logging
@@ -19,7 +20,6 @@ import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
-from functools import partial
 
 import click
 import mlflow
@@ -36,10 +36,12 @@ from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import FilterSource
+from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
+from morpheus.cli.utils import parse_log_level
+from morpheus.common import FileTypes
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
@@ -49,17 +51,14 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
-from morpheus.utils.logger import get_log_levels
-from morpheus.utils.logger import parse_log_level
 
 
 @click.command()
@@ -111,6 +110,11 @@ from morpheus.utils.logger import parse_log_level
               default=0,
               show_envvar=True,
               help="Minimum time step, in milliseconds, between object logs.")
+@click.option("--filter_threshold",
+              type=float,
+              default=2.0,
+              show_envvar=True,
+              help="Filter out inference results below this threshold")
 @click.option(
     "--input_file",
     "-f",
@@ -121,6 +125,17 @@ from morpheus.utils.logger import parse_log_level
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option('--watch_inputs',
+              type=bool,
+              is_flag=True,
+              default=False,
+              help=("Instructs the pipeline to continuously check the paths specified by `--input_file` for new files. "
+                    "This assumes that the at least one paths contains a wildcard."))
+@click.option("--watch_interval",
+              type=float,
+              default=1.0,
+              help=("Amount of time, in seconds, to wait between checks for new files. "
+                    "Only used if --watch_inputs is set."))
 @click.option('--tracking_uri',
               type=str,
               default="http://mlflow:5000",
@@ -133,9 +148,11 @@ def run_pipeline(train_users,
                  cache_dir,
                  log_level,
                  sample_rate_s,
+                 filter_threshold,
                  **kwargs):
+    """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
-    include_generic = train_users == "all" or train_users == "generic"
+    include_generic = train_users in ("all", "generic")
 
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
@@ -163,7 +180,7 @@ def run_pipeline(train_users,
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    logger = logging.getLogger("morpheus.{}".format(__name__))
+    logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
@@ -229,18 +246,16 @@ def run_pipeline(train_users,
                         dtype=int,
                         input_name=config.ae.timestamp_column_name,
                         groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col,
-                                               column_name="location",
-                                               groupby_column=config.ae.userid_column_name,
-                                               timestamp_column=config.ae.timestamp_column_name)),
-        CustomColumn(name="appincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col,
-                                               column_name="appDisplayName",
-                                               groupby_column=config.ae.userid_column_name,
-                                               timestamp_column=config.ae.timestamp_column_name))
+        DistinctIncrementColumn(name="locincrement",
+                                dtype=int,
+                                input_name="location",
+                                groupby_column=config.ae.userid_column_name,
+                                timestamp_column=config.ae.timestamp_column_name),
+        DistinctIncrementColumn(name="appincrement",
+                                dtype=int,
+                                input_name="appDisplayName",
+                                groupby_column=config.ae.userid_column_name,
+                                timestamp_column=config.ae.timestamp_column_name)
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
@@ -248,9 +263,13 @@ def run_pipeline(train_users,
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    pipeline.set_source(
+        MultiFileSource(config,
+                        filenames=list(kwargs["input_file"]),
+                        watch=kwargs["watch_inputs"],
+                        watch_interval=kwargs["watch_interval"]))
 
-    # Batch files into buckets by time. Use the default ISO date extractor from the filename
+    # Batch files into batches by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
         DFPFileBatcherStage(config,
                             period="D",
@@ -259,7 +278,7 @@ def run_pipeline(train_users,
                             start_time=start_time,
                             end_time=end_time))
 
-    # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
+    # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
@@ -296,7 +315,6 @@ def run_pipeline(train_users,
     experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
 
     if (is_training):
-
         # Finally, perform training which will output a model
         pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 
@@ -315,7 +333,10 @@ def run_pipeline(train_users,
 
         # Filter for only the anomalous logs
         pipeline.add_stage(
-            FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+            FilterDetectionsStage(config,
+                                  threshold=filter_threshold,
+                                  filter_source=FilterSource.DATAFRAME,
+                                  field_name='mean_abs_z'))
         pipeline.add_stage(DFPPostprocessingStage(config))
 
         # Exclude the columns we don't want in our output
@@ -329,4 +350,5 @@ def run_pipeline(train_users,
 
 
 if __name__ == "__main__":
+    # pylint: disable=no-value-for-parameter
     run_pipeline(obj={}, auto_envvar_prefix='DFP', show_default=True, prog_name="dfp")

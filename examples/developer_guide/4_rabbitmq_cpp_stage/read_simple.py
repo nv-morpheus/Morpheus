@@ -19,7 +19,7 @@ import os
 import click
 from rabbitmq_source_stage import RabbitMQSourceStage
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline

@@ -13,23 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# set -x
-
 export SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"}
-export REPO_DIR=$(realpath ${REPO_DIR:-"${SCRIPT_DIR}/../.."})
-export PY_ROOT="${REPO_DIR}"
+
+# The root to the Morpheus repo
+export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
+
+export PY_ROOT="${MORPHEUS_ROOT}"
 export PY_CFG="${PY_ROOT}/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
 # work-around for known yapf issue https://github.com/google/yapf/issues/984
-export YAPF_EXCLUDE_FLAGS="-e ${PY_ROOT}/versioneer.py -e ${PY_ROOT}/morpheus/_version.py"
+export YAPF_EXCLUDE_FLAGS="-e versioneer.py -e morpheus/_version.py"
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
 export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target)}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
 export CPP_FILE_REGEX='^(\.\/)?(morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
-export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build).*\.(py|pyx|pxd)$'
+export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build|external).*\.(py|pyx|pxd)$'
 
 # Use these options to skip any of the checks
 export SKIP_COPYRIGHT=${SKIP_COPYRIGHT:-""}
@@ -40,7 +41,7 @@ export SKIP_ISORT=${SKIP_ISORT:-""}
 export SKIP_YAPF=${SKIP_YAPF:-""}
 
 # Set BUILD_DIR to use a different build folder
-export BUILD_DIR=${BUILD_DIR:-"${REPO_DIR}/build"}
+export BUILD_DIR=${BUILD_DIR:-"${MORPHEUS_ROOT}/build"}
 
 # Speficy the clang-tools version to use. Default 14
 export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-14}
@@ -194,4 +195,4 @@ function cleanup {
 trap cleanup EXIT
 
 # Change directory to the repo root
-pushd "${REPO_DIR}" &> /dev/null
+pushd "${MORPHEUS_ROOT}" &> /dev/null

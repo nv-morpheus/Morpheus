@@ -16,13 +16,15 @@ import dataclasses
 import logging
 import typing
 
+import pandas as pd
+
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class DFPMessageMeta(MessageMeta, cpp_class=None):
     """
     This class extends MessageMeta to also hold userid corresponding to batched metadata.
@@ -37,19 +39,26 @@ class DFPMessageMeta(MessageMeta, cpp_class=None):
     """
     user_id: str
 
+    def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        super().__init__(df)
+        self.user_id = user_id
+
     def get_df(self):
         return self.df
 
     def set_df(self, df):
-        self.df = df
+        self._df = df
 
 
 @dataclasses.dataclass
 class MultiDFPMessage(MultiMessage):
 
-    def __post_init__(self):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
 
-        assert isinstance(self.meta, DFPMessageMeta), "`meta` must be an instance of DFPMessageMeta"
+        if (not isinstance(meta, DFPMessageMeta)):
+            raise ValueError(f"`meta` must be an instance of `DFPMessageMeta` when creating {self.__class__.__name__}")
+
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
     @property
     def user_id(self):
@@ -71,22 +80,11 @@ class MultiDFPMessage(MultiMessage):
 
         typing.cast(DFPMessageMeta, self.meta).set_df(df)
 
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
 
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
+        sliced_rows = self.copy_meta_ranges(ranges)
 
-        Returns
-        -------
-        morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            A new `MultiAEMessage` with sliced offset and count.
-
-        """
-        return MultiDFPMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+        return self.from_message(self,
+                                 meta=DFPMessageMeta(sliced_rows, self.user_id),
+                                 mess_offset=0,
+                                 mess_count=len(sliced_rows))

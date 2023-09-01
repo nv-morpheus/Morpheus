@@ -534,34 +534,34 @@ DFP_DATASET_FILES = {
 }
 
 S3_BASE_PATH = "/rapidsai-data/cyber/morpheus/dfp/"
+EXAMPLE_DATA_DIR = dirname(dirname(os.path.abspath(__file__))) + "/data"
 
 
 def fetch_dataset(dataset):
 
     ds_filenames = DFP_DATASET_FILES[dataset]
-    fs = s3fs.S3FileSystem(anon=True)
-    S3_BASE_PATH = "/rapidsai-data/cyber/morpheus/dfp/{}/".format(dataset)
-    EXAMPLE_DATA_DIR = dirname(dirname(os.path.abspath(__file__))) + "/data"
+    fs_hndl = s3fs.S3FileSystem(anon=True)
+    s3_base_path = os.path.join(S3_BASE_PATH, dataset)
 
-    train_dir = EXAMPLE_DATA_DIR + "/dfp/{}-training-data/".format(dataset)
+    train_dir = f"{EXAMPLE_DATA_DIR}/dfp/{dataset}-training-data/"
     if not os.path.exists(train_dir):
         os.makedirs(train_dir)
 
     train_files = ds_filenames[0]
     for f in train_files:
         if not exists(train_dir + f):
-            print("Downloading {}".format(f))
-            fs.get(S3_BASE_PATH + f, train_dir + f)
+            print(f"Downloading {f}")
+            fs_hndl.get_file(os.path.join(s3_base_path, f), train_dir + f)
 
-    infer_dir = EXAMPLE_DATA_DIR + "/dfp/{}-inference-data/".format(dataset)
+    infer_dir = f"{EXAMPLE_DATA_DIR}/dfp/{dataset}-inference-data/"
     if not exists(infer_dir):
         os.makedirs(infer_dir)
 
     infer_files = ds_filenames[1]
     for f in infer_files:
         if not os.path.exists(infer_dir + f):
-            print("Downloading {}".format(f))
-            fs.get(S3_BASE_PATH + f, infer_dir + f)
+            print(f"Downloading {f}")
+            fs_hndl.get_file(os.path.join(s3_base_path, f), infer_dir + f)
 
 
 def parse_args():
@@ -580,8 +580,8 @@ def main():
     else:
         ds_list = args.data_set
 
-    for ds in ds_list:
-        fetch_dataset(ds)
+    for dataset in ds_list:
+        fetch_dataset(dataset)
 
 
 if __name__ == "__main__":
