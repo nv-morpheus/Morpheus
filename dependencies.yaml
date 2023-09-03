@@ -1,0 +1,140 @@
+# Dependency list for https://github.com/rapidsai/dependency-file-generator
+files:
+  all:
+    output: conda
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - run_morpheus
+      - test_python_morpheus
+      - cudatoolkit
+
+channels:
+  - rapidsai
+  - nvidia/label/cuda-11.8.0
+  - nvidia
+  - rapidsai-nightly
+  - nvidia/label/dev
+  - pytorch
+  - conda-forge
+
+dependencies:
+
+  build_cpp: # should be split in to `build_python` if/when converting to use scikit-build
+    common:
+      - output_types: [conda]
+        packages:
+          - boost-cpp=1.82
+          - cuda-nvcc
+          - cudf=23.06
+          - cxx-compiler
+          - cython=0.29.24
+          - libhwloc=2.9.2
+          - librdkafka=1.9.2
+          - ninja=1.10
+          - nlohmann_json=3.9
+          - protobuf=4.21.*
+          - pybind11-stubgen=0.10
+          - rapidjson=1.1.0
+          - scikit-build=0.17.1
+          - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
+          - ucx=1.14
+  run_morpheus:
+    common:
+      - output_types: [conda]
+        packages:
+          - appdirs
+          - click>=8
+          - gputil
+          - grpcio
+          - numpydoc=1.4
+          - nvtabular=23.06
+          - datacompy=0.8
+          - pytorch-cuda
+          - pytorch=2.0.1
+          - scikit-learn=1.2.2
+          - tqdm=4
+          - python-confluent-kafka=1.9.2
+          - python-graphviz
+          - typing_utils=0.1
+          - watchdog=2.1
+          - dill
+          - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
+          - mlflow>=2.2.1,<3
+  test_python_morpheus:
+    common:
+      - output_types: [conda]
+        packages:
+          - pytest
+          - pytest-benchmark>=4.0
+          - pytest-cov
+          - pip
+          - pip:
+              - pytest-kafka==0.6.0
+
+  # build_python:
+  #   common:
+  #     - output_types: [conda, requirements, pyproject]
+  #       packages:
+  #         - cython>=3.0.0
+  #         - scikit-build>=0.13.1
+  #         - setuptools
+  #     - output_types: conda
+  #       packages: &build_python_packages_conda
+  #         - &cudf_conda cudf==23.10.*
+  #         - &rmm_conda rmm==23.10.*
+  #     - output_types: requirements
+  #       packages:
+  #         # pip recognizes the index as a global option for the requirements.txt file
+  #         # This index is needed for cudf and rmm.
+  #         - --extra-index-url=https://pypi.nvidia.com
+  #   specific:
+  #     - output_types: conda
+  #       matrices:
+  #         - matrix:
+  #             arch: x86_64
+  #           packages:
+  #             - *gcc_amd64
+  #             - *sysroot_amd64
+  #         - matrix:
+  #             arch: aarch64
+  #           packages:
+  #             - *gcc_aarch64
+  #             - *sysroot_aarch64
+  #     - output_types: [requirements, pyproject]
+  #       matrices:
+  #         - matrix: {cuda: "12.0"}
+  #           packages:
+  #             - cudf-cu12==23.10.*
+  #             - rmm-cu12==23.10.*
+  #         - matrix: {cuda: "11.8"}
+  #           packages: &build_python_packages_cu11
+  #             - &cudf_cu11 cudf-cu11==23.10.*
+  #             - &rmm_cu11 rmm-cu11==23.10.*
+  #         - {matrix: {cuda: "11.5"}, packages: *build_python_packages_cu11}
+  #         - {matrix: {cuda: "11.4"}, packages: *build_python_packages_cu11}
+  #         - {matrix: {cuda: "11.2"}, packages: *build_python_packages_cu11}
+  #         - {matrix: null, packages: [*cudf_conda, *rmm_conda] }
+  cudatoolkit:
+    specific:
+      - output_types: conda
+        matrices:
+          - matrix:
+              cuda: "12.2"
+            packages:
+              - cuda-cudart-dev
+              - cuda-cudart-static
+              - cuda-nvrtc-dev
+              - cuda-version=12.2
+              - cuda-nvml-dev
+              - cuda-tools
+          - matrix:
+              cuda: "11.8"
+            packages:
+              - cuda-cudart-dev=11.8
+              - cuda-nvrtc-dev=11.8
+              - cuda-version=11.8
+              - cuda-nvml-dev=11.8
+              - cuda-tools=11.8
