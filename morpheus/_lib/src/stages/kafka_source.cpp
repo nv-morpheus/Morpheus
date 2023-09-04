@@ -29,13 +29,14 @@
 #include <boost/fiber/operations.hpp>  // for sleep_for, yield
 #include <boost/fiber/recursive_mutex.hpp>
 #include <cudf/io/json.hpp>
+#include <cudf/utilities/error.hpp>
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
 #include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>
+#include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 
@@ -47,8 +48,10 @@
 #include <functional>
 #include <initializer_list>  // for initializer_list
 #include <iterator>          // for back_insert_iterator, back_inserter
+#include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
@@ -655,22 +658,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool async_commits,
     std::optional<pybind11::function> oauth_callback)
 {
-    auto oauth_callback_cpp = [&oauth_callback]() {
-        if (!oauth_callback.has_value())
-        {
-            return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
-        }
-
-        return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
-            auto kvp_cpp       = std::map<std::string, std::string>();
-            pybind11::dict kvp = oauth_callback.value()();
-            for (auto [key, value] : kvp)
-            {
-                kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
-            }
-            return kvp_cpp;
-        });
-    }();
+    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(oauth_callback);
 
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
@@ -699,22 +687,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool async_commits,
     std::optional<pybind11::function> oauth_callback)
 {
-    auto oauth_callback_cpp = [&oauth_callback]() {
-        if (!oauth_callback.has_value())
-        {
-            return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
-        }
-
-        return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
-            auto kvp_cpp       = std::map<std::string, std::string>();
-            pybind11::dict kvp = oauth_callback.value()();
-            for (auto [key, value] : kvp)
-            {
-                kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
-            }
-            return kvp_cpp;
-        });
-    }();
+    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(oauth_callback);
 
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
@@ -729,4 +702,24 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
 
     return stage;
 }
+
+std::unique_ptr<KafkaOAuthCallback> KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(
+    std::optional<pybind11::function>& oauth_callback)
+{
+    if (oauth_callback == std::nullopt)
+    {
+        return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
+    }
+
+    return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
+        auto kvp_cpp       = std::map<std::string, std::string>();
+        pybind11::dict kvp = oauth_callback.value()();
+        for (auto [key, value] : kvp)
+        {
+            kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
+        }
+        return kvp_cpp;
+    });
+}
+
 }  // namespace morpheus

@@ -30,11 +30,13 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uuint32_t
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -216,6 +218,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     * @param oauth_callback : Callback used when an OAuth token needs to be generated.
      */
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_single_topic(
         mrc::segment::Builder& builder,
@@ -246,6 +249,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     * @param oauth_callback : Callback used when an OAuth token needs to be generated.
      */
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_multiple_topics(
         mrc::segment::Builder& builder,
@@ -259,6 +263,16 @@ struct KafkaSourceStageInterfaceProxy
         std::size_t stop_after                           = 0,
         bool async_commits                               = true,
         std::optional<pybind11::function> oauth_callback = std::nullopt);
+
+  private:
+    /**
+     * @brief Create a KafkaOAuthCallback or return nullptr. If oauth_callback is std::nullopt,
+     * returns nullptr, otherwise wraps the callback in a KafkaOAuthCallback such that the values
+     * returned from the python callback are converted for use in c++.
+     * @param oauth_callback : The callback to wrap, if any.
+     */
+    static std::unique_ptr<KafkaOAuthCallback> make_kafka_oauth_callback(
+        std::optional<pybind11::function>& oauth_callback);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
