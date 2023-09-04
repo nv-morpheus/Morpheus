@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cupy
 import ctypes
 import multiprocessing as mp
 import os
@@ -21,6 +20,7 @@ import threading as mt
 import time
 from multiprocessing.connection import Connection
 
+import cupy
 import mrc
 from mrc.core.subscriber import Observer
 
@@ -42,8 +42,9 @@ class MyMultiprocessingStage(SinglePortStage):
     def __init__(self, config: Config):
         super().__init__(config)
         # must use spawn because we can't fork the cuda context.
-        self.mp_context = mp.get_context("spawn")  
+        self.mp_context = mp.get_context("spawn")
         self.cancellation_token = self.mp_context.Value(ctypes.c_int8, False)
+
     @property
     def name(self) -> str:
         return "my-multiprocessing"
@@ -66,19 +67,17 @@ class MyMultiprocessingStage(SinglePortStage):
             event = queue_recv.get()
 
             if event["type"] == "on_next":
-
                 #  we can do our fancy processing here.
-
                 message: MultiMessage = event["value"]
                 message.set_meta("b", cupy.arange(message.mess_count))
-                queue_send.put({ "type": "on_next", "value": message })
+                queue_send.put({"type": "on_next", "value": message})
                 continue
 
-            if event["type"] == "on_completed":
+            if event["type"] == "on_error":
                 queue_send.put(event)
                 break
 
-            if event["type"] == "on_error":
+            if event["type"] == "on_completed":
                 queue_send.put(event)
                 break
 
@@ -86,37 +85,36 @@ class MyMultiprocessingStage(SinglePortStage):
 
     @staticmethod
     def parent_receive(queue_recv: mp.Queue, sub: mrc.Subscriber, cancellation_token: mp.Value):
-            print("===== Started parent receive =====", os.getpid())
-            while not cancellation_token.value:
-                if queue_recv.qsize() == 0:
-                    print("parent: waiting...")
-                    time.sleep(1)
-                    continue
+        print("===== Started parent receive =====", os.getpid())
+        while not cancellation_token.value:
+            if queue_recv.qsize() == 0:
+                print("parent: waiting...")
+                time.sleep(1)
+                continue
 
-                event = queue_recv.get()
+            event = queue_recv.get()
 
-                if event["type"] == "on_next":
-                    sub.on_next(event["value"])
-                    continue
+            if event["type"] == "on_next":
+                sub.on_next(event["value"])
+                continue
 
-                if event["type"] == "on_error":
-                    sub.on_next(event["value"])
-                    break
+            if event["type"] == "on_error":
+                sub.on_next(event["value"])
+                break
 
-                if event["type"] == "on_completed":
-                    sub.on_completed()
-                    break
-
-    def generate(self, obs: mrc.Observable, sub: mrc.Subscriber):
-
-        # generate is called on subscribe
+            if event["type"] == "on_completed":
+                sub.on_completed()
+                break
 
         print("parent: closing...")
 
+    def generate(self, obs: mrc.Observable, sub: mrc.Subscriber):
         pre_queue = self.mp_context.Queue()
         post_queue = self.mp_context.Queue()
-        my_process = self.mp_context.Process(target=MyMultiprocessingStage.child_receive, args=(pre_queue, post_queue, self.cancellation_token))
-        my_thread = mt.Thread(target=MyMultiprocessingStage.parent_receive, args=(post_queue, sub, self.cancellation_token))
+        my_process = self.mp_context.Process(target=MyMultiprocessingStage.child_receive,
+                                             args=(pre_queue, post_queue, self.cancellation_token))
+        my_thread = mt.Thread(target=MyMultiprocessingStage.parent_receive,
+                              args=(post_queue, sub, self.cancellation_token))
 
         def on_next(message: MultiMessage):
             print("obs on next", os.getpid())
@@ -133,8 +131,6 @@ class MyMultiprocessingStage(SinglePortStage):
         my_process.start()
         my_thread.start()
 
-        # forward the subscribe call
-
         obs.subscribe(Observer.make_observer(on_next, on_error, on_completed))
 
         my_thread.join()
@@ -144,7 +140,7 @@ class MyMultiprocessingStage(SinglePortStage):
         stream = builder.make_node("my-multiprocessing", mrc.core.operators.build(self.generate))
         builder.make_edge(input_stream[0], stream)
         return stream, input_stream[1]
-    
+
     def stop(self):
         super().stop()
         self.cancellation_token.value = True
@@ -154,10 +150,11 @@ def run_pipeline():
 
     config = Config()
 
-    df_input = cudf.DataFrame({"name": ["five","four","three","two","one"], "value": [5,4,3,2,1]})
+    df_input_a = cudf.DataFrame({"name": ["five", "four", "three", "two", "one"], "value": [5, 4, 3, 2, 1]})
+    df_input_b = cudf.DataFrame({"name": ["one", "two", "three", "four", "five"], "value": [1, 2, 3, 4, 5]})
 
     pipeline = LinearPipeline(config)
-    pipeline.set_source(InMemorySourceStage(config, [df_input]))
+    pipeline.set_source(InMemorySourceStage(config, [df_input_a, df_input_b]))
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(MyMultiprocessingStage(config))
     pipeline.add_stage(SerializeStage(config))
