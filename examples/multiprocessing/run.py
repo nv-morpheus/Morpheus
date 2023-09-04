@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cupy
+import ctypes
 import multiprocessing as mp
 import os
 import threading as mt
@@ -37,6 +39,11 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 class MyMultiprocessingStage(SinglePortStage):
 
+    def __init__(self, config: Config):
+        super().__init__(config)
+        # must use spawn because we can't fork the cuda context.
+        self.mp_context = mp.get_context("spawn")  
+        self.cancellation_token = self.mp_context.Value(ctypes.c_int8, False)
     @property
     def name(self) -> str:
         return "my-multiprocessing"
@@ -48,81 +55,106 @@ class MyMultiprocessingStage(SinglePortStage):
         return False
 
     @staticmethod
-    def child_receive(conn: Connection):
+    def child_receive(queue_recv: mp.Queue, queue_send: mp.Queue, cancellation_token: mp.Value):
         print("===== Started child receive =====", os.getppid(), os.getpid())
-        while True:
-            while not conn.poll():
+        while not cancellation_token.value:
+            if queue_recv.qsize() == 0:
                 print("child: waiting...")
-                time.sleep(10)
-            print("child: receiving...")
-            message: MultiMessage = conn.recv()
-            print("child: sending...")
-            conn.send(message)
+                time.sleep(1)
+                continue
+
+            event = queue_recv.get()
+
+            if event["type"] == "on_next":
+
+                #  we can do our fancy processing here.
+
+                message: MultiMessage = event["value"]
+                message.set_meta("b", cupy.arange(message.mess_count))
+                queue_send.put({ "type": "on_next", "value": message })
+                continue
+
+            if event["type"] == "on_completed":
+                queue_send.put(event)
+                break
+
+            if event["type"] == "on_error":
+                queue_send.put(event)
+                break
+
+        print("child: closing...")
 
     @staticmethod
-    def generate(obs: mrc.Observable, sub: mrc.Subscriber):
+    def parent_receive(queue_recv: mp.Queue, sub: mrc.Subscriber, cancellation_token: mp.Value):
+            print("===== Started parent receive =====", os.getpid())
+            while not cancellation_token.value:
+                if queue_recv.qsize() == 0:
+                    print("parent: waiting...")
+                    time.sleep(1)
+                    continue
+
+                event = queue_recv.get()
+
+                if event["type"] == "on_next":
+                    sub.on_next(event["value"])
+                    continue
+
+                if event["type"] == "on_error":
+                    sub.on_next(event["value"])
+                    break
+
+                if event["type"] == "on_completed":
+                    sub.on_completed()
+                    break
+
+    def generate(self, obs: mrc.Observable, sub: mrc.Subscriber):
 
         # generate is called on subscribe
 
-        def parent_receive(conn: Connection):
-            print("===== Started parent receive =====", os.getpid())
-            while True:
-                while not conn.poll():
-                    print("parent: waiting...")
-                    time.sleep(1)
+        print("parent: closing...")
 
-                print("parent: receiving...")
-                message: MultiMessage = conn.recv()
-                print("parent: on_nexting...")
-                print(message.get_meta())  # this prints the correct dataframe.
-                sub.on_next(message)  # this results in a segfault.
-
-        mp_context = mp.get_context("spawn")  # must use spawn because we can't fork the cuda context.
-
-        [parent_conn, child_conn] = mp_context.Pipe()
-
-        my_process = mp_context.Process(target=MyMultiprocessingStage.child_receive, args=(child_conn, ))
-        my_thread = mt.Thread(target=parent_receive, args=(parent_conn, ))
+        pre_queue = self.mp_context.Queue()
+        post_queue = self.mp_context.Queue()
+        my_process = self.mp_context.Process(target=MyMultiprocessingStage.child_receive, args=(pre_queue, post_queue, self.cancellation_token))
+        my_thread = mt.Thread(target=MyMultiprocessingStage.parent_receive, args=(post_queue, sub, self.cancellation_token))
 
         def on_next(message: MultiMessage):
             print("obs on next", os.getpid())
-            try:
-                parent_conn.send(message)
-            except Exception as error:
-                print(error)  # can't pickle a MultiMessage
-                my_process.kill()
-                my_thread.kill()
+            pre_queue.put({"type": "on_next", "value": message})
 
         def on_error(error: BaseException):
             print("obs on error", os.getpid())
-            my_process.kill()
-            my_thread.kill()
-            sub.on_error(error)
+            pre_queue.put({"type": "on_error", "value": error})
 
         def on_completed():
             print("obs on completed", os.getpid())
-            # my_process.kill()
-            # my_thread.kill()
-            # sub.on_completed()
-
-        # forward the subscribe call
+            pre_queue.put({"type": "on_completed"})
 
         my_process.start()
         my_thread.start()
 
+        # forward the subscribe call
+
         obs.subscribe(Observer.make_observer(on_next, on_error, on_completed))
 
+        my_thread.join()
+        my_process.join()
+
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair):
-        stream = builder.make_node("my-multiprocessing", mrc.core.operators.build(MyMultiprocessingStage.generate))
+        stream = builder.make_node("my-multiprocessing", mrc.core.operators.build(self.generate))
         builder.make_edge(input_stream[0], stream)
         return stream, input_stream[1]
+    
+    def stop(self):
+        super().stop()
+        self.cancellation_token.value = True
 
 
 def run_pipeline():
 
     config = Config()
 
-    df_input = cudf.DataFrame({"name": "1", "value": 1})
+    df_input = cudf.DataFrame({"name": ["five","four","three","two","one"], "value": [5,4,3,2,1]})
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(InMemorySourceStage(config, [df_input]))
@@ -139,38 +171,5 @@ def run_pipeline():
         print(messages[0].copy_dataframe())
 
 
-def run_cudf_multiproc_child(conn: Connection):
-    while not conn.poll():
-        time.sleep(1)
-
-    df: cudf.DataFrame = conn.recv()
-    conn.send(df)
-
-
-def run_cudf_multiproc():
-
-    mp_context = mp.get_context("spawn")
-
-    [parent_conn, child_conn] = mp_context.Pipe()
-
-    child_process = mp_context.Process(target=run_cudf_multiproc_child, args=(child_conn, ), daemon=True)
-
-    child_process.start()
-
-    df = cudf.DataFrame({"a": "b"})
-
-    parent_conn.send(df)
-
-    while not parent_conn.poll():
-        time.sleep(1)
-
-    df = parent_conn.recv()
-
-    child_process.terminate()
-
-    print(df)
-
-
 if __name__ == "__main__":
-    # run_cudf_multiproc()
     run_pipeline()
