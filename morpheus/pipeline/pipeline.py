@@ -412,12 +412,6 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        # try:
-        #     self._build_mrc()
-        # except Exception:
-        #     logger.exception("Error occurred during Pipeline._build_mrc(). Exiting.", exc_info=True)
-        #     return
-
         await self._async_start()
 
         self._start()
