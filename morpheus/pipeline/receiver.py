@@ -148,7 +148,6 @@ class Receiver():
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
                 if (great_ancestor is None):
-                    # TODO(MDD): Add stage, port, and type info to message
                     raise RuntimeError((f"Cannot determine single type for senders of input port for {self._parent}. "
                                         "Use a merge stage to handle different types of inputs."))
 
