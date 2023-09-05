@@ -372,7 +372,9 @@ class Pipeline():
         Typically called after `stop`.
         """
         try:
-            await self._mrc_executor.join_async()
+            # If the pipeline failed any pre-flight checks self._mrc_executor will be None
+            if self._mrc_executor is not None:
+                await self._mrc_executor.join_async()
         except Exception:
             logger.exception("Exception occurred in pipeline. Rethrowing")
             raise
