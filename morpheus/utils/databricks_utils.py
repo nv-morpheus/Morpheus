@@ -37,8 +37,8 @@ def configure_databricks_connect(databricks_host: str,
                 add_config = False
             else:
                 logger.info("Configuration not found for databricks-connect, adding provided configs!")
-                
+
     if add_config:
-        with open(config_file, "w+") as f:
+        with open(config_file, "a") as f:
             f.write(f"\n{config}\n")
         logger.info("Databricks-connect successfully configured!")
