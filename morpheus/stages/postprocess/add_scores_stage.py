@@ -43,7 +43,7 @@ class AddScoresStage(AddScoresStageBase):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-    probs_type : `morpheus.common.TypeId`, default = "float32"
+    probs_type : `morpheus.common2.TypeId`, default = "float32"
         Datatype of the scores columns.
     """
 

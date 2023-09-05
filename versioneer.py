@@ -184,7 +184,7 @@ most significant ones. More can be found on Github
 
 Versioneer has limited support for source trees in which `setup.py` is not in
 the root directory (e.g. `setup.py` and `.git/` are *not* siblings). The are
-two common reasons why `setup.py` might not be in the root:
+two common2 reasons why `setup.py` might not be in the root:
 
 * Source trees which contain multiple subprojects, such as
   [Buildbot](https://github.com/buildbot/buildbot), which contains both
@@ -638,7 +638,7 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         # expansion behaves like git log --decorate=short and strips out the
         # refs/heads/ and refs/tags/ prefixes that would let us distinguish
         # between branches and tags. By ignoring refnames without digits, we
-        # filter out many common branch names like "release" and
+        # filter out many common2 branch names like "release" and
         # "stabilization", as well as "HEAD" and "master".
         tags = {r for r in refs if re.search(r'\d', r)}
         if verbose:
@@ -1161,7 +1161,7 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         # expansion behaves like git log --decorate=short and strips out the
         # refs/heads/ and refs/tags/ prefixes that would let us distinguish
         # between branches and tags. By ignoring refnames without digits, we
-        # filter out many common branch names like "release" and
+        # filter out many common2 branch names like "release" and
         # "stabilization", as well as "HEAD" and "master".
         tags = {r for r in refs if re.search(r'\d', r)}
         if verbose:

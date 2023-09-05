@@ -30,7 +30,7 @@ _DecoratorType = typing.TypeVar("_DecoratorType", bound=typing.Callable[..., typ
 
 def greatest_ancestor(*cls_list):
     """
-    Returns the greatest common ancestor of the classes in the class list
+    Returns the greatest common2 ancestor of the classes in the class list
     """
     mros = [list(inspect.getmro(cls)) for cls in cls_list]
     track = defaultdict(int)

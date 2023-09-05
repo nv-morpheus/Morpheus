@@ -49,7 +49,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     iterative : boolean, default = False, is_flag = True
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
+    file_type : `morpheus.common2.FileTypes`, optional, case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
     repeat : int, default = 1, min = 1

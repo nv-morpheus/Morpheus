@@ -46,7 +46,7 @@ class WriteToFileStage(SinglePortStage):
         Name of the file to which the messages will be written.
     overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
-    file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
+    file_type : `morpheus.common2.FileTypes`, optional, case_sensitive = False
         Indicates what type of file to write. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json' and 'jsonlines'
     include_index_col : bool, default = True

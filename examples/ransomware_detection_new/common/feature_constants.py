@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-common2 tools and utilities for model training and tuning.
-"""
+
+
+class FeatureConstants():
+
+    FULL_MEMORY_ADDRESS = 2147483647
+
+    PROTECTIONS = {
+        'PAGE_READONLY ': 'PAGE_READONLY_RATIO',
+        'PAGE_EXECUTE_WRITECOPY ': 'PAGE_EXECUTE_WRITECOPY_RATIO',
+        'PAGE_READWRITE ': 'PAGE_READWRITE_RATIO',
+        'PAGE_NOACCESS ': 'PAGE_NOACCESS_RATIO',
+        'PAGE_EXECUTE_READWRITE ': 'PAGE_EXECUTE_READWRITE_RATIO'
+    }
+
+    STATE_LIST = [2,4,5]
+    WAIT_REASON_LIST = [9,13,15,22,31]

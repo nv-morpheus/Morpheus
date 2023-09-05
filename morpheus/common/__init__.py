@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Module for common utilities and classes in the Morpheus library.
+Module for common2 utilities and classes in the Morpheus library.
 """
 
-# Export symbols from the morpheus._lib.common module. Users should never be directly importing morpheus._lib
+# Export symbols from the morpheus._lib.common2 module. Users should never be directly importing morpheus._lib
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource

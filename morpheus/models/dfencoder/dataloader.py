@@ -440,7 +440,7 @@ class DatasetFromDataframe(Dataset):
     ):
         """A dataset class that slice a given dataframe into batches and applies preprocessing to each batch.
         * This class is developed to match the interface of the DatasetFromPath class. 
-          As a result, unlike other common implementations of PyTorch datasets that return one row at a time and
+          As a result, unlike other common2 implementations of PyTorch datasets that return one row at a time and
           let the higher level DataLoader batch the data, this class returns one batch at a time when `__getitem__`
           is called. (Even if this limits the ability to fully shuffle the whole dataset.)
 

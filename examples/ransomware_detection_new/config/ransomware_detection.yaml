@@ -1,0 +1,149 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+file_extensions:
+  - doc
+  - docx
+  - html
+  - htm
+  - odt
+  - pdf
+  - xls
+  - xlsx
+  - ods
+  - ppt
+  - pptx
+  - txt
+  - csv
+  - jpg
+  - jpeg
+  - png
+  - zip
+  - gif
+  - bmp
+  - dmp
+  - 7z
+  - rar
+  - msg
+model_features:
+  - THREAD_STATE_2
+  - HANDLES_DOUBLE_EXTENSION
+  - THREAD_WINDOWS_WAIT_REASON_9
+  - VMA_WINDOWS_COMMIT_CHARGE_FULL
+  - VMA_WINDOWS_COMMIT_CHARGE_MAX
+  - VMA_WINDOWS_COMMIT_CHARGE_STD
+  - VMA_AMOUNT
+  - THREAD_STATE_4
+  - VMA_WINDOWS_COMMIT_CHARGE_MEAN
+  - LIB_WINDOWS_SIZE_OFIMAGE
+  - VMA_WINDOWS_PROTECTION_PAGE_READWRITE_RATIO
+  - HANDLES_AMOUNT
+  - VMA_WINDOWS_PROTECTION_PAGE_EXECUTE_WRITECOPY_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_22
+  - VMA_WINDOWS_PROTECTION_PAGE_NOACCESS_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_13
+  - VMA_WINDOWS_PROTECTION_PAGE_EXECUTE_READWRITE_RATIO
+  - VMA_WINDOWS_PROTECTION_PAGE_READWRITE_READONLY_DEVIDE
+  - VMA_WINDOWS_PROTECTION_PAGE_READONLY_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_31
+  - THREAD_STATE_5
+  - VMA_WINDOWS_PRIVATE_MEMORY_1
+  - LIBS_AMOUNT
+  - THREAD_WINDOWS_WAIT_REASON_15
+  - VMA_WINDOWS_PRIVATE_MEMORY_0
+
+raw_columns:
+  - Base
+  - Block
+  - CommitCharge
+  - "End VPN"
+  - File
+  - GrantedAccess
+  - HandleValue
+  - InInit
+  - InLoad
+  - InMem
+  - Name
+  - Offset
+  - PID
+  - Parent
+  - Path
+  - PrivateMemory
+  - Process
+  - Protection
+  - SHA256
+  - Size
+  - "Start VPN"
+  - State
+  - TID
+  - Tag
+  - Type
+  - Value
+  - Variable
+  - WaitReason
+  - plugin
+  - snapshot_id
+  - timestamp
+  - source
+
+plugins_schema:
+  ldrmodules:
+    name: doca_apsh_lib_windows
+    column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_LIB_PID: PID
+          DOCA_APSH_LIB_COMM: Process
+          DOCA_APSH_LIB_LIBRARY_PATH: Path
+          DOCA_APSH_LIB_WINDOWS_SIZE_OFIMAGE: Size
+          DOCA_APSH_LIB_WINDOWS_FULL_DLL_NAME: Name
+  threadlist:
+      name: doca_apsh_thread_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_THREAD_PID: PID
+          DOCA_APSH_THREAD_COMM: Process
+          DOCA_APSH_THREAD_STATE: State
+          DOCA_APSH_LIB_WINDOWS_SIZE_OFIMAGE: Size
+          DOCA_APSH_THREAD_WINDOWS_WAIT_REASON: WaitReason
+  vadinfo:
+      name: doca_apsh_vad_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_VMA_PID: PID
+          DOCA_APSH_VMA_PROCESS_NAME: Process
+          DOCA_APSH_VMA_PROTECTION: Protection
+          DOCA_APSH_VMA_WINDOWS_COMMIT_CHARGE: CommitCharge
+          DOCA_APSH_VMA_WINDOWS_PRIVATE_MEMORY: PrivateMemory
+          DOCA_APSH_VMA_FILE_PATH: File
+          DOCA_APSH_VMA_WINDOWS_TAG: Tag
+  handles:
+      name: doca_apsh_handle_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_HANDLE_PID: PID
+          DOCA_APSH_HANDLE_COMM: Process
+          DOCA_APSH_HANDLE_TYPE: Type
+          DOCA_APSH_HANDLE_NAME: Name
+
+intrested_plugins:
+  - handles
+  - threadlist
+  - ldrmodules
+  - vadinfo

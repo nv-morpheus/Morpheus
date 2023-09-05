@@ -177,7 +177,7 @@ pod/sdk-cli-helper           1/1     Running   0               41s
 Connect to the **sdk-cli-helper** container and copy the models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLflow will have access to model files.
 
 ```bash
-kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
+kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common2
 ```
 
 ### Install Morpheus MLflow
@@ -263,7 +263,7 @@ Delete deployed models from Morpheus AI Engine:
 Now that we've figured out how to deploy models let's move on to the next step. Now it's time to deploy the relevant models, which have already been copied to `/opt/morpheus/common/models` which are bound to `/common/models` within the MLflow pod.
 
 ```bash
-(mlflow) root@mlflow-6d98:/mlflow# ls -lrt /common/models
+(mlflow) root@mlflow-6d98:/mlflow# ls -lrt /common2/models
 ```
 
 Output:
@@ -292,7 +292,7 @@ Publish and deploy sid-minibert-onnx model:
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
       --model_name sid-minibert-onnx \
-      --model_directory /common/models/triton-model-repo/sid-minibert-onnx \
+      --model_directory /common2/models/triton-model-repo/sid-minibert-onnx \
       --flavor triton
 ```
 
@@ -309,7 +309,7 @@ Publish and deploy phishing-bert-onnx model:
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
       --model_name phishing-bert-onnx \
-      --model_directory /common/models/triton-model-repo/phishing-bert-onnx \
+      --model_directory /common2/models/triton-model-repo/phishing-bert-onnx \
       --flavor triton
 ```
 ```bash
@@ -325,7 +325,7 @@ Publish and deploy abp-nvsmi-xgb model:
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
       --model_name abp-nvsmi-xgb \
-      --model_directory /common/models/triton-model-repo/abp-nvsmi-xgb \
+      --model_directory /common2/models/triton-model-repo/abp-nvsmi-xgb \
       --flavor triton
 ```
 
@@ -400,7 +400,7 @@ helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
 To publish messages to a Kafka topic, we need to copy datasets to locations where they can be accessed from the host.
 
 ```bash
-kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
+kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common2
 ```
 
 Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
@@ -539,7 +539,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common/data/email.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common2/data/email.jsonlines>
 ```
 
 > **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.

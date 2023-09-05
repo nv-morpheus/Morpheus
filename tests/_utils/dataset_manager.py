@@ -33,7 +33,7 @@ from morpheus.utils.type_aliases import DataFrameType
 
 class DatasetManager:
     """
-    Helper class for loading and caching test datasets as DataFrames, along with some common manipulation methods.
+    Helper class for loading and caching test datasets as DataFrames, along with some common2 manipulation methods.
 
     Parameters
     ----------

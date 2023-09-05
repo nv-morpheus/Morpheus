@@ -54,7 +54,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus.common.FileTypes`, default = 'auto'
+    file_type : `morpheus.common2.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1

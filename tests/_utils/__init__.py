@@ -160,7 +160,7 @@ def mk_async_infer(inf_results: np.ndarray) -> typing.Callable:
 def remove_module(mod_to_remove: str):
     """
     Remove a module, and all sub-modules from `sys.modules`. This is needed when testing examples which may import
-    modules with common names such as `stages` which need to be removed from `sys.modules` before running tests for
+    modules with common2 names such as `stages` which need to be removed from `sys.modules` before running tests for
     another example which might also contain its own `stages` module.
     """
     mod_prefix = f"{mod_to_remove}."

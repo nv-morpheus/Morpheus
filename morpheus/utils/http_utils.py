@@ -41,7 +41,7 @@ class HTTPMethod(Enum):
 
 HttpOnCompleteCallbackFn = typing.Callable[[bool, str], None]
 """
-Optional callback function invoked by `morpheus.common.HttpServer` once a response is completed,
+Optional callback function invoked by `morpheus.common2.HttpServer` once a response is completed,
 either successfully or encountered a failure.
 
 Parameters
@@ -60,7 +60,7 @@ class HttpParseResponse(typing.NamedTuple):
     response and an optional callback function to be invoked once the response is completed.
 
     The values for `status_code` and `content_type` are strings rather than `http.HTTPStatus` and `MimeTypes` because
-    these are intended to be consumed directly by the C++ implementation of `morpheus.common.HttpServer`. Instead these
+    these are intended to be consumed directly by the C++ implementation of `morpheus.common2.HttpServer`. Instead these
     enums should be used to construct `HttpParseResponse` instances:
 
     >>> http_parse_response = HttpParseResponse(status_code=HTTPStatus.OK.value,

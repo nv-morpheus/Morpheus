@@ -1,0 +1,6 @@
+{
+    "name": "ransomware_model_tl_opt_fast",
+    "triton_model_path": "/common/triton-model-repo/ransomware_model_tl_opt_fast",
+    "mlflow_model_uri": "models:/ransomware_model_tl_opt_fast/1",
+    "flavor": "triton"
+}

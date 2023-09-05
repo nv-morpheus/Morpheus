@@ -72,7 +72,7 @@ def interested_plugins():
 
 
 # Some of the code inside ransomware_detection performs imports in the form of:
-#    from common....
+#    from common2....
 # For this reason we need to ensure that the examples/ransomware_detection dir is in the sys.path first
 @pytest.fixture(autouse=True)
 @pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
@@ -87,5 +87,5 @@ def reset_modules():
     modules imported by these tests are removed from sys.modules after the test is completed.
     """
     yield
-    for remove_mod in ('common', 'stages'):
+    for remove_mod in ('common2', 'stages'):
         remove_module(remove_mod)

@@ -168,7 +168,7 @@ py-version = "3.10"
 # source root.
 # source-roots =
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
+# When enabled, pylint would attempt to guess common2 misconfiguration and emit
 # user-friendly hints instead of false-positive error messages.
 suggestion-mode = true
 

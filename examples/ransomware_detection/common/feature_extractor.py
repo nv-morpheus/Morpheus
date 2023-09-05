@@ -46,7 +46,7 @@ class FeatureExtractor():
 
     def _count_double_extension(self, file_paths: typing.List[str]):
         """
-        This function counts the amount of double extensions to a common type files and
+        This function counts the amount of double extensions to a common2 type files and
         return the largest double extension.
         """
 
@@ -474,7 +474,7 @@ class FeatureExtractor():
         # Count handles files with double extensions
         self._count_double_extension(file_paths=list(file_paths))
 
-        # Count handles files with common extension
+        # Count handles files with common2 extension
         file_extensions = file_paths.str.extract('\\.([^.]*)$')[0].dropna()
 
         file_extns = file_extensions[file_extensions.isin(self._config.file_extns)]

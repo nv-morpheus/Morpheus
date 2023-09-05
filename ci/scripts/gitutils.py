@@ -404,7 +404,7 @@ def get_merge_target():
 
 def determine_merge_commit(current_branch="HEAD"):
     """
-    When running outside of CI, this will estimate the target merge commit hash of `current_branch` by finding a common
+    When running outside of CI, this will estimate the target merge commit hash of `current_branch` by finding a common2
     ancester with the remote branch 'branch-{major}.{minor}' where {major} and {minor} are determined from the repo
     version.
 
@@ -416,7 +416,7 @@ def determine_merge_commit(current_branch="HEAD"):
     Returns
     -------
     str
-        The common commit hash ID
+        The common2 commit hash ID
     """
 
     remote_branch = get_merge_target()

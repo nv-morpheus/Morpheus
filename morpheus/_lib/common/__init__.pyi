@@ -1,6 +1,6 @@
 """
         -----------------------
-        .. currentmodule:: morpheus.common
+        .. currentmodule:: morpheus.common2
         .. autosummary::
            :toctree: _generate
         """

@@ -85,7 +85,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         Input schema for the DataFrame.
     filter_null : bool, optional
         Whether to filter null values from the DataFrame.
-    file_type : `morpheus.common.FileTypes`, optional
+    file_type : `morpheus.common2.FileTypes`, optional
         File type of the input files. If `FileTypes.Auto`, the file type will be inferred from the file extension.
     parser_kwargs : dict, optional
         Keyword arguments to pass to the DataFrame parser.
