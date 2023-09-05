@@ -23,7 +23,11 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-class BasePassThruStage(SinglePortStage):
+class MultiMessagePassThruStage(PassThruTypeMixin, SinglePortStage):
+
+    @property
+    def name(self) -> str:
+        return "mm-pass-thru"
 
     def accepted_types(self) -> (MultiMessage, ):
         return (MultiMessage, )
@@ -39,17 +43,3 @@ class BasePassThruStage(SinglePortStage):
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
-
-
-class MultiMessagePassThruStage(PassThruTypeMixin, BasePassThruStage):
-
-    @property
-    def name(self) -> str:
-        return "mm-pass-thru"
-
-
-class InferredMultiMessagePassThruStage(PassThruTypeMixin, BasePassThruStage):
-
-    @property
-    def name(self) -> str:
-        return "inf-mm-pass-thru"

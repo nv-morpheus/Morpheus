@@ -21,7 +21,6 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
-from _utils.stages.multi_message_pass_thru import InferredMultiMessagePassThruStage
 from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
@@ -92,8 +91,7 @@ def test_destructors_called(config: Config, filter_probs_df: DataFrameType):
 
 
 @pytest.mark.use_cudf
-@pytest.mark.parametrize("PassThruStage", [MultiMessagePassThruStage, InferredMultiMessagePassThruStage])
-def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType, PassThruStage: type):
+def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType):
     """
     Test to ensure that we aren't narrowing the types of messages in the pipeline.
 
@@ -109,7 +107,7 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config))
-    pipe.add_stage(PassThruStage(config))
+    pipe.add_stage(MultiMessagePassThruStage(config))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=[f"^{c}$" for c in config.class_labels]))
     compare_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
