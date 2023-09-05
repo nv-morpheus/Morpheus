@@ -68,7 +68,11 @@ class DFPArgParser:
         self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
         self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
 
-    def verify_init(self, func):
+    @staticmethod
+    def verify_init(func):
+        """
+        Decorator function that verifies DFPArgParser instance has been initialized.
+        """
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
@@ -91,7 +95,6 @@ class DFPArgParser:
     def silence_monitors(self):
         return self._silence_monitors
 
-    @property
     @verify_init
     def include_generic(self):
         return self._include_generic

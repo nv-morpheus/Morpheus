@@ -47,7 +47,7 @@ if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 # End-to-end test intended to imitate the ABP validation test
-FEATURE_LENGTH = 29
+FEATURE_LENGTH = 18
 MODEL_MAX_BATCH_SIZE = 1024
 
 

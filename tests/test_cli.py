@@ -995,7 +995,7 @@ class TestCLI:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
-        test_columns = [f"column{i}" for i in range(29)]
+        test_columns = [f"column{i}" for i in range(18)]
 
         # Overwrite the copied labels
         with open(columns_file_local, mode="w", encoding='UTF-8') as f:
