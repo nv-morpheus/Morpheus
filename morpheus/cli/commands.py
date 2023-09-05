@@ -369,7 +369,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
              cls=PluginGroup,
              pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
-              default=29,
+              default=18,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
 @click.option('--label',

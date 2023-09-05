@@ -52,7 +52,7 @@ class Pipeline():
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
 
     """
@@ -61,6 +61,7 @@ class Pipeline():
         self._source_count: int = None  # Maximum number of iterations for progress reporting. None = Unknown/Unlimited
 
         self._id_counter = 0
+        self._num_threads = config.num_threads
 
         # Complete set of nodes across segments in this pipeline
         self._stages: typing.Set[Stage] = set()
@@ -70,10 +71,6 @@ class Pipeline():
 
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
-
-        self._exec_options = mrc.Options()
-        self._exec_options.topology.user_cpuset = f"0-{config.num_threads - 1}"
-        self._exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
         # Set the default channel size
         mrc.Config.default_channel_size = config.edge_buffer_size
@@ -87,7 +84,6 @@ class Pipeline():
         self._is_started = False
 
         self._mrc_executor: mrc.Executor = None
-        self._mrc_pipeline: mrc.Pipeline = None
 
     @property
     def is_built(self) -> bool:
@@ -233,9 +229,13 @@ class Pipeline():
 
         logger.info("====Registering Pipeline====")
 
-        self._mrc_executor = mrc.Executor(self._exec_options)
+        exec_options = mrc.Options()
+        exec_options.topology.user_cpuset = f"0-{self._num_threads - 1}"
+        exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
-        self._mrc_pipeline = mrc.Pipeline()
+        self._mrc_executor = mrc.Executor(exec_options)
+
+        mrc_pipeline = mrc.Pipeline()
 
         def inner_build(builder: mrc.Builder, segment_id: str):
             logger.info("====Building Segment: %s====", segment_id)
@@ -281,9 +281,9 @@ class Pipeline():
             segment_egress_ports = segment["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
-                                            [port_info["port_pair"] for port_info in segment_egress_ports],
-                                            segment_inner_build)
+            mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+                                      [port_info["port_pair"] for port_info in segment_egress_ports],
+                                      segment_inner_build)
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True
@@ -291,7 +291,7 @@ class Pipeline():
         # Finally call _on_start
         self._on_start()
 
-        self._mrc_executor.register_pipeline(self._mrc_pipeline)
+        self._mrc_executor.register_pipeline(mrc_pipeline)
 
         self._is_built = True
 
@@ -318,6 +318,7 @@ class Pipeline():
         self._mrc_executor.stop()
 
         logger.info("====Pipeline Stopped====")
+        self._on_stop()
 
     async def join(self):
         """
@@ -346,6 +347,11 @@ class Pipeline():
             # Now call join on all stages
             for stage in list(self._stages):
                 await stage.join()
+
+            self._on_stop()
+
+    def _on_stop(self):
+        self._mrc_executor = None
 
     async def _build_and_start(self):
 

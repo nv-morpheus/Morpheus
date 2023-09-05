@@ -1,7 +1,7 @@
 {
-	"tracking_uri": "http://mlflow:5000",
+	"tracking_uri": "http://localhost:5000",
 	"test_dfp_modules_azure_payload_inference_e2e": {
-		"message_path": "./resource/control_messages/azure_payload_inference.json",
+		"message_path": "../control_messages/azure_payload_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -13,7 +13,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_payload_lti_e2e": {
-		"message_path": "./resource/control_messages/azure_payload_lti.json",
+		"message_path": "../control_messages/azure_payload_lti.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -25,7 +25,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_payload_lti_s3_e2e": {
-		"message_path": "./resource/control_messages/azure_payload_lti_s3.json",
+		"message_path": "../control_messages/azure_payload_lti_s3.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -37,7 +37,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_payload_training_e2e": {
-		"message_path": "./resource/control_messages/azure_payload_training.json",
+		"message_path": "../control_messages/azure_payload_training.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -49,7 +49,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_streaming_inference_e2e": {
-		"message_path": "./resource/control_messages/azure_streaming_inference.json",
+		"message_path": "../control_messages/azure_streaming_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -61,7 +61,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_streaming_lti_e2e": {
-		"message_path": "./resource/control_messages/azure_streaming_lti.json",
+		"message_path": "../control_messages/azure_streaming_lti.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -73,7 +73,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_azure_streaming_training_e2e": {
-		"message_path": "./resource/control_messages/azure_streaming_training.json",
+		"message_path": "../control_messages/azure_streaming_training.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -85,7 +85,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_payload_inference_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_inference.json",
+		"message_path": "../control_messages/duo_payload_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -97,7 +97,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_payload_lti_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_lti.json",
+		"message_path": "../control_messages/duo_payload_lti.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -109,7 +109,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_payload_only_load_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_only_load.json",
+		"message_path": "../control_messages/duo_payload_only_load.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -121,7 +121,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_payload_training_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_training.json",
+		"message_path": "../control_messages/duo_payload_training.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -133,7 +133,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_streaming_inference_e2e": {
-		"message_path": "./resource/control_messages/duo_streaming_inference.json",
+		"message_path": "../control_messages/duo_streaming_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -145,7 +145,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_streaming_lti_e2e": {
-		"message_path": "./resource/control_messages/duo_streaming_lti.json",
+		"message_path": "../control_messages/duo_streaming_lti.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -157,7 +157,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_streaming_only_load_e2e": {
-		"message_path": "./resource/control_messages/duo_streaming_only_load.json",
+		"message_path": "../control_messages/duo_streaming_only_load.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -169,7 +169,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_streaming_payload_e2e": {
-		"message_path": "./resource/control_messages/duo_streaming_payload.json",
+		"message_path": "../control_messages/duo_streaming_payload.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -181,7 +181,7 @@
 		"use_cpp": true
 	},
 	"test_dfp_modules_duo_streaming_training_e2e": {
-		"message_path": "./resource/control_messages/duo_streaming_training.json",
+		"message_path": "../control_messages/duo_streaming_training.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
