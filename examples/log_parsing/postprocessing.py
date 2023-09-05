@@ -23,7 +23,6 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
-from messages import MultiResponseLogParsingMessage  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -74,7 +73,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiResponseLogParsingMessage, )
+        return (MultiPostprocLogParsingMessage, )
 
     def output_type(self, parent_output_type: type) -> type:
         return MessageMeta

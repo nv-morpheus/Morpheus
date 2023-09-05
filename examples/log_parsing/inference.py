@@ -176,6 +176,9 @@ class LogParsingInferenceStage(InferenceStage):
         # Get the value from the worker class
         return False
 
+    def output_type(self, parent_output_type: type) -> type:
+        return MultiPostprocLogParsingMessage
+
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
