@@ -58,11 +58,18 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, server_url: str = "0.0.0.0", server_port: int = 8765):
+    def __init__(self,
+                 c: Config,
+                 server_url: str = "0.0.0.0",
+                 server_port: int = 8765,
+                 out_dir: str = None,
+                 overwrite: bool = False):
         super().__init__(c)
 
         self._server_url = server_url
         self._server_port = server_port
+        self._out_dir = out_dir
+        self._overwrite = overwrite
 
         self._first_timestamp = -1
         self._buffers = []
@@ -167,7 +174,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         out_file = os.path.join(self._out_dir, f"{offset}.csv")
 
-        assert not os.path.exists(out_file)
+        assert self._overwrite or not os.path.exists(out_file)
 
         in_df.to_csv(out_file, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
