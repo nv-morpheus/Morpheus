@@ -41,7 +41,6 @@ class Stage(_pipeline.StreamWrapper):
     def _start(self):
         pass
 
-    # TODO : pipeline should assert that the length of the output types matches the number of output ports
     @abstractmethod
     def output_types(self, parent_output_types: list[type]) -> list[type]:
         """
