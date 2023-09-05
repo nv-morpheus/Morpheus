@@ -331,7 +331,6 @@ class ModelManager:
             logger.error("Deadlock when trying to acquire model cache lock")
             raise RuntimeError("Deadlock when trying to acquire model cache lock") from e
 
-    # pylint: disable=dangerous-default-value
     def load_user_model_cache(self,
                               user_id: str,
                               timeout: float,
