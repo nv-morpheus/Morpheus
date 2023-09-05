@@ -24,7 +24,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-# TODO: Document the InferredPassThruTypeMixin
+# TODO: Document the PassThruTypeMixin
 @register_stage("pass-thru")
 class PassThruStage(PassThruTypeMixin, SinglePortStage):
     """

@@ -86,6 +86,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def stop(self):
         # Indicate we need to stop
         self._stop_requested = True

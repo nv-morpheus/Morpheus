@@ -84,6 +84,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(cls) -> bool:
         return True
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
