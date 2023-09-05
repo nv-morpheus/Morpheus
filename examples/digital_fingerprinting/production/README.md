@@ -157,6 +157,12 @@ Run Azure Inference Pipeline:
 python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json"
 ```
 
+##### Module-based DFP pipelines
+
+The commands in the previous section run stage-based example DFP pipelines. The Morpheus 23.03 release introduced a new, more flexible module-based approach to build pipelines through the use of control messages. More information about modular DFP pipelines can be found [here](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md).
+
+Commands to run equivalent module-based DFP pipelines can be found [here](../../../docs/source/developer_guide/guides/10_modular_pipeline_digital_fingerprinting.md#running-example-modular-dfp-pipelines).
+
 #### Optional MLflow Service
 Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
