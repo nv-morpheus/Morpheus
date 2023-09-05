@@ -18,7 +18,7 @@ def configure_databricks_connect(databricks_host: str,
         raise Exception("Parameter for databricks cluster not provided")
 
     config_file = f"{str(Path.home())}/.databricks-connect"
-    add_config = False
+    add_config = True
 
     config = {
         "host": os.environ.get('DATABRICKS_HOST', databricks_host),
@@ -34,11 +34,10 @@ def configure_databricks_connect(databricks_host: str,
         with open(config_file) as f:
             if config in f.read():
                 logger.info("Configuration for databricks-connect already exists, nothing added!")
+                add_config = False
             else:
                 logger.info("Configuration not found for databricks-connect, adding provided configs!")
-                add_config = True
-    else:
-        add_config = True
+                
     if add_config:
         with open(config_file, "w+") as f:
             f.write(f"\n{config}\n")

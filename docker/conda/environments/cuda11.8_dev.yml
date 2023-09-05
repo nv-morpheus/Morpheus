@@ -39,7 +39,6 @@ dependencies:
     - cupy>=12.0.0
     - cxx-compiler
     - cython=0.29.24
-    - databricks-connect
     - datacompy=0.8
     - dill
     - docker-py=5.0
@@ -106,4 +105,5 @@ dependencies:
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
+        - databricks-connect
         - pytest-kafka==0.6.0
