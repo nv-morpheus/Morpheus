@@ -27,8 +27,6 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-# TODO: We might have an explicit output type or a typing.Any, we need to update the output_type method to infer the
-# output type if `output_type` is `Typing.Any`.
 class LinearBoundaryEgressStage(SinglePortStage):
     """
     The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
@@ -73,7 +71,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         return (self._output_type, )
 
     def output_type(self, parent_output_type: type) -> type:
-        return self._output_type
+        return parent_output_type
 
     def supports_cpp_node(self):
         return False
@@ -82,7 +80,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         boundary_egress = builder.get_egress(self._port_id)
         builder.make_edge(input_stream[0], boundary_egress)
 
-        return input_stream[0], self._output_type
+        return input_stream
 
 
 class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):

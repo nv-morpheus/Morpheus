@@ -116,8 +116,7 @@ class Receiver():
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
                 if (great_ancestor is None):
-                    # TODO(MDD): Add stage, port, and type info to message
-                    raise RuntimeError(("Cannot determine single type for senders of input port. "
+                    raise RuntimeError((f"Cannot determine single type for senders of input port for {self._parent}. "
                                         "Use a merge stage to handle different types of inputs."))
 
                 self._input_type = great_ancestor
@@ -145,15 +144,12 @@ class Receiver():
                     self._input_node = sender.out_node
                     self._is_node_linked = True
             else:
-                # TODO: get_input_pair would use the mrc builder to create a dummy stream to connect all senders
-                # Not sure if we need to do that
-
                 # Now determine the output type from what we have
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
 
                 if (great_ancestor is None):
                     # TODO(MDD): Add stage, port, and type info to message
-                    raise RuntimeError(("Cannot determine single type for senders of input port. "
+                    raise RuntimeError((f"Cannot determine single type for senders of input port for {self._parent}. "
                                         "Use a merge stage to handle different types of inputs."))
 
                 self._input_type = great_ancestor
