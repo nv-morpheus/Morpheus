@@ -84,7 +84,7 @@ inference tasks against a specific set of data, and the capacity for real-time l
 that can be injected back into the training pipeline.
 
 The following content will track the pipeline declared in
-`examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
+`examples/digital_fingerprinting/production/morpheus/dfp_modules_streaming_pipeline.py`
 
 ```python
 # Setup and command line argument parsing
@@ -514,3 +514,134 @@ def write_to_file(builder: mrc.Builder):
 ```
 
 For a complete reference, refer to: [Write to File](../../modules/core/write_to_file.md)
+
+## Running Example Modular DFP Pipelines
+
+The following are steps to run modular DFP pipelines with example Azure and Duo datasets.
+
+### System requirements
+* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
+* Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
+
+### Building the services
+From the root of the Morpheus repo, run:
+```bash
+cd examples/digital_fingerprinting/production
+docker compose build
+```
+
+> **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
+>
+> ```
+> ERROR: The Compose file './docker-compose.yml' is invalid because:
+> services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was
+> unexpected)
+> ```
+>
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
+
+### Downloading the example datasets
+First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
+
+From the Morpheus repo, run:
+```bash
+pip install s3fs
+python examples/digital_fingerprinting/fetch_example_data.py all
+```
+
+### Morpheus Pipeline
+From the `examples/digital_fingerprinting/production` dir, run:
+```bash
+docker compose run morpheus_pipeline bash
+```
+To run the DFP pipelines with the example datasets within the container, run:
+
+* Duo Training Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/duo_payload_training.json"
+    ```
+
+* Duo Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-30" \
+        --input_file "./control_messages/duo_payload_inference.json"
+    ```
+
+* Duo Training + Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/duo_payload_load_training_inference.json" 
+    ```
+
+* Azure Training Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/azure_payload_training.json"
+    ```
+
+* Azure Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-30" \
+        --input_file "./control_messages/azure_payload_inference.json"
+    ```
+
+* Azure Training + Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/azure_payload_load_train_inference.json" 
+    ```
+
+### Output Fields
+The output files, `dfp_detectiions_duo.csv` and `dfp_detections_azure.csv`, will contain those logs from the input dataset for which an anomaly was detected; this is determined by the z-score in the `mean_abs_z` field. By default, any logs with a z-score of 2.0 or higher are considered anomalous. Refer to [`DFPPostprocessingStage`](6_digital_fingerprinting_reference.md#post-processing-stage-dfppostprocessingstage).
+
+Most of the fields in the output files generated by running the above examples are input fields or derived from input fields. The additional output fields are:
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| event_time | TEXT | ISO 8601 formatted date string, the time the anomaly was detected by Morpheus |
+| model_version | TEXT | Name and version of the model used to performed the inference, in the form of `<model name>:<version>` |
+| max_abs_z | FLOAT | Max z-score across all features |
+| mean_abs_z | FLOAT | Average z-score across all features |
+
+In addition to this, for each input feature the following output fields will exist:
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `<feature name>_loss` | FLOAT | The loss |
+| `<feature name>_z_loss` | FLOAT | The loss z-score |
+| `<feature name>_pred` | FLOAT | The predicted value |
+
+Refer to [DFPInferenceStage](6_digital_fingerprinting_reference.md#inference-stage-dfpinferencestage) for more on these fields.
