@@ -50,7 +50,7 @@ class Sender():
 
     @property
     def is_complete(self):
-        # Sender is complete when the type or stream has been set
+        # Sender is complete when the type has been set
         return self._out_type is not None
 
     @property
