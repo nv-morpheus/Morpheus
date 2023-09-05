@@ -43,9 +43,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
-            from . import morpheus_example as morpheus_example_cpp
-
-            # pylint: disable=c-extension-no-member
+            from _lib import morpheus_example as morpheus_example_cpp
             node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
         else:
             node = builder.make_node(self.unique_name, ops.map(self.on_data))
