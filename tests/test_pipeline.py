@@ -26,11 +26,11 @@ from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.type_aliases import DataFrameType
 
 
