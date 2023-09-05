@@ -53,7 +53,7 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # Attempt to import the C++ stage on creation
         try:
-            # pylint: disable=C0415
+            # pylint: disable=c-extension-no-member
             import morpheus._lib.doca as _doca
 
             self._doca_source_class = _doca.DocaSourceStage

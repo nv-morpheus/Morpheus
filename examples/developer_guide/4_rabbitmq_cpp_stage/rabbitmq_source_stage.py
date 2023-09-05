@@ -23,7 +23,6 @@ import pika
 
 import cudf
 
-from _lib import morpheus_rabbit as morpheus_rabbit_cpp
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
@@ -80,8 +79,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def name(self) -> str:
         return "from-rabbitmq"
 
-    @classmethod
-    def supports_cpp_node(cls) -> bool:
+    def supports_cpp_node(self) -> bool:
         return True
 
     def output_type(self) -> type:
@@ -89,6 +87,9 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
+            # pylint: disable=c-extension-no-member,no-name-in-module
+            from _lib import morpheus_rabbit as morpheus_rabbit_cpp
+
             node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
                                                            self.unique_name,
                                                            self._host,

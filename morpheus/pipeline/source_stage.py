@@ -49,12 +49,6 @@ class SourceStage(_pipeline.StreamWrapper):
     def input_count(self) -> int:
         """
         Return None for no max intput count.
-
-        Returns
-        -------
-        int
-            Input count.
-
         """
         return None
 

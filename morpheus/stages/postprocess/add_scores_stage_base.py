@@ -119,7 +119,7 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
 
         if (probs.shape[1] <= max(idx2label.keys())):
             raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
-                                "Label indexes: {}, Model output columns: {}").format(idx2label, probs.shape[1]))
+                                f"Label indexes: {idx2label}, Model output columns: {probs.shape[1]}"))
 
         if (threshold is not None):
             probs = (probs > threshold).astype(bool)

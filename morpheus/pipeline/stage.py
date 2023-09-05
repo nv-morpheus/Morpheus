@@ -70,6 +70,5 @@ class Stage(_pipeline.StreamWrapper):
         """
         pass
 
-    def _on_complete(self, stream):
-
-        logger.info("Stage Complete: {}".format(self.name))
+    def _on_complete(self, stream):  # pylint: disable=unused-argument
+        logger.info("Stage Complete: %s", self.name)

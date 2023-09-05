@@ -41,15 +41,18 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         self._create_ports(0, 1)
 
+    # pylint: disable=unused-argument
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
+
+    # pylint: enable=unused-argument
 
     @typing.final
     def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         ret_val = self._post_build_single(builder, out_ports_pair[0])
 
-        logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_print_type_name(ret_val[1])))
+        logger.info("Added source: %s\n  └─> %s", self, pretty_print_type_name(ret_val[1]))
 
         return [ret_val]
 
