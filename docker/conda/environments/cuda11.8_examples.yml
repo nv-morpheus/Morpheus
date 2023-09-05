@@ -34,4 +34,3 @@ dependencies:
     - mlflow>=2.2.1,<3
     - papermill=2.3.4
     - s3fs>=2023.6
-    - databricks-connect

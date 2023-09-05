@@ -19,7 +19,6 @@ channels:
     - nvidia
     - rapidsai-nightly
     - conda-forge
-    - databricks-connect
 dependencies:
     - nb_conda_kernels
     - pip

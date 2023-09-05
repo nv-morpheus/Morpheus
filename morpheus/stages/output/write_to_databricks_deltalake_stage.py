@@ -81,17 +81,18 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
 
         super().__init__(config)
         self.delta_path = delta_path
-        self._configure_databricks_connect(databricks_host,
+        configure_databricks_connect(databricks_host,
                                            databricks_token,
                                            databricks_cluster_id,
                                            databricks_port,
                                            databricks_org_id)
-        self.spark = SparkSession.builder.config("spark.databricks.delta.optimizeWrite.enabled", "true")\
-            .config("spark.databricks.delta.autoCompact.enabled", "true")\
-            .getOrCreate()
 
         # Enable Arrow-based columnar data transfers
-        self.spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+        self.spark = SparkSession.builder \
+            .config("spark.databricks.delta.optimizeWrite.enabled", "true") \
+            .config("spark.databricks.delta.autoCompact.enabled", "true") \
+            .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+            .getOrCreate()
 
     @property
     def name(self) -> str:
@@ -115,30 +116,28 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
 
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
-            def write_to_deltalake(x: MessageMeta):
-                # convert cudf to spark dataframe
-                if isinstance(x.df, pd.DataFrame):
-                    df = x.df
-                elif isinstance(x.df, cudf.DataFrame):
-                    df = x.df.to_pandas()
-                else:
-                    raise 
-                schema = self._extract_schema_from_pandas_dataframe(df)
-                spark_df = self.spark.createDataFrame(df, schema=schema)
-                spark_df.write.format('delta')\
-                    .option("mergeSchema", "true").mode("append")\
-                    .save(self.delta_path)
-                return x
 
-            obs.pipe(ops.map(write_to_deltalake)).subscribe(sub)
-
-        node = builder.make_node_full(self.unique_name, node_fn)
+            def write_to_deltalake(meta: MessageMeta):
+            # convert cudf to spark dataframe
+            df = meta.copy_dataframe()
+            if isinstance(df, cudf.DataFrame):
+                df = df.to_pandas()
+            schema = self._extract_schema_from_pandas_dataframe(df)
+            spark_df = self.spark.createDataFrame(df, schema=schema)
+            spark_df.write \
+                .format('delta') \
+                .option("mergeSchema", "true") \
+                .mode("append") \
+                .save(self.delta_path)
+            return meta
+        node = builder.make_node(self.unique_name, ops.map(write_to_deltalake))
         builder.make_edge(stream, node)
 
         # Return input unchanged to allow passthrough
         return node, input_stream[1]
 
-    def _extract_schema_from_pandas_dataframe(self, df):
+    @staticmethod
+    def _extract_schema_from_pandas_dataframe(self, df: pd.DataFrame): -> StructType
         """
         Extract approximate schemas from pandas dataframe
         """

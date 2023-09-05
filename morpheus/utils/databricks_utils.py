@@ -19,7 +19,7 @@ def configure_databricks_connect(databricks_host: str,
 
     config_file = f"{str(Path.home())}/.databricks-connect"
     add_config = False
-    
+
     config = {
         "host": os.environ.get('DATABRICKS_HOST', databricks_host),
         "token": os.environ.get('DATABRICKS_TOKEN', databricks_token),
@@ -28,10 +28,11 @@ def configure_databricks_connect(databricks_host: str,
         "port": databricks_port
     }
     # check if the config file for databricks connect already exists
+    config = json.dumps(config)
     if os.path.exists(config_file):
         # check if the config being added already exists, if so do nothing
         with open(config_file) as f:
-            if json.dumps(config) in f.read():
+            if config in f.read():
                 logger.info("Configuration for databricks-connect already exists, nothing added!")
             else:
                 logger.info("Configuration not found for databricks-connect, adding provided configs!")
@@ -40,5 +41,5 @@ def configure_databricks_connect(databricks_host: str,
         add_config = True
     if add_config:
         with open(config_file, "w+") as f:
-            f.write(json.dumps(config))
+            f.write(f"\n{config}\n")
         logger.info("Databricks-connect successfully configured!")
