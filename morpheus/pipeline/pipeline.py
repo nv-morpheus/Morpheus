@@ -225,7 +225,7 @@ class Pipeline():
 
         logger.info("====Pipeline Pre-build====")
 
-        for segment_id in sorted(self._segments.keys()):
+        for segment_id in self._segments.keys():
             logger.info("====Pre-Building Segment: %s====", segment_id)
             segment_graph = self._segment_graphs[segment_id]
 
@@ -261,7 +261,7 @@ class Pipeline():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
                     port.link_type()
 
-            logger.info("====Building Segment Complete!====")
+            logger.info("====Pre-Building Segment Complete!====")
 
         self._is_pre_built = True
         logger.info("====Pipeline Pre-build Complete!====")
@@ -309,8 +309,7 @@ class Pipeline():
 
                 for stage in segment_graph.nodes():
                     if (stage.can_build(check_ports=True)):
-                        stage.build()
-
+                        stage.build(builder)
             if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 

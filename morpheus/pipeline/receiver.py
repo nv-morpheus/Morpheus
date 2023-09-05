@@ -95,10 +95,11 @@ class Receiver():
             if (len(self._input_senders) == 1):
                 # In this case, our input stream/type is determined from the sole Sender
                 sender = self._input_senders[0]
-
-                self._input_node = sender.out_node
                 self._input_type = sender.out_type
-                self._is_type_linked = True
+
+                if sender.out_node is not None:
+                    self._input_node = sender.out_node
+                    self._is_node_linked = True
             else:
                 # We have multiple senders. Create a dummy stream to connect all senders
                 self._input_node = builder.make_node_component(
@@ -109,7 +110,7 @@ class Receiver():
                     for input_sender in self._input_senders:
                         builder.make_edge(input_sender.out_node, self._input_node)
 
-                    self._is_type_linked = True
+                    self._is_node_linked = True
 
                 # Now determine the output type from what we have
                 great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
@@ -120,6 +121,8 @@ class Receiver():
                                         "Use a merge stage to handle different types of inputs."))
 
                 self._input_type = great_ancestor
+
+            self._is_type_linked = True
 
         return (self._input_node, self._input_type)
 
@@ -137,7 +140,10 @@ class Receiver():
                 # In this case, our input stream/type is determined from the sole Sender
                 sender = self._input_senders[0]
                 self._input_type = sender.out_type
-                self._is_type_linked = True  #???
+                self._is_type_linked = True
+                if sender.out_node is not None:
+                    self._input_node = sender.out_node
+                    self._is_node_linked = True
             else:
                 # TODO: get_input_pair would use the mrc builder to create a dummy stream to connect all senders
                 # Not sure if we need to do that
@@ -191,6 +197,7 @@ class Receiver():
             return
 
         for sender in self._input_senders:
+            assert sender.out_node is not self._input_node
             builder.make_edge(sender.out_node, self._input_node)
 
         self._is_node_linked = True
