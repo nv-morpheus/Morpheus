@@ -11,14 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Mixin for single port stages which receicve and emit the same type."""
+"""Mixin for single port stages which receive and emit the same type."""
 from abc import ABC
 
 
 class PassThruTypeMixin(ABC):
     """
-    Mixin intented to be added to stages which can accept multiple types or `typing.Any`, and who's output type is
-    inferred from the output types of the parent stages.
+    Mixin intented to be added to stages which receive and emit the same type. The stage may receive multiple types or
+    `typing.Any`, and who's output type is inferred from the output types of the parent stages.
     """
 
     def output_type(self, parent_output_type: type) -> type:
