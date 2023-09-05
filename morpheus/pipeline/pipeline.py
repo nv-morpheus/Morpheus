@@ -373,8 +373,10 @@ class Pipeline():
         """
         try:
             # If the pipeline failed any pre-flight checks self._mrc_executor will be None
-            if self._mrc_executor is not None:
-                await self._mrc_executor.join_async()
+            if self._mrc_executor is None:
+                raise RuntimeError("Pipeline failed pre-flight checks.")
+
+            await self._mrc_executor.join_async()
         except Exception:
             logger.exception("Exception occurred in pipeline. Rethrowing")
             raise
