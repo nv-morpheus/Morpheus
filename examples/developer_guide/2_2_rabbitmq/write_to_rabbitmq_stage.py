@@ -86,7 +86,7 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         return message
 
     def on_error(self, ex: Exception):
-        logger.exception("Error occurred : {}".format(ex))
+        logger.exception("Error occurred : %s", ex)
         self._connection.close()
 
     def on_complete(self):

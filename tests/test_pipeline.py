@@ -98,8 +98,8 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
     Test to ensure that we aren't narrowing the types of messages in the pipeline.
 
     In this case, `ConvMsg` emits `MultiResponseMessage` messages which are a subclass of `MultiMessage`,
-    which is the accepted type for `MultiMessagePassThruStage`. We want to ensure that the type is retained allowing us to
-    place a stage after `MultiMessagePassThruStage` requring `MultiResponseMessage` like `AddScoresStage`.
+    which is the accepted type for `MultiMessagePassThruStage`. We want to ensure that the type is retained allowing us
+    to place a stage after `MultiMessagePassThruStage` requring `MultiResponseMessage` like `AddScoresStage`.
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     expected_df = filter_probs_df.to_pandas()

@@ -117,14 +117,14 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def source_generator(self):
         try:
             while not self._stop_requested:
-                (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+                (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
                         df = cudf.io.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
-                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                     finally:
                         self._channel.basic_ack(method_frame.delivery_tag)
                 else:
