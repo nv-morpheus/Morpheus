@@ -48,8 +48,7 @@ def test_pass_thru_ex1(config: Config,
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
 
 
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/_lib/pass_thru.py'),
-                        sys_path=-2)
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py'))
 def test_pass_thru_ex3(config: Config,
                        filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
                        import_mod: types.ModuleType):

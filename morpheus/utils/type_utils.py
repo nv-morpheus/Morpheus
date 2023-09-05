@@ -17,6 +17,7 @@ import types
 import typing
 from collections import defaultdict
 
+#pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
 T = typing.TypeVar('T')
 T1 = typing.TypeVar('T1')
@@ -27,6 +28,8 @@ T4 = typing.TypeVar('T4')
 # Use _DecoratorType as a type variable for decorators. See:
 # https://github.com/python/mypy/pull/8336/files#diff-eb668b35b7c0c4f88822160f3ca4c111f444c88a38a3b9df9bb8427131538f9cR260
 _DecoratorType = typing.TypeVar("_DecoratorType", bound=typing.Callable[..., typing.Any])
+
+#pylint: enable=invalid-name
 
 
 def greatest_ancestor(*cls_list):
@@ -92,16 +95,14 @@ def unpack_union(*cls_list: typing.Type) -> typing.Union:
 
     if (len(cls_list) == 1):
         return typing.Union[cls_list[0]]
-    # elif (len(cls_list) == 2):
-    #     return typing.Union[cls_list[0], cls_list[1]]
-    else:
-        out_union = unpack_union(cls_list[0:2])
 
-        # Since typing.Union[typing.Union[A, B], C] == typing.Union[A, B, C], we build the union up manually
-        for t in cls_list[2:]:
-            out_union = typing.Union[out_union, t]
+    out_union = unpack_union(cls_list[0:2])
 
-        return out_union
+    # Since typing.Union[typing.Union[A, B], C] == typing.Union[A, B, C], we build the union up manually
+    for type_ in cls_list[2:]:
+        out_union = typing.Union[out_union, type_]
+
+    return out_union
 
 
 @typing.overload
@@ -126,30 +127,28 @@ def unpack_tuple(*cls_list: typing.Type) -> typing.Tuple:
 
     if (len(cls_list) == 1):
         return typing.Tuple[cls_list[0]]
-    # elif (len(cls_list) == 2):
-    #     return typing.Union[cls_list[0], cls_list[1]]
-    else:
-        out_tuple = unpack_tuple(cls_list[0:2])
 
-        # Since typing.Tuple[typing.Tuple[A, B], C] == typing.Tuple[A, B, C], we build the union up manually
-        for t in cls_list[2:]:
-            out_tuple = typing.Tuple[out_tuple, t]
+    out_tuple = unpack_tuple(cls_list[0:2])
 
-        return out_tuple
+    # Since typing.Tuple[typing.Tuple[A, B], C] == typing.Tuple[A, B, C], we build the union up manually
+    for type_ in cls_list[2:]:
+        out_tuple = typing.Tuple[out_tuple, type_]
+
+    return out_tuple
 
 
-def pretty_print_type_name(t: typing.Type) -> str:
+def pretty_print_type_name(type_: type) -> str:
     """
     Determines a good label to use for a type. Keeps the strings shorter.
     """
 
-    if (t.__module__ == "typing"):
-        return str(t).replace("typing.", "")
+    if (type_.__module__ == "typing"):
+        return str(type_).replace("typing.", "")
 
-    return t.__module__.split(".")[0] + "." + t.__name__
+    return type_.__module__.split(".")[0] + "." + type_.__name__
 
 
-def get_full_qualname(klass: typing.Type) -> str:
+def get_full_qualname(klass: type) -> str:
     """
     Returns the fully qualified name of a class.
     """
