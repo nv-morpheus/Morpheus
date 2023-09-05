@@ -54,7 +54,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         super().__init__(c)
 
         self._port_id = boundary_port_id
-        self.output_type = data_type if data_type else typing.Any
+        self._output_type = data_type if data_type else typing.Any
 
     @property
     def name(self) -> str:
@@ -70,10 +70,10 @@ class LinearBoundaryEgressStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self.output_type, )
+        return (self._output_type, )
 
     def output_type(self, parent_output_type: type) -> type:
-        return self.output_type
+        return self._output_type
 
     def supports_cpp_node(self):
         return False
@@ -82,7 +82,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         boundary_egress = builder.get_egress(self._port_id)
         builder.make_edge(input_stream[0], boundary_egress)
 
-        return input_stream[0], self.output_type
+        return input_stream[0], self._output_type
 
 
 class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
@@ -110,7 +110,7 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
         super().__init__(c)
 
         self._port_id = boundary_port_id
-        self.output_type = data_type if data_type else typing.Any
+        self._output_type = data_type if data_type else typing.Any
 
     @property
     def name(self) -> str:
@@ -126,10 +126,10 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
             Accepted input types.
 
         """
-        return (self.output_type, )
+        return (self._output_type, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return self.output_type
+    def output_type(self) -> type:
+        return self._output_type
 
     def supports_cpp_node(self):
         return False
@@ -139,4 +139,4 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
         source = builder.make_node(self.unique_name, ops.map(lambda data: data))
         builder.make_edge(boundary_ingress, source)
 
-        return source, self.output_type
+        return source, self._output_type
