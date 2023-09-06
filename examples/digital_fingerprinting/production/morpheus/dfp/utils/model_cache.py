@@ -245,12 +245,14 @@ class ModelManager:
     def user_id_to_model(self, user_id: str):
         return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
-    # pylint: disable=dangerous-default-value
     def load_user_model(self,
                         client,
                         user_id: str,
-                        fallback_user_ids: typing.List[str] = [],
+                        fallback_user_ids: typing.List[str],
                         timeout: float = 1.0) -> ModelCache:
+
+        if fallback_user_ids is None:
+            fallback_user_ids = []
 
         # First get the UserModel
         user_model_cache = self.load_user_model_cache(user_id=user_id,
@@ -331,12 +333,7 @@ class ModelManager:
             logger.error("Deadlock when trying to acquire model cache lock")
             raise RuntimeError("Deadlock when trying to acquire model cache lock") from e
 
-    def load_user_model_cache(self,
-                              user_id: str,
-                              timeout: float,
-                              fallback_user_ids: typing.List[str] = None) -> UserModelMap:
-        if (fallback_user_ids is None):
-            fallback_user_ids = []
+    def load_user_model_cache(self, user_id: str, timeout: float, fallback_user_ids: typing.List[str]) -> UserModelMap:
 
         try:
             with timed_acquire(self._user_model_cache_lock, timeout=timeout):

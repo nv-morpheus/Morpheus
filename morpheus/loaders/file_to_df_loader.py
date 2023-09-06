@@ -91,18 +91,20 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
     except Exception as exec_info:
         raise ValueError(f"Invalid input file type '{file_type}'. Available file types are: CSV, JSON.") from exec_info
 
-    controller = FileToDFController(schema=schema,
-                                    filter_null=filter_null,
-                                    file_type=file_type,
-                                    parser_kwargs=parser_kwargs,
-                                    cache_dir=cache_dir,
-                                    timestamp_column_name=timestamp_column_name)
+    try:
+        controller = FileToDFController(schema=schema,
+                                        filter_null=filter_null,
+                                        file_type=file_type,
+                                        parser_kwargs=parser_kwargs,
+                                        cache_dir=cache_dir,
+                                        timestamp_column_name=timestamp_column_name)
+        pdf = controller.convert_to_dataframe(file_object_batch=(fsspec.open_files(files), n_groups))
+        df = cudf.from_pandas(pdf)
 
-    pdf = controller.convert_to_dataframe(file_object_batch=(fsspec.open_files(files), n_groups))
+        # Overwriting payload with derived data
+        control_message.payload(MessageMeta(df))
 
-    df = cudf.from_pandas(pdf)
-
-    # Overwriting payload with derived data
-    control_message.payload(MessageMeta(df))
+    finally:
+        controller.close()
 
     return control_message

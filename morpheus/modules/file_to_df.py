@@ -85,10 +85,7 @@ def file_to_df(builder: mrc.Builder):
                                     cache_dir=cache_dir,
                                     timestamp_column_name=timestamp_column_name)
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(controller.convert_to_dataframe), ops.on_completed(controller.close)).subscribe(sub)
-
-    node = builder.make_node(FILE_TO_DF, mrc.core.operators.build(node_fn))
+    node = builder.make_node(FILE_TO_DF, ops.map(controller.convert_to_dataframe), ops.on_completed(controller.close))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)
