@@ -613,6 +613,11 @@ def pipeline_other(ctx: click.Context, **kwargs):
 def post_pipeline(ctx: click.Context, *args, **kwargs):
     """Executes the pipeline"""
 
+    pipeline = get_pipeline_from_ctx(ctx)
+    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
+        pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
+        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
+
     config = get_config_from_ctx(ctx)
 
     logger.info("Config: \n%s", config.to_string())
@@ -620,15 +625,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
 
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
-    pipeline = get_pipeline_from_ctx(ctx)
-
-    # Run the pipeline before generating visualization to ensure the pipeline has been started
     pipeline.run()
-
-    # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
-    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
-        pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
-        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
 
 
 # Manually create the subcommands for each command (necessary since commands can be used on multiple groups)
