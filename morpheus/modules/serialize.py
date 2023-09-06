@@ -13,17 +13,11 @@
 # limitations under the License.
 
 import logging
-import re
-import typing
 from functools import partial
 
 import mrc
-import pandas as pd
 
-import cudf
-
-from morpheus.messages import MultiMessage
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_utils import register_module
@@ -58,64 +52,17 @@ def serialize(builder: mrc.Builder):
 
     config = builder.get_current_module_config()
 
-    include_columns = config.get("include", None)
-    exclude_columns = config.get("exclude", [r'^ID$', r'^_ts_'])
+    include = config.get("include", None)
+    exclude = config.get("exclude", [r'^ID$', r'^_ts_'])
     fixed_columns = config.get("fixed_columns", True)
-    columns = config.get("columns", None)
-    use_cpp = config.get("use_cpp", False)
 
-    def convert_to_df(x: MultiMessage,
-                      include_columns: typing.Pattern,
-                      exclude_columns: typing.List[typing.Pattern],
-                      columns: typing.List[str]):
-        """
-        Converts dataframe to entries to JSON lines.
+    controller = SerializeController(include=include, exclude=exclude, fixed_columns=fixed_columns)
 
-        Parameters
-        ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
-            MultiMessage instance that contains data.
-        include_columns : typing.Pattern
-            Columns that are required send to downstream stage.
-        exclude_columns : typing.List[typing.Pattern]
-            Columns that are not required send to downstream stage.
-        columns : typing.List[str]
-            Explicit list of columns to include, if not `None` and `fixed_columns` is `True`, then `include_columns`
-            and `exclude_columns` will be ignored.
-        """
-
-        if (not fixed_columns or columns is None):
-            columns: typing.List[str] = []
-
-            # Minimize access to x.meta.df
-            df_columns = list(x.meta.df.columns)
-
-            # First build up list of included. If no include regex is specified, select all
-            if (include_columns is None):
-                columns = df_columns
-            else:
-                columns = [y for y in df_columns if include_columns.match(y)]
-
-            # Now remove by the ignore
-            for test in exclude_columns:
-                columns = [y for y in columns if not test.match(y)]
-
-        # Get metadata from columns
-        df = x.get_meta(columns)
-
-        if (isinstance(df, pd.DataFrame) and use_cpp):
-            df = cudf.from_pandas(df)
-
-        return MessageMeta(df=df)
-
-    if (include_columns is not None and len(include_columns) > 0):
-        include_columns = re.compile(f"({'|'.join(include_columns)})")
-
-    exclude_columns = [re.compile(x) for x in exclude_columns]
+    include_columns = controller.get_include_col_pattern()
+    exclude_columns = controller.get_exclude_col_pattern()
 
     node = builder.make_node(
-        SERIALIZE,
-        partial(convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns, columns=columns))
+        SERIALIZE, partial(controller.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)
