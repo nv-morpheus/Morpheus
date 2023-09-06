@@ -369,7 +369,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
              cls=PluginGroup,
              pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
-              default=29,
+              default=18,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
 @click.option('--label',
@@ -660,6 +660,7 @@ add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStag
 add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
 add_command("from-http", "morpheus.stages.input.http_server_source_stage.HttpServerSourceStage", modes=ALL)
 add_command("from-http-client", "morpheus.stages.input.http_client_source_stage.HttpClientSourceStage", modes=ALL)
+add_command("from-rss", "morpheus.stages.input.rss_source_stage.RSSSourceStage", modes=ALL)
 add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
 add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
 add_command("inf-pytorch",
