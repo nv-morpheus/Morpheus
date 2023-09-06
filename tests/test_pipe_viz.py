@@ -55,28 +55,23 @@ def viz_pipeline_fixture(config, filter_probs_df):
     return pipe
 
 
-def test_call_before_run(viz_pipeline: Pipeline, tmp_path: str):
-
-    # Test is necessary to ensure run() is called first. See issue #230
-    viz_file = os.path.join(tmp_path, 'pipeline.png')
-
-    with pytest.raises(RuntimeError):
-
-        viz_pipeline.visualize(viz_file, rankdir="LR")
-
-
-def test_png(viz_pipeline: Pipeline, tmp_path: str):
+@pytest.mark.parametrize("run_first", [True, False])
+def test_png(viz_pipeline: Pipeline, tmp_path: str, run_first: bool):
 
     viz_file = os.path.join(tmp_path, 'pipeline.png')
 
-    # Call pipeline run first
-    viz_pipeline.run()
+    if run_first:
+        # Call pipeline run first
+        viz_pipeline.run()
 
     viz_pipeline.visualize(viz_file, rankdir="LR")
 
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
+
+    assert viz_pipeline.is_pre_built
+    assert viz_pipeline.is_built == run_first
 
 
 @pytest.mark.slow
