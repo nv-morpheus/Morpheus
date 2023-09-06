@@ -444,6 +444,9 @@ class Pipeline():
         exists it will be overwritten.  Requires the graphviz library.
         """
 
+        if not self.is_pre_built:
+            self.pre_build()
+
         # Mimic the streamz visualization
         # 1. Create graph (already done since we use networkx under the hood)
         # 2. Readable graph
@@ -476,12 +479,6 @@ class Pipeline():
                 return len(node.input_ports) > 0
 
             return len(node.output_ports) > 0
-
-        if not self._is_build_complete:
-            raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
-                               "the visualization. Please call Pipeline.start(), Pipeline.build_and_start() or "
-                               "Pipeline.run() before calling Pipeline.visualize(). This is a known issue and will "
-                               "be fixed in a future release.")
 
         # Now build up the nodes
         for segment_id in self._segments:
