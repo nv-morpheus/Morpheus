@@ -381,7 +381,7 @@ class FeatureExtractor():
         """
         page_execute_writecopy_count = 0
 
-        for protection, _ in fc.PROTECTIONS.items():
+        for protection in fc.PROTECTIONS:
 
             p_data = self._get_protection_data(x, protection, vadinfo_df_size, vadsinfo_size, vadinfo_size)
 
