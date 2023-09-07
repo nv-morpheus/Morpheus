@@ -26,6 +26,7 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import DateTimeColumn
 from morpheus.utils.column_info import DistinctIncrementColumn
 from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import PreparedDFInfo
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import StringJoinColumn
@@ -361,8 +362,8 @@ def test_input_schema_conversion_interdependent_columns():
     test_df["application"] = ['{"name": "AnotherApp", "version": "1.0"}']
 
     modified_schema = create_and_attach_nvt_workflow(modified_schema)
-    test_df = modified_schema.prep_dataframe(test_df)
-    dataset = nvt.Dataset(test_df)
+    prepared_df_info: PreparedDFInfo = modified_schema.prep_dataframe(test_df)
+    dataset = nvt.Dataset(prepared_df_info.df)
     output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
@@ -399,8 +400,8 @@ def test_input_schema_conversion_nested_operations():
     modified_schema.column_info.append(ColumnInfo(name="appsuffix", dtype="str"))
 
     modified_schema = create_and_attach_nvt_workflow(modified_schema)
-    test_df = modified_schema.prep_dataframe(test_df)
-    dataset = nvt.Dataset(test_df)
+    prepared_df_info: PreparedDFInfo = modified_schema.prep_dataframe(test_df)
+    dataset = nvt.Dataset(prepared_df_info.df)
     output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     expected_df = pd.DataFrame({
@@ -503,8 +504,8 @@ def test_input_schema_conversion():
     modified_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
-    test_df = modified_schema.prep_dataframe(test_df)
-    dataset = nvt.Dataset(test_df)
+    prepared_df_info: PreparedDFInfo = modified_schema.prep_dataframe(test_df)
+    dataset = nvt.Dataset(prepared_df_info.df)
     output_df = modified_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
@@ -587,8 +588,8 @@ def test_input_schema_conversion_with_functional_filter():
     example_schema = create_and_attach_nvt_workflow(example_schema)
 
     # Apply the returned nvt.Workflow to the test dataframe
-    test_df = example_schema.prep_dataframe(test_df)
-    dataset = nvt.Dataset(test_df)
+    prepared_df_info: PreparedDFInfo = example_schema.prep_dataframe(test_df)
+    dataset = nvt.Dataset(prepared_df_info.df)
     output_df = example_schema.nvt_workflow.transform(dataset).to_ddf().compute().to_pandas()
 
     # Check if the output dataframe has the expected schema and values
