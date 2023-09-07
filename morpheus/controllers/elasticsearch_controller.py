@@ -31,11 +31,11 @@ class ElasticsearchController:
     ----------
     connection_kwargs : dict
         Keyword arguments to configure the Elasticsearch connection.
-    raise_on_exception : bool, optional
+    raise_on_exception : bool, optional, default: False
         Whether to raise exceptions on Elasticsearch errors.
-    refresh_period_secs : int, optional
+    refresh_period_secs : int, optional, default: 2400
         The refresh period in seconds for client refreshing.
-    pickled_func_config : dict, optional
+    pickled_func_config : dict, optional, default: None
         Configuration for a pickled function to modify connection parameters.
     """
 
@@ -59,7 +59,7 @@ class ElasticsearchController:
         logger.debug("Elasticsearch cluster info: %s", self._client.info)
         logger.debug("Creating Elasticsearch client... Done!")
 
-    def _apply_derive_params_func(self, pickled_func_config) -> None:
+    def _apply_derive_params_func(self, pickled_func_config: dict) -> None:
         if pickled_func_config:
             pickled_func_str = pickled_func_config["pickled_func_str"]
             encoding = pickled_func_config["encoding"]
@@ -72,7 +72,7 @@ class ElasticsearchController:
 
         Parameters
         ----------
-        force : bool, optional
+        force : bool, optional, default: False
             Force a client refresh.
         """
 
@@ -145,7 +145,7 @@ class ElasticsearchController:
 
             return {}
 
-    def close_client(self):
+    def close_client(self) -> None:
         """
         Close the Elasticsearch client connection.
         """
