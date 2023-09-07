@@ -29,8 +29,6 @@ class ElasticsearchController:
 
     Parameters
     ----------
-    index : str
-        The name of the index to interact with.
     connection_kwargs : dict
         Keyword arguments to configure the Elasticsearch connection.
     raise_on_exception : bool, optional
@@ -42,13 +40,13 @@ class ElasticsearchController:
     """
 
     def __init__(self,
-                 index: str,
                  connection_kwargs: dict,
                  raise_on_exception: bool = False,
                  refresh_period_secs: int = 2400,
                  pickled_func_config: dict = None):
 
-        self._index = index
+        self._client = None
+        self._last_refresh_time = None
         self._connection_kwargs = connection_kwargs
         self._raise_on_exception = raise_on_exception
         self._refresh_period_secs = refresh_period_secs
@@ -56,34 +54,10 @@ class ElasticsearchController:
 
         logger.debug("Creating Elasticsearch client with configuration: %s", connection_kwargs)
 
-        # Create ElasticSearch client
-        self._client = Elasticsearch(**self._connection_kwargs)
-
-        # Check if the client is connected
-        is_connected = self._client.ping()
-
-        if is_connected:
-            logger.debug("Elasticsearch client is connected.")
-        else:
-            logger.debug("Elasticsearch client is not connected.")
-            raise ESConnectionError("Elasticsearch client is not connected.")
-
-        self._last_refresh_time = time.time()
+        self.refresh_client(force=True)
 
         logger.debug("Elasticsearch cluster info: %s", self._client.info)
         logger.debug("Creating Elasticsearch client... Done!")
-
-    @property
-    def client(self) -> Elasticsearch:
-        """
-        Get the active Elasticsearch client instance.
-
-        Returns
-        -------
-        Elasticsearch
-            The active Elasticsearch client.
-        """
-        return self._client
 
     def _apply_derive_params_func(self, pickled_func_config) -> None:
         if pickled_func_config:
@@ -92,7 +66,7 @@ class ElasticsearchController:
             func = pickle.loads(bytes(pickled_func_str, encoding))
             self._connection_kwargs = func(self._connection_kwargs)
 
-    def refresh_client(self, force=False) -> None:
+    def refresh_client(self, force=False) -> bool:
         """
         Refresh the Elasticsearch client instance.
 
@@ -101,18 +75,32 @@ class ElasticsearchController:
         force : bool, optional
             Force a client refresh.
         """
-        if force or self._client is None or time.time() - self._last_refresh_time >= self._refresh_period_secs:
-            if not force and self._client:
+
+        is_refreshed = False
+        time_now = time.time()
+        if force or self._client is None or time_now - self._last_refresh_time >= self._refresh_period_secs:
+            if self._client:
                 try:
                     # Close the existing client
                     self.close_client()
                 except Exception as ex:
                     logger.warning("Ignoring client close error: %s", ex)
             logger.debug("Refreshing Elasticsearch client....")
-            self._client = Elasticsearch(**self._connection_kwargs)
-            logger.debug("Refreshing Elasticsearch client.... Done!")
 
+            # Create Elasticsearch client
+            self._client = Elasticsearch(**self._connection_kwargs)
+
+            # Check if the client is connected
+            if self._client.ping():
+                logger.debug("Elasticsearch client is connected.")
+            else:
+                raise ESConnectionError("Elasticsearch client is not connected.")
+
+            logger.debug("Refreshing Elasticsearch client.... Done!")
             self._last_refresh_time = time.time()
+            is_refreshed = True
+
+        return is_refreshed
 
     def parallel_bulk_write(self, actions) -> None:
         """
@@ -128,16 +116,16 @@ class ElasticsearchController:
             if not success:
                 logger.error("Error writing to ElasticSearch: %s", str(info))
 
-    def search_documents(self, query: dict, index: str = None, **kwargs) -> dict:
+    def search_documents(self, index: str, query: dict, **kwargs) -> dict:
         """
         Search for documents in Elasticsearch based on the given query.
 
         Parameters
         ----------
+        index : str
+            The name of the index to search.
         query : dict
-            The query DSL (Domain Specific Language) for the search.
-        index : str, optional
-            The name of the index to search. If not provided, the instance's index will be used.
+            The DSL query for the search.
         **kwargs
             Additional keyword arguments that are supported by the Elasticsearch search method.
 
@@ -146,8 +134,6 @@ class ElasticsearchController:
         dict
             The search result returned by Elasticsearch.
         """
-        if index is None:
-            index = self._index
 
         try:
             result = self._client.search(index=index, query=query, **kwargs)

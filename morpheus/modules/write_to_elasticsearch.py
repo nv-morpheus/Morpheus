@@ -41,13 +41,20 @@ def write_to_elasticsearch(builder: mrc.Builder):
     config = builder.get_current_module_config()
 
     index = config.get("index", None)
+
+    if index is None:
+        raise ValueError("Index must not be None.")
+
     connection_kwargs = config.get("connection_kwargs")
+
+    if not isinstance(connection_kwargs, dict):
+        raise ValueError(f"Expects `connection_kwargs` as a dictionary, but it is of type {type(connection_kwargs)}")
+
     raise_on_exception = config.get("raise_on_exception", False)
     pickled_func_config = config.get("pickled_func_config", None)
     refresh_period_secs = config.get("refresh_period_secs", 2400)
 
-    controller = ElasticsearchController(index=index,
-                                         connection_kwargs=connection_kwargs,
+    controller = ElasticsearchController(connection_kwargs=connection_kwargs,
                                          raise_on_exception=raise_on_exception,
                                          refresh_period_secs=refresh_period_secs,
                                          pickled_func_config=pickled_func_config)
@@ -68,10 +75,7 @@ def write_to_elasticsearch(builder: mrc.Builder):
 
         return message
 
-    def on_complete():
-        controller.close_client()  # Close client
-
-    node = builder.make_node(WRITE_TO_ELASTICSEARCH, ops.map(on_data), ops.on_completed(on_complete))
+    node = builder.make_node(WRITE_TO_ELASTICSEARCH, ops.map(on_data), ops.on_completed(controller.close_client))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)
