@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import logging
-import pickle
 import time
+import typing
 
+import pandas as pd
 from elasticsearch import ConnectionError as ESConnectionError
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import parallel_bulk
@@ -35,22 +36,21 @@ class ElasticsearchController:
         Whether to raise exceptions on Elasticsearch errors.
     refresh_period_secs : int, optional, default: 2400
         The refresh period in seconds for client refreshing.
-    pickled_func_config : dict, optional, default: None
-        Configuration for a pickled function to modify connection parameters.
+    connection_kwargs_update_func : typing.Callable, optional, default: None
+        Custom function to update connection parameters.
     """
 
     def __init__(self,
                  connection_kwargs: dict,
                  raise_on_exception: bool = False,
                  refresh_period_secs: int = 2400,
-                 pickled_func_config: dict = None):
+                 connection_kwargs_update_func: typing.Callable = None):
 
         self._client = None
         self._last_refresh_time = None
-        self._connection_kwargs = connection_kwargs
         self._raise_on_exception = raise_on_exception
         self._refresh_period_secs = refresh_period_secs
-        self._apply_derive_params_func(pickled_func_config)
+        self._connection_kwargs = self._apply_custom_func(connection_kwargs_update_func, connection_kwargs)
 
         logger.debug("Creating Elasticsearch client with configuration: %s", connection_kwargs)
 
@@ -59,14 +59,14 @@ class ElasticsearchController:
         logger.debug("Elasticsearch cluster info: %s", self._client.info)
         logger.debug("Creating Elasticsearch client... Done!")
 
-    def _apply_derive_params_func(self, pickled_func_config: dict) -> None:
-        if pickled_func_config:
-            pickled_func_str = pickled_func_config["pickled_func_str"]
-            encoding = pickled_func_config["encoding"]
-            func = pickle.loads(bytes(pickled_func_str, encoding))
-            self._connection_kwargs = func(self._connection_kwargs)
+    def _apply_custom_func(self, func, connection_kwargs):
+        # Apply custom function if it's available
+        if func:
+            connection_kwargs = func(connection_kwargs)
 
-    def refresh_client(self, force=False) -> bool:
+        return connection_kwargs
+
+    def refresh_client(self, force: bool = False) -> bool:
         """
         Refresh the Elasticsearch client instance.
 
@@ -74,6 +74,11 @@ class ElasticsearchController:
         ----------
         force : bool, optional, default: False
             Force a client refresh.
+
+        Returns
+        -------
+        bool
+            Returns true if client is refreshed, otherwise false.
         """
 
         is_refreshed = False
@@ -144,6 +149,27 @@ class ElasticsearchController:
                 raise RuntimeError(f"Error searching documents: {exc}") from exc
 
             return {}
+
+    def df_to_parallel_bulk_write(self, index: str, df: pd.DataFrame) -> None:
+        """
+        Convert dataframe entries to an actions and parallel bulk writes to Elasticsearch.
+
+        Parameters
+        ----------
+        index : str
+            The name of the index to write.
+        df : pd.DataFrame
+            DataFrame entries that require writing to Elasticsearch.
+        """
+
+        rows = df.to_dict('records')
+
+        actions = []
+        for row in rows:
+            action = {"_index": index, "_source": row}
+            actions.append(action)
+
+        self.parallel_bulk_write(actions)  # Parallel bulk upload to Elasticsearch
 
     def close_client(self) -> None:
         """

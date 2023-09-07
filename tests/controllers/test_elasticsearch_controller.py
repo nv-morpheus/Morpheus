@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pickle
 import time
 import typing
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 
 from morpheus.controllers.elasticsearch_controller import ElasticsearchController
@@ -63,24 +63,20 @@ def test_constructor(create_controller: typing.Callable[..., ElasticsearchContro
 
 
 @pytest.mark.use_python
-def test_apply_derive_params_func(create_controller: typing.Callable[..., ElasticsearchController]):
-    pickled_func_str = str(pickle.dumps(mock_derive_params), encoding="latin1")
+def test_apply_custom_func(create_controller: typing.Callable[..., ElasticsearchController], connection_kwargs: dict):
 
-    # Create pickled_func_config
-    pickled_func_config = {
-        "pickled_func_str": pickled_func_str,  # Pickled function string
-        "encoding": "latin1"
-    }
-
-    controller = create_controller()
-    # Apply the mock function and check if connection_kwargs is updated
-    controller._apply_derive_params_func(pickled_func_config)
-
-    assert controller._connection_kwargs == {
+    expected_connection_kwargs = {
         "hosts": [{
             "host": "localhost", "port": 9200, "scheme": "http"
         }], "retry_on_status": 3, "retry_on_timeout": 30
     }
+
+    controller = create_controller(connection_kwargs_update_func=mock_derive_params,
+                                   connection_kwargs=connection_kwargs.copy())
+
+    # Ensure the original connection_kwargs is not modified
+    assert connection_kwargs != controller._connection_kwargs
+    assert expected_connection_kwargs == controller._connection_kwargs
 
 
 @pytest.mark.use_python
@@ -138,6 +134,30 @@ def test_parallel_bulk_write(mock_parallel_bulk, create_controller: typing.Calla
 
     create_controller().parallel_bulk_write(actions=mock_actions)
     mock_parallel_bulk.assert_called_once()
+
+
+@pytest.mark.use_python
+@patch("morpheus.controllers.elasticsearch_controller.parallel_bulk", return_value=[(True, None)])
+def test_df_to_parallel_bulk_write(mock_parallel_bulk: typing.Callable,
+                                   create_controller: typing.Callable[..., ElasticsearchController]):
+    data = {"field1": ["value1", "value2"], "field2": ["value3", "value4"]}
+    df = pd.DataFrame(data)
+
+    expected_actions = [{
+        "_index": "test_index", "_source": {
+            "field1": "value1", "field2": "value3"
+        }
+    }, {
+        "_index": "test_index", "_source": {
+            "field1": "value2", "field2": "value4"
+        }
+    }]
+
+    controller = create_controller()
+    controller.df_to_parallel_bulk_write(index="test_index", df=df)
+    mock_parallel_bulk.assert_called_once_with(controller._client,
+                                               actions=expected_actions,
+                                               raise_on_exception=controller._raise_on_exception)
 
 
 def test_search_documents_success(create_controller: typing.Callable[..., ElasticsearchController]):
