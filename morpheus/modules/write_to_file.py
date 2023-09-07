@@ -14,19 +14,11 @@
 """To File Sink Module."""
 
 import logging
-import os
-import typing
 
 import mrc
-import pandas as pd
-from mrc.core import operators as ops
-
-import cudf
 
 from morpheus.common import FileTypes
-from morpheus.common import determine_file_type
-from morpheus.io import serializers
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import register_module
@@ -55,67 +47,19 @@ def write_to_file(builder: mrc.Builder):
     """
     config = builder.get_current_module_config()
 
-    output_file = config.get("filename", None)
+    filename = config.get("filename", None)
     overwrite = config.get("overwrite", False)
     flush = config.get("flush", False)
     file_type = config.get("file_type", FileTypes.Auto)
     include_index_col = config.get("include_index_col", True)
 
-    is_first = True
+    controller = WriteToFileController(filename=filename,
+                                       overwrite=overwrite,
+                                       file_type=file_type,
+                                       include_index_col=include_index_col,
+                                       flush=flush)
 
-    if (os.path.exists(output_file)):
-        if (overwrite):
-            os.remove(output_file)
-        else:
-            raise FileExistsError(
-                f"Cannot output classifications to '{output_file}'. File exists and overwrite = False")
-
-    if (file_type == FileTypes.Auto):
-        file_type = determine_file_type(output_file)
-
-    def convert_to_strings(df: typing.Union[pd.DataFrame, cudf.DataFrame]):
-        nonlocal is_first
-
-        if (file_type == FileTypes.JSON):
-            output_strs = serializers.df_to_json(df, include_index_col=include_index_col)
-        elif (file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=is_first, include_index_col=include_index_col)
-        else:
-            raise NotImplementedError(f"Unknown file type: {file_type}")
-
-        is_first = False
-
-        # Remove any trailing whitespace
-        if (len(output_strs[-1].strip()) == 0):
-            output_strs = output_strs[:-1]
-
-        return output_strs
-
-    # Sink to file
-
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-        # Ensure our directory exists
-        os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
-
-        # Open up the file handle
-        with open(output_file, "a", encoding='UTF-8') as out_file:
-
-            def _write_to_file(x: MessageMeta):
-                lines = convert_to_strings(x.df)
-
-                out_file.writelines(lines)
-
-                if flush:
-                    out_file.flush()
-
-                return x
-
-            obs.pipe(ops.map(_write_to_file)).subscribe(sub)
-
-        # File should be closed by here
-
-    node = builder.make_node(WRITE_TO_FILE, mrc.core.operators.build(node_fn))
+    node = builder.make_node(WRITE_TO_FILE, mrc.core.operators.build(controller.node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

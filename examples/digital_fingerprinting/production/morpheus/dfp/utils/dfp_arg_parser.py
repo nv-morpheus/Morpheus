@@ -24,7 +24,7 @@ import pandas as pd
 
 from morpheus.utils.logger import configure_logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @dataclass
@@ -68,7 +68,11 @@ class DFPArgParser:
         self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
         self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
 
-    def verify_init(self, func):
+    @staticmethod
+    def verify_init(func):
+        """
+        Decorator function that verifies DFPArgParser instance has been initialized.
+        """
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
