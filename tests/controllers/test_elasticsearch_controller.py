@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from elasticsearch import Elasticsearch
 
 from morpheus.controllers.elasticsearch_controller import ElasticsearchController
 
@@ -33,19 +34,19 @@ def mock_derive_params(kwargs):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def patch_elasticsearch():
+def patch_elasticsearch() -> Elasticsearch:
     with patch("morpheus.controllers.elasticsearch_controller.Elasticsearch", autospec=True):
         yield
 
 
 @pytest.fixture(scope="module", name="connection_kwargs")
-def connection_kwargs_fixture():
+def connection_kwargs_fixture() -> dict:
     kwargs = {"hosts": [{"host": "localhost", "port": 9200, "scheme": "http"}]}
     yield kwargs
 
 
 @pytest.fixture(scope="module", name="create_controller")
-def create_controller_fixture(connection_kwargs):
+def create_controller_fixture(connection_kwargs) -> typing.Callable[..., ElasticsearchController]:
 
     def inner_create_controller(*, connection_kwargs=connection_kwargs, refresh_period_secs=10, **controller_kwargs):
         return ElasticsearchController(connection_kwargs=connection_kwargs,

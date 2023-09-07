@@ -105,7 +105,7 @@ class WriteToElasticsearchStage(SinglePortStage):
 
         stream = input_stream[0]
 
-        def on_data(meta: MessageMeta):
+        def on_data(meta: MessageMeta) -> MessageMeta:
 
             self._controller.refresh_client()
 
