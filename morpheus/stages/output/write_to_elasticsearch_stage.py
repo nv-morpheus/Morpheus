@@ -13,6 +13,7 @@
 # limitations under the License.
 """Write to Elasticsearch stage."""
 
+import logging
 import typing
 
 import mrc
@@ -27,6 +28,8 @@ from morpheus.controllers.elasticsearch_controller import ElasticsearchControlle
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+
+logger = logging.getLogger(__name__)
 
 
 @register_stage("to-elasticsearch", ignore_args=["connection_kwargs_update_func"])
@@ -63,8 +66,14 @@ class WriteToElasticsearchStage(SinglePortStage):
 
         self._index = index
 
-        with open(connection_conf_file, "r", encoding="utf-8") as file:
-            connection_kwargs = yaml.safe_load(file)
+        try:
+            with open(connection_conf_file, "r", encoding="utf-8") as file:
+                connection_kwargs = yaml.safe_load(file)
+        except FileNotFoundError as exc:
+            raise FileNotFoundError(
+                f"The specified connection configuration file '{connection_conf_file}' does not exist.") from exc
+        except Exception as exc:
+            raise RuntimeError(f"An error occurred while loading the configuration file: {exc}") from exc
 
         self._controller = ElasticsearchController(connection_kwargs=connection_kwargs,
                                                    raise_on_exception=raise_on_exception,
@@ -103,6 +112,7 @@ class WriteToElasticsearchStage(SinglePortStage):
             df = meta.copy_dataframe()
             if isinstance(df, cudf.DataFrame):
                 df = df.to_pandas()
+                logger.debug("Converted cudf of size: %s to pandas dataframe.", len(df))
 
             self._controller.df_to_parallel_bulk_write(index=self._index, df=df)
 
