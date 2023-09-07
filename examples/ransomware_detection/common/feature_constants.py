@@ -15,38 +15,15 @@
 
 class FeatureConstants():
 
-    FILE_EXTN_EXP = '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL'
-
     FULL_MEMORY_ADDRESS = 2147483647
 
-    HANDLES_TYPES = [('Directory', 'directory'), ('TpWorkerFactory', 'tpworkerfactory'),
-                     ('WaitCompletionPacket', 'waitcompletionpacket'), ('Section', 'section'), ('File', 'file'),
-                     ('Mutant', 'mutant'), ('Event', 'event'), ('Semaphore', 'semaphore'), ('Key', 'key'),
-                     ('IoCompletion', 'iocompletion'), ('ALPC Port', 'alpc port'), ('Thread', 'thread')]
-
-    HANDLES_TYPES_2 = [('IoCompletionReserve', 'iocompletionreserve'), ('Desktop', 'desktop'),
-                       ('EtwRegistration', 'etwregistration'), ('WindowStation', 'windowstation')]
-
     PROTECTIONS = {
-        'PAGE_EXECUTE_READWRITE ': 'page_execute_readwrite',
-        'PAGE_NOACCESS ': 'page_noaccess',
-        'PAGE_EXECUTE_WRITECOPY ': 'page_execute_writecopy',
-        'PAGE_READONLY ': 'page_readonly',
-        'PAGE_READWRITE ': 'page_readwrite'
+        'PAGE_READONLY ': 'PAGE_READONLY_RATIO',
+        'PAGE_EXECUTE_WRITECOPY ': 'PAGE_EXECUTE_WRITECOPY_RATIO',
+        'PAGE_READWRITE ': 'PAGE_READWRITE_RATIO',
+        'PAGE_NOACCESS ': 'PAGE_NOACCESS_RATIO',
+        'PAGE_EXECUTE_READWRITE ': 'PAGE_EXECUTE_READWRITE_RATIO'
     }
 
-    WAIT_REASON_LIST = ['9', '31', '13']
-
-    VAD = 'Vad '
-
-    VADS = 'VadS'
-
-    PAGE_NOACCESS = 'PAGE_NOACCESS '
-
-    PAGE_EXECUTE_READWRITE = 'PAGE_EXECUTE_READWRITE '
-
-    PAGE_EXECUTE_WRITECOPY = 'PAGE_EXECUTE_WRITECOPY '
-
-    PAGE_READONLY = 'PAGE_READONLY '
-
-    PAGE_READWRITE = 'PAGE_READWRITE '
+    STATE_LIST = [2,4,5]
+    WAIT_REASON_LIST = [9,13,15,22,31]

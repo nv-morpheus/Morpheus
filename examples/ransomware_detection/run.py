@@ -17,6 +17,7 @@ import os
 import typing
 
 import click
+import numpy as np
 import yaml
 
 from morpheus.config import Config
@@ -25,18 +26,19 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
+from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
+from stages.appshield_partitioner import AppshieldPartitionerStage
 from stages.create_features import CreateFeaturesRWStage
 from stages.preprocessing import PreprocessingRWStage
 
 
 @click.command()
 @click.option('--debug', default=False)
-@click.option('--use_cpp', default=False, help="Enable C++ execution for this pipeline, currently this is unsupported.")
+@click.option('--use_cpp', default=False)
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
@@ -45,26 +47,26 @@ from stages.preprocessing import PreprocessingRWStage
 )
 @click.option(
     "--n_dask_workers",
-    default=6,
+    default=1,
     type=click.IntRange(min=1),
     help="Number of dask workers.",
 )
 @click.option(
     "--threads_per_dask_worker",
-    default=2,
+    default=1,
     type=click.IntRange(min=1),
     help="Number of threads per each dask worker.",
 )
 @click.option(
     "--model_max_batch_size",
-    default=1024,
+    default=64,
     type=click.IntRange(min=1),
     help="Max batch size to use for the model.",
 )
 @click.option(
     "--conf_file",
     type=click.STRING,
-    default="./config/ransomware_detection.yaml",
+    default="./config/ransomware_detection_streaming.yaml",
     help="Ransomware detection configuration filepath.",
 )
 @click.option(
@@ -79,24 +81,16 @@ from stages.preprocessing import PreprocessingRWStage
     type=click.IntRange(min=3),
     help="Sliding window to be used for model input request.",
 )
+@click.option('--input_topic', type=click.STRING, required=True, help=("Input Kafka topic"))
+@click.option('--bootstrap_servers', type=click.STRING, default="localhost:9092", help=("bootstrap servers uri"))
 @click.option(
-    '--input_glob',
-    type=str,
-    required=True,
-    help=("Input glob pattern to match files to read. For example, './input_dir/*/snapshot-*/*.json' would read all "
-          "files with the 'json' extension in the directory 'input_dir'."))
-@click.option('--watch_directory',
-              type=bool,
-              default=False,
-              help=("The watch directory option instructs this stage to not close down once all files have been read. "
-                    "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
-                    "the directory for additional files. Any new files that are added that match the glob will then "
-                    "be processed."))
-@click.option(
-    "--output_file",
+    "--output_topic",
     type=click.STRING,
-    default="./ransomware_detection_output.jsonlines",
-    help="The path to the file where the inference output will be saved.",
+    help="Output Kafka topic",
+)
+@click.option("--group_id",
+    type=click.STRING,
+    help="Output Kafka topic",
 )
 def run_pipeline(debug,
                  use_cpp,
@@ -108,22 +102,25 @@ def run_pipeline(debug,
                  model_name,
                  server_url,
                  sliding_window,
-                 input_glob,
-                 watch_directory,
-                 output_file):
+                 input_topic,
+                 bootstrap_servers,
+                 output_topic,
+                 group_id):
 
     if debug:
         configure_logging(log_level=logging.DEBUG)
     else:
         configure_logging(log_level=logging.INFO)
 
-    snapshot_fea_length = 99
+    snapshot_fea_length = 25
 
     CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
+    config.num_threads = num_threads
     config.mode = PipelineModes.FIL
+    config.edge_buffer_size = 2048
 
     # Below properties are specified by the command line.
     config.num_threads = num_threads
@@ -137,20 +134,17 @@ def run_pipeline(debug,
     # Load ransomware detection configuration.
     rwd_conf = load_yaml(conf_file)
 
-    # Exclude columns that are not required.
-    cols_exclude = ["SHA256"]
-
     # Only intrested plugins files will be read from Appshield snapshots.
-    interested_plugins = ['ldrmodules', 'threadlist', 'envars', 'vadinfo', 'handles']
+    interested_plugins = rwd_conf["intrested_plugins"]
+
+    # Columns from the above intrested plugins.
+    plugins_schema = rwd_conf['plugins_schema']
 
     # Columns from the above intrested plugins.
     cols_interested_plugins = rwd_conf['raw_columns']
 
     # Feature columns used by the model.
-    model_features = rwd_conf['model_features']
-
-    # Features to include in the DF, superset of model_features along with a few that the model doesn't receive
-    feature_columns = model_features + rwd_conf['features']
+    feature_columns = rwd_conf['model_features']
 
     # File extensions.
     file_extns = rwd_conf['file_extensions']
@@ -158,19 +152,11 @@ def run_pipeline(debug,
     # Set source stage.
     # This stage reads raw data from the required plugins and merge all the plugins data into a single dataframe
     # for a given source.
-    pipeline.set_source(
-        AppShieldSourceStage(
-            config,
-            input_glob,
-            interested_plugins,
-            cols_interested_plugins,
-            cols_exclude=cols_exclude,
-            watch_directory=watch_directory,
-        ))
+    pipeline.set_source(KafkaSourceStage(config, bootstrap_servers=bootstrap_servers, group_id=group_id, input_topic=input_topic))
 
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="FromFile rate"))
+    # Add a appshield partitioner stage.
+    # This stage combine the plugins together to combined dataframe
+    pipeline.add_stage(AppshieldPartitionerStage(config, interested_plugins, cols_interested_plugins, plugins_schema))
 
     # Add a create features stage.
     # This stage generates model feature values from the raw data.
@@ -182,17 +168,10 @@ def run_pipeline(debug,
                               n_workers=n_dask_workers,
                               threads_per_worker=threads_per_dask_worker))
 
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="CreateFeatures rate"))
-
     # Add preprocessing stage.
     # This stage generates snapshot sequences using sliding window for each pid_process.
-    pipeline.add_stage(PreprocessingRWStage(config, feature_columns=model_features, sliding_window=sliding_window))
-
-    # Add a monitor stage
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="PreProcessing rate"))
+    pipeline.add_stage(PreprocessingRWStage(config, feature_columns=feature_columns,
+                                            sliding_window=sliding_window))
 
     # Add a inference stage.
     # This stage sends inference requests to the Tritonserver and captures the response.
@@ -204,33 +183,17 @@ def run_pipeline(debug,
             force_convert_inputs=True,
         ))
 
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="Inference rate"))
-
     # Add a add scores stage.
     # This stage adds probability scores to each message.
     pipeline.add_stage(AddScoresStage(config, labels=["score"]))
-
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="AddScore rate"))
 
     # Add a serialize stage.
     # This stage includes & excludes columns from messages.
     pipeline.add_stage(SerializeStage(config, exclude=[r'^ID$', r'^_ts_', r'source_pid_process']))
 
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
-
     # Add a write file stage.
-    # This stage writes all messages to a file.
-    pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
-
-    # Add a monitor stage.
-    # This stage logs the metrics (msg/sec) from the above stage.
-    pipeline.add_stage(MonitorStage(config, description="ToFile rate"))
+    # This stage writes all messages to a kafka topic.
+    pipeline.add_stage(WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=output_topic))
 
     # Run the pipeline.
     pipeline.run()
@@ -260,3 +223,4 @@ def load_yaml(filepath: str) -> typing.Dict[object, object]:
 # Execution starts here
 if __name__ == "__main__":
     run_pipeline()
+

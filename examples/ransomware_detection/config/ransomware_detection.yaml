@@ -39,107 +39,32 @@ file_extensions:
   - rar
   - msg
 model_features:
-  - envirs_pathext
-  - count_double_extension_count_handles
-  - page_readonly_vads_count
-  - double_extension_len_handles
-  - get_commit_charge_max_vad
-  - count_entire_commit_charge_vads
-  - get_commit_charge_min_vad_page_noaccess
-  - check_doc_file_handle_count
-  - envars_df_count
-  - page_noaccess_vad_count
-  - get_commit_charge_min_vads
-  - get_commit_charge_mean_vad_page_noaccess
-  - page_noaccess_vad_ratio
-  - handles_df_directory_count
-  - threadlist_df_wait_reason_9
-  - page_noaccess_count
-  - get_commit_charge_mean_page_noaccess
-  - ldrmodules_df_size_int
-  - get_commit_charge_max_page_execute_readwrite
-  - ratio_private_memory
-  - get_commit_charge_max_page_noaccess
-  - page_readwrite_ratio
-  - get_commit_charge_mean_page_execute_readwrite
-  - handles_df_section_ratio
-  - vad_ratio
-  - page_noaccess_ratio
-  - page_execute_writecopy_vad_ratio
-  - handles_df_section_count
-  - handles_df_tpworkerfactory_count
-  - page_readonly_count
-  - handles_df_waitcompletionpacket_count
-  - get_commit_charge_mean_page_readonly
-  - page_readonly_vad_ratio
-  - handles_df_event_ratio
-  - handles_df_semaphore_ratio
-  - get_commit_charge_sum_page_execute_readwrite
-  - threadlist_df_state_2
-  - handles_df_iocompletionreserve_count
-  - handles_df_directory_ratio
-  - handles_df_iocompletionreserve_ratio
-  - get_commit_charge_mean_vad
-  - get_commit_charge_sum_page_execute_writecopy
-  - page_execute_readwrite_ratio
-  - get_commit_charge_min_page_execute_readwrite
-  - threadlist_df_wait_reason_31
-  - get_commit_charge_sum_page_noaccess
-  - page_readwrite_vads_ratio
-  - handles_df_mutant_ratio
-  - get_commit_charge_sum_vad
-  - get_commit_charge_max
-  - handles_df_type_unique
-  - handles_df_iocompletion_ratio
-  - handles_df_waitcompletionpacket_ratio
-  - handles_df_tpworkerfactory_ratio
-  - vadinfo_df_path_unique
-  - vad_count
-  - page_readonly_ratio
-  - count_private_memory
-  - page_execute_readwrite_vads_ratio
-  - vads_page_execute_writecopy_ratio
-  - handles_df_file_ratio
-  - handles_df_etwregistration_ratio
-  - handles_df_key_ratio
-  - get_commit_charge_min_page_noaccess
-  - page_readonly_vads_ratio
-  - handles_df_thread_ratio
-  - handles_df_file_count
-  - handles_df_thread_count
-  - threadlist_df_count
-  - get_commit_charge_len
-  - get_commit_charge_min_page_execute_writecopy
-  - "handles_df_alpc port_ratio"
-  - file_users_exists
-  - file_windows_count
-  - handles_df_key_count
-  - threadlist_df_wait_reason_13
-  - threadlist_df_wait_reason_unique
-  - handles_df_semaphore_count
-  - handles_df_name_unique_ratio
-  - threadlist_df_state_unique
-  - get_count_unique_extensions
-  - handles_df_name_unique
-  - page_noaccess_vads_ratio
-  - handles_df_event_count
-  - page_readwrite_vad_ratio
-  - "handles_df_alpc port_count"
-  - get_commit_charge_std_page_execute_readwrite
-  - count_directories_handles_uniques
-  - count_extension_handles_uniques
-  - page_readwrite_vad_count
-  - get_commit_charge_sum
-  - get_commit_charge_mean
-  - handles_df_desktop_ratio
-  - handles_df_count
-  - handles_df_mutant_count
-  - handles_df_windowstation_ratio
-  - page_execute_readwrite_vads_count
-  - handles_df_type_unique_ratio
-  - page_execute_readwrite_count
-features:
-  - ldrmodules_df_path
+  - THREAD_STATE_2
+  - HANDLES_DOUBLE_EXTENSION
+  - THREAD_WINDOWS_WAIT_REASON_9
+  - VMA_WINDOWS_COMMIT_CHARGE_FULL
+  - VMA_WINDOWS_COMMIT_CHARGE_MAX
+  - VMA_WINDOWS_COMMIT_CHARGE_STD
+  - VMA_AMOUNT
+  - THREAD_STATE_4
+  - VMA_WINDOWS_COMMIT_CHARGE_MEAN
+  - LIB_WINDOWS_SIZE_OFIMAGE
+  - VMA_WINDOWS_PROTECTION_PAGE_READWRITE_RATIO
+  - HANDLES_AMOUNT
+  - VMA_WINDOWS_PROTECTION_PAGE_EXECUTE_WRITECOPY_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_22
+  - VMA_WINDOWS_PROTECTION_PAGE_NOACCESS_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_13
+  - VMA_WINDOWS_PROTECTION_PAGE_EXECUTE_READWRITE_RATIO
+  - VMA_WINDOWS_PROTECTION_PAGE_READWRITE_READONLY_DEVIDE
+  - VMA_WINDOWS_PROTECTION_PAGE_READONLY_RATIO
+  - THREAD_WINDOWS_WAIT_REASON_31
+  - THREAD_STATE_5
+  - VMA_WINDOWS_PRIVATE_MEMORY_1
+  - LIBS_AMOUNT
+  - THREAD_WINDOWS_WAIT_REASON_15
+  - VMA_WINDOWS_PRIVATE_MEMORY_0
+
 raw_columns:
   - Base
   - Block
@@ -172,3 +97,53 @@ raw_columns:
   - plugin
   - snapshot_id
   - timestamp
+  - source
+
+plugins_schema:
+  ldrmodules:
+    name: doca_apsh_lib_windows
+    column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_LIB_PID: PID
+          DOCA_APSH_LIB_COMM: Process
+          DOCA_APSH_LIB_LIBRARY_PATH: Path
+          DOCA_APSH_LIB_WINDOWS_SIZE_OFIMAGE: Size
+          DOCA_APSH_LIB_WINDOWS_FULL_DLL_NAME: Name
+  threadlist:
+      name: doca_apsh_thread_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_THREAD_PID: PID
+          DOCA_APSH_THREAD_COMM: Process
+          DOCA_APSH_THREAD_STATE: State
+          DOCA_APSH_LIB_WINDOWS_SIZE_OFIMAGE: Size
+          DOCA_APSH_THREAD_WINDOWS_WAIT_REASON: WaitReason
+  vadinfo:
+      name: doca_apsh_vad_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_VMA_PID: PID
+          DOCA_APSH_VMA_PROCESS_NAME: Process
+          DOCA_APSH_VMA_PROTECTION: Protection
+          DOCA_APSH_VMA_WINDOWS_COMMIT_CHARGE: CommitCharge
+          DOCA_APSH_VMA_WINDOWS_PRIVATE_MEMORY: PrivateMemory
+          DOCA_APSH_VMA_FILE_PATH: File
+          DOCA_APSH_VMA_WINDOWS_TAG: Tag
+  handles:
+      name: doca_apsh_handle_windows
+      column_mapping:
+          type_name: plugin
+          scan_id: snapshot_id
+          DOCA_APSH_HANDLE_PID: PID
+          DOCA_APSH_HANDLE_COMM: Process
+          DOCA_APSH_HANDLE_TYPE: Type
+          DOCA_APSH_HANDLE_NAME: Name
+
+intrested_plugins:
+  - handles
+  - threadlist
+  - ldrmodules
+  - vadinfo

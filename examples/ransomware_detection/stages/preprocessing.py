@@ -12,28 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+import time
 import typing
 
 import cupy as cp
 import mrc
 import pandas as pd
+from mrc.core import operators as ops
 
-from common.data_models import SnapshotData  # pylint: disable=no-name-in-module
+from common.data_models import SnapshotData
 from morpheus.cli.register_stage import register_stage
-from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
+from morpheus.messages.message_meta import AppShieldMessageMeta
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("ransomware-preprocess", modes=[PipelineModes.FIL])
-class PreprocessingRWStage(PreprocessBaseStage):
+class PreprocessingRWStage(SinglePortStage):
     """
-    This class extends PreprocessBaseStage and process the features that are derived from Appshield data.
+    This class extends PreprocessBaseStage and process the features that aree derived from Appshield data.
     It also arranges the snapshots of Appshield data in a sequential order using provided sliding window.
 
     Parameters
@@ -59,7 +64,6 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         # Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
-        self._needed_columns.update({'sequence': TypeId.STRING})
 
     @property
     def name(self) -> str:
@@ -68,44 +72,49 @@ class PreprocessingRWStage(PreprocessBaseStage):
     def supports_cpp_node(self):
         return False
 
+    def accepted_types(self) -> typing.Tuple:
+        """
+        Returns accepted input types for this stage.
+        """
+        return (AppShieldMessageMeta, )
+
+
     def _sliding_window_offsets(self, ids: typing.List[int], ids_len: int,
-                                window: int) -> typing.List[typing.Tuple[int]]:
+                                window: int) -> typing.List[typing.List[int]]:
         """
         Create snapshot_id's sliding sequence for a given window
         """
-        assert ids_len == len(ids)
-        assert ids_len >= window
 
         sliding_window_offsets = []
 
         for start in range(ids_len - (window - 1)):
             stop = start + window
             sequence = ids[start:stop]
-            consecutive = sorted(sequence) == list(range(min(sequence), max(sequence) + 1))
+            consecutive = sequence == list(range(min(sequence), max(sequence) + 1))
             if consecutive:
                 sliding_window_offsets.append((start, stop))
 
         return sliding_window_offsets
 
-    def _rollover_pending_snapshots(self,
-                                    snapshot_ids: typing.List[int],
-                                    source_pid_process: str,
-                                    snapshot_df: pd.DataFrame):
+    def _rollover_pending_snapshots(self, source_pid_process: str, snapshots_dict):
         """
         Store the unprocessed snapshots from current run to a stateful member to process them in the next run.
         """
 
         pending_snapshots = []
 
-        for snapshot_id in snapshot_ids[1 - self._sliding_window:]:
-            pending_snapshot_data = snapshot_df[snapshot_df.index == snapshot_id].values[0]
-            pending_snapshot = SnapshotData(snapshot_id, pending_snapshot_data)
+        keys_to_keep = list(snapshots_dict.keys())
+
+        if len(snapshots_dict) >= self._sliding_window:
+            keys_to_keep = keys_to_keep[1:]
+
+        for key in keys_to_keep:
+            pending_snapshot = SnapshotData(key, snapshots_dict[key])
             pending_snapshots.append(pending_snapshot)
 
-        if pending_snapshots:
-            self._snapshot_dict[source_pid_process] = pending_snapshots
+        self._snapshot_dict[source_pid_process] = pending_snapshots
 
-    def _merge_curr_and_prev_snapshots(self, snapshot_df: pd.DataFrame, source_pid_process: str) -> pd.DataFrame:
+    def _merge_curr_and_prev_snapshots(self, snapshots_dict: pd.Series, source_pid_process: str) -> pd.DataFrame:
         """
         Merge current run snapshots with previous unprocessed snapshots.
         """
@@ -114,14 +123,14 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
         # If previous pending snapshots that exists in the memory. Just get them to process in this run.
         for prev_pending_snapshot in prev_pending_snapshots:
-            snapshot_df.loc[prev_pending_snapshot.snapshot_id] = prev_pending_snapshot.data
+            snapshots_dict[prev_pending_snapshot.snapshot_id] = prev_pending_snapshot.data
 
         # Keep snapshot_ids in order to generate sequence.
-        snapshot_df = snapshot_df.sort_index()
+        snapshots_dict = dict(sorted(snapshots_dict.items()))
 
-        return snapshot_df
+        return snapshots_dict
 
-    def _pre_process_batch(self, x: MultiMessage) -> MultiInferenceFILMessage:
+    def _process_batch(self, x: AppShieldMessageMeta) -> MultiInferenceFILMessage:
         """
         This function is invoked for every source_pid_process.
         It looks for any pending snapshots related to the source and pid process in the memory.
@@ -131,64 +140,94 @@ class PreprocessingRWStage(PreprocessBaseStage):
         Current run's unprocessed snapshots will be rolled over to the next.
         """
 
-        snapshot_df = x.get_meta()
-        curr_snapshots_size = len(snapshot_df)
+        snapshot_df = x.df
 
-        # Set snapshot_id as index this is used to get ordered snapshots based on sliding window.
-        snapshot_df.index = snapshot_df.snapshot_id
-
-        # Get source_pid_process.
-        source_pid_process = snapshot_df.source_pid_process.iloc[0]
+        ldrmodules_df_path = snapshot_df['ldrmodules_df_path']
+        pid_process = snapshot_df['pid_process']
+        process_name = snapshot_df['process_name']
+        snapshot_id = snapshot_df['snapshot_id']
+        timestamp = snapshot_df['timestamp']
+        source_pid_process = snapshot_df['source_pid_process']
 
         # Get only feature columns from the dataframe
+        snapshot_id = snapshot_df.snapshot_id.iloc[0]
+
         snapshot_df = snapshot_df[self._feature_columns]
+        snapshot_df_size = len(snapshot_df)
+        source_pid_processes = snapshot_df.index
 
-        # Get if there are any previous pending snapshots.
-        if source_pid_process in self._snapshot_dict:
-            snapshot_df = self._merge_curr_and_prev_snapshots(snapshot_df, source_pid_process)
+        data_l = []
+        sequence_l = []
 
-        snapshot_ids = snapshot_df.index.values
+        for source_pid_process in source_pid_processes:
+            snapshots_dict = {}
+            snapshots_dict[snapshot_id] = snapshot_df.loc[source_pid_process].tolist()
+            # Get if there are any previous pending snapshots.
+            if source_pid_process in self._snapshot_dict:
+                snapshots_dict = self._merge_curr_and_prev_snapshots(snapshots_dict, source_pid_process)
 
-        curr_and_prev_snapshots_size = len(snapshot_df)
+            curr_and_prev_snapshots_size = len(snapshots_dict)
 
-        # Make a dummy set of data and a dummy sequence.
-        # When the number of snapshots received for the pid process is less than the sliding window supplied,
-        # this is used. For each input message, this is used to construct inference output.
-        data = [self._padding_data] * curr_snapshots_size
-        sequence = ["dummy"] * curr_snapshots_size
+            # Make a dummy set of data and a dummy sequence.
+            # When the number of snapshots received for the pid process is less than the sliding window supplied,
+            # this is used. For each input message, this is used to construct inference output.
+            data = self._padding_data
+            sequence = "dummy"
 
-        if curr_and_prev_snapshots_size >= self._sliding_window:
-            # Rollover and current snapshots are used to generate sliding window offsets
-            offsets = self._sliding_window_offsets(snapshot_ids,
-                                                   curr_and_prev_snapshots_size,
-                                                   window=self._sliding_window)
+            if curr_and_prev_snapshots_size >= self._sliding_window:
+                data = []
+                keys = snapshots_dict.keys()
 
-            # Generate data from the sliding window offsets.
-            for start, stop in offsets:
-                data[start] = list(snapshot_df[start:stop].values.ravel())
-                sequence[start] = str(snapshot_df.index[start]) + "-" + str(snapshot_df.index[stop - 1])
+                max_key = max(keys)
+                min_key = min(keys)
 
-        # Rollover pending snapshots
-        self._rollover_pending_snapshots(snapshot_ids, source_pid_process, snapshot_df)
+                for key in keys:
+                    data += snapshots_dict[key]
+
+                sequence = f"{min_key}-{max_key}"
+
+            sequence_l.append(sequence)
+
+            data_l.append(data)
+
+            # Rollover pending snapshots
+            self._rollover_pending_snapshots(source_pid_process, snapshots_dict)
 
         # This column is used to identify whether sequence is genuine or dummy
-        x.set_meta('sequence', sequence)
+        snapshot_df['sequence'] = sequence_l
+        snapshot_df['ldrmodules_df_path'] = ldrmodules_df_path
+        snapshot_df['pid_process'] = pid_process
+        snapshot_df['process_name'] = process_name
+        snapshot_df['snapshot_id'] = snapshot_id
+        snapshot_df['timestamp'] = timestamp
+        snapshot_df['source_pid_process'] = source_pid_process
 
         # Convert data to cupy array
-        data = cp.asarray(data)
+        cp_data = cp.asarray(data_l)
 
-        seg_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + curr_snapshots_size, dtype=cp.uint32)
+        seg_ids = cp.zeros((snapshot_df_size, 3), dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(0, snapshot_df_size, dtype=cp.uint32)
         seg_ids[:, 2] = self._features_len * 3
 
-        memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
+        memory = InferenceMemoryFIL(count=snapshot_df_size, input__0=cp_data, seq_ids=seg_ids)
 
-        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
+        infer_message = MultiInferenceFILMessage(meta=MessageMeta(df=snapshot_df),
+                                                 mess_offset=0,
+                                                 mess_count=snapshot_df_size,
+                                                 memory=memory,
+                                                 offset=0,
+                                                 count=snapshot_df_size)
+        current_time = datetime.datetime.now()
+        print(f"Preprocessing snapshot sequence: {sequence} is completed at time: {current_time.strftime('%Y-%m-%d %H:%M:%S.%f')}")
+
         return infer_message
 
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-        pre_process_batch_fn = self._pre_process_batch
-        return pre_process_batch_fn
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-    def _get_preprocess_node(self, builder: mrc.Builder):
-        raise NotImplementedError("No C++ node supported")
+        stream = input_stream[0]
+
+        node = builder.make_node(self.unique_name, ops.map(self._process_batch))
+        builder.make_edge(stream, node)
+        stream = node
+
+        return stream, MultiInferenceFILMessage
