@@ -1,0 +1,191 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Project - Set PR Dates
+
+on:
+  pull_request_target:
+    # Run this action when a PR is opened, ready for review, or closed
+    types: [opened, closed, ready_for_review]
+
+env:
+ ORG: ${{ github.event.repository.owner.login }}
+ PR_NUMBER: ${{ github.event.pull_request.number }}
+ REPO: ${{ github.event.repository.name }}
+ GH_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+ OPENED_DATE: ${{ github.event.pull_request.created_at }}
+ CLOSED_DATE: ${{ github.event.pull_request.closed_at }}
+ TRIGGER: ${{ github.event.action }}
+
+ # The environment vars below are hard-coded from external queries to save time + complexity here
+ # Note: PVT means Project V2, not "Private" - although this is a private project
+ # PVT = Project V2, PVTSSF = Project V2 Single Select Field, PVTIF = Project V2 Iteration Field, PVTF = Project V2 Date or Text Field
+ PROJECT_ID: "PVT_kwDOBkAsks4ACeio"
+ START_DATE_FIELD_ID: "PVTF_lADOBkAsks4ACeiozgLiId4"
+ REVIEW_START_DATE_FIELD_ID: "PVTF_lADOBkAsks4ACeiozgNUjEs"
+ END_DATE_FIELD_ID: "PVTF_lADOBkAsks4ACeiozgLiIf4"
+
+jobs:
+  set_pr_date_fields:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sleep 1s
+        id: sleep_1s
+        run: sleep 1
+
+      - name: Get PR Project ID
+        id: get_pr_id
+        run: |
+            # Query up to 10 projects for the PR
+            gh api graphql -f query='
+              query {
+                organization(login: "${{ env.ORG }}") {
+                  repository(name: "${{ env.REPO }}") {
+                    issueOrPullRequest(number: ${{ env.PR_NUMBER }}) {
+                      ... on PullRequest {
+                        id
+                        projectItems(first: 10) {
+                          edges {
+                            node {
+                              id
+                              project {
+                                id
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }' > project_data.json
+            
+            # Filter the json result to only the project-specific ID for the PR
+            # A PR can be in multiple projects so we need to filter by the project ID we want
+            pr_id=$(jq -r '.data.organization.repository.issueOrPullRequest.projectItems.edges[] |
+                           select(.node.project.id == "${{ env.PROJECT_ID }}") |
+                           .node.id' project_data.json)
+            echo "PR_PROJECT_ID=$pr_id" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Get Date for Review Start
+        if: ${{ env.TRIGGER == 'ready_for_review' }} || (${{ env.TRIGGER == 'opened' }} && ${{ github.event.pull_request.draft == false }})
+        id: get_date
+        run: |
+            # Get the current date in the format required by ProjectsV2 GraphQL
+            # Uses EST timezone
+            # There's no github.action.date so we have to make one for the Review Date
+            # Otherwise we use the opened date or closed date
+            # If the PR is opened as a draft we will set both the open date and the review date as the same date
+            # An improvement could be to use the first commit date as the start date
+
+            review_date=$(TZ=America/New_York date +"%Y-%m-%dT%H:%M:%SZ")
+            echo "REVIEW_DATE=$review_date" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Set PR Opened Date
+        id: set_open_date
+        if: ${{ env.TRIGGER == 'opened' }}
+        run: |
+            # Mutation to update the PRs's Opened Date field
+            echo "${{ env.OPENED_DATE }}"
+            gh api graphql -f query='
+              mutation {
+              updateProjectV2ItemFieldValue(
+                  input: {
+                      projectId: "${{ env.PROJECT_ID }}"
+                      itemId: "${{ env.PR_PROJECT_ID }}"
+                      fieldId: "${{ env.START_DATE_FIELD_ID }}"
+                      value: {
+                          date: "${{ env.OPENED_DATE }}"
+                      }
+                      }
+                  ) {
+                      projectV2Item {
+                      id
+                      }
+                  }
+                }'
+            echo "PR Opened Date set to ${{ env.OPENED_DATE }}"
+        continue-on-error: true
+
+      - name: Set PR Review Start Date
+        id: set_review_date
+        if: ${{ env.TRIGGER == 'ready_for_review' }} || (${{ env.TRIGGER == 'opened' }} && ${{ github.event.pull_request.draft == false }})
+        run: |              
+          # Check the Review Start Date
+            gh api graphql -f query='
+              query {
+                node(id: "${{ env.PR_PROJECT_ID }}") {
+                  ... on ProjectV2Item {
+                    fieldValueByName(name: "Review Start Date") {
+                      ... on ProjectV2ItemFieldDateValue {
+                        date
+                      }
+                    }
+                  }
+                }
+              }' > pr_date_data.json
+              date=$(jq -r '.data.node.fieldValueByName' pr_date_data.json)
+
+          # If the Review Start Date is not set, set it
+          if [ "$date" == "null" ]; then
+            # Mutation to update the PR's Review Start Date field
+              gh api graphql -f query='
+                mutation {
+                updateProjectV2ItemFieldValue(
+                    input: {
+                        projectId: "${{ env.PROJECT_ID }}"
+                        itemId: "${{ env.PR_PROJECT_ID }}"
+                        fieldId: "${{ env.REVIEW_START_DATE_FIELD_ID }}"
+                        value: {
+                            date: "${{ env.REVIEW_DATE }}"
+                        }
+                        }
+                    ) {
+                        projectV2Item {
+                        id
+                        }
+                    }
+                  }'
+              echo "PR Review Start Date set to ${{ env.REVIEW_DATE }}"
+          fi
+        continue-on-error: true
+
+      - name: Set PR Closed Date
+        id: set_closed_date
+        if: ${{ env.TRIGGER == 'closed' }}
+        run: |
+          # Mutation to update the PR's Closed Date field
+            gh api graphql -f query='
+              mutation {
+              updateProjectV2ItemFieldValue(
+                  input: {
+                      projectId: "${{ env.PROJECT_ID }}"
+                      itemId: "${{ env.PR_PROJECT_ID }}"
+                      fieldId: "${{ env.END_DATE_FIELD_ID }}"
+                      value: {
+                          date: "${{ env.CLOSED_DATE }}"
+                      }
+                      }
+                  ) {
+                      projectV2Item {
+                      id
+                      }
+                  }
+                }'
+            echo "PR Closed Date set to ${{ env.CLOSED_DATE }}"
+        continue-on-error: true
