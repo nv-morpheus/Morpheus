@@ -136,10 +136,11 @@ class MyMultiprocessingStage(SinglePortStage):
         my_thread.join()
         my_process.join()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair):
-        stream = builder.make_node("my-multiprocessing", mrc.core.operators.build(self.generate))
-        builder.make_edge(input_stream[0], stream)
-        return stream, input_stream[1]
+    def _build_single(self, builder: mrc.Builder, input: StreamPair):
+        [input_node, input_type] = input
+        node = builder.make_node("my-multiprocessing", mrc.core.operators.build(self.generate))
+        builder.make_edge(input_node, node)
+        return node, input_type
 
     def stop(self):
         super().stop()
