@@ -152,7 +152,7 @@ class ElasticsearchController:
 
     def df_to_parallel_bulk_write(self, index: str, df: pd.DataFrame) -> None:
         """
-        Convert dataframe entries to an actions and parallel bulk writes to Elasticsearch.
+        Converts DataFrames to actions and parallel bulk writes to Elasticsearch.
 
         Parameters
         ----------
