@@ -381,20 +381,19 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert not self.is_built, "Can only build stages once!"
         assert self._pipeline is not None, "Must be attached to a pipeline before building!"
 
-        # TODO: determine if we still neede to build these as pairs
-        in_ports_pairs = [x.get_input_pair(builder=builder) for x in self.input_ports]
+        in_ports_nodes = [x.get_input_node(builder=builder) for x in self.input_ports]
 
-        out_ports_pair = self._build(builder=builder, in_ports_streams=in_ports_pairs)
+        out_ports_nodes = self._build(builder=builder, input_nodes=in_ports_nodes)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_pair = self._post_build(builder=builder, out_ports_pair=out_ports_pair)
+        out_ports_nodes = self._post_build(builder=builder, out_ports_pair=out_ports_nodes)
 
-        assert len(out_ports_pair) == len(self.output_ports), \
+        assert len(out_ports_nodes) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
 
         # Assign the output ports
-        for port_idx, out_pair in enumerate(out_ports_pair):
-            self.output_ports[port_idx]._out_node = out_pair[0]
+        for port_idx, out_node in enumerate(out_ports_nodes):
+            self.output_ports[port_idx]._out_node = out_node
 
         self._is_built = True
 
@@ -409,13 +408,12 @@ class StreamWrapper(ABC, collections.abc.Hashable):
             dep.build(builder, do_propagate=do_propagate)
 
     @abstractmethod
-    def _build(self, builder: mrc.Builder, in_ports_streams: list[StreamPair]) -> list[StreamPair]:
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
         """
         This function is responsible for constructing this stage's internal `mrc.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
 
-        The input values are the `mrc.Builder` for this stage and a `StreamPair` tuple which contain the input
-        `mrc.SegmentObject` object and the message data type.
+        The input values are the `mrc.Builder` for this stage and a list of parent nodes.
 
         :meta public:
 
@@ -424,13 +422,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         builder : `mrc.Builder`
             `mrc.Builder` object for the pipeline. This should be used to construct/attach the internal
             `mrc.SegmentObject`.
-        in_ports_streams : `morpheus.pipeline.pipeline.StreamPair`
-            List of tuples containing the input `mrc.SegmentObject` object and the message data type.
+        input_nodes : `list[mrc.SegmentObject]`
+            List containing the input `mrc.SegmentObject` objects.
 
         Returns
         -------
-        `list[morpheus.pipeline.pipeline.StreamPair]`
-            List of tuples containing the output `mrc.SegmentObject` object from this stage and the message data type.
+        `list[mrc.SegmentObject]`
+            List of tuples containing the output `mrc.SegmentObject` object from this stage.
 
         """
         pass

@@ -115,7 +115,7 @@ class MultiPortModulesStage(Stage):
             raise ValueError(f"Provided output ports do not match module output ports. Module: {output_ids}, "
                              f"Provided: {self._out_ports}.")
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
         # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
@@ -124,7 +124,7 @@ class MultiPortModulesStage(Stage):
 
         # Make an edges with input ports
         for index in range(self._num_in_ports):
-            in_stream_node = in_ports_streams[index][0]
+            in_stream_node = input_nodes[index]
             in_port = self._in_ports[index]
             mod_in_stream = module.input_port(in_port)
             builder.make_edge(in_stream_node, mod_in_stream)
