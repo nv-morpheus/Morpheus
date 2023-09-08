@@ -94,6 +94,7 @@ jobs:
 
             review_date=$(TZ=America/New_York date +"%Y-%m-%dT%H:%M:%SZ")
             echo "REVIEW_DATE=$review_date" >> $GITHUB_ENV
+        continue-on-error: true
 
       - name: Set PR Opened Date
         id: set_open_date
@@ -123,27 +124,46 @@ jobs:
 
       - name: Set PR Review Start Date
         id: set_review_date
-        if: ${{ env.TRIGGER == 'ready_for_review' }}
-        run: |
-          # Mutation to update the PR's Review Start Date field
+        if: ${{ env.TRIGGER == 'ready_for_review' }} || (${{ env.TRIGGER == 'opened' }} && ${{ github.event.pull_request.draft == false }})
+        run: |              
+          # Check the Review Start Date
             gh api graphql -f query='
-              mutation {
-              updateProjectV2ItemFieldValue(
-                  input: {
-                      projectId: "${{ env.PROJECT_ID }}"
-                      itemId: "${{ env.PR_PROJECT_ID }}"
-                      fieldId: "${{ env.REVIEW_START_DATE_FIELD_ID }}"
-                      value: {
-                          date: "${{ env.REVIEW_DATE }}"
+              query {
+                node(id: "${{ env.PR_PROJECT_ID }}") {
+                  ... on ProjectV2Item {
+                    fieldValueByName(name: "Review Start Date") {
+                      ... on ProjectV2ItemFieldDateValue {
+                        date
                       }
-                      }
-                  ) {
-                      projectV2Item {
-                      id
-                      }
+                    }
                   }
-                }'
-            echo "PR Review Start Date set to ${{ env.REVIEW_DATE }}"
+                }
+              }' > pr_date_data.json
+              date=$(jq -r '.data.node.fieldValueByName' pr_date_data.json)
+
+          # If the Review Start Date is not set, set it
+          if [ "$date" == "null" ]; then
+            # Mutation to update the PR's Review Start Date field
+              gh api graphql -f query='
+                mutation {
+                updateProjectV2ItemFieldValue(
+                    input: {
+                        projectId: "${{ env.PROJECT_ID }}"
+                        itemId: "${{ env.PR_PROJECT_ID }}"
+                        fieldId: "${{ env.REVIEW_START_DATE_FIELD_ID }}"
+                        value: {
+                            date: "${{ env.REVIEW_DATE }}"
+                        }
+                        }
+                    ) {
+                        projectV2Item {
+                        id
+                        }
+                    }
+                  }'
+              echo "PR Review Start Date set to ${{ env.REVIEW_DATE }}"
+          fi
+        continue-on-error: true
 
       - name: Set PR Closed Date
         id: set_closed_date
