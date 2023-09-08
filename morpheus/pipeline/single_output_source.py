@@ -48,11 +48,11 @@ class SingleOutputSource(_pipeline.SourceStage):
     # pylint: enable=unused-argument
 
     @typing.final
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        ret_val = self._post_build_single(builder, out_ports_pair[0])
+        ret_val = self._post_build_single(builder, out_ports_nodes[0])
 
-        logger.info("Added source: %s\n  └─> %s", self, pretty_print_type_name(ret_val[1]))
+        logger.info("Added source: %s\n  └─> %s", self, pretty_print_type_name(self.output_type()))
 
         return [ret_val]
 

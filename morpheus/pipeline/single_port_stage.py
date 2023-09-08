@@ -109,14 +109,14 @@ class SinglePortStage(_pipeline.Stage):
         return out_pair
 
     @typing.final
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: list[StreamPair]) -> list[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        ret_val = self._post_build_single(builder, out_ports_pair[0])
+        ret_val = self._post_build_single(builder, out_ports_nodes[0])
 
         # pylint: disable=logging-format-interpolation
         logger.info("Added stage: %s\n  └─ %s -> %s",
                     str(self),
                     pretty_print_type_name(self.input_ports[0].in_type),
-                    pretty_print_type_name(ret_val[1]))
+                    pretty_print_type_name(self.output_ports[0].out_type))
 
         return [ret_val]

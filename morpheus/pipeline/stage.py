@@ -34,9 +34,9 @@ class Stage(_pipeline.StreamWrapper):
 
     """
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: list[StreamPair]) -> list[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        return out_ports_pair
+        return out_ports_nodes
 
     def _start(self):
         pass

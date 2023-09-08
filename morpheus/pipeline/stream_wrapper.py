@@ -386,7 +386,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         out_ports_nodes = self._build(builder=builder, input_nodes=in_ports_nodes)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_nodes = self._post_build(builder=builder, out_ports_pair=out_ports_nodes)
+        out_ports_nodes = self._post_build(builder=builder, out_ports_nodes=out_ports_nodes)
 
         assert len(out_ports_nodes) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
@@ -436,9 +436,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     def _post_build(
         self,
         builder: mrc.Builder,  # pylint: disable=unused-argument
-        out_ports_pair: list[StreamPair],
-    ) -> list[StreamPair]:
-        return out_ports_pair
+        out_ports_nodes: list[mrc.SegmentObject],
+    ) -> list[mrc.SegmentObject]:
+        return out_ports_nodes
 
     def _start(self):
         pass

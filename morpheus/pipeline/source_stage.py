@@ -93,9 +93,9 @@ class SourceStage(_pipeline.StreamWrapper):
 
         return [source_pair]
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        return out_ports_pair
+        return out_ports_nodes
 
     def _start(self):
         self._source_stream.start()
