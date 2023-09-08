@@ -17,7 +17,7 @@ import types
 import typing
 from collections import defaultdict
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
 T = typing.TypeVar('T')
 T1 = typing.TypeVar('T1')
@@ -29,7 +29,7 @@ T4 = typing.TypeVar('T4')
 # https://github.com/python/mypy/pull/8336/files#diff-eb668b35b7c0c4f88822160f3ca4c111f444c88a38a3b9df9bb8427131538f9cR260
 _DecoratorType = typing.TypeVar("_DecoratorType", bound=typing.Callable[..., typing.Any])
 
-#pylint: enable=invalid-name
+# pylint: enable=invalid-name
 
 
 def greatest_ancestor(*cls_list):
