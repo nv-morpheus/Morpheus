@@ -83,16 +83,9 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            out_stream = self._doca_source_class(builder,
-                                                 self.unique_name,
-                                                 self._nic_pci_address,
-                                                 self._gpu_pci_address)
-        else:
-            raise NotImplementedError("Does not support Python nodes")
+            return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address)
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        raise NotImplementedError("Does not support Python nodes")

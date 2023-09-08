@@ -51,9 +51,8 @@ class StaticMessageSource(SingleOutputSource):
     def output_type(self) -> type:
         return MessageMeta
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        out_stream = builder.make_source(self.unique_name, self._generate_frames())
-        return out_stream, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._generate_frames())
 
     def _generate_frames(self):
         yield MessageMeta(self._df)

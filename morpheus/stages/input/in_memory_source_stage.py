@@ -70,6 +70,5 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
 
                 yield x
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self._generate_frames())
-        return node, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._generate_frames())

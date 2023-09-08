@@ -46,6 +46,5 @@ class InMemSourceXStage(SingleOutputSource):
         for x in self._data:
             yield x
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self._emit_data())
-        return node, type(self._data[0])
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._emit_data())

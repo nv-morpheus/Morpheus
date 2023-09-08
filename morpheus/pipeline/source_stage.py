@@ -53,7 +53,7 @@ class SourceStage(_pipeline.StreamWrapper):
         return None
 
     @abstractmethod
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -62,8 +62,8 @@ class SourceStage(_pipeline.StreamWrapper):
         Returns
         -------
 
-        `morpheus.pipeline.pipeline.StreamPair`:
-            A tuple containing the output `mrc.SegmentObject` object from this stage and the message data type.
+        `mrc.SegmentObject`:
+            The MRC node for this stage.
         """
 
         pass
@@ -81,17 +81,14 @@ class SourceStage(_pipeline.StreamWrapper):
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
         assert len(input_nodes) == 0, "Sources shouldnt have input nodes"
 
-        source_pair = self._build_source(builder)
-
-        curr_source = source_pair[0]
+        curr_source = self._build_source(builder)
 
         self._source_stream = curr_source
 
         # Now set up the output ports
-        self._output_ports[0]._out_node = source_pair[0]
-        self._output_ports[0]._out_type = source_pair[1]
+        self._output_ports[0]._out_node = curr_source
 
-        return [source_pair]
+        return [curr_source]
 
     def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 

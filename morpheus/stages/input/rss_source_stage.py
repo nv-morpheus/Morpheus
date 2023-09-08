@@ -124,6 +124,5 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                     logger.error("Max retries reached. Unable to fetch feed entries.")
                     raise RuntimeError(f"Failed to fetch feed entries after max retries: {exc}") from exc
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        source = builder.make_source(self.unique_name, self._fetch_feeds)
-        return source, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._fetch_feeds)

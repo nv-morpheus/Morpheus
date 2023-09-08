@@ -132,9 +132,9 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         boundary_ingress = builder.get_ingress(self._port_id)
         source = builder.make_node(self.unique_name, ops.map(lambda data: data))
         builder.make_edge(boundary_ingress, source)
 
-        return source, self._output_type
+        return source

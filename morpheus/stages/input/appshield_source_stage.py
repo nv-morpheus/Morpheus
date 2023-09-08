@@ -360,15 +360,9 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return metas
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
-        filename_source = self._watcher.build_node(self.unique_name, builder)
-
-        out_type = typing.List[str]
-
-        # Supposed to just return a source here
-        return filename_source, out_type
+        return self._watcher.build_node(self.unique_name, builder)
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # At this point, we have batches of filenames to process. Make a node for processing batches of

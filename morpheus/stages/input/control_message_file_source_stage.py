@@ -72,8 +72,5 @@ class ControlMessageFileSourceStage(SingleOutputSource):
                     message_control = ControlMessage(message_config)
                     yield message_control
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-
-        out_stream = builder.make_source(self.unique_name, self._create_control_message())
-
-        return out_stream, fsspec.core.OpenFiles
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._create_control_message())

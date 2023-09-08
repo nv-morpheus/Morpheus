@@ -104,21 +104,19 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     def output_type(self) -> type:
         return MessageMeta
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            out_stream = _stages.FileSourceStage(builder,
-                                                 self.unique_name,
-                                                 self._filename,
-                                                 self._repeat_count,
-                                                 self._parser_kwargs)
+            node = _stages.FileSourceStage(builder,
+                                           self.unique_name,
+                                           self._filename,
+                                           self._repeat_count,
+                                           self._parser_kwargs)
         else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return node
 
     def _generate_frames(self) -> typing.Iterable[MessageMeta]:
 

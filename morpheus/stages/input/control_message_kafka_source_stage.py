@@ -188,8 +188,5 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             if (consumer):
                 consumer.close()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-
-        source = builder.make_source(self.unique_name, self._source_generator)
-
-        return source, ControlMessage
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._source_generator)

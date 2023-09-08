@@ -205,7 +205,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
                         self._processing = False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
             node = _stages.HttpServerSourceStage(builder,
@@ -226,4 +226,4 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 
-        return node, MessageMeta
+        return node

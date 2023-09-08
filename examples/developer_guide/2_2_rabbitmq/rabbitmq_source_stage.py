@@ -95,9 +95,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return super().stop()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self.source_generator)
-        return node, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self.source_generator)
 
     def source_generator(self):
         try:

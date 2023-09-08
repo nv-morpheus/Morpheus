@@ -132,14 +132,14 @@ class MultiFileSource(SingleOutputSource):
                 time.sleep(sleep_duration)
                 curr_time = time.monotonic()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
 
         if self._watch:
-            out_stream = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
+            node = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
         else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames_fsspec())
+            node = builder.make_source(self.unique_name, self._generate_frames_fsspec())
 
-        return out_stream, fsspec.core.OpenFiles
+        return node

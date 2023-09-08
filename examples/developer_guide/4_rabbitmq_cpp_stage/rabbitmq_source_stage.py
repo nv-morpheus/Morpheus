@@ -85,7 +85,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def output_type(self) -> type:
         return MessageMeta
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
             # pylint: disable=c-extension-no-member,no-name-in-module
             from _lib import morpheus_rabbit as morpheus_rabbit_cpp
@@ -100,7 +100,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         else:
             self.connect()
             node = builder.make_source(self.unique_name, self.source_generator)
-        return node, MessageMeta
+
+        return node
 
     def connect(self):
         self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=self._host))

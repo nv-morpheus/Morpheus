@@ -88,16 +88,12 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
-        else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return builder.make_source(self.unique_name, self._generate_frames())
 
     def _generate_frames(self):
 
