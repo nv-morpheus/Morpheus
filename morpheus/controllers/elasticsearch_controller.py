@@ -162,12 +162,7 @@ class ElasticsearchController:
             DataFrame entries that require writing to Elasticsearch.
         """
 
-        rows = df.to_dict('records')
-
-        actions = []
-        for row in rows:
-            action = {"_index": index, "_source": row}
-            actions.append(action)
+        actions = [{"_index": index, "_source": row} for row in df.to_dict("records")]
 
         self.parallel_bulk_write(actions)  # Parallel bulk upload to Elasticsearch
 
