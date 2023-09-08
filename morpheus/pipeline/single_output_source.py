@@ -42,8 +42,8 @@ class SingleOutputSource(_pipeline.SourceStage):
         self._create_ports(0, 1)
 
     # pylint: disable=unused-argument
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-        return out_pair
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        return out_node
 
     # pylint: enable=unused-argument
 

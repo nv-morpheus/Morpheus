@@ -370,10 +370,7 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # At this point, we have batches of filenames to process. Make a node for processing batches of
         # filenames into batches of dataframes
         post_node = builder.make_node(
@@ -387,9 +384,6 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
             ops.map(self._build_metadata),
             # Finally flatten to single meta
             ops.flatten())
-        builder.make_edge(out_stream, post_node)
+        builder.make_edge(out_node, post_node)
 
-        out_stream = post_node
-        out_type = AppShieldMessageMeta
-
-        return super()._post_build_single(builder, (out_stream, out_type))
+        return super()._post_build_single(builder, post_node)

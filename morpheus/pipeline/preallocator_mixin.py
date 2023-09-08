@@ -86,8 +86,8 @@ class PreallocatorMixin(ABC):
         self._preallocate_meta(msg.meta)
         return msg
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-        (out_stream, out_type) = out_pair
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        out_type = self.output_ports[0].out_type
         pretty_type = pretty_print_type_name(out_type)
 
         if len(self._needed_columns) > 0:
@@ -99,22 +99,22 @@ class PreallocatorMixin(ABC):
                     import morpheus._lib.stages as _stages
                     needed_columns = list(self._needed_columns.items())
                     if issubclass(out_type, MessageMeta):
-                        stream = _stages.PreallocateMessageMetaStage(builder, node_name, needed_columns)
+                        node = _stages.PreallocateMessageMetaStage(builder, node_name, needed_columns)
                     else:
-                        stream = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
+                        node = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
                 else:
                     if issubclass(out_type, MessageMeta):
-                        stream = builder.make_node(node_name, ops.map(self._preallocate_meta))
+                        node = builder.make_node(node_name, ops.map(self._preallocate_meta))
                     else:
-                        stream = builder.make_node(node_name, ops.map(self._preallocate_multi))
+                        node = builder.make_node(node_name, ops.map(self._preallocate_multi))
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
-                stream = builder.make_node(node_name, ops.map(self._preallocate_df))
+                node = builder.make_node(node_name, ops.map(self._preallocate_df))
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type "
                        f"{pretty_type} isn't a supported type")
                 raise RuntimeError(msg)
 
-            builder.make_edge(out_stream, stream)
-            out_stream = stream
+            builder.make_edge(out_node, node)
+            out_node = node
 
-        return (out_stream, out_type)
+        return out_node

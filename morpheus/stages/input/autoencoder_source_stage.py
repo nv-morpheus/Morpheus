@@ -319,10 +319,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-        out_type = out_pair[1]
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # At this point, we have batches of filenames to process. Make a node for processing batches of
         # filenames into batches of dataframes
@@ -341,9 +338,6 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
             ops.map(self._build_user_metadata),
             # Finally flatten to single meta
             ops.flatten())
-        builder.make_edge(out_stream, post_node)
+        builder.make_edge(out_node, post_node)
 
-        out_stream = post_node
-        out_type = UserMessageMeta
-
-        return super()._post_build_single(builder, (out_stream, out_type))
+        return super()._post_build_single(builder, post_node)
