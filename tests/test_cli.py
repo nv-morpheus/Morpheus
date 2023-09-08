@@ -244,7 +244,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_all(self, callback_values):
@@ -338,7 +338,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -404,7 +404,7 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -528,7 +528,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -624,7 +624,7 @@ class TestCLI:
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
-        assert filter_stage._filter_source == FilterSource.TENSOR
+        assert filter_stage._controller._filter_source == FilterSource.TENSOR
 
         assert isinstance(dropna, DropNullStage)
         assert dropna._column == 'xyz'
@@ -662,8 +662,8 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
-        assert to_file._file_type == FileTypes.CSV
+        assert to_file._controller._output_file == 'out.csv'
+        assert to_file._controller._file_type == FileTypes.CSV
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -745,7 +745,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -877,7 +877,7 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'

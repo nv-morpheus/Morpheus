@@ -58,7 +58,7 @@ def test_constructor(config: Config):
     assert stage._mc._determine_count_fn is two_x
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
@@ -71,7 +71,7 @@ def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
     assert stage._mc._progress is mock_morph_tqdm
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
@@ -87,7 +87,7 @@ def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.close.assert_called_once()
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
@@ -133,7 +133,7 @@ def test_auto_count_fn_not_impl(config: Config, value: typing.Any):
         stage._mc.auto_count_fn(value)
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
 def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
