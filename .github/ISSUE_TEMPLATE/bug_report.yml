@@ -29,7 +29,7 @@ body:
     attributes:
       label: Version
       description: What version of Morpheus are you running?
-      placeholder: "example: 22.09"
+      placeholder: "example: 23.11"
     validations:
       required: true
 
@@ -42,6 +42,7 @@ body:
         - Docker
         - Conda
         - Source
+        - Kubernetes
 
   - type: textarea
     id: description
@@ -64,14 +65,24 @@ body:
     attributes:
       label: Relevant log output
       description: Please paste relevant error and log output here
-      render: shell
+      value: |
+       <details><summary>Click here to see error details</summary><pre>
+
+        [Paste the error here, it will be hidden by default]
+
+       </pre></details>
 
   - type: textarea
     id: env-printout
     attributes:
       label: Full env printout
       description: Please run and paste the output of the `./external/utilities/scripts/print_env.sh` script here, to gather any other relevant environment details
-      render: shell
+      value: |
+       <details><summary>Click here to see environment details</summary><pre>
+
+        [Paste the results of print_env.sh here, it will be hidden by default]
+
+       </pre></details>
 
   - type: textarea
     id: misc
