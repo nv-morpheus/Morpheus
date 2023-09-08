@@ -76,6 +76,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def _fetch_feeds(self) -> MessageMeta:
         """
         Fetch RSS feed entries and yield as MessageMeta object.
