@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Set PR or Issue Roadmap Value on Close
+name: Project - Set PR or Issue Roadmap Value on Close
 
 on:
   pull_request_target:
