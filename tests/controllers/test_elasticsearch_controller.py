@@ -25,14 +25,6 @@ from elasticsearch import Elasticsearch
 from morpheus.controllers.elasticsearch_controller import ElasticsearchController
 
 
-# Define a mock function for _apply_derive_params_function
-def mock_derive_params(kwargs):
-    kwargs["retry_on_status"] = 3
-    kwargs["retry_on_timeout"] = 3 * 10
-
-    return kwargs
-
-
 @pytest.fixture(scope="function", autouse=True)
 def patch_elasticsearch() -> Elasticsearch:
     with patch("morpheus.controllers.elasticsearch_controller.Elasticsearch", autospec=True):
@@ -61,23 +53,6 @@ def test_constructor(create_controller: typing.Callable[..., ElasticsearchContro
     assert create_controller(raise_on_exception=True)._raise_on_exception is True
     assert create_controller(refresh_period_secs=1.5)._refresh_period_secs == 1.5
     assert create_controller()._connection_kwargs == connection_kwargs
-
-
-@pytest.mark.use_python
-def test_apply_custom_func(create_controller: typing.Callable[..., ElasticsearchController], connection_kwargs: dict):
-
-    expected_connection_kwargs = {
-        "hosts": [{
-            "host": "localhost", "port": 9200, "scheme": "http"
-        }], "retry_on_status": 3, "retry_on_timeout": 30
-    }
-
-    controller = create_controller(connection_kwargs_update_func=mock_derive_params,
-                                   connection_kwargs=connection_kwargs.copy())
-
-    # Ensure the original connection_kwargs is not modified
-    assert connection_kwargs != controller._connection_kwargs
-    assert expected_connection_kwargs == controller._connection_kwargs
 
 
 @pytest.mark.use_python

@@ -14,7 +14,6 @@
 
 import logging
 import time
-import typing
 
 import pandas as pd
 from elasticsearch import ConnectionError as ESConnectionError
@@ -36,21 +35,19 @@ class ElasticsearchController:
         Whether to raise exceptions on Elasticsearch errors.
     refresh_period_secs : int, optional, default: 2400
         The refresh period in seconds for client refreshing.
-    connection_kwargs_update_func : typing.Callable, optional, default: None
-        Custom function to update connection parameters.
     """
 
-    def __init__(self,
-                 connection_kwargs: dict,
-                 raise_on_exception: bool = False,
-                 refresh_period_secs: int = 2400,
-                 connection_kwargs_update_func: typing.Callable = None):
+    def __init__(self, connection_kwargs: dict, raise_on_exception: bool = False, refresh_period_secs: int = 2400):
 
         self._client = None
         self._last_refresh_time = None
         self._raise_on_exception = raise_on_exception
         self._refresh_period_secs = refresh_period_secs
-        self._connection_kwargs = self._apply_custom_func(connection_kwargs_update_func, connection_kwargs)
+
+        if connection_kwargs is not None and not connection_kwargs:
+            raise ValueError("Connection kwargs cannot be none or empty.")
+
+        self._connection_kwargs = connection_kwargs
 
         logger.debug("Creating Elasticsearch client with configuration: %s", connection_kwargs)
 
@@ -58,13 +55,6 @@ class ElasticsearchController:
 
         logger.debug("Elasticsearch cluster info: %s", self._client.info)
         logger.debug("Creating Elasticsearch client... Done!")
-
-    def _apply_custom_func(self, func, connection_kwargs):
-        # Apply custom function if it's available
-        if func:
-            connection_kwargs = func(connection_kwargs)
-
-        return connection_kwargs
 
     def refresh_client(self, force: bool = False) -> bool:
         """

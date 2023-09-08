@@ -55,33 +55,25 @@ def write_to_elasticsearch(builder: mrc.Builder):
     pickled_func_config = config.get("pickled_func_config", None)
     refresh_period_secs = config.get("refresh_period_secs", 2400)
 
-    connection_kwargs_update_func = None
-
     if pickled_func_config:
         pickled_func_str = pickled_func_config.get("pickled_func_str")
         encoding = pickled_func_config.get("encoding")
 
         if pickled_func_str and encoding:
             connection_kwargs_update_func = pickle.loads(bytes(pickled_func_str, encoding))
+            connection_kwargs = connection_kwargs_update_func(connection_kwargs)
 
     controller = ElasticsearchController(connection_kwargs=connection_kwargs,
                                          raise_on_exception=raise_on_exception,
-                                         refresh_period_secs=refresh_period_secs,
-                                         connection_kwargs_update_func=connection_kwargs_update_func)
+                                         refresh_period_secs=refresh_period_secs)
 
     def on_data(message: ControlMessage):
 
         controller.refresh_client()
 
-        meta = message.payload()
-        rows = meta.df.to_pandas().to_dict('records')
+        df = message.payload().df.to_pandas()
 
-        actions = []
-        for row in rows:
-            action = {"_index": index, "_source": row}
-            actions.append(action)
-
-        controller.parallel_bulk_write(actions)  # Parallel bulk upload to Elasticsearch
+        controller.df_to_parallel_bulk_write(index=index, df=df)
 
         return message
 

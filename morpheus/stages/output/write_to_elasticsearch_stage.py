@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -75,10 +75,12 @@ class WriteToElasticsearchStage(SinglePortStage):
         except Exception as exc:
             raise RuntimeError(f"An error occurred while loading the configuration file: {exc}") from exc
 
+        if connection_kwargs_update_func:
+            connection_kwargs = connection_kwargs_update_func(connection_kwargs)
+
         self._controller = ElasticsearchController(connection_kwargs=connection_kwargs,
                                                    raise_on_exception=raise_on_exception,
-                                                   refresh_period_secs=refresh_period_secs,
-                                                   connection_kwargs_update_func=connection_kwargs_update_func)
+                                                   refresh_period_secs=refresh_period_secs)
 
     @property
     def name(self) -> str:
