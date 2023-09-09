@@ -47,6 +47,24 @@ class SingleOutputSource(_pipeline.SourceStage):
 
     # pylint: enable=unused-argument
 
+    @abstractmethod
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        """
+        Abstract method all derived Source classes should implement. Returns the same value as `build`.
+
+        :meta public:
+
+        Returns
+        -------
+
+        `mrc.SegmentObject`:
+            The MRC node for this stage.
+        """
+        pass
+
+    def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
+        return [self._build_source(builder)]
+
     @typing.final
     def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 

@@ -43,7 +43,7 @@ class SourceStage(_pipeline.StreamWrapper):
         self._start_callbacks: typing.List[typing.Callable] = []
         self._stop_callbacks: typing.List[typing.Callable] = []
 
-        self._source_stream: mrc.SegmentObject = None
+        self._sources: list[mrc.SegmentObject] = []
 
     @property
     def input_count(self) -> int:
@@ -53,7 +53,7 @@ class SourceStage(_pipeline.StreamWrapper):
         return None
 
     @abstractmethod
-    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+    def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -81,21 +81,23 @@ class SourceStage(_pipeline.StreamWrapper):
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
         assert len(input_nodes) == 0, "Sources shouldnt have input nodes"
 
-        curr_source = self._build_source(builder)
+        sources = self._build_sources(builder)
 
-        self._source_stream = curr_source
+        assert len(sources) == len(self.output_ports), "Number of sources should match number of output ports"
 
-        # Now set up the output ports
-        self._output_ports[0]._out_node = curr_source
+        for (i, source) in enumerate(sources):
+            self._output_ports[i]._out_node = source
+            self._sources.append(source)
 
-        return [curr_source]
+        return sources
 
     def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
         return out_ports_nodes
 
     def _start(self):
-        self._source_stream.start()
+        for source in self._sources:
+            source.start()
 
     async def join(self):
         """
