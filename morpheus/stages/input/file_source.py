@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -99,8 +99,6 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         super().__init__(c)
 
-        self._batch_size = c.pipeline_batch_size
-
         if not files:
             raise ValueError("The 'files' cannot be empty.")
 
@@ -133,18 +131,21 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
-        if self._watch and not self._has_remote_paths():
-            # When watching a directory, we use the directory path for monitoring.
-            input_glob = self._files[0]
-            watcher = DirectoryWatcher(input_glob=input_glob,
-                                       watch_directory=self._watch,
-                                       max_files=None,
-                                       sort_glob=self._sort_glob,
-                                       recursive=self._recursive,
-                                       queue_max_size=self._queue_max_size,
-                                       batch_timeout=self._batch_timeout)
-            out_stream = watcher.build_node(self.unique_name, builder)
+        if self._build_cpp_node():
+            raise RuntimeError("Does not support C++ nodes")
 
+        if self._watch and not self._has_remote_paths():
+            input_glob = self._files[0]
+            watcher = DirectoryWatcher(
+                input_glob=input_glob,
+                watch_directory=self._watch,
+                max_files=None,  # This is not being used in the latest version.
+                sort_glob=self._sort_glob,
+                recursive=self._recursive,
+                queue_max_size=self._queue_max_size,
+                batch_timeout=self._batch_timeout)
+
+            out_stream = watcher.build_node(self.unique_name, builder)
             out_type = list[str]
         else:
             if self._watch:
@@ -165,6 +166,9 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         if (len(files) == 0):
             raise RuntimeError(f"No files matched input strings: '{self._files}'. "
                                "Check your input pattern and ensure any credentials are correct")
+
+        if self._sort_glob:
+            files = sorted(files, key=lambda f: f.full_name)
 
         yield files
 
@@ -195,6 +199,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             files_seen = file_set
 
             if len(filtered_files) > 0:
+                if self._sort_glob:
+                    filtered_files = sorted(filtered_files, key=lambda f: f.full_name)
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
             curr_time = time.monotonic()
@@ -281,8 +287,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         fsspec.core.OpenFiles
             An fsspec OpenFiles object representing the input files.
         """
-
-        if isinstance(files, list):
+        # Check if the list contains string items by checking the type of the first element
+        if files and isinstance(files[0], str):
             files: fsspec.core.OpenFiles = fsspec.open_files(files)
 
         return files
