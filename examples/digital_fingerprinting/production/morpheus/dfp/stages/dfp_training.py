@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Training stage for the DFP pipeline."""
-
+import base64
 import logging
+import pickle
 import typing
 
 import mrc
@@ -151,6 +152,10 @@ class DFPTraining(SinglePortStage):
         if (to_cm):
             output_message = ControlMessage(message.meta)
             output_message.set_metadata("user_id", user_id)
+
+            pickled_model_bytes = pickle.dumps(model)
+            pickled_model_base64_str = base64.b64encode(pickled_model_bytes).decode('utf-8')
+            output_message.set_metadata("model", pickled_model_base64_str)
         else:
             output_message = MultiAEMessage(meta=message.meta,
                                             mess_offset=message.mess_offset,
