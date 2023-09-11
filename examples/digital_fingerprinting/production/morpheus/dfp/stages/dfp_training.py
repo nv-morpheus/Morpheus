@@ -169,8 +169,8 @@ class DFPTraining(SinglePortStage):
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], stream)
 
-        rdtype = input_stream[1]
-        if (rdtype == MultiDFPMessage):
-            rdtype = MultiAEMessage
+        return_type = input_stream[1]
+        if (return_type == MultiDFPMessage):
+            return_type = MultiAEMessage
 
-        return stream, rdtype
+        return stream, return_type

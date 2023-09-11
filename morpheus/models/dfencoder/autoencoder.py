@@ -923,8 +923,8 @@ class AutoEncoder(torch.nn.Module):
         if (self.patience and not run_validation):
             LOG.warning(
                 f"Not going to perform early-stopping. self.patience(={self.patience}) is provided for early-stopping"
-                " but validation is not enabled. Please set `run_validation` to True and provide a `validation_dataset` to"
-                " enable early-stopping.")
+                " but validation is not enabled. Please set `run_validation` to True and provide a `validation_dataset`"
+                " to enable early-stopping.")
 
         # Check if we're running validation, and compute baseline performance if we are
         if (is_main_process and run_validation):
