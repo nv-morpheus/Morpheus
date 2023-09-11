@@ -245,7 +245,7 @@ class Pipeline():
                 if (stage.can_pre_build()):
                     stage._pre_build()
 
-            if (not all(x.is_built for x in segment_graph.nodes())):
+            if (not all(x.is_pre_built for x in segment_graph.nodes())):
                 logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
 
                 for stage in segment_graph.nodes():
@@ -310,6 +310,7 @@ class Pipeline():
                 for stage in segment_graph.nodes():
                     if (stage.can_build(check_ports=True)):
                         stage.build(builder)
+
             if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
