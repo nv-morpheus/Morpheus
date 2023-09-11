@@ -18,7 +18,6 @@ import os
 import typing
 from unittest.mock import patch
 
-import pandas
 import pandas as pd
 import pytest
 import torch

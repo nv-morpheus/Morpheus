@@ -801,7 +801,7 @@ class AutoEncoder(torch.nn.Module):
                           epochs,
                           rank,
                           world_size,
-                          should_run_validation,
+                          run_validation,
                           is_main_process):
         # Batched Training loop with early stopping
         early_stopping_count = 0
@@ -826,7 +826,7 @@ class AutoEncoder(torch.nn.Module):
             if (self.learning_rate_decay is not None):
                 self.learning_rate_decay.step()
 
-            if (is_main_process and should_run_validation):
+            if (is_main_process and run_validation):
                 # run validation
                 curr_val_loss = self._validate_dataset(validation_data, rank)
                 LOG.debug(f'Rank{rank} Loss: {round(last_val_loss, 4)}->{round(curr_val_loss, 4)}')
