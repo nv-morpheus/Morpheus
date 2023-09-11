@@ -25,15 +25,13 @@ from morpheus.config import Config
 from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("filter")
-class FilterDetectionsStage(PassThruTypeMixin, SinglePortStage):
+class FilterDetectionsStage(SinglePortStage):
     """
     Filter message by a classification threshold.
 
@@ -108,16 +106,15 @@ class FilterDetectionsStage(PassThruTypeMixin, SinglePortStage):
 
         return (MultiMessage, )
 
+    def output_type(self, parent_output_type: type) -> type:
+        self._controller.update_filter_source(message_type=parent_output_type)
+        return parent_output_type
+
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        # (parent_node, message_type) = input_stream
-
-        # TODO move this to
-        #self._controller.update_filter_source(message_type=message_type)
-
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,
                                                  self.unique_name,
