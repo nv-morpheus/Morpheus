@@ -13,18 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 import mrc.core.operators as ops
-import typing_utils
 
 import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import SingleOutputSource
-from morpheus.pipeline import StreamPair
 
 # TODO: test benchmarks, as far as I can tell the post-flatten node was not used.
 

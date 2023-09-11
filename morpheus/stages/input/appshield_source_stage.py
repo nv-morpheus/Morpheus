@@ -29,7 +29,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
-from morpheus.pipeline import StreamPair
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.utils.directory_watcher import DirectoryWatcher
 

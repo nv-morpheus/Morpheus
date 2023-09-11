@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 import mrc.core.operators as ops
 from mrc.core.node import Broadcast
@@ -42,13 +40,13 @@ class SplitStage(Stage):
     def output_types(self, parent_output_types: list[type]) -> list[type]:
         return [MessageMeta, MessageMeta]
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        assert len(in_ports_streams) == 1, "Only 1 input supported"
+        assert len(input_nodes) == 1, "Only 1 input supported"
 
         # Create a broadcast node
         broadcast = Broadcast(builder, "broadcast")
-        builder.make_edge(in_ports_streams[0][0], broadcast)
+        builder.make_edge(input_nodes[0], broadcast)
 
         def filter_higher_fn(data: MessageMeta):
             return MessageMeta(data.df[data.df["v2"] >= 0.5])
@@ -64,4 +62,4 @@ class SplitStage(Stage):
         filter_lower = builder.make_node("filter_lower", ops.map(filter_lower_fn))
         builder.make_edge(broadcast, filter_lower)
 
-        return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
+        return [filter_higher, filter_lower]
