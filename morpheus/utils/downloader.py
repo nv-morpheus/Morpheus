@@ -110,7 +110,7 @@ class Downloader:
 
             logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
-        return self._dask_cluster
+        return Downloader._dask_cluster
 
     def get_dask_client(self):
         """
