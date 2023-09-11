@@ -113,7 +113,7 @@ class DFEncoderDataLoader(DataLoader):
         dataset = FileSystemDataset(
             data_folder,
             model.batch_size,
-            model.preprocess_train_data,
+            model.preprocess_training_data,
             load_data_fn=load_data_fn,
         )
         dataloader = DFEncoderDataLoader.get_distributed_training_dataloader_from_dataset(

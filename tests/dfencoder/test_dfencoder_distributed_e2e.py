@@ -134,9 +134,9 @@ def _run_test(rank, world_size):
         encoder_layers=[512, 500],
         decoder_layers=[512],
         activation='relu',
-        swap_p=0.2,
-        lr=0.01,
-        lr_decay=0.99,
+        swap_probability=0.2,
+        learning_rate=0.01,
+        learning_rate_decay=0.99,
         batch_size=4096,
         logger='basic',
         verbose=True,
@@ -169,11 +169,11 @@ def _run_test(rank, world_size):
     )
 
     # Train
-    model.fit(train_data=dataloader,
+    model.fit(training_data=dataloader,
               rank=rank,
               world_size=world_size,
               epochs=10,
-              val_data=val_dataset,
+              validation_data=val_dataset,
               run_validation=True,
               use_val_for_loss_stats=True)
 

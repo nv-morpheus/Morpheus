@@ -95,19 +95,20 @@ class DFPTraining(SinglePortStage):
             MultiDFPMessage,
         )
 
-    def _dfp_mm_from_cm(self, control_message: ControlMessage) -> MultiDFPMessage:
+    def _dfp_multimessage_from_control_message(self,
+                                               control_message: ControlMessage) -> typing.Union[MultiDFPMessage, None]:
         """Create a MultiDFPMessage from a ControlMessage."""
-        user_id = control_message.get_metadata("user_id")
+        ctrl_msg_user_id = control_message.get_metadata("user_id")
         message_meta = control_message.payload()
 
-        if (user_id is None or message_meta is None):
+        if (ctrl_msg_user_id is None or message_meta is None):
             return None
 
         with message_meta.mutable_dataframe() as dfm:
-            mm_df = dfm.to_pandas()
+            msg_meta_df = dfm.to_pandas()
 
-        dfp_mm = DFPMessageMeta(mm_df, user_id=str(user_id))
-        message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(mm_df))
+        msg_meta = DFPMessageMeta(msg_meta_df, user_id=str(ctrl_msg_user_id))
+        message = MultiDFPMessage(meta=msg_meta, mess_offset=0, mess_count=len(msg_meta_df))
 
         return message
 
@@ -121,10 +122,10 @@ class DFPTraining(SinglePortStage):
 
     def on_data(self, message):
         """Train the model and attach it to the output message."""
-        to_cm = False
+        received_control_message = False
         if (isinstance(message, ControlMessage)):
-            message = self._dfp_mm_from_cm(message)
-            to_cm = True
+            message = self._dfp_multimessage_from_control_message(message)
+            received_control_message = True
 
         if (message is None or message.mess_count == 0):
             return None
@@ -146,10 +147,10 @@ class DFPTraining(SinglePortStage):
             run_validation = True
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(train_df, epochs=self._epochs, val_data=validation_df, run_validation=run_validation)
+        model.fit(train_df, epochs=self._epochs, validation_data=validation_df, run_validation=run_validation)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        if (to_cm):
+        if (received_control_message):
             output_message = ControlMessage(message.meta)
             output_message.set_metadata("user_id", user_id)
 

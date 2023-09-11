@@ -18,9 +18,11 @@ import os
 import typing
 from unittest.mock import patch
 
+import pandas
 import pandas as pd
 import pytest
 import torch
+from torch.utils.data import Dataset as TorchDataset
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
@@ -29,6 +31,9 @@ from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
+from morpheus.models.dfencoder.dataloader import DataframeDataset
+from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
+from morpheus.models.dfencoder.dataloader import FileSystemDataset
 
 # Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
@@ -64,9 +69,9 @@ def train_ae_fixture():
         encoder_layers=[512, 500],
         decoder_layers=[512],
         activation='relu',
-        swap_p=0.2,
-        lr=0.01,
-        lr_decay=.99,
+        swap_probability=0.2,
+        learning_rate=0.01,
+        learning_rate_decay=.99,
         batch_size=512,
         verbose=False,
         optimizer='sgd',
@@ -172,17 +177,16 @@ def test_auto_encoder_constructor_default_vals():
     assert ae.model.encoder_layers is None
     assert ae.model.decoder_layers is None
     assert ae.min_cats == 10
-    assert ae.swap_p == 0.15
+    assert ae.swap_probability == 0.15
     assert ae.batch_size == 256
     assert ae.eval_batch_size == 1024
     assert ae.model.activation == 'relu'
     assert ae.optimizer == 'adam'
-    assert ae.lr == 0.01
-    assert ae.lr_decay is None
+    assert ae.learning_rate == 0.01
+    assert ae.learning_rate_decay is None
     assert ae.device.type == 'cuda'
     assert ae.scaler == 'standard'
     assert ae.loss_scaler is scalers.StandardScaler
-    assert ae.n_megabatches == 1
 
 
 def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
@@ -193,19 +197,18 @@ def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
     assert train_ae.model.encoder_layers == [512, 500]
     assert train_ae.model.decoder_layers == [512]
     assert train_ae.min_cats == 1
-    assert train_ae.swap_p == 0.2
+    assert train_ae.swap_probability == 0.2
     assert train_ae.batch_size == 512
     assert train_ae.eval_batch_size == 1024
     assert train_ae.model.activation == 'relu'
     assert train_ae.optimizer == 'sgd'
-    assert train_ae.lr == 0.01
-    assert train_ae.lr_decay == 0.99
+    assert train_ae.learning_rate == 0.01
+    assert train_ae.learning_rate_decay == 0.99
     assert not train_ae.progress_bar
     assert not train_ae.verbose
     assert train_ae.device.type == 'cuda'
     assert train_ae.scaler == 'standard'
     assert train_ae.loss_scaler is scalers.StandardScaler
-    assert train_ae.n_megabatches == 1
 
 
 def test_auto_encoder_get_scaler():
@@ -246,8 +249,23 @@ def test_auto_encoder_init_numeric(filter_probs_df):
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
-    train_ae.fit(train_df, epochs=1)
+@pytest.mark.parametrize("input_type", [pandas.DataFrame, FileSystemDataset, DFEncoderDataLoader, TorchDataset])
+def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame, input_type):
+    _train_df = train_df
+    if (isinstance(input_type, FileSystemDataset)):
+        _train_df = DataframeDataset(_train_df)
+    elif (isinstance(input_type, DFEncoderDataLoader)):
+        _train_df = DFEncoderDataLoader.get_distributed_training_dataloader_from_df(train_ae,
+                                                                                    _train_df,
+                                                                                    1,
+                                                                                    1,
+                                                                                    num_workers=1)
+    elif (isinstance(input_type, TorchDataset)):
+        with pytest.raises(TypeError):
+            train_ae.fit(_train_df, epochs=1)
+        return
+
+    train_ae.fit(_train_df, epochs=1)
 
     expected_numeric_features = {
         'eventID': {
@@ -267,7 +285,7 @@ def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFr
 
     assert sorted(train_ae.categorical_fts.keys()) == CAT_COLS
     for cat in CAT_COLS:
-        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(train_df[cat].dropna().unique())
+        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(_train_df[cat].dropna().unique())
 
     assert len(train_ae.cyclical_fts) == 0
 
@@ -278,9 +296,9 @@ def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFr
         assert isinstance(feature['scaler'], scalers.StandardScaler)
 
     assert isinstance(train_ae.optim, torch.optim.SGD)
-    assert isinstance(train_ae.lr_decay, torch.optim.lr_scheduler.ExponentialLR)
-    assert train_ae.lr_decay.gamma == 0.99
-    assert train_ae.optim is train_ae.lr_decay.optimizer
+    assert isinstance(train_ae.learning_rate_decay, torch.optim.lr_scheduler.ExponentialLR)
+    assert train_ae.learning_rate_decay.gamma == 0.99
+    assert train_ae.optim is train_ae.learning_rate_decay.optimizer
 
 
 def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
@@ -291,7 +309,7 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
 
     # Test normal training loop with no early stopping
     ae = autoencoder.AutoEncoder(patience=5)
-    ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+    ae.fit(train_data, validation_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
     # assert that training runs through all epoches
     assert ae.logger.n_epochs == epochs
 
@@ -304,11 +322,8 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
 
             Parameters:
             -----------
-            orig_losses : list
-                A list of original validation losses to be returned by the mocked `_validate_dataframe` method.
-            swapped_loss : float, optional (default=1.0)
-                A fixed loss value to be returned by the mocked `_validate_dataframe` method as the `swapped_loss`.
-                Fixed as it's unrelated to the early-stopping functionality being tested here.
+            mean_loss: list
+                A list of mean validation losses to be returned by the mocked `_validate_dataframe` method.
             """
             self.orig_losses = orig_losses
             # counter to keep track of the number of times the mocked `_validate_dataframe` method has been called
@@ -334,7 +349,11 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
         patience=3)  # should stop at epoch 3 as the first 3 losses are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
     with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
-        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+        ae.fit(train_data,
+               validation_data=validation_data,
+               run_validation=True,
+               use_val_for_loss_stats=True,
+               epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 3
 
@@ -342,7 +361,11 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
         patience=5)  # should stop at epoch 9 as losses from epoch 5-9 are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
     with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
-        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+        ae.fit(train_data,
+               validation_data=validation_data,
+               run_validation=True,
+               use_val_for_loss_stats=True,
+               epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 9
 
