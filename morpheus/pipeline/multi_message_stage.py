@@ -69,5 +69,6 @@ class MultiMessageStage(_pipeline.SinglePortStage):
             # Only have one port
             post_ts = builder.make_node(self.unique_name + "-ts", post_timestamps)
             builder.make_edge(out_node, post_ts)
+            out_node = post_ts
 
-        return super()._post_build_single(builder, post_ts)
+        return super()._post_build_single(builder, out_node)
