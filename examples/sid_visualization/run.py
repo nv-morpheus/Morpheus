@@ -84,6 +84,9 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def output_type(self) -> type:
+        return MessageMeta
+
     def supports_cpp_node(self):
         return False
 
