@@ -94,14 +94,14 @@ class LinearModulesStage(SinglePortStage):
     def _get_cpp_module_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Load module from the registry.
         module = load_module(self._module_config, builder=builder)
 
-        mod_in_stream = module.input_port(self._input_port_name)
-        mod_out_stream = module.output_port(self._output_port_name)
+        mod_in_node = module.input_port(self._input_port_name)
+        mod_out_node = module.output_port(self._output_port_name)
 
-        builder.make_edge(input_stream[0], mod_in_stream)
+        builder.make_edge(input_node, mod_in_node)
 
-        return mod_out_stream, self._ouput_type
+        return mod_out_node

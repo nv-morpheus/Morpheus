@@ -212,10 +212,7 @@ class InferenceStage(MultiMessageStage):
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiResponseMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -267,11 +264,9 @@ class InferenceStage(MultiMessageStage):
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
+        return node
 
     def stop(self):
         """

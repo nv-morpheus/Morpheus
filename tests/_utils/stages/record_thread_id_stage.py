@@ -47,9 +47,8 @@ class RecordThreadIdStage(PassThruTypeMixin, SinglePortStage):
         self.thread_id = threading.current_thread().ident
         return x
 
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        stream = builder.make_node(self.unique_name, mrc.core.operators.map(self._save_thread))
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, mrc.core.operators.map(self._save_thread))
+        builder.make_edge(input_node, node)
 
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, input_stream[1]
+        return node

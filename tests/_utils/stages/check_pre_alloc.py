@@ -55,8 +55,8 @@ class CheckPreAlloc(PassThruTypeMixin, SinglePortStage):
 
         return msg
 
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        stream = builder.make_node(self.unique_name, ops.map(self._check_prealloc))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._check_prealloc))
+        builder.make_edge(input_node, node)
 
-        return stream, input_stream[1]
+        return node

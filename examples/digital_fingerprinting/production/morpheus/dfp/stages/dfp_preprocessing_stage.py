@@ -81,10 +81,10 @@ class DFPPreprocessingStage(PassThruTypeMixin, SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.process_features))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
         # node.launch_options.pe_count = self._config.num_threads
 
-        return node, MultiDFPMessage
+        return node

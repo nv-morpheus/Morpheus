@@ -90,25 +90,20 @@ class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return True
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = _stages.WriteToFileStage(builder,
-                                               self.unique_name,
-                                               self._controller.output_file,
-                                               "w",
-                                               self._controller.file_type,
-                                               self._controller.include_index_col,
-                                               self._controller.flush)
+            to_file_node = _stages.WriteToFileStage(builder,
+                                                    self.unique_name,
+                                                    self._controller.output_file,
+                                                    "w",
+                                                    self._controller.file_type,
+                                                    self._controller.include_index_col,
+                                                    self._controller.flush)
         else:
 
-            to_file = builder.make_node(self.unique_name, ops.build(self._controller.node_fn))
+            to_file_node = builder.make_node(self.unique_name, ops.build(self._controller.node_fn))
 
-        builder.make_edge(stream, to_file)
-        stream = to_file
+        builder.make_edge(input_node, to_file_node)
 
-        # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return to_file_node

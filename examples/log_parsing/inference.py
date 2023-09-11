@@ -179,10 +179,7 @@ class LogParsingInferenceStage(InferenceStage):
     def output_type(self, parent_output_type: type) -> type:
         return MultiPostprocLogParsingMessage
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiResponseLogParsingMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -236,11 +233,9 @@ class LogParsingInferenceStage(InferenceStage):
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
+        return node
 
     @staticmethod
     def _convert_one_response(output: PostprocMemoryLogParsing,

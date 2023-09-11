@@ -97,20 +97,20 @@ class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
     def _get_cpp_node(self, builder: mrc.Builder):
         pass
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():
-            stream = self._get_cpp_node(builder=builder)
+            node = self._get_cpp_node(builder=builder)
         else:
-            stream = builder.make_node(
+            node = builder.make_node(
                 self.unique_name,
                 ops.map(functools.partial(self._add_labels, idx2label=self._idx2label, threshold=self._threshold)))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
         # Return input type unchanged
-        return stream, input_stream[1]
+        return node
 
     @staticmethod
     def _add_labels(x: MultiResponseMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):

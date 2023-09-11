@@ -96,8 +96,8 @@ class ConvMsg(SinglePortStage):
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
         return MultiResponseMessage.from_message(message, memory=memory)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self._conv_message))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._conv_message))
+        builder.make_edge(input_node, node)
 
-        return stream, MultiResponseMessage
+        return node

@@ -162,11 +162,11 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
-        stream = builder.make_node(self.unique_name, ops.map(self._postprocess))
+        node = builder.make_node(self.unique_name, ops.map(self._postprocess))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, MessageMeta
+        return node

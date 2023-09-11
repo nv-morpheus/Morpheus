@@ -152,14 +152,10 @@ class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
 
         return x
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
         node = builder.make_node(self.unique_name, ops.map(self._calc_drift))
-        builder.make_edge(input_stream[0], node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        # Return input unchanged
-        return stream, MultiResponseMessage
+        return node

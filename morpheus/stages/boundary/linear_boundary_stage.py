@@ -76,11 +76,11 @@ class LinearBoundaryEgressStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         boundary_egress = builder.get_egress(self._port_id)
-        builder.make_edge(input_stream[0], boundary_egress)
+        builder.make_edge(input_node, boundary_egress)
 
-        return input_stream
+        return input_node
 
 
 class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):

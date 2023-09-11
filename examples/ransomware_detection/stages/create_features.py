@@ -154,16 +154,12 @@ class CreateFeaturesRWStage(MultiMessageStage):
         # Close dask client when pipeline initiates shutdown
         self._client.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,
                                  ops.map(self.on_next),
                                  ops.map(self.create_multi_messages),
                                  ops.on_completed(self.on_completed),
                                  ops.flatten())
-        builder.make_edge(stream, node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        return stream, MultiMessage
+        return node

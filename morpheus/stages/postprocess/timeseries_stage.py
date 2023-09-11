@@ -496,10 +496,7 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
 
         return self._timeseries_per_user[x.user_id]._calc_timeseries(x, False)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = input_stream[1]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def on_next(x: MultiMessage):
 
@@ -518,12 +515,12 @@ class TimeSeriesStage(PassThruTypeMixin, SinglePortStage):
 
             return to_send if len(to_send) > 0 else None
 
-        stream = builder.make_node(self.unique_name,
-                                   ops.map(on_next),
-                                   ops.filter(lambda x: len(x) > 0),
-                                   ops.on_completed(on_completed),
-                                   ops.flatten())
+        node = builder.make_node(self.unique_name,
+                                 ops.map(on_next),
+                                 ops.filter(lambda x: len(x) > 0),
+                                 ops.on_completed(on_completed),
+                                 ops.flatten())
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, out_type
+        return node

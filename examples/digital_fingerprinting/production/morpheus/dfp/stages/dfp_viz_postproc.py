@@ -119,13 +119,8 @@ class DFPVizPostprocStage(PassThruTypeMixin, SinglePortStage):
 
         return x
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         dfp_viz_postproc = builder.make_node(self.unique_name, ops.map(self._write_to_files))
+        builder.make_edge(input_node, dfp_viz_postproc)
 
-        builder.make_edge(stream, dfp_viz_postproc)
-        stream = dfp_viz_postproc
-
-        return stream, input_stream[1]
+        return dfp_viz_postproc

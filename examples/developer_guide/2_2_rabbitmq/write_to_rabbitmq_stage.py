@@ -69,10 +69,10 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
-        builder.make_edge(input_stream[0], node)
-        return (node, input_stream[1])
+        builder.make_edge(input_node, node)
+        return node
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         df = message.df

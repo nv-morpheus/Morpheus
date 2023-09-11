@@ -66,9 +66,8 @@ class BufferStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)
 
-        return input_stream
+        return input_node

@@ -112,10 +112,11 @@ class FilterDetectionsStage(PassThruTypeMixin, SinglePortStage):
         # Enable support by default
         return True
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        (parent_node, message_type) = input_stream
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        # (parent_node, message_type) = input_stream
 
-        self._controller.update_filter_source(message_type=message_type)
+        # TODO move this to
+        #self._controller.update_filter_source(message_type=message_type)
 
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,
@@ -134,6 +135,6 @@ class FilterDetectionsStage(PassThruTypeMixin, SinglePortStage):
                 # Use `ops.flatten` to convert the list returned by `filter_slice` back to individual messages
                 node = builder.make_node(self.unique_name, ops.map(self._controller.filter_slice), ops.flatten())
 
-        builder.make_edge(parent_node, node)
+        builder.make_edge(input_node, node)
 
-        return node, message_type
+        return node

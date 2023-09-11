@@ -41,6 +41,7 @@ class PreprocessBaseStage(MultiMessageStage):
     def __init__(self, c: Config):
         super().__init__(c)
 
+        self._preprocess_fn = None
         self._should_log_timestamps = True
 
     def accepted_types(self) -> typing.Tuple:
@@ -51,7 +52,17 @@ class PreprocessBaseStage(MultiMessageStage):
         return (MultiMessage, )
 
     def output_type(self, parent_output_type: type) -> type:
-        return MultiInferenceMessage
+        out_type = MultiInferenceMessage
+
+        self._preprocess_fn = self._get_preprocess_fn()
+        preproc_sig = inspect.signature(self._preprocess_fn)
+
+        # If the innerfunction returns a type annotation, update the output type
+        if (preproc_sig.return_annotation
+                and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
+            out_type = preproc_sig.return_annotation
+
+        return out_type
 
     @abstractmethod
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
@@ -61,24 +72,13 @@ class PreprocessBaseStage(MultiMessageStage):
     def _get_preprocess_node(self, builder: mrc.Builder):
         pass
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiInferenceMessage
-
-        preprocess_fn = self._get_preprocess_fn()
-
-        preproc_sig = inspect.signature(preprocess_fn)
-
-        # If the innerfunction returns a type annotation, update the output type
-        if (preproc_sig.return_annotation and typing_utils.issubtype(preproc_sig.return_annotation, out_type)):
-            out_type = preproc_sig.return_annotation
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        assert self._preprocess_fn is not None, "Preprocess function not set"
         if self._build_cpp_node():
-            stream = self._get_preprocess_node(builder)
+            node = self._get_preprocess_node(builder)
         else:
-            stream = builder.make_node(self.unique_name, ops.map(preprocess_fn))
+            node = builder.make_node(self.unique_name, ops.map(self._preprocess_fn))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, out_type
+        return node

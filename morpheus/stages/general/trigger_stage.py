@@ -60,10 +60,10 @@ class TriggerStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Store all messages until on_complete is called and then push them
         node = builder.make_node(self.unique_name, ops.to_list(), ops.flatten())
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

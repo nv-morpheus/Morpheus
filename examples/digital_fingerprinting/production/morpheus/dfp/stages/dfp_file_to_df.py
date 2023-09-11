@@ -87,10 +87,10 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
     def output_type(self, parent_output_type: type) -> type:
         return pd.DataFrame
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name,
-                                   ops.map(self._controller.convert_to_dataframe),
-                                   ops.on_completed(self._controller.close))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name,
+                                 ops.map(self._controller.convert_to_dataframe),
+                                 ops.on_completed(self._controller.close))
+        builder.make_edge(input_node, node)
 
-        return stream, pd.DataFrame
+        return node

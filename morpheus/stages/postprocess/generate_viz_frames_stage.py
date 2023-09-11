@@ -247,9 +247,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def node_fn(input_obs, output_obs):
 
@@ -292,9 +290,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = builder.make_node(self.unique_name, ops.build(node_fn))
-        builder.make_edge(stream, to_file)
-        stream = to_file
+        to_filenode = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(input_node, to_filenode)
 
-        # Return input unchanged to allow passthrough
-        return input_stream
+        return to_filenode

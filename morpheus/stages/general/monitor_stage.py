@@ -119,16 +119,16 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
         if (self._mc.progress is not None):
             self._mc.progress.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if not self._mc.is_enabled():
-            return input_stream
+            return input_node
 
         # Use a component so we track progress using the upstream progress engine. This will provide more accurate
         # results
-        stream = builder.make_node_component(self.unique_name,
-                                             ops.map(self._mc.progress_sink),
-                                             ops.on_completed(self._mc.sink_on_completed))
+        node = builder.make_node_component(self.unique_name,
+                                           ops.map(self._mc.progress_sink),
+                                           ops.on_completed(self._mc.sink_on_completed))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, input_stream[1]
+        return node
