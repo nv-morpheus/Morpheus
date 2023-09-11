@@ -126,14 +126,12 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports a C++ node"""
-        return True
+        return False
 
     def _has_remote_paths(self) -> bool:
         return any(urlsplit(file).scheme for file in self._files if "://" in file)
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        if self._build_cpp_node():
-            raise RuntimeError("Does not support C++ nodes")
 
         if self._watch and not self._has_remote_paths():
             # When watching a directory, we use the directory path for monitoring.
@@ -209,7 +207,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                 curr_time = time.monotonic()
 
     @staticmethod
-    def generate_frames(file: fsspec.core.OpenFiles,
+    def generate_frames(file: fsspec.core.OpenFile,
                         file_type: FileTypes,
                         filter_null: bool,
                         parser_kwargs: dict,
@@ -222,8 +220,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         Parameters
         ----------
-        file : fsspec.core.OpenFiles
-            An open file object obtained using fsspec's `open_files` function.
+        file : fsspec.core.OpenFile
+            An open file object using fsspec.
         file_type : FileTypes
             Indicates the type of the file to read. Supported types include 'csv', 'json', 'jsonlines', and 'parquet'.
         filter_null : bool
@@ -266,8 +264,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         return metas
 
     @staticmethod
-    def convert_list_to_fsspec_files(
-            files: typing.Union[list[str], fsspec.core.OpenFiles]) -> fsspec.core.OpenFiles:
+    def convert_to_fsspec_files(files: typing.Union[list[str], fsspec.core.OpenFiles]) -> fsspec.core.OpenFiles:
         """
         Convert a list of file paths to fsspec OpenFiles.
 
@@ -296,7 +293,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         post_node = builder.make_node(
             self.unique_name + "-post",
-            ops.map(self.convert_list_to_fsspec_files),
+            ops.map(self.convert_to_fsspec_files),
             ops.flatten(),
             ops.map(
                 partial(self.generate_frames,
