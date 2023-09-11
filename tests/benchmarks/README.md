@@ -180,3 +180,15 @@ Additional benchmark stats for each workflow:
 - max_throughput_bytes
 - mean_throughput_bytes
 - median_throughput_bytes
+
+
+### Production DFP E2E Benchmarks
+
+Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipeline built using [Starter DFP](../../examples/digital_fingerprinting/starter/README.md) stages. Separate benchmark tests are also provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
+
+You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
+
+```
+export CUDA_VER=11.8
+mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_examples.yml
+```

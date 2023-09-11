@@ -16,16 +16,57 @@
 
 # Running DFP E2E Benchmarks
 
-### Set Environment
+### Set up Morpheus Dev Container
 
-To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLflow server have been set up and running with `docker compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
-
-## Requirements
-> **Note**: Make sure `gputil`, `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
-
-```bash
-conda install gputil 'dask>=2023.1.1' 'distributed>=2023.1.1'
+If you don't already have the Morpheus Dev container, run the following to build it:
 ```
+./docker/build_container_dev.sh
+```
+
+Now run the container:
+```
+./docker/run_container_dev.sh
+```
+
+Note that Morpheus containers are tagged by date. By default, `run_container_dev.sh` will try to use current date as tag. Therefore, if you are trying to run a container that was not built on the current date, you must set the `DOCKER_IMAGE_TAG` environment variable. For example,
+```
+DOCKER_IMAGE_TAG=dev-221003 ./docker/run_container_dev.sh
+```
+
+In the `/workspace` directory of the container, run the following to compile Morpheus:
+```
+./scripts/compile.sh
+```
+
+Now install Morpheus:
+```
+pip install -e /workspace
+```
+
+Install additonal required dependencies:
+```
+export CUDA_VER=11.8
+mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_examples.yml
+```
+
+Fetch input data for benchmarks:
+```
+./examples/digital_fingerprinting/fetch_example_data.py all
+```
+
+### Start MLflow
+
+MLflow is used as the model repository where the trained DFP models will be published and used for inference by the pipelines. Run the following to start MLflow in a host terminal window (not container):
+
+```
+# from root of Morpheus repo
+cd examples/digital_fingerprinting/production
+```
+
+```
+docker compose up mlflow
+```
+
 
 ### Run E2E Benchmarks
 
@@ -36,7 +77,7 @@ To provide your own calibration or use other `pytest-benchmark` features with th
 Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `dfp_modules_duo_payload_inference`:
 ```
 "test_dfp_modules_duo_payload_inference_e2e": {
-		"message_path": "./resource/control_messages/duo_payload_inference.json",
+		"message_path": "../control_messages/duo_payload_inference.json",
 		"num_threads": 12,
 		"pipeline_batch_size": 256,
 		"edge_buffer_size": 128,
@@ -55,10 +96,10 @@ When using the MRC SegmentModule in a pipeline, it will also require a module co
 To ensure the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_loader.py) utilizes the same type of downloading mechanism, set `MORPHEUS_FILE_DOWNLOAD_TYPE` environment variable with any one of given choices (`multiprocess`, `dask`, `dask thread`, `single thread`).
 
 ```
-export MORPHEUS_FILE_DOWNLOAD_TYPE=multiprocess
+export MORPHEUS_FILE_DOWNLOAD_TYPE=dask
 ```
 
-Benchmarks for an individual workflow can be run using the following:
+Benchmarks for an individual workflow can be run using the following in your dev container:
 
 ```
 

@@ -40,7 +40,7 @@ def test_constructor(config):
     assert len(accepted_types) > 0
 
     fds = FilterDetectionsStage(config, threshold=0.2)
-    assert fds._threshold == 0.2
+    assert fds._controller._threshold == 0.2
 
 
 @pytest.mark.use_cudf
@@ -52,7 +52,7 @@ def test_filter_copy(config, filter_probs_df):
     mock_message = _make_message(filter_probs_df, probs)
 
     # All values are at or below the threshold so nothing should be returned
-    output_message = fds.filter_copy(mock_message)
+    output_message = fds._controller.filter_copy(mock_message)
     assert output_message is None
 
     # Only one row has a value above the threshold
@@ -64,7 +64,7 @@ def test_filter_copy(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_message = fds.filter_copy(mock_message)
+    output_message = fds._controller.filter_copy(mock_message)
     assert output_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[1:1, :].to_cupy().tolist()
 
     # Two adjacent rows have a value above the threashold
@@ -78,7 +78,7 @@ def test_filter_copy(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_message = fds.filter_copy(mock_message)
+    output_message = fds._controller.filter_copy(mock_message)
     assert output_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[2:3, :].to_cupy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
@@ -93,7 +93,7 @@ def test_filter_copy(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_message = fds.filter_copy(mock_message)
+    output_message = fds._controller.filter_copy(mock_message)
     mask = cp.zeros(len(filter_probs_df), dtype=cp.bool_)
     mask[2] = True
     mask[4] = True
@@ -118,7 +118,7 @@ def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
     mock_message = _make_message(filter_probs_df, probs)
 
     # All values are at or below the threshold
-    output_message = fds.filter_copy(mock_message)
+    output_message = fds._controller.filter_copy(mock_message)
 
     assert output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
 
@@ -132,7 +132,7 @@ def test_filter_slice(config, filter_probs_df):
     mock_message = _make_message(filter_probs_df, probs)
 
     # All values are at or below the threshold
-    output_messages = fds.filter_slice(mock_message)
+    output_messages = fds._controller.filter_slice(mock_message)
     assert len(output_messages) == 0
 
     # Only one row has a value above the threshold
@@ -144,7 +144,7 @@ def test_filter_slice(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_messages = fds.filter_slice(mock_message)
+    output_messages = fds._controller.filter_slice(mock_message)
     assert len(output_messages) == 1
     output_message = output_messages[0]
     assert output_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[1:1, :].to_cupy().tolist()
@@ -160,7 +160,7 @@ def test_filter_slice(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_messages = fds.filter_slice(mock_message)
+    output_messages = fds._controller.filter_slice(mock_message)
     assert len(output_messages) == 1
     output_message = output_messages[0]
     assert output_message.offset == 2
@@ -179,7 +179,7 @@ def test_filter_slice(config, filter_probs_df):
 
     mock_message = _make_message(filter_probs_df, probs)
 
-    output_messages = fds.filter_slice(mock_message)
+    output_messages = fds._controller.filter_slice(mock_message)
     assert len(output_messages) == 2
     (msg1, msg2) = output_messages  # pylint: disable=unbalanced-tuple-unpacking
     assert msg1.offset == 2
