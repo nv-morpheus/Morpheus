@@ -20,7 +20,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_pair import StreamPair
+
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)

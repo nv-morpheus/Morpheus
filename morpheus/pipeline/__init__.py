@@ -18,7 +18,6 @@ All objects related to building and running a pipeline.
 # These must be imported in a specific order
 # isort: off
 
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.stream_wrapper import StreamWrapper

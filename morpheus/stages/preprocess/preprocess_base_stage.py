@@ -24,7 +24,6 @@ from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 class PreprocessBaseStage(MultiMessageStage):

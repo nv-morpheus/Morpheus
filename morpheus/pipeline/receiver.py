@@ -19,7 +19,7 @@ import mrc
 import typing_utils
 
 import morpheus.pipeline as _pipeline
-from morpheus.pipeline.stream_pair import StreamPair
+
 from morpheus.utils.type_utils import greatest_ancestor
 
 logger = logging.getLogger(__name__)
