@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import mrc
-import mrc.core.operators as ops
 
 import cudf
 

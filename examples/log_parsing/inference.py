@@ -24,7 +24,6 @@ from mrc.core import operators as ops
 from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
-from messages import MultiResponseLogParsingMessage  # pylint: disable=no-name-in-module
 from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
 from messages import ResponseMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
