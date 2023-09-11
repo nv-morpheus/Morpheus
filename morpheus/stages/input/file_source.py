@@ -128,7 +128,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return True
 
-    def _has_remote_paths(self):
+    def _has_remote_paths(self) -> bool:
         return any(urlsplit(file).scheme for file in self._files if "://" in file)
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -147,7 +147,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                                        batch_timeout=self._batch_timeout)
             out_stream = watcher.build_node(self.unique_name, builder)
 
-            out_type = typing.List[str]
+            out_type = list[str]
         else:
             if self._watch:
                 generator_function = self._polling_generate_frames_fsspec
@@ -267,7 +267,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     @staticmethod
     def convert_list_to_fsspec_files(
-            files: typing.Union[typing.List[str], fsspec.core.OpenFiles]) -> fsspec.core.OpenFiles:
+            files: typing.Union[list[str], fsspec.core.OpenFiles]) -> fsspec.core.OpenFiles:
         """
         Convert a list of file paths to fsspec OpenFiles.
 
