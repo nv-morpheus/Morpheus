@@ -19,7 +19,6 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)

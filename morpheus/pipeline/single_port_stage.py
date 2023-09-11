@@ -21,7 +21,6 @@ import typing_utils
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)

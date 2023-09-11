@@ -24,7 +24,6 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
-
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 logger = logging.getLogger(__name__)

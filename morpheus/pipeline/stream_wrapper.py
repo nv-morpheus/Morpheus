@@ -26,7 +26,6 @@ import mrc
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
 from morpheus.config import CppConfig
-
 from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.type_utils import _DecoratorType
 

@@ -30,7 +30,6 @@ from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-
 from morpheus.utils.type_aliases import DataFrameType
 from morpheus.utils.type_utils import pretty_print_type_name
 

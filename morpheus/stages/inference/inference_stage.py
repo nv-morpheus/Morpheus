@@ -26,7 +26,6 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 
