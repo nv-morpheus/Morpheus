@@ -128,10 +128,10 @@ class MultiPortModulesStage(Stage):
             mod_in_stream = module.input_port(in_port)
             builder.make_edge(in_stream_node, mod_in_stream)
 
-        out_stream_pairs = []
+        out_nodes = []
 
         for index in range(self._num_out_ports):
             out_port = self._out_ports[index]
-            out_stream_pairs.append((module.output_port(out_port), self._ouput_type))
+            out_nodes.append(module.output_port(out_port))
 
-        return out_stream_pairs
+        return out_nodes
