@@ -25,7 +25,6 @@ from morpheus.config import Config
 from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.column_info import DataFrameInputSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")

@@ -20,7 +20,6 @@ from mrc.core import operators as ops
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 class MultiMessagePassThruStage(PassThruTypeMixin, SinglePortStage):

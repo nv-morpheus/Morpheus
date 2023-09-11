@@ -24,7 +24,6 @@ from morpheus.controllers.mlflow_model_writer_controller import MLFlowModelWrite
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 # Setup conda environment
 conda_env = {

@@ -25,7 +25,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_aliases import DataFrameType
 
 from ..messages.multi_dfp_message import DFPMessageMeta

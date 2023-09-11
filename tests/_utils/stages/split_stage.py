@@ -23,7 +23,6 @@ from mrc.core.node import Broadcast
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 class SplitStage(Stage):

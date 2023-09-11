@@ -29,7 +29,6 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 from .model import build_fsi_graph
 from .model import prepare_data

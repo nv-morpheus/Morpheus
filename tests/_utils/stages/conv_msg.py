@@ -28,7 +28,6 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])

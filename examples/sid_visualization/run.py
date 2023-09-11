@@ -28,7 +28,6 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage

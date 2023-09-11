@@ -24,7 +24,6 @@ from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 

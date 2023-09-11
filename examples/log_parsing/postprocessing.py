@@ -28,7 +28,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("log-postprocess", modes=[PipelineModes.NLP])

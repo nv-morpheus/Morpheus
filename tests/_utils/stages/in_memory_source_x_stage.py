@@ -19,7 +19,6 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 class InMemSourceXStage(SingleOutputSource):

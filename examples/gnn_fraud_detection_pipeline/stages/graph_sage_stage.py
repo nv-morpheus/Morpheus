@@ -26,7 +26,6 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 from .graph_construction_stage import FraudGraphMultiMessage
 from .model import load_model
