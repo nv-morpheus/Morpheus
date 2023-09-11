@@ -28,7 +28,7 @@ dependencies:
     - boost-cpp=1.74
     - cachetools=5.0.0
     - ccache>=3.7
-    - clangdev=14
+    - clangdev=16
     - click >=8
     - cmake=3.24
     - configargparse=1.5
@@ -57,7 +57,7 @@ dependencies:
     - grpcio
     - gtest>=1.13.0
     - gxx_linux-64=11.2
-    - include-what-you-use=0.18
+    - include-what-you-use
     - ipywidgets
     - isort
     - jupyter_core>=4.11.2,<5.0
