@@ -62,12 +62,13 @@ class Downloader:
         The heartbeat interval to use when using dask or dask_thread.
     """
 
+    _dask_cluster = None
+
     def __init__(self,
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
         self._merlin_distributed = None
-        self._dask_cluster = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
         download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
@@ -96,21 +97,18 @@ class Downloader:
         dask_cuda.LocalCUDACluster
         """
 
-        if self._dask_cluster is None:
-            import dask
-            import dask.distributed
+        if Downloader._dask_cluster is None:
             import dask_cuda.utils
 
             logger.debug("Creating dask cluster...")
 
-            # Up the heartbeat interval which can get violated with long download times
-            dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
             n_workers = dask_cuda.utils.get_n_gpus()
             threads_per_worker = mp.cpu_count() // n_workers
 
-            self._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers, threads_per_worker=threads_per_worker)
+            Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
+                                                                  threads_per_worker=threads_per_worker)
 
-            logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
+            logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
         return self._dask_cluster
 
@@ -123,6 +121,9 @@ class Downloader:
         dask.distributed.Client
         """
         import dask.distributed
+
+        # Up the heartbeat interval which can get violated with long download times
+        dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
 
         if (self._merlin_distributed is None):
             self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
