@@ -97,6 +97,7 @@ def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, dl_method: str):
     downloader = Downloader(download_method=dl_method)
     assert downloader.get_dask_cluster() is mock_dask_cluster
 
+    # call again then assert that cluster was only created once
     downloader.get_dask_cluster()
 
     mock_dask_cluster.assert_called_once()
