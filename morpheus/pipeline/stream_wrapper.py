@@ -310,7 +310,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             return True
 
-        # Check if we can build based on the input ports. We can build
+        # Check if we can prebuild based on the input ports.
         for receiver in self.input_ports:
             if (not receiver.is_partial):
                 return False
