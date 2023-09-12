@@ -354,7 +354,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         out_types: list[type] = self.output_types(in_types)
 
         assert len(out_types) == len(self.output_ports), \
-            "output_types must return the same number of output types as output ports"
+            f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), but got {len(out_types)}."
 
         for (port_idx, out_type) in enumerate(out_types):
             self.output_ports[port_idx]._out_type = out_type
