@@ -47,7 +47,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     files : List[str]
         List of paths to be read from, can be a list of S3 URLs (`s3://path`) and can include wildcard characters `*`
@@ -84,7 +84,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  files: typing.List[str],
                  watch: bool = False,
                  watch_interval: float = 1.0,
@@ -97,7 +97,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                  filter_null: bool = True,
                  parser_kwargs: dict = None):
 
-        super().__init__(c)
+        super().__init__(config)
 
         if not files:
             raise ValueError("The 'files' cannot be empty.")
@@ -201,6 +201,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             if len(filtered_files) > 0:
                 if self._sort_glob:
                     filtered_files = sorted(filtered_files, key=lambda f: f.full_name)
+
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
             curr_time = time.monotonic()
@@ -287,9 +288,10 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         fsspec.core.OpenFiles
             An fsspec OpenFiles object representing the input files.
         """
-        # Check if the list contains string items by checking the type of the first element
-        if files and isinstance(files[0], str):
-            files: fsspec.core.OpenFiles = fsspec.open_files(files)
+
+        # Convert fsspec open files
+        if not isinstance(files, fsspec.core.OpenFiles):
+            files = fsspec.open_files(files)
 
         return files
 
@@ -300,13 +302,13 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         post_node = builder.make_node(
             self.unique_name + "-post",
             ops.map(self.convert_to_fsspec_files),
-            ops.flatten(),
+            ops.flatten(),  # Flatten list of open fsspec files
             ops.map(
                 partial(self.generate_frames,
                         file_type=self._file_type,
                         filter_null=self._filter_null,
                         parser_kwargs=self._parser_kwargs,
-                        repeat_count=self._repeat_count)),
+                        repeat_count=self._repeat_count)),  # Generate dataframe for each file
             ops.flatten())
 
         builder.make_edge(out_stream, post_node)
