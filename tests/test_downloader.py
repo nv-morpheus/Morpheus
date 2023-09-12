@@ -20,6 +20,7 @@ from unittest import mock
 import fsspec
 import pytest
 
+import morpheus.utils.downloader
 from _utils import TEST_DIRS
 from _utils import import_or_skip
 from morpheus.utils.downloader import DOWNLOAD_METHODS_MAP
@@ -87,28 +88,28 @@ def test_constructor_invalid_dltype(use_env: bool):
         Downloader(**kwargs)
 
 
-@pytest.mark.usefixtures("restore_environ")
+@pytest.mark.reload_modules(morpheus.utils.downloader)
 @pytest.mark.parametrize("dl_method", ["dask", "dask_thread"])
-@mock.patch('dask.config')
+@pytest.mark.usefixtures("reload_modules")
 @mock.patch('dask_cuda.LocalCUDACluster')
-def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, dl_method: str):
+def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
     assert downloader.get_dask_cluster() is mock_dask_cluster
 
-    mock_dask_config.set.assert_called_once()
+    downloader.get_dask_cluster()
+
     mock_dask_cluster.assert_called_once()
 
 
-@mock.patch('dask.config')
-@mock.patch('dask_cuda.LocalCUDACluster')
+@pytest.mark.reload_modules(morpheus.utils.downloader)
 @pytest.mark.parametrize('dl_method', ["dask", "dask_thread"])
-def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMock, dl_method: str):
+@pytest.mark.usefixtures("reload_modules")
+@mock.patch('dask_cuda.LocalCUDACluster')
+def test_close(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
     assert downloader.get_dask_cluster() is mock_dask_cluster
-
-    mock_dask_config.set.assert_called_once()
 
     mock_dask_cluster.close.assert_not_called()
     downloader.close()
@@ -127,7 +128,8 @@ def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.close.assert_not_called()
 
 
-@pytest.mark.usefixtures("restore_environ")
+@pytest.mark.reload_modules(morpheus.utils.downloader)
+@pytest.mark.usefixtures("reload_modules", "restore_environ")
 @pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
 @mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
