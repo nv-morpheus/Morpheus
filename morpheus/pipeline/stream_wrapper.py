@@ -303,12 +303,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
             return False
 
         if (not check_ports):
-            # We can build if all input stages have been built. Easy and quick check. Works for non-circular pipelines
-            for in_stage in self.get_all_input_stages():
-                if (not in_stage.is_pre_built):
-                    return False
-
-            return True
+        if not check_ports:
+            # We can prebuild if all input stages have been prebuilt. Easy and quick check. Works for non-circular pipelines
+            return all(stage.is_pre_built for stage in self.get_all_input_stages())
 
         # Check if we can prebuild based on the input ports.
         return all(receiver.is_partial for receiver in self.input_ports)
