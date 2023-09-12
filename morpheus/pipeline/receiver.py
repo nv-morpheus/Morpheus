@@ -136,7 +136,7 @@ class Receiver():
 
     def link_type(self):
         """
-        The linking phase determines the final type of the `Receiver`.
+        The type linking phase determines the final type of the `Receiver`.
 
         Raises:
             RuntimeError: Throws a `RuntimeError` if the predicted input port type determined during the build phase is
@@ -158,11 +158,7 @@ class Receiver():
 
     def link_node(self, builder: mrc.Builder):
         """
-        The linking phase connects all underlying stages.
-
-        Raises:
-            RuntimeError: Throws a `RuntimeError` if the predicted input port type determined during the build phase is
-            different than the current port type.
+        The node linking phase connects all underlying stages.
         """
 
         assert self.is_complete, "Must be complete before linking!"
