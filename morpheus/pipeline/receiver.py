@@ -78,7 +78,7 @@ class Receiver():
         Returns the input or parent node.
         """
 
-        assert self.is_partial, "Must be partially complete to get the input pair!"
+        assert self.is_partial, "Must be partially complete to get the input node!"
 
         # Build the input from the senders
         if (self._input_node is None):
