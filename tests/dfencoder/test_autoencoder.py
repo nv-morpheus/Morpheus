@@ -248,7 +248,7 @@ def test_auto_encoder_init_numeric(filter_probs_df):
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-@pytest.mark.parametrize("input_type", [pandas.DataFrame, FileSystemDataset, DFEncoderDataLoader, TorchDataset])
+@pytest.mark.parametrize("input_type", [pd.DataFrame, FileSystemDataset, DFEncoderDataLoader, TorchDataset])
 def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame, input_type):
     _train_df = train_df
     if (isinstance(input_type, FileSystemDataset)):
