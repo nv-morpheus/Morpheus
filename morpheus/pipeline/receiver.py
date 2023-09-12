@@ -144,7 +144,7 @@ class Receiver():
 
     def link_type(self):
         """
-        The linking phase determines the final type of the `Receiver` and connects all underlying stages.
+        The linking phase determines the final type of the `Receiver`.
 
         Raises:
             RuntimeError: Throws a `RuntimeError` if the predicted input port type determined during the build phase is
