@@ -21,8 +21,6 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import SingleOutputSource
 
-# TODO: test benchmarks, as far as I can tell the post-flatten node was not used.
-
 
 class StaticMessageSource(SingleOutputSource):
 
