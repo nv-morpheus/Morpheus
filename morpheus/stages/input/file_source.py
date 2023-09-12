@@ -47,7 +47,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     Parameters
     ----------
-    config : `morpheus.config.Config`
+    config : morpheus.config.Config
         Pipeline configuration instance.
     files : List[str]
         List of paths to be read from, can be a list of S3 URLs (`s3://path`) and can include wildcard characters `*`
