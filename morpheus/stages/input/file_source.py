@@ -98,7 +98,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         super().__init__(config)
 
-        if not files:
+        if not files or len(files) == 0:
             raise ValueError("The 'files' cannot be empty.")
 
         if watch and len(files) != 1:
