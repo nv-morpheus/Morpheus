@@ -62,7 +62,7 @@ class SourceStage(_pipeline.StreamWrapper):
         -------
 
         `mrc.SegmentObject`:
-            The MRC node for this stage.
+            The MRC nodes for this stage.
         """
 
         pass
