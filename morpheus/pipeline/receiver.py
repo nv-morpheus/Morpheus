@@ -70,10 +70,6 @@ class Receiver():
         return any(x.is_complete for x in self._input_senders)
 
     @property
-    def in_node(self):
-        return self._input_node
-
-    @property
     def in_type(self):
         return self._input_type
 
