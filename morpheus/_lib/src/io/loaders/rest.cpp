@@ -156,7 +156,7 @@ void construct_request(http::request<http::string_body>& request,
     }
     for (auto& x_header : x_headers.items())
     {
-        request.insert(x_header.key(), x_header.value());
+        request.insert(x_header.key(), x_header.value().dump());
     }
 }
 
