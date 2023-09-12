@@ -47,7 +47,7 @@ def dask_cuda(fail_missing: bool):
 
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize('use_env', [True, False])
-@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_method', ["single_thread", "dask", "dask_thread"])
 def test_constructor_download_type(use_env: bool, dl_method: str):
     kwargs = {}
     if use_env:
@@ -66,12 +66,11 @@ def test_constructor_enum_vals(dl_method: DownloadMethods):
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_method',
-                         [DownloadMethods.SINGLE_THREAD, DownloadMethods.DASK, DownloadMethods.DASK_THREAD])
+@pytest.mark.parametrize('dl_method', [DownloadMethods.DASK, DownloadMethods.DASK_THREAD])
 def test_constructor_env_wins(dl_method: DownloadMethods):
-    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = "multiprocessing"
+    os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = "single_thread"
     downloader = Downloader(download_method=dl_method)
-    assert downloader.download_method == DownloadMethods.MULTIPROCESSING
+    assert downloader.download_method == DownloadMethods.SINGLE_THREAD
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -115,7 +114,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
 
 
 @mock.patch('dask_cuda.LocalCUDACluster')
-@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])
+@pytest.mark.parametrize('dl_method', ["single_thread"])
 def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
@@ -128,28 +127,19 @@ def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
-@mock.patch('multiprocessing.get_context')
+@pytest.mark.parametrize('dl_method', ["single_thread", "dask", "dask_thread"])
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 def test_download(mock_dask_cluster: mock.MagicMock,
                   mock_dask_client: mock.MagicMock,
                   mock_dask_config: mock.MagicMock,
-                  mock_mp_gc: mock.MagicMock,
                   dl_method: str):
     mock_dask_config.get = lambda key: 1.0 if (key == "distributed.comm.timesouts.connect") else None
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
     mock_dask_client.__enter__.return_value = mock_dask_client
     mock_dask_client.__exit__.return_value = False
-
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-    mock_mp_pool.return_value = mock_mp_pool
-    mock_mp_pool.__enter__.return_value = mock_mp_pool
-    mock_mp_pool.__exit__.return_value = False
 
     input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield/snapshot-1/*.json')
     download_buckets = fsspec.open_files(input_glob)
@@ -160,8 +150,6 @@ def test_download(mock_dask_cluster: mock.MagicMock,
     returnd_df = mock.MagicMock()
     if dl_method.startswith('dask'):
         mock_dask_client.gather.return_value = [returnd_df for _ in range(num_buckets)]
-    elif dl_method in ("multiprocess", "multiprocessing"):
-        mock_mp_pool.map.return_value = [returnd_df for _ in range(num_buckets)]
     else:
         download_fn.return_value = returnd_df
 
@@ -169,13 +157,6 @@ def test_download(mock_dask_cluster: mock.MagicMock,
 
     results = downloader.download(download_buckets, download_fn)
     assert results == [returnd_df for _ in range(num_buckets)]
-
-    if dl_method in ("multiprocess", "multiprocessing"):
-        mock_mp_gc.assert_called_once()
-        mock_mp_pool.map.assert_called_once()
-    else:
-        mock_mp_gc.assert_not_called()
-        mock_mp_pool.map.assert_not_called()
 
     if dl_method == "single_thread":
         download_fn.assert_has_calls([mock.call(bucket) for bucket in download_buckets])

@@ -32,8 +32,6 @@ logger = logging.getLogger(__name__)
 class DownloadMethods(str, Enum):
     """Valid download methods for the `Downloader` class."""
     SINGLE_THREAD = "single_thread"
-    MULTIPROCESS = "multiprocess"
-    MULTIPROCESSING = "multiprocessing"
     DASK = "dask"
     DASK_THREAD = "dask_thread"
 
@@ -44,14 +42,12 @@ DOWNLOAD_METHODS_MAP = {dl.value: dl for dl in DownloadMethods}
 class Downloader:
     """
     Downloads a list of `fsspec.core.OpenFiles` files using one of the following methods:
-        single_thread, multiprocess, dask or dask_thread
+        single_thread, dask or dask_thread
 
     The download method can be passed in via the `download_method` parameter or via the `MORPHEUS_FILE_DOWNLOAD_TYPE`
     environment variable. If both are set, the environment variable takes precedence, by default `dask_thread` is used.
 
-    When using single_thread, or multiprocess is used `dask` and `dask.distributed` is not reuiqrred to be installed.
-
-    For compatibility reasons "multiprocessing" is an alias for "multiprocess".
+    When using single_thread, `dask` and `dask.distributed` is not reuiqrred to be installed.
 
     Parameters
     ----------
@@ -159,10 +155,6 @@ class Downloader:
                 dfs = dist.client.map(download_fn, download_buckets)
                 dfs = dist.client.gather(dfs)
 
-        elif (self._download_method in ("multiprocess", "multiprocessing")):
-            # Use multiprocessing here since parallel downloads are a pain
-            with mp.get_context("spawn").Pool(mp.cpu_count()) as pool:
-                dfs = pool.map(download_fn, download_buckets)
         else:
             # Simply loop
             for open_file in download_buckets:

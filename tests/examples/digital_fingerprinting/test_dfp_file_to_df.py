@@ -100,9 +100,8 @@ def test_constructor(config: Config):
 
 # pylint: disable=redefined-outer-name
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
 @mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
@@ -113,7 +112,6 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
                                                        mock_obf_to_df: mock.MagicMock,
                                                        mock_dask_cluster: mock.MagicMock,
                                                        mock_dask_client: mock.MagicMock,
-                                                       mock_mp_gc: mock.MagicMock,
                                                        config: Config,
                                                        dl_type: str,
                                                        use_convert_to_dataframe: bool,
@@ -133,13 +131,6 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
     mock_distributed.__enter__.return_value = mock_distributed
     mock_distributed.__exit__.return_value = False
 
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-    mock_mp_pool.return_value = mock_mp_pool
-    mock_mp_pool.__enter__.return_value = mock_mp_pool
-    mock_mp_pool.__exit__.return_value = False
-
     expected_hash = hashlib.md5(json.dumps([{
         'ukey': single_file_obj.fs.ukey(single_file_obj.path)
     }]).encode()).hexdigest()
@@ -158,8 +149,6 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
     if dl_type.startswith('dask'):
         mock_dist_client.map.return_value = [returned_df]
         mock_dist_client.gather.return_value = [returned_df]
-    elif dl_type in ("multiprocess", "multiprocessing"):
-        mock_mp_pool.map.return_value = [returned_df]
     else:
         mock_obf_to_df.return_value = returned_df
 
@@ -175,13 +164,6 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
     else:
         (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_batch((batch, 1))
         assert not cache_hit
-
-    if dl_type in ("multiprocess", "multiprocessing"):
-        mock_mp_gc.assert_called_once()
-        mock_mp_pool.map.assert_called_once()
-    else:
-        mock_mp_gc.assert_not_called()
-        mock_mp_pool.map.assert_not_called()
 
     if dl_type == "single_thread":
         mock_obf_to_df.assert_called_once()
@@ -206,9 +188,8 @@ def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicM
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
@@ -217,7 +198,6 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
                                                       mock_dask_cluster: mock.MagicMock,
                                                       mock_dask_client: mock.MagicMock,
                                                       mock_dask_config: mock.MagicMock,
-                                                      mock_mp_gc: mock.MagicMock,
                                                       config: Config,
                                                       dl_type: str,
                                                       use_convert_to_dataframe: bool,
@@ -229,13 +209,6 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
     mock_dask_client.return_value = mock_dask_client
     mock_dask_client.__enter__.return_value = mock_dask_client
     mock_dask_client.__exit__.return_value = False
-
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-    mock_mp_pool.return_value = mock_mp_pool
-    mock_mp_pool.__enter__.return_value = mock_mp_pool
-    mock_mp_pool.__exit__.return_value = False
 
     file_specs = fsspec.open_files(os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')))
 
@@ -265,8 +238,6 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
         assert cache_hit
 
     # When we get a cache hit, none of the download methods should be executed
-    mock_mp_gc.assert_not_called()
-    mock_mp_pool.map.assert_not_called()
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
     mock_dask_client.assert_not_called()
@@ -276,9 +247,8 @@ def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.Magic
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
@@ -287,7 +257,6 @@ def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.Magic
                                                       mock_dask_cluster: mock.MagicMock,
                                                       mock_dask_client: mock.MagicMock,
                                                       mock_dask_config: mock.MagicMock,
-                                                      mock_mp_gc: mock.MagicMock,
                                                       config: Config,
                                                       dl_type: str,
                                                       use_convert_to_dataframe: bool,
@@ -295,10 +264,6 @@ def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.Magic
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
-
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
 
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
@@ -312,7 +277,5 @@ def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.Magic
     mock_dask_cluster.assert_not_called()
     mock_dask_client.assert_not_called()
     mock_dask_config.assert_not_called()
-    mock_mp_gc.assert_not_called()
-    mock_mp_pool.map.assert_not_called()
 
     assert os.listdir(tmp_path) == []
