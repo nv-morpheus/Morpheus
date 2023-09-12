@@ -92,6 +92,10 @@ class Pipeline():
     def is_pre_built(self) -> bool:
         return self._is_pre_built
 
+    def _assert_not_built(self):
+        assert not self.is_built, "Pipeline has already been built. Cannot modify pipeline."
+        assert not self.is_pre_built, "Pipeline has already been pre-built. Cannot modify pipeline."
+
     def _add_id_col(self, x: cudf.DataFrame):
 
         # Data in stream is cudf Dataframes at this point. We need an ID column before continuing
@@ -112,7 +116,7 @@ class Pipeline():
         segment_id : str
             ID indicating what segment the stage should be added to.
         """
-
+        self._assert_not_built()
         assert stage._pipeline is None or stage._pipeline is self, "A stage can only be added to one pipeline at a time"
 
         segment_nodes = self._segments[segment_id]["nodes"]
@@ -152,6 +156,7 @@ class Pipeline():
         segment_id : str
             ID indicating what segment the edge should be added to.
         """
+        self._assert_not_built()
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -202,6 +207,7 @@ class Pipeline():
                 * class: type being sent (typically `object`)
                 * bool: If the type is a shared pointer (typically should be `False`)
         """
+        self._assert_not_built()
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
