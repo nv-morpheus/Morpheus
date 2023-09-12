@@ -42,8 +42,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    FileSource is used to produce messages loaded from a file. Useful for testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
