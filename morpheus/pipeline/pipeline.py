@@ -231,19 +231,21 @@ class Pipeline():
 
             # Check if preallocated columns are requested, this needs to happen before the source stages are built
             needed_columns = OrderedDict()
-            for stage in networkx.topological_sort(segment_graph):
-                needed_columns.update(stage.get_needed_columns())
-
-            if (len(needed_columns) > 0):
-                for stage in segment_graph.nodes():
-                    if (isinstance(stage, PreallocatorMixin)):
-                        stage.set_needed_columns(needed_columns)
+            preallocator_stages = []
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.
             for stage in networkx.topological_sort(segment_graph):
+                needed_columns.update(stage.get_needed_columns())
+                if (isinstance(stage, PreallocatorMixin)):
+                    preallocator_stages.append(stage)
+
                 if (stage.can_pre_build()):
                     stage._pre_build()
+
+            if (len(needed_columns) > 0):
+                for stage in preallocator_stages:
+                    stage.set_needed_columns(needed_columns)
 
             if (not all(x.is_pre_built for x in segment_graph.nodes())):
                 logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
@@ -251,9 +253,8 @@ class Pipeline():
                 for stage in segment_graph.nodes():
                     if (stage.can_pre_build(check_ports=True)):
                         stage._pre_build()
-
-            if (not all(x.is_pre_built for x in segment_graph.nodes())):
-                raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
+                    else:
+                        raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
             # for s in source_and_stages:
