@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import warnings
 from abc import abstractmethod
 
 import mrc
@@ -55,19 +56,17 @@ class Stage(_pipeline.StreamWrapper):
         """
         pass
 
-    def on_start(self):
-        """
-        This function can be overridden to add usecase-specific implementation at the start of any stage in
-        the pipeline.
-        """
-        pass
-
     async def start_async(self):
         """
         This function is called along with on_start during stage initialization. Allows stages to utilize the
         asyncio loop if needed.
         """
-        pass
+        if (hasattr(self, 'on_start')):
+            warnings.warn(
+                "The on_start method is deprecated and may be removed in the future. "
+                "Please use start_async instead.",
+                DeprecationWarning)
+            self.on_start()
 
     def _on_complete(self, stream):  # pylint: disable=unused-argument
         logger.info("Stage Complete: %s", self.name)

@@ -17,7 +17,6 @@ import logging
 import os
 import signal
 import sys
-import time
 import typing
 from collections import OrderedDict
 from collections import defaultdict
@@ -315,10 +314,6 @@ class Pipeline():
             for stage in segment_graph.nodes():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
                     port.link_node(builder=builder)
-
-                if (isinstance(stage, Stage)):
-                    # TODO: Move & deprecate
-                    stage.on_start()
 
             logger.info("====Building Segment Complete!====")
 
