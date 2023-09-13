@@ -316,6 +316,10 @@ class Pipeline():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
                     port.link_node(builder=builder)
 
+                if (isinstance(stage, Stage)):
+                    # TODO: Move & deprecate
+                    stage.on_start()
+
             logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline====")
@@ -329,9 +333,6 @@ class Pipeline():
                                       segment_inner_build)
 
         logger.info("====Building Pipeline Complete!====")
-
-        # Finally call _on_start
-        self._on_start()
 
         self._mrc_executor.register_pipeline(mrc_pipeline)
 
@@ -417,21 +418,6 @@ class Pipeline():
         # Loop over all stages and call on_start if it exists
         for stage in self._stages:
             await stage.start_async()
-
-    def _on_start(self):
-
-        # Only execute this once
-        if (self._is_started):
-            return
-
-        # Stop from running this twice
-        self._is_started = True
-
-        logger.debug("Starting! Time: %s", time.time())
-
-        # Loop over all stages and call on_start if it exists
-        for stage in self._stages:
-            stage.on_start()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
