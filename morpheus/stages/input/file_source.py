@@ -101,7 +101,6 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         self._storage_connection_kwargs = storage_connection_kwargs or {}
         self._watch_interval = watch_interval
         self._max_files = max_files
-        self._stop_requested = False
 
     @property
     def name(self) -> str:
@@ -111,14 +110,6 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         """Indicates whether or not this stage supports a C++ node."""
         return False
-
-    def stop(self):
-        """Performs cleanup steps when pipeline is stopped."""
-
-        # Indicate we need to stop
-        self._stop_requested = True
-
-        return super().stop()
 
     def _extract_unique_protocols(self) -> set:
         """Extracts unique protocols from the given file paths."""
@@ -172,7 +163,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         processed_files_count = 0
         has_s3_protocol = "s3" in self._protocols
 
-        while (not self._stop_requested):
+        while (True):
             # Before doing any work, find the next update epoch after the current time
             while (next_update_epoch <= curr_time):
                 # Only ever add `self._watch_interval` to next_update_epoch so all updates are at repeating intervals
@@ -198,9 +189,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             # need to re-ingest that new file.
             files_seen = file_set
 
-            filtered_files_count = len(filtered_files)
-
-            if filtered_files_count > 0:
+            if len(filtered_files) > 0:
 
                 if self._sort:
                     filtered_files = sorted(filtered_files, key=lambda f: f.full_name)
@@ -208,6 +197,11 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                 if self._max_files > 0:
                     filtered_files = filtered_files[:self._max_files - processed_files_count]
                     processed_files_count += len(filtered_files)
+
+                    if self._max_files <= processed_files_count:
+                        logger.debug("Maximum file limit reached. Exiting polling service...")
+                        yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
+                        break
 
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
@@ -219,10 +213,6 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             if (sleep_duration > 0):
                 time.sleep(sleep_duration)
                 curr_time = time.monotonic()
-
-            if self._max_files > 0 and self._max_files <= processed_files_count:
-                logger.debug("Maximum file limit reached. Exiting polling service...")
-                self._stop_requested = True
 
     @staticmethod
     def generate_frames(file: fsspec.core.OpenFile, file_type: FileTypes, parser_kwargs: dict) -> MessageMeta:
