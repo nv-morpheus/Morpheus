@@ -24,7 +24,7 @@ import yaml
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.pipeline import Pipeline
+from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_elasticsearch_stage import WriteToElasticsearchStage
 
@@ -83,16 +83,11 @@ def test_write_to_elasticsearch_stage_pipe(mock_controller: typing.Any,
     mock_refresh_client = mock_controller.return_value.refresh_client
 
     # Create a pipeline
-    pipe = Pipeline(config)
+    pipe = LinearPipeline(config)
 
     # Add the source stage and the WriteToElasticsearchStage to the pipeline
-    source_stage = pipe.add_stage(InMemorySourceStage(config, [filter_probs_df]))
-
-    write_to_elasticsearch_stage = pipe.add_stage(
-        WriteToElasticsearchStage(config, index="t_index", connection_conf_file=connection_conf_file))
-
-    # Connect the stages in the pipeline
-    pipe.add_edge(source_stage, write_to_elasticsearch_stage)
+    pipe.add_stage(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.add_stage(WriteToElasticsearchStage(config, index="t_index", connection_conf_file=connection_conf_file))
 
     # Run the pipeline
     pipe.run()

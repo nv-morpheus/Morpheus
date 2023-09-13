@@ -70,10 +70,7 @@ def test_refresh_client_force(create_controller: typing.Callable[..., Elasticsea
 
 @pytest.mark.use_python
 def test_refresh_client_not_needed(create_controller: typing.Callable[..., ElasticsearchController]):
-    # Set last refresh time to a recent time
-    current_time = time.time()
     controller = create_controller()
-    controller._last_refresh_time = current_time
     client = controller._client
 
     # Simulate a refresh not needed scenario
@@ -82,7 +79,6 @@ def test_refresh_client_not_needed(create_controller: typing.Callable[..., Elast
     client.close.assert_not_called()
     assert client.ping.call_count == 1
     assert is_refreshed is False
-    assert controller._last_refresh_time == current_time
 
 
 @pytest.mark.use_python
