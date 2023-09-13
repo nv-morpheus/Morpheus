@@ -31,17 +31,30 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 
 
 @pytest.mark.use_python
+@pytest.mark.parametrize("input_files,watch, protocols",
+                         [(["file1.json", "file2.json"], False, ["file"]),
+                          (["file://file1.json", "file2.json"], False, ["file"]),
+                          (["file:///file1.json"], False, ["file"]), (["test_data/*.json"], True, ["file"]),
+                          (["s3://test_data/file1.json", "s3://test_data/file2.json"], False, ["s3"]),
+                          (["s3://test_data/*.json"], True, ["s3"])])
+def test_constructor(config, input_files, watch, protocols):
+    source = FileSource(config, files=input_files, watch=watch)
+    assert sorted(source._protocols) == protocols
+
+
+@pytest.mark.use_python
 @pytest.mark.parametrize(
     "input_files,watch,error_msg",
     [(["file1.json", "file2.json"], True, "When 'watch' is True, the 'files' should contain exactly one file path."),
-     ([], True, "The 'files' cannot be empty."), (None, True, "The 'files' cannot be empty."),
+     ([], True, "The 'files' cannot be empty."), ([], False, "The 'files' cannot be empty."),
+     (None, True, "The 'files' cannot be empty."), (None, False, "The 'files' cannot be empty."),
      (["file1.json", "s3://test_data/file2.json"],
       True,
       "When 'watch' is True, the 'files' should contain exactly one file path."),
      (["file1.json", "s3://test_data/file2.json"],
       False,
       "Accepts same protocol input files, but it received multiple protocols.")])
-def test_constructor_with_invalid_params(config, input_files, watch, error_msg):
+def test_constructor_error(config, input_files, watch, error_msg):
     with pytest.raises(ValueError, match=error_msg):
         FileSource(config, files=input_files, watch=watch)
 
