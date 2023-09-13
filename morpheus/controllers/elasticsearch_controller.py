@@ -107,6 +107,8 @@ class ElasticsearchController:
             List of actions to perform in parallel.
         """
 
+        self.refresh_client()
+
         for success, info in parallel_bulk(self._client, actions=actions, raise_on_exception=self._raise_on_exception):
             if not success:
                 logger.error("Error writing to ElasticSearch: %s", str(info))

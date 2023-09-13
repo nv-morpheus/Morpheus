@@ -69,8 +69,6 @@ def write_to_elasticsearch(builder: mrc.Builder):
 
     def on_data(message: ControlMessage):
 
-        controller.refresh_client()
-
         df = message.payload().df.to_pandas()
 
         controller.df_to_parallel_bulk_write(index=index, df=df)
