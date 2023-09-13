@@ -58,7 +58,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         When `watch` is True, this is the time in seconds between polling the paths in `files` for new files.
     sort : bool, default = False
         If true, the list of files will be processed in sorted order.
-    file_type : morpheus.common.FileTypes, optional, default = `FileTypes.Auto`; case_sensitive = False
+    file_type : morpheus.common.FileTypes, optional, case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
     parser_kwargs : dict, default = None
