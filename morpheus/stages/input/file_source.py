@@ -57,14 +57,16 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     watch_interval : float, default = 1.0
         When `watch` is True, this is the time in seconds between polling the paths in `files` for new files.
     sort : bool, default = False
-        If true, the list of files will be processed in sorted order.
+        When True, the list of files will be processed in sorted order.
     file_type : morpheus.common.FileTypes, optional, case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
     parser_kwargs : dict, default = None
         Extra options to pass to the file parser.
-    max_files: int, default = -1
+    max_files : int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
+    storage_connection_kwargs : dict, default = None
+        Extra settings that are relevant to a specific storage connection used by `fsspec.open_files`.
     """
 
     def __init__(self,
@@ -75,7 +77,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                  sort: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  parser_kwargs: dict = None,
-                 max_files: int = -1):
+                 max_files: int = -1,
+                 storage_connection_kwargs: dict = None):
 
         super().__init__(config)
 
@@ -95,6 +98,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         self._sort = sort
         self._file_type = file_type
         self._parser_kwargs = parser_kwargs or {}
+        self._storage_connection_kwargs = storage_connection_kwargs or {}
         self._watch_interval = watch_interval
         self._max_files = max_files
         self._stop_requested = False
@@ -147,7 +151,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     def _generate_frames_fsspec(self) -> typing.Iterable[fsspec.core.OpenFiles]:
 
-        files: fsspec.core.OpenFiles = fsspec.open_files(self._files)
+        files: fsspec.core.OpenFiles = fsspec.open_files(self._files, **self._storage_connection_kwargs)
 
         if (len(files) == 0):
             raise RuntimeError(f"No files matched input strings: '{self._files}'. "
@@ -181,7 +185,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             if has_s3_protocol:
                 s3fs.S3FileSystem.clear_instance_cache()
 
-            files = fsspec.open_files(self._files)
+            files = fsspec.open_files(self._files, **self._storage_connection_kwargs)
 
             for file in files:
                 file_set.add(file.full_name)

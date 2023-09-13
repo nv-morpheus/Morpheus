@@ -79,7 +79,7 @@ def test_generate_frames(input_file, filetypes, parser_kwargs, expected_df_count
 
 @pytest.mark.use_python
 @pytest.mark.parametrize(
-    "input_files,parser_kwargs,max_files,watch,expected_result",
+    "input_files,parser_kwargs,max_files,watch,storage_connection_kwargs,expected_result",
     [([
         "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json",
         "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T12_09_47.901Z.json"
@@ -88,21 +88,42 @@ def test_generate_frames(input_file, filetypes, parser_kwargs, expected_df_count
     },
       -1,
       False,
-      2), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, -1, False, 3),
-     ([f'file:/{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, RuntimeError),
+      None,
+      2),
+     ([
+         "/rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json",
+         "/rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T12_09_47.901Z.json"
+     ], {
+         "lines": False, "orient": "records"
+     },
+      -1,
+      False, {
+          "protocol": "s3"
+      },
+      2), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, -1, False, None, 3),
+     ([f'file:/{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, None, RuntimeError),
      ([f'file:/{os.path.join(TEST_DIRS.tests_data_dir, "triton_abp_inf_results.csv")}'],
       None,
       -1,
       False,
-      FileNotFoundError), ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, 3),
+      None,
+      FileNotFoundError),
+     ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, None, 3),
      (["s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json"], {
          "lines": False, "orient": "records"
      },
       1,
       True,
-      1), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, 2, False, 2),
-     ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, 3, True, 3)])
-def test_filesource_pipe(config, input_files, parser_kwargs, max_files, watch, expected_result):
+      None,
+      1), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, 2, False, None, 2),
+     ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, 3, True, None, 3)])
+def test_filesource_pipe(config,
+                         input_files,
+                         parser_kwargs,
+                         max_files,
+                         watch,
+                         storage_connection_kwargs,
+                         expected_result):
 
     pipe = Pipeline(config)
 
@@ -110,7 +131,8 @@ def test_filesource_pipe(config, input_files, parser_kwargs, max_files, watch, e
                                    files=input_files,
                                    watch=watch,
                                    max_files=max_files,
-                                   parser_kwargs=parser_kwargs)
+                                   parser_kwargs=parser_kwargs,
+                                   storage_connection_kwargs=storage_connection_kwargs)
     sink_stage = InMemorySinkStage(config)
 
     pipe.add_stage(file_source_stage)
