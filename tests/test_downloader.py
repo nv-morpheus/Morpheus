@@ -94,11 +94,13 @@ def test_constructor_invalid_dltype(use_env: bool):
 @mock.patch('dask_cuda.LocalCUDACluster')
 def test_get_dask_cluster(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
-    downloader = Downloader(download_method=dl_method)
-    assert downloader.get_dask_cluster() is mock_dask_cluster
+    downloader1 = Downloader(download_method=dl_method)
+    assert downloader1.get_dask_cluster() is mock_dask_cluster
 
-    # call again then assert that cluster was only created once
-    downloader.get_dask_cluster()
+    # create another downloader then assert that cluster was only created once
+    downloader2 = Downloader(download_method=dl_method)
+    downloader2.get_dask_cluster()
+    assert downloader2.get_dask_cluster() is mock_dask_cluster
 
     mock_dask_cluster.assert_called_once()
 
