@@ -77,9 +77,7 @@ class Pipeline():
 
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
-        self._is_pre_built = False
         self._is_built = False
-        self._is_build_complete = False
         self._is_started = False
 
         self._mrc_executor: mrc.Executor = None
@@ -88,13 +86,8 @@ class Pipeline():
     def is_built(self) -> bool:
         return self._is_built
 
-    @property
-    def is_pre_built(self) -> bool:
-        return self._is_pre_built
-
     def _assert_not_built(self):
         assert not self.is_built, "Pipeline has already been built. Cannot modify pipeline."
-        assert not self.is_pre_built, "Pipeline has already been pre-built. Cannot modify pipeline."
 
     def _add_id_col(self, x: cudf.DataFrame):
 
@@ -224,9 +217,7 @@ class Pipeline():
             "output_receiver": ingress_stage.unique_name
         })
 
-    def pre_build(self):
-        assert not self.is_pre_built, "Pipeline can only be pre-built once!"
-        assert not self.is_built, "Pipeline cannot be built before pre-build"
+    def _pre_build(self):
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
         logger.info("====Pipeline Pre-build====")
@@ -270,7 +261,6 @@ class Pipeline():
 
             logger.info("====Pre-Building Segment Complete!====")
 
-        self._is_pre_built = True
         logger.info("====Pipeline Pre-build Complete!====")
 
     def build(self):
@@ -285,8 +275,7 @@ class Pipeline():
         assert not self._is_built, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
-        if (not self.is_pre_built):
-            self.pre_build()
+        self._pre_build()
 
         logger.info("====Registering Pipeline====")
 
@@ -340,7 +329,6 @@ class Pipeline():
                                       segment_inner_build)
 
         logger.info("====Building Pipeline Complete!====")
-        self._is_build_complete = True
 
         # Finally call _on_start
         self._on_start()
@@ -452,8 +440,10 @@ class Pipeline():
         exists it will be overwritten.  Requires the graphviz library.
         """
 
-        if not self.is_pre_built:
-            self.pre_build()
+        if not self._is_built:
+            raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
+                               "the visualization. Please call Pipeline.build() or  Pipeline.run() before calling "
+                               "Pipeline.visualize().")
 
         # Mimic the streamz visualization
         # 1. Create graph (already done since we use networkx under the hood)

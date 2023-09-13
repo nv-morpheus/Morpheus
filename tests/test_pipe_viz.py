@@ -55,30 +55,28 @@ def viz_pipeline_fixture(config, filter_probs_df):
     return pipe
 
 
-@pytest.mark.parametrize("run_before,run_after", [
-    (True, False),
-    (False, False),
-    (False, True),
-])
-def test_png(viz_pipeline: Pipeline, tmp_path: str, run_before: bool, run_after: bool):
+def test_call_before_build(viz_pipeline: Pipeline, tmp_path: str):
+
+    # Test is necessary to ensure run() is called first. See issue #230
+    viz_file = os.path.join(tmp_path, 'pipeline.png')
+
+    with pytest.raises(RuntimeError):
+        viz_pipeline.visualize(viz_file, rankdir="LR")
+
+    assert not os.path.exists(viz_file)
+
+
+def test_viz_without_run(viz_pipeline: Pipeline, tmp_path: str):
 
     viz_file = os.path.join(tmp_path, 'pipeline.png')
 
-    if run_before:
-        viz_pipeline.run()
-
+    viz_pipeline.build()
     viz_pipeline.visualize(viz_file, rankdir="LR")
 
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
-
-    assert viz_pipeline.is_pre_built
-    assert viz_pipeline.is_built == run_before
-
-    if run_after:
-        viz_pipeline.run()
-        assert viz_pipeline.is_built
+    assert viz_pipeline.is_built
 
 
 @pytest.mark.slow

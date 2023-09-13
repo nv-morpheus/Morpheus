@@ -614,6 +614,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
     """Executes the pipeline"""
 
     pipeline = get_pipeline_from_ctx(ctx)
+    pipeline.build()
     if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
         pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
         click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
