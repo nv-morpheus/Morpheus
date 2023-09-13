@@ -42,12 +42,11 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    FileSource is used to produce messages loaded from a file. Useful for testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
-    config : `morpheus.config.Config`
+    config : morpheus.config.Config
         Pipeline configuration instance.
     files : List[str]
         List of paths to be read from, can be a list of S3 URLs (`s3://path`) and can include wildcard characters `*`
@@ -80,7 +79,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         super().__init__(config)
 
-        if not files and len(files) > 0:
+        if not files or len(files) == 0:
             raise ValueError("The 'files' cannot be empty.")
 
         if watch and len(files) != 1:
