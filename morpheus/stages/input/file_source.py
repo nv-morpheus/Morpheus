@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 import fsspec
 import mrc
+import s3fs
 from mrc.core import operators as ops
 
 from morpheus.cli import register_stage
@@ -32,7 +33,6 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
 
@@ -54,33 +54,18 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         as defined by `fsspec`:
         https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files
     watch : bool, default = False
-        When True, will check `files` for new files and emit them as they appear.  (Note: `watch_interval` is
-        applicable when `watch` is True and there are no remote paths in `files`.)
+        When True, will check `files` for new files and emit them as they appear.
     watch_interval : float, default = 1.0
         When `watch` is True, this is the time in seconds between polling the paths in `files` for new files.
-        (Note: Applicable when path in `files` are remote and when `watch` is True)
-    sort_glob : bool, default = False
-        If true, the list of files matching `input_glob` will be processed in sorted order.
-        (Note: Applicable when all paths in `files` are local.)
-    recursive : bool, default = True
-        If true, events will be emitted for the files in subdirectories matching `input_glob`.
-        (Note: Applicable when all paths in `files` are local.)
-    queue_max_size : int, default = 128
-        Maximum queue size to hold the file paths to be processed that match `input_glob`.
-        (Note: Applicable when all paths in `files` are local.)
-    batch_timeout : float, default = 5.0
-        Timeout to retrieve batch messages from the queue.
-        (Note: Applicable when all paths in `files` are local.)
+    sort : bool, default = False
+        If true, the list of files will be processed in sorted order.
     file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
-    repeat : int, default = 1, min = 1
-        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    filter_null : bool, default = True
-        Whether or not to filter rows with a null 'data' column. Null values in the 'data' column can cause issues down
-        the line with processing. Setting this to True is recommended.
     parser_kwargs : dict, default = {}
         Extra options to pass to the file parser.
+    max_files: int
+        Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
     """
 
     def __init__(self,
@@ -88,34 +73,32 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                  files: typing.List[str],
                  watch: bool = False,
                  watch_interval: float = 1.0,
-                 sort_glob: bool = False,
-                 recursive: bool = True,
-                 queue_max_size: int = 128,
-                 batch_timeout: float = 5.0,
+                 sort: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
-                 repeat: int = 1,
-                 filter_null: bool = True,
-                 parser_kwargs: dict = None):
+                 parser_kwargs: dict = None,
+                 max_files: int = -1):
 
         super().__init__(config)
 
-        if not files:
+        if not files and len(files) > 0:
             raise ValueError("The 'files' cannot be empty.")
 
         if watch and len(files) != 1:
             raise ValueError("When 'watch' is True, the 'files' should contain exactly one file path.")
 
         self._files = list(files)
+        self._protocols = self._extract_unique_protocols()
+
+        if len(self._protocols) > 1:
+            raise ValueError(f"Supports single protocol input files., but received multiple {self._protocols}")
+
         self._watch = watch
-        self._sort_glob = sort_glob
-        self._recursive = recursive
-        self._queue_max_size = queue_max_size
-        self._batch_timeout = batch_timeout
+        self._sort = sort
         self._file_type = file_type
-        self._filter_null = filter_null
         self._parser_kwargs = parser_kwargs or {}
         self._watch_interval = watch_interval
-        self._repeat_count = repeat
+        self._max_files = max_files
+        self._stop_requested = False
 
     @property
     def name(self) -> str:
@@ -126,35 +109,40 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return False
 
-    def _has_remote_paths(self) -> bool:
-        return any(urlsplit(file).scheme for file in self._files if "://" in file)
+    def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
+
+        # Indicate we need to stop
+        self._stop_requested = True
+
+        return super().stop()
+
+    def _extract_unique_protocols(self):
+        protocols = set()
+
+        for file in self._files:
+            scheme = urlsplit(file).scheme
+            if scheme:
+                protocols.add(scheme.lower())
+            else:
+                protocols.add("file")
+
+        return protocols
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
 
-        if self._watch and not self._has_remote_paths():
-            input_glob = self._files[0]
-            watcher = DirectoryWatcher(
-                input_glob=input_glob,
-                watch_directory=self._watch,
-                max_files=None,  # This is not being used in the latest version.
-                sort_glob=self._sort_glob,
-                recursive=self._recursive,
-                queue_max_size=self._queue_max_size,
-                batch_timeout=self._batch_timeout)
-
-            out_stream = watcher.build_node(self.unique_name, builder)
-            out_type = list[str]
+        if self._watch:
+            generator_function = self._polling_generate_frames_fsspec
         else:
-            if self._watch:
-                generator_function = self._polling_generate_frames_fsspec
-            else:
-                generator_function = self._generate_frames_fsspec
+            generator_function = self._generate_frames_fsspec
 
-            out_stream = builder.make_source(self.unique_name, generator_function())
-            out_type = fsspec.core.OpenFiles
+        out_stream = builder.make_source(self.unique_name, generator_function())
+        out_type = fsspec.core.OpenFiles
 
         # Supposed to just return a source here
         return out_stream, out_type
@@ -167,8 +155,11 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             raise RuntimeError(f"No files matched input strings: '{self._files}'. "
                                "Check your input pattern and ensure any credentials are correct")
 
-        if self._sort_glob:
+        if self._sort:
             files = sorted(files, key=lambda f: f.full_name)
+
+        if self._max_files > 0:
+            files = files[:self._max_files]
 
         yield files
 
@@ -176,8 +167,10 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         files_seen = set()
         curr_time = time.monotonic()
         next_update_epoch = curr_time
+        processed_files_count = 0
+        has_s3_protocol = "s3" in self._protocols
 
-        while (True):
+        while (not self._stop_requested):
             # Before doing any work, find the next update epoch after the current time
             while (next_update_epoch <= curr_time):
                 # Only ever add `self._watch_interval` to next_update_epoch so all updates are at repeating intervals
@@ -186,7 +179,12 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             file_set = set()
             filtered_files = []
 
+            # Clear cached instance, otherwise we don't receive newly touched files.
+            if has_s3_protocol:
+                s3fs.S3FileSystem.clear_instance_cache()
+
             files = fsspec.open_files(self._files)
+
             for file in files:
                 file_set.add(file.full_name)
                 if file.full_name not in files_seen:
@@ -198,9 +196,16 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             # need to re-ingest that new file.
             files_seen = file_set
 
-            if len(filtered_files) > 0:
-                if self._sort_glob:
+            filtered_files_count = len(filtered_files)
+
+            if filtered_files_count > 0:
+
+                if self._sort:
                     filtered_files = sorted(filtered_files, key=lambda f: f.full_name)
+
+                if self._max_files > 0:
+                    filtered_files = filtered_files[:self._max_files - processed_files_count]
+                    processed_files_count += len(filtered_files)
 
                 yield fsspec.core.OpenFiles(filtered_files, fs=files.fs)
 
@@ -213,12 +218,12 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                 time.sleep(sleep_duration)
                 curr_time = time.monotonic()
 
+            if self._max_files > 0 and self._max_files <= processed_files_count:
+                logger.debug("Maximum file limit reached. Exiting directory watcher...")
+                self._stop_requested = True
+
     @staticmethod
-    def generate_frames(file: fsspec.core.OpenFile,
-                        file_type: FileTypes,
-                        filter_null: bool,
-                        parser_kwargs: dict,
-                        repeat_count: int) -> list[MessageMeta]:
+    def generate_frames(file: fsspec.core.OpenFile, file_type: FileTypes, parser_kwargs: dict) -> list[MessageMeta]:
         """
         Generate message frames from a file.
 
@@ -231,14 +236,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             An open file object using fsspec.
         file_type : FileTypes
             Indicates the type of the file to read. Supported types include 'csv', 'json', 'jsonlines', and 'parquet'.
-        filter_null : bool
-            Determines whether to filter out rows with null values in the 'data' column. Filtering null values is
-            recommended to prevent potential issues during processing.
         parser_kwargs : dict
             Additional keyword arguments to pass to the file parser.
-        repeat_count : int
-            The number of times to repeat the data reading process. Each repetition generates a new set of message
-            frames.
 
         Returns
         -------
@@ -248,52 +247,14 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         df = read_file_to_df(
             file.full_name,
             file_type=file_type,
-            filter_nulls=filter_null,
+            filter_nulls=False,
             parser_kwargs=parser_kwargs,
             df_type="cudf",
         )
 
-        metas = []
+        meta = MessageMeta(df)
 
-        for i in range(repeat_count):
-
-            x = MessageMeta(df)
-
-            # If we are looping, copy the object. Do this before we push the object in case it changes
-            if (i + 1 < repeat_count):
-                df = df.copy()
-
-                # Shift the index to allow for unique indices without reading more data
-                df.index += len(df)
-
-            metas.append(x)
-
-        return metas
-
-    @staticmethod
-    def convert_to_fsspec_files(files: typing.Union[list[str], fsspec.core.OpenFiles]) -> fsspec.core.OpenFiles:
-        """
-        Convert a list of file paths to fsspec OpenFiles.
-
-        This static method takes a list of file paths or an existing fsspec OpenFiles object and ensures that the
-        input is converted to an OpenFiles object for uniform handling in Morpheus pipeline stages.
-
-        Parameters
-        ----------
-        files : Union[List[str], fsspec.core.OpenFiles]
-            A list of file paths or an existing fsspec OpenFiles object.
-
-        Returns
-        -------
-        fsspec.core.OpenFiles
-            An fsspec OpenFiles object representing the input files.
-        """
-
-        # Convert fsspec open files
-        if not isinstance(files, fsspec.core.OpenFiles):
-            files = fsspec.open_files(files)
-
-        return files
+        return meta
 
     def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
@@ -301,15 +262,10 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         post_node = builder.make_node(
             self.unique_name + "-post",
-            ops.map(self.convert_to_fsspec_files),
             ops.flatten(),  # Flatten list of open fsspec files
-            ops.map(
-                partial(self.generate_frames,
-                        file_type=self._file_type,
-                        filter_null=self._filter_null,
-                        parser_kwargs=self._parser_kwargs,
-                        repeat_count=self._repeat_count)),  # Generate dataframe for each file
-            ops.flatten())
+            ops.map(partial(self.generate_frames, file_type=self._file_type,
+                            parser_kwargs=self._parser_kwargs))  # Generate dataframe for each file
+        )
 
         builder.make_edge(out_stream, post_node)
 
