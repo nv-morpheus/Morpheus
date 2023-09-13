@@ -194,9 +194,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
             # need to re-ingest that new file.
             files_seen = file_set
 
-            filtered_files_count = len(filtered_files)
-
-            if filtered_files_count > 0:
+            if len(filtered_files) > 0:
 
                 if self._sort:
                     filtered_files = sorted(filtered_files, key=lambda f: f.full_name)
