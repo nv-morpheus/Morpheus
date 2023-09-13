@@ -27,7 +27,6 @@ from mrc.core import operators as ops
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -37,12 +36,13 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("file-source", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@register_stage("file-source")
 class FileSource(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 
-    FileSource is used to produce messages loaded from a file. Useful for testing performance and accuracy of a pipeline.
+    FileSource is used to produce messages loaded from a file. Useful for testing performance and
+    accuracy of a pipeline.
 
     Parameters
     ----------
@@ -58,12 +58,12 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         When `watch` is True, this is the time in seconds between polling the paths in `files` for new files.
     sort : bool, default = False
         If true, the list of files will be processed in sorted order.
-    file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
+    file_type : morpheus.common.FileTypes, optional, default = `FileTypes.Auto`; case_sensitive = False
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json', 'jsonlines' and 'parquet'.
-    parser_kwargs : dict, default = {}
+    parser_kwargs : dict, default = None
         Extra options to pass to the file parser.
-    max_files: int
+    max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
     """
 
@@ -89,7 +89,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
         self._protocols = self._extract_unique_protocols()
 
         if len(self._protocols) > 1:
-            raise ValueError(f"Supports single protocol input files., but received multiple {self._protocols}")
+            raise ValueError("Accepts same protocol input files, but it received multiple protocols.")
 
         self._watch = watch
         self._sort = sort
@@ -101,24 +101,23 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
     @property
     def name(self) -> str:
-        """Return the name of the stage"""
+        """Return the name of the stage."""
         return "file-source"
 
     def supports_cpp_node(self) -> bool:
-        """Indicates whether or not this stage supports a C++ node"""
+        """Indicates whether or not this stage supports a C++ node."""
         return False
 
     def stop(self):
-        """
-        Performs cleanup steps when pipeline is stopped.
-        """
+        """Performs cleanup steps when pipeline is stopped."""
 
         # Indicate we need to stop
         self._stop_requested = True
 
         return super().stop()
 
-    def _extract_unique_protocols(self):
+    def _extract_unique_protocols(self) -> set:
+        """Extracts unique protocols from the given file paths."""
         protocols = set()
 
         for file in self._files:
@@ -133,7 +132,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
-            raise RuntimeError("Does not support C++ nodes")
+            raise RuntimeError("Does not support C++ nodes.")
 
         if self._watch:
             generator_function = self._polling_generate_frames_fsspec
@@ -152,7 +151,7 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         if (len(files) == 0):
             raise RuntimeError(f"No files matched input strings: '{self._files}'. "
-                               "Check your input pattern and ensure any credentials are correct")
+                               "Check your input pattern and ensure any credentials are correct.")
 
         if self._sort:
             files = sorted(files, key=lambda f: f.full_name)
@@ -218,13 +217,13 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
                 curr_time = time.monotonic()
 
             if self._max_files > 0 and self._max_files <= processed_files_count:
-                logger.debug("Maximum file limit reached. Exiting directory watcher...")
+                logger.debug("Maximum file limit reached. Exiting polling service...")
                 self._stop_requested = True
 
     @staticmethod
-    def generate_frames(file: fsspec.core.OpenFile, file_type: FileTypes, parser_kwargs: dict) -> list[MessageMeta]:
+    def generate_frames(file: fsspec.core.OpenFile, file_type: FileTypes, parser_kwargs: dict) -> MessageMeta:
         """
-        Generate message frames from a file.
+        Generate message frame from a file.
 
         This function reads data from a file and generates message frames (MessageMeta) based on the file's content.
         It can be used to load and process messages from a file for testing and analysis within a Morpheus pipeline.
@@ -240,8 +239,8 @@ class FileSource(PreallocatorMixin, SingleOutputSource):
 
         Returns
         -------
-        List[MessageMeta]
-            MessageMeta objects, each containing a dataframe of messages from the file.
+        MessageMeta
+            MessageMeta object, each containing a dataframe of messages from the file.
         """
         df = read_file_to_df(
             file.full_name,

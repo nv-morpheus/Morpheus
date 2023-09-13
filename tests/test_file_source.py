@@ -31,31 +31,19 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 
 
 @pytest.mark.use_python
-def test_constructor(config):
-    file_source = FileSource(
-        config,
-        files=["path/to/*.json"],
-        watch=True,
-        sort=True,
-        file_type=FileTypes.JSON,
-        parser_kwargs={"key": "value"},
-        watch_interval=2.0,
-    )
-
-    assert file_source._files == ["path/to/*.json"]
-    assert file_source._watch
-    assert file_source._sort
-    assert file_source._file_type == FileTypes.JSON
-    assert file_source._parser_kwargs == {"key": "value"}
-    assert file_source._watch_interval == 2.0
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("input_files", [["file1.json", "file2.json"], []])
-def test_constructor_with_invalid_params(config, input_files):
-    with pytest.raises(ValueError):
-        # 'watch' is True, but multiple files are provided
-        FileSource(config, files=input_files, watch=True)
+@pytest.mark.parametrize(
+    "input_files,watch,error_msg",
+    [(["file1.json", "file2.json"], True, "When 'watch' is True, the 'files' should contain exactly one file path."),
+     ([], True, "The 'files' cannot be empty."), (None, True, "The 'files' cannot be empty."),
+     (["file1.json", "s3://test_data/file2.json"],
+      True,
+      "When 'watch' is True, the 'files' should contain exactly one file path."),
+     (["file1.json", "s3://test_data/file2.json"],
+      False,
+      "Accepts same protocol input files, but it received multiple protocols.")])
+def test_constructor_with_invalid_params(config, input_files, watch, error_msg):
+    with pytest.raises(ValueError, match=error_msg):
+        FileSource(config, files=input_files, watch=watch)
 
 
 @pytest.mark.use_python
@@ -77,19 +65,39 @@ def test_generate_frames(input_file, filetypes, parser_kwargs, expected_df_count
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("input_files,parser_kwargs,expected_count",
-                         [([
-                             "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json",
-                             "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T12_09_47.901Z.json"
-                         ], {
-                             "lines": False, "orient": "records"
-                         },
-                           2), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, 3)])
-def test_filesource_with_watch_false(config, input_files, parser_kwargs, expected_count):
+@pytest.mark.parametrize(
+    "input_files,parser_kwargs,max_files,watch,expected_result",
+    [([
+        "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json",
+        "s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T12_09_47.901Z.json"
+    ], {
+        "lines": False, "orient": "records"
+    },
+      -1,
+      False,
+      2), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, -1, False, 3),
+     ([f'file:/{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, RuntimeError),
+     ([f'file:/{os.path.join(TEST_DIRS.tests_data_dir, "triton_abp_inf_results.csv")}'],
+      None,
+      -1,
+      False,
+      FileNotFoundError), ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, -1, False, 3),
+     (["s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022-08-01T00_05_06.806Z.json"], {
+         "lines": False, "orient": "records"
+     },
+      1,
+      True,
+      1), ([os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")], None, 2, False, 2),
+     ([f'file://{os.path.join(TEST_DIRS.tests_data_dir, "triton_*.csv")}'], None, 3, True, 3)])
+def test_filesource_pipe(config, input_files, parser_kwargs, max_files, watch, expected_result):
 
     pipe = Pipeline(config)
 
-    file_source_stage = FileSource(config, files=input_files, watch=False, parser_kwargs=parser_kwargs)
+    file_source_stage = FileSource(config,
+                                   files=input_files,
+                                   watch=watch,
+                                   max_files=max_files,
+                                   parser_kwargs=parser_kwargs)
     sink_stage = InMemorySinkStage(config)
 
     pipe.add_stage(file_source_stage)
@@ -97,20 +105,36 @@ def test_filesource_with_watch_false(config, input_files, parser_kwargs, expecte
 
     pipe.add_edge(file_source_stage, sink_stage)
 
-    pipe.run()
+    if expected_result in (RuntimeError, FileNotFoundError):
+        with pytest.raises(expected_result):
+            pipe.run()
+    else:
+        pipe.run()
 
-    assert len(sink_stage.get_messages()) == expected_count
+        assert len(sink_stage.get_messages()) == expected_result
 
 
 @pytest.mark.use_python
-def test_build_source_watch_remote_files(config):
+@pytest.mark.parametrize("watch", [True, False])
+@mock.patch.object(FileSource, '_polling_generate_frames_fsspec')
+@mock.patch.object(FileSource, '_generate_frames_fsspec')
+def test_build_source(mock_generate_frames_fsspec, mock_polling_generate_frames_fsspec, watch, config):
     files = ["s3://rapidsai-data/cyber/morpheus/dfp/duo/DUO_2022*.json"]
-    source = FileSource(config=config, files=files, watch=True)
+    source = FileSource(config=config, files=files, watch=watch)
 
     mock_node = mock.MagicMock()
     mock_builder = mock.MagicMock()
     mock_builder.make_source.return_value = mock_node
     out_stream, out_type = source._build_source(mock_builder)
+
+    if watch:
+        mock_polling_generate_frames_fsspec.assert_called_once()
+        with pytest.raises(Exception):
+            mock_generate_frames_fsspec.assert_called_once()
+    else:
+        mock_generate_frames_fsspec.assert_called_once()
+        with pytest.raises(Exception):
+            mock_polling_generate_frames_fsspec.assert_called_once()
 
     assert out_stream == mock_node
     assert out_type == fsspec.core.OpenFiles
