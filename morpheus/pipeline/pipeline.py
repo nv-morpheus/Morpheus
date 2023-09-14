@@ -315,6 +315,14 @@ class Pipeline():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
                     port.link_node(builder=builder)
 
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            loop.call_soon_threadsafe(self._async_start, segment_graph.nodes())
+
             logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline====")
@@ -404,15 +412,14 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        await self._async_start()
-
         self._start()
 
-    async def _async_start(self):
+    async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
 
         # Loop over all stages and call on_start if it exists
-        for stage in self._stages:
-            await stage.start_async()
+        for stage in stages:
+            if (isinstance(stage, Stage)):
+                await stage.start_async()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
