@@ -664,7 +664,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool async_commits,
     std::optional<pybind11::function> oauth_callback)
 {
-    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(oauth_callback);
+    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(std::move(oauth_callback));
 
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
