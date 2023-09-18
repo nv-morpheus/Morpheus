@@ -32,8 +32,6 @@ logger = logging.getLogger(__name__)
 class DownloadMethods(str, Enum):
     """Valid download methods for the `Downloader` class."""
     SINGLE_THREAD = "single_thread"
-    MULTIPROCESS = "multiprocess"
-    MULTIPROCESSING = "multiprocessing"
     DASK = "dask"
     DASK_THREAD = "dask_thread"
 
@@ -71,6 +69,10 @@ class Downloader:
         download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
 
         if isinstance(download_method, str):
+            if (download_method in ("multiprocess", "multiprocessing")):
+                raise ValueError(
+                    f"The '{download_method}' download method is no longer supported. Please use 'dask' or "
+                    "'single_thread' instead.")
             try:
                 download_method = DOWNLOAD_METHODS_MAP[download_method.lower()]
             except KeyError as exc:
@@ -156,11 +158,6 @@ class Downloader:
             with self.get_dask_client() as dist:
                 dfs = dist.client.map(download_fn, download_buckets)
                 dfs = dist.client.gather(dfs)
-
-        elif (self._download_method in ("multiprocess", "multiprocessing")):
-            raise ValueError(
-                f"The '{self._download_method}' download method is no longer supported. Please use 'dask' or "
-                "'single_thread' instead.")
 
         else:
             # Simply loop

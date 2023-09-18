@@ -47,7 +47,7 @@ def dask_cuda(fail_missing: bool):
 
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize('use_env', [True, False])
-@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_method', ["single_thread", "dask", "dask_thread"])
 def test_constructor_download_type(use_env: bool, dl_method: str):
     kwargs = {}
     if use_env:
@@ -114,7 +114,7 @@ def test_close(mock_dask_cluster: mock.MagicMock, mock_dask_config: mock.MagicMo
 
 
 @mock.patch('dask_cuda.LocalCUDACluster')
-@pytest.mark.parametrize('dl_method', ["single_thread", "multiprocess", "multiprocessing"])
+@pytest.mark.parametrize('dl_method', ["single_thread"])
 def test_close_noop(mock_dask_cluster: mock.MagicMock, dl_method: str):
     mock_dask_cluster.return_value = mock_dask_cluster
     downloader = Downloader(download_method=dl_method)
@@ -174,28 +174,16 @@ def test_download(mock_dask_cluster: mock.MagicMock,
 
 
 @pytest.mark.usefixtures("restore_environ")
+@pytest.mark.parametrize('use_env', [True, False])
 @pytest.mark.parametrize('dl_method', ["multiprocess", "multiprocessing"])
-@mock.patch('dask.config')
-@mock.patch('dask.distributed.Client')
-@mock.patch('dask_cuda.LocalCUDACluster')
-def test_multiprocess_download_error(mock_dask_cluster: mock.MagicMock,
-                                     mock_dask_client: mock.MagicMock,
-                                     mock_dask_config: mock.MagicMock,
-                                     dl_method: str):
-    mock_dask_config.get = lambda key: 1.0 if (key == "distributed.comm.timesouts.connect") else None
-    mock_dask_cluster.return_value = mock_dask_cluster
-    mock_dask_client.return_value = mock_dask_client
-    mock_dask_client.__enter__.return_value = mock_dask_client
-    mock_dask_client.__exit__.return_value = False
+def test_constructor_multiproc_dltype_not_supported(use_env: bool, dl_method: str):
+    kwargs = {}
+    if use_env:
+        os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_method
+    else:
+        kwargs['download_method'] = dl_method
 
-    input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield/snapshot-1/*.json')
-    download_buckets = fsspec.open_files(input_glob)
-    num_buckets = len(download_buckets)
-    assert num_buckets > 0
+    with pytest.raises(ValueError) as excinfo:
+        Downloader(**kwargs)
 
-    download_fn = mock.MagicMock()
-
-    downloader = Downloader(download_method=dl_method)
-
-    with pytest.raises(ValueError):
-        downloader.download(download_buckets, download_fn)
+    assert "no longer supported" in str(excinfo.value)
