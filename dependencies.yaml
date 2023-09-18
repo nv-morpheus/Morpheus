@@ -61,7 +61,9 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - clangdev=14
+          - clangdev=16
+          - isort
+          - yapf=0.40.1
   run_morpheus:
     common:
       - output_types: [conda]
