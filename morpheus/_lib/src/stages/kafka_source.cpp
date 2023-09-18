@@ -21,6 +21,7 @@
 #include "mrc/node/rx_source_base.hpp"
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
+#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
@@ -86,15 +87,20 @@ KafkaOAuthCallback::KafkaOAuthCallback(const std::function<std::map<std::string,
 
 void KafkaOAuthCallback::oauthbearer_token_refresh_cb(RdKafka::Handle* handle, const std::string& oauthbearer_config)
 {
-    auto response = m_oauth_callback();
-    // Build parameters to pass to librdkafka
-    std::string token         = response["token"];
-    int64_t token_lifetime_ms = std::stoll(response["token_expiration_in_epoch"]);
-    std::list<std::string> extensions;  // currently not supported
-    std::string errstr;
-    CUDF_EXPECTS(RdKafka::ErrorCode::ERR_NO_ERROR ==
-                     handle->oauthbearer_set_token(token, token_lifetime_ms, "kafka", extensions, errstr),
-                 "Error occurred while setting the oauthbearer token");
+    try
+    {
+        auto response = m_oauth_callback();
+        // Build parameters to pass to librdkafka
+        std::string token         = response["token"];
+        int64_t token_lifetime_ms = std::stoll(response["token_expiration_in_epoch"]);
+        std::list<std::string> extensions;  // currently not supported
+        std::string errstr;
+        auto result = handle->oauthbearer_set_token(token, token_lifetime_ms, "kafka", extensions, errstr);
+        CHECK(result == RdKafka::ErrorCode::ERR_NO_ERROR) << "Error occurred while setting the oauthbearer token";
+    } catch (std::exception ex)
+    {
+        LOG(FATAL) << "Exception occured oauth refresh: " << ex.what();
+    }
 }
 
 // Component-private classes.
@@ -687,7 +693,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     bool async_commits,
     std::optional<pybind11::function> oauth_callback)
 {
-    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(oauth_callback);
+    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(std::move(oauth_callback));
 
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
@@ -704,16 +710,18 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
 }
 
 std::unique_ptr<KafkaOAuthCallback> KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(
-    std::optional<pybind11::function>& oauth_callback)
+    std::optional<pybind11::function>&& oauth_callback)
 {
     if (oauth_callback == std::nullopt)
     {
         return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
     }
 
-    return std::make_unique<KafkaOAuthCallback>([&oauth_callback]() {
-        auto kvp_cpp       = std::map<std::string, std::string>();
-        pybind11::dict kvp = oauth_callback.value()();
+    auto oauth_callback_wrapped = mrc::pymrc::PyFuncWrapper(std::move(oauth_callback.value()));
+
+    return std::make_unique<KafkaOAuthCallback>([oauth_callback_wrapped = std::move(oauth_callback_wrapped)]() {
+        auto kvp_cpp = std::map<std::string, std::string>();
+        auto kvp     = oauth_callback_wrapped.operator()<pybind11::dict>();
         for (auto [key, value] : kvp)
         {
             kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();

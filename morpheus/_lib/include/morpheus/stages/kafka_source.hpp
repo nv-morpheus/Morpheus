@@ -272,7 +272,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param oauth_callback : The callback to wrap, if any.
      */
     static std::unique_ptr<KafkaOAuthCallback> make_kafka_oauth_callback(
-        std::optional<pybind11::function>& oauth_callback);
+        std::optional<pybind11::function>&& oauth_callback);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
