@@ -236,7 +236,7 @@ git submodule update --init --recursive
 1. Optional: Run full end-to-end tests
    - Our end-to-end tests require the [camouflage](https://testinggospels.github.io/camouflage/) testing framework. Install camouflage with:
       ```bash
-      npm install -g camouflage-server
+      npm install -g camouflage-server@0.15
       ```
 
    Run all tests:
