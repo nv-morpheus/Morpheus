@@ -65,7 +65,7 @@ class Downloader:
 
     # This cluster is shared by all Downloader instances that use dask download method.
     _dask_cluster = None
-    
+
     _mutex = threading.RLock()
 
     def __init__(self,
