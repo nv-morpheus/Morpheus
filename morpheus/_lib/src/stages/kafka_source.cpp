@@ -30,7 +30,6 @@
 #include <boost/fiber/operations.hpp>  // for sleep_for, yield
 #include <boost/fiber/recursive_mutex.hpp>
 #include <cudf/io/json.hpp>
-#include <cudf/utilities/error.hpp>
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
 #include <mrc/runnable/context.hpp>
