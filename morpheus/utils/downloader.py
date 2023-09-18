@@ -19,6 +19,7 @@ by the `DownloadMethods` enum.
 import logging
 import multiprocessing as mp
 import os
+import threading
 import typing
 from enum import Enum
 
@@ -62,12 +63,14 @@ class Downloader:
         The heartbeat interval to use when using dask or dask_thread.
     """
 
+    # This cluster is shared by all Downloader instances that use dask download method.
     _dask_cluster = None
 
     def __init__(self,
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
+        self.mutex = threading.RLock()
         self._merlin_distributed = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
@@ -97,20 +100,21 @@ class Downloader:
         dask_cuda.LocalCUDACluster
         """
 
-        if Downloader._dask_cluster is None:
-            import dask_cuda.utils
+        with self.mutex:
+            if Downloader._dask_cluster is None:
+                import dask_cuda.utils
 
-            logger.debug("Creating dask cluster...")
+                logger.debug("Creating dask cluster...")
 
-            n_workers = dask_cuda.utils.get_n_gpus()
-            threads_per_worker = mp.cpu_count() // n_workers
+                n_workers = dask_cuda.utils.get_n_gpus()
+                threads_per_worker = mp.cpu_count() // n_workers
 
-            Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
-                                                                  threads_per_worker=threads_per_worker)
+                Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
+                                                                      threads_per_worker=threads_per_worker)
 
-            logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
+                logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
-        return Downloader._dask_cluster
+            return Downloader._dask_cluster
 
     def get_dask_client(self):
         """
