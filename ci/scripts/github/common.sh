@@ -186,7 +186,9 @@ function download_artifact() {
 }
 
 function set_job_summary_preamble() {
-    msg="Note: NVIDIA VPN access is required to view these URLs."
-    echo $msg >> ${GITHUB_STEP_SUMMARY}
-    rapids-logger $msg
+    if [[ "${LOCAL_CI}" == "" ]]; then
+        msg="Note: NVIDIA VPN access is required to view these URLs."
+        echo $msg >> ${GITHUB_STEP_SUMMARY}
+        rapids-logger $msg
+    fi
 }
