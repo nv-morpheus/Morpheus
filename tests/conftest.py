@@ -596,14 +596,19 @@ def _start_camouflage(root_dir: str,
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
+            def read_logs():
+                camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                if os.path.exists(camouflage_log):
+                    with open(camouflage_log, 'r', encoding='utf-8') as f:
+                        return f.read()
+                return ""
+
             if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
 
                 if popen.poll() is not None:
-                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
-                    raise RuntimeError(
-                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
+                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}\n{read_logs()}")
 
-                raise RuntimeError("Failed to launch camouflage server")
+                raise RuntimeError(f"Failed to launch camouflage server\n{read_logs()}")
 
             # Must have been started by this point
             return (True, popen)
