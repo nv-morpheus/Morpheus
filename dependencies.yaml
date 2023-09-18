@@ -62,6 +62,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - clangdev=16
+          - include-what-you-use=0.18
           - isort
           - yapf=0.40.1
   run_morpheus:
