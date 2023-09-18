@@ -18,7 +18,7 @@ limitations under the License.
 This document walks through manual testing of the Kafka functionality in Morpheus. There are also several automated tests which are run as part of the CI process. To run the tests locally we will need to install a few dependencies needed for the tests:
 ```bash
 mamba install -c conda-forge "openjdk=11.0.15"
-npm install -g camouflage-server@0.9
+npm install -g camouflage-server@0.15
 python ${MORPHEUS_ROOT}/ci/scripts/download_kafka.py
 cd ${MORPHEUS_ROOT}
 ```
