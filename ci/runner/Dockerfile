@@ -68,7 +68,7 @@ COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
 # Install camouflage needed for unittests to mock a triton server
 RUN source activate ${PROJ_NAME} && \
-    npm install -g camouflage-server@0.9 && \
+    npm install -g camouflage-server@0.15 && \
     npm cache clean --force
 
 # Install Kafka
