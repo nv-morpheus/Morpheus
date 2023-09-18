@@ -133,6 +133,7 @@ class ElasticsearchController:
         """
 
         try:
+            self.refresh_client()
             result = self._client.search(index=index, query=query, **kwargs)
             return result
         except Exception as exc:
