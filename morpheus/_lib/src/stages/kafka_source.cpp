@@ -55,6 +55,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 // IWYU thinks we need atomic for vector.emplace_back of a unique_ptr
 // and __alloc_traits<>::value_type for vector assignments

@@ -42,7 +42,6 @@
 #include <optional>
 #include <string>
 #include <thread>
-#include <type_traits>  // for remove_reference, remove_reference<>::type
 #include <vector>
 
 namespace morpheus {
