@@ -86,7 +86,7 @@ def test_write_to_elasticsearch_stage_pipe(mock_controller: typing.Any,
     pipe = LinearPipeline(config)
 
     # Add the source stage and the WriteToElasticsearchStage to the pipeline
-    pipe.add_stage(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(WriteToElasticsearchStage(config, index="t_index", connection_conf_file=connection_conf_file))
 
     # Run the pipeline
