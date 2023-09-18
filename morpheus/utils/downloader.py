@@ -65,12 +65,13 @@ class Downloader:
 
     # This cluster is shared by all Downloader instances that use dask download method.
     _dask_cluster = None
+    
+    _mutex = threading.RLock()
 
     def __init__(self,
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
-        self.mutex = threading.RLock()
         self._merlin_distributed = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
@@ -100,7 +101,7 @@ class Downloader:
         dask_cuda.LocalCUDACluster
         """
 
-        with self.mutex:
+        with Downloader._mutex:
             if Downloader._dask_cluster is None:
                 import dask_cuda.utils
 
