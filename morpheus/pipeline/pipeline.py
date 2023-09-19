@@ -310,18 +310,11 @@ class Pipeline():
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
-            # for s in source_and_stages:
             for stage in segment_graph.nodes():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
                     port.link_node(builder=builder)
 
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            loop.call_soon_threadsafe(self._async_start, segment_graph.nodes())
+            asyncio.run(self._async_start(segment_graph.nodes()))
 
             logger.info("====Building Segment Complete!====")
 
@@ -415,11 +408,12 @@ class Pipeline():
         self._start()
 
     async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
-
-        # Loop over all stages and call on_start if it exists
+        # This method is called once for each segment in the pipeline executed on this host
         for stage in stages:
             if (isinstance(stage, Stage)):
                 await stage.start_async()
+
+        self._is_started = True
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
