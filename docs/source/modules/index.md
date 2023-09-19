@@ -31,10 +31,10 @@ limitations under the License.
 ./core/filter_detections.md
 ./core/from_control_message.md
 ./core/mlflow_model_writer.md
-./core/multiplexer.md
 ./core/payload_batcher.md
 ./core/serialize.md
 ./core/to_control_message.md
+./core/write_to_elasticsearch.md
 ./core/write_to_file.md
 ```
 
