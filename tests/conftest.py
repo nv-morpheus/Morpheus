@@ -517,7 +517,7 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=5):
+def wait_for_camouflage(host="localhost", port=8000, timeout=10):
 
     start_time = time.time()
     cur_time = start_time
@@ -526,7 +526,7 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
     url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
-        timeout_epoch = min(cur_time + 1.0, end_time)
+        timeout_epoch = min(cur_time + 2.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
