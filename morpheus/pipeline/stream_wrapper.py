@@ -303,7 +303,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
             return False
 
         if (not check_ports):
-            # We can prebuild if all input stages have been prebuilt. Easy and quick check. Works for non-circular pipelines
+            # We can prebuild if all input stages have been prebuilt.
+            # Easy and quick check. Works for non-circular pipelines
             return all(stage.is_pre_built for stage in self.get_all_input_stages())
 
         # Check if we can prebuild based on the input ports.
@@ -342,7 +343,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         out_types: list[type] = self.output_types(in_types)
 
         assert len(out_types) == len(self.output_ports), \
-            f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), but got {len(out_types)}."
+            (f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), "
+             f"but got {len(out_types)}.")
 
         for (port_idx, out_type) in enumerate(out_types):
             self.output_ports[port_idx]._out_type = out_type
