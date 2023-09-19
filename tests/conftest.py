@@ -568,7 +568,7 @@ def _start_camouflage(root_dir: str,
                       host: str = "localhost",
                       port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-    startup_timeout = 5
+    startup_timeout = 10
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
