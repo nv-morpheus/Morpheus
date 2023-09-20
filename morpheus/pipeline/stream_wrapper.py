@@ -336,7 +336,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         # Check if we can build based on the input ports. We can build
         return all(receiver.is_partial for receiver in self.input_ports)
 
-    def _pre_build(self):
+    def _pre_build(self, do_propagate: bool = True):
         assert not self.is_built, "build called prior to _pre_build"
         assert not self.is_pre_built, "Can only pre-build stages once!"
         in_types: list[type] = [x.get_input_type() for x in self.input_ports]
@@ -351,7 +351,17 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         self._is_pre_built = True
 
-    def build(self, builder: mrc.Builder, do_propagate=True):
+        if (not do_propagate):
+            return
+
+        # Now pre-build for any dependents
+        for dep in self.get_all_output_stages():
+            if (not dep.can_pre_build()):
+                continue
+
+            dep._pre_build(do_propagate=do_propagate)
+
+    def build(self, builder: mrc.Builder, do_propagate: bool = True):
         """Build this stage.
 
         Parameters

@@ -68,9 +68,9 @@ class SourceStage(_pipeline.StreamWrapper):
         pass
 
     @typing.final
-    def _pre_build(self) -> list[type]:
+    def _pre_build(self, do_propagate: bool = True):
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
-        return super()._pre_build()
+        return super()._pre_build(do_propagate=do_propagate)
 
     @typing.final
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
