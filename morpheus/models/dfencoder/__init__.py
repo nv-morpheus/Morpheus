@@ -57,9 +57,9 @@ from .ae_module import AEModule
 from .ae_module import CompleteLayer
 from .autoencoder import AutoEncoder
 from .dataframe import EncoderDataFrame
-from .dataloader import DatasetFromDataframe
-from .dataloader import DatasetFromPath
+from .dataloader import DataframeDataset
 from .dataloader import DFEncoderDataLoader
+from .dataloader import FileSystemDataset
 from .distributed_ae import DistributedAutoEncoder
 from .logging import BasicLogger
 from .logging import IpynbLogger
@@ -74,8 +74,8 @@ __all__ = [
     "CompleteLayer",
     "AutoEncoder",
     "EncoderDataFrame",
-    "DatasetFromDataframe",
-    "DatasetFromPath",
+    "DataframeDataset",
+    "FileSystemDataset",
     "DFEncoderDataLoader",
     "DistributedAutoEncoder",
     "BasicLogger",
