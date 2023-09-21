@@ -1,2 +1,2 @@
-score
-pred
+not_phishing
+is_phishing
