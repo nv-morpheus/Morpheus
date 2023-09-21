@@ -517,7 +517,7 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=5):
+def wait_for_camouflage(host="localhost", port=8000, timeout=10):
 
     start_time = time.time()
     cur_time = start_time
@@ -526,7 +526,7 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
     url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
-        timeout_epoch = min(cur_time + 1.0, end_time)
+        timeout_epoch = min(cur_time + 2.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
@@ -568,7 +568,7 @@ def _start_camouflage(root_dir: str,
                       host: str = "localhost",
                       port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-    startup_timeout = 5
+    startup_timeout = 10
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
@@ -596,14 +596,19 @@ def _start_camouflage(root_dir: str,
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
+            def read_logs():
+                camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                if os.path.exists(camouflage_log):
+                    with open(camouflage_log, 'r', encoding='utf-8') as f:
+                        return f.read()
+                return ""
+
             if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
 
                 if popen.poll() is not None:
-                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
-                    raise RuntimeError(
-                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
+                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}\n{read_logs()}")
 
-                raise RuntimeError("Failed to launch camouflage server")
+                raise RuntimeError(f"Failed to launch camouflage server\n{read_logs()}")
 
             # Must have been started by this point
             return (True, popen)
