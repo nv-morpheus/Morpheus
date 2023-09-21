@@ -97,7 +97,7 @@ def dfp_training(builder: mrc.Builder):
                 run_validation = True
 
             logger.debug("Training AE model for user: '%s'...", user_id)
-            model.fit(train_df, epochs=epochs, val_data=validation_df, run_validation=run_validation)
+            model.fit(train_df, epochs=epochs, validation_data=validation_df, run_validation=run_validation)
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
             dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
