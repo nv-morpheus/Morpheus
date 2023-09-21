@@ -23,9 +23,10 @@ morpheus --log_level=DEBUG \
     pipeline-nlp --model_seq_length=256 \
     from-file --filename=${MORPHEUS_ROOT}/examples/data/pcap_dump.jsonlines \
     deserialize \
-    preprocess --vocab_hash_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt \
-        --do_lower_case=True --truncation=True \
+    preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
     inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
     monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-    add-class serialize --exclude '^_ts_' \
+    add-class \
+    filter --filter_source=TENSOR \
+    serialize --exclude '^_ts_' \
     to-file --filename=detections.jsonlines --overwrite
