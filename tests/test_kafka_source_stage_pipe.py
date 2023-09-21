@@ -134,13 +134,15 @@ class OffsetChecker(SinglePortStage):
         new_offsets = self._client.list_consumer_group_offsets(self._group_id)
 
         if self._offsets is not None:
-            for (topic_partition, prev_offset) in self._offsets.items():
-                new_offset = new_offsets[topic_partition]
+            at_least_one_gt = len(new_offsets) > len(self._offsets)
+            if not at_least_one_gt:
+                for (topic_partition, prev_offset) in self._offsets.items():
+                    new_offset = new_offsets[topic_partition]
 
-                assert new_offset.offset >= prev_offset.offset
+                    assert new_offset.offset >= prev_offset.offset
 
-                if new_offset.offset > prev_offset.offset:
-                    at_least_one_gt = True
+                    if new_offset.offset > prev_offset.offset:
+                        at_least_one_gt = True
 
             assert at_least_one_gt
 
@@ -149,7 +151,7 @@ class OffsetChecker(SinglePortStage):
         return x
 
     def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, ops.map(self._offset_checker))
+        node = builder.make_node_component(self.unique_name, ops.map(self._offset_checker))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
