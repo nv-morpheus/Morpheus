@@ -219,8 +219,8 @@ class MLFlowModelWriterController:
                 # Log all params in one dict to avoid round trips
                 mlflow.log_params({
                     "Algorithm": "Denosing Autoencoder",
-                    "Epochs": model.lr_decay.state_dict().get("last_epoch", "unknown"),
-                    "Learning rate": model.lr,
+                    "Epochs": model.learning_rate_decay.state_dict().get("last_epoch", "unknown"),
+                    "Learning rate": model.learning_rate,
                     "Batch size": model.batch_size,
                     "Start Epoch": message.get_meta(self._timestamp_column_name).min(),
                     "End Epoch": message.get_meta(self._timestamp_column_name).max(),
