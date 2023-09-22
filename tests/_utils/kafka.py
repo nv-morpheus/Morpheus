@@ -53,23 +53,28 @@ def kafka_bootstrap_servers_fixture(kafka_server: (subprocess.Popen, int)):  # p
     yield f"localhost:{kafka_port}"
 
 
-@pytest.fixture(name='kafka_consumer', scope='function')
-def kafka_consumer_fixture(kafka_topics: KafkaTopics, _kafka_consumer: "KafkaConsumer"):
-    _kafka_consumer.subscribe([kafka_topics.output_topic])
-
-    # Wait until we have assigned partitions
+def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = PARTITION_ASSIGNMENT_TIMEOUT):
+    """
+    Seeks to the beginning of the Kafka topic
+    """
     start = time.time()
-    end = start + PARTITION_ASSIGNMENT_TIMEOUT
+    end = start + timeout
     partitions_assigned = False
     while not partitions_assigned and time.time() <= end:
-        _kafka_consumer.poll(timeout_ms=20)
-        partitions_assigned = len(_kafka_consumer.assignment()) > 0
+        kafka_consumer.poll(timeout_ms=20)
+        partitions_assigned = len(kafka_consumer.assignment()) > 0
         if not partitions_assigned:
             time.sleep(0.1)
 
     assert partitions_assigned
 
-    _kafka_consumer.seek_to_beginning()
+    kafka_consumer.seek_to_beginning()
+
+
+@pytest.fixture(name='kafka_consumer', scope='function')
+def kafka_consumer_fixture(kafka_topics: KafkaTopics, _kafka_consumer: "KafkaConsumer"):
+    _kafka_consumer.subscribe([kafka_topics.output_topic])
+    seek_to_beginning(_kafka_consumer)
 
     yield _kafka_consumer
 
@@ -103,7 +108,9 @@ def _init_pytest_kafka() -> (bool, Exception):
                                                       'zookeeper_proc',
                                                       teardown_fn=teardown_fn,
                                                       scope='session')
-        _kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server', scope='function')
+        _kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
+                                                           scope='function',
+                                                           group_id='morpheus_unittest_consumer')
 
         return (True, None)
     except Exception as e:
