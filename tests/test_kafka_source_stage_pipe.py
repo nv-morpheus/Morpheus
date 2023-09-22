@@ -15,16 +15,14 @@
 # limitations under the License.
 
 import os
+import time
 import typing
 
-import mrc
 import pandas as pd
 import pytest
-from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -35,6 +33,9 @@ from utils import assert_results
 from utils import write_data_to_kafka
 from utils import write_file_to_kafka
 from utils.stages.dfp_length_checker import DFPLengthChecker
+
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
 
 
 @pytest.mark.kafka
@@ -92,77 +93,45 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
 
     assert_results(comp_stage.get_results())
 
-
-class OffsetChecker(SinglePortStage):
+def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = 15):
     """
-    Verifies that the kafka offsets are being updated as a way of verifying that the
-    consumer is performing a commit.
+    Seeks to the beginning of the Kafka topic
     """
+    start = time.time()
+    end = start + timeout
+    partitions_assigned = False
+    while not partitions_assigned and time.time() <= end:
+        kafka_consumer.poll(timeout_ms=20)
+        partitions_assigned = len(kafka_consumer.assignment()) > 0
+        if not partitions_assigned:
+            time.sleep(0.1)
 
-    def __init__(self, c: Config, bootstrap_servers: str, group_id: str):
-        super().__init__(c)
+    assert partitions_assigned
 
-        # Importing here so that running without the --run_kafka flag won't fail due
-        # to not having the kafka libs installed
-        from kafka import KafkaAdminClient
-
-        self._client = KafkaAdminClient(bootstrap_servers=bootstrap_servers)
-        self._group_id = group_id
-        self._offsets = None
-
-    @property
-    def name(self) -> str:
-        return "morpheus_offset_checker"
-
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
-
-        Returns
-        -------
-        typing.Tuple
-            Accepted input types.
-
-        """
-        return (typing.Any, )
-
-    def supports_cpp_node(self):
-        return False
-
-    def _offset_checker(self, x):
-        at_least_one_gt = False
-        new_offsets = self._client.list_consumer_group_offsets(self._group_id)
-
-        if self._offsets is not None:
-            for (tp, prev_offset) in self._offsets.items():
-                new_offset = new_offsets[tp]
-
-                assert new_offset.offset >= prev_offset.offset
-
-                if new_offset.offset > prev_offset.offset:
-                    at_least_one_gt = True
-
-            assert at_least_one_gt
-
-        self._offsets = new_offsets
-
-        return x
-
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, ops.map(self._offset_checker))
-        builder.make_edge(input_stream[0], node)
-
-        return node, input_stream[1]
-
+    kafka_consumer.seek_to_beginning()
 
 @pytest.mark.kafka
+@pytest.mark.parametrize('async_commits', [True, False])
 @pytest.mark.parametrize('num_records', [10, 100, 1000])
-def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
-                             kafka_topics: typing.Tuple[str, str]) -> None:
+def test_kafka_source_commit(num_records: int,
+                             async_commits: bool,
+                             config: Config,
+                             kafka_bootstrap_servers: str,
+                             kafka_topics: typing.Tuple[str, str],
+                             kafka_consumer: "KafkaConsumer") -> None:
+    group_id = 'morpheus'
 
     data = [{'v': i} for i in range(num_records)]
     num_written = write_data_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, data)
     assert num_written == num_records
+
+    kafka_consumer.subscribe([kafka_topics.input_topic])
+    seek_to_beginning(kafka_consumer)
+    partitions = kafka_consumer.assignment()
+
+    # This method does not advance the consumer, and even if it did, this consumer has a different group_id than the
+    # source stage
+    expected_offsets = kafka_consumer.end_offsets(partitions)
 
     pipe = LinearPipeline(config)
     pipe.set_source(
@@ -171,12 +140,10 @@ def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
-                         group_id='morpheus',
+                         group_id=group_id,
                          client_id='morpheus_kafka_source_commit',
                          stop_after=num_records,
-                         async_commits=False))
-
-    pipe.add_stage(OffsetChecker(config, bootstrap_servers=kafka_bootstrap_servers, group_id='morpheus'))
+                         async_commits=async_commits))
     pipe.add_stage(TriggerStage(config))
 
     pipe.add_stage(DeserializeStage(config))
@@ -186,6 +153,17 @@ def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
     pipe.run()
 
     assert_results(comp_stage.get_results())
+
+    from kafka import KafkaAdminClient
+    admin_client = KafkaAdminClient(bootstrap_servers=kafka_bootstrap_servers, client_id='offset_checker')
+    offsets = admin_client.list_consumer_group_offsets(group_id)
+
+    # The broker may have created additional partitions, offsets should be a superset of expected_offsets
+    for (topic_partition, expected_offset) in expected_offsets.items():
+        # The value of the offsets dict being returned is a tuple of (offset, metadata), while the value of the
+        #  expected_offsets is just the offset.
+        actual_offset = offsets[topic_partition][0]
+        assert actual_offset == expected_offset
 
 
 @pytest.mark.kafka
