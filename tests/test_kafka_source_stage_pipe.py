@@ -17,10 +17,8 @@
 import os
 import typing
 
-import mrc
 import pandas as pd
 import pytest
-from mrc.core import operators as ops
 
 from _utils import TEST_DIRS
 from _utils import assert_results
@@ -30,12 +28,14 @@ from _utils.kafka import write_file_to_kafka
 from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
 
 
 @pytest.mark.kafka
@@ -95,9 +95,11 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
 
 
 @pytest.mark.kafka
+@pytest.mark.parametrize('async_commits', [True, False])
 @pytest.mark.parametrize('num_records', [10, 100, 1000])
-def test_kafka_source_commit(num_records,
-                             config,
+def test_kafka_source_commit(num_records: int,
+                             async_commits: bool,
+                             config: Config,
                              kafka_bootstrap_servers: str,
                              kafka_topics: typing.Tuple[str, str],
                              kafka_consumer: "KafkaConsumer") -> None:
@@ -125,7 +127,7 @@ def test_kafka_source_commit(num_records,
                          group_id=group_id,
                          client_id='morpheus_kafka_source_commit',
                          stop_after=num_records,
-                         async_commits=False))
+                         async_commits=async_commits))
     pipe.add_stage(TriggerStage(config))
 
     pipe.add_stage(DeserializeStage(config))
