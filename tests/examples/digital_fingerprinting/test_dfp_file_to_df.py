@@ -22,6 +22,7 @@ import fsspec
 import pandas as pd
 import pytest
 
+import morpheus.utils.downloader
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
@@ -99,7 +100,8 @@ def test_constructor(config: Config):
 
 
 # pylint: disable=redefined-outer-name
-@pytest.mark.usefixtures("restore_environ")
+@pytest.mark.reload_modules(morpheus.utils.downloader)
+@pytest.mark.usefixtures("reload_modules", "restore_environ")
 @pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
 @mock.patch('dask.distributed.Client')
