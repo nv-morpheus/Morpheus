@@ -589,7 +589,7 @@ To run the DFP pipelines with the example datasets within the container, run:
         --start_time "2022-08-01" \
         --duration "60d" \
         --train_users generic \
-        --input_file "./control_messages/duo_payload_load_training_inference.json" 
+        --input_file "./control_messages/duo_payload_load_train_inference.json" 
     ```
 
 * Azure Training Pipeline
