@@ -121,7 +121,6 @@ jobs:
 
   test:
     name: Test
-    needs: [build]
     runs-on: linux-amd64-gpu-v100-latest-1
     timeout-minutes: 60
     container:
