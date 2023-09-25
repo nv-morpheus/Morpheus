@@ -19,6 +19,7 @@ by the `DownloadMethods` enum.
 import logging
 import multiprocessing as mp
 import os
+import threading
 import typing
 from enum import Enum
 
@@ -32,8 +33,6 @@ logger = logging.getLogger(__name__)
 class DownloadMethods(str, Enum):
     """Valid download methods for the `Downloader` class."""
     SINGLE_THREAD = "single_thread"
-    MULTIPROCESS = "multiprocess"
-    MULTIPROCESSING = "multiprocessing"
     DASK = "dask"
     DASK_THREAD = "dask_thread"
 
@@ -44,14 +43,12 @@ DOWNLOAD_METHODS_MAP = {dl.value: dl for dl in DownloadMethods}
 class Downloader:
     """
     Downloads a list of `fsspec.core.OpenFiles` files using one of the following methods:
-        single_thread, multiprocess, dask or dask_thread
+        single_thread, dask or dask_thread
 
     The download method can be passed in via the `download_method` parameter or via the `MORPHEUS_FILE_DOWNLOAD_TYPE`
     environment variable. If both are set, the environment variable takes precedence, by default `dask_thread` is used.
 
-    When using single_thread, or multiprocess is used `dask` and `dask.distributed` is not reuiqrred to be installed.
-
-    For compatibility reasons "multiprocessing" is an alias for "multiprocess".
+    When using single_thread, `dask` and `dask.distributed` is not reuiqrred to be installed.
 
     Parameters
     ----------
@@ -62,17 +59,25 @@ class Downloader:
         The heartbeat interval to use when using dask or dask_thread.
     """
 
+    # This cluster is shared by all Downloader instances that use dask download method.
+    _dask_cluster = None
+
+    _mutex = threading.RLock()
+
     def __init__(self,
                  download_method: typing.Union[DownloadMethods, str] = DownloadMethods.DASK_THREAD,
                  dask_heartbeat_interval: str = "30s"):
 
         self._merlin_distributed = None
-        self._dask_cluster = None
         self._dask_heartbeat_interval = dask_heartbeat_interval
 
         download_method = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", download_method)
 
         if isinstance(download_method, str):
+            if (download_method in ("multiprocess", "multiprocessing")):
+                raise ValueError(
+                    f"The '{download_method}' download method is no longer supported. Please use 'dask' or "
+                    "'single_thread' instead.")
             try:
                 download_method = DOWNLOAD_METHODS_MAP[download_method.lower()]
             except KeyError as exc:
@@ -96,23 +101,21 @@ class Downloader:
         dask_cuda.LocalCUDACluster
         """
 
-        if self._dask_cluster is None:
-            import dask
-            import dask.distributed
-            import dask_cuda.utils
+        with Downloader._mutex:
+            if Downloader._dask_cluster is None:
+                import dask_cuda.utils
 
-            logger.debug("Creating dask cluster...")
+                logger.debug("Creating dask cluster...")
 
-            # Up the heartbeat interval which can get violated with long download times
-            dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
-            n_workers = dask_cuda.utils.get_n_gpus()
-            threads_per_worker = mp.cpu_count() // n_workers
+                n_workers = dask_cuda.utils.get_n_gpus()
+                threads_per_worker = mp.cpu_count() // n_workers
 
-            self._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers, threads_per_worker=threads_per_worker)
+                Downloader._dask_cluster = dask_cuda.LocalCUDACluster(n_workers=n_workers,
+                                                                      threads_per_worker=threads_per_worker)
 
-            logger.debug("Creating dask cluster... Done. Dashboard: %s", self._dask_cluster.dashboard_link)
+                logger.debug("Creating dask cluster... Done. Dashboard: %s", Downloader._dask_cluster.dashboard_link)
 
-        return self._dask_cluster
+            return Downloader._dask_cluster
 
     def get_dask_client(self):
         """
@@ -123,6 +126,9 @@ class Downloader:
         dask.distributed.Client
         """
         import dask.distributed
+
+        # Up the heartbeat interval which can get violated with long download times
+        dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
 
         if (self._merlin_distributed is None):
             self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
@@ -159,10 +165,6 @@ class Downloader:
                 dfs = dist.client.map(download_fn, download_buckets)
                 dfs = dist.client.gather(dfs)
 
-        elif (self._download_method in ("multiprocess", "multiprocessing")):
-            # Use multiprocessing here since parallel downloads are a pain
-            with mp.get_context("spawn").Pool(mp.cpu_count()) as pool:
-                dfs = pool.map(download_fn, download_buckets)
         else:
             # Simply loop
             for open_file in download_buckets:
