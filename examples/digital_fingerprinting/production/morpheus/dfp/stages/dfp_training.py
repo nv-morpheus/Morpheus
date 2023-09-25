@@ -57,9 +57,9 @@ class DFPTraining(SinglePortStage):
             "encoder_layers": [512, 500],  # layers of the encoding part
             "decoder_layers": [512],  # layers of the decoding part
             "activation": 'relu',  # activation function
-            "swap_p": 0.2,  # noise parameter
-            "lr": 0.001,  # learning rate
-            "lr_decay": .99,  # learning decay
+            "swap_probability": 0.2,  # noise parameter
+            "learning_rate": 0.001,  # learning rate
+            "learning_rate_decay": .99,  # learning decay
             "batch_size": 512,
             "verbose": False,
             "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
