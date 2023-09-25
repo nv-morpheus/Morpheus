@@ -22,6 +22,7 @@ files:
       arch: [x86_64]
     includes:
       - build_cpp
+      - development_cpp
       - run_morpheus
       - test_python_morpheus
       - cudatoolkit
@@ -56,6 +57,14 @@ dependencies:
           - scikit-build=0.17.1
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
+  development_cpp:
+    common:
+      - output_types: [conda]
+        packages:
+          - clangdev=14
+          - include-what-you-use=0.18
+          - isort
+          - yapf=0.40.1
   run_morpheus:
     common:
       - output_types: [conda]
