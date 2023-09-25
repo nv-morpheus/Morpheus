@@ -27,14 +27,13 @@ docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 ##### Deploy Triton Inference Server
-
-Bind the provided `abp-pcap-xgb` directory to the docker container model repo at `/models`.
-
 From the root of the Morpheus repo, navigate to the anomalous behavior profiling example directory:
 ```bash
 cd examples/abp_pcap_detection
+```
 
-# Launch the container
+The following creates the Triton container, mounts the `abp-pcap-xgb` directory to `/models/abp-pcap-xgb` in the Triton container, and starts the Triton server:
+```bash
 docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models --exit-on-error=false
 ```
 
