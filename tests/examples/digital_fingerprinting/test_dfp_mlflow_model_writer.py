@@ -258,8 +258,8 @@ def test_on_data(
     max_time = time_col.max()
 
     mock_model = mock.MagicMock()
-    mock_model.lr_decay.state_dict.return_value = {'last_epoch': 42}
-    mock_model.lr = 0.1
+    mock_model.learning_rate_decay.state_dict.return_value = {'last_epoch': 42}
+    mock_model.learning_rate = 0.1
     mock_model.batch_size = 100
 
     mock_embedding = mock.MagicMock()
