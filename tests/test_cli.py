@@ -685,8 +685,8 @@ class TestCLI:
                     '--truncation=True',
                     '--do_lower_case=True',
                     '--add_special_tokens=False'
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -696,7 +696,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -731,7 +731,7 @@ class TestCLI:
         assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -781,8 +781,8 @@ class TestCLI:
                     'mlflow-drift',
                     '--tracking_uri',
                     mlflow_uri
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -792,7 +792,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -864,7 +864,7 @@ class TestCLI:
         assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
