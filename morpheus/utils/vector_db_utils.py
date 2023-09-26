@@ -18,6 +18,21 @@ import inspect
 from morpheus.controllers.vector_db_controller import VectorDBController
 
 
+def with_mutex(lock_name):
+    """
+    """
+
+    def decorator(func):
+
+        def wrapper(*args, **kwargs):
+            with getattr(args[0], lock_name):
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def load_handler_by_path(handler_class_path, kwargs):
     """
     Dynamically loads and instantiates a handler class specified by its import path.

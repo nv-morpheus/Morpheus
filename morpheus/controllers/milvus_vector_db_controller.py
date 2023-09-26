@@ -26,7 +26,7 @@ from pymilvus import connections
 from pymilvus import utility
 
 from morpheus.controllers.vector_db_controller import VectorDBController
-from morpheus.controllers.vector_db_controller import with_mutex
+from morpheus.utils.vector_db_utils import with_mutex
 
 logger = logging.getLogger(__name__)
 

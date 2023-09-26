@@ -15,6 +15,7 @@
 from qdrant_openapi_client.qdrant_client import QdrantClient
 
 from morpheus.controllers.vector_db_controller import VectorDatabaseController
+from morpheus.utils.vector_db_utils import with_mutex
 
 
 class QdrantVectorDBController(VectorDatabaseController):

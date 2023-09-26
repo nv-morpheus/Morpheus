@@ -17,25 +17,12 @@ from abc import ABC
 from abc import abstractmethod
 
 
-def with_mutex(lock_name):
-
-    def decorator(func):
-
-        def wrapper(*args, **kwargs):
-            with getattr(args[0], lock_name):
-                return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 class VectorDBController(ABC):
-
-    _mutex = threading.Lock()
     """
     Abstract class for vector document store implementation.
     """
+
+    _mutex = threading.Lock()
 
     @abstractmethod
     def insert(self, name, data, **kwargs):
@@ -58,46 +45,18 @@ class VectorDBController(ABC):
     # @abstractmethod
     # def update(self, vector: list[float], vector_id: str):
     #     """
-    #     Update an existing vector in the vector document store.
-
-    #     Parameters:
-    #     - vector (List[float]): The updated vector data.
-    #     - vector_id (str): The unique identifier of the vector to update.
-
-    #     Returns:
-    #     - None
-
-    #     Raises:
-    #     - RuntimeError: If an error occurs while updating the vector.
     #     """
     #     pass
 
     # @abstractmethod
     # def get_by_name(self, name: str) -> list[float]:
     #     """
-    #     Retrieve a vector from the vector document store by its ID.
-
-    #     Parameters:
-    #     - vector_id (str): The unique identifier of the vector to retrieve.
-
-    #     Returns:
-    #     - List[float]: The vector data.
-
-    #     Raises:
-    #     - RuntimeError: If an error occurs while retrieving the vector.
     #     """
     #     pass
 
     # @abstractmethod
     # def count(self) -> int:
     #     """
-    #     Get the total count of vectors in the vector document store.
-
-    #     Returns:
-    #     - int: The total count of vectors.
-
-    #     Raises:
-    #     - RuntimeError: If an error occurs while counting the vectors.
     #     """
     #     pass
 
