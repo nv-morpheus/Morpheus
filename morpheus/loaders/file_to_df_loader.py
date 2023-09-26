@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 def file_to_df_loader(control_message: ControlMessage, task: dict):
     """
     This function is used to load files containing data into a dataframe. Dataframe is created by
-    processing files either using a single thread, multiprocess, dask, or dask_thread. This function determines
+    processing files either using a single thread, dask, or dask_thread. This function determines
     the download method to use, and if it starts with "dask," it creates a dask client and uses it to process the files.
-    Otherwise, it uses a single thread or multiprocess to process the files. This function then caches the resulting
+    Otherwise, it uses a single thread to process the files. This function then caches the resulting
     dataframe using a hash of the file paths. The dataframe is wrapped in a MessageMeta and then attached as a payload
     to a ControlMessage object and passed on to further stages.
 

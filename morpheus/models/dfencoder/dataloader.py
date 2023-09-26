@@ -41,10 +41,7 @@ class DFEncoderDataLoader(DataLoader):
             if self.batch_size == 1:
                 # unbatch to get rid of the first dimention of 1 intorduced by DataLoaders batching
                 # (if batch size is set to 1)
-                data_d["data"] = {
-                    k: v[0] if type(v) != list else [_v[0] for _v in v]
-                    for k, v in data_d["data"].items()
-                }
+                data_d["data"] = {k: v[0] if type(v) != list else [_v[0] for _v in v] for k, v in data_d["data"].items()}
             yield data_d
 
     @staticmethod
@@ -113,10 +110,10 @@ class DFEncoderDataLoader(DataLoader):
         DFEncoderDataLoader
             The training DataLoader with DistributedSampler for distributed training.
         """
-        dataset = DatasetFromPath(
+        dataset = FileSystemDataset(
             data_folder,
             model.batch_size,
-            model.preprocess_train_data,
+            model.preprocess_training_data,
             load_data_fn=load_data_fn,
         )
         dataloader = DFEncoderDataLoader.get_distributed_training_dataloader_from_dataset(
@@ -152,7 +149,7 @@ class DFEncoderDataLoader(DataLoader):
         DFEncoderDataLoader
             The training DataLoader with DistributedSampler for distributed training.
         """
-        dataset = DatasetFromDataframe.get_train_dataset(model, df)
+        dataset = DataframeDataset.get_train_dataset(model, df)
         dataloader = DFEncoderDataLoader.get_distributed_training_dataloader_from_dataset(
             dataset=dataset,
             rank=rank,
@@ -163,7 +160,7 @@ class DFEncoderDataLoader(DataLoader):
         return dataloader
 
 
-class DatasetFromPath(Dataset):
+class FileSystemDataset(Dataset):
     """ A dataset class that reads data in batches from a folder and applies preprocessing to each batch.
     * This class assumes that the data is saved in small csv files in one folder.
     """
@@ -171,8 +168,8 @@ class DatasetFromPath(Dataset):
     def __init__(
         self,
         data_folder,
-        batch_size,
-        preprocess_fn,
+        batch_size=128,
+        preprocess_fn=lambda x: x,
         load_data_fn=pd.read_csv,
         shuffle_rows_in_batch=True,
         shuffle_batch_indices=False,
@@ -352,89 +349,46 @@ class DatasetFromPath(Dataset):
             self._preloaded_data = {fn: self._load_data_fn(f"{self._data_folder}/{fn}") for fn in self._filenames}
         return pd.concat(pdf for pdf in self._preloaded_data.values())
 
-    @staticmethod
-    def get_train_dataset(model, data_folder, load_data_fn=pd.read_csv, preload_data_into_memory=False):
-        """A helper function to get a train dataset with the provided parameters.
+    @property
+    def preprocess_fn(self):
+        return self._preprocess_fn
 
-        Parameters
-        ----------
-        model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        data_folder : str
-            The path to the folder containing the data.
-        load_data_fn : function, optional
-            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
-        preload_data_into_memory : bool, optional
-            Whether to preload all the data into memory, by default False.
+    @preprocess_fn.setter
+    def preprocess_fn(self, value):
+        self._preprocess_fn = value
 
-        Returns
-        -------
-        DatasetFromPath
-            Validation Dataset set up to load from the path.
-        """
-        dataset = DatasetFromPath(
-            data_folder,
-            model.batch_size,
-            model.preprocess_train_data,
-            load_data_fn=load_data_fn,
-            shuffle_rows_in_batch=True,
-            shuffle_batch_indices=True,
-            preload_data_into_memory=preload_data_into_memory,
-        )
-        return dataset
+    @property
+    def batch_size(self):
+        return self._batch_size
 
-    @staticmethod
-    def get_validation_dataset(model, data_folder, load_data_fn=pd.read_csv, preload_data_into_memory=True):
-        """A helper function to get a validation dataset with the provided parameters.
+    @batch_size.setter
+    def batch_size(self, value):
+        self._batch_size = value
 
-        Parameters
-        ----------
-        model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        data_folder : str
-            The path to the folder containing the data.
-        load_data_fn : function, optional
-            A function for loading data from a provided file path into a pandas.DataFrame, by default pd.read_csv.
-        preload_data_into_memory : bool, optional
-            Whether to preload all the data into memory, by default True.
-            (can speed up data loading if the data can fit into memory)
+    @property
+    def shuffle_rows_in_batch(self):
+        return self._shuffle_rows_in_batch
 
-        Returns
-        -------
-        DatasetFromPath
-            Validation Dataset set up to load from the path.
-        """
-        dataset = DatasetFromPath(
-            data_folder,
-            model.eval_batch_size,
-            model.preprocess_validation_data,
-            load_data_fn=load_data_fn,
-            shuffle_rows_in_batch=False,
-            preload_data_into_memory=preload_data_into_memory,
-        )
-        return dataset
+    @shuffle_rows_in_batch.setter
+    def shuffle_rows_in_batch(self, value):
+        self._shuffle_rows_in_batch = value
 
-    def convert_to_validation(self, model):
-        """Converts the dataset to validation mode by resetting instance variables.
+    @property
+    def shuffle_batch_indices(self):
+        return self._shuffle_batch_indices
 
-        Parameters
-        ----------
-         model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        """
-        self._preprocess_fn = model.preprocess_validation_data
-        self._batch_size = model.eval_batch_size
-        self._shuffle_rows_in_batch = False
-        self._shuffle_batch_indices = False
+    @shuffle_batch_indices.setter
+    def shuffle_batch_indices(self, value):
+        self._shuffle_batch_indices = value
 
 
-class DatasetFromDataframe(Dataset):
+class DataframeDataset(Dataset):
 
     def __init__(
         self,
         df,
-        batch_size,
-        preprocess_fn,
+        batch_size=128,
+        preprocess_fn=lambda x: x,
         shuffle_rows_in_batch=True,
         shuffle_batch_indices=False,
     ):
@@ -545,65 +499,34 @@ class DatasetFromDataframe(Dataset):
         )
         return {"batch_index": batch_index, "data": data}
 
-    @staticmethod
-    def get_train_dataset(model, df):
-        """A helper function to get a train dataset with the provided parameters.
+    @property
+    def preprocess_fn(self):
+        return self._preprocess_fn
 
-        Parameters
-        ----------
-        model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        df : pandas.DataFrame
-            Input dataframe used for the dataset.
+    @preprocess_fn.setter
+    def preprocess_fn(self, value):
+        self._preprocess_fn = value
 
-        Returns
-        -------
-        DatasetFromDataframe
-            Training Dataset set up to load from the dataframe.
-        """
-        dataset = DatasetFromDataframe(
-            df=df,
-            batch_size=model.batch_size,
-            preprocess_fn=model.preprocess_train_data,
-            shuffle_rows_in_batch=True,
-            shuffle_batch_indices=True,
-        )
-        return dataset
+    @property
+    def batch_size(self):
+        return self._batch_size
 
-    @staticmethod
-    def get_validation_dataset(model, df):
-        """A helper function to get a validation dataset with the provided parameters.
+    @batch_size.setter
+    def batch_size(self, value):
+        self._batch_size = value
 
-        Parameters
-        ----------
-        model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        df : pandas.DataFrame
-            Input dataframe used for the dataset.
+    @property
+    def shuffle_rows_in_batch(self):
+        return self._shuffle_rows_in_batch
 
-        Returns
-        -------
-        DatasetFromDataframe
-            Validation Dataset set up to load from the dataframe.
-        """
-        dataset = DatasetFromDataframe(
-            df=df,
-            batch_size=model.eval_batch_size,
-            preprocess_fn=model.preprocess_validation_data,
-            shuffle_rows_in_batch=False,
-            shuffle_batch_indices=False,
-        )
-        return dataset
+    @shuffle_rows_in_batch.setter
+    def shuffle_rows_in_batch(self, value):
+        self._shuffle_rows_in_batch = value
 
-    def convert_to_validation(self, model):
-        """Converts the dataset to validation mode by resetting instance variables.
+    @property
+    def shuffle_batch_indices(self):
+        return self._shuffle_batch_indices
 
-        Parameters
-        ----------
-         model : AutoEncoder
-            The autoencoder model used to get relevant params and the preprocessing func.
-        """
-        self._preprocess_fn = model.preprocess_validation_data
-        self._batch_size = model.eval_batch_size
-        self._shuffle_rows_in_batch = False
-        self._shuffle_batch_indices = False
+    @shuffle_batch_indices.setter
+    def shuffle_batch_indices(self, value):
+        self._shuffle_batch_indices = value
