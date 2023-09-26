@@ -18,6 +18,8 @@ from collections import OrderedDict
 from collections import namedtuple
 from unittest import mock
 
+# This import is needed to ensure our mocks work correctly, otherwise mlflow.pytorch is a stub.
+import mlflow.pytorch  # noqa: F401 pylint: disable=unused-import
 import pandas as pd
 import pytest
 
