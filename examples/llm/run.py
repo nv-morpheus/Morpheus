@@ -11,9 +11,9 @@ from morpheus.utils.logger import configure_logging
 from morpheus.pipeline import LinearPipeline
 from morpheus.config import Config
 
-from examples.llm.nemo import NemoLLMClient
-from examples.llm.mock import MockLLMClient
-from examples.llm.openai import OpenAICompletionLLMClient
+from examples.llm.nemo_client import NemoLLMClient
+from examples.llm.mock_client import MockLLMClient
+from examples.llm.openai_client import OpenAICompletionLLMClient
 from examples.llm.llm_client import LLMClient
 
 import logging
@@ -43,7 +43,7 @@ class PromptCompletionStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "flatmap"
+        return "prompt-completion"
 
     def accepted_types(self) -> typing.Tuple:
         return (typing.Any, )
@@ -51,15 +51,15 @@ class PromptCompletionStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    async def on_data_async_gen(self, message: MultiMessage):
+    async def on_data_async(self, message: MultiMessage):
         prompts = [prompt for prompt in message.get_meta(self._prompt_key).to_pandas()]
         responses = await self._client.generate_multiple_async(prompts)
         message.set_meta(self._response_key, responses)
-        yield message
+        return message
 
     def _build_single(self, builder: mrc.Builder, input: StreamPair) -> StreamPair:
         [input_node, input_type] = input
-        node = builder.make_node(self.unique_name, mrc.operators.concat_map_async(self.on_data_async_gen))
+        node = builder.make_node(self.unique_name, mrc.operators.map_async(self.on_data_async))
         builder.make_edge(input_node, node)
         return node, input_type
 
