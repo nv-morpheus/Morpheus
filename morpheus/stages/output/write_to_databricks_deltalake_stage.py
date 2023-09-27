@@ -22,7 +22,6 @@ import os
 import pandas as pd
 import cudf
 import typing
-import dask
 
 from pyspark.sql import SparkSession
 from pyspark.sql.types import BooleanType
@@ -42,7 +41,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.utils.databricks_utils import configure_databricks_connect
+from databricks.connect import DatabricksSession
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,9 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         Access token for Databricks cluster.
     databricks_cluster_id : str, default None
         Databricks cluster to be used to query the data as per SQL provided.
-    databricks_port : str, defailt "15001"
+    delta_table_write_mode: str, default "append"
+        Delta table write mode for storing data.
+    databricks_port : str, default "15001"
         Databricks port that Databricks Connect connects to. Defaults to 15001
     databricks_org_id : str, default "0"
         Azure-only, see ?o=orgId in URL. Defaults to 0 for other platform
@@ -76,23 +77,17 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
                  databricks_host: str = None,
                  databricks_token: str = None,
                  databricks_cluster_id: str = None,
+                 delta_table_write_mode: str = "append",
                  databricks_port: str = "15001",
                  databricks_org_id: str = "0"):
 
         super().__init__(config)
         self.delta_path = delta_path
-        configure_databricks_connect(databricks_host,
-                                           databricks_token,
-                                           databricks_cluster_id,
-                                           databricks_port,
-                                           databricks_org_id)
-
-        # Enable Arrow-based columnar data transfers
-        self.spark = SparkSession.builder \
-            .config("spark.databricks.delta.optimizeWrite.enabled", "true") \
-            .config("spark.databricks.delta.autoCompact.enabled", "true") \
-            .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
-            .getOrCreate()
+        self.spark = DatabricksSession.builder.remote(
+                          host       = databricks_host,
+                          token      = databricks_token,
+                          cluster_id = databricks_cluster_id
+                        ).getOrCreate()
 
     @property
     def name(self) -> str:
@@ -114,20 +109,18 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-
-            def write_to_deltalake(meta: MessageMeta):
-            # convert cudf to spark dataframe
+        def write_to_deltalake(meta: MessageMeta):
+        # convert cudf to spark dataframe
             df = meta.copy_dataframe()
             if isinstance(df, cudf.DataFrame):
                 df = df.to_pandas()
+            print(df)
             schema = self._extract_schema_from_pandas_dataframe(df)
             spark_df = self.spark.createDataFrame(df, schema=schema)
             spark_df.write \
                 .format('delta') \
                 .option("mergeSchema", "true") \
-                .mode("append") \
+                .mode(self.delta_table_write_mode) \
                 .save(self.delta_path)
             return meta
         node = builder.make_node(self.unique_name, ops.map(write_to_deltalake))
@@ -137,7 +130,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         return node, input_stream[1]
 
     @staticmethod
-    def _extract_schema_from_pandas_dataframe(self, df: pd.DataFrame): -> StructType
+    def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> StructType:
         """
         Extract approximate schemas from pandas dataframe
         """

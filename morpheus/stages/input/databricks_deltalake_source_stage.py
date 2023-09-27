@@ -30,7 +30,8 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as sf
-from morpheus.stages.utils.databricks_utils import configure_databricks_connect
+from pyspark.sql.window import Window
+from databricks.connect import DatabricksSession
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +73,11 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
 
         super().__init__(config)
         self.spark_query = spark_query
-        configure_databricks_connect(databricks_host,
-                                           databricks_token,
-                                           databricks_cluster_id,
-                                           databricks_port,
-                                           databricks_org_id)
-        self.spark = SparkSession.builder.getOrCreate()
+        self.spark = DatabricksSession.builder.remote(
+                          host       = databricks_host,
+                          token      = databricks_token,
+                          cluster_id = databricks_cluster_id
+                        ).getOrCreate()
         self.items_per_page = items_per_page
         self.offset = 0
 
@@ -96,12 +96,14 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
         try:
             spark_df = self.spark.sql(self.spark_query)
             spark_df = spark_df.withColumn('_id', sf.monotonically_increasing_id())
+            w = Window.partitionBy(sf.lit(1)).orderBy("_id")
+            spark_df = spark_df.select("*").withColumn("_id", sf.row_number().over(w))
             count = spark_df.count()
             while self.offset <= count:
                 df = spark_df.where(sf.col('_id').between(self.offset, self.offset + self.items_per_page))
-                logger.debug(f"Reading next iteration data between index: {str(self.offset)} and {str(self.offset + self.items_per_page + 1)}")
-                self.offset = self.offset + self.items_per_page + 1
+                print(f"Reading next iteration data between index: {str(self.offset)} and {str(self.offset + self.items_per_page + 1)}")
+                self.offset += self.items_per_page + 1
                 yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"],axis=1)))
         except Exception as e:
             logger.exception("Error occurred reading data from feature store and converting to Dataframe: {}".format(e))
-            raise 
+            raise
