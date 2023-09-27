@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import threading
+import typing
 from abc import ABC
 from abc import abstractmethod
 
@@ -25,21 +26,52 @@ class VectorDBController(ABC):
     _mutex = threading.Lock()
 
     @abstractmethod
-    def insert(self, name, data, **kwargs):
+    def insert(self, name: str, data: typing.Any, **kwargs):
         """
+        This abstract function is used to insert data to the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        data : typing.Any
+            Data that needs to be instered in the resource.
+        **kwargs : dict
+            Extra optional arguments specific to the vector db implementation.
         """
+
         pass
 
     @abstractmethod
-    def search(self, name, query=None, **kwargs):
+    def search(self, name: str, query: typing.Union[str, dict] = None, **kwargs) -> typing.Any:
         """
+        This abstract function is used to search content in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        query : yping.Union[str, dict], default None
+            Query to execute on the given resource.
+        **kwargs : dict
+            Extra optional arguments specific to the vector db implementation.
         """
+
         pass
 
     @abstractmethod
-    def drop(self):
+    def drop(self, name: str, **kwargs) -> None:
         """
+        This abstract function is used to drop resources in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        **kwargs : dict
+            Extra optional arguments specific to the vector db implementation.
         """
+
         pass
 
     # @abstractmethod
@@ -61,22 +93,46 @@ class VectorDBController(ABC):
     #     pass
 
     @abstractmethod
-    def create_collection(self, collection_config: dict):
+    def create(self, name: str, **kwargs) -> None:
         """
-        Create an index on the vector document store for efficient querying
+        This abstract function is used to create resources in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        **kwargs : dict
+            Extra optional arguments specific to the vector db implementation.
         """
+        pass
 
     @abstractmethod
-    def close(self, **kwargs):
+    def close(self, **kwargs) -> None:
         """
+        This abstract function is used to close connections to the vector database.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Extra optional arguments specific to the vector db implementation.
         """
+        pass
 
     @abstractmethod
-    def has_collection(self, name) -> bool:
+    def has_store_object(self, name: str) -> bool:
         """
+        This abstract function is used to check if the resource exists in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
         """
 
+        pass
+
     @abstractmethod
-    def list_collections(self) -> list[str]:
+    def list_store_objects(self) -> list[str]:
         """
+        This abstract function is used to list existing resources in the vector database.
         """

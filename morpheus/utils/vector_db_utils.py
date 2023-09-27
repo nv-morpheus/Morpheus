@@ -15,7 +15,18 @@
 import importlib
 import inspect
 
+from pymilvus import DataType
+
 from morpheus.controllers.vector_db_controller import VectorDBController
+
+MILVUS_DATA_TYPE_MAP = {
+    "int64": DataType.INT64,
+    "bool": DataType.BOOL,
+    "float": DataType.FLOAT,
+    "double": DataType.DOUBLE,
+    "binary_vector": DataType.BINARY_VECTOR,
+    "float_vector": DataType.FLOAT_VECTOR
+}
 
 
 def with_mutex(lock_name):

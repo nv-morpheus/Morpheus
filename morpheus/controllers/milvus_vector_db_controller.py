@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import logging
-import threading
-import time
+import typing
 
 import pandas as pd
 from pymilvus import BulkInsertState
@@ -26,6 +25,7 @@ from pymilvus import connections
 from pymilvus import utility
 
 from morpheus.controllers.vector_db_controller import VectorDBController
+from morpheus.utils.vector_db_utils import MILVUS_DATA_TYPE_MAP
 from morpheus.utils.vector_db_utils import with_mutex
 
 logger = logging.getLogger(__name__)
@@ -35,29 +35,24 @@ class MilvusVectorDBController(VectorDBController):
     """
     """
 
-    def __init__(self, host: str, port: str, alias: str = "default", pool_size: int = 1, **kwargs):
-        self._data_type_dict = {
-            "int": DataType.INT64,
-            "bool": DataType.BOOL,
-            "float": DataType.FLOAT,
-            "double": DataType.DOUBLE,
-            "binary_vector": DataType.BINARY_VECTOR,
-            "float_vector": DataType.FLOAT_VECTOR
-        }
+    def __init__(self, host: str, port: str, alias: str = "default", **kwargs):
         self._alias = alias
-        connections.connect(host=host, port=port, alias=self._alias, pool_size=pool_size, **kwargs)
+        connections.connect(host=host, port=port, alias=self._alias, **kwargs)
 
-    def has_collection(self, name) -> bool:
+    def transform(self, data: typing.Any, **kwargs):
+        return data
+
+    def has_store_object(self, name) -> bool:
         return utility.has_collection(name)
 
-    def list_collections(self) -> list[str]:
+    def list_store_objects(self) -> list[str]:
         return utility.list_collections()
 
     def _create_index(self, collection, field_name, index_params) -> None:
         collection.create_index(field_name=field_name, index_params=index_params)
 
     def _create_schema_field(self, field_conf: dict):
-        dtype = self._data_type_dict[field_conf["dtype"].lower()]
+        dtype = MILVUS_DATA_TYPE_MAP[field_conf["dtype"].lower()]
         dim = field_conf.get("dim", None)
 
         if (dtype == DataType.BINARY_VECTOR or dtype == DataType.FLOAT_VECTOR):
@@ -74,16 +69,15 @@ class MilvusVectorDBController(VectorDBController):
         return field_schema
 
     @with_mutex("_mutex")
-    def create_collection(self, collection_config):
-        collection_conf = collection_config.get("collection_conf")
-        collection_name = collection_conf.get("name")
+    def create(self, name, **kwargs):
+        collection_conf = kwargs.get("collection_conf")
         index_conf = collection_conf.get("index_conf", None)
         partition_conf = collection_conf.get("partition_conf", None)
 
         schema_conf = collection_conf.get("schema_conf")
         schema_fields_conf = schema_conf.get("schema_fields")
 
-        if not self.has_collection(collection_name):
+        if not self.has_store_object(name):
 
             if len(schema_fields_conf) == 0:
                 raise ValueError("Cannot create collection as provided empty schema_fields configuration")
@@ -93,7 +87,8 @@ class MilvusVectorDBController(VectorDBController):
             schema = CollectionSchema(fields=schema_fields,
                                       auto_id=schema_conf.get("auto_id", False),
                                       description=schema_conf.get("description", ""))
-            collection = Collection(name=collection_name,
+
+            collection = Collection(name=name,
                                     schema=schema,
                                     using=self._alias,
                                     shards_num=collection_conf.get("shards", 2),
@@ -111,42 +106,28 @@ class MilvusVectorDBController(VectorDBController):
     @with_mutex("_mutex")
     def insert(self, name, data, **kwargs):
 
-        partition_name = kwargs.get("partition_name", "_default")
+        collection_conf = kwargs.get("collection_conf", {})
+        partition_name = collection_conf.get("partition_name", "_default")
 
+        # TODO (Bhargav): Load input data from a file
         if isinstance(data, list):
-            if not self.has_collection(name):
+            if not self.has_store_object(name):
                 raise ValueError(f"Collection {name} doesn't exist.")
             collection = Collection(name=name)
-
             collection.insert(data, partition_name=partition_name)
             collection.flush()
 
-        # TODO (Bhargav): Load input data from a file
-        # if isinstance(data, str):
-        #     task_id = utility.do_bulk_insert(collection_name=name,
-        #                                      partition_name=kwargs.get("partition_name", None),
-        #                                      files=[data])
-        #
-        #     while True:
-        #         time.sleep(2)
-        #         state = utility.get_bulk_insert_state(task_id=task_id)
-        #         if state.state == BulkInsertState.ImportFailed or state.state == BulkInsertState.ImportFailedAndCleaned:
-        #             raise Exception(f"The task {state.task_id} failed, reason: {state.failed_reason}")
-
-        #         if state.state >= BulkInsertState.ImportCompleted:
-        #             break
-
         elif isinstance(data, pd.DataFrame):
-            collection_conf = kwargs.get("collection_conf")
+
             index_conf = collection_conf.get("index_conf", None)
             params = collection_conf.get("params", {})
 
-            collection, _ = Collection.construct_from_dataframe(
-                collection_conf["name"],
+            collection, ins_res = Collection.construct_from_dataframe(
+                name,
                 data,
                 primary_field=collection_conf["primary_field"],
                 auto_id=collection_conf.get("auto_id", False),
-                description=collection_conf.get("description", None),
+                description=collection_conf.get("description", ""),
                 partition_name=partition_name,
                 **params
             )
