@@ -83,6 +83,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
 
         super().__init__(config)
         self.delta_path = delta_path
+        self.delta_table_write_mode = delta_table_write_mode
         self.spark = DatabricksSession.builder.remote(
                           host       = databricks_host,
                           token      = databricks_token,
@@ -114,7 +115,6 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
             df = meta.copy_dataframe()
             if isinstance(df, cudf.DataFrame):
                 df = df.to_pandas()
-            print(df)
             schema = self._extract_schema_from_pandas_dataframe(df)
             spark_df = self.spark.createDataFrame(df, schema=schema)
             spark_df.write \
