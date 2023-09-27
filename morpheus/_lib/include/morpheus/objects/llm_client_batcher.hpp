@@ -20,14 +20,16 @@ using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 
 struct LLMClientRequest
 {
-    LLMClientRequest() = delete;
-    LLMClientRequest(std::vector<std::string>&& requests,
+    LLMClientRequest()                              = delete;
+    LLMClientRequest(const LLMClientRequest& other) = delete;
+    LLMClientRequest(std::vector<std::string> queries,
                      std::promise<std::vector<std::string>>&& promise,
                      time_point_t requestsed_at) :
-      m_queries(std::move(requests)),
+      m_queries(std::move(queries)),
       m_promise(std::move(promise)),
       m_requested_at(requestsed_at)
     {}
+    LLMClientRequest(LLMClientRequest&& other) = default;
 
     std::vector<std::string> m_queries;
     std::promise<std::vector<std::string>> m_promise;
@@ -51,20 +53,20 @@ class LLMClientBatcher
         }
     }
 
-    std::future<std::vector<std::string>> generate(std::vector<std::string> requests)
+    std::future<std::vector<std::string>> generate(std::vector<std::string> queries)
     {
-        std::promise<std::vector<std::string>> responses_promise{};
+        std::promise<std::vector<std::string>> response_promise;
 
-        auto responses_future = responses_promise.get_future();
+        auto responses_future = response_promise.get_future();
 
         {
-            auto guard = std::lock_guard(this->m_batches_mutex);
-            m_requests.insert(m_requests.end(),
-                              {
-                                  std::move(requests),
-                                  std::move(responses_promise),
-                                  std::chrono::system_clock::now()  //
-                              });
+            auto guard   = std::lock_guard(this->m_batches_mutex);
+            auto request = LLMClientRequest{
+                std::move(queries),
+                std::move(response_promise),
+                std::chrono::system_clock::now()  //
+            };
+            m_requests.emplace_back(std::move(request));
         }
 
         return responses_future;
@@ -77,11 +79,16 @@ class LLMClientBatcher
         {
             std::this_thread::sleep_for(m_loop_wait);
 
-            auto guard = std::lock_guard(this->m_batches_mutex);
+            if (m_loop_ct)
+            {
+                break;
+            }
+
+            auto lock = std::unique_lock(this->m_batches_mutex);
 
             if (m_requests.size() == 0)
             {
-                break;
+                continue;
             }
 
             auto batch_size = 0;
@@ -96,14 +103,28 @@ class LLMClientBatcher
             // only go to next step if our batch size is big enough, our wait time is too long, or we're exiting.
             if (batch_size < m_min_batch_size and oldest_request_wait < m_max_wait and not m_loop_ct)
             {
-                break;
+                continue;
             }
 
             auto batch = std::move(m_requests);
-            m_requests = {};
+            m_requests.clear();
+
+            lock.unlock();
 
             LOG(INFO) << "LLMClientBatcher: processing " << batch.size() << " batches with " << batch_size
                       << " total requests";
+
+            for (auto& request : batch)
+            {
+                std::vector<std::string> response{};
+
+                for (auto& query : request.m_queries)
+                {
+                    response.emplace_back("cool story");
+                }
+
+                request.m_promise.set_value(std::move(response));
+            }
         }
 
         try
@@ -111,9 +132,14 @@ class LLMClientBatcher
             throw std::runtime_error("batcher destroyed");
         } catch (...)
         {
-            for (auto& request : m_requests)
+            auto lock  = std::unique_lock(m_batches_mutex);
+            auto batch = std::move(m_requests);
+            m_requests.clear();
+            lock.unlock();
+            for (auto& request : batch)
             {
-                request.m_promise.set_exception(std::exception_ptr());
+                LOG(ERROR) << "setting exception";
+                request.m_promise.set_exception(std::current_exception());
             }
         }
     }
@@ -123,6 +149,6 @@ class LLMClientBatcher
     std::mutex m_batches_mutex{};
     uint32_t m_min_batch_size                 = 10;
     std::chrono::duration<long> m_max_wait    = 1s;
-    std::chrono::duration<double> m_loop_wait = 0.001s;
+    std::chrono::duration<double> m_loop_wait = 0.1s;
     std::atomic<bool> m_loop_ct               = false;
 };
