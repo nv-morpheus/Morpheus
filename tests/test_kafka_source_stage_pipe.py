@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import typing
 
 import pandas as pd
 import pytest
@@ -26,7 +27,6 @@ from _utils.kafka import seek_to_beginning
 from _utils.kafka import write_data_to_kafka
 from _utils.kafka import write_file_to_kafka
 from _utils.stages.dfp_length_checker import DFPLengthChecker
-from _utils.stages.kafka_offset_checker import KafkaOffsetChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.trigger_stage import TriggerStage
