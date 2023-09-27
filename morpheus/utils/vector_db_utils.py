@@ -44,34 +44,34 @@ def with_mutex(lock_name):
     return decorator
 
 
-def load_handler_by_path(handler_class_path, kwargs):
+def load_controller_by_path(controller_class_path, kwargs):
     """
-    Dynamically loads and instantiates a handler class specified by its import path.
+    Dynamically loads and instantiates a controller class specified by its import path.
 
     Parameters
     ----------
-    handler_class_path : str
-        The import path to the handler class to be loaded.
+    controller_class_path : str
+        The import path to the controller class to be loaded.
     kwargs : dict
-        A dictionary of keyword arguments to pass to the handler class constructor.
+        A dictionary of keyword arguments to pass to the controller class constructor.
 
     Returns
     -------
-    VectorDatabaseHandler
-        An instance of the loaded handler class.
+    VectorDatabaseController
+        An instance of the loaded controller class.
 
     Raises
     ------
     ImportError
         If the specified module cannot be imported.
     AttributeError
-        If no classes that inherit from VectorDatabaseHandler are found in the module.
+        If no classes that inherit from VectorDatabaseController are found in the module.
     ValueError
-        If required constructor keyword arguments are missing or if no valid custom handler is found.
+        If required constructor keyword arguments are missing or if no valid custom controller is found.
     """
 
     try:
-        module = importlib.import_module(handler_class_path)
+        module = importlib.import_module(controller_class_path)
         for obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, VectorDBController) and obj != VectorDBController:
                 handler_constructor_args = inspect.signature(obj.__init__).parameters.keys()
@@ -84,12 +84,12 @@ def load_handler_by_path(handler_class_path, kwargs):
                     )
 
                 return obj(**kwargs)  # Instantiate with kwargs
-        raise ValueError(f"No valid custom handler found in the specified class path '{handler_class_path}'")
+        raise ValueError(f"No valid custom controller found in the specified class path '{controller_class_path}'")
     except ImportError:
         raise ImportError(
-            f"Failed to import module for the specified class path '{handler_class_path}'. Make sure the module exists."
+            f"Failed to import module for the specified class path '{controller_class_path}'. Make sure the module exists."
         )
     except AttributeError:
         raise AttributeError(
-            f"No classes that inherit from VectorDatabaseHandler found in module for the specified class path '{handler_class_path}'"
+            f"No classes that inherit from VectorDatabaseController found in module for the specified class path '{controller_class_path}'"
         )
