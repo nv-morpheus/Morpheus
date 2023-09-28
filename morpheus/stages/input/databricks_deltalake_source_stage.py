@@ -13,11 +13,6 @@
 # limitations under the License.
 
 import logging
-import time
-from io import StringIO
-import os
-import pandas as pd
-
 import mrc
 import cudf
 
@@ -28,7 +23,6 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
-from pyspark.sql import SparkSession
 from pyspark.sql import functions as sf
 from pyspark.sql.window import Window
 from databricks.connect import DatabricksSession
@@ -74,10 +68,9 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
         super().__init__(config)
         self.spark_query = spark_query
         self.spark = DatabricksSession.builder.remote(
-                          host       = databricks_host,
-                          token      = databricks_token,
-                          cluster_id = databricks_cluster_id
-                        ).getOrCreate()
+                          host = databricks_host,
+                          token = databricks_token,
+                          cluster_id = databricks_cluster_id).getOrCreate()
         self.items_per_page = items_per_page
         self.offset = 0
 
@@ -101,9 +94,10 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
             count = spark_df.count()
             while self.offset <= count:
                 df = spark_df.where(sf.col('_id').between(self.offset, self.offset + self.items_per_page))
-                print(f"Reading next iteration data between index: {str(self.offset)} and {str(self.offset + self.items_per_page + 1)}")
+                logger.debug(f"Reading next iteration data between index: \
+                    {str(self.offset)} and {str(self.offset + self.items_per_page + 1)}")
                 self.offset += self.items_per_page + 1
-                yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"],axis=1)))
+                yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"], axis=1)))
         except Exception as e:
-            logger.exception("Error occurred reading data from feature store and converting to Dataframe: {}".format(e))
+            logger.error("Error occurred while reading data from DeltaLake and converting to Dataframe: {}".format(e))
             raise

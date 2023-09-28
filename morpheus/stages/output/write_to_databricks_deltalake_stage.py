@@ -12,18 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
-
 import logging
-import time
-from io import StringIO
-import os
 import pandas as pd
 import cudf
 import typing
 
-from pyspark.sql import SparkSession
 from pyspark.sql.types import BooleanType
 from pyspark.sql.types import DoubleType
 from pyspark.sql.types import FloatType
@@ -44,7 +37,6 @@ from morpheus.pipeline.stream_pair import StreamPair
 from databricks.connect import DatabricksSession
 
 logger = logging.getLogger(__name__)
-
 
 @register_stage("to-databricks-deltalake")
 class DataBricksDeltaLakeSinkStage(SinglePortStage):
@@ -85,10 +77,9 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         self.delta_path = delta_path
         self.delta_table_write_mode = delta_table_write_mode
         self.spark = DatabricksSession.builder.remote(
-                          host       = databricks_host,
-                          token      = databricks_token,
-                          cluster_id = databricks_cluster_id
-                        ).getOrCreate()
+                          host = databricks_host,
+                          token = databricks_token,
+                          cluster_id = databricks_cluster_id).getOrCreate()
 
     @property
     def name(self) -> str:
@@ -111,7 +102,9 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         stream = input_stream[0]
 
         def write_to_deltalake(meta: MessageMeta):
-        # convert cudf to spark dataframe
+            """
+            convert cudf to spark dataframe
+            """
             df = meta.copy_dataframe()
             if isinstance(df, cudf.DataFrame):
                 df = df.to_pandas()
