@@ -43,7 +43,7 @@ class PortSchema:
 class StageSchema:
 
     def __init__(self, stage: "StreamWrapper"):
-        self._stage = stage
+        self._stage = stage  # TODO: Determine if we need to hold a reference to the stage
 
         self._input_schemas = []
         for port in stage.input_ports:
@@ -57,8 +57,26 @@ class StageSchema:
         return self._input_schemas
 
     @property
+    def input_schema(self) -> PortSchema:
+        """
+        Single port variant of input_schemas. Will fail if there are multiple input ports.
+        """
+        assert len(self._input_schemas) == 1, \
+            "Attempted to access input_schema property on StageSchema with multiple inputs"
+        return self._input_schemas[0]
+
+    @property
     def output_schemas(self) -> list[PortSchema]:
         return self._output_schemas
+
+    @property
+    def output_schema(self) -> PortSchema:
+        """
+        Single port variant of output_schemas. Will fail if there are multiple output ports.
+        """
+        assert len(self._output_schemas) == 1, \
+            "Attempted to access output_schema property on StageSchema with multiple outputs"
+        return self._output_schemas[0]
 
     def complete(self):
         for port_schema in self.output_schemas:
