@@ -19,37 +19,48 @@ if typing.TYPE_CHECKING:
     from .stream_wrapper import StreamWrapper
 
 
-class StagePortSchema:
+class PortSchema:
 
-    def __init__(self, port_type: type = None) -> None:
+    def __init__(self, port_type: type = None):
         self._type = port_type
         self._completed = False
 
-    @property
-    def type(self) -> type:
+    def get_type(self) -> type:
         return self._type
 
-    @type.setter
-    def type(self, value: type):
-        assert not self._completed, "Attempted to set type on completed StagePortSchema"
-
+    def set_type(self, value: type):
+        assert not self._completed, "Attempted to set type on completed PortSchema"
         self._type = value
 
     def complete(self):
-        assert self.type is not None, "Attempted to complete StagePortSchema without setting type"
+        assert self._type is not None, "Attempted to complete PortSchema without setting type"
         self._completed = True
+
+    def is_completed(self) -> bool:
+        return self._completed
 
 
 class StageSchema:
 
-    def __init__(self, stage: "StreamWrapper") -> None:
+    def __init__(self, stage: "StreamWrapper"):
         self._stage = stage
 
-        self._input_ports = [p._schema for p in stage.input_ports]
-        self._output_ports = [StagePortSchema() for p in range(len(stage.output_ports))]
+        self._input_schemas = []
+        for port in stage.input_ports:
+            assert port._schema.is_completed(), "Attempted to create StageSchema with incomplete input port schemas"
+            self._input_schemas.append(port._schema)
+
+        self._output_schemas = [PortSchema() for _ in range(len(stage.output_ports))]
+
+    @property
+    def input_schemas(self) -> list[PortSchema]:
+        return self._input_schemas
+
+    @property
+    def output_schemas(self) -> list[PortSchema]:
+        return self._output_schemas
 
     def complete(self):
-
-        for port in self._output_ports:
+        for port_schema in self.output_schemas:
             # This locks the port schema
-            port.complete()
+            port_schema.complete()
