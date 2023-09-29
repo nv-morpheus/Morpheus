@@ -20,6 +20,7 @@ All objects related to building and running a pipeline.
 
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.receiver import Receiver
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.pipeline.stream_wrapper import StreamWrapper
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
