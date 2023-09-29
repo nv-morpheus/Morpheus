@@ -339,15 +339,17 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     def _pre_build(self, do_propagate: bool = True):
         assert not self.is_built, "build called prior to _pre_build"
         assert not self.is_pre_built, "Can only pre-build stages once!"
-        in_types: list[type] = [x.get_input_type() for x in self.input_ports]
-        out_types: list[type] = self.output_types(in_types)
+        schema = _pipeline.StageSchema(self)
+        self.output_types(schema)
 
-        assert len(out_types) == len(self.output_ports), \
+        assert len(schema.output_schemas) == len(self.output_ports), \
             (f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), "
-             f"but got {len(out_types)}.")
+             f"but got {len(schema.output_schemas)}.")
 
-        for (port_idx, out_type) in enumerate(out_types):
-            self.output_ports[port_idx]._out_type = out_type
+        schema.complete()
+
+        for (port_idx, port_schema) in enumerate(schema.output_schemas):
+            self.output_ports[port_idx]._schema = port_schema
 
         self._is_pre_built = True
 

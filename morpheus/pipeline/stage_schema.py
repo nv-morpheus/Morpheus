@@ -33,6 +33,7 @@ class PortSchema:
         self._type = value
 
     def complete(self):
+        assert not self._completed, "Attempted to PortSchema.complete() twice"
         assert self._type is not None, "Attempted to complete PortSchema without setting type"
         self._completed = True
 
@@ -43,8 +44,6 @@ class PortSchema:
 class StageSchema:
 
     def __init__(self, stage: "StreamWrapper"):
-        self._stage = stage  # TODO: Determine if we need to hold a reference to the stage
-
         self._input_schemas = []
         for port in stage.input_ports:
             assert port._schema.is_completed(), "Attempted to create StageSchema with incomplete input port schemas"
@@ -79,6 +78,10 @@ class StageSchema:
         return self._output_schemas[0]
 
     def complete(self):
+        """
+        Calls complete on all output port schemas.
+        This will trigger an assertion error if any of the output port schemas do not have a type set.
+        """
         for port_schema in self.output_schemas:
             # This locks the port schema
             port_schema.complete()
