@@ -53,7 +53,6 @@ def test_forking_pipeline(config: Config, dataset_cudf: DatasetManager):
     assert_results(comp_lower.get_results())
 
 
-@pytest.mark.skip(reason="TODO: Fix this test, do not merge")
 @pytest.mark.parametrize("source_count, expected_count", [(1, 1), (2, 2), (3, 3)])
 def test_port_multi_sender(config: Config, dataset_cudf: DatasetManager, source_count: int, expected_count: int):
 
