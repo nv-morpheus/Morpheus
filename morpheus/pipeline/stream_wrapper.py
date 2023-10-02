@@ -481,7 +481,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         all output ports. For example a simple pass-thru stage might perform the following:
 
         ```
-        >>> for (port_idx, port_schema) in schema.input_schemas:
+        >>> for (port_idx, port_schema) in enumerate(schema.input_schemas):
         >>>     schema.output_schemas[port_idx].set_type(port_schema.get_type())
         ```
 

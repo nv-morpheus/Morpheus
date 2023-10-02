@@ -46,8 +46,10 @@ class StageSchema:
     def __init__(self, stage: "StreamWrapper"):
         self._input_schemas = []
         for port in stage.input_ports:
-            assert port.input_schema.is_complete(), "Attempted to create StageSchema with incomplete input port schemas"
-            self._input_schemas.append(port.input_schema)
+            input_schema = port.get_input_schema()
+            assert input_schema.is_complete(), \
+                f"Attempted to create StageSchema for {stage} with incomplete input port schemas"
+            self._input_schemas.append(input_schema)
 
         self._output_schemas = [PortSchema() for _ in range(len(stage.output_ports))]
 

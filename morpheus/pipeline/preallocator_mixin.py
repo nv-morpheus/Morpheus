@@ -86,7 +86,7 @@ class PreallocatorMixin(ABC):
         return msg
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        out_type = self.output_ports[0].out_type
+        out_type = self.output_ports[0].output_type
         pretty_type = pretty_print_type_name(out_type)
 
         if len(self._needed_columns) > 0:
