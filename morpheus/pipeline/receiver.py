@@ -104,6 +104,16 @@ class Receiver():
 
         return self._input_node
 
+    def _compute_input_schema(self):
+        great_ancestor = greatest_ancestor(*[x.output_schema.get_type() for x in self._input_senders if x.is_complete])
+
+        if (great_ancestor is None):
+            raise RuntimeError((f"Cannot determine single type for senders of input port for {self._parent}. "
+                                "Use a merge stage to handle different types of inputs."))
+
+        self._input_schema = _pipeline.PortSchema(port_type=great_ancestor)
+        self._is_schema_linked = True
+
     def get_input_schema(self) -> _pipeline.PortSchema:
         assert self.is_partial, "Must be partially complete to get the input type!"
 
@@ -120,14 +130,7 @@ class Receiver():
                     self._is_node_linked = True
             else:
                 # Now determine the output type from what we have
-                great_ancestor = greatest_ancestor(
-                    *[x.output_schema.get_type() for x in self._input_senders if x.is_complete])
-
-                if (great_ancestor is None):
-                    raise RuntimeError((f"Cannot determine single type for senders of input port for {self._parent}. "
-                                        "Use a merge stage to handle different types of inputs."))
-
-                self._input_schema = _pipeline.PortSchema(port_type=great_ancestor)
+                self._compute_input_schema()
 
         return self._input_schema
 
@@ -152,14 +155,7 @@ class Receiver():
         if (self._is_schema_linked):
             return
 
-        # Check that the types still work
-        great_ancestor = greatest_ancestor(*[x.output_schema.get_type() for x in self._input_senders if x.is_complete])
-
-        if (not typing_utils.issubtype(great_ancestor, self._input_schema)):
-            raise RuntimeError(
-                f"Input port type {great_ancestor} does not match {self._input_schema} for {self._parent}")
-
-        self._is_schema_linked = True
+        self._compute_input_schema()
 
     def link_node(self, builder: mrc.Builder):
         """
