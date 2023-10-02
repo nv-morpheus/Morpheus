@@ -1,19 +1,12 @@
-import os
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from unittest import mock
 import pytest
 from unittest.mock import patch
-import cudf
-import pandas as pd
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.input.databricks_deltalake_source_stage import DataBricksDeltaLakeSourceStage
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: DatasetManager):
     """
