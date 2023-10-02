@@ -22,6 +22,7 @@ import pandas as pd
 import cudf
 
 from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import PreparedDFInfo
 from morpheus.utils.nvt import patches
 from morpheus.utils.nvt.extensions import morpheus_ext
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
@@ -101,9 +102,17 @@ def process_dataframe(
 
         # Note(Devin): pre-flatten to avoid Dask hang when calling json_normalize within an NVT operator
         if (input_schema.prep_dataframe is not None):
-            df_in = input_schema.prep_dataframe(df_in)
+            prepared_df_info: PreparedDFInfo = input_schema.prep_dataframe(df_in)
 
         nvt_workflow = input_schema.nvt_workflow
+
+    preserve_df = None
+
+    if prepared_df_info is not None:
+        df_in = prepared_df_info.df
+
+        if prepared_df_info.columns_to_preserve:
+            preserve_df = df_in[prepared_df_info.columns_to_preserve]
 
     if (convert_to_pd):
         df_in = cudf.DataFrame(df_in)
@@ -127,6 +136,17 @@ def process_dataframe(
         df_result.set_index(saved_index.take(df_result.index), inplace=True)
 
     if (convert_to_pd):
-        return df_result.to_pandas()
+        df_result = df_result.to_pandas()
+
+    # Restore preserved columns
+    if (preserve_df is not None):
+        # Ensure there is no overlap with columns to preserve
+        columns_to_merge = set(preserve_df.columns) - set(df_result.columns)
+        columns_to_merge = list(columns_to_merge)
+        if (columns_to_merge):
+            if (convert_to_pd):
+                df_result = pd.concat([df_result, preserve_df[columns_to_merge]], axis=1)
+            else:
+                df_result = cudf.concat([df_result, preserve_df[columns_to_merge]], axis=1)
 
     return df_result

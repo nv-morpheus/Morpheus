@@ -21,9 +21,9 @@ from dfp.utils.module_ids import DFP_MONITOR
 from mrc.core import operators as ops
 from tqdm import tqdm
 
+from morpheus.controllers.monitor_controller import MonitorController
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.monitor_utils import MonitorController
 from morpheus.utils.monitor_utils import MorpheusTqdm
 from morpheus.utils.monitor_utils import SilentMorpheusTqdm
 

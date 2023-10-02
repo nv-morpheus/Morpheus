@@ -406,7 +406,8 @@ Note that the tokenizer parameters and vocabulary hash file should exactly match
 
 At this point, we have a pipeline that reads in a set of records and pre-processes them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
 
-Next we will add a monitor stage to measure the inference rate as well as a filter stage to filter out any results below a probability threshold of `0.9`.
+Next we will add a monitor stage to measure the inference rate:
+
 ```python
 # Add an inference stage
 pipeline.add_stage(
@@ -418,14 +419,17 @@ pipeline.add_stage(
     ))
 
 pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
+```
 
-# Filter values lower than 0.9
-pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9))
+Here we add a postprocessing stage that adds the probability score for `is_phishing`:
+
+```python
+pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 ```
 
 Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
-The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type that is used by the `FilterDetectionsStage` to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
+The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
 The `WriteToFileStage` will append message data to the output file as messages are received. Note however that for performance reasons the `WriteToFileStage` does not flush its contents out to disk every time a message is received. Instead, it relies on the underlying [buffered output stream](https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html) to flush as needed, and then will close the file handle on shutdown.
 
@@ -456,7 +460,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
@@ -522,8 +526,8 @@ def run_pipeline():
     # Monitor the inference rate
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
-    # Filter values lower than 0.9
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9))
+    # Add probability score for is_phishing
+    pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))
@@ -550,7 +554,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
   inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
   monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
-  filter --threshold=0.9 --filter_source=TENSOR \
+  add-scores --label=is_phishing \
   serialize \
   to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
