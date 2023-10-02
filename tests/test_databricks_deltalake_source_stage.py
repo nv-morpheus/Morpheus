@@ -16,12 +16,14 @@ from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from unittest import mock
 import pytest
+import cudf
 from unittest.mock import patch
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.input.databricks_deltalake_source_stage import DataBricksDeltaLakeSourceStage
 
+@pytest.mark.use_pandas
 def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: DatasetManager):
     """
     Test the DataBricksDeltaLakeSourceStage against a mock spark session which will return spark_df converted into a DataFrame with specific rows per page.
@@ -36,6 +38,6 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
         deltaLakeStage.spark.sql.return_value.withColumn.return_value.select.return_value.withColumn.return_value.count.return_value = expected_df.shape[0]
         pipe = LinearPipeline(config)
         pipe.set_source(deltaLakeStage)
-        comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+        comp_stage = pipe.add_stage(CompareDataFrameStage(config, cudf.from_pandas(expected_df)))
         pipe.run()
         assert_results(comp_stage.get_results())
