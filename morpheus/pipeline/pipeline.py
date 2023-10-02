@@ -537,17 +537,17 @@ class Pipeline():
                 if (len(in_port._input_senders) == 1 and len(out_port._output_receivers) == 1
                         and (in_port.input_schema == out_port.output_schema)):
 
-                    edge_attrs["label"] = pretty_print_type_name(in_port.input_schema)
+                    edge_attrs["label"] = pretty_print_type_name(in_port.input_type)
                 else:
                     rec_idx = out_port._output_receivers.index(in_port)
                     sen_idx = in_port._input_senders.index(out_port)
 
                     # Add type labels if available
                     if (rec_idx == 0 and out_port.output_schema is not None):
-                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.output_schema)
+                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.output_type)
 
                     if (sen_idx == 0 and in_port.input_schema is not None):
-                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.input_schema)
+                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.input_type)
 
                 gv_subgraph.edge(start_name, end_name, **edge_attrs)
 
