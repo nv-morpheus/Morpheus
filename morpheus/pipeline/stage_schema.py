@@ -37,7 +37,7 @@ class PortSchema:
         assert self._type is not None, "Attempted to complete PortSchema without setting type"
         self._completed = True
 
-    def is_completed(self) -> bool:
+    def is_complete(self) -> bool:
         return self._completed
 
 
@@ -46,14 +46,26 @@ class StageSchema:
     def __init__(self, stage: "StreamWrapper"):
         self._input_schemas = []
         for port in stage.input_ports:
-            assert port._schema.is_completed(), "Attempted to create StageSchema with incomplete input port schemas"
-            self._input_schemas.append(port._schema)
+            assert port.input_schema.is_complete(), "Attempted to create StageSchema with incomplete input port schemas"
+            self._input_schemas.append(port.input_schema)
 
         self._output_schemas = [PortSchema() for _ in range(len(stage.output_ports))]
 
     @property
     def input_schemas(self) -> list[PortSchema]:
+        """
+        Return all input schemas, one for each input port.
+        """
         return self._input_schemas
+
+    @property
+    def input_types(self) -> list[type]:
+        """
+        Return the type associated with each input port.
+
+        Convenience function for calling `port_schema.get_type()` for each element in `input_schemas`.
+        """
+        return [port_schema.get_type() for port_schema in self._input_schemas]
 
     @property
     def input_schema(self) -> PortSchema:
@@ -65,7 +77,17 @@ class StageSchema:
         return self._input_schemas[0]
 
     @property
+    def input_type(self) -> type:
+        """
+        Single port variant of input_types. Will fail if there are multiple input ports.
+        """
+        return self.input_schema.get_type()
+
+    @property
     def output_schemas(self) -> list[PortSchema]:
+        """
+        Return all output schemas, one for each output port.
+        """
         return self._output_schemas
 
     @property
