@@ -18,6 +18,7 @@ import typing
 import pandas as pd
 import pymilvus
 from pymilvus import Collection
+from pymilvus.exceptions import MilvusException
 
 import cudf
 
@@ -92,20 +93,13 @@ class MilvusVectorDBService(VectorDBService):
         return self._client.list_collections(**kwargs)
 
     def _create_schema_field(self, field_conf: dict) -> pymilvus.FieldSchema:
-        dtype = MILVUS_DATA_TYPE_MAP[field_conf["dtype"].lower()]
-        dim = field_conf.get("dim", None)
+        name = field_conf.pop("name")
+        dtype = field_conf.pop("dtype")
 
-        if (dtype == pymilvus.DataType.BINARY_VECTOR or dtype == pymilvus.DataType.FLOAT_VECTOR):
-            if not dim:
-                raise ValueError(f"Dimensions for {dtype} should not be None")
-            if not isinstance(dim, int):
-                raise ValueError(f"Dimensions for {dtype} should be an integer")
+        dtype = MILVUS_DATA_TYPE_MAP[dtype.lower()]
 
-        field_schema = pymilvus.FieldSchema(name=field_conf["name"],
-                                            dtype=dtype,
-                                            description=field_conf.get("description", ""),
-                                            is_primary=field_conf["is_primary"],
-                                            dim=dim)
+        field_schema = pymilvus.FieldSchema(name=name, dtype=dtype, **field_conf)
+
         return field_schema
 
     @with_mutex("_mutex")
@@ -116,9 +110,10 @@ class MilvusVectorDBService(VectorDBService):
         partition_conf = collection_conf.get("partition_conf", None)
 
         schema_conf = collection_conf.get("schema_conf")
-        schema_fields_conf = schema_conf.get("schema_fields")
+        schema_fields_conf = schema_conf.pop("schema_fields")
 
         index_param = None
+
         if overwrite:
             if self.has_store_object(name):
                 self.drop(name)
@@ -130,17 +125,14 @@ class MilvusVectorDBService(VectorDBService):
 
             schema_fields = [self._create_schema_field(field_conf=field_conf) for field_conf in schema_fields_conf]
 
-            schema = pymilvus.CollectionSchema(fields=schema_fields,
-                                               auto_id=auto_id,
-                                               description=schema_conf.get("description", ""))
+            schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
 
             if index_conf:
-                index_param = self._client.prepare_index_params(field_name=index_conf["field_name"],
-                                                                index_type=index_conf.get("index_type", None),
-                                                                metric_type=index_conf.get("metric_type", None),
-                                                                index_name=index_conf.get("index_name", ""),
-                                                                timeout=index_conf.get("timeout", 1.0),
-                                                                params=index_conf.get("params", 1.0))
+                field_name = index_conf.pop("field_name")
+                metric_type = index_conf.pop("metric_type")
+                index_param = self._client.prepare_index_params(field_name=field_name,
+                                                                metric_type=metric_type,
+                                                                **index_conf)
 
             self._client.create_collection_with_schema(collection_name=name,
                                                        schema=schema,
@@ -148,7 +140,7 @@ class MilvusVectorDBService(VectorDBService):
                                                        auto_id=auto_id,
                                                        shards_num=collection_conf.get("shards", 2),
                                                        consistency_level=collection_conf.get("consistency_level",
-                                                                                                "Strong"))
+                                                                                             "Strong"))
 
             if partition_conf:
                 timeout = partition_conf.get("timeout", 1.0)
@@ -182,6 +174,7 @@ class MilvusVectorDBService(VectorDBService):
     def _collection_insert(self, name: str,
                            data: typing.Union[list[list], list[dict], dict],
                            **kwargs: dict[str, typing.Any]) -> None:
+        collection = None
         try:
             if not self.has_store_object(name):
                 raise RuntimeError(f"Collection {name} doesn't exist.")
@@ -255,31 +248,45 @@ class MilvusVectorDBService(VectorDBService):
             If an error occurs during the search operation.
         """
 
-        use_partitions = kwargs.get("use_partitions", False)
-        collection = pymilvus.Collection(name=name)
-
         try:
-            if use_partitions:
-                partitions = kwargs.get("partitions")
-                collection.load(partitions)
+            self._handler.load_collection(collection_name=name)
+            if query is not None:
+                result = self._client.query(collection_name=name, filter=query, **kwargs)
             else:
-                collection.load()
-
-            if query:
-                result = collection.query(expr=query, **kwargs)
-            else:
-                result = collection.search(**kwargs)
-
+                if "data" not in kwargs:
+                    raise ValueError("The search operation requires that search vectors be " +
+                                     "provided as a keyword argument 'data'.")
+                data = kwargs.pop("data")
+                result = self._client.search(collection_name=name, data=data, **kwargs)
+                self._handler.release_collection(collection_name=name)
             return result
+        except MilvusException as exec:
+            raise RuntimeError(f"Unable to perform serach: {exec}") from exec
 
-        except Exception as exec_info:
-            raise RuntimeError(f"Error while performing search: {exec_info}") from exec_info
         finally:
-            collection.release()
+            self._handler.release_collection(collection_name=name)
 
     @with_mutex("_mutex")
-    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> None:
-        pass
+    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
+        """
+        Update data in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        data : typing.Any
+            Data to be updated in the resource.
+        **kwargs : dict[str, typing.Any]
+            Extra keyword arguments specific to upsert operation.
+        """
+
+        if not isinstance(data, list):
+            raise RuntimeError("Data is not of type list.")
+
+        response = self._handler.upsert(collection_name=name, entities=data, **kwargs)
+
+        return response
 
     @with_mutex("_mutex")
     def delete_by_keys(self, name: str,
@@ -388,8 +395,8 @@ class MilvusVectorDBService(VectorDBService):
             elif type == "index":
                 if "field_name" in kwargs and "index_name" in kwargs:
                     self._handler.drop_index(collection_name=name,
-                                          field_name=kwargs["field_name"],
-                                          index_name=kwargs["index_name"])
+                                             field_name=kwargs["field_name"],
+                                             index_name=kwargs["index_name"])
                 else:
                     raise ValueError("Mandatory fields missing")
 
