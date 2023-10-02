@@ -64,15 +64,23 @@ def dfp_inference(builder: mrc.Builder):
 
     model_name_formatter = config.get("model_name_formatter", None)
     fallback_user = config.get("fallback_username", "generic_user")
-
+    model_fetch_timeout = config.get("model_fetch_timeout", 1.0)
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
     client = MlflowClient()
-    model_manager = ModelManager(model_name_formatter=model_name_formatter)
+
+    model_manager = None
 
     def get_model(user: str) -> ModelCache:
+        nonlocal model_manager
 
-        return model_manager.load_user_model(client, user_id=user, fallback_user_ids=[fallback_user])
+        if not model_manager:
+            model_manager = ModelManager(model_name_formatter=model_name_formatter)
+
+        return model_manager.load_user_model(client,
+                                             user_id=user,
+                                             fallback_user_ids=[fallback_user],
+                                             timeout=model_fetch_timeout)
 
     def process_task(control_message: ControlMessage):
         start_time = time.time()

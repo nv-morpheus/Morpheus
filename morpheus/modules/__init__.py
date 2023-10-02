@@ -14,6 +14,7 @@
 """
 Morpheus module definitions, each module is automatically registered when imported
 """
+from morpheus._lib import modules
 # When segment modules are imported, they're added to the module registry.
 # To avoid flake8 warnings about unused code, the noqa flag is used during import.
 from morpheus.modules import file_batcher
@@ -26,8 +27,8 @@ from morpheus.modules import mlflow_model_writer
 from morpheus.modules import payload_batcher
 from morpheus.modules import serialize
 from morpheus.modules import to_control_message
+from morpheus.modules import write_to_elasticsearch
 from morpheus.modules import write_to_file
-from morpheus._lib import modules
 
 __all__ = [
     "file_batcher",
@@ -41,5 +42,6 @@ __all__ = [
     "payload_batcher",
     "serialize",
     "to_control_message",
-    "write_to_file"
+    "write_to_file",
+    "write_to_elasticsearch"
 ]

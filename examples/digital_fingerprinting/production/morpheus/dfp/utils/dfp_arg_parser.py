@@ -24,7 +24,7 @@ import pandas as pd
 
 from morpheus.utils.logger import configure_logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @dataclass
@@ -95,6 +95,7 @@ class DFPArgParser:
     def silence_monitors(self):
         return self._silence_monitors
 
+    @property
     @verify_init
     def include_generic(self):
         return self._include_generic

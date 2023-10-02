@@ -46,7 +46,7 @@ class DFPFileBatcherStage(SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     date_conversion_func : callable
         A function that takes a file object and returns a `datetime` object representing the date of the file.
@@ -69,14 +69,14 @@ class DFPFileBatcherStage(SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  date_conversion_func: typing.Callable[[fsspec.core.OpenFile], datetime],
                  period: str = "D",
                  sampling_rate_s: typing.Optional[int] = None,
                  start_time: datetime = None,
                  end_time: datetime = None,
                  sampling: typing.Union[str, float, int, None] = None):
-        super().__init__(c)
+        super().__init__(config)
 
         self._date_conversion_func = date_conversion_func
         self._period = period
