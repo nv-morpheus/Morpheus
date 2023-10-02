@@ -340,7 +340,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert not self.is_built, "build called prior to _pre_build"
         assert not self.is_pre_built, "Can only pre-build stages once!"
         schema = _pipeline.StageSchema(self)
-        self.output_types(schema)
+        self.compute_schema(schema)
 
         assert len(schema.output_schemas) == len(self.output_ports), \
             (f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), "
@@ -469,14 +469,10 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return self._needed_columns.copy()
 
     @abstractmethod
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
+    def compute_schema(self, upstream_schema: _pipeline.StageSchema) -> _pipeline.StageSchema:
         """
-        Return the output types for this stage. Derived classes should override this method.
-
-        Returns
-        -------
-        list
-            Output types.
-
+        Compute the output schema for this stage based on the incoming schema from upstream stages.
+        Derived classes should override this method. If the port types in `upstream_schema` are incompatible the stage
+        should raise a `RuntimeError`.
         """
         pass

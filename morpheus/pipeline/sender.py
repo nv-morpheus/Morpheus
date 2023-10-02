@@ -45,16 +45,16 @@ class Sender():
         self._output_node: mrc.SegmentObject = None
 
     @property
-    def parent(self):
+    def parent(self) -> "_pipeline.StreamWrapper":
         return self._parent
 
     @property
-    def is_complete(self):
+    def is_complete(self) -> bool:
         # Sender is complete when the type has been set
         return self._output_schema is not None
 
     @property
-    def output_schema(self):
+    def output_schema(self) -> _pipeline.PortSchema:
         return self._output_schema
 
     @output_schema.setter
@@ -62,5 +62,12 @@ class Sender():
         self._output_schema = value
 
     @property
-    def output_node(self):
+    def output_type(self) -> type:
+        if self.is_complete:
+            return self._output_schema.get_type()
+
+        return None
+
+    @property
+    def output_node(self) -> mrc.SegmentObject:
         return self._output_node

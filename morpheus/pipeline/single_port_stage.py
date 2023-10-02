@@ -56,7 +56,7 @@ class SinglePortStage(_pipeline.Stage):
         """
         pass
 
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
+    def compute_schema(self, upstream_schema: _pipeline.StageSchema) -> _pipeline.StageSchema:
         """
         Return the output type for this stage.
 

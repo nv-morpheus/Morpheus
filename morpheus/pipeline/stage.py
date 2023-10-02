@@ -41,21 +41,6 @@ class Stage(_pipeline.StreamWrapper):
     def _start(self):
         pass
 
-    @abstractmethod
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
-        """
-        Return the output types for this stage based on the incoming types of parent stages. Derived classes should
-        override this method, if the `parent_output_types` are incompatible then the stage should rase a
-        `RuntimeError` exception.
-
-        Returns
-        -------
-        list
-            Output types.
-
-        """
-        pass
-
     async def start_async(self):
         """
         This function is called along with on_start during stage initialization. Allows stages to utilize the
