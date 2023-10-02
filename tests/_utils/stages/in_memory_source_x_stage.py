@@ -19,6 +19,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 class InMemSourceXStage(SingleOutputSource):
@@ -38,8 +39,8 @@ class InMemSourceXStage(SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def output_type(self) -> type:
-        return type(self._data[0])
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(type(self._data[0]))
 
     def _emit_data(self) -> typing.Iterator[typing.Any]:
         for x in self._data:

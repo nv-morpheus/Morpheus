@@ -28,6 +28,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("log-postprocess", modes=[PipelineModes.NLP])
@@ -74,8 +75,8 @@ class LogParsingPostProcessingStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiPostprocLogParsingMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _postprocess(self, x: MultiPostprocLogParsingMessage):
 

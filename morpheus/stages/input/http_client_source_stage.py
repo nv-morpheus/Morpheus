@@ -28,6 +28,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils import http_utils
 
 logger = logging.getLogger(__name__)
@@ -145,8 +146,8 @@ class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ implementation"""
         return False
 
-    def output_type(self) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _parse_response(self, response: requests.Response) -> typing.Union[cudf.DataFrame, None]:
         """

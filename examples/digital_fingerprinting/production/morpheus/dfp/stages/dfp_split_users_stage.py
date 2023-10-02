@@ -25,6 +25,7 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.type_aliases import DataFrameType
 
 from ..messages.multi_dfp_message import DFPMessageMeta
@@ -84,8 +85,8 @@ class DFPSplitUsersStage(SinglePortStage):
         """Input types accepted by this stage."""
         return (cudf.DataFrame, pd.DataFrame)
 
-    def output_type(self, parent_output_type: type) -> type:
-        return DFPMessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(DFPMessageMeta)
 
     def extract_users(self, message: DataFrameType) -> typing.List[DFPMessageMeta]:
         """

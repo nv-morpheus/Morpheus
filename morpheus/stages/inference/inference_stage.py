@@ -26,6 +26,7 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 
@@ -181,8 +182,8 @@ class InferenceStage(MultiMessageStage):
         """
         return (MultiInferenceMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MultiResponseMessage
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiResponseMessage)
 
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value

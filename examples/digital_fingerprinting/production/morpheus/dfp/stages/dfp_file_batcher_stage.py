@@ -26,6 +26,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -107,8 +108,8 @@ class DFPFileBatcherStage(SinglePortStage):
         """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return typing.Tuple[fsspec.core.OpenFiles, int]
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(typing.Tuple[fsspec.core.OpenFiles, int])
 
     def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
         """

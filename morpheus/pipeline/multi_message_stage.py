@@ -45,8 +45,8 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
         super().__init__(c)
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MultiMessage
+    def compute_schema(self, schema: _pipeline.StageSchema):
+        schema.output_schema.set_type(MultiMessage)
 
     def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 

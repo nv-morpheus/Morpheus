@@ -30,6 +30,7 @@ from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
@@ -208,8 +209,8 @@ class TrainAEStage(MultiMessageStage):
         """
         return (UserMessageMeta, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MultiAEMessage
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
 
     def supports_cpp_node(self):
         return False

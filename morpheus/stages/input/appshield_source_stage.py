@@ -30,6 +30,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
@@ -121,8 +122,8 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def output_type(self) -> type:
-        return AppShieldMessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(AppShieldMessageMeta)
 
     @staticmethod
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):

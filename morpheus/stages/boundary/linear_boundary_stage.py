@@ -19,14 +19,16 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
 
-class LinearBoundaryEgressStage(SinglePortStage):
+class LinearBoundaryEgressStage(PassThruTypeMixin, SinglePortStage):
     """
     The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
     pipeline that we want to connect to another segment, a linear boundary egress stage would be added, in conjunction
@@ -69,9 +71,6 @@ class LinearBoundaryEgressStage(SinglePortStage):
         """
         return (self._output_type, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return parent_output_type
-
     def supports_cpp_node(self):
         return False
 
@@ -113,20 +112,8 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
     def name(self) -> str:
         return "segment_boundary_ingress"
 
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
-
-        Returns
-        -------
-        typing.Tuple
-            Accepted input types.
-
-        """
-        return (self._output_type, )
-
-    def output_type(self) -> type:
-        return self._output_type
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._output_type)
 
     def supports_cpp_node(self):
         return False

@@ -344,8 +344,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         self.compute_schema(schema)
 
         assert len(schema.output_schemas) == len(self.output_ports), \
-            (f"Prebuild expected `output_types()` to return {len(self.output_ports)} types (one for each output port), "
-             f"but got {len(schema.output_schemas)}.")
+            (f"Prebuild expected `schema.output_schemas` to be of length {len(self.output_ports)} "
+             f"(one for each output port), but got {len(schema.output_schemas)}.")
 
         schema.complete()
 

@@ -27,6 +27,7 @@ from morpheus.config import Config
 from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
@@ -112,8 +113,8 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max input count"""
         return self._input_count if self._input_count is not None else 0
 
-    def output_type(self) -> type:
-        return UserMessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(UserMessageMeta)
 
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""

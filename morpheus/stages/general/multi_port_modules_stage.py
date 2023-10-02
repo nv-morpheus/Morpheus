@@ -20,6 +20,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.stage import Stage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -98,8 +99,9 @@ class MultiPortModulesStage(Stage):
         """
         return (typing.Any, )
 
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
-        return [self._ouput_type for _ in range(self._num_out_ports)]
+    def compute_schema(self, schema: StageSchema):
+        for port_schema in schema.output_schemas:
+            port_schema.set_type(self._ouput_type)
 
     def _validate_ports(self, module) -> None:
 

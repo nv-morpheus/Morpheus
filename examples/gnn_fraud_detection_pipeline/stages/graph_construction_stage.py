@@ -29,6 +29,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 from .model import build_fsi_graph
 from .model import prepare_data
@@ -77,8 +78,8 @@ class FraudGraphConstructionStage(SinglePortStage):
     def accepted_types(self) -> (MultiMessage, ):
         return (MultiMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return FraudGraphMultiMessage
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(FraudGraphMultiMessage)
 
     def supports_cpp_node(self) -> bool:
         return False

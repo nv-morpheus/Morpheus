@@ -29,6 +29,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
@@ -128,8 +129,8 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports C++ nodes."""
         return True
 
-    def output_type(self) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:

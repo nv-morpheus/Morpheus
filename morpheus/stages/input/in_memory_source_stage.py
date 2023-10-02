@@ -22,6 +22,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
@@ -51,8 +52,8 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def output_type(self) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):

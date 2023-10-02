@@ -19,6 +19,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -87,8 +88,8 @@ class LinearModulesStage(SinglePortStage):
         """
         return (self._input_type, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return self._output_type
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._output_type)
 
     def _get_cpp_module_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")

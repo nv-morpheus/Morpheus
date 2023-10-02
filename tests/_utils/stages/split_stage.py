@@ -21,6 +21,7 @@ from mrc.core.node import Broadcast
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.stage import Stage
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 class SplitStage(Stage):
@@ -37,7 +38,11 @@ class SplitStage(Stage):
     def supports_cpp_node(self):
         return False
 
-    def output_types(self, parent_output_types: list[type]) -> list[type]:
+    def compute_schema(self, schema: StageSchema):
+        assert len(schema.output_schemas) == 2, "Expected two output schemas"
+        for port_schema in schema.output_schemas:
+            port_schema.set_type(MessageMeta)
+
         return [MessageMeta, MessageMeta]
 
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:

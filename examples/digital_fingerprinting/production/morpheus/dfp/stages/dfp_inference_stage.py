@@ -24,6 +24,7 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
@@ -71,8 +72,8 @@ class DFPInferenceStage(SinglePortStage):
         """Accepted input types."""
         return (MultiDFPMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MultiAEMessage
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
 
     def get_model(self, user: str) -> ModelCache:
         """

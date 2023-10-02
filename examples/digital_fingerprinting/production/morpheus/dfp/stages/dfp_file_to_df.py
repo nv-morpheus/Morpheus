@@ -25,6 +25,7 @@ from morpheus.config import Config
 from morpheus.controllers.file_to_df_controller import FileToDFController
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.column_info import DataFrameInputSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
@@ -83,8 +84,8 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         """Accepted input types."""
         return (typing.Any, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return pd.DataFrame
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(pd.DataFrame)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,

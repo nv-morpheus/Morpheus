@@ -25,6 +25,7 @@ from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("serialize")
@@ -78,8 +79,8 @@ class SerializeStage(SinglePortStage):
         """
         return (MultiMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def supports_cpp_node(self):
         # Enable support by default

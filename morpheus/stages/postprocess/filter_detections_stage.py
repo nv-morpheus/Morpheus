@@ -26,6 +26,7 @@ from morpheus.controllers.filter_detections_controller import FilterDetectionsCo
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +107,9 @@ class FilterDetectionsStage(SinglePortStage):
 
         return (MultiMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        self._controller.update_filter_source(message_type=parent_output_type)
-        return parent_output_type
+    def compute_schema(self, schema: StageSchema):
+        self._controller.update_filter_source(message_type=schema.input_type)
+        schema.output_schema.set_type(schema.input_type)
 
     def supports_cpp_node(self):
         # Enable support by default

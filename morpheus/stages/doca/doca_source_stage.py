@@ -22,6 +22,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +77,8 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max input count"""
         return None
 
-    def output_type(self) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def supports_cpp_node(self):
         return True

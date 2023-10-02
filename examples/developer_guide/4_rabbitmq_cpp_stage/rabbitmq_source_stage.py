@@ -28,6 +28,7 @@ from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +82,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return True
 
-    def output_type(self) -> type:
-        return MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():

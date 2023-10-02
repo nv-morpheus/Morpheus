@@ -28,6 +28,7 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])
@@ -68,8 +69,8 @@ class ConvMsg(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return MultiResponseMessage
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiResponseMessage)
 
     def supports_cpp_node(self) -> bool:
         return False

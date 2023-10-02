@@ -26,6 +26,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
@@ -94,11 +95,11 @@ class DFPTraining(SinglePortStage):
             MultiDFPMessage,
         )
 
-    def output_type(self, parent_output_type: type) -> type:
-        return_type = parent_output_type
-        if (return_type == MultiDFPMessage):
-            return_type = MultiAEMessage
-        return return_type
+    def compute_schema(self, schema: StageSchema):
+        output_type = schema.input_type
+        if (output_type == MultiDFPMessage):
+            output_type = MultiAEMessage
+        schema.output_schema.set_type(output_type)
 
     def _dfp_multimessage_from_control_message(self,
                                                control_message: ControlMessage) -> typing.Union[MultiDFPMessage, None]:

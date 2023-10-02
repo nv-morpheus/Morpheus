@@ -23,6 +23,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -76,8 +77,8 @@ class MultiFileSource(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
-    def output_type(self) -> type:
-        return fsspec.core.OpenFiles
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(fsspec.core.OpenFiles)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports C++ nodes."""

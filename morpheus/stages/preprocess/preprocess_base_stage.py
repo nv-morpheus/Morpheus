@@ -24,6 +24,7 @@ from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 class PreprocessBaseStage(MultiMessageStage):
@@ -50,7 +51,7 @@ class PreprocessBaseStage(MultiMessageStage):
         """
         return (MultiMessage, )
 
-    def output_type(self, parent_output_type: type) -> type:
+    def compute_schema(self, schema: StageSchema):
         out_type = MultiInferenceMessage
 
         self._preprocess_fn = self._get_preprocess_fn()
@@ -61,7 +62,7 @@ class PreprocessBaseStage(MultiMessageStage):
                 and typing_utils.issubtype(preproc_sig.return_annotation, MultiInferenceMessage)):
             out_type = preproc_sig.return_annotation
 
-        return out_type
+        schema.output_schema.set_type(out_type)
 
     @abstractmethod
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
