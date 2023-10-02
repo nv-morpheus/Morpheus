@@ -100,7 +100,6 @@ class StageSchema:
         assert len(self._output_schemas) == 1, \
             "Attempted to access output_schema property on StageSchema with multiple outputs"
         return self._output_schemas[0]
-    
 
     def complete(self):
         """

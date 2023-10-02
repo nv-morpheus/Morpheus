@@ -14,7 +14,6 @@
 
 import logging
 import warnings
-from abc import abstractmethod
 
 import mrc
 

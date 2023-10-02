@@ -64,7 +64,7 @@ class SingleOutputSource(_pipeline.SourceStage):
     def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
         assert len(self.output_ports) == 1, \
             f"SingleOutputSource should have only one output port, {self} has {len(self.output_ports)}"
-        
+
         return [self._build_source(builder)]
 
     @typing.final
