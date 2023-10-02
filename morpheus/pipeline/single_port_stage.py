@@ -56,38 +56,14 @@ class SinglePortStage(_pipeline.Stage):
         """
         pass
 
-    def compute_schema(self, upstream_schema: _pipeline.StageSchema) -> _pipeline.StageSchema:
-        """
-        Return the output type for this stage.
-
-        Returns
-        -------
-        list
-            Output types.
-
-        """
+    def _pre_compute_schema(self, schema: _pipeline.StageSchema):
+        # Pre-flight check to verify that the input type is one of the accepted types
+        super()._pre_compute_schema(schema)
         accepted_types = typing.Union[self.accepted_types()]
-
-        assert len(parent_output_types) == 1, "SinglePortStage must have 1 input port and 1 output port"
-        parent_output_type = parent_output_types[0]
-        if (not typing_utils.issubtype(parent_output_type, accepted_types)):
-            raise RuntimeError((f"The {self.name} stage cannot handle input of {parent_output_type}. "
+        input_type = schema.input_type
+        if (not typing_utils.issubtype(input_type, accepted_types)):
+            raise RuntimeError((f"The {self.name} stage cannot handle input of {input_type}. "
                                 f"Accepted input types: {self.accepted_types()}"))
-
-        return [self.output_type(parent_output_type)]
-
-    @abstractmethod
-    def output_type(self, parent_output_type: type) -> type:
-        """
-        Return the output type for this stage. Derived classes should override this method.
-
-        Returns
-        -------
-        type
-            Output type.
-
-        """
-        pass
 
     @abstractmethod
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
@@ -115,7 +91,7 @@ class SinglePortStage(_pipeline.Stage):
         # pylint: disable=logging-format-interpolation
         logger.info("Added stage: %s\n  └─ %s -> %s",
                     str(self),
-                    pretty_print_type_name(self.input_ports[0].input_schema),
-                    pretty_print_type_name(self.output_ports[0].output_schema))
+                    pretty_print_type_name(self.input_ports[0].input_type),
+                    pretty_print_type_name(self.output_ports[0].output_type))
 
         return [ret_val]

@@ -340,6 +340,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         assert not self.is_built, "build called prior to _pre_build"
         assert not self.is_pre_built, "Can only pre-build stages once!"
         schema = _pipeline.StageSchema(self)
+        self._pre_compute_schema(schema)
         self.compute_schema(schema)
 
         assert len(schema.output_schemas) == len(self.output_ports), \
@@ -469,10 +470,28 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return self._needed_columns.copy()
 
     @abstractmethod
-    def compute_schema(self, upstream_schema: _pipeline.StageSchema) -> _pipeline.StageSchema:
+    def compute_schema(self, schema: _pipeline.StageSchema):
         """
-        Compute the output schema for this stage based on the incoming schema from upstream stages.
-        Derived classes should override this method. If the port types in `upstream_schema` are incompatible the stage
-        should raise a `RuntimeError`.
+        Compute the schema for this stage based on the incoming schema from upstream stages.
+
+        Incoming schema and type information from upstream stages is available via the `schema.input_schemas` and
+        `schema.input_types` properties.
+
+        Derived classes need to override this method, can set the output type(s) on `schema` by calling `set_type` for
+        all output ports. For example a simple pass-thru stage might perform the following:
+
+        ```
+        >>> for (port_idx, port_schema) in schema.input_schemas:
+        >>>     schema.output_schemas[port_idx].set_type(port_schema.get_type())
+        ```
+
+        If the port types in `upstream_schema` are incompatible the stage should raise a `RuntimeError`.
+        """
+        pass
+
+    def _pre_compute_schema(self, schema: _pipeline.StageSchema):
+        """
+        Optional pre-flight method, allows base classes like `SinglePortStage` to perform pre-flight checks prior to
+        `compute_schema` being called.
         """
         pass

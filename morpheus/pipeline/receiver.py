@@ -134,7 +134,8 @@ class Receiver():
 
         return self._input_schema
 
-    def get_input_type(self) -> type:
+    @property
+    def input_type(self) -> type:
         """
         Returns the the upstream node's output type, and in case of multiple upstreams this will return the common
         ancestor type.
