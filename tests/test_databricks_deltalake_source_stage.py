@@ -29,9 +29,8 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
 
     # df = pd.DataFrame([("audit", "system1"),("audit", "system2"),("secure", "system1"),("secure", "system2")], columns=["log","source"])
     expected_df = dataset['filter_probs.csv']
-    config = Config()
     with patch('morpheus.stages.input.databricks_deltalake_source_stage.DatabricksSession') as mock_db_session:
-        deltaLakeStage = DeltaLakeSourceStage(config,
+        deltaLakeStage = DataBricksDeltaLakeSourceStage(config,
                      spark_query="",items_per_page=10000,databricks_host="",databricks_token="", databricks_cluster_id="")
         deltaLakeStage.spark.sql.return_value.withColumn.return_value.select.return_value.withColumn.return_value.where.return_value.toPandas.return_value.drop.return_value = expected_df
         deltaLakeStage.spark.sql.return_value.withColumn.return_value.select.return_value.withColumn.return_value.count.return_value = expected_df.shape[0]
