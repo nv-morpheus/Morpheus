@@ -14,6 +14,8 @@
 """Mixin for single port stages which receive and emit the same type."""
 from abc import ABC
 
+from morpheus.pipeline.stage_schema import StageSchema
+
 
 class PassThruTypeMixin(ABC):
     """
@@ -21,5 +23,6 @@ class PassThruTypeMixin(ABC):
     `typing.Any`, and who's output type is inferred from the output types of the parent stages.
     """
 
-    def output_type(self, parent_output_type: type) -> type:
-        return parent_output_type
+    def compute_schema(self, schema: StageSchema):
+        for (port_idx, port_schema) in schema.input_schemas:
+            schema.output_schemas[port_idx].set_type(port_schema.get_type())
