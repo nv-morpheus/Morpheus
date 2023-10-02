@@ -256,7 +256,7 @@ class Pipeline():
             # for s in source_and_stages:
             for stage in segment_graph.nodes():
                 for port in typing.cast(StreamWrapper, stage).input_ports:
-                    port.link_type()
+                    port.link_schema()
 
             logger.info("====Pre-Building Segment Complete!====")
 
@@ -535,19 +535,19 @@ class Pipeline():
 
                 # Check for situation #1
                 if (len(in_port._input_senders) == 1 and len(out_port._output_receivers) == 1
-                        and (in_port.in_type == out_port.out_type)):
+                        and (in_port.input_schema == out_port.output_schema)):
 
-                    edge_attrs["label"] = pretty_print_type_name(in_port.in_type)
+                    edge_attrs["label"] = pretty_print_type_name(in_port.input_schema)
                 else:
                     rec_idx = out_port._output_receivers.index(in_port)
                     sen_idx = in_port._input_senders.index(out_port)
 
                     # Add type labels if available
-                    if (rec_idx == 0 and out_port.out_type is not None):
-                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.out_type)
+                    if (rec_idx == 0 and out_port.output_schema is not None):
+                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.output_schema)
 
-                    if (sen_idx == 0 and in_port.in_type is not None):
-                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.in_type)
+                    if (sen_idx == 0 and in_port.input_schema is not None):
+                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.input_schema)
 
                 gv_subgraph.edge(start_name, end_name, **edge_attrs)
 

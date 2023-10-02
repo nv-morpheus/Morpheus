@@ -115,7 +115,7 @@ class SinglePortStage(_pipeline.Stage):
         # pylint: disable=logging-format-interpolation
         logger.info("Added stage: %s\n  └─ %s -> %s",
                     str(self),
-                    pretty_print_type_name(self.input_ports[0].in_type),
-                    pretty_print_type_name(self.output_ports[0].out_type))
+                    pretty_print_type_name(self.input_ports[0].input_schema),
+                    pretty_print_type_name(self.output_ports[0].output_schema))
 
         return [ret_val]

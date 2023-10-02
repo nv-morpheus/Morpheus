@@ -349,7 +349,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         schema.complete()
 
         for (port_idx, port_schema) in enumerate(schema.output_schemas):
-            self.output_ports[port_idx]._schema = port_schema
+            self.output_ports[port_idx].output_schema = port_schema
 
         self._is_pre_built = True
 
@@ -390,7 +390,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         # Assign the output ports
         for port_idx, out_node in enumerate(out_ports_nodes):
-            self.output_ports[port_idx]._out_node = out_node
+            self.output_ports[port_idx]._output_node = out_node
 
         self._is_built = True
 

@@ -41,8 +41,8 @@ class Sender():
 
         self._output_receivers: typing.List[_pipeline.Receiver] = []
 
-        self._out_type: type = None
-        self._out_node: mrc.SegmentObject = None
+        self._output_schema: _pipeline.PortSchema = None
+        self._output_node: mrc.SegmentObject = None
 
     @property
     def parent(self):
@@ -51,12 +51,16 @@ class Sender():
     @property
     def is_complete(self):
         # Sender is complete when the type has been set
-        return self._out_type is not None
+        return self._output_schema is not None
 
     @property
-    def out_type(self):
-        return self._out_type
+    def output_schema(self):
+        return self._output_schema
+
+    @output_schema.setter
+    def output_schema(self, value: _pipeline.PortSchema):
+        self._output_schema = value
 
     @property
-    def out_node(self):
-        return self._out_node
+    def output_node(self):
+        return self._output_node
