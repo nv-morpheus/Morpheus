@@ -17,6 +17,10 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
+import pandas as pd
+
+import cudf
+
 
 class VectorDBService(ABC):
     """
@@ -46,6 +50,29 @@ class VectorDBService(ABC):
             Returns insert response result.
         """
 
+        pass
+
+    @abstractmethod
+    def insert_dataframe(self, name: str,
+                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                         **kwargs: dict[str, typing.Any]):
+        """
+        Converts dataframe to rows and insert into the vector database resource.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource to be inserted.
+        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+            Dataframe to be inserted.
+        **kwargs : dict[str, typing.Any]
+            Additional keyword arguments containing collection configuration.
+
+        Raises
+        ------
+        RuntimeError
+            If the resource not exists exists.
+        """
         pass
 
     @abstractmethod
@@ -130,6 +157,21 @@ class VectorDBService(ABC):
             Name of the resource.
         overwrite : bool, default False
             Whether to overwrite the resource if it already exists.
+        **kwargs : dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+        """
+
+        pass
+
+    @abstractmethod
+    def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
+        """
+        Describe resource in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
         """

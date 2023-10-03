@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
+import typing
+
 from pymilvus import DataType
 
 MILVUS_DATA_TYPE_MAP = {
@@ -32,6 +35,20 @@ MILVUS_DATA_TYPE_MAP = {
 
 def with_mutex(lock_name):
     """
+    A decorator that provides a mutex (locking mechanism) for a method.
+
+    This decorator is used to ensure that only one instance of a method can be executed
+    at a time, which is particularly useful for preventing concurrent access to shared resources.
+
+    Parameters
+    ----------
+    lock_name : str
+        The name of the attribute that holds the mutex (lock) for the method.
+
+    Returns
+    -------
+    function:
+        A decorated version of the method that acquires the mutex before execution.
     """
 
     def decorator(func):
@@ -44,14 +61,41 @@ def with_mutex(lock_name):
 
     return decorator
 
-class CollectionLockManager:
-    def __init__(self, collection, mutex):
-        self.collection = collection
-        self.mutex = mutex
 
-    def __enter__(self):
-        self.mutex.acquire()
+class VectorDBServiceFactory:
+    """
+    Factory for creating instances of vector database service classes. This factory allows dynamically
+    creating instances of vector database service classes based on the provided service name.
+    Each service name corresponds to a specific implementation class.
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.collection.release()
-        self.mutex.release()
+    Parameters
+    ----------
+    service_name : str
+        The name of the vector database service to create.
+    *args : typing.Any
+        Variable-length argument list to pass to the service constructor.
+    **kwargs : dict[str, typing.Any]
+        Arbitrary keyword arguments to pass to the service constructor.
+
+    Returns
+    -------
+        An instance of the specified vector database service class.
+
+    Raises
+    ------
+    ValueError
+        If the specified service name is not found or does not correspond to a valid service class.
+    """
+
+    @classmethod
+    def create_instance(cls, service_name: str, *args: typing.Any, **kwargs: dict[str, typing.Any]):
+        try:
+            module_name = f"morpheus.service.{service_name}_vector_db_service"
+            module = importlib.import_module(module_name)
+            class_name = f"{service_name.capitalize()}VectorDBService"
+            class_ = getattr(module, class_name)
+            instance = class_(*args, **kwargs)
+            return instance
+        except (ModuleNotFoundError, AttributeError):
+            raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class," +
+                             f"such as {module_name}, has been implemented.")

@@ -22,7 +22,7 @@ from pymilvus.exceptions import MilvusException
 
 import cudf
 
-from morpheus.service.vector_db_serivce import VectorDBService
+from morpheus.service.vector_db_service import VectorDBService
 from morpheus.utils.vector_db_service_utils import MILVUS_DATA_TYPE_MAP
 from morpheus.utils.vector_db_service_utils import with_mutex
 
@@ -54,6 +54,7 @@ class MilvusVectorDBService(VectorDBService):
                  db_name: str = "",
                  token: str = "",
                  **kwargs: dict[str, typing.Any]):
+
         self._client = pymilvus.MilvusClient(uri=uri,
                                              user=user,
                                              password=password,
@@ -139,16 +140,14 @@ class MilvusVectorDBService(VectorDBService):
                                                        index_param=index_param,
                                                        auto_id=auto_id,
                                                        shards_num=collection_conf.get("shards", 2),
-                                                       consistency_level=collection_conf.get("consistency_level",
-                                                                                             "Strong"))
+                                                       consistency_level=collection_conf.get(
+                                                           "consistency_level", "Strong"))
 
             if partition_conf:
                 timeout = partition_conf.get("timeout", 1.0)
                 # Iterate over each partition configuration
                 for part in partition_conf["partitions"]:
-                    self._handler.create_partition(collection_name=name,
-                                                   partition_name=part["name"],
-                                                   timeout=timeout)
+                    self._handler.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_mutex("_mutex")
     def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str, typing.Any]):
@@ -171,7 +170,8 @@ class MilvusVectorDBService(VectorDBService):
         """
         return self._collection_insert(name, data, **kwargs)
 
-    def _collection_insert(self, name: str,
+    def _collection_insert(self,
+                           name: str,
                            data: typing.Union[list[list], list[dict], dict],
                            **kwargs: dict[str, typing.Any]) -> None:
         collection = None
@@ -190,9 +190,10 @@ class MilvusVectorDBService(VectorDBService):
         return result
 
     @with_mutex("_mutex")
-    def insert_dataframe(self, name: str,
+    def insert_dataframe(self,
+                         name: str,
                          df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]):
+                         **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Converts dataframe to rows and insert to a collection in the Milvus vector database.
 
@@ -289,8 +290,7 @@ class MilvusVectorDBService(VectorDBService):
         return response
 
     @with_mutex("_mutex")
-    def delete_by_keys(self, name: str,
-                       keys: typing.Union[int, str, list],
+    def delete_by_keys(self, name: str, keys: typing.Union[int, str, list],
                        **kwargs: dict[str, typing.Any]) -> list[typing.Union[str, int]]:
         """
         Delete vectors by keys from the resource.
@@ -335,9 +335,8 @@ class MilvusVectorDBService(VectorDBService):
 
         return self._handler.delete(collection_name=name, expression=expr, **kwargs)
 
-    def retrieve_by_keys(self, name: str,
-                         keys: typing.Union[int, str, list],
-                         **kwargs: dict[str, typing.Any]) -> list[dict]:
+    def retrieve_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
+                                                                                             typing.Any]) -> list[dict]:
         """
         Retrieve the inserted vectors using their primary keys from the Collection.
 
@@ -399,6 +398,19 @@ class MilvusVectorDBService(VectorDBService):
                                              index_name=kwargs["index_name"])
                 else:
                     raise ValueError("Mandatory fields missing")
+
+    def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
+        """
+        Describe the collection in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the collection.
+        **kwargs : dict[str, typing.Any]
+            Additional keyword arguments specific to the Milvus vector database.
+        """
+        return self._client.describe_collection(collection_name=name, **kwargs)
 
     @with_mutex("_mutex")
     def close(self) -> None:
