@@ -98,7 +98,7 @@ function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
 
     # Update the packages
-    rm /opt/codna/.condarc
+    rm /opt/conda/.condarc
     rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
 
     # Finally, reactivate
