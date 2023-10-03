@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import logging
 import typing
 
@@ -41,6 +40,8 @@ class WriteToVectorDBStage(SinglePortStage):
         Pipeline configuration instance.
     resource_name : str
         The name of the resource managed by this instance.
+    resource_conf : dict
+        Additional resource configuration when performing vector database writes.
     vdb_service : typing.Union[str, VectorDBService]
         Either the name of the vector database service to use or an instance of VectorDBService
         for managing the resource.
@@ -52,22 +53,30 @@ class WriteToVectorDBStage(SinglePortStage):
     ValueError
         If `vdb_service` is not a valid string (service name) or an instance of VectorDBService.
     """
-    def __init__(self, config: Config, resource_name: str,
+
+    def __init__(self,
+                 config: Config,
+                 resource_name: str,
                  vdb_service: typing.Union[str, VectorDBService],
                  **kwargs: dict[str, typing.Any]):
 
         super().__init__(config)
+
         self._resource_name = resource_name
+        self._resource_conf = {}
+
+        if "resource_conf" in kwargs:
+            self._resource_conf = kwargs.pop("resource_conf")
 
         if isinstance(vdb_service, str):
-            # If vdb_input is a string, assume it's the service name
+            # If vdb_service is a string, assume it's the service name
             self._vdb_service: VectorDBService = VectorDBServiceFactory.create_instance(service_name=vdb_service,
                                                                                         **kwargs)
         elif isinstance(vdb_service, VectorDBService):
-            # If vdb_input is an instance of VectorDBService, use it directly
+            # If vdb_service is an instance of VectorDBService, use it directly
             self._vdb_service: VectorDBService = vdb_service
         else:
-            raise ValueError("vdb_input must be a string (service name) or an instance of VectorDBService")
+            raise ValueError("vdb_service must be a string (service name) or an instance of VectorDBService")
 
     @property
     def name(self) -> str:
@@ -89,17 +98,24 @@ class WriteToVectorDBStage(SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return False
 
+    def on_completed(self):
+        # Close vector database service connection
+        self._vdb_service.close()
+
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
         def on_data(ctrl_msg: ControlMessage) -> ControlMessage:
-            result = self._vdb_service.insert_dataframe(name=self._resource_name, df=ctrl_msg.payload().df)
+            # Insert entries in the dataframe to vector database.
+            result = self._vdb_service.insert_dataframe(name=self._resource_name,
+                                                        df=ctrl_msg.payload().df,
+                                                        **self._resource_conf)
             ctrl_msg.set_metadata("insert_response", result)
 
             return ctrl_msg
 
-        to_vector_db = builder.make_node(self.unique_name, ops.map(on_data))
+        to_vector_db = builder.make_node(self.unique_name, ops.map(on_data), ops.on_completed(self.on_completed))
 
         builder.make_edge(stream, to_vector_db)
         stream = to_vector_db

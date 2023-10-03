@@ -103,7 +103,6 @@ class MilvusVectorDBService(VectorDBService):
 
         return field_schema
 
-    @with_mutex("_mutex")
     def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
         collection_conf = kwargs.get("collection_conf")
         auto_id = collection_conf.get("auto_id", False)
@@ -268,7 +267,7 @@ class MilvusVectorDBService(VectorDBService):
             self._handler.release_collection(collection_name=name)
 
     @with_mutex("_mutex")
-    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def update(self, name: str, data: list[dict], **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Update data in the vector database.
 
@@ -276,7 +275,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        data : typing.Any
+        data : list[dict]
             Data to be updated in the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to upsert operation.

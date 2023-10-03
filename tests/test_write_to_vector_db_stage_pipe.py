@@ -32,63 +32,177 @@ from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 
 
+@pytest.fixture(scope="function", name="milvus_vdb_serivce_fixture")
+def milvus_vdb_serivce():
+    vdb_service = MilvusVectorDBService(uri="http://localhost:19530")
+    return vdb_service
+
+
+def create_milvus_collection(vdb_service: MilvusVectorDBService):
+    collection_config = {
+        "collection_conf": {
+            "shards": 2,
+            "auto_id": False,
+            "consistency_level": "Strong",
+            "description": "Test collection",
+            "schema_conf": {
+                "enable_dynamic_field": True,
+                "schema_fields": [
+                    {
+                        "name": "id",
+                        "dtype": "int64",
+                        "description": "Primary key for the collection",
+                        "is_primary": True,
+                    },
+                    {
+                        "name": "embedding",
+                        "dtype": "float_vector",
+                        "description": "Embedding vectors",
+                        "is_primary": False,
+                        "dim": 10,
+                    },
+                    {
+                        "name": "age",
+                        "dtype": "int64",
+                        "description ": "Age",
+                        "is_primary": False,
+                    },
+                ],
+                "description": "Test collection schema",
+            },
+        }
+    }
+    vdb_service.create(name="test", overwrite=True, **collection_config)
+
+
+def create_milvus_collection_idx_part(vdb_service: MilvusVectorDBService):
+    collection_config = {
+        "collection_conf": {
+            "shards": 2,
+            "auto_id": False,
+            "consistency_level": "Strong",
+            "description": "Test collection with partition and index",
+            "index_conf": {
+                "field_name": "embedding", "metric_type": "L2"
+            },
+            "partition_conf": {
+                "timeout": 1, "partitions": [{
+                    "name": "age_partition", "description": "Partition by age"
+                }]
+            },
+            "schema_conf": {
+                "enable_dynamic_field": True,
+                "schema_fields": [
+                    {
+                        "name": "id",
+                        "dtype": "int64",
+                        "description": "Primary key for the collection",
+                        "is_primary": True,
+                    },
+                    {
+                        "name": "embedding",
+                        "dtype": "float_vector",
+                        "description": "Embedding vectors",
+                        "is_primary": False,
+                        "dim": 10,
+                    },
+                    {
+                        "name": "age",
+                        "dtype": "int64",
+                        "description ": "Age",
+                        "is_primary": False,
+                    },
+                ],
+                "description": "Test collection schema",
+            },
+        }
+    }
+    vdb_service.create(name="test_idx_part", overwrite=True, **collection_config)
+
+
 @pytest.mark.use_cpp
-def test_write_to_vector_db_stage_with_instance_pipe(config: Config, pipeline_batch_size: int = 256):
+def test_write_to_vector_db_stage_with_instance_pipe(milvus_vdb_serivce_fixture,
+                                                     config: Config,
+                                                     pipeline_batch_size: int = 256):
     config.pipeline_batch_size = pipeline_batch_size
 
     rows_count = 5
     dimensions = 10
+    collection_name = "test"
+
+    create_milvus_collection(milvus_vdb_serivce_fixture)
+
     df = cudf.DataFrame({
-            "id": [i for i in range(rows_count)],
-            "age": [random.randint(20, 40) for i in range(rows_count)],
-            "embedding": [[random.random() for _ in range(dimensions)] for _ in range(rows_count)]
-        })
+        "id": [i for i in range(rows_count)],
+        "age": [random.randint(20, 40) for i in range(rows_count)],
+        "embedding": [[random.random() for _ in range(dimensions)] for _ in range(rows_count)]
+    })
 
     to_cm_module_config = {
-        "module_id": TO_CONTROL_MESSAGE,
-        "module_name": "to_control_message",
-        "namespace": MORPHEUS_MODULE_NAMESPACE
+        "module_id": TO_CONTROL_MESSAGE, "module_name": "to_control_message", "namespace": MORPHEUS_MODULE_NAMESPACE
     }
     vdb_service = MilvusVectorDBService(uri="http://localhost:19530")
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [df]))
-    pipe.add_stage(LinearModulesStage(config, to_cm_module_config,
-                                      input_port_name="input",
-                                      output_port_name="output",
-                                      output_type=ControlMessage))
-    pipe.add_stage(WriteToVectorDBStage(config, resource_name="test", vdb_service=vdb_service))
+    pipe.add_stage(
+        LinearModulesStage(config,
+                           to_cm_module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=ControlMessage))
+    pipe.add_stage(WriteToVectorDBStage(config, resource_name=collection_name, vdb_service=vdb_service))
 
     pipe.run()
+
+    actual_count = milvus_vdb_serivce_fixture.count(name=collection_name)
+    milvus_vdb_serivce_fixture.close()
+
+    assert actual_count == 5
 
 
 @pytest.mark.use_cpp
-def test_write_to_vector_db_stage_with_name_pipe(config: Config, pipeline_batch_size: int = 256):
+def test_write_to_vector_db_stage_with_name_pipe(milvus_vdb_serivce_fixture,
+                                                 config: Config,
+                                                 pipeline_batch_size: int = 256):
     config.pipeline_batch_size = pipeline_batch_size
+
+    create_milvus_collection_idx_part(milvus_vdb_serivce_fixture)
 
     rows_count = 5
     dimensions = 10
+    collection_name = "test_idx_part"
+
+    resource_conf = {"collection_conf": {"partition_name": "age_partition"}}
+
     df = cudf.DataFrame({
-            "id": [i for i in range(rows_count)],
-            "age": [random.randint(20, 40) for i in range(rows_count)],
-            "embedding": [[random.random() for _ in range(dimensions)] for _ in range(rows_count)]
-        })
+        "id": [i for i in range(rows_count)],
+        "age": [random.randint(20, 40) for i in range(rows_count)],
+        "embedding": [[random.random() for _ in range(dimensions)] for _ in range(rows_count)]
+    })
 
     to_cm_module_config = {
-        "module_id": TO_CONTROL_MESSAGE,
-        "module_name": "to_control_message",
-        "namespace": MORPHEUS_MODULE_NAMESPACE
+        "module_id": TO_CONTROL_MESSAGE, "module_name": "to_control_message", "namespace": MORPHEUS_MODULE_NAMESPACE
     }
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [df]))
-    pipe.add_stage(LinearModulesStage(config, to_cm_module_config,
-                                      input_port_name="input",
-                                      output_port_name="output",
-                                      output_type=ControlMessage))
-    pipe.add_stage(WriteToVectorDBStage(config,
-                                        resource_name="test_collection",
-                                        vdb_service="milvus",
-                                        uri="http://localhost:19530"))
+    pipe.set_source(InMemorySourceStage(config, [df], repeat=2))
+    pipe.add_stage(
+        LinearModulesStage(config,
+                           to_cm_module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=ControlMessage))
+    pipe.add_stage(
+        WriteToVectorDBStage(config,
+                             resource_name=collection_name,
+                             vdb_service="milvus",
+                             uri="http://localhost:19530",
+                             resource_conf=resource_conf))
 
     pipe.run()
+
+    actual_count = milvus_vdb_serivce_fixture.count(name=collection_name)
+    milvus_vdb_serivce_fixture.close()
+
+    assert actual_count == 10

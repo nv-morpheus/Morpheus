@@ -53,7 +53,8 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def insert_dataframe(self, name: str,
+    def insert_dataframe(self,
+                         name: str,
                          df: typing.Union[cudf.DataFrame, pd.DataFrame],
                          **kwargs: dict[str, typing.Any]):
         """
