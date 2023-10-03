@@ -14,8 +14,10 @@
 
 from unittest.mock import patch
 
-import cudf
 import pytest
+
+import cudf
+
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -35,7 +37,8 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
     expected_df = dataset['filter_probs.csv']
     with patch('morpheus.stages.input.databricks_deltalake_source_stage.DatabricksSession') as mock_db_session:
         databricks_deltalake_source_stage = DataBricksDeltaLakeSourceStage(config,
-                                                                           spark_query="", items_per_page=10000,
+                                                                           spark_query="",
+                                                                           items_per_page=10000,
                                                                            databricks_host="",
                                                                            databricks_token="",
                                                                            databricks_cluster_id="")
@@ -45,7 +48,6 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
             withColumn.return_value.count.return_value = expected_df.shape[0]
         pipe = LinearPipeline(config)
         pipe.set_source(databricks_deltalake_source_stage)
-        comp_stage = pipe.add_stage(CompareDataFrameStage(config,
-                                                          cudf.from_pandas(expected_df)))
+        comp_stage = pipe.add_stage(CompareDataFrameStage(config, cudf.from_pandas(expected_df)))
         pipe.run()
         assert_results(comp_stage.get_results())

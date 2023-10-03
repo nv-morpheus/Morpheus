@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from unittest import mock
 from unittest.mock import patch
 
 import pytest
+
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -27,7 +27,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @pytest.mark.use_cudf
-def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: DatasetManager):
+def test_databricks_deltalake_sink_stage_pipe(config: Config, dataset: DatasetManager):
     """
     Test the DataBricksDeltaLakeSinkStage against a mock spark session which
     will create spark dataframe that will be written to remote
@@ -37,8 +37,10 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
     df_input_a = dataset['filter_probs.csv']
     with patch('morpheus.stages.output.write_to_databricks_deltalake_stage.DatabricksSession') as mock_db_session:
         databricks_deltalake_sink_stage = DataBricksDeltaLakeSinkStage(config,
-                                                                       delta_path="", delta_table_write_mode="append",
-                                                                       databricks_host="", databricks_token="",
+                                                                       delta_path="",
+                                                                       delta_table_write_mode="append",
+                                                                       databricks_host="",
+                                                                       databricks_token="",
                                                                        databricks_cluster_id="")
         mock_spark_df = mock.Mock()
         databricks_deltalake_sink_stage.spark.createDataFrame.return_value = mock_spark_df

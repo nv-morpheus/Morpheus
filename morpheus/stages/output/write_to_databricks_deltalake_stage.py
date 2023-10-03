@@ -15,15 +15,9 @@
 import logging
 import typing
 
-import cudf
 import mrc
 import pandas as pd
 from databricks.connect import DatabricksSession
-from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
-from morpheus.messages import MessageMeta
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from mrc.core import operators as ops
 from pyspark.sql.types import BooleanType
 from pyspark.sql.types import DoubleType
@@ -34,6 +28,14 @@ from pyspark.sql.types import StringType
 from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 from pyspark.sql.types import TimestampType
+
+import cudf
+
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +72,9 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         super().__init__(config)
         self.delta_path = delta_path
         self.delta_table_write_mode = delta_table_write_mode
-        self.spark = DatabricksSession.builder.remote(
-            host=databricks_host,
-            token=databricks_token,
-            cluster_id=databricks_cluster_id).getOrCreate()
+        self.spark = DatabricksSession.builder.remote(host=databricks_host,
+                                                      token=databricks_token,
+                                                      cluster_id=databricks_cluster_id).getOrCreate()
 
     @property
     def name(self) -> str:
@@ -87,7 +88,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
             Accepted input types.
         """
-        return (MessageMeta,)
+        return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
         return False
