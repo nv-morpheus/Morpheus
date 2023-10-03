@@ -13,17 +13,18 @@
 # limitations under the License.
 
 
-import cudf
-import pytest
-from unittest.mock import patch
 from unittest import mock
-from morpheus.stages.output.write_to_databricks_deltalake_stage import DataBricksDeltaLakeSinkStage
+from unittest.mock import patch
+
+import pytest
 from _utils.dataset_manager import DatasetManager
-from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.config import Config
+from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.write_to_databricks_deltalake_stage import DataBricksDeltaLakeSinkStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
 
 @pytest.mark.use_cudf
 def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: DatasetManager):
@@ -34,19 +35,18 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
     """
 
     df_input_a = dataset['filter_probs.csv']
-    with patch('utils.write_to_databricks_deltalake_stage.DatabricksSession') as mock_db_session:
+    with patch('morpheus.stages.output.write_to_databricks_deltalake_stage.DatabricksSession') as mock_db_session:
         databricks_deltalake_sink_stage = DataBricksDeltaLakeSinkStage(config,
-                     delta_path="", delta_table_write_mode="append",
-                     databricks_host="", databricks_token="",
-                     databricks_cluster_id="")
+                                                                       delta_path="", delta_table_write_mode="append",
+                                                                       databricks_host="", databricks_token="",
+                                                                       databricks_cluster_id="")
         mock_spark_df = mock.Mock()
         databricks_deltalake_sink_stage.spark.createDataFrame.return_value = mock_spark_df
-        # df_input_a = cudf.DataFrame({"name": ["five", "four", "three", "two", "one"], "value": [5, 4, 3, 2, 1]})
         pipeline = LinearPipeline(config)
         pipeline.set_source(InMemorySourceStage(config, [df_input_a]))
         pipeline.add_stage(DeserializeStage(config))
         pipeline.add_stage(SerializeStage(config))
-        sink = pipeline.add_stage(databricks_deltalake_sink_stage)
+        pipeline.add_stage(databricks_deltalake_sink_stage)
         pipeline.run()
         databricks_deltalake_sink_stage.spark.createDataFrame.assert_called_once()
         mock_spark_df.write.format.assert_called_once()
