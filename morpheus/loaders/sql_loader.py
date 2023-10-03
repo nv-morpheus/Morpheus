@@ -31,7 +31,8 @@ from morpheus.utils.loader_utils import register_loader
 logger = logging.getLogger(__name__)
 
 
-def _parse_query_data(query_data: dict[str, str | typing.Optional[dict[str, typing.Any]]]
+def _parse_query_data(
+    query_data: dict[str, str | typing.Optional[dict[str, typing.Any]]]
 ) -> dict[str, str | typing.Optional[dict[str, typing.Any]]]:
     """
     Parses a dictionary of query data.
@@ -47,10 +48,7 @@ def _parse_query_data(query_data: dict[str, str | typing.Optional[dict[str, typi
         A dictionary containing parsed connection string, query, and params (if present).
     """
 
-    return {
-        "query": query_data["query"],
-        "params": query_data.get("params", None)
-    }
+    return {"query": query_data["query"], "params": query_data.get("params", None)}
 
 
 def _read_sql(engine: typing.Any,
