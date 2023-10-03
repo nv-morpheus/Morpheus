@@ -57,10 +57,6 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
         Databricks cluster to be used to query the data as per SQL provided.
     delta_table_write_mode: str, default "append"
         Delta table write mode for storing data.
-    databricks_port : str, default "15001"
-        Databricks port that Databricks Connect connects to. Defaults to 15001
-    databricks_org_id : str, default "0"
-        Azure-only, see ?o=orgId in URL. Defaults to 0 for other platform
     """
 
     def __init__(self,
@@ -69,17 +65,15 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
                  databricks_host: str = None,
                  databricks_token: str = None,
                  databricks_cluster_id: str = None,
-                 delta_table_write_mode: str = "append",
-                 databricks_port: str = "15001",
-                 databricks_org_id: str = "0"):
+                 delta_table_write_mode: str = "append"):
 
         super().__init__(config)
         self.delta_path = delta_path
         self.delta_table_write_mode = delta_table_write_mode
         self.spark = DatabricksSession.builder.remote(
-                          host = databricks_host,
-                          token = databricks_token,
-                          cluster_id = databricks_cluster_id).getOrCreate()
+                          host=databricks_host,
+                          token=databricks_token,
+                          cluster_id=databricks_cluster_id).getOrCreate()
 
     @property
     def name(self) -> str:

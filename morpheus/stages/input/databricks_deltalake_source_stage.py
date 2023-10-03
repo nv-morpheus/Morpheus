@@ -49,10 +49,6 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
         Access token for Databricks cluster.
     databricks_cluster_id : str, default None
         Databricks cluster to be used to query the data as per SQL provided.
-    databricks_port : str, default "15001"
-        Databricks port that Databricks Connect connects to. Defaults to 15001
-    databricks_org_id : str, default "0"
-        Azure-only, see ?o=orgId in URL. Defaults to 0 for other platforms
     """
 
     def __init__(self,
@@ -61,16 +57,14 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
                  items_per_page: int = 1000,
                  databricks_host: str = None,
                  databricks_token: str = None,
-                 databricks_cluster_id: str = None,
-                 databricks_port: str = "15001",
-                 databricks_org_id: str = "0"):
+                 databricks_cluster_id: str = None):
 
         super().__init__(config)
         self.spark_query = spark_query
         self.spark = DatabricksSession.builder.remote(
-                          host = databricks_host,
-                          token = databricks_token,
-                          cluster_id = databricks_cluster_id).getOrCreate()
+                          host=databricks_host,
+                          token=databricks_token,
+                          cluster_id=databricks_cluster_id).getOrCreate()
         self.items_per_page = items_per_page
         self.offset = 0
 
@@ -89,15 +83,19 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
         try:
             spark_df = self.spark.sql(self.spark_query)
             spark_df = spark_df.withColumn('_id', sf.monotonically_increasing_id())
-            w = Window.partitionBy(sf.lit(1)).orderBy("_id")
-            spark_df = spark_df.select("*").withColumn("_id", sf.row_number().over(w))
+            window = Window.partitionBy(sf.lit(1)).orderBy("_id")
+            spark_df = spark_df.select("*").withColumn("_id", sf.row_number().over(window))
             count = spark_df.count()
             while self.offset <= count:
-                df = spark_df.where(sf.col('_id').between(self.offset, self.offset + self.items_per_page))
+                df = spark_df.where(sf.col('_id').between(self.offset,
+                                            self.offset + self.items_per_page))
                 logger.debug(f"Reading next iteration data between index: \
-                    {str(self.offset)} and {str(self.offset + self.items_per_page + 1)}")
+                    {str(self.offset)} and \
+                    {str(self.offset + self.items_per_page + 1)}")
                 self.offset += self.items_per_page + 1
-                yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"], axis=1)))
+                yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"]
+                                , axis=1)))
         except Exception as e:
-            logger.error("Error occurred while reading data from DeltaLake and converting to Dataframe: {}".format(e))
+            logger.error("Error occurred while reading data from \
+                        DeltaLake and converting to Dataframe: {}".format(e))
             raise
