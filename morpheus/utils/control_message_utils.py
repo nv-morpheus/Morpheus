@@ -89,7 +89,7 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
                 cm_ensure_payload_not_null(control_message=control_messsage)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
-            return ret_cm
+                return ret_cm
 
         return wrapper
 
