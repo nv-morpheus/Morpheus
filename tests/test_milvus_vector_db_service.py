@@ -37,7 +37,6 @@ def mock_milvus_client() -> MilvusClient:
 
 @pytest.fixture(scope="function", name="milvus_service_fixture")
 def milvus_service(mock_milvus_client_fixture) -> MilvusVectorDBService:
-    mock_milvus_client_fixture.has_collection.return_value = True
     service = MilvusVectorDBService(uri="http://localhost:19530")
     return service
 
