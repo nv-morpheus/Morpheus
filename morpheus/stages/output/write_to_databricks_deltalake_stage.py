@@ -141,7 +141,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
                 else:
                     spark_dtype = StructField(col, StringType())
             except Exception as e:
-                logger.error(f"Encountered error {e} while converting columns {col} with data type {dtype}")
+                logger.error("Encountered error %s while converting columns %s with data type %s", e, col, dtype)
                 spark_dtype = StructField(col, StringType())
             spark_schema.append(spark_dtype)
         return StructType(spark_schema)

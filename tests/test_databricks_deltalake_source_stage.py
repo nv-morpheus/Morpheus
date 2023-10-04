@@ -33,9 +33,9 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
     will return spark_df converted into a DataFrame with specific rows per page.
     """
 
-    # df = pd.DataFrame([("audit", "system1"),("audit", "system2"),("secure", "system1"),("secure", "system2")], columns=["log","source"])
     expected_df = dataset['filter_probs.csv']
-    with patch('morpheus.stages.input.databricks_deltalake_source_stage.DatabricksSession') as mock_db_session:
+    # pylint: disable=unused-variable
+    with patch('morpheus.stages.input.databricks_deltalake_source_stage.DatabricksSession') as mock_db_session:  # NOQA
         databricks_deltalake_source_stage = DataBricksDeltaLakeSourceStage(config,
                                                                            spark_query="",
                                                                            items_per_page=10000,

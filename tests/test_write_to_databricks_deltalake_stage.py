@@ -35,7 +35,9 @@ def test_databricks_deltalake_sink_stage_pipe(config: Config, dataset: DatasetMa
     """
 
     df_input_a = dataset['filter_probs.csv']
-    with patch('morpheus.stages.output.write_to_databricks_deltalake_stage.DatabricksSession') as mock_db_session:
+    # pylint: disable=unused-variable
+    with patch('morpheus.stages.output.write_to_databricks_deltalake_stage.DatabricksSession') \
+            as mock_db_session:  # NOQA
         databricks_deltalake_sink_stage = DataBricksDeltaLakeSinkStage(config,
                                                                        delta_path="",
                                                                        delta_table_write_mode="append",

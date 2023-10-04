@@ -87,12 +87,15 @@ class DataBricksDeltaLakeSourceStage(SingleOutputSource):
             count = spark_df.count()
             while self.offset <= count:
                 df = spark_df.where(sf.col('_id').between(self.offset, self.offset + self.items_per_page))
-                logger.debug(f"Reading next iteration data between index: \
-                    {str(self.offset)} and \
-                    {str(self.offset + self.items_per_page + 1)}")
+                logger.debug("Reading next iteration data between index: \
+                    %s and %s",
+                             str(self.offset),
+                             str(self.offset + self.items_per_page + 1))
                 self.offset += self.items_per_page + 1
                 yield MessageMeta(df=cudf.from_pandas(df.toPandas().drop(["_id"], axis=1)))
         except Exception as e:
-            logger.error("Error occurred while reading data from \
-                        DeltaLake and converting to Dataframe: {}".format(e))
+            logger.error(
+                "Error occurred while reading data from \
+                        DeltaLake and converting to Dataframe: %s",
+                e)
             raise
