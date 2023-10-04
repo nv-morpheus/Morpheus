@@ -60,7 +60,7 @@ def _read_sql(engine_obj: engine.Engine,
 
     Parameters
     ----------
-    engine : engine.Engine
+    engine_obj : engine.Engine
         SQL engine instance.
     query : str
         SQL query.
