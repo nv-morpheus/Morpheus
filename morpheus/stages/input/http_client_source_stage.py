@@ -24,6 +24,7 @@ import requests
 import cudf
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.config import PipelineModes
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -34,7 +35,7 @@ from morpheus.utils import http_utils
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-http-client", ignore_args=["query_params", "headers", "**request_kwargs"])
+@register_stage("from-http-client", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],ignore_args=["query_params", "headers", "**request_kwargs"])
 class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.

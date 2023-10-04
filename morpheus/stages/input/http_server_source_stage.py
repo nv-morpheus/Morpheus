@@ -25,6 +25,7 @@ import mrc
 import cudf
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.config import PipelineModes
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 SUPPORTED_METHODS = (HTTPMethod.POST, HTTPMethod.PUT)
 
 
-@register_stage("from-http")
+@register_stage("from-http", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that starts an HTTP server and listens for incoming requests on a specified endpoint.
