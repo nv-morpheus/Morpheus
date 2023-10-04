@@ -18,7 +18,7 @@ import typing
 
 import pandas as pd
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
+from sqlalchemy import engine
 
 import cudf
 
@@ -52,7 +52,7 @@ def _parse_query_data(
     return {"query": query_data["query"], "params": query_data.get("params", None)}
 
 
-def _read_sql(engine: Engine,
+def _read_sql(engine_obj: engine.Engine,
               query: str,
               params: typing.Optional[typing.Dict[str, typing.Any]] = None) -> typing.Dict[str, pd.DataFrame]:
     """
@@ -60,7 +60,7 @@ def _read_sql(engine: Engine,
 
     Parameters
     ----------
-    engine : typing.Any
+    engine : engine.Engine
         SQL engine instance.
     query : str
         SQL query.
@@ -74,9 +74,9 @@ def _read_sql(engine: Engine,
     """
 
     if (params is None):
-        df = pd.read_sql(query, engine)
+        df = pd.read_sql(query, engine_obj)
     else:
-        df = pd.read_sql(query, engine, params=params)
+        df = pd.read_sql(query, engine_obj, params=params)
 
     return {"df": df}
 
@@ -137,13 +137,13 @@ def sql_loader(control_message: ControlMessage, task: typing.Dict[str, typing.An
                     engine_registry[conn_str] = create_engine(conn_str)
 
                 aggregate_df = functools.partial(_aggregate_df, df_aggregate=final_df)
-                read_sql = functools.partial(_read_sql, engine=engine_registry[conn_str])
+                read_sql = functools.partial(_read_sql, engine_obj=engine_registry[conn_str])
                 execution_chain = ExecutionChain(function_chain=[_parse_query_data, read_sql, aggregate_df])
                 final_df = execution_chain(query_data=query_data)
         finally:
             # Dispose all open connections.
-            for engine in engine_registry.values():
-                engine.dispose()
+            for engine_obj in engine_registry.values():
+                engine_obj.dispose()
 
         control_message.payload(MessageMeta(final_df))
 
