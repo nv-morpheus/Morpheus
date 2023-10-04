@@ -83,10 +83,6 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         """
         Returns accepted input types for this stage.
-        Returns
-        -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
-            Accepted input types.
         """
         return (MessageMeta, )
 
