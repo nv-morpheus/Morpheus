@@ -93,6 +93,7 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
 
     assert_results(comp_stage.get_results())
 
+
 def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = 15):
     """
     Seeks to the beginning of the Kafka topic
@@ -109,6 +110,7 @@ def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = 15):
     assert partitions_assigned
 
     kafka_consumer.seek_to_beginning()
+
 
 @pytest.mark.kafka
 @pytest.mark.parametrize('async_commits', [True, False])
