@@ -35,7 +35,9 @@ from morpheus.utils import http_utils
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-http-client", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],ignore_args=["query_params", "headers", "**request_kwargs"])
+@register_stage("from-http-client",
+                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                ignore_args=["query_params", "headers", "**request_kwargs"])
 class HttpClientSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that polls a remote HTTP server for incoming data.
