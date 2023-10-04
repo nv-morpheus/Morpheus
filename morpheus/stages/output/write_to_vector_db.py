@@ -42,41 +42,41 @@ class WriteToVectorDBStage(SinglePortStage):
         The name of the resource managed by this instance.
     resource_conf : dict
         Additional resource configuration when performing vector database writes.
-    vdb_service : typing.Union[str, VectorDBService]
+    service : typing.Union[str, VectorDBService]
         Either the name of the vector database service to use or an instance of VectorDBService
         for managing the resource.
-    **kwargs : dict[str, typing.Any]
+    **service_kwargs : dict[str, typing.Any]
         Additional keyword arguments to pass when creating a VectorDBService instance.
 
     Raises
     ------
     ValueError
-        If `vdb_service` is not a valid string (service name) or an instance of VectorDBService.
+        If `service` is not a valid string (service name) or an instance of VectorDBService.
     """
 
     def __init__(self,
                  config: Config,
                  resource_name: str,
-                 vdb_service: typing.Union[str, VectorDBService],
-                 **kwargs: dict[str, typing.Any]):
+                 service: typing.Union[str, VectorDBService],
+                 **service_kwargs: dict[str, typing.Any]):
 
         super().__init__(config)
 
         self._resource_name = resource_name
-        self._resource_conf = {}
+        self._resource_kwargs = {}
 
-        if "resource_conf" in kwargs:
-            self._resource_conf = kwargs.pop("resource_conf")
+        if "resource_kwargs" in service_kwargs:
+            self._resource_kwargs = service_kwargs.pop("resource_kwargs")
 
-        if isinstance(vdb_service, str):
-            # If vdb_service is a string, assume it's the service name
-            self._vdb_service: VectorDBService = VectorDBServiceFactory.create_instance(service_name=vdb_service,
-                                                                                        **kwargs)
-        elif isinstance(vdb_service, VectorDBService):
-            # If vdb_service is an instance of VectorDBService, use it directly
-            self._vdb_service: VectorDBService = vdb_service
+        if isinstance(service, str):
+            # If service is a string, assume it's the service name
+            self._service: VectorDBService = VectorDBServiceFactory.create_instance(service_name=service,
+                                                                                    **service_kwargs)
+        elif isinstance(service, VectorDBService):
+            # If service is an instance of VectorDBService, use it directly
+            self._service: VectorDBService = service
         else:
-            raise ValueError("vdb_service must be a string (service name) or an instance of VectorDBService")
+            raise ValueError("service must be a string (service name) or an instance of VectorDBService")
 
     @property
     def name(self) -> str:
@@ -100,7 +100,7 @@ class WriteToVectorDBStage(SinglePortStage):
 
     def on_completed(self):
         # Close vector database service connection
-        self._vdb_service.close()
+        self._service.close()
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
@@ -108,9 +108,9 @@ class WriteToVectorDBStage(SinglePortStage):
 
         def on_data(ctrl_msg: ControlMessage) -> ControlMessage:
             # Insert entries in the dataframe to vector database.
-            result = self._vdb_service.insert_dataframe(name=self._resource_name,
-                                                        df=ctrl_msg.payload().df,
-                                                        **self._resource_conf)
+            result = self._service.insert_dataframe(name=self._resource_name,
+                                                    df=ctrl_msg.payload().df,
+                                                    **self._resource_kwargs)
             ctrl_msg.set_metadata("insert_response", result)
 
             return ctrl_msg
