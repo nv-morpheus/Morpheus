@@ -105,11 +105,9 @@ class MilvusVectorDBService(VectorDBService):
 
         index_param = None
 
-        if overwrite:
-            if self.has_store_object(name):
+        if not self.has_store_object(name) or overwrite:
+            if overwrite and self.has_store_object(name):
                 self.drop(name)
-
-        if not self.has_store_object(name):
 
             if len(schema_fields_conf) == 0:
                 raise ValueError("Cannot create collection as provided empty schema_fields configuration")
@@ -164,10 +162,12 @@ class MilvusVectorDBService(VectorDBService):
                            name: str,
                            data: typing.Union[list[list], list[dict], dict],
                            **kwargs: dict[str, typing.Any]) -> None:
+
+        if not self.has_store_object(name):
+            raise RuntimeError(f"Collection {name} doesn't exist.")
+
         collection = None
         try:
-            if not self.has_store_object(name):
-                raise RuntimeError(f"Collection {name} doesn't exist.")
             collection_conf = kwargs.get("collection_conf", {})
             partition_name = collection_conf.get("partition_name", "_default")
 
@@ -237,8 +237,8 @@ class MilvusVectorDBService(VectorDBService):
         ------
         RuntimeError
             If an error occurs during the search operation.
-        ValueError
-            If query argument is `None` and data keyword argument doesn't exist.
+            If query argument is `None` and `data` keyword argument doesn't exist.
+            If `data` keyword arguement is `None`.
         """
 
         try:
@@ -247,12 +247,15 @@ class MilvusVectorDBService(VectorDBService):
                 result = self._client.query(collection_name=name, filter=query, **kwargs)
             else:
                 if "data" not in kwargs:
-                    raise ValueError("The search operation requires that search vectors be " +
-                                     "provided as a keyword argument 'data'.")
+                    raise RuntimeError("The search operation requires that search vectors be " +
+                                       "provided as a keyword argument 'data'")
+                if kwargs["data"] is None:
+                    raise RuntimeError("Argument 'data' cannot be None")
+
                 data = kwargs.pop("data")
                 result = self._client.search(collection_name=name, data=data, **kwargs)
-                self._client.release_collection(collection_name=name)
             return result
+
         except MilvusException as exec_info:
             raise RuntimeError(f"Unable to perform serach: {exec_info}") from exec_info
 
