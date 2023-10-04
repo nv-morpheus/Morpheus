@@ -17,11 +17,11 @@ import typing
 
 import pandas as pd
 import pymilvus
-from pymilvus import Collection
 from pymilvus.exceptions import MilvusException
 
 import cudf
 
+from morpheus.service.milvus_client import MilvusClient
 from morpheus.service.vector_db_service import VectorDBService
 from morpheus.utils.vector_db_service_utils import MILVUS_DATA_TYPE_MAP
 from morpheus.utils.vector_db_service_utils import with_mutex
@@ -55,16 +55,7 @@ class MilvusVectorDBService(VectorDBService):
                  token: str = "",
                  **kwargs: dict[str, typing.Any]):
 
-        self._client = pymilvus.MilvusClient(uri=uri,
-                                             user=user,
-                                             password=password,
-                                             db_name=db_name,
-                                             token=token,
-                                             **kwargs)
-        self._handler = pymilvus.connections._fetch_handler(self._get_using())
-
-    def _get_using(self):
-        return self._client._using
+        self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
     def has_store_object(self, name: str) -> bool:
         """
@@ -80,7 +71,7 @@ class MilvusVectorDBService(VectorDBService):
         bool
             True if the collection exists, False otherwise.
         """
-        return self._handler.has_collection(name)
+        return self._client.has_collection(collection_name=name)
 
     def list_store_objects(self, **kwargs: dict[str, typing.Any]) -> list[str]:
         """
@@ -146,7 +137,7 @@ class MilvusVectorDBService(VectorDBService):
                 timeout = partition_conf.get("timeout", 1.0)
                 # Iterate over each partition configuration
                 for part in partition_conf["partitions"]:
-                    self._handler.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
+                    self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_mutex("_mutex")
     def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str, typing.Any]):
@@ -180,7 +171,7 @@ class MilvusVectorDBService(VectorDBService):
             collection_conf = kwargs.get("collection_conf", {})
             partition_name = collection_conf.get("partition_name", "_default")
 
-            collection = Collection(name=name, using=self._get_using(), data=data, **collection_conf)
+            collection = self._client.get_collection(collection_name=name, **collection_conf)
             result = collection.insert(data, partition_name=partition_name)
             collection.flush()
         finally:
@@ -246,10 +237,12 @@ class MilvusVectorDBService(VectorDBService):
         ------
         RuntimeError
             If an error occurs during the search operation.
+        ValueError
+            If query argument is `None` and data keyword argument doesn't exist.
         """
 
         try:
-            self._handler.load_collection(collection_name=name)
+            self._client.load_collection(collection_name=name)
             if query is not None:
                 result = self._client.query(collection_name=name, filter=query, **kwargs)
             else:
@@ -258,13 +251,13 @@ class MilvusVectorDBService(VectorDBService):
                                      "provided as a keyword argument 'data'.")
                 data = kwargs.pop("data")
                 result = self._client.search(collection_name=name, data=data, **kwargs)
-                self._handler.release_collection(collection_name=name)
+                self._client.release_collection(collection_name=name)
             return result
-        except MilvusException as exec:
-            raise RuntimeError(f"Unable to perform serach: {exec}") from exec
+        except MilvusException as exec_info:
+            raise RuntimeError(f"Unable to perform serach: {exec_info}") from exec_info
 
         finally:
-            self._handler.release_collection(collection_name=name)
+            self._client.release_collection(collection_name=name)
 
     @with_mutex("_mutex")
     def update(self, name: str, data: list[dict], **kwargs: dict[str, typing.Any]) -> typing.Any:
@@ -284,7 +277,7 @@ class MilvusVectorDBService(VectorDBService):
         if not isinstance(data, list):
             raise RuntimeError("Data is not of type list.")
 
-        response = self._handler.upsert(collection_name=name, entities=data, **kwargs)
+        response = self._client.upsert(collection_name=name, entities=data, **kwargs)
 
         return response
 
@@ -332,7 +325,7 @@ class MilvusVectorDBService(VectorDBService):
             Returns vectors of the given keys that are delete from the resource.
         """
 
-        return self._handler.delete(collection_name=name, expression=expr, **kwargs)
+        return self._client.delete_by_expr(collection_name=name, expression=expr, **kwargs)
 
     def retrieve_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
                                                                                              typing.Any]) -> list[dict]:
@@ -363,7 +356,6 @@ class MilvusVectorDBService(VectorDBService):
             Additional keyword arguments for the count operation.
         """
 
-        # Updated counts is not updating when we delete the vectors from the collection.
         return self._client.num_entities(collection_name=name, **kwargs)
 
     @with_mutex("_mutex")
@@ -380,23 +372,42 @@ class MilvusVectorDBService(VectorDBService):
             Name of the collection, index, or partition to be dropped.
         **kwargs : dict
             Additional keyword arguments for specifying the type and partition name (if applicable).
+
+        Notes on Expected Keyword Arguments:
+        ------------------------------------
+        - 'resource' (str, optional):
+        Specifies the type of resource to drop. Possible values: 'collection' (default), 'index', 'partition'.
+
+        - 'partition_name' (str, optional):
+        Required when dropping a specific partition within a collection. Specifies the partition name to be dropped.
+
+        - 'field_name' (str, optional):
+        Required when dropping an index within a collection. Specifies the field name for which the index is created.
+
+        - 'index_name' (str, optional):
+        Required when dropping an index within a collection. Specifies the name of the index to be dropped.
+
+        Raises
+        ------
+        ValueError
+            If mandatory arguments are missing or if the provided 'resource' value is invalid.
         """
 
         if self.has_store_object(name):
-            type = kwargs.get("type", "collection")
-            if type == "collection":
+            resource = kwargs.get("resource", "collection")
+            if resource == "collection":
                 self._client.drop_collection(collection_name=name)
-            elif type == "partition" and "partition_name" in kwargs:
+            elif resource == "partition" and "partition_name" in kwargs:
                 partition_name = kwargs["partition_name"]
-                if self._handler.has_partition(collection_name=name, partition_name=partition_name):
-                    self._handler.drop_partition(collection_name=name, partition_name=partition_name)
-            elif type == "index":
+                if self._client.has_partition(collection_name=name, partition_name=partition_name):
+                    self._client.drop_partition(collection_name=name, partition_name=partition_name)
+            elif resource == "index":
                 if "field_name" in kwargs and "index_name" in kwargs:
-                    self._handler.drop_index(collection_name=name,
-                                             field_name=kwargs["field_name"],
-                                             index_name=kwargs["index_name"])
+                    self._client.drop_index(collection_name=name,
+                                            field_name=kwargs["field_name"],
+                                            index_name=kwargs["index_name"])
                 else:
-                    raise ValueError("Mandatory fields missing")
+                    raise ValueError("Mandatory arguments 'field_name' and 'index_name' are missing")
 
     def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -411,7 +422,6 @@ class MilvusVectorDBService(VectorDBService):
         """
         return self._client.describe_collection(collection_name=name, **kwargs)
 
-    @with_mutex("_mutex")
     def close(self) -> None:
         """
         Close the connection to the Milvus vector database.

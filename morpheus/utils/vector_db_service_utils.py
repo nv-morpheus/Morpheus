@@ -96,6 +96,6 @@ class VectorDBServiceFactory:
             class_ = getattr(module, class_name)
             instance = class_(*args, **kwargs)
             return instance
-        except (ModuleNotFoundError, AttributeError):
+        except (ModuleNotFoundError, AttributeError) as exc:
             raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class," +
-                             f"such as {module_name}, has been implemented.")
+                             f"such as {module_name}, has been implemented.") from exc

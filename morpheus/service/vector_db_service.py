@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import threading
 import typing
 from abc import ABC
@@ -20,6 +21,8 @@ from abc import abstractmethod
 import pandas as pd
 
 import cudf
+
+logger = logging.getLogger(__name__)
 
 
 class VectorDBService(ABC):
@@ -180,14 +183,9 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def close(self, **kwargs) -> None:
+    def close(self) -> None:
         """
-        Close connections to the vector database.
-
-        Parameters
-        ----------
-        **kwargs : dict
-            Extra keyword arguments specific to the vector database implementation.
+        Close connection to the vector database.
         """
 
         pass
@@ -228,6 +226,7 @@ class VectorDBService(ABC):
 
         pass
 
+    # pylint: disable=unused-argument
     def transform(self, data: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Transform data according to the specific vector database implementation.
