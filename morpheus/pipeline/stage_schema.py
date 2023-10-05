@@ -16,7 +16,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from .stream_wrapper import StreamWrapper
+    from .stream_wrapper import BaseStage
 
 
 class PortSchema:
@@ -43,7 +43,7 @@ class PortSchema:
 
 class StageSchema:
 
-    def __init__(self, stage: "StreamWrapper"):
+    def __init__(self, stage: "BaseStage"):
         self._input_schemas = []
         for port in stage.input_ports:
             input_schema = port.get_input_schema()

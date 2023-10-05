@@ -35,7 +35,7 @@ class Receiver():
             Receiver port number.
     """
 
-    def __init__(self, parent: "_pipeline.StreamWrapper", port_number: int):
+    def __init__(self, parent: "_pipeline.BaseStage", port_number: int):
 
         self._parent = parent
         self.port_number = port_number
