@@ -32,8 +32,8 @@ class PortSchema:
         assert not self._completed, "Attempted to set type on completed PortSchema"
         self._type = value
 
-    def complete(self):
-        assert not self._completed, "Attempted to PortSchema.complete() twice"
+    def _complete(self):
+        assert not self._completed, "Attempted to PortSchema._complete() twice"
         assert self._type is not None, "Attempted to complete PortSchema without setting type"
         self._completed = True
 
@@ -101,11 +101,13 @@ class StageSchema:
             "Attempted to access output_schema property on StageSchema with multiple outputs"
         return self._output_schemas[0]
 
-    def complete(self):
+    def _complete(self):
         """
-        Calls complete on all output port schemas.
-        This will trigger an assertion error if any of the output port schemas do not have a type set.
+        Calls `_complete` on all output port schemas.
+        This will trigger an assertion error if any of the output port schemas do not have a type set, or have
+        previously been completed. Users should not call this function directly, as this is called internally by the
+        `BaseStage` and `Receiver` classes.
         """
         for port_schema in self.output_schemas:
             # This locks the port schema
-            port_schema.complete()
+            port_schema._complete()

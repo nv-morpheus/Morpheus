@@ -347,7 +347,7 @@ class BaseStage(ABC, collections.abc.Hashable):
             (f"Prebuild expected `schema.output_schemas` to be of length {len(self.output_ports)} "
              f"(one for each output port), but got {len(schema.output_schemas)}.")
 
-        schema.complete()
+        schema._complete()
 
         for (port_idx, port_schema) in enumerate(schema.output_schemas):
             self.output_ports[port_idx].output_schema = port_schema

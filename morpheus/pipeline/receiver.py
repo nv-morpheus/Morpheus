@@ -111,7 +111,7 @@ class Receiver():
                                 "Use a merge stage to handle different types of inputs."))
 
         self._input_schema = _pipeline.PortSchema(port_type=great_ancestor)
-        self._input_schema.complete()
+        self._input_schema._complete()
         self._is_schema_linked = True
 
     def get_input_schema(self) -> _pipeline.PortSchema:
