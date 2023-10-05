@@ -160,6 +160,14 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
+@click.option('--mlflow_experiment_name_template',
+              type=str,
+              default="dfp/azure/training/{reg_model_name}",
+              help="The MLflow experiment name template to use when logging experiments. ")
+@click.option('--mlflow_model_name_template',
+              type=str,
+              default="DFP-azure-{user_id}",
+              help="The MLflow model name template to use when logging models. ")
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -169,6 +177,8 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  filter_threshold,
+                 mlflow_experiment_name_template,
+                 mlflow_model_name_template,
                  file_type_override,
                  **kwargs):
     """Runs the DFP pipeline."""
@@ -332,8 +342,8 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    model_name_formatter = "DFP-azure-{user_id}"
-    experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
+    model_name_formatter = mlflow_model_name_template
+    experiment_name_formatter = mlflow_experiment_name_template
 
     if (is_training):
         # Finally, perform training which will output a model

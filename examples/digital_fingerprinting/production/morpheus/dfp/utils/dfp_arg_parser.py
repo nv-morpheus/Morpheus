@@ -46,6 +46,8 @@ class DFPArgParser:
                  source: str,
                  tracking_uri: str,
                  silence_monitors: bool,
+                 mlflow_experiment_name_formatter: str,
+                 mlflow_model_name_formatter: str,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -65,8 +67,8 @@ class DFPArgParser:
         self._time_fields: TimeFields = None
         self._silence_monitors = silence_monitors
 
-        self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
-        self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
+        self._model_name_formatter = mlflow_model_name_formatter
+        self._experiment_name_formatter = mlflow_experiment_name_formatter
 
     @staticmethod
     def verify_init(func):
