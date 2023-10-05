@@ -16,7 +16,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from .stream_wrapper import BaseStage
+    from .base_stage import BaseStage
 
 
 class PortSchema:

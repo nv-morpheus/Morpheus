@@ -34,7 +34,7 @@ from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_wrapper import BaseStage
+from morpheus.pipeline.base_stage import BaseStage
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
