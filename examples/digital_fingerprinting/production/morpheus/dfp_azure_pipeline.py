@@ -61,6 +61,18 @@ from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
 
+def _file_type_name_to_enum(file_type: str) -> FileTypes:
+    """Converts a file type name to a FileTypes enum."""
+    if (file_type == "JSON"):
+        return FileTypes.JSON
+    elif (file_type == "CSV"):
+        return FileTypes.CSV
+    elif (file_type == "PARQUET"):
+        return FileTypes.PARQUET
+    else:
+        return FileTypes.Auto
+
+
 @click.command()
 @click.option(
     "--train_users",
@@ -125,6 +137,14 @@ from morpheus.utils.logger import configure_logging
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option(
+    "--file_type_override",
+    "-t",
+    type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
+    default="JSON",
+    help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
+    callback=lambda _, __, value: None if value is None else _file_type_name_to_enum(value)
+)
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
@@ -149,6 +169,7 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  filter_threshold,
+                 file_type_override,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -157,7 +178,7 @@ def run_pipeline(train_users,
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
 
-    # None indicates we arent training anything
+    # None indicates we aren't training anything
     is_training = train_users != "none"
 
     skip_users = list(skip_user)
@@ -282,7 +303,7 @@ def run_pipeline(train_users,
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
-                                file_type=FileTypes.JSON,
+                                file_type=file_type_override,
                                 parser_kwargs={
                                     "lines": False, "orient": "records"
                                 },
