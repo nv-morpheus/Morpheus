@@ -34,14 +34,15 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("to-databricks-deltalake")
-class DataBricksDeltaLakeSinkStage(SinglePortStage):
+class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
     """
     Sink stage used to write messages to a DeltaLake table.
 
@@ -89,8 +90,7 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def write_to_deltalake(meta: MessageMeta):
             """
@@ -109,10 +109,9 @@ class DataBricksDeltaLakeSinkStage(SinglePortStage):
             return meta
 
         node = builder.make_node(self.unique_name, ops.map(write_to_deltalake))
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        # Return input unchanged to allow passthrough
-        return node, input_stream[1]
+        return node
 
     @staticmethod
     def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> StructType:
