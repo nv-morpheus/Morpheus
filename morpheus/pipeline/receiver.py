@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 
 class Receiver():
     """
-    The `Receiver` object represents a downstream port on a `StreamWrapper` object that gets messages from a `Sender`.
+    The `Receiver` object represents a downstream port on a `BaseStage` object that gets messages from a `Sender`.
 
     Parameters
         ----------
-        parent : `morpheus.pipeline.pipeline.StreamWrapper`
-            Parent `StreamWrapper` object.
+        parent : `morpheus.pipeline.pipeline.BaseStage`
+            Parent `BaseStage` object.
         port_number : int
             Receiver port number.
     """

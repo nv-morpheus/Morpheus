@@ -139,7 +139,7 @@ class Pipeline():
 
         Parameters
         ----------
-        start : typing.Union[StreamWrapper, Sender]
+        start : typing.Union[BaseStage, Sender]
             The start of the edge or parent stage.
 
         end : typing.Union[Stage, Receiver]
@@ -265,7 +265,7 @@ class Pipeline():
     def build(self):
         """
         This function sequentially activates all the Morpheus pipeline stages passed by the users to execute a
-        pipeline. For the `Source` and all added `Stage` objects, `StreamWrapper.build` will be called sequentially to
+        pipeline. For the `Source` and all added `Stage` objects, `BaseStage.build` will be called sequentially to
         construct the pipeline.
 
         Once the pipeline has been constructed, this will start the pipeline by calling `Source.start` on the source
