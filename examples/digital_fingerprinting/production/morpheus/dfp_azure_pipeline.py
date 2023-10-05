@@ -309,14 +309,15 @@ def run_pipeline(train_users,
                             start_time=start_time,
                             end_time=end_time))
 
+    parser_kwargs = None
+    if (file_type_override == FileTypes.JSON):
+        parser_kwargs = {"lines": False, "orient": "records"}
     # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
                                 file_type=file_type_override,
-                                parser_kwargs={
-                                    "lines": False, "orient": "records"
-                                },
+                                parser_kwargs=parser_kwargs,  # TODO(Devin) probably should be configurable too
                                 cache_dir=cache_dir))
 
     pipeline.add_stage(MonitorStage(config, description="Input data rate"))
