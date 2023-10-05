@@ -93,6 +93,10 @@ function update_conda_env() {
 
     if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
         rapids-logger "Checking for updates to conda env"
+
+        # Remove default/conflicting channels from base image
+        rm /opt/conda/.condarc
+
         # Update the packages
         rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
     fi
