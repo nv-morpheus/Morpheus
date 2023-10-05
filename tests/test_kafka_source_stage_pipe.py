@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import os
-import time
 import typing
 
 import pandas as pd
@@ -34,9 +33,6 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-
-if (typing.TYPE_CHECKING):
-    from kafka import KafkaConsumer
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
