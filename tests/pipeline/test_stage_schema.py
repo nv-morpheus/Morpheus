@@ -77,6 +77,7 @@ def multi_pass_thru_stage_fixture(config: Config, in_mem_multi_source_stage: InM
     yield stage
 
 
+# Fixtures cannot be used directly as paramertize values, but we can fetch them by name
 @pytest.mark.parametrize("stage_fixture_name,num_inputs,num_outputs",
                          [("in_mem_source_stage", 0, 1), ("in_mem_multi_source_stage", 0, 3), ("stage", 1, 1),
                           ("split_stage", 1, 2), ("multi_pass_thru_stage", 3, 3)])
@@ -137,3 +138,20 @@ def test_output_schema_multi_error(request: pytest.FixtureRequest, stage_fixture
 
     with pytest.raises(AssertionError):
         schema.output_schema
+
+
+@pytest.mark.parametrize(
+    "stage_fixture_name",
+    ["in_mem_source_stage", "in_mem_multi_source_stage", "stage", "split_stage", "multi_pass_thru_stage"])
+def test_complete(request: pytest.FixtureRequest, stage_fixture_name: str):
+    stage = request.getfixturevalue(stage_fixture_name)
+    schema = StageSchema(stage)
+    stage.compute_schema(schema)
+
+    for port_schema in schema.output_schemas:
+        assert not port_schema.is_complete()
+
+    schema._complete()
+
+    for port_schema in schema.output_schemas:
+        assert port_schema.is_complete()
