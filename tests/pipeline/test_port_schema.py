@@ -20,21 +20,21 @@ from morpheus.pipeline.stage_schema import PortSchema
 
 
 @pytest.mark.parametrize("port_type", [float, None])
-def test_port_schema_init(port_type: type):
+def test_constructor(port_type: type):
     port_schema = PortSchema(port_type=port_type)
     assert port_schema.get_type() is port_type
     assert not port_schema.is_complete()
 
 
 @pytest.mark.parametrize("port_type", [float, None])
-def test_port_schema_set_type(port_type: type):
+def test_set_type(port_type: type):
     port_schema = PortSchema(port_type=port_type)
 
     port_schema.set_type(int)
     assert port_schema.get_type() is int
 
 
-def test_port_schema_complete():
+def test_complete():
     port_schema = PortSchema(port_type=float)
     assert not port_schema.is_complete()
 
@@ -42,7 +42,7 @@ def test_port_schema_complete():
     assert port_schema.is_complete()
 
 
-def test_port_schema_complete_error_no_type():
+def test_complete_error_no_type():
     port_schema = PortSchema()
 
     with pytest.raises(AssertionError):
@@ -51,7 +51,7 @@ def test_port_schema_complete_error_no_type():
     assert not port_schema.is_complete()
 
 
-def test_port_schema_complete_error_called_twice():
+def test_complete_error_called_twice():
     port_schema = PortSchema(port_type=float)
 
     port_schema._complete()
