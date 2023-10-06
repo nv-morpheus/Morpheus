@@ -52,8 +52,4 @@ class InMemoryMultiSourceStage(SourceStage):
             yield x
 
     def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
-        sources = []
-        for _ in range(len(self._data)):
-            sources.append(builder.make_source(self.unique_name, self._emit_data()))
-
-        return sources
+        return [builder.make_source(self.unique_name, self._emit_data()) for _ in range(len(self._data))]

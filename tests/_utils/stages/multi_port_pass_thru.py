@@ -47,8 +47,8 @@ class MultiPassThruStage(PassThruTypeMixin, Stage):
 
         output_nodes = []
 
-        for input_node in input_nodes:
-            node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        for (port_idx, input_node) in enumerate(input_nodes):
+            node = builder.make_node(f"{self.unique_name}_port_{port_idx}", ops.map(self.on_data))
             builder.make_edge(input_node, node)
             output_nodes.append(node)
 

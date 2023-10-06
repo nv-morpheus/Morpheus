@@ -15,18 +15,18 @@
 # limitations under the License.
 
 import pytest
-import typing_utils
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import Pipeline
 from morpheus.pipeline.base_stage import BaseStage
 from morpheus.pipeline.source_stage import SourceStage
-from morpheus.pipeline.stage_schema import PortSchema
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from _utils.dataset_manager import DatasetManager
+from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
+from _utils.stages.multi_port_pass_thru import MultiPassThruStage
 from _utils.stages.split_stage import SplitStage
 
 
@@ -36,11 +36,20 @@ def in_mem_source_stage_fixture(config: Config, dataset_cudf: DatasetManager):
     yield InMemorySourceStage(config, [df])
 
 
+@pytest.fixture(name="in_mem_multi_source_stage")
+def in_mem_multi_source_stage_fixture(config: Config):
+    data = [[1, 2, 3], ["a", "b", "c"], [1.1, 2.2, 3.3]]
+    yield InMemoryMultiSourceStage(config, data=data)
+
+
 def _build_ports(config: Config, source_stage: SourceStage, stage: BaseStage):
     pipe = Pipeline(config)
     pipe.add_stage(source_stage)
     pipe.add_stage(stage)
-    pipe.add_edge(source_stage, stage)
+
+    for (port_idx, output_port) in enumerate(source_stage.output_ports):
+        pipe.add_edge(output_port, stage.input_ports[port_idx])
+
     pipe.build()
 
 
@@ -52,16 +61,25 @@ def stage_fixture(config: Config, in_mem_source_stage: InMemorySourceStage):
     yield stage
 
 
-@pytest.fixture(name="multiport_stage")
-def multiport_stage_fixture(config: Config, in_mem_source_stage: InMemorySourceStage):
+@pytest.fixture(name="split_stage")
+def split_stage_fixture(config: Config, in_mem_source_stage: InMemorySourceStage):
     stage = SplitStage(config)
     _build_ports(config=config, source_stage=in_mem_source_stage, stage=stage)
 
     yield stage
 
 
-@pytest.mark.parametrize("stage_fixture_name,num_inputs,num_outputs", [("in_mem_source_stage", 0, 1), ("stage", 1, 1),
-                                                                       ("multiport_stage", 1, 2)])
+@pytest.fixture(name="multi_pass_thru_stage")
+def multi_pass_thru_stage_fixture(config: Config, in_mem_multi_source_stage: InMemoryMultiSourceStage):
+    stage = MultiPassThruStage(config, num_ports=3)
+    _build_ports(config=config, source_stage=in_mem_multi_source_stage, stage=stage)
+
+    yield stage
+
+
+@pytest.mark.parametrize("stage_fixture_name,num_inputs,num_outputs",
+                         [("in_mem_source_stage", 0, 1), ("in_mem_multi_source_stage", 0, 3), ("stage", 1, 1),
+                          ("split_stage", 1, 2), ("multi_pass_thru_stage", 3, 3)])
 def test_constructor(request: pytest.FixtureRequest, stage_fixture_name: str, num_inputs: int, num_outputs: int):
     stage = request.getfixturevalue(stage_fixture_name)
     schema = StageSchema(stage)
@@ -98,22 +116,24 @@ def test_single_port_output_schemas(in_mem_source_stage: InMemorySourceStage):
     assert schema.output_schema is port_schema
 
 
-def test_multi_port_output_schemas(multiport_stage: SplitStage):
-    schema = StageSchema(multiport_stage)
-    multiport_stage.compute_schema(schema)
+def test_multi_port_output_schemas(split_stage: SplitStage):
+    schema = StageSchema(split_stage)
+    split_stage.compute_schema(schema)
     assert len(schema.output_schemas) == 2
 
     for port_schema in schema.output_schemas:
         assert port_schema.get_type() is MessageMeta
 
 
-def test_output_schema_multi_error(multiport_stage: SplitStage):
+@pytest.mark.parametrize("stage_fixture_name", ["split_stage", "multi_pass_thru_stage"])
+def test_output_schema_multi_error(request: pytest.FixtureRequest, stage_fixture_name: str):
     """
     Test confirms that the output_schema property raises an error when there are multiple output schemas
     """
-    schema = StageSchema(multiport_stage)
-    multiport_stage.compute_schema(schema)
-    assert len(schema.output_schemas) == 2
+    stage = request.getfixturevalue(stage_fixture_name)
+    schema = StageSchema(stage)
+    stage.compute_schema(schema)
+    assert len(schema.output_schemas) > 1
 
     with pytest.raises(AssertionError):
         schema.output_schema
