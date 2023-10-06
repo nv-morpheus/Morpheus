@@ -14,10 +14,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
-import cudf
-
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
