@@ -24,7 +24,7 @@ from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.stage import Stage
 
 
-class MultiPassThruStage(PassThruTypeMixin, Stage):
+class MultiPortPassThruStage(PassThruTypeMixin, Stage):
 
     def __init__(self, c: Config, num_ports: int):
         super().__init__(c)

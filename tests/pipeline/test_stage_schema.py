@@ -16,65 +16,11 @@
 
 import pytest
 
-from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.pipeline import Pipeline
-from morpheus.pipeline.base_stage import BaseStage
-from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from _utils.dataset_manager import DatasetManager
-from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
-from _utils.stages.multi_port_pass_thru import MultiPassThruStage
 from _utils.stages.split_stage import SplitStage
-
-
-@pytest.fixture(name="in_mem_source_stage")
-def in_mem_source_stage_fixture(config: Config, dataset_cudf: DatasetManager):
-    df = dataset_cudf['filter_probs.csv']
-    yield InMemorySourceStage(config, [df])
-
-
-@pytest.fixture(name="in_mem_multi_source_stage")
-def in_mem_multi_source_stage_fixture(config: Config):
-    data = [[1, 2, 3], ["a", "b", "c"], [1.1, 2.2, 3.3]]
-    yield InMemoryMultiSourceStage(config, data=data)
-
-
-def _build_ports(config: Config, source_stage: SourceStage, stage: BaseStage):
-    pipe = Pipeline(config)
-    pipe.add_stage(source_stage)
-    pipe.add_stage(stage)
-
-    for (port_idx, output_port) in enumerate(source_stage.output_ports):
-        pipe.add_edge(output_port, stage.input_ports[port_idx])
-
-    pipe.build()
-
-
-@pytest.fixture(name="stage")
-def stage_fixture(config: Config, in_mem_source_stage: InMemorySourceStage):
-    stage = DeserializeStage(config)
-    _build_ports(config=config, source_stage=in_mem_source_stage, stage=stage)
-
-    yield stage
-
-
-@pytest.fixture(name="split_stage")
-def split_stage_fixture(config: Config, in_mem_source_stage: InMemorySourceStage):
-    stage = SplitStage(config)
-    _build_ports(config=config, source_stage=in_mem_source_stage, stage=stage)
-
-    yield stage
-
-
-@pytest.fixture(name="multi_pass_thru_stage")
-def multi_pass_thru_stage_fixture(config: Config, in_mem_multi_source_stage: InMemoryMultiSourceStage):
-    stage = MultiPassThruStage(config, num_ports=3)
-    _build_ports(config=config, source_stage=in_mem_multi_source_stage, stage=stage)
-
-    yield stage
 
 
 # Fixtures cannot be used directly as paramertize values, but we can fetch them by name

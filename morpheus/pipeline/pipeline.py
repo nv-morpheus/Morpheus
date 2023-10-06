@@ -136,6 +136,7 @@ class Pipeline():
                  segment_id: str = "main"):
         """
         Create an edge between two stages and add it to a segment in the pipeline.
+        When `start` and `end` are stages, they must have exactly one output and input port respectively.
 
         Parameters
         ----------
@@ -151,12 +152,24 @@ class Pipeline():
         self._assert_not_built()
 
         if (isinstance(start, BaseStage)):
+            assert len(start.output_ports) > 0, \
+                "Cannot call `add_edge` with a stage with no output ports as the `start` parameter"
+            assert len(start.output_ports) == 1, \
+                ("Cannot call `add_edge` with a stage with with multiple output ports as the `start` parameter, "
+                 "instead `add_edge` must be called for each output port individually.")
             start_port = start.output_ports[0]
+
         elif (isinstance(start, Sender)):
             start_port = start
 
         if (isinstance(end, Stage)):
+            assert len(end.input_ports) > 0, \
+                "Cannot call `add_edge` with a stage with no input ports as the `end` parameter"
+            assert len(end.input_ports) == 1, \
+                ("Cannot call `add_edge` with a stage with with multiple input ports as the `end` parameter, "
+                 "instead `add_edge` must be called for each input port individually.")
             end_port = end.input_ports[0]
+
         elif (isinstance(end, Receiver)):
             end_port = end
 

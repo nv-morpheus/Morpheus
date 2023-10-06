@@ -21,9 +21,13 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
+from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
+from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
 from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
+from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -159,3 +163,35 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
     pipe.run()
 
     assert_results(compare_stage.get_results())
+
+
+@pytest.mark.parametrize("num_outputs", [0, 2, 3])
+def test_add_edge_output_port_errors(config: Config, num_outputs: int):
+    """
+    Calling add_edge where start has either no output ports or multiple output ports should cause an assertion error.
+    """
+    data = [list(range(3)) for _ in range(num_outputs)]
+    start_stage = InMemoryMultiSourceStage(config, data=data)
+
+    pipe = Pipeline(config)
+    pipe.add_stage(start_stage)
+    end_stage = pipe.add_stage(ConvMsg(config))
+
+    with pytest.raises(AssertionError):
+        pipe.add_edge(start_stage, end_stage.input_ports[0])
+
+
+@pytest.mark.parametrize("num_inputs", [0, 2, 3])
+def test_add_edge_input_port_errors(config: Config, num_inputs: int):
+    """
+    Calling add_edge where end has either no input ports or multiple input ports should cause an assertion error.
+    """
+    start_stage = InMemSourceXStage(config, data=list(range(3)))
+    end_stage = MultiPortPassThruStage(config, num_ports=num_inputs)
+
+    pipe = Pipeline(config)
+    pipe.add_stage(start_stage)
+    pipe.add_stage(end_stage)
+
+    with pytest.raises(AssertionError):
+        pipe.add_edge(start_stage.output_ports[0], end_stage)
