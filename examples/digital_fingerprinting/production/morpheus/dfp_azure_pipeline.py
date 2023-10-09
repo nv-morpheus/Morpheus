@@ -137,14 +137,14 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
-@click.option(
-    "--file_type_override",
-    "-t",
-    type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
-    default="JSON",
-    help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
-    callback=lambda _, __, value: None if value is None else _file_type_name_to_enum(value)
-)
+@click.option("--file_type_override",
+              "-t",
+              type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
+              default="JSON",
+              help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
+              callback=lambda _,
+              __,
+              value: None if value is None else _file_type_name_to_enum(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
@@ -168,6 +168,7 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
               type=str,
               default="DFP-azure-{user_id}",
               help="The MLflow model name template to use when logging models. ")
+@click.option('--use_postproc_schema', is_flag=True, help='Assume that input data has already been preprocessed.')
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -180,6 +181,7 @@ def run_pipeline(train_users,
                  mlflow_experiment_name_template,
                  mlflow_model_name_template,
                  file_type_override,
+                 use_postproc_schema,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -188,7 +190,7 @@ def run_pipeline(train_users,
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
 
-    # None indicates we aren't training anything
+    # None indicates we arent training anything
     is_training = train_users != "none"
 
     skip_users = list(skip_user)
@@ -238,58 +240,131 @@ def run_pipeline(train_users,
     config.ae.timestamp_column_name = "timestamp"
 
     # Specify the column names to ensure all data is uniform
-    source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
-    ]
+    if (use_postproc_schema):
 
-    source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
+        source_column_info = [
+            ColumnInfo(name="autonomousSystemNumber", dtype=str),
+            ColumnInfo(name="location_geoCoordinates_latitude", dtype=float),
+            ColumnInfo(name="location_geoCoordinates_longitude", dtype=float),
+            ColumnInfo(name="resourceDisplayName", dtype=str),
+            ColumnInfo(name="travel_speed_kmph", dtype=float),
+            DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
+            ColumnInfo(name="appDisplayName", dtype=str),
+            ColumnInfo(name="clientAppUsed", dtype=str),
+            RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="userPrincipalName"),
+            RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="deviceDetail_browser"),
+            RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="deviceDetail_displayName"),
+            RenameColumn(name="deviceDetailoperatingSystem", dtype=str, input_name="deviceDetail_operatingSystem"),
 
-    # Preprocessing schema
-    preprocess_column_info = [
-        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
-        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="appDisplayName", dtype=str),
-        ColumnInfo(name="clientAppUsed", dtype=str),
-        ColumnInfo(name="deviceDetailbrowser", dtype=str),
-        ColumnInfo(name="deviceDetaildisplayName", dtype=str),
-        ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
-        ColumnInfo(name="statusfailureReason", dtype=str),
+            # RenameColumn(name="location_country", dtype=str, input_name="location_countryOrRegion"),
+            ColumnInfo(name="location_city_state_country", dtype=str),
+            ColumnInfo(name="location_state_country", dtype=str),
+            ColumnInfo(name="location_country", dtype=str),
 
-        # Derived columns
-        IncrementColumn(name="logcount",
-                        dtype=int,
-                        input_name=config.ae.timestamp_column_name,
-                        groupby_column=config.ae.userid_column_name),
-        DistinctIncrementColumn(name="locincrement",
-                                dtype=int,
-                                input_name="location",
-                                groupby_column=config.ae.userid_column_name,
-                                timestamp_column=config.ae.timestamp_column_name),
-        DistinctIncrementColumn(name="appincrement",
-                                dtype=int,
-                                input_name="appDisplayName",
-                                groupby_column=config.ae.userid_column_name,
-                                timestamp_column=config.ae.timestamp_column_name)
-    ]
+            # Non-features
+            ColumnInfo(name="is_corp_vpn", dtype=bool),
+            ColumnInfo(name="distance_km", dtype=float),
+            ColumnInfo(name="ts_delta_hour", dtype=float),
+        ]
+        source_schema = DataFrameInputSchema(column_info=source_column_info)
 
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+        preprocess_column_info = [
+            ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
+            ColumnInfo(name=config.ae.userid_column_name, dtype=str),
+
+            # Resource access
+            ColumnInfo(name="appDisplayName", dtype=str),
+            ColumnInfo(name="resourceDisplayName", dtype=str),
+            ColumnInfo(name="clientAppUsed", dtype=str),
+
+            # Device detail
+            ColumnInfo(name="deviceDetailbrowser", dtype=str),
+            ColumnInfo(name="deviceDetaildisplayName", dtype=str),
+            ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
+
+            # Location information
+            ColumnInfo(name="autonomousSystemNumber", dtype=str),
+            ColumnInfo(name="location_geoCoordinates_latitude", dtype=float),
+            ColumnInfo(name="location_geoCoordinates_longitude", dtype=float),
+            ColumnInfo(name="location_city_state_country", dtype=str),
+            ColumnInfo(name="location_state_country", dtype=str),
+            ColumnInfo(name="location_country", dtype=str),
+
+            # Derived information
+            ColumnInfo(name="travel_speed_kmph", dtype=float),
+
+            # Non-features
+            ColumnInfo(name="is_corp_vpn", dtype=bool),
+            ColumnInfo(name="distance_km", dtype=float),
+            ColumnInfo(name="ts_delta_hour", dtype=float),
+        ]
+
+        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+
+        exclude_from_training = [
+            config.ae.userid_column_name,
+            config.ae.timestamp_column_name,
+            "is_corp_vpn",
+            "distance_km",
+            "ts_delta_hour",
+        ]
+
+        config.ae.feature_columns = [
+            name for (name, dtype) in preprocess_schema.output_columns if name not in exclude_from_training
+        ]
+    else:
+        source_column_info = [
+            DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
+            RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
+            RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
+            ColumnInfo(name="category", dtype=str),
+            RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
+            RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
+            RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+            RenameColumn(name="deviceDetailoperatingSystem",
+                         dtype=str,
+                         input_name="properties.deviceDetail.operatingSystem"),
+            StringCatColumn(name="location",
+                            dtype=str,
+                            input_columns=[
+                                "properties.location.city",
+                                "properties.location.countryOrRegion",
+                            ],
+                            sep=", "),
+            RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
+        ]
+
+        source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
+
+        # Preprocessing schema
+        preprocess_column_info = [
+            ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
+            ColumnInfo(name=config.ae.userid_column_name, dtype=str),
+            ColumnInfo(name="appDisplayName", dtype=str),
+            ColumnInfo(name="clientAppUsed", dtype=str),
+            ColumnInfo(name="deviceDetailbrowser", dtype=str),
+            ColumnInfo(name="deviceDetaildisplayName", dtype=str),
+            ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
+            ColumnInfo(name="statusfailureReason", dtype=str),
+
+            # Derived columns
+            IncrementColumn(name="logcount",
+                            dtype=int,
+                            input_name=config.ae.timestamp_column_name,
+                            groupby_column=config.ae.userid_column_name),
+            DistinctIncrementColumn(name="locincrement",
+                                    dtype=int,
+                                    input_name="location",
+                                    groupby_column=config.ae.userid_column_name,
+                                    timestamp_column=config.ae.timestamp_column_name),
+            DistinctIncrementColumn(name="appincrement",
+                                    dtype=int,
+                                    input_name="appDisplayName",
+                                    groupby_column=config.ae.userid_column_name,
+                                    timestamp_column=config.ae.timestamp_column_name)
+        ]
+
+        preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -314,11 +389,12 @@ def run_pipeline(train_users,
         parser_kwargs = {"lines": False, "orient": "records"}
     # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
-        DFPFileToDataFrameStage(config,
-                                schema=source_schema,
-                                file_type=file_type_override,
-                                parser_kwargs=parser_kwargs,  # TODO(Devin) probably should be configurable too
-                                cache_dir=cache_dir))
+        DFPFileToDataFrameStage(
+            config,
+            schema=source_schema,
+            file_type=file_type_override,
+            parser_kwargs=parser_kwargs,  # TODO(Devin) probably should be configurable too
+            cache_dir=cache_dir))
 
     pipeline.add_stage(MonitorStage(config, description="Input data rate"))
 
@@ -348,7 +424,7 @@ def run_pipeline(train_users,
 
     if (is_training):
         # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
+        pipeline.add_stage(DFPTraining(config, epochs=100, validation_size=0.15))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 

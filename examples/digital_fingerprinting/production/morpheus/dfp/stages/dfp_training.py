@@ -66,7 +66,8 @@ class DFPTraining(SinglePortStage):
             "scaler": 'standard',  # feature scaling method
             "min_cats": 1,  # cut off for minority categories
             "progress_bar": False,
-            "device": "cuda"
+            "device": "cuda",
+            "patience": -1,
         }
 
         # Update the defaults
@@ -167,6 +168,9 @@ class DFPTraining(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+
+        stream.launch_options.pe_count = self._config.num_threads
+
         builder.make_edge(input_stream[0], stream)
 
         return_type = input_stream[1]

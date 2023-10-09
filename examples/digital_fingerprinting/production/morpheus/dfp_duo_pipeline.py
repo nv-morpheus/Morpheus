@@ -138,14 +138,14 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
-@click.option(
-    "--file_type_override",
-    "-t",
-    type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
-    default="JSON",
-    help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
-    callback=lambda _, __, value: None if value is None else _file_type_name_to_enum(value)
-)
+@click.option("--file_type_override",
+              "-t",
+              type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
+              default="JSON",
+              help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
+              callback=lambda _,
+              __,
+              value: None if value is None else _file_type_name_to_enum(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,

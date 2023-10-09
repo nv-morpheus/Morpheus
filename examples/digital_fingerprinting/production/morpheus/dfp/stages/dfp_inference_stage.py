@@ -93,17 +93,18 @@ class DFPInferenceStage(SinglePortStage):
             model_cache = self.get_model(user_id)
 
             if (model_cache is None):
-                raise RuntimeError(f"Could not find model for user {user_id}")
+                logger.warning("Could not find model for user %s", user_id)
+                return None
+                # raise RuntimeError("Could not find model for user {}".format(user_id))
 
             loaded_model = model_cache.load_model(self._client)
 
-        except Exception:
-            logger.exception("Error trying to get model", exc_info=True)
+            post_model_time = time.time()
+
+            results_df = loaded_model.get_results(df_user, return_abs=True)
+        except Exception as e:  # TODO
+            logger.exception(f"({user_id}) Error trying to get model: {str(e)}")
             return None
-
-        post_model_time = time.time()
-
-        results_df = loaded_model.get_results(df_user, return_abs=True)
 
         # Create an output message to allow setting meta
         output_message = MultiDFPMessage(meta=message.meta,
@@ -128,7 +129,7 @@ class DFPInferenceStage(SinglePortStage):
         return output_message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, ops.map(self.on_data))
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
         builder.make_edge(input_stream[0], node)
 
         # node.launch_options.pe_count = self._config.num_threads
