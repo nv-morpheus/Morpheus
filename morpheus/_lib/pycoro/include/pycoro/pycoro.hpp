@@ -145,4 +145,112 @@ class MORPHEUS_EXPORT PyTaskToCppAwaitable
     friend struct Awaiter;
 };
 
+namespace mrc::pycoro {
+
+// ====== HELPER MACROS ======
+
+#define MRC_PYBIND11_FAIL_ABSTRACT(cname, fnname)                                                                \
+    pybind11::pybind11_fail(MRC_CONCAT_STR("Tried to call pure virtual function \"" << PYBIND11_STRINGIFY(cname) \
+                                                                                    << "::" << fnname << "\""));
+
+// ====== OVERRIDE PURE TEMPLATE ======
+#define MRC_PYBIND11_OVERRIDE_PURE_TEMPLATE_NAME(ret_type, abstract_cname, cname, name, fn, ...)  \
+    do                                                                                            \
+    {                                                                                             \
+        PYBIND11_OVERRIDE_IMPL(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), name, __VA_ARGS__); \
+        if constexpr (std::is_same_v<cname, abstract_cname>)                                      \
+        {                                                                                         \
+            MRC_PYBIND11_FAIL_ABSTRACT(PYBIND11_TYPE(abstract_cname), name);                      \
+        }                                                                                         \
+        else                                                                                      \
+        {                                                                                         \
+            return cname::fn(__VA_ARGS__);                                                        \
+        }                                                                                         \
+    } while (false)
+
+#define MRC_PYBIND11_OVERRIDE_PURE_TEMPLATE(ret_type, abstract_cname, cname, fn, ...) \
+    MRC_PYBIND11_OVERRIDE_PURE_TEMPLATE_NAME(                                         \
+        PYBIND11_TYPE(ret_type), PYBIND11_TYPE(abstract_cname), PYBIND11_TYPE(cname), #fn, fn, __VA_ARGS__)
+// ====== OVERRIDE PURE TEMPLATE ======
+
+// ====== OVERRIDE COROUTINE IMPL ======
+#define MRC_PYBIND11_OVERRIDE_CORO_IMPL(ret_type, cname, name, ...)                                    \
+    do                                                                                                 \
+    {                                                                                                  \
+        pybind11::gil_scoped_acquire gil;                                                              \
+        pybind11::function override = pybind11::get_override(static_cast<const cname*>(this), name);   \
+        if (override)                                                                                  \
+        {                                                                                              \
+            auto o_coro         = override(__VA_ARGS__);                                               \
+            auto asyncio_module = pybind11::module::import("asyncio");                                 \
+            /* Return type must be a coroutine to allow calling asyncio.create_task() */               \
+            if (!asyncio_module.attr("iscoroutine")(o_coro).cast<bool>())                              \
+            {                                                                                          \
+                pybind11::pybind11_fail(MRC_CONCAT_STR("Return value from overriden async function "   \
+                                                       << PYBIND11_STRINGIFY(cname) << "::" << name    \
+                                                       << " did not return a coroutine. Returned: "    \
+                                                       << pybind11::str(o_coro).cast<std::string>())); \
+            }                                                                                          \
+            auto o_task = asyncio_module.attr("create_task")(o_coro);                                  \
+            mrc::pymrc::PyHolder o_result;                                                             \
+            {                                                                                          \
+                pybind11::gil_scoped_release nogil;                                                    \
+                o_result = co_await mrc::pycoro::PyTaskToCppAwaitable(std::move(o_task));              \
+            }                                                                                          \
+            if (pybind11::detail::cast_is_temporary_value_reference<ret_type>::value)                  \
+            {                                                                                          \
+                static pybind11::detail::override_caster_t<ret_type> caster;                           \
+                co_return pybind11::detail::cast_ref<ret_type>(std::move(o_result), caster);           \
+            }                                                                                          \
+            co_return pybind11::detail::cast_safe<ret_type>(std::move(o_result));                      \
+        }                                                                                              \
+    } while (false)
+// ====== OVERRIDE COROUTINE IMPL======
+
+// ====== OVERRIDE COROUTINE ======
+#define MRC_PYBIND11_OVERRIDE_CORO_NAME(ret_type, cname, name, fn, ...)                                    \
+    do                                                                                                     \
+    {                                                                                                      \
+        MRC_PYBIND11_OVERRIDE_CORO_IMPL(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), name, __VA_ARGS__); \
+        return cname::fn(__VA_ARGS__);                                                                     \
+    } while (false)
+
+#define MRC_PYBIND11_OVERRIDE_CORO(ret_type, cname, fn, ...) \
+    MRC_PYBIND11_OVERRIDE_CORO_NAME(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), #fn, fn, __VA_ARGS__)
+// ====== OVERRIDE COROUTINE ======
+
+// ====== OVERRIDE COROUTINE PURE======
+#define MRC_PYBIND11_OVERRIDE_CORO_PURE_NAME(ret_type, cname, name, fn, ...)                               \
+    do                                                                                                     \
+    {                                                                                                      \
+        MRC_PYBIND11_OVERRIDE_CORO_IMPL(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), name, __VA_ARGS__); \
+        MRC_PYBIND11_FAIL_ABSTRACT(PYBIND11_TYPE(cname), name);                                            \
+    } while (false)
+
+#define MRC_PYBIND11_OVERRIDE_CORO_PURE(ret_type, cname, fn, ...) \
+    MRC_PYBIND11_OVERRIDE_CORO_PURE_NAME(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), #fn, fn, __VA_ARGS__)
+// ====== OVERRIDE COROUTINE PURE======
+
+// ====== OVERRIDE COROUTINE PURE TEMPLATE======
+#define MRC_PYBIND11_OVERRIDE_CORO_PURE_TEMPLATE_NAME(ret_type, abstract_cname, cname, name, fn, ...)      \
+    do                                                                                                     \
+    {                                                                                                      \
+        MRC_PYBIND11_OVERRIDE_CORO_IMPL(PYBIND11_TYPE(ret_type), PYBIND11_TYPE(cname), name, __VA_ARGS__); \
+        if constexpr (std::is_same_v<cname, abstract_cname>)                                               \
+        {                                                                                                  \
+            MRC_PYBIND11_FAIL_ABSTRACT(PYBIND11_TYPE(abstract_cname), name);                               \
+        }                                                                                                  \
+        else                                                                                               \
+        {                                                                                                  \
+            co_return co_await cname::fn(__VA_ARGS__);                                                     \
+        }                                                                                                  \
+    } while (false)
+
+#define MRC_PYBIND11_OVERRIDE_CORO_PURE_TEMPLATE(ret_type, abstract_cname, cname, fn, ...) \
+    MRC_PYBIND11_OVERRIDE_CORO_PURE_TEMPLATE_NAME(                                         \
+        PYBIND11_TYPE(ret_type), PYBIND11_TYPE(abstract_cname), PYBIND11_TYPE(cname), #fn, fn, __VA_ARGS__)
+// ====== OVERRIDE COROUTINE PURE TEMPLATE======
+
+}  // namespace mrc::pycoro
+
 }  // namespace mrc::pycoro

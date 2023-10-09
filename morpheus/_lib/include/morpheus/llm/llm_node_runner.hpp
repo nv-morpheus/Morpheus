@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
@@ -11,7 +12,7 @@
 
 namespace morpheus::llm {
 
-class LLMNodeRunner
+class MORPHEUS_EXPORT LLMNodeRunner
 {
   public:
     LLMNodeRunner(std::string name, input_map_t inputs, std::shared_ptr<LLMNodeBase> node);

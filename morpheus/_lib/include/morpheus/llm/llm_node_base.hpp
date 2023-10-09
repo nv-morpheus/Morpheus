@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/types.hpp"
 
@@ -9,7 +10,7 @@
 
 namespace morpheus::llm {
 
-class LLMNodeBase
+class MORPHEUS_EXPORT LLMNodeBase
 {
   public:
     virtual ~LLMNodeBase() = default;

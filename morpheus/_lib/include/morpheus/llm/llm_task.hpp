@@ -1,12 +1,14 @@
 #pragma once
 
+#include "morpheus/export.h"
+
 #include <nlohmann/json.hpp>
 
 #include <string>
 
 namespace morpheus::llm {
 
-struct LLMTask
+struct MORPHEUS_EXPORT LLMTask
 {
     LLMTask();
     LLMTask(std::string task_type, nlohmann::json task_dict);

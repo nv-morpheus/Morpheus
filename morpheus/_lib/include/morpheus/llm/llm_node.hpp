@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
@@ -11,7 +12,7 @@
 
 namespace morpheus::llm {
 
-class LLMNode : public LLMNodeBase
+class MORPHEUS_EXPORT LLMNode : public LLMNodeBase
 {
   public:
     LLMNode();

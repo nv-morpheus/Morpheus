@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/types.hpp"
 
@@ -10,7 +11,7 @@
 
 namespace morpheus::llm {
 
-class LLMTaskHandler
+class MORPHEUS_EXPORT LLMTaskHandler
 {
   public:
     using return_t = std::optional<std::vector<std::shared_ptr<ControlMessage>>>;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_node.hpp"
@@ -13,7 +14,7 @@
 
 namespace morpheus::llm {
 
-class LLMEngine : public LLMNode
+class MORPHEUS_EXPORT LLMEngine : public LLMNode
 {
   public:
     LLMEngine();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
@@ -12,7 +13,7 @@
 
 namespace morpheus::llm {
 
-class LLMTaskHandlerRunner
+class MORPHEUS_EXPORT LLMTaskHandlerRunner
 {
   public:
     LLMTaskHandlerRunner(input_map_t inputs, std::shared_ptr<LLMTaskHandler> handler);

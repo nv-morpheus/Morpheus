@@ -1,5 +1,6 @@
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/messages/control.hpp"
@@ -16,7 +17,7 @@ struct LLMContextState
     nlohmann::json values;
 };
 
-class LLMContext : public std::enable_shared_from_this<LLMContext>
+class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContext>
 {
   public:
     LLMContext();

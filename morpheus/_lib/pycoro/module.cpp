@@ -34,7 +34,13 @@ PYBIND11_MODULE(pycoro, _module)
 
         )pbdoc";
 
-    py::class_<CppToPyAwaitable, std::shared_ptr<CppToPyAwaitable>>(_module, "CppToPyAwaitable")
+    auto setup_type = [](PyHeapTypeObject* heap_type) {
+        auto* type = &heap_type->ht_type;
+        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+    };
+
+    py::class_<CppToPyAwaitable, std::shared_ptr<CppToPyAwaitable>>(
+        _module, "CppToPyAwaitable", py::custom_type_setup(setup_type))
         .def(py::init<>())
         .def("__iter__", &CppToPyAwaitable::iter)
         .def("__await__", &CppToPyAwaitable::await)

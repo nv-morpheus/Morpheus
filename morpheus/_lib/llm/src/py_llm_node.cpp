@@ -20,14 +20,8 @@ std::shared_ptr<LLMNodeRunner> PyLLMNode<BaseT>::add_node(std::string name,
                                                           std::shared_ptr<LLMNodeBase> node,
                                                           bool is_output)
 {
-    // // Try to cast the object to a python object to ensure that we keep it alive
-    // auto py_node = std::dynamic_pointer_cast<PyLLMNodeBase>(node);
-
-    // if (py_node)
-    // {
-    // Store the python object to keep it alive
+    // Try to cast the object to a python object to ensure that we keep it alive
     m_py_nodes[node] = pybind11::cast(node);
-    // }
 
     // Call the base class implementation
     return LLMNode::add_node(std::move(name), std::move(inputs), std::move(node), is_output);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pycoro/pycoro.hpp"
-
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/types.hpp"
 
