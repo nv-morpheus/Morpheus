@@ -16,11 +16,11 @@
 
 import pytest
 
+from _utils.stages.split_stage import SplitStage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from _utils.stages.split_stage import SplitStage
 
 
 # Fixtures cannot be used directly as paramertize values, but we can fetch them by name

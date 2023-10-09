@@ -21,8 +21,8 @@ import pytest
 
 from _utils import assert_results
 from _utils.stages.conv_msg import ConvMsg
-from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from _utils.stages.in_memory_multi_source_stage import InMemoryMultiSourceStage
+from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
