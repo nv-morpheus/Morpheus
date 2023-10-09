@@ -85,6 +85,7 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libnuma1 \
+        openjdk-11-jre-headless \
         openssh-client \
         pkg-config \
         tar \
@@ -291,7 +292,7 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
 # Install camouflage needed for unittests to mock a triton server
 # Pin to v0.9 until #967 is resolved
 RUN source activate morpheus && \
-    npm install -g camouflage-server@0.9 && \
+    npm install -g camouflage-server@0.15 && \
     npm cache clean --force
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or

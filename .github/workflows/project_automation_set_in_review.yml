@@ -19,7 +19,7 @@ on:
   pull_request_target:
     # Run this action when a PR is opened or edited
     # Issues do not have a graphQL connection to linked PRs so we can't use that event
-    types: [ready_for_review]
+    types: [ready_for_review, review_requested]
       
 env:
  ORG: ${{ github.event.repository.owner.login }}

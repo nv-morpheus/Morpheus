@@ -86,6 +86,27 @@ class MLFlowModelWriterController:
     def databricks_permissions(self):
         return self._databricks_permissions
 
+    def _create_safe_user_id(self, user_id: str):
+        """
+        Creates a safe user ID for use in MLflow model names and experiment names.
+
+        Parameters
+        ----------
+        user_id : str
+            The user ID.
+
+        Returns
+        -------
+        str
+            The generated safe user ID.
+        """
+
+        safe_user_id = user_id.replace('.', '_dot_')
+        safe_user_id = safe_user_id.replace('/', '_slash_')
+        safe_user_id = safe_user_id.replace(':', '_colon_')
+
+        return safe_user_id
+
     def user_id_to_model(self, user_id: str):
         """
         Converts a user ID to an model name
@@ -102,7 +123,7 @@ class MLFlowModelWriterController:
         """
 
         kwargs = {
-            "user_id": user_id,
+            "user_id": self._create_safe_user_id(user_id),
             "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
         }
 
@@ -123,9 +144,11 @@ class MLFlowModelWriterController:
             The generated experiment name.
         """
 
+        safe_user_id = self._create_safe_user_id(user_id)
+
         kwargs = {
-            "user_id": user_id,
-            "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
+            "user_id": safe_user_id,
+            "user_md5": hashlib.md5(safe_user_id.encode('utf-8')).hexdigest(),
             "reg_model_name": self.user_id_to_model(user_id=user_id)
         }
 
@@ -219,8 +242,8 @@ class MLFlowModelWriterController:
                 # Log all params in one dict to avoid round trips
                 mlflow.log_params({
                     "Algorithm": "Denosing Autoencoder",
-                    "Epochs": model.lr_decay.state_dict().get("last_epoch", "unknown"),
-                    "Learning rate": model.lr,
+                    "Epochs": model.learning_rate_decay.state_dict().get("last_epoch", "unknown"),
+                    "Learning rate": model.learning_rate,
                     "Batch size": model.batch_size,
                     "Start Epoch": message.get_meta(self._timestamp_column_name).min(),
                     "End Epoch": message.get_meta(self._timestamp_column_name).max(),

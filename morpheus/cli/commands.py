@@ -675,6 +675,9 @@ add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.Prepr
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
 add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
 add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
+add_command("to-elasticsearch",
+            "morpheus.stages.output.write_to_elasticsearch_stage.WriteToElasticsearchStage",
+            modes=ALL)
 add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileStage", modes=ALL)
 add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
 add_command("to-http", "morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage", modes=ALL)

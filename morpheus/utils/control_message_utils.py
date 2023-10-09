@@ -83,10 +83,11 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
     def decorator(func):
 
         @wraps(func)
-        def wrapper(control_messsage: ControlMessage, *args, **kwargs):
-            with CMDefaultFailureContextManager(control_message=control_messsage,
+        def wrapper(control_message: ControlMessage, *args, **kwargs):
+            ret_cm = control_message
+            with CMDefaultFailureContextManager(control_message=control_message,
                                                 raise_on_failure=raise_on_failure) as ctx_mgr:
-                cm_ensure_payload_not_null(control_message=control_messsage)
+                cm_ensure_payload_not_null(control_message=control_message)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
             return ret_cm

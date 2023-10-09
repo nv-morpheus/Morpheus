@@ -93,6 +93,10 @@ function update_conda_env() {
 
     if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
         rapids-logger "Checking for updates to conda env"
+
+        # Remove default/conflicting channels from base image
+        rm /opt/conda/.condarc
+
         # Update the packages
         rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
     fi
@@ -186,7 +190,9 @@ function download_artifact() {
 }
 
 function set_job_summary_preamble() {
-    msg="Note: NVIDIA VPN access is required to view these URLs."
-    echo $msg >> ${GITHUB_STEP_SUMMARY}
-    rapids-logger $msg
+    if [[ "${LOCAL_CI}" == "" ]]; then
+        msg="Note: NVIDIA VPN access is required to view these URLs."
+        echo $msg >> ${GITHUB_STEP_SUMMARY}
+        rapids-logger $msg
+    fi
 }
