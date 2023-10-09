@@ -1,0 +1,127 @@
+#include "morpheus/llm/utils.hpp"
+
+#include "morpheus/utilities/string_util.hpp"
+
+#include <glog/logging.h>
+
+#include <set>
+#include <stdexcept>
+
+namespace morpheus::llm {
+
+input_map_t process_input_names(const input_map_t& inputs, const std::vector<std::string>& input_names)
+{
+    input_map_t final_inputs;
+    input_map_t placeholder_inputs;
+
+    // Perform any placeholder replacements
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        const auto& single_input = inputs[i];
+
+        bool found_star_input_name = single_input.input_name.find('*') != std::string::npos;
+        bool found_star_node_name  = single_input.node_name == "*";
+
+        if (found_star_input_name != found_star_node_name)
+        {
+            throw std::runtime_error(
+                "LLMNode::add_node() called with a placeholder input name and node name that "
+                "do not match");
+        }
+        else if (found_star_input_name && found_star_node_name)
+        {
+            // Need to process these after the non-placeholder inputs
+            placeholder_inputs.push_back(single_input);
+        }
+        else
+        {
+            // No placeholder, so just add the input. If the node_name == "-", then replace it with the input name
+            if (single_input.node_name == "-")
+            {
+                // If we start with a slash, that means we are mapping from another node, not a parent.
+                if (single_input.input_name[0] == '/')
+                {
+                    if (inputs.size() != input_names.size())
+                    {
+                        throw std::runtime_error(MORPHEUS_CONCAT_STR(
+                            "When mapping from a sibling node, the number of siblings must match. Provided: "
+                            << inputs.size() << ", Expected: " << input_names.size()));
+                    }
+
+                    // Match by index
+                    final_inputs.push_back({single_input.input_name, input_names[i]});
+                }
+                else
+                {
+                    // Match by name
+                    auto found = std::find(input_names.begin(), input_names.end(), single_input.input_name);
+
+                    if (found != input_names.end())
+                    {
+                        final_inputs.push_back({single_input.input_name, *found});
+                    }
+                    else if (input_names.size() == 1)
+                    {
+                        // We can infer that the node name is the only one
+                        final_inputs.push_back({single_input.input_name, input_names[0]});
+                    }
+                    else
+                    {
+                        throw std::runtime_error(MORPHEUS_CONCAT_STR("Could not find a matching node name for input '"
+                                                                     << single_input.input_name << "'"));
+                    }
+                }
+            }
+            else
+            {
+                final_inputs.push_back(single_input);
+            }
+        }
+    }
+
+    if (!placeholder_inputs.empty())
+    {
+        // TODO(MDD): Support multiple placeholders
+        CHECK_EQ(placeholder_inputs.size(), 1) << "Only a single placeholder input is currently supported";
+
+        std::set<std::string> specified_names;
+
+        std::transform(final_inputs.begin(),
+                       final_inputs.end(),
+                       std::inserter(specified_names, specified_names.begin()),
+                       [](const auto& input) { return input.node_name; });
+
+        std::set<std::string> total_names(input_names.begin(), input_names.end());
+
+        std::vector<std::string> remaining_names;
+
+        // Find the remaining names
+        std::set_difference(total_names.begin(),
+                            total_names.end(),
+                            specified_names.begin(),
+                            specified_names.end(),
+                            std::back_inserter(remaining_names));
+
+        auto star_input_name_loc = placeholder_inputs[0].input_name.find('*');
+
+        // Loop over the remaining names and add them to the final inputs
+        for (const auto& remaining_name : remaining_names)
+        {
+            // Make a copy of the string to avoid modifying the original
+            auto replaced = std::string(placeholder_inputs[0].input_name);
+            replaced.replace(star_input_name_loc, 1, remaining_name);
+            final_inputs.push_back({replaced, remaining_name});
+        }
+    }
+
+    if (input_names.size() != final_inputs.size())
+    {
+        throw std::runtime_error(MORPHEUS_CONCAT_STR(
+            "The number of inputs provided does not match the number of inputs expected by the node. Provided: "
+            << final_inputs.size() << ", Expected: " << input_names.size()));
+    }
+
+    return final_inputs;
+}
+
+}  // namespace morpheus::llm
