@@ -25,7 +25,7 @@ dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
     - automake=1.16.5
     - benchmark=1.6.1
-    - boost-cpp=1.74
+    - boost-cpp=1.82
     - cachetools=5.0.0
     - ccache>=3.7
     - clangdev=16
@@ -58,7 +58,7 @@ dependencies:
     - grpcio
     - gtest>=1.13.0
     - gxx_linux-64=11.2
-    - include-what-you-use
+    - include-what-you-use=0.20
     - ipywidgets
     - isort
     - jupyter_core>=4.11.2,<5.0

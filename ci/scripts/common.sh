@@ -43,8 +43,8 @@ export SKIP_YAPF=${SKIP_YAPF:-""}
 # Set BUILD_DIR to use a different build folder
 export BUILD_DIR=${BUILD_DIR:-"${MORPHEUS_ROOT}/build"}
 
-# Speficy the clang-tools version to use. Default 14
-export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-14}
+# Speficy the clang-tools version to use. Default 16
+export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-16}
 
 # Returns the `branch-YY.MM` that is used as the base for merging
 function get_base_branch() {
