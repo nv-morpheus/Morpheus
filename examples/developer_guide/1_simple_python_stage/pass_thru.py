@@ -23,7 +23,6 @@ from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-# TODO: Document the PassThruTypeMixin
 @register_stage("pass-thru")
 class PassThruStage(PassThruTypeMixin, SinglePortStage):
     """
