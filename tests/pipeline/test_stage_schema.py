@@ -83,7 +83,7 @@ def test_output_schema_multi_error(request: pytest.FixtureRequest, stage_fixture
     assert len(schema.output_schemas) > 1
 
     with pytest.raises(AssertionError):
-        schema.output_schema
+        schema.output_schema  # pylint: disable=pointless-statement
 
 
 @pytest.mark.parametrize(
