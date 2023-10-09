@@ -109,3 +109,4 @@ dependencies:
         # Add additional dev dependencies here
         - pytest-kafka==0.6.0
         - pymilvus==2.3.1
+        - milvus

@@ -35,6 +35,7 @@ def mock_milvus_client() -> MilvusClient:
         yield mock_client.return_value
 
 
+# pylint:disable=unused-argument
 @pytest.fixture(scope="function", name="milvus_service_fixture")
 def milvus_service(mock_milvus_client_fixture) -> MilvusVectorDBService:
     service = MilvusVectorDBService(uri="http://localhost:19530")
@@ -76,7 +77,7 @@ def test_create(milvus_service_fixture: MilvusVectorDBService,
                 has_collection: bool):
     filepath = path.join(TEST_DIRS.tests_data_dir, "service", "milvus_test_collection_conf.json")
     collection_config = {}
-    with open(filepath, "r") as file:
+    with open(filepath, "r", encoding="utf-8") as file:
         collection_config = json.load(file)
 
     mock_milvus_client_fixture.has_collection.return_value = has_collection

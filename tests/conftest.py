@@ -28,6 +28,7 @@ import warnings
 
 import pytest
 import requests
+from milvus import default_server
 
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
@@ -937,3 +938,29 @@ def filter_probs_df(dataset, use_cpp: bool):
     that as well, while excluding the combination of C++ execution and Pandas dataframes.
     """
     yield dataset["filter_probs.csv"]
+
+
+@pytest.fixture(scope="module")
+def milvus_server_uri():
+    """
+    Pytest fixture to start and stop a Milvus server and provide its URI for testing.
+
+    This fixture starts a Milvus server, retrieves its URI (Uniform Resource Identifier), and provides
+    the URI as a yield value to the tests using this fixture. After all tests in the module are
+    completed, the Milvus server is stopped.
+    """
+    logger = logging.getLogger(f"morpheus.{__name__}")
+    try:
+        default_server.start()
+        host = "127.0.0.1"
+        port = default_server.listen_port
+        uri = f"http://{host}:{port}"
+
+        yield uri
+    except Exception as exec_inf:
+        logger.error("Error in starting Milvus server: %s", exec_inf)
+    finally:
+        try:
+            default_server.stop()
+        except Exception as exec_inf:
+            logger.error("Error in stopping Milvus server: %s", exec_inf)
