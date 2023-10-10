@@ -3,8 +3,10 @@
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/utils.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
 #include <mrc/coroutines/task.hpp>
+#include <nlohmann/detail/json_pointer.hpp>
 
 namespace morpheus::llm {
 
@@ -17,10 +19,47 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
                                                  std::shared_ptr<LLMNodeBase> node,
                                                  bool is_output)
 {
+    // Check if a node with this name already exists
+    if (std::find_if(m_child_runners.begin(), m_child_runners.end(), [&name](const auto& runner) {
+            return runner->name() == name;
+        }) != m_child_runners.end())
+    {
+        throw std::runtime_error("A node with the name '" + name + "' already exists");
+    }
+
     // Get the inputs of the current node
     auto input_names = node->get_input_names();
 
     auto final_inputs = process_input_names(inputs, input_names);
+
+    // Check the final inputs to ensure they match existing nodes
+    for (const auto& inp : final_inputs)
+    {
+        // Find the first occurance of "/"
+        auto slash_pos = inp.input_name.find('/');
+
+        if (slash_pos != 0)
+        {
+            // If there is no slash, then the input is a parent of the current node
+            continue;
+        }
+
+        // Otherwise, the input is a child of the current node. Find the next slash
+        slash_pos = inp.input_name.find('/', 1);
+
+        auto upstream_node_name =
+            inp.input_name.substr(1, slash_pos != std::string::npos ? slash_pos - 1 : std::string::npos);
+
+        if (std::find_if(m_child_runners.begin(), m_child_runners.end(), [&upstream_node_name](const auto& runner) {
+                return runner->name() == upstream_node_name;
+            }) == m_child_runners.end())
+        {
+            // Could not find a matching node for this input
+            throw std::runtime_error(MORPHEUS_CONCAT_STR("Could not find a node with the name '"
+                                                         << upstream_node_name << "' for the input {'" << inp.input_name
+                                                         << "', '" << inp.node_name << "'}"));
+        }
+    }
 
     auto node_runner = std::make_shared<LLMNodeRunner>(std::move(name), std::move(final_inputs), std::move(node));
 
@@ -48,6 +87,16 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
 std::vector<std::string> LLMNode::get_input_names() const
 {
     return m_input_names;
+}
+
+const std::vector<std::string>& LLMNode::get_output_node_names() const
+{
+    return m_output_node_names;
+}
+
+size_t LLMNode::node_count() const
+{
+    return m_child_runners.size();
 }
 
 Task<std::shared_ptr<LLMContext>> LLMNode::execute(std::shared_ptr<LLMContext> context)

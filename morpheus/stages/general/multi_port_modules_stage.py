@@ -49,7 +49,7 @@ class MultiPortModulesStage(Stage):
 
     def __init__(self,
                  c: Config,
-                 module_conf: typing.Dict[str, any],
+                 module_conf: typing.Dict[str, typing.Any],
                  input_ports: typing.List[str],
                  output_ports: typing.List[str],
                  input_type=typing.Any,

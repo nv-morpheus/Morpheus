@@ -144,6 +144,13 @@ add_morpheus_test(
 )
 
 add_morpheus_test(
+  NAME llm
+  FILES
+    llm/test_llm_engine.cpp
+    llm/test_llm_node.cpp
+)
+
+add_morpheus_test(
   NAME matx_util
   FILES
     test_matx_util.cpp

@@ -25,6 +25,10 @@ class MORPHEUS_EXPORT LLMNode : public LLMNodeBase
 
     std::vector<std::string> get_input_names() const override;
 
+    const std::vector<std::string>& get_output_node_names() const;
+
+    size_t node_count() const;
+
     Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override;
 
   private:

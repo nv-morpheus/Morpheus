@@ -6,6 +6,8 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
+#include <mrc/types.hpp>
+
 #include <memory>
 
 namespace morpheus::llm {
@@ -72,7 +74,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     nlohmann::json m_outputs;
 
-    // mrc::Promise<void> m_outputs_promise;
-    // mrc::SharedFuture<void> m_outputs_future;
+    mrc::Promise<void> m_outputs_promise;
+    mrc::SharedFuture<void> m_outputs_future;
 };
 }  // namespace morpheus::llm

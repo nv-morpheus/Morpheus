@@ -2,10 +2,7 @@
 
 namespace morpheus::llm {
 
-LLMContext::LLMContext() : m_state(std::make_shared<LLMContextState>())
-{
-    // m_outputs_future = m_outputs_promise.get_future().share();
-}
+LLMContext::LLMContext() : m_state(std::make_shared<LLMContextState>()) {}
 
 LLMContext::LLMContext(LLMTask task, std::shared_ptr<ControlMessage> message) : LLMContext()
 {
@@ -17,13 +14,7 @@ LLMContext::LLMContext(std::shared_ptr<LLMContext> parent, std::string name, inp
   m_parent(std::move(parent)),
   m_name(std::move(name)),
   m_inputs(std::move(inputs))
-{
-    // m_outputs_future = m_outputs_promise.get_future().share();
-
-    // this->m_parent = parent;
-    // this->m_name   = std::move(name);
-    // this->m_inputs = std::move(inputs);
-}
+{}
 
 LLMContext::~LLMContext() = default;
 
@@ -120,32 +111,10 @@ nlohmann::json::const_reference LLMContext::get_input() const
     }
 
     return this->get_input(m_inputs[0].node_name);
-
-    // nlohmann::json inputs;
-
-    // for (const auto& [input_name, output_name] : m_inputs)
-    // {
-    //     inputs[input_name] = m_state->outputs[nlohmann::json::json_pointer(output_name)];
-    // }
-
-    // return inputs;
 }
 
 nlohmann::json::const_reference LLMContext::get_input(const std::string& node_name) const
 {
-    // if (node_name[0] == '$')
-    // {
-    //     // Interpolate it as a json path
-    //     auto outputs_str = m_outputs.dump();
-
-    //     jsoncons::json tmp_json = jsoncons::json::parse(outputs_str);
-
-    //     std::ostringstream ss;
-    //     jsoncons::jsonpath::json_query(tmp_json, node_name).dump_pretty(ss);
-
-    //     LOG(INFO) << ss.str();
-    // }
-
     if (node_name[0] == '/')
     {
         nlohmann::json::json_pointer node_json_ptr(node_name);
@@ -192,41 +161,13 @@ nlohmann::json LLMContext::get_inputs() const
 void LLMContext::set_output(nlohmann::json outputs)
 {
     m_outputs = std::move(outputs);
-    // auto full_name = nlohmann::json::json_pointer(this->full_name());
 
-    // // if (m_parent)
-    // // {
-    // //     auto& output = m_parent->get_outputs()
-    // // }
-
-    // m_state->values[full_name] = std::move(outputs);
-
-    // // Notify that the outputs are complete
-    // this->outputs_complete();
+    this->outputs_complete();
 }
 
 void LLMContext::set_output(const std::string& output_name, nlohmann::json outputs)
 {
     m_outputs[output_name] = std::move(outputs);
-    // std::string full_name = nlohmann::json::json_pointer(this->full_name() + "/" + output_name);
-
-    // m_state->values[full_name] = std::move(outputs);
-
-    // std::vector<int32_t> test(outputs.size(), 0);
-
-    // //           using RepType        = typename ElementTo::rep;
-    // //   auto transformer     = fixed_width_type_converter<ElementFrom, RepType>{};
-    // //   auto transform_begin = thrust::make_transform_iterator(begin, transformer);
-    // //   auto const size      = cudf::distance(begin, end);
-    // auto const elements = thrust::host_vector<int32_t>(test.begin(), test.end());
-    // auto device_buff =
-    //     rmm::device_buffer{elements.data(), test.size() * sizeof(int32_t), cudf::get_default_stream()};
-
-    // // Create a cudf column
-    // auto new_column = std::make_unique<cudf::column>(
-    //     cudf::data_type{cudf::type_id::INT32}, outputs.size(), std::move(device_buff), rmm::device_buffer{}, 0);
-
-    // m_state->outputs_columns[full_name] = std::move(new_column);
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)
@@ -241,10 +182,9 @@ void LLMContext::outputs_complete()
 
 nlohmann::json::const_reference LLMContext::view_outputs() const
 {
-    // // // Wait for the outputs to be available
-    // // m_outputs_future.wait();
+    // // Wait for the outputs to be available
+    // m_outputs_future.wait();
 
-    // return m_state->values[this->full_name()];
     return m_outputs;
 }
 
