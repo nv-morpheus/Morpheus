@@ -16,9 +16,14 @@
  */
 #include "pycoro/pycoro.hpp"
 
-#include "morpheus/version.hpp"
-
+#include <genobject.h>
+#include <glog/logging.h>
+#include <mrc/coroutines/task.hpp>
+#include <pybind11/detail/descr.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include <type_traits>
 
 namespace mrc::pycoro {
 
@@ -34,19 +39,26 @@ PYBIND11_MODULE(pycoro, _module)
 
         )pbdoc";
 
-    auto setup_type = [](PyHeapTypeObject* heap_type) {
-        auto* type = &heap_type->ht_type;
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
-    };
+    // auto setup_type = [](PyHeapTypeObject* heap_type) {
+    //     auto* type = &heap_type->ht_type;
+    //     type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+    // };
 
-    py::class_<CppToPyAwaitable, std::shared_ptr<CppToPyAwaitable>>(
-        _module, "CppToPyAwaitable", py::custom_type_setup(setup_type))
+    py::class_<CppToPyAwaitable, std::shared_ptr<CppToPyAwaitable>>(_module, "CppToPyAwaitable")
         .def(py::init<>())
         .def("__iter__", &CppToPyAwaitable::iter)
         .def("__await__", &CppToPyAwaitable::await)
         .def("__next__", &CppToPyAwaitable::next);
 
-    _module.attr("__version__") =
-        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
+    _module.def("wrap_coroutine", [](coroutines::Task<std::vector<std::string>> fn) -> coroutines::Task<std::string> {
+        DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL when resuming a C++ coroutine";
+
+        auto strings = co_await fn;
+
+        co_return strings[0];
+    });
+
+    // _module.attr("__version__") =
+    //     MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace mrc::pycoro

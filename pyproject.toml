@@ -35,6 +35,8 @@ testpaths = ["tests"]
 
 addopts = "--benchmark-disable"
 
+asyncio_mode = "auto"
+
 [tool.yapfignore]
 ignore_patterns = [
   "**/*.pyx",

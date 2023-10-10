@@ -25,7 +25,7 @@ list(APPEND MODULE_SOURCE_FILES module.cpp)
 morpheus_add_pybind11_library(pycoro
    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
    SOURCE_FILES ${MODULE_SOURCE_FILES}
-   LINK_TARGETS morpheus mrc::pymrc
+   LINK_TARGETS mrc::pymrc
    OUTPUT_TARGET PYCORO_TARGET_NAME
    CURRENT_DIR_IS_MODULE
 )

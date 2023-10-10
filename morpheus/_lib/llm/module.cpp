@@ -96,10 +96,26 @@
 namespace morpheus::llm {
 namespace py = pybind11;
 
+// class LLMFunctionNode : public LLMNodeBase
+// {
+//   public:
+
+//     std::vector<std::string> get_input_names() const override
+//     {
+//         return {""};
+//     }
+
+//     Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override
+//     {
+//         co_return co_await m_function(context);
+//     }
+
+//   private:
+//     std::function<Task<std::shared_ptr<LLMContext>>(std::shared_ptr<LLMContext>)> m_function;
+// };
+
 PYBIND11_MODULE(llm, _module)
 {
-    py::print("Loading");
-
     _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.llm
@@ -235,16 +251,7 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
-        .def("execute", [](std::shared_ptr<LLMNodeBase> self, std::shared_ptr<LLMContext> context) {
-            auto convert = [self](std::shared_ptr<LLMContext> context) -> Task<mrc::pymrc::PyHolder> {
-                auto result = co_await self->execute(context);
-
-                // Convert the output to a python object
-                co_return py::cast(result);
-            };
-
-            return std::make_shared<mrc::pycoro::CppToPyAwaitable>(convert(context));
-        });
+        .def("execute", &LLMNodeBase::execute);
 
     py::class_<LLMNodeRunner, std::shared_ptr<LLMNodeRunner>>(_module, "LLMNodeRunner")
         .def_property_readonly("name", &LLMNodeRunner::name)
@@ -391,12 +398,21 @@ PYBIND11_MODULE(llm, _module)
                     py::gil_scoped_acquire gil;
 
                     // Convert the output to a python object
-                    co_return py::cast(message);
+                    co_return py::cast(result);
                 };
 
                 return std::make_shared<mrc::pycoro::CppToPyAwaitable>(convert(self, message));
             },
-            py::arg("input_message"));
+            py::arg("input_message"))
+        .def("run2",
+             [](std::shared_ptr<LLMEngine> self, std::shared_ptr<ControlMessage> message)
+                 -> Task<std::vector<std::shared_ptr<morpheus::ControlMessage>>> {
+                 VLOG(10) << "Running LLMEngine::run";
+
+                 auto result = co_await self->run(message);
+
+                 co_return result;
+             });
 
     // .def("execute", [](std::shared_ptr<LLMEngine> self, std::shared_ptr<LLMContext> context) {
     //     auto convert = [self](std::shared_ptr<LLMContext> context) -> Task<mrc::pymrc::PyHolder> {

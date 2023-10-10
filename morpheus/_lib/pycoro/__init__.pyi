@@ -10,7 +10,8 @@ import morpheus._lib.pycoro
 import typing
 
 __all__ = [
-    "CppToPyAwaitable"
+    "CppToPyAwaitable",
+    "wrap_coroutine"
 ]
 
 
@@ -20,4 +21,5 @@ class CppToPyAwaitable():
     def __iter__(self) -> CppToPyAwaitable: ...
     def __next__(self) -> None: ...
     pass
-__version__ = '23.11.0'
+def wrap_coroutine(arg0: typing.Awaitable[typing.List[str]]) -> typing.Awaitable[str]:
+    pass
