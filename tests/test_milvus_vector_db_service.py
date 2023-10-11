@@ -15,224 +15,310 @@
 # limitations under the License.
 
 import json
-import typing
-from os import path
-from unittest.mock import Mock
-from unittest.mock import patch
+import os
 
+import numpy as np
 import pytest
 
-import cudf
-
 from _utils import TEST_DIRS
-from morpheus.service.milvus_client import MilvusClient
+from morpheus.service.milvus_client import MILVUS_DATA_TYPE_MAP
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 
 
-@pytest.fixture(scope="function", name="mock_milvus_client_fixture")
-def mock_milvus_client() -> MilvusClient:
-    with patch('morpheus.service.milvus_vector_db_service.MilvusClient') as mock_client:
-        yield mock_client.return_value
-
-
-# pylint:disable=unused-argument
 @pytest.fixture(scope="function", name="milvus_service_fixture")
-def milvus_service(mock_milvus_client_fixture) -> MilvusVectorDBService:
-    service = MilvusVectorDBService(uri="http://localhost:19530")
-    return service
+def milvus_service(milvus_server_uri: str):
+    service = MilvusVectorDBService(uri=milvus_server_uri)
+    yield service
 
 
-@pytest.mark.parametrize(
-    "has_store_object_input, expected_result",
-    [
-        (True, True),  # Collection exists
-        (False, False),  # Collection does not exist
-    ])
-def test_has_store_object(milvus_service_fixture: MilvusVectorDBService,
-                          mock_milvus_client_fixture: MilvusClient,
-                          has_store_object_input: bool,
-                          expected_result: bool):
-    mock_milvus_client_fixture.has_collection.return_value = has_store_object_input
-    assert milvus_service_fixture.has_store_object("test_collection") == expected_result
+def load_yaml(filename):
+    conf_filepath = os.path.join(TEST_DIRS.tests_data_dir, "service", filename)
+
+    with open(conf_filepath, 'r', encoding="utf-8") as json_file:
+        collection_config = json.load(json_file)
+
+        return collection_config
 
 
-@pytest.mark.parametrize(
-    "list_collections_input, expected_result",
-    [
-        (["collection1", "collection2"], ["collection1", "collection2"]),  # Collections exist
-        ([], []),  # No collections exist
-    ])
-def test_list_store_objects(milvus_service_fixture: MilvusVectorDBService,
-                            mock_milvus_client_fixture: MilvusClient,
-                            list_collections_input: list,
-                            expected_result: list):
-    mock_milvus_client_fixture.list_collections.return_value = list_collections_input
-    assert milvus_service_fixture.list_store_objects() == expected_result
+@pytest.fixture(scope="module", name="data_fixture")
+def data():
+    inital_data = [{"id": i, "embedding": [i / 10.0] * 10, "age": 25 + i} for i in range(10)]
+    yield inital_data
 
 
-@pytest.mark.parametrize("overwrite, has_collection", [(True, True), (False, False), (True, False)])
-def test_create(milvus_service_fixture: MilvusVectorDBService,
-                mock_milvus_client_fixture: MilvusClient,
-                overwrite: bool,
-                has_collection: bool):
-    filepath = path.join(TEST_DIRS.tests_data_dir, "service", "milvus_test_collection_conf.json")
-    collection_config = {}
-    with open(filepath, "r", encoding="utf-8") as file:
-        collection_config = json.load(file)
-
-    mock_milvus_client_fixture.has_collection.return_value = has_collection
-    name = collection_config.pop("name")
-    milvus_service_fixture.create(name=name, overwrite=overwrite, **collection_config)
-
-    if overwrite:
-        if has_collection:
-            mock_milvus_client_fixture.drop_collection.assert_called_once()
-        else:
-            mock_milvus_client_fixture.drop_collection.assert_not_called()
-    else:
-        mock_milvus_client_fixture.drop_collection.assert_not_called()
-
-    mock_milvus_client_fixture.create_collection_with_schema.assert_called_once()
+@pytest.fixture(scope="module", name="idx_part_collection_config_fixture")
+def idx_part_collection_config():
+    collection_config = load_yaml(filename="milvus_idx_part_collection_conf.json")
+    yield collection_config
 
 
-def test_insert(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    data = [
-        {
-            "id": 1, "embedding": [0.1, 0.2, 0.3], "age": 30
-        },
-        {
-            "id": 2, "embedding": [0.4, 0.5, 0.6], "age": 25
-        },
-    ]
-    milvus_service_fixture.insert(name="test_collection", data=data)
-    mock_milvus_client_fixture.get_collection.assert_called_once()
+@pytest.fixture(scope="module", name="simple_collection_config_fixture")
+def simple_collection_config():
+    collection_config = load_yaml(filename="milvus_simple_collection_conf.json")
+    yield collection_config
 
 
-@pytest.mark.parametrize(
-    "insert_data, expected_exception",
-    [
-        ([], RuntimeError),  # Collection does not exist
-        ([], RuntimeError),  # Other error scenario
-    ])
-def test_insert_error(milvus_service_fixture: MilvusVectorDBService,
-                      mock_milvus_client_fixture: MilvusClient,
-                      insert_data: list,
-                      expected_exception: Exception):
-    mock_milvus_client_fixture.has_collection.return_value = False
-    with pytest.raises(expected_exception):
-        milvus_service_fixture.insert("non_existent_collection", data=insert_data)
+@pytest.mark.slow
+def test_list_store_objects(milvus_service_fixture: MilvusVectorDBService):
+    # List all collections in the Milvus server.
+    collections = milvus_service_fixture.list_store_objects()
+    assert isinstance(collections, list)
 
 
-def test_insert_dataframe(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    mock_insert = Mock()
-    mock_milvus_client_fixture.get_collection.return_value.insert = mock_insert
-
-    data = cudf.DataFrame({
-        "id": [1, 2],
-        "embedding": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
-        "age": [30, 25],
-    })
-
-    milvus_service_fixture.insert_dataframe(name="test_collection", df=data)
-    mock_insert.assert_called_once()
+@pytest.mark.slow
+def test_has_store_object(milvus_service_fixture: MilvusVectorDBService):
+    # Check if a non-existing collection exists in the Milvus server.
+    collection_name = "non_existing_collection"
+    assert not milvus_service_fixture.has_store_object(collection_name)
 
 
-search_test_cases = [
-    ("query", {
-        "bool": {
-            "must": [{
-                "vector": {
-                    "embedding": [0.1, 0.2, 0.3]
-                }
-            }]
-        }
-    }, "query_result"),
-    ("data", [{
-        "id": 1, "embedding": [0.1, 0.2, 0.3]
-    }, {
-        "id": 2, "embedding": [0.4, 0.5, 0.6]
-    }], "data_result"),
-    ("error_value", None, None),
-    ("error_value", None, []),
-]
+@pytest.mark.slow
+def test_create_and_drop_collection(milvus_service_fixture: MilvusVectorDBService,
+                                    idx_part_collection_config_fixture: dict):
+    # Create a collection and check if it exists.
+    collection_name = "test_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+    assert milvus_service_fixture.has_store_object(collection_name)
+
+    # Drop the collection and check if it no longer exists.
+    milvus_service_fixture.drop(collection_name)
+    assert not milvus_service_fixture.has_store_object(collection_name)
 
 
-@pytest.mark.parametrize("test_type, query_or_data, expected_result", search_test_cases)
+@pytest.mark.slow
+def test_insert_and_retrieve_by_keys(milvus_service_fixture: MilvusVectorDBService,
+                                     idx_part_collection_config_fixture: dict,
+                                     data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_insert_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data into the collection.
+    response = milvus_service_fixture.insert(collection_name, data_fixture)
+    assert response["insert_count"] == len(data_fixture)
+
+    # Retrieve inserted data by primary keys.
+    keys_to_retrieve = [2, 4, 6]
+    retrieved_data = milvus_service_fixture.retrieve_by_keys(collection_name, keys_to_retrieve)
+    assert len(retrieved_data) == len(keys_to_retrieve)
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+@pytest.mark.slow
 def test_search(milvus_service_fixture: MilvusVectorDBService,
-                mock_milvus_client_fixture: MilvusClient,
-                test_type: str,
-                query_or_data: dict,
-                expected_result: typing.Any):
-    if test_type == "query":
-        mock_milvus_client_fixture.query.return_value = {"result": expected_result}
-    elif test_type == "data":
-        mock_milvus_client_fixture.search.return_value = {"result": expected_result}
+                idx_part_collection_config_fixture: dict,
+                data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_search_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
 
-    if test_type == "error_value":
-        with pytest.raises(RuntimeError):
-            milvus_service_fixture.search(name="test_collection", query=query_or_data, data=None)
-    else:
-        result = milvus_service_fixture.search(name="test_collection", **{test_type: query_or_data})
-        assert result == {"result": expected_result}
-        mock_milvus_client_fixture.load_collection.assert_called_once()
-        if test_type == "query":
-            mock_milvus_client_fixture.query.assert_called_once()
-        elif test_type == "data":
-            mock_milvus_client_fixture.search.assert_called_once()
-        mock_milvus_client_fixture.release_collection.assert_called_once()
+    # Insert data into the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
 
+    # Define a search query.
+    query = "age==26 or age==27"
 
-def test_update(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    data = [
-        {
-            "id": 1, "embedding": [0.1, 0.2, 0.3], "age": 30
-        },
-        {
-            "id": 2, "embedding": [0.4, 0.5, 0.6], "age": 25
-        },
-    ]
-    milvus_service_fixture.update(name="test_collection", data=data)
-    mock_milvus_client_fixture.upsert.assert_called_once()
+    # Perform a search in the collection.
+    search_result = milvus_service_fixture.search(collection_name, query)
+    assert len(search_result) == 2
+    assert search_result[0]["age"] in [26, 27]
+    assert search_result[1]["age"] in [26, 27]
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
 
 
-def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    keys = [1, 2]
-    mock_milvus_client_fixture.delete.return_value = keys
+@pytest.mark.slow
+def test_search_with_data(milvus_service_fixture: MilvusVectorDBService,
+                          idx_part_collection_config_fixture: dict,
+                          data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_search_with_data_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
 
-    result = milvus_service_fixture.delete_by_keys(name="test_collection", keys=keys)
-    assert result == keys
-    mock_milvus_client_fixture.delete.assert_called_once()
+    # Insert data to the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
 
+    rng = np.random.default_rng(seed=100)
+    search_vec = rng.random((1, 10))
 
-def test_delete(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    expr = "age < 30"
-    milvus_service_fixture.delete(name="test_collection", expr=expr)
-    mock_milvus_client_fixture.delete_by_expr.assert_called_once()
+    # Define a search filter.
+    fltr = "age==26 or age==27"
 
+    # Perform a search in the collection.
+    search_result = milvus_service_fixture.search(collection_name,
+                                                  data=search_vec,
+                                                  filter=fltr,
+                                                  output_fields=["id", "age"])
 
-def test_retrieve_by_keys(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    keys = [1]
-    mock_milvus_client_fixture.get.return_value = [{"id": 1, "embedding": [0.1, 0.2, 0.3], "age": 30}]
+    assert len(search_result[0]) == 2
+    assert search_result[0][0]["entity"]["age"] in [26, 27]
+    assert search_result[0][1]["entity"]["age"] in [26, 27]
+    assert len(search_result[0][0]["entity"].keys()) == 2
+    assert sorted(list(search_result[0][0]["entity"].keys())) == ["age", "id"]
 
-    result = milvus_service_fixture.retrieve_by_keys(name="test_collection", keys=keys)
-    assert result == [{"id": 1, "embedding": [0.1, 0.2, 0.3], "age": 30}]
-    mock_milvus_client_fixture.get.assert_called_once()
-
-
-def test_count(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    mock_milvus_client_fixture.num_entities.return_value = 5
-    count = milvus_service_fixture.count(name="test_collection")
-    assert count == 5
-    mock_milvus_client_fixture.num_entities.assert_called_once()
-
-
-def test_drop(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    milvus_service_fixture.drop(name="test_collection")
-    mock_milvus_client_fixture.drop_collection.assert_called_once()
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
 
 
-def test_describe(milvus_service_fixture: MilvusVectorDBService, mock_milvus_client_fixture: MilvusClient):
-    mock_milvus_client_fixture.describe_collection.return_value = {"name": "test_collection"}
-    description = milvus_service_fixture.describe(name="test_collection")
-    assert description == {"name": "test_collection"}
-    mock_milvus_client_fixture.describe_collection.assert_called_once()
+@pytest.mark.slow
+def test_count(milvus_service_fixture: MilvusVectorDBService,
+               idx_part_collection_config_fixture: dict,
+               data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_count_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data into the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
+
+    # Get the count of entities in the collection.
+    count = milvus_service_fixture.count(collection_name)
+    assert count == len(data_fixture)
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+@pytest.mark.slow
+def test_overwrite_collection_on_create(milvus_service_fixture: MilvusVectorDBService,
+                                        idx_part_collection_config_fixture: dict,
+                                        data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_overwrite_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data to the collection.
+    response1 = milvus_service_fixture.insert(collection_name, data_fixture)
+    assert response1["insert_count"] == len(data_fixture)
+
+    # Create the same collection again with overwrite=True.
+    milvus_service_fixture.create(collection_name, overwrite=True, **idx_part_collection_config_fixture)
+
+    # Insert different data into the collection.
+    data2 = [{"id": i, "embedding": [i / 10] * 10, "age": 26 + i} for i in range(10)]
+
+    response2 = milvus_service_fixture.insert(collection_name, data2)
+    assert response2["insert_count"] == len(data2)
+
+    # Retrieve the data from the collection and check if it matches the second set of data.
+    retrieved_data = milvus_service_fixture.retrieve_by_keys(collection_name, list(range(10)))
+    for i in range(10):
+        assert retrieved_data[i]["age"] == data2[i]["age"]
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+@pytest.mark.slow
+def test_insert_into_partition(milvus_service_fixture: MilvusVectorDBService,
+                               idx_part_collection_config_fixture: dict,
+                               data_fixture: list[dict]):
+    # Create a collection with a partition.
+    collection_name = "test_partition_collection"
+    partition_name = idx_part_collection_config_fixture["collection_conf"]["partition_conf"]["partitions"][0]["name"]
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data into the specified partition.
+    response = milvus_service_fixture.insert(collection_name,
+                                             data_fixture,
+                                             collection_conf={"partition_name": partition_name})
+    assert response["insert_count"] == len(data_fixture)
+
+    # Retrieve inserted data by primary keys.
+    keys_to_retrieve = [2, 4, 6]
+    retrieved_data = milvus_service_fixture.retrieve_by_keys(collection_name,
+                                                             keys_to_retrieve,
+                                                             partition_names=[partition_name])
+    assert len(retrieved_data) == len(keys_to_retrieve)
+
+    retrieved_data_default_part = milvus_service_fixture.retrieve_by_keys(collection_name,
+                                                                          keys_to_retrieve,
+                                                                          partition_names=["_default"])
+    assert len(retrieved_data_default_part) == 0
+    assert len(retrieved_data_default_part) != len(keys_to_retrieve)
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+def test_update(milvus_service_fixture: MilvusVectorDBService,
+                simple_collection_config_fixture: dict,
+                data_fixture: list[dict]):
+    collection_name = "test_update_collection"
+
+    # Create a collection with the specified schema configuration.
+    milvus_service_fixture.create(collection_name, **simple_collection_config_fixture)
+
+    # Insert data to the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
+
+    # Use updated data to test the update/upsert functionality.
+    updated_data = [{
+        "type": MILVUS_DATA_TYPE_MAP["int64"], "name": "id", "values": list(range(5, 12))
+    },
+                    {
+                        "type": MILVUS_DATA_TYPE_MAP["float_vector"],
+                        "name": "embedding",
+                        "values": [[i / 5.0] * 10 for i in range(5, 12)]
+                    }, {
+                        "type": MILVUS_DATA_TYPE_MAP["int64"], "name": "age", "values": [25 + i for i in range(5, 12)]
+                    }]
+
+    # Apply update/upsert on updated_data.
+    result_dict = milvus_service_fixture.update(collection_name, updated_data)
+
+    assert result_dict["upsert_count"] == 7
+    assert result_dict["insert_count"] == 7
+    assert result_dict["succ_count"] == 7
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService,
+                        idx_part_collection_config_fixture: dict,
+                        data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_delete_by_keys_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data into the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
+
+    # Delete data by keys from the collection.
+    keys_to_delete = [2, 4, 6]
+    response = milvus_service_fixture.delete_by_keys(collection_name, keys_to_delete)
+    assert response == keys_to_delete
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)
+
+
+def test_delete(milvus_service_fixture: MilvusVectorDBService,
+                idx_part_collection_config_fixture: dict,
+                data_fixture: list[dict]):
+    # Create a collection.
+    collection_name = "test_delete_collection"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    # Insert data into the collection.
+    milvus_service_fixture.insert(collection_name, data_fixture)
+
+    # Delete expression.
+    delete_expr = "id in [0,1]"
+
+    # Delete data from the collection using the expression.
+    milvus_service_fixture.delete(collection_name, delete_expr)
+
+    response = milvus_service_fixture.search(collection_name, query="id > 0")
+
+    assert len(response) == len(data_fixture) - 2
+
+    for item in response:
+        assert item["id"] > 1
+
+    # Clean up the collection.
+    milvus_service_fixture.drop(collection_name)

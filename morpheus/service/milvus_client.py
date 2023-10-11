@@ -19,6 +19,21 @@ import pymilvus
 
 logger = logging.getLogger(__name__)
 
+MILVUS_DATA_TYPE_MAP = {
+    "int8": pymilvus.DataType.INT8,
+    "int16": pymilvus.DataType.INT16,
+    "int32": pymilvus.DataType.INT32,
+    "int64": pymilvus.DataType.INT64,
+    "bool": pymilvus.DataType.BOOL,
+    "float": pymilvus.DataType.FLOAT,
+    "double": pymilvus.DataType.DOUBLE,
+    "binary_vector": pymilvus.DataType.BINARY_VECTOR,
+    "float_vector": pymilvus.DataType.FLOAT_VECTOR,
+    "string": pymilvus.DataType.STRING,
+    "varchar": pymilvus.DataType.VARCHAR,
+    "json": pymilvus.DataType.JSON,
+}
+
 
 def handle_exceptions(method_name: str, error_message: str):
     """

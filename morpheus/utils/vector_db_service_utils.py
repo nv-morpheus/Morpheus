@@ -15,23 +15,6 @@
 import importlib
 import typing
 
-from pymilvus import DataType
-
-MILVUS_DATA_TYPE_MAP = {
-    "int8": DataType.INT8,
-    "int16": DataType.INT16,
-    "int32": DataType.INT32,
-    "int64": DataType.INT64,
-    "bool": DataType.BOOL,
-    "float": DataType.FLOAT,
-    "double": DataType.DOUBLE,
-    "binary_vector": DataType.BINARY_VECTOR,
-    "float_vector": DataType.FLOAT_VECTOR,
-    "string": DataType.STRING,
-    "varchar": DataType.VARCHAR,
-    "json": DataType.JSON,
-}
-
 
 def with_mutex(lock_name):
     """

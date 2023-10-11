@@ -111,6 +111,7 @@ class WriteToVectorDBStage(SinglePortStage):
             result = self._service.insert_dataframe(name=self._resource_name,
                                                     df=ctrl_msg.payload().df,
                                                     **self._resource_kwargs)
+
             ctrl_msg.set_metadata("insert_response", result)
 
             return ctrl_msg

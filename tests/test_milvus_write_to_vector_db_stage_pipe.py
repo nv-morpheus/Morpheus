@@ -53,18 +53,14 @@ def get_test_df(num_input_rows):
     return df
 
 
-def create_milvus_collection(conf_file: str, service: MilvusVectorDBService) -> str:
+def create_milvus_collection(collection_name: str, conf_file: str, service: MilvusVectorDBService):
 
     conf_filepath = os.path.join(TEST_DIRS.tests_data_dir, "service", conf_file)
 
     with open(conf_filepath, 'r', encoding="utf-8") as json_file:
         collection_config = json.load(json_file)
 
-    collection_name = collection_config.pop("name")
-
     service.create(name=collection_name, overwrite=True, **collection_config)
-
-    return collection_name
 
 
 @pytest.mark.slow
@@ -77,7 +73,10 @@ def test_write_to_vector_db_stage_pipe(milvus_service_fixture: MilvusVectorDBSer
                                        num_input_rows: int,
                                        expected_num_output_rows: int):
 
-    collection_name = create_milvus_collection("milvus_test_collection_conf.json", milvus_service_fixture)
+    collection_name = "test_stage_insert_collection"
+
+    # Create milvus collection using config file.
+    create_milvus_collection(collection_name, "milvus_idx_part_collection_conf.json", milvus_service_fixture)
     df = get_test_df(num_input_rows)
 
     to_cm_module_config = {
@@ -93,13 +92,22 @@ def test_write_to_vector_db_stage_pipe(milvus_service_fixture: MilvusVectorDBSer
                            output_port_name="output",
                            output_type=ControlMessage))
 
+    # Provide partition name to insert data into the partition otherwise goes to '_default' partition.
+    resource_kwargs = {"collection_conf": {"partition_name": "age_partition"}}
+
     if use_instance:
-        write_to_vdb_stage = WriteToVectorDBStage(config, resource_name=collection_name, service=milvus_service_fixture)
+        # Instantiate stage with service instance and insert options.
+        write_to_vdb_stage = WriteToVectorDBStage(config,
+                                                  resource_name=collection_name,
+                                                  service=milvus_service_fixture,
+                                                  resource_kwargs=resource_kwargs)
     else:
+        # Instantiate stage with service name, uri and insert options.
         write_to_vdb_stage = WriteToVectorDBStage(config,
                                                   resource_name=collection_name,
                                                   service="milvus",
-                                                  uri=milvus_server_uri)
+                                                  uri=milvus_server_uri,
+                                                  resource_kwargs=resource_kwargs)
 
     pipe.add_stage(write_to_vdb_stage)
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
@@ -110,4 +118,10 @@ def test_write_to_vector_db_stage_pipe(milvus_service_fixture: MilvusVectorDBSer
     assert len(messages) == 1
     assert isinstance(messages[0], ControlMessage)
     assert messages[0].has_metadata("insert_response")
-    assert len(messages[0].payload().df) == expected_num_output_rows
+
+    # Insert entities response as a dictionary.
+    response = messages[0].get_metadata("insert_response")
+
+    assert response["insert_count"] == expected_num_output_rows
+    assert response["succ_count"] == expected_num_output_rows
+    assert response["err_count"] == 0

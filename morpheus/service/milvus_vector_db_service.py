@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import logging
 import typing
 
 import pandas as pd
 import pymilvus
-from pymilvus.exceptions import MilvusException
 
 import cudf
 
+from morpheus.service.milvus_client import MILVUS_DATA_TYPE_MAP
 from morpheus.service.milvus_client import MilvusClient
 from morpheus.service.vector_db_service import VectorDBService
-from morpheus.utils.vector_db_service_utils import MILVUS_DATA_TYPE_MAP
 from morpheus.utils.vector_db_service_utils import with_mutex
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ class MilvusVectorDBService(VectorDBService):
         return self._client.list_collections(**kwargs)
 
     def _create_schema_field(self, field_conf: dict) -> pymilvus.FieldSchema:
+
         name = field_conf.pop("name")
         dtype = field_conf.pop("dtype")
 
@@ -95,6 +96,9 @@ class MilvusVectorDBService(VectorDBService):
         return field_schema
 
     def create(self, name: str, overwrite: bool = False, **kwargs: dict[str, typing.Any]):
+        # Preserve original configuration.
+        kwargs = copy.deepcopy(kwargs)
+
         collection_conf = kwargs.get("collection_conf")
         auto_id = collection_conf.get("auto_id", False)
         index_conf = collection_conf.get("index_conf", None)
@@ -103,7 +107,7 @@ class MilvusVectorDBService(VectorDBService):
         schema_conf = collection_conf.get("schema_conf")
         schema_fields_conf = schema_conf.pop("schema_fields")
 
-        index_param = None
+        index_param = {}
 
         if not self.has_store_object(name) or overwrite:
             if overwrite and self.has_store_object(name):
@@ -117,6 +121,7 @@ class MilvusVectorDBService(VectorDBService):
             schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
 
             if index_conf:
+                # Preserve original index configuration.
                 field_name = index_conf.pop("field_name")
                 metric_type = index_conf.pop("metric_type")
                 index_param = self._client.prepare_index_params(field_name=field_name,
@@ -138,7 +143,8 @@ class MilvusVectorDBService(VectorDBService):
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_mutex("_mutex")
-    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str, typing.Any]):
+    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
+                                                                                                 typing.Any]) -> dict:
         """
         Insert a collection specific data in the Milvus vector database.
 
@@ -177,7 +183,19 @@ class MilvusVectorDBService(VectorDBService):
         finally:
             collection.release()
 
-        return result
+        result_dict = {
+            "primary_keys": result.primary_keys,
+            "insert_count": result.insert_count,
+            "delete_count": result.delete_count,
+            "upsert_count": result.upsert_count,
+            "timestamp": result.timestamp,
+            "succ_count": result.succ_count,
+            "err_count": result.err_count,
+            "succ_index": result.succ_index,
+            "err_index": result.err_index
+        }
+
+        return result_dict
 
     @with_mutex("_mutex")
     def insert_dataframe(self,
@@ -253,17 +271,18 @@ class MilvusVectorDBService(VectorDBService):
                     raise RuntimeError("Argument 'data' cannot be None")
 
                 data = kwargs.pop("data")
+
                 result = self._client.search(collection_name=name, data=data, **kwargs)
             return result
 
-        except MilvusException as exec_info:
+        except pymilvus.exceptions.MilvusException as exec_info:
             raise RuntimeError(f"Unable to perform serach: {exec_info}") from exec_info
 
         finally:
             self._client.release_collection(collection_name=name)
 
     @with_mutex("_mutex")
-    def update(self, name: str, data: list[dict], **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def update(self, name: str, data: list[dict], **kwargs: dict[str, typing.Any]) -> dict:
         """
         Update data in the vector database.
 
@@ -280,9 +299,18 @@ class MilvusVectorDBService(VectorDBService):
         if not isinstance(data, list):
             raise RuntimeError("Data is not of type list.")
 
-        response = self._client.upsert(collection_name=name, entities=data, **kwargs)
+        result = self._client.upsert(collection_name=name, entities=data, **kwargs)
 
-        return response
+        result_dict = {
+            "insert_count": result.insert_count,
+            "delete_count": result.delete_count,
+            "upsert_count": result.upsert_count,
+            "timestamp": result.timestamp,
+            "succ_count": result.succ_count,
+            "err_count": result.err_count
+        }
+
+        return result_dict
 
     @with_mutex("_mutex")
     def delete_by_keys(self, name: str, keys: typing.Union[int, str, list],
@@ -345,7 +373,19 @@ class MilvusVectorDBService(VectorDBService):
         **kwargs :  dict[str, typing.Any]
             Additional keyword arguments for the retrieval operation.
         """
-        return self._client.get(collection_name=name, ids=keys, **kwargs)
+
+        result = None
+
+        try:
+            self._client.load_collection(collection_name=name)
+            result = self._client.get(collection_name=name, ids=keys, **kwargs)
+        except pymilvus.exceptions.MilvusException as exec_info:
+            raise RuntimeError(f"Unable to perform serach: {exec_info}") from exec_info
+
+        finally:
+            self._client.release_collection(collection_name=name)
+
+        return result
 
     def count(self, name: str, **kwargs: dict[str, typing.Any]) -> int:
         """

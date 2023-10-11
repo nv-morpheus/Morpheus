@@ -59,7 +59,7 @@ class VectorDBService(ABC):
     def insert_dataframe(self,
                          name: str,
                          df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]):
+                         **kwargs: dict[str, typing.Any]) -> dict:
         """
         Converts dataframe to rows and insert into the vector database resource.
 
@@ -71,6 +71,11 @@ class VectorDBService(ABC):
             Dataframe to be inserted.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
+
+        Returns
+        -------
+        dict
+            Returns response conntent as a dictionary.
 
         Raises
         ------

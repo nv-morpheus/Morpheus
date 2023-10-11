@@ -940,7 +940,7 @@ def filter_probs_df(dataset, use_cpp: bool):
     yield dataset["filter_probs.csv"]
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def milvus_server_uri():
     """
     Pytest fixture to start and stop a Milvus server and provide its URI for testing.
