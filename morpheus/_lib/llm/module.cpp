@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,53 +66,8 @@
 #include <utility>
 #include <vector>
 
-// namespace pybind11::detail {
-// template <typename Iterator, typename SFINAE = decltype((*std::declval<Iterator&>()).key())>
-// class iterator_key_access
-// {
-//   private:
-//     using pair_type = decltype(*std::declval<Iterator&>());
-
-//   public:
-//     /* If either the pair itself or the element of the pair is a reference, we
-//      * want to return a reference, otherwise a value. When the decltype
-//      * expression is parenthesized it is based on the value category of the
-//      * expression; otherwise it is the declared type of the pair member.
-//      * The use of declval<pair_type> in the second branch rather than directly
-//      * using *std::declval<Iterator &>() is a workaround for nvcc
-//      * (it's not used in the first branch because going via decltype and back
-//      * through declval does not perfectly preserve references).
-//      */
-//     using result_type = std::conditional_t<std::is_reference<decltype(*std::declval<Iterator&>())>::value,
-//                                            decltype(((*std::declval<Iterator&>()).first)),
-//                                            decltype(std::declval<pair_type>().first)>;
-//     result_type operator()(Iterator& it) const
-//     {
-//         return (*it).key();
-//     }
-// };
-// }  // namespace pybind11::detail
-
 namespace morpheus::llm {
 namespace py = pybind11;
-
-// class LLMFunctionNode : public LLMNodeBase
-// {
-//   public:
-
-//     std::vector<std::string> get_input_names() const override
-//     {
-//         return {""};
-//     }
-
-//     Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override
-//     {
-//         co_return co_await m_function(context);
-//     }
-
-//   private:
-//     std::function<Task<std::shared_ptr<LLMContext>>(std::shared_ptr<LLMContext>)> m_function;
-// };
 
 PYBIND11_MODULE(llm, _module)
 {
@@ -316,23 +271,6 @@ PYBIND11_MODULE(llm, _module)
             py::arg("inputs"),
             py::arg("node"),
             py::arg("is_output") = false);
-    // .def("execute", [](std::shared_ptr<LLMNode> self, std::shared_ptr<LLMContext> context) {
-    //     auto convert = [self](std::shared_ptr<LLMContext> context) -> Task<mrc::pymrc::PyHolder> {
-    //         auto result = co_await self->execute(context);
-
-    //         // Convert the output to a python object
-    //         co_return py::cast(result);
-    //     };
-
-    //     return std::make_shared<CoroAwaitable>(std::move(convert));
-    // });
-
-    // auto LLMService =
-    //     py::class_<LLMService, PyLLMService, std::shared_ptr<LLMService>>(_module, "LLMService");
-
-    // auto LLMPromptGenerator =
-    //     py::class_<LLMPromptGenerator, PyLLMPromptGenerator, std::shared_ptr<LLMPromptGenerator>>(
-    //         _module, "LLMPromptGenerator");
 
     py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(_module, "LLMTaskHandler")
         .def(py::init<>())
@@ -357,9 +295,6 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<LLMEngine, LLMNode, PyLLMEngine, std::shared_ptr<LLMEngine>>(_module, "LLMEngine")
         .def(py::init_alias<>())
-        // .def(py::init([](std::shared_ptr<LLMService> llm_service) {
-        //     return std::make_shared<PyLLMEngine>(std::move(llm_service));
-        // }))
         .def(
             "add_task_handler",
             [](LLMEngine& self,
@@ -385,7 +320,6 @@ PYBIND11_MODULE(llm, _module)
             },
             py::arg("inputs"),
             py::arg("handler"))
-        // .def("add_node", &LLMEngine::add_node, py::arg("name"), py::arg("input_names"), py::arg("node"))
         .def(
             "run",
             [](std::shared_ptr<LLMEngine> self, std::shared_ptr<ControlMessage> message) {
@@ -413,40 +347,6 @@ PYBIND11_MODULE(llm, _module)
 
                  co_return result;
              });
-
-    // .def("execute", [](std::shared_ptr<LLMEngine> self, std::shared_ptr<LLMContext> context) {
-    //     auto convert = [self](std::shared_ptr<LLMContext> context) -> Task<mrc::pymrc::PyHolder> {
-    //         auto result = co_await self->execute(context);
-
-    //         // Convert the output to a python object
-    //         co_return py::cast(result);
-    //     };
-
-    //     return std::make_shared<CoroAwaitable>(std::move(convert));
-    // });
-
-    // py::class_<LangChainTemplateNodeCpp, LLMNodeBase, std::shared_ptr<LangChainTemplateNodeCpp>>(
-    //     _module, "LangChainTemplateNodeCpp")
-    //     .def(py::init<>([](std::string template_str) {
-    //              return std::make_shared<LangChainTemplateNodeCpp>(std::move(template_str));
-    //          }),
-    //          py::arg("template"))
-    //     .def_property_readonly("template",
-    //                            [](LangChainTemplateNodeCpp& self) {
-    //                                //
-    //                                return self.get_template();
-    //                            })
-    //     .def("get_input_names", &LangChainTemplateNodeCpp::get_input_names)
-    //     .def("execute", [](std::shared_ptr<LangChainTemplateNodeCpp> self, std::shared_ptr<LLMContext> context) {
-    //         auto convert = [self](std::shared_ptr<LLMContext> context) -> Task<mrc::pymrc::PyHolder> {
-    //             auto result = co_await self->execute(context);
-
-    //             // Convert the output to a python object
-    //             co_return py::cast(result);
-    //         };
-
-    //         return std::make_shared<CppToPyAwaitable>(convert(context));
-    //     });
 
     _module.attr("__version__") =
         MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
