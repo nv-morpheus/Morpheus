@@ -20,6 +20,7 @@ channels:
 dependencies:
   - boto3
   - onnx
+  - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
   - psycopg2<3
   - pymysql
   - python=3.11

@@ -150,7 +150,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0,
-             py::arg("async_commits")         = true)
+             py::arg("async_commits")         = true,
+             py::arg("oauth_callback")        = py::none())
         .def(py::init<>(&KafkaSourceStageInterfaceProxy::init_with_multiple_topics),
              py::arg("builder"),
              py::arg("name"),
@@ -161,7 +162,8 @@ PYBIND11_MODULE(stages, _module)
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0,
-             py::arg("async_commits")         = true);
+             py::arg("async_commits")         = true,
+             py::arg("oauth_callback")        = py::none());
 
     py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
