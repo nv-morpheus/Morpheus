@@ -19,6 +19,7 @@ import pymilvus
 
 logger = logging.getLogger(__name__)
 
+# Milvus data type mapping dictionary
 MILVUS_DATA_TYPE_MAP = {
     "int8": pymilvus.DataType.INT8,
     "int16": pymilvus.DataType.INT16,
@@ -35,7 +36,7 @@ MILVUS_DATA_TYPE_MAP = {
 }
 
 
-def handle_exceptions(method_name: str, error_message: str):
+def handle_exceptions(method_name: str, error_message: str) -> typing.Callable:
     """
     Decorator function to handle exceptions and log errors.
 
@@ -48,7 +49,7 @@ def handle_exceptions(method_name: str, error_message: str):
 
     Returns
     -------
-    Callable
+    typing.Callable
         Decorated function.
     """
 
@@ -241,7 +242,22 @@ class MilvusClient(pymilvus.MilvusClient):
         conn = self._get_connection()
         conn.drop_index(collection_name=collection_name, field_name=field_name, index_name=index_name)
 
-    @handle_exceptions("get_collection", "Error getting collection")
-    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> str:
+    @handle_exceptions("get_collection", "Error getting collection object")
+    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> pymilvus.Collection:
+        """
+        Returns `pymilvus.Collection` object associated with the given collection name.
+
+        Parameters
+        ----------
+        collection_name : str
+            Name of the collection to delete from.
+        **kwargs : dict
+            Additional keyword arguments to get Collection instance.
+
+        Returns
+        -------
+        pymilvus.Collection
+            Returns pymilvus Collection instance.
+        """
         collection = pymilvus.Collection(name=collection_name, using=self._using, **kwargs)
         return collection

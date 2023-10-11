@@ -16,35 +16,6 @@ import importlib
 import typing
 
 
-def with_mutex(lock_name):
-    """
-    A decorator that provides a mutex (locking mechanism) for a method.
-
-    This decorator is used to ensure that only one instance of a method can be executed
-    at a time, which is particularly useful for preventing concurrent access to shared resources.
-
-    Parameters
-    ----------
-    lock_name : str
-        The name of the attribute that holds the mutex (lock) for the method.
-
-    Returns
-    -------
-    function:
-        A decorated version of the method that acquires the mutex before execution.
-    """
-
-    def decorator(func):
-
-        def wrapper(*args, **kwargs):
-            with getattr(args[0], lock_name):
-                return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 class VectorDBServiceFactory:
     """
     Factory for creating instances of vector database service classes. This factory allows dynamically

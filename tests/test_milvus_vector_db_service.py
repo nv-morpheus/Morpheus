@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
 import json
 import os
 
@@ -25,7 +26,7 @@ from morpheus.service.milvus_client import MILVUS_DATA_TYPE_MAP
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 
 
-@pytest.fixture(scope="function", name="milvus_service_fixture")
+@pytest.fixture(scope="module", name="milvus_service_fixture")
 def milvus_service(milvus_server_uri: str):
     service = MilvusVectorDBService(uri=milvus_server_uri)
     yield service
@@ -244,6 +245,7 @@ def test_insert_into_partition(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
+@pytest.mark.slow
 def test_update(milvus_service_fixture: MilvusVectorDBService,
                 simple_collection_config_fixture: dict,
                 data_fixture: list[dict]):
@@ -278,6 +280,7 @@ def test_update(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
+@pytest.mark.slow
 def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService,
                         idx_part_collection_config_fixture: dict,
                         data_fixture: list[dict]):
@@ -297,6 +300,7 @@ def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
+@pytest.mark.slow
 def test_delete(milvus_service_fixture: MilvusVectorDBService,
                 idx_part_collection_config_fixture: dict,
                 data_fixture: list[dict]):
@@ -322,3 +326,39 @@ def test_delete(milvus_service_fixture: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service_fixture.drop(collection_name)
+
+
+@pytest.mark.slow
+def test_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
+                              idx_part_collection_config_fixture: dict,
+                              data_fixture: list[dict]):
+
+    # Create a collection.
+    collection_name = "test_insert_and_search_order_with_collection_lock"
+    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+
+    execution_order = []
+
+    def insert_data():
+        result = milvus_service_fixture.insert(collection_name, data_fixture)
+        assert result['insert_count'] == len(data_fixture)
+        execution_order.append("Insert Executed")
+
+    def search_data():
+        filter_query = "age == 26 or age == 27"
+        search_vec = np.random.random((1, 10))
+        result = milvus_service_fixture.search(collection_name, data=search_vec, filter=filter_query)
+        execution_order.append("Search Executed")
+        assert isinstance(result, list)
+
+    def count_entities():
+        milvus_service_fixture.count(collection_name)
+        execution_order.append("Count Collection Entities Executed")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        executor.submit(insert_data)
+        executor.submit(search_data)
+        executor.submit(count_entities)
+
+    # Assert the execution order
+    assert execution_order == ["Count Collection Entities Executed", "Insert Executed", "Search Executed"]

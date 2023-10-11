@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import threading
 import typing
 from abc import ABC
 from abc import abstractmethod
@@ -30,11 +29,8 @@ class VectorDBService(ABC):
     Class used for vectorstore specific implementation.
     """
 
-    # Mutex lock to perform operations synchronously.
-    _mutex = threading.Lock()
-
     @abstractmethod
-    def insert(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def insert(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert data into the vector database.
 
@@ -49,8 +45,8 @@ class VectorDBService(ABC):
 
         Returns
         -------
-        typing.Any
-            Returns insert response result.
+        dict
+            Returns response content as a dictionary.
         """
 
         pass
@@ -75,7 +71,7 @@ class VectorDBService(ABC):
         Returns
         -------
         dict
-            Returns response conntent as a dictionary.
+            Returns response content as a dictionary.
 
         Raises
         ------
