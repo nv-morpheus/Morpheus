@@ -118,7 +118,7 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> None:
+    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Update data in the vector database.
 
@@ -130,6 +130,11 @@ class VectorDBService(ABC):
             Data to be updated in the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        dict
+            Returns result of the updated operation stats.
         """
 
         pass
@@ -179,6 +184,11 @@ class VectorDBService(ABC):
             Name of the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        dict
+            Returns resource information.
         """
 
         pass
@@ -263,7 +273,7 @@ class VectorDBService(ABC):
         Returns
         -------
         typing.Any
-            Returns inserted vectors of the given keys that exists in the resource.
+            Returns rows of the given keys that exists in the resource.
         """
         pass
 

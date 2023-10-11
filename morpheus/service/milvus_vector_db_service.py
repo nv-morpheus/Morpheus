@@ -60,7 +60,7 @@ def with_collection_lock(func: typing.Callable) -> typing.Callable:
 
 class MilvusVectorDBService(VectorDBService):
     """
-    Service class for Milvus Vector Database implementation. This class provides methods for interacting
+    Service class for Milvus Vector Database implementation. This class provides functions for interacting
     with a Milvus vector database.
 
     Parameters
@@ -219,7 +219,6 @@ class MilvusVectorDBService(VectorDBService):
             schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
 
             if index_conf:
-                # Preserve original index configuration.
                 field_name = index_conf.pop("field_name")
                 metric_type = index_conf.pop("metric_type")
                 index_param = self._client.prepare_index_params(field_name=field_name,
@@ -241,8 +240,7 @@ class MilvusVectorDBService(VectorDBService):
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_collection_lock
-    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
-                                                                                                 typing.Any]) -> dict:
+    def insert(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert a collection specific data in the Milvus vector database.
 
@@ -265,6 +263,7 @@ class MilvusVectorDBService(VectorDBService):
         RuntimeError
             If the collection not exists exists.
         """
+
         return self._collection_insert(name, data, **kwargs)
 
     def _collection_insert(self,
@@ -404,6 +403,11 @@ class MilvusVectorDBService(VectorDBService):
             Data to be updated in the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to upsert operation.
+
+        Returns
+        -------
+        dict
+            Returns result of the updated operation stats.
         """
 
         if not isinstance(data, list):
@@ -440,7 +444,7 @@ class MilvusVectorDBService(VectorDBService):
         Returns
         -------
         typing.Any
-            Returns vectors of the given keys that are delete from the resource.
+            Returns result of the given keys that are delete from the collection.
         """
 
         response = self._client.delete(collection_name=name, pks=keys, **kwargs)
@@ -464,7 +468,7 @@ class MilvusVectorDBService(VectorDBService):
         Returns
         -------
         typing.Any
-            Returns vectors of the given keys that are delete from the resource.
+            Returns result of the given keys that are delete from the collection.
         """
 
         return self._client.delete_by_expr(collection_name=name, expression=expr, **kwargs)
@@ -484,6 +488,11 @@ class MilvusVectorDBService(VectorDBService):
             or a list of either.
         **kwargs :  dict[str, typing.Any]
             Additional keyword arguments for the retrieval operation.
+
+        Returns
+        -------
+        list[dict]
+            Returns result rows of the given keys from the collection.
         """
 
         result = None
@@ -509,6 +518,11 @@ class MilvusVectorDBService(VectorDBService):
             Name of the collection.
         **kwargs :  dict[str, typing.Any]
             Additional keyword arguments for the count operation.
+
+        Returns
+        -------
+        int
+            Returns number of entities in the collection.
         """
 
         return self._client.num_entities(collection_name=name, **kwargs)
@@ -575,6 +589,11 @@ class MilvusVectorDBService(VectorDBService):
             Name of the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments specific to the Milvus vector database.
+
+        Returns
+        -------
+        dict
+            Returns collection information.
         """
 
         return self._client.describe_collection(collection_name=name, **kwargs)
