@@ -29,7 +29,7 @@ python:
   - 3.10
 
 boost:
-  - 1.74
+  - 1.82
 
 rapids_version:
   - 23.06
