@@ -240,7 +240,8 @@ class MilvusVectorDBService(VectorDBService):
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_collection_lock
-    def insert(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
+    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
+                                                                                                 typing.Any]) -> dict:
         """
         Insert a collection specific data in the Milvus vector database.
 
@@ -248,7 +249,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        data : typing.Any
+        data : typing.Union[list[list], list[dict], dict]
             Data to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
@@ -436,7 +437,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        keys : typing.Any
+        keys : typing.Union[int, str, list]
             Primary keys to delete vectors.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -452,7 +453,7 @@ class MilvusVectorDBService(VectorDBService):
         return response
 
     @with_collection_lock
-    def delete(self, name: str, expr: str, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete(self, name: str, expr: typing.Union[str, dict], **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Delete vectors from the resource using expressions.
 
@@ -460,7 +461,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        expr : str
+        expr : typing.Union[str, dict]
             Delete expression.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.

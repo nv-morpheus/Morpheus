@@ -30,7 +30,8 @@ class VectorDBService(ABC):
     """
 
     @abstractmethod
-    def insert(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
+    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
+                                                                                                 typing.Any]) -> dict:
         """
         Insert data into the vector database.
 
@@ -38,7 +39,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        data : typing.Any
+        data : typing.Union[list[list], list[dict], dict]
             Data to be inserted into the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -140,13 +141,13 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def delete(self, name: str, expr: typing.Any, **kwargs: dict[str, typing.Any]) -> None:
+    def delete(self, name: str, expr: typing.Union[str, dict], **kwargs: dict[str, typing.Any]) -> None:
         """
         Delete data in the vector database.
 
         Parameters
         ----------
-        name : str
+        name : typing.Union[str, dict]
             Name of the resource.
         expr : typing.Any
             E.
@@ -257,7 +258,8 @@ class VectorDBService(ABC):
         return data
 
     @abstractmethod
-    def retrieve_by_keys(self, name: str, keys: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def retrieve_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
+                                                                                             typing.Any]) -> typing.Any:
         """
         Retrieve the inserted vectors using keys from the resource.
 
@@ -278,7 +280,8 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def delete_by_keys(self, name: str, keys: typing.Any, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
+                                                                                           typing.Any]) -> typing.Any:
         """
         Delete vectors by keys from the resource.
 
@@ -286,7 +289,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        keys : typing.Any
+        keys : typing.Union[int, str, list]
             Primary keys to delete vectors.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
