@@ -33,8 +33,9 @@ struct InputMap
                                      // the default input of the node
 };
 
-// NOLINTNEXTLINE(readability-identifier-naming)
+// NOLINTBEGIN(readability-identifier-naming)
 using InputMapSpeficier = std::variant<std::string, InputMap, std::shared_ptr<LLMNodeRunner>>;
+// NOLINTEND(readability-identifier-naming)
 
 // Ordered mapping of input names (current node) to output names (from previous nodes)
 using input_mapping_t = std::vector<InputMap>;
