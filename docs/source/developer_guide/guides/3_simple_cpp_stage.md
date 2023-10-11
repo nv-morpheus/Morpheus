@@ -336,11 +336,13 @@ PYBIND11_MODULE(morpheus_example, m)
 
 ### Python Changes
 
-We need to make a few minor adjustments to our Python implementation of the `PassThruStage`.
+We need to make a few minor adjustments to our Python implementation of the `PassThruStage`. First, we import the new `morpheus_example` Python module we created in the previous section.
+
+```python
+from _lib import morpheus_example as morpheus_example_cpp
+```
 
 As mentioned in the previous section, we will need to change the return value of the `supports_cpp_node` method to indicate that our stage now supports a C++ implementation.  Our `_build_single` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is `True` using the `self._build_cpp_node()` method. The `_build_cpp_node()` method compares both `morpheus.config.CppConfig.get_should_use_cpp()` and `supports_cpp_node()` and returns `True` only when both methods return `True`.
-
- We lazily import the new `morpheus_example` Python module we created in the previous section only when we need to build a C++ node since importing a compiled extension module comes at a performance cost.
 
 ```python
 def supports_cpp_node(self):
@@ -349,7 +351,6 @@ def supports_cpp_node(self):
 ```python
 def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     if self._build_cpp_node():
-        from _lib import morpheus_example as morpheus_example_cpp
         node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
     else:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
