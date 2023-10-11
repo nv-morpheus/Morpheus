@@ -21,23 +21,32 @@
 
 #include <glog/logging.h>
 
+#include <regex>
 #include <set>
 #include <stdexcept>
 
 namespace morpheus::llm {
 
-input_map_t process_input_names(const input_map_t& inputs, const std::vector<std::string>& input_names)
+// Use this regex
+const std::regex VALID_INPUT_NAME(R"([a-zA-Z_][a-zA-Z0-9_]*)", std::regex_constants::ECMAScript);
+
+bool is_valid_node_name(std::string_view name)
 {
-    input_map_t final_inputs;
-    input_map_t placeholder_inputs;
+    return std::regex_match(name.begin(), name.end(), VALID_INPUT_NAME);
+}
+
+input_mapping_t process_input_names(const input_mapping_t& inputs, const std::vector<std::string>& input_names)
+{
+    input_mapping_t final_inputs;
+    input_mapping_t placeholder_inputs;
 
     // Perform any placeholder replacements
     for (size_t i = 0; i < inputs.size(); ++i)
     {
         const auto& single_input = inputs[i];
 
-        bool found_star_input_name = single_input.input_name.find('*') != std::string::npos;
-        bool found_star_node_name  = single_input.node_name == "*";
+        bool found_star_input_name = single_input.external_name.find('*') != std::string::npos;
+        bool found_star_node_name  = single_input.internal_name == "*";
 
         if (found_star_input_name != found_star_node_name)
         {
@@ -53,10 +62,10 @@ input_map_t process_input_names(const input_map_t& inputs, const std::vector<std
         else
         {
             // No placeholder, so just add the input. If the node_name == "-", then replace it with the input name
-            if (single_input.node_name == "-")
+            if (single_input.internal_name == "-")
             {
                 // If we start with a slash, that means we are mapping from another node, not a parent.
-                if (single_input.input_name[0] == '/')
+                if (single_input.external_name[0] == '/')
                 {
                     if (inputs.size() != input_names.size())
                     {
@@ -66,26 +75,26 @@ input_map_t process_input_names(const input_map_t& inputs, const std::vector<std
                     }
 
                     // Match by index
-                    final_inputs.push_back({single_input.input_name, input_names[i]});
+                    final_inputs.push_back({single_input.external_name, input_names[i]});
                 }
                 else
                 {
                     // Match by name
-                    auto found = std::find(input_names.begin(), input_names.end(), single_input.input_name);
+                    auto found = std::find(input_names.begin(), input_names.end(), single_input.external_name);
 
                     if (found != input_names.end())
                     {
-                        final_inputs.push_back({single_input.input_name, *found});
+                        final_inputs.push_back({single_input.external_name, *found});
                     }
                     else if (input_names.size() == 1)
                     {
                         // We can infer that the node name is the only one
-                        final_inputs.push_back({single_input.input_name, input_names[0]});
+                        final_inputs.push_back({single_input.external_name, input_names[0]});
                     }
                     else
                     {
                         throw std::runtime_error(MORPHEUS_CONCAT_STR("Could not find a matching node name for input '"
-                                                                     << single_input.input_name << "'"));
+                                                                     << single_input.external_name << "'"));
                     }
                 }
             }
@@ -107,7 +116,7 @@ input_map_t process_input_names(const input_map_t& inputs, const std::vector<std
                        final_inputs.end(),
                        std::inserter(specified_names, specified_names.begin()),
                        [](const auto& input) {
-                           return input.node_name;
+                           return input.internal_name;
                        });
 
         std::set<std::string> total_names(input_names.begin(), input_names.end());
@@ -121,13 +130,13 @@ input_map_t process_input_names(const input_map_t& inputs, const std::vector<std
                             specified_names.end(),
                             std::back_inserter(remaining_names));
 
-        auto star_input_name_loc = placeholder_inputs[0].input_name.find('*');
+        auto star_input_name_loc = placeholder_inputs[0].external_name.find('*');
 
         // Loop over the remaining names and add them to the final inputs
         for (const auto& remaining_name : remaining_names)
         {
             // Make a copy of the string to avoid modifying the original
-            auto replaced = std::string(placeholder_inputs[0].input_name);
+            auto replaced = std::string(placeholder_inputs[0].external_name);
             replaced.replace(star_input_name_loc, 1, remaining_name);
             final_inputs.push_back({replaced, remaining_name});
         }

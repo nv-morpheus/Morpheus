@@ -34,9 +34,6 @@ class PyLLMNodeBase : public BaseT
     std::vector<std::string> get_input_names() const override;
 
     Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override;
-
-  private:
-    std::map<std::shared_ptr<LLMNodeBase>, pybind11::object> m_py_nodes;
 };
 
 }  // namespace morpheus::llm

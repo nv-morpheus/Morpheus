@@ -36,7 +36,7 @@ class MORPHEUS_EXPORT LLMNode : public LLMNodeBase
     ~LLMNode() override;
 
     virtual std::shared_ptr<LLMNodeRunner> add_node(std::string name,
-                                                    input_map_t inputs,
+                                                    input_mapping_t inputs,
                                                     std::shared_ptr<LLMNodeBase> node,
                                                     bool is_output = false);
 

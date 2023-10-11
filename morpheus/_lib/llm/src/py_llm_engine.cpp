@@ -25,7 +25,7 @@ PyLLMEngine::PyLLMEngine() : PyLLMNode<LLMEngine>() {}
 
 PyLLMEngine::~PyLLMEngine() = default;
 
-void PyLLMEngine::add_task_handler(input_map_t inputs, std::shared_ptr<LLMTaskHandler> task_handler)
+void PyLLMEngine::add_task_handler(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> task_handler)
 {
     // Try to cast the object to a python object to ensure that we keep it alive
     auto py_task_handler = std::dynamic_pointer_cast<PyLLMTaskHandler>(task_handler);

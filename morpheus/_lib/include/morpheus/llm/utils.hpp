@@ -21,6 +21,15 @@
 
 namespace morpheus::llm {
 
-input_map_t process_input_names(const input_map_t& inputs, const std::vector<std::string>& input_names);
+/**
+ * @brief Determines if a name is valid for a node or input. Must follow python rules for identifiers.
+ *
+ * @param name The node name to test
+ * @return true
+ * @return false
+ */
+bool is_valid_node_name(std::string_view name);
+
+input_mapping_t process_input_names(const input_mapping_t& inputs, const std::vector<std::string>& input_names);
 
 }  // namespace morpheus::llm

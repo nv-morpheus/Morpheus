@@ -24,7 +24,7 @@
 
 namespace morpheus::llm {
 
-LLMTaskHandlerRunner::LLMTaskHandlerRunner(input_map_t inputs, std::shared_ptr<LLMTaskHandler> handler) :
+LLMTaskHandlerRunner::LLMTaskHandlerRunner(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> handler) :
   m_inputs(std::move(inputs)),
   m_handler(std::move(handler))
 {
@@ -36,8 +36,8 @@ LLMTaskHandlerRunner::LLMTaskHandlerRunner(input_map_t inputs, std::shared_ptr<L
     // Replace any placeholders with the real node input name
     for (const auto& inp : m_inputs)
     {
-        const auto& node_name  = inp.node_name;
-        const auto& input_name = inp.input_name;
+        const auto& node_name  = inp.internal_name;
+        const auto& input_name = inp.external_name;
 
         // Check that the input name and node names are valid
         CHECK_EQ(node_name.find("*"), std::string::npos) << "Invalid node name '" << node_name << "'";

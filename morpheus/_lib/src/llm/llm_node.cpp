@@ -32,7 +32,7 @@ LLMNode::LLMNode() = default;
 LLMNode::~LLMNode() = default;
 
 std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
-                                                 input_map_t inputs,
+                                                 input_mapping_t inputs,
                                                  std::shared_ptr<LLMNodeBase> node,
                                                  bool is_output)
 {
@@ -53,7 +53,7 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
     for (const auto& inp : final_inputs)
     {
         // Find the first occurance of "/"
-        auto slash_pos = inp.input_name.find('/');
+        auto slash_pos = inp.external_name.find('/');
 
         if (slash_pos != 0)
         {
@@ -62,10 +62,10 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
         }
 
         // Otherwise, the input is a child of the current node. Find the next slash
-        slash_pos = inp.input_name.find('/', 1);
+        slash_pos = inp.external_name.find('/', 1);
 
         auto upstream_node_name =
-            inp.input_name.substr(1, slash_pos != std::string::npos ? slash_pos - 1 : std::string::npos);
+            inp.external_name.substr(1, slash_pos != std::string::npos ? slash_pos - 1 : std::string::npos);
 
         if (std::find_if(m_child_runners.begin(), m_child_runners.end(), [&upstream_node_name](const auto& runner) {
                 return runner->name() == upstream_node_name;
@@ -73,8 +73,8 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
         {
             // Could not find a matching node for this input
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Could not find a node with the name '"
-                                                         << upstream_node_name << "' for the input {'" << inp.input_name
-                                                         << "', '" << inp.node_name << "'}"));
+                                                         << upstream_node_name << "' for the input {'"
+                                                         << inp.external_name << "', '" << inp.internal_name << "'}"));
         }
     }
 

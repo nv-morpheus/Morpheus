@@ -18,23 +18,30 @@
 #pragma once
 
 #include "py_llm_node.hpp"
+#include "py_llm_node_base.hpp"
 
+#include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/llm_engine.hpp"
+#include "morpheus/llm/llm_lambda_node.hpp"
+
+#include <pybind11/pytypes.h>
+#include <pymrc/utilities/function_wrappers.hpp>
 
 namespace morpheus::llm {
 
-class PyLLMEngine : public PyLLMNode<LLMEngine>
+class PyLLMLambdaNode : public LLMNodeBase
 {
   public:
-    PyLLMEngine();
+    PyLLMLambdaNode(pybind11::function fn);
 
-    ~PyLLMEngine() override;
+    ~PyLLMLambdaNode() override;
 
-    void add_task_handler(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> task_handler) override;
+    std::vector<std::string> get_input_names() const override;
+    Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override;
 
   private:
-    // Keep the python objects alive by saving references in this object
-    std::map<std::shared_ptr<LLMTaskHandler>, pybind11::object> m_py_task_handler;
+    std::vector<std::string> m_input_names;
+    pybind11::function m_fn;
 };
 
 }  // namespace morpheus::llm

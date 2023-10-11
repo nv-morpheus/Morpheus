@@ -32,7 +32,7 @@ namespace morpheus::llm {
 class MORPHEUS_EXPORT LLMNodeRunner
 {
   public:
-    LLMNodeRunner(std::string name, input_map_t inputs, std::shared_ptr<LLMNodeBase> node);
+    LLMNodeRunner(std::string name, input_mapping_t inputs, std::shared_ptr<LLMNodeBase> node);
 
     ~LLMNodeRunner();
 
@@ -40,7 +40,7 @@ class MORPHEUS_EXPORT LLMNodeRunner
 
     const std::string& name() const;
 
-    const input_map_t& inputs() const;
+    const input_mapping_t& inputs() const;
 
     const std::vector<std::string>& sibling_input_names() const;
 
@@ -48,7 +48,7 @@ class MORPHEUS_EXPORT LLMNodeRunner
 
   private:
     std::string m_name;
-    input_map_t m_inputs;
+    input_mapping_t m_inputs;
     std::shared_ptr<LLMNodeBase> m_node;
 
     std::vector<std::string> m_sibling_input_names;

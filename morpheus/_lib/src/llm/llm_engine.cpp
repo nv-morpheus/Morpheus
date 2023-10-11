@@ -28,7 +28,7 @@ LLMEngine::LLMEngine() = default;
 
 LLMEngine::~LLMEngine() = default;
 
-void LLMEngine::add_task_handler(input_map_t inputs, std::shared_ptr<LLMTaskHandler> task_handler)
+void LLMEngine::add_task_handler(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> task_handler)
 {
     auto input_names = task_handler->get_input_names();
 

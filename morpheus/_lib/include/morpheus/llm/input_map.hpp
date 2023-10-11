@@ -17,19 +17,28 @@
 
 #pragma once
 
+#include "morpheus/llm/fwd.hpp"
+
+#include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace morpheus::llm {
 
 struct InputMap
 {
-    std::string input_name;      // The name of the upstream node to use as input
-    std::string node_name{"-"};  // The name of the input that the upstream node maps to. '-' is a placeholder for the
-                                 // default input of the node
+    std::string external_name;       // The name of the upstream node to use as input
+    std::string internal_name{"-"};  // The name of the input that the upstream node maps to. '-' is a placeholder for
+                                     // the default input of the node
 };
 
+// NOLINTNEXTLINE(readability-identifier-naming)
+using InputMapSpeficier = std::variant<std::string, InputMap, std::shared_ptr<LLMNodeRunner>>;
+
 // Ordered mapping of input names (current node) to output names (from previous nodes)
-using input_map_t = std::vector<InputMap>;
+using input_mapping_t = std::vector<InputMap>;
+
+using input_mapping_specifier_t = std::vector<InputMapSpeficier>;
 
 }  // namespace morpheus::llm

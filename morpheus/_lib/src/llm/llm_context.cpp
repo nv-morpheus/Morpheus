@@ -17,6 +17,8 @@
 
 #include "morpheus/llm/llm_context.hpp"
 
+#include "morpheus/pybind11/json.hpp"
+
 namespace morpheus::llm {
 
 LLMContext::LLMContext() : m_state(std::make_shared<LLMContextState>()) {}
@@ -27,7 +29,7 @@ LLMContext::LLMContext(LLMTask task, std::shared_ptr<ControlMessage> message) : 
     m_state->message = std::move(message);
 }
 
-LLMContext::LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_map_t inputs) :
+LLMContext::LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mapping_t inputs) :
   m_parent(std::move(parent)),
   m_name(std::move(name)),
   m_inputs(std::move(inputs))
@@ -45,7 +47,7 @@ const std::string& LLMContext::name() const
     return m_name;
 }
 
-const input_map_t& LLMContext::input_map() const
+const input_mapping_t& LLMContext::input_map() const
 {
     return m_inputs;
 }
@@ -87,7 +89,7 @@ std::string LLMContext::full_name() const
     return "";
 }
 
-std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_map_t inputs)
+std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mapping_t inputs)
 {
     return std::make_shared<LLMContext>(this->shared_from_this(), std::move(name), std::move(inputs));
 }
@@ -127,7 +129,7 @@ nlohmann::json::const_reference LLMContext::get_input() const
             "LLMContext::get_input() called on a context with multiple inputs. Use get_input(input_name) instead.");
     }
 
-    return this->get_input(m_inputs[0].node_name);
+    return this->get_input(m_inputs[0].internal_name);
 }
 
 nlohmann::json::const_reference LLMContext::get_input(const std::string& node_name) const
@@ -148,7 +150,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
     {
         // Must be on the parent, so find the mapping between this namespace and the parent
         auto found = std::find_if(m_inputs.begin(), m_inputs.end(), [&node_name](const auto& map_iterator) {
-            return map_iterator.node_name == node_name;
+            return map_iterator.internal_name == node_name;
         });
 
         if (found == m_inputs.end())
@@ -156,20 +158,20 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
             throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the input list"));
         }
 
-        auto& input_name = found->input_name;
+        auto& input_name = found->external_name;
 
         // Get the value from a parent output
         return m_parent->get_input(input_name);
     }
 }
 
-nlohmann::json LLMContext::get_inputs() const
+nlohmann::json_dict LLMContext::get_inputs() const
 {
     nlohmann::json inputs;
 
     for (const auto& in_map : m_inputs)
     {
-        inputs[in_map.node_name] = this->get_input(in_map.node_name);
+        inputs[in_map.internal_name] = this->get_input(in_map.internal_name);
     }
 
     return inputs;
@@ -182,9 +184,9 @@ void LLMContext::set_output(nlohmann::json outputs)
     this->outputs_complete();
 }
 
-void LLMContext::set_output(const std::string& output_name, nlohmann::json outputs)
+void LLMContext::set_output(const std::string& output_name, nlohmann::json output)
 {
-    m_outputs[output_name] = std::move(outputs);
+    m_outputs[output_name] = std::move(output);
 }
 
 void LLMContext::set_output_names(std::vector<std::string> output_names)

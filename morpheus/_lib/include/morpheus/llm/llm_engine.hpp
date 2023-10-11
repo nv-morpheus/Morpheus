@@ -37,7 +37,7 @@ class MORPHEUS_EXPORT LLMEngine : public LLMNode
     LLMEngine();
     ~LLMEngine() override;
 
-    virtual void add_task_handler(input_map_t inputs, std::shared_ptr<LLMTaskHandler> task_handler);
+    virtual void add_task_handler(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> task_handler);
 
     virtual Task<std::vector<std::shared_ptr<ControlMessage>>> run(std::shared_ptr<ControlMessage> input_message);
 

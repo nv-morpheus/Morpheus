@@ -17,24 +17,25 @@
 
 #pragma once
 
-#include "py_llm_node.hpp"
+#include <nlohmann/json.hpp>
 
-#include "morpheus/llm/llm_engine.hpp"
+namespace nlohmann {
+// NOLINTBEGIN(readability-identifier-naming)
 
-namespace morpheus::llm {
+/*
+    Derived class from basic_json to allow for custom type names. Use this if the return type would always be an object
+   (i.e. dict[str, Any] in python)
+*/
+// NLOHMANN_BASIC_JSON_TPL_DECLARATION
+class json_dict : public basic_json<>
+{};
 
-class PyLLMEngine : public PyLLMNode<LLMEngine>
-{
-  public:
-    PyLLMEngine();
+/*
+    Derived class from basic_json to allow for custom type names. Use this if the return type would always be a list
+   (i.e. list[Any] in python)
+*/
+class json_list : public basic_json<>
+{};
 
-    ~PyLLMEngine() override;
-
-    void add_task_handler(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> task_handler) override;
-
-  private:
-    // Keep the python objects alive by saving references in this object
-    std::map<std::shared_ptr<LLMTaskHandler>, pybind11::object> m_py_task_handler;
-};
-
-}  // namespace morpheus::llm
+// NOLINTEND(readability-identifier-naming)
+}  // namespace nlohmann
