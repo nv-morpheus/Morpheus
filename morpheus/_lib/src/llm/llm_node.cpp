@@ -37,7 +37,7 @@ LLMNode::LLMNode() = default;
 LLMNode::~LLMNode() = default;
 
 std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
-                                                 input_mapping_t inputs,
+                                                 user_input_mappings_t inputs,
                                                  std::shared_ptr<LLMNodeBase> node,
                                                  bool is_output)
 {
@@ -46,7 +46,7 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
             return runner->name() == name;
         }) != m_child_runners.end())
     {
-        throw std::runtime_error("A node with the name '" + name + "' already exists");
+        throw std::invalid_argument("A node with the name '" + name + "' already exists");
     }
 
     // Get the inputs of the current node
@@ -77,9 +77,9 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
             }) == m_child_runners.end())
         {
             // Could not find a matching node for this input
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Could not find a node with the name '"
-                                                         << upstream_node_name << "' for the input {'"
-                                                         << inp.external_name << "', '" << inp.internal_name << "'}"));
+            throw std::invalid_argument(MORPHEUS_CONCAT_STR(
+                "Could not find a node with the name '" << upstream_node_name << "' for the input {'"
+                                                        << inp.external_name << "', '" << inp.internal_name << "'}"));
         }
     }
 

@@ -34,7 +34,7 @@ LLMContext::LLMContext(LLMTask task, std::shared_ptr<ControlMessage> message) : 
     m_state->message = std::move(message);
 }
 
-LLMContext::LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mapping_t inputs) :
+LLMContext::LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mappings_t inputs) :
   m_parent(std::move(parent)),
   m_name(std::move(name)),
   m_inputs(std::move(inputs))
@@ -52,7 +52,7 @@ const std::string& LLMContext::name() const
     return m_name;
 }
 
-const input_mapping_t& LLMContext::input_map() const
+const input_mappings_t& LLMContext::input_map() const
 {
     return m_inputs;
 }
@@ -94,7 +94,7 @@ std::string LLMContext::full_name() const
     return "";
 }
 
-std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mapping_t inputs)
+std::shared_ptr<LLMContext> LLMContext::push(std::string name, input_mappings_t inputs)
 {
     return std::make_shared<LLMContext>(this->shared_from_this(), std::move(name), std::move(inputs));
 }
@@ -170,7 +170,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
     }
 }
 
-nlohmann::json_dict LLMContext::get_inputs() const
+nlohmann::json LLMContext::get_inputs() const
 {
     nlohmann::json inputs;
 

@@ -95,7 +95,7 @@ TEST_F(TestLLMNode, DuplicateNode)
 
     node.add_node("Node1", {}, make_dummy_node());
 
-    EXPECT_THROW(node.add_node("Node1", {}, make_dummy_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node1", {}, make_dummy_node()), std::invalid_argument);
 }
 
 TEST_F(TestLLMNode, InputNodeDoesNotExist)
@@ -103,7 +103,7 @@ TEST_F(TestLLMNode, InputNodeDoesNotExist)
     llm::LLMNode node;
 
     // No upstream nodes
-    EXPECT_THROW(node.add_node("DummyNode", {{"/NodeDoesNotExist"}}, make_single_input_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("DummyNode", {{"/NodeDoesNotExist"}}, make_single_input_node()), std::invalid_argument);
     ASSERT_EQ(node.node_count(), 0);
     ASSERT_EQ(node.get_input_names().size(), 0);
     ASSERT_EQ(node.get_output_node_names().size(), 0);
@@ -111,7 +111,7 @@ TEST_F(TestLLMNode, InputNodeDoesNotExist)
     node.add_node("Node1", {}, make_dummy_node());
 
     // Wrong name
-    EXPECT_THROW(node.add_node("Node2", {{"/NodeDoesNotExist"}}, make_single_input_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node2", {{"/NodeDoesNotExist"}}, make_single_input_node()), std::invalid_argument);
     ASSERT_EQ(node.node_count(), 1);
     ASSERT_EQ(node.get_input_names().size(), 0);
     ASSERT_EQ(node.get_output_node_names().size(), 0);
@@ -122,9 +122,9 @@ TEST_F(TestLLMNode, InputNameDoesNotExist)
     llm::LLMNode node;
 
     // Mismatched number of inputs
-    EXPECT_THROW(node.add_node("Node1", {}, make_single_input_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node1", {}, make_single_input_node()), std::invalid_argument);
 
-    EXPECT_THROW(node.add_node("Node1", {{"Test"}}, make_dummy_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node1", {{"Test"}}, make_dummy_node()), std::invalid_argument);
 }
 
 TEST_F(TestLLMNode, WrongNumberOfNodes)
@@ -132,9 +132,9 @@ TEST_F(TestLLMNode, WrongNumberOfNodes)
     llm::LLMNode node;
 
     // Mismatched number of inputs
-    EXPECT_THROW(node.add_node("Node1", {}, make_single_input_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node1", {}, make_single_input_node()), std::invalid_argument);
 
-    EXPECT_THROW(node.add_node("Node1", {{"Test"}}, make_dummy_node()), std::runtime_error);
+    EXPECT_THROW(node.add_node("Node1", {{"Test"}}, make_dummy_node()), std::invalid_argument);
 }
 
 TEST_F(TestLLMNode, AddChildNode)

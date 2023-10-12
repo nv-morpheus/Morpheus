@@ -33,12 +33,17 @@ struct InputMap
 };
 
 // NOLINTBEGIN(readability-identifier-naming)
-using InputMapSpeficier = std::variant<std::string, InputMap, std::shared_ptr<LLMNodeRunner>>;
+/**
+ * @brief Represents the options that a user can specify for an input mapping. Will get converted into an InputMap.
+ *
+ */
+using UserIntputMapping =
+    std::variant<InputMap, std::string, std::pair<std::string, std::string>, std::shared_ptr<LLMNodeRunner>>;
 // NOLINTEND(readability-identifier-naming)
 
 // Ordered mapping of input names (current node) to output names (from previous nodes)
-using input_mapping_t = std::vector<InputMap>;
+using input_mappings_t = std::vector<InputMap>;
 
-using input_mapping_specifier_t = std::vector<InputMapSpeficier>;
+using user_input_mappings_t = std::vector<UserIntputMapping>;
 
 }  // namespace morpheus::llm

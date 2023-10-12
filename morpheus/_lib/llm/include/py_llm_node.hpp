@@ -40,7 +40,7 @@ class PyLLMNode : public PyLLMNodeBase<BaseT>
     using PyLLMNodeBase<BaseT>::PyLLMNodeBase;
 
     std::shared_ptr<LLMNodeRunner> add_node(std::string name,
-                                            input_mapping_t inputs,
+                                            user_input_mappings_t inputs,
                                             std::shared_ptr<LLMNodeBase> node,
                                             bool is_output = false) override;
 

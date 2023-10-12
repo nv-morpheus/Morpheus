@@ -17,6 +17,8 @@
 
 #include "py_llm_lambda_node.hpp"
 
+#include "pycoro/pycoro.hpp"
+
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
 #include "morpheus/utilities/json_types.hpp"
@@ -27,6 +29,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pymrc/types.hpp>
 #include <pymrc/utils.hpp>
 
 #include <coroutine>
@@ -42,6 +45,14 @@ PyLLMLambdaNode::PyLLMLambdaNode(pybind11::function fn) : LLMNodeBase(), m_fn(st
     if (!m_fn)
     {
         throw std::runtime_error("Invalid function. Function cannot be null to a LLMLambdaNode");
+    }
+
+    auto asyncio = pybind11::module_::import("asyncio");
+
+    if (!asyncio.attr("iscoroutinefunction")(m_fn).cast<bool>())
+    {
+        throw std::invalid_argument(
+            MORPHEUS_CONCAT_STR("Invalid function '" << py::str(m_fn) << "'. Function must be a coroutine function"));
     }
 
     auto inspect               = pybind11::module_::import("inspect");
@@ -63,7 +74,7 @@ PyLLMLambdaNode::PyLLMLambdaNode(pybind11::function fn) : LLMNodeBase(), m_fn(st
         }
         else
         {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR(
+            throw std::invalid_argument(MORPHEUS_CONCAT_STR(
                 "Invalid argument '" << name << "' in wrapped function: " << py::str(m_fn)
                                      << ". Function arguments must either KEYWORD_ONLY or POSITIONAL_OR_KEYWORD"));
         }
@@ -89,10 +100,28 @@ Task<std::shared_ptr<LLMContext>> PyLLMLambdaNode::execute(std::shared_ptr<LLMCo
     auto py_inputs = mrc::pymrc::cast_from_json(std::move(inputs));
 
     // Call the function
-    auto py_return_val = m_fn(**py_inputs);
+    auto py_coro = m_fn(**py_inputs);
+
+    // Double check that the returned value is a coroutine
+    auto asyncio_module = pybind11::module::import("asyncio");
+
+    if (!asyncio_module.attr("iscoroutine")(py_coro).cast<bool>())
+    {
+        pybind11::pybind11_fail(
+            MORPHEUS_CONCAT_STR("Return value from LLMLambdaNode function did not return a coroutine. Returned: "
+                                << py::str(py_coro).cast<std::string>()));
+    }
+
+    auto o_task = asyncio_module.attr("create_task")(py_coro);
+    mrc::pymrc::PyHolder o_result;
+    {
+        pybind11::gil_scoped_release nogil;
+        o_result = co_await mrc::pycoro::PyTaskToCppAwaitable(std::move(o_task));
+        DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL after returning from co_await";
+    }
 
     // Convert back to JSON
-    auto return_val = mrc::pymrc::cast_from_pyobject(py_return_val);
+    auto return_val = mrc::pymrc::cast_from_pyobject(std::move(o_result));
 
     // Set the object back into the context outputs
     context->set_output(std::move(return_val));

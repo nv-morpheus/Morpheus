@@ -40,6 +40,7 @@
 #include <nlohmann/detail/exceptions.hpp>
 #include <nlohmann/json.hpp>
 #include <pybind11/cast.h>
+#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>     // for dict, sequence
@@ -174,6 +175,7 @@ PYBIND11_MODULE(llm, _module)
     //     py::keep_alive<0, 1>());
 
     py::class_<LLMContext, std::shared_ptr<LLMContext>>(_module, "LLMContext")
+        .def(py::init())
         .def_property_readonly("name", &LLMContext::name)
         .def_property_readonly("full_name", &LLMContext::full_name)
         .def_property_readonly("view_outputs", &LLMContext::view_outputs)
@@ -213,12 +215,13 @@ PYBIND11_MODULE(llm, _module)
         .def(
             "add_node",
             [](LLMNode& self, std::string name, std::shared_ptr<LLMNodeBase> node, bool is_output) {
-                input_mapping_t converted_inputs;
+                user_input_mappings_t converted_inputs;
 
                 // Populate the inputs from the node input_names
                 for (const auto& single_input : node->get_input_names())
                 {
-                    converted_inputs.push_back({.external_name = "/" + single_input});
+                    UserIntputMapping mapping = InputMap{.external_name = single_input};
+                    converted_inputs.push_back(mapping);
                 }
 
                 return self.add_node(std::move(name), std::move(converted_inputs), std::move(node), is_output);
@@ -227,68 +230,22 @@ PYBIND11_MODULE(llm, _module)
             py::kw_only(),
             py::arg("node"),
             py::arg("is_output") = false)
-        .def(
-            "add_node",
-            [](LLMNode& self,
-               std::string name,
-               std::vector<std::variant<std::string, std::pair<std::string, std::string>>> inputs,
-               std::shared_ptr<LLMNodeBase> node,
-               bool is_output) {
-                input_mapping_t converted_inputs;
-
-                for (const auto& single_input : inputs)
-                {
-                    if (std::holds_alternative<std::string>(single_input))
-                    {
-                        converted_inputs.push_back({.external_name = std::get<std::string>(single_input)});
-                    }
-                    else
-                    {
-                        auto pair = std::get<std::pair<std::string, std::string>>(single_input);
-
-                        converted_inputs.push_back({.external_name = pair.first, .internal_name = pair.second});
-                    }
-                }
-
-                return self.add_node(std::move(name), std::move(converted_inputs), std::move(node), is_output);
-            },
-            py::arg("name"),
-            py::kw_only(),
-            py::arg("inputs"),
-            py::arg("node"),
-            py::arg("is_output") = false);
+        .def("add_node",
+             &LLMNode::add_node,
+             py::arg("name"),
+             py::kw_only(),
+             py::arg("inputs"),
+             py::arg("node"),
+             py::arg("is_output") = false);
 
     py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(_module, "LLMTaskHandler")
         .def(py::init<>())
+        .def("get_input_names", &LLMTaskHandler::get_input_names)
         .def("try_handle", &LLMTaskHandler::try_handle, py::arg("context"));
 
     py::class_<LLMEngine, LLMNode, PyLLMEngine, std::shared_ptr<LLMEngine>>(_module, "LLMEngine")
         .def(py::init_alias<>())
-        .def(
-            "add_task_handler",
-            [](LLMEngine& self,
-               std::vector<std::variant<std::string, std::pair<std::string, std::string>>> inputs,
-               std::shared_ptr<LLMTaskHandler> handler) {
-                input_mapping_t converted_inputs;
-
-                for (const auto& single_input : inputs)
-                {
-                    if (std::holds_alternative<std::string>(single_input))
-                    {
-                        converted_inputs.push_back({.external_name = std::get<std::string>(single_input)});
-                    }
-                    else
-                    {
-                        auto pair = std::get<std::pair<std::string, std::string>>(single_input);
-
-                        converted_inputs.push_back({.external_name = pair.first, .internal_name = pair.second});
-                    }
-                }
-
-                return self.add_task_handler(std::move(converted_inputs), std::move(handler));
-            },
-            py::arg("inputs"),
-            py::arg("handler"))
+        .def("add_task_handler", &LLMEngine::add_task_handler, py::arg("inputs"), py::arg("handler"))
         .def("run", &LLMEngine::run, py::arg("message"));
 
     py::class_<PyLLMLambdaNode, LLMNodeBase, std::shared_ptr<PyLLMLambdaNode>>(_module, "LLMLambdaNode")

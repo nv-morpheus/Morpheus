@@ -67,7 +67,7 @@ struct type_caster<nlohmann::json>
      */
     static handle cast(nlohmann::json src, return_value_policy policy, handle parent)
     {
-        return mrc::pymrc::cast_from_json(src);
+        return mrc::pymrc::cast_from_json(src).release();
     }
 };
 
@@ -113,7 +113,7 @@ struct type_caster<nlohmann::json_dict>
      */
     static handle cast(nlohmann::json_dict src, return_value_policy policy, handle parent)
     {
-        return mrc::pymrc::cast_from_json(src);
+        return mrc::pymrc::cast_from_json(src).release();
     }
 };
 
@@ -159,7 +159,7 @@ struct type_caster<nlohmann::json_list>
      */
     static handle cast(nlohmann::json_list src, return_value_policy policy, handle parent)
     {
-        return mrc::pymrc::cast_from_json(src);
+        return mrc::pymrc::cast_from_json(src).release();
     }
 };
 

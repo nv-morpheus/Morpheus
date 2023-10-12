@@ -46,7 +46,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     LLMContext(LLMTask task, std::shared_ptr<ControlMessage> message);
 
-    LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mapping_t inputs);
+    LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mappings_t inputs);
 
     ~LLMContext();
 
@@ -54,7 +54,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     const std::string& name() const;
 
-    const input_mapping_t& input_map() const;
+    const input_mappings_t& input_map() const;
 
     const LLMTask& task() const;
 
@@ -64,7 +64,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     std::string full_name() const;
 
-    std::shared_ptr<LLMContext> push(std::string name, input_mapping_t inputs);
+    std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
 
     void pop();
 
@@ -72,7 +72,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     nlohmann::json::const_reference get_input(const std::string& node_name) const;
 
-    nlohmann::json_dict get_inputs() const;
+    nlohmann::json get_inputs() const;
 
     void set_output(nlohmann::json outputs);
 
@@ -87,7 +87,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
   private:
     std::shared_ptr<LLMContext> m_parent{nullptr};
     std::string m_name;
-    input_mapping_t m_inputs;
+    input_mappings_t m_inputs;
     std::vector<std::string> m_output_names;  // Names of keys to be used as the output. Empty means use all keys
 
     std::shared_ptr<LLMContextState> m_state;

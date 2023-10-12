@@ -26,10 +26,14 @@
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <coroutine>
 
 namespace morpheus::llm {
+
+template <class BaseT>
+PyLLMNodeBase<BaseT>::~PyLLMNodeBase() = default;
 
 template <class BaseT>
 std::vector<std::string> PyLLMNodeBase<BaseT>::get_input_names() const

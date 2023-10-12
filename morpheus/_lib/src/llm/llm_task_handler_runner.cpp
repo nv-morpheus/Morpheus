@@ -30,7 +30,7 @@
 
 namespace morpheus::llm {
 
-LLMTaskHandlerRunner::LLMTaskHandlerRunner(input_mapping_t inputs, std::shared_ptr<LLMTaskHandler> handler) :
+LLMTaskHandlerRunner::LLMTaskHandlerRunner(input_mappings_t inputs, std::shared_ptr<LLMTaskHandler> handler) :
   m_inputs(std::move(inputs)),
   m_handler(std::move(handler))
 {

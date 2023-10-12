@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/input_map.hpp"
 
 #include <string>
@@ -32,8 +33,9 @@ namespace morpheus::llm {
  * @return true
  * @return false
  */
-bool is_valid_node_name(std::string_view name);
+bool MORPHEUS_EXPORT is_valid_node_name(std::string_view name);
 
-input_mapping_t process_input_names(const input_mapping_t& inputs, const std::vector<std::string>& input_names);
+input_mappings_t MORPHEUS_EXPORT process_input_names(const user_input_mappings_t& user_inputs,
+                                                     const std::vector<std::string>& input_names);
 
 }  // namespace morpheus::llm

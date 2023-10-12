@@ -24,6 +24,7 @@ from morpheus.llm import LLMContext
 from morpheus.llm import LLMEngine
 from morpheus.llm import LLMLambdaNode
 from morpheus.llm import LLMNode
+from morpheus.llm import LLMNodeBase
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
@@ -150,8 +151,6 @@ async def test_simple_engine():
 
     event = AutoResetEvent()
 
-    engine = LLMEngine()
-
     async def source_node():
 
         await event.wait()
@@ -180,22 +179,45 @@ async def test_simple_engine():
                 return node1
 
             # Add a pass through node with input the same name as the output of node1
-            self.add_node("node2", node=LLMLambdaNode(node2))
+            self.add_node("node2", inputs=["/node1"], node=LLMLambdaNode(node2))
 
             async def node3(questions: list[str], indices: list[int], values: list[int]):
                 # Reorder based on the indices
                 return [f"{q}{values[indices[i]]}" for i, q in enumerate(questions)]
 
             self.add_node("node3",
-                          inputs=[("/node2", "questions"), ("*", "*")],
+                          inputs=[("/node2", "questions"), "indices", "values"],
                           node=LLMLambdaNode(node3),
                           is_output=True)
 
-    async def sink_node(nested_answers: list[str], answers: list[str]):
+    class SinkNode(LLMNodeBase):
 
-        assert nested_answers == answers
+        def get_input_names(self):
+            return ["nested_answers", "answers"]
 
-        return answers
+        async def execute(self, context: LLMContext):
+
+            dict_inputs = context.get_inputs()
+
+            {
+                "nested_answers": [],
+                "answers": [],
+            }
+
+            nested_answers = dict_inputs["nested_answers"]
+            answers = dict_inputs["answers"]
+
+            context.get_input("nested_answers")
+            context.get_inputs()["nested_answers"]
+
+            # nested_answers = context.get_input("nested_answers")
+            # answers = context.get_input("answers")
+
+            assert nested_answers == answers
+
+            context.set_output(answers)
+
+            return context
 
     class SimpleTaskHandler(LLMTaskHandler):
 
@@ -209,11 +231,11 @@ async def test_simple_engine():
 
             return [context.message()]
 
+    engine = LLMEngine()
+
     engine.add_node("source", node=LLMLambdaNode(source_node))
     engine.add_node("nested", inputs=[("/source/*", "*")], node=NestedNode())
-    engine.add_node("sink",
-                    inputs=[("/nested", "nested_answers"), ("/source/answers", "answers")],
-                    node=LLMLambdaNode(sink_node))
+    engine.add_node("sink", inputs=[("/nested", "nested_answers"), ("/source/answers", "answers")], node=SinkNode())
 
     # # Add our task handler
     engine.add_task_handler(inputs=["/sink"], handler=SimpleTaskHandler())
@@ -232,12 +254,26 @@ async def test_simple_engine():
     message.payload(MessageMeta(payload))
 
     # Finally, run the engine
-    result = await engine.run(message)
+    async def wrapper():
+
+        return await engine.run(message)
+
+    run_task = asyncio.create_task(wrapper())
+    # result = await engine.run(message)
 
     assert not run_task.done()
 
     event.set()
 
+    result = await run_task
+
     assert run_task.done()
 
-    result = await run_task
+
+def test_context_get_inputs():
+
+    context = LLMContext()
+
+    context.set_output({"a": 1})
+
+    assert context.view_outputs["a"] == 1

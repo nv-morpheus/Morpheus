@@ -33,7 +33,7 @@
 
 namespace morpheus::llm {
 
-LLMNodeRunner::LLMNodeRunner(std::string name, input_mapping_t inputs, std::shared_ptr<LLMNodeBase> node) :
+LLMNodeRunner::LLMNodeRunner(std::string name, input_mappings_t inputs, std::shared_ptr<LLMNodeBase> node) :
   m_name(std::move(name)),
   m_inputs(std::move(inputs)),
   m_node(std::move(node))
@@ -138,7 +138,7 @@ const std::string& LLMNodeRunner::name() const
     return m_name;
 }
 
-const input_mapping_t& LLMNodeRunner::inputs() const
+const input_mappings_t& LLMNodeRunner::inputs() const
 {
     return m_inputs;
 }

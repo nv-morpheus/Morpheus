@@ -17,6 +17,7 @@
 
 #include "py_llm_node.hpp"
 
+#include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
 
@@ -29,7 +30,7 @@ namespace morpheus::llm {
 
 template <class BaseT>
 std::shared_ptr<LLMNodeRunner> PyLLMNode<BaseT>::add_node(std::string name,
-                                                          input_mapping_t inputs,
+                                                          user_input_mappings_t inputs,
                                                           std::shared_ptr<LLMNodeBase> node,
                                                           bool is_output)
 {
