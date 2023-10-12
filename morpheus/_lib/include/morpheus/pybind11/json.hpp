@@ -26,6 +26,7 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
+// NOLINTNEXTLINE(modernize-concat-nested-namespaces)
 namespace PYBIND11_NAMESPACE {
 namespace detail {
 
