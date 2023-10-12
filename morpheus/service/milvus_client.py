@@ -84,7 +84,7 @@ class MilvusClient(pymilvus.MilvusClient):
         Name of the Milvus database.
     token : str
         Token for authentication.
-    **kwargs : dict
+    **kwargs : dict[str, typing.Any]
         Additional keyword arguments for the MilvusClient constructor.
     """
 

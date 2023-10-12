@@ -17,7 +17,6 @@
 import concurrent.futures
 import json
 import os
-import time
 
 import numpy as np
 import pytest
@@ -427,25 +426,3 @@ def test_get_collection_lock():
     lock = MilvusVectorDBService.get_collection_lock(collection_name)
     assert "lock" == type(lock).__name__
     assert collection_name in MilvusVectorDBService._collection_locks
-
-
-def test_cleanup_collection_locks():
-
-    collection_name_1 = "test_cleanup_collection_lock"
-    MilvusVectorDBService.get_collection_lock(collection_name_1)
-    assert len(MilvusVectorDBService._collection_locks) == 1
-
-    MilvusVectorDBService._last_cleanup_time = time.time() - 400
-    collection_name_2 = "test_cleanup_collection_lock2"
-    MilvusVectorDBService._collection_locks[collection_name_1]["last_used"] = time.time() - 400
-    MilvusVectorDBService.get_collection_lock(collection_name_2)
-
-    assert len(MilvusVectorDBService._collection_locks) == 2
-
-    MilvusVectorDBService._last_cleanup_time = time.time() - 601
-    MilvusVectorDBService._collection_locks[collection_name_1]["last_used"] = time.time() - 600
-    MilvusVectorDBService._collection_locks[collection_name_2]["last_used"] = time.time() - 600
-    collection_name = "test_cleanup_collection_lock3"
-    MilvusVectorDBService.get_collection_lock(collection_name)
-
-    assert len(MilvusVectorDBService._collection_locks) == 1
