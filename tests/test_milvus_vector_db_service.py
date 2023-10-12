@@ -17,6 +17,7 @@
 import concurrent.futures
 import json
 import os
+import time
 
 import numpy as np
 import pytest
@@ -32,7 +33,7 @@ def milvus_service(milvus_server_uri: str):
     yield service
 
 
-def load_yaml(filename):
+def load_json(filename):
     conf_filepath = os.path.join(TEST_DIRS.tests_data_dir, "service", filename)
 
     with open(conf_filepath, 'r', encoding="utf-8") as json_file:
@@ -49,13 +50,13 @@ def data():
 
 @pytest.fixture(scope="module", name="idx_part_collection_config_fixture")
 def idx_part_collection_config():
-    collection_config = load_yaml(filename="milvus_idx_part_collection_conf.json")
+    collection_config = load_json(filename="milvus_idx_part_collection_conf.json")
     yield collection_config
 
 
 @pytest.fixture(scope="module", name="simple_collection_config_fixture")
 def simple_collection_config():
-    collection_config = load_yaml(filename="milvus_simple_collection_conf.json")
+    collection_config = load_json(filename="milvus_simple_collection_conf.json")
     yield collection_config
 
 
@@ -241,6 +242,26 @@ def test_insert_into_partition(milvus_service_fixture: MilvusVectorDBService,
     assert len(retrieved_data_default_part) == 0
     assert len(retrieved_data_default_part) != len(keys_to_retrieve)
 
+    # Raises error if resource is partition and not passed partition name.
+    with pytest.raises(ValueError, match="Mandatory argument 'partition_name' is required when resource='partition'"):
+        milvus_service_fixture.drop(name=collection_name, resource="partition")
+
+    # Clean up the partition
+    milvus_service_fixture.drop(name=collection_name, resource="partition", partition_name=partition_name)
+
+    # Raises error if resource is index and not passed partition name.
+    with pytest.raises(ValueError,
+                       match="Mandatory arguments 'field_name' and 'index_name' are required when resource='index'"):
+        milvus_service_fixture.drop(name=collection_name, resource="index")
+
+    milvus_service_fixture.drop(name=collection_name,
+                                resource="index",
+                                field_name="embedding",
+                                index_name="_default_idx_")
+
+    retrieved_data_after_part_drop = milvus_service_fixture.retrieve_by_keys(collection_name, keys_to_retrieve)
+    assert len(retrieved_data_after_part_drop) == 0
+
     # Clean up the collection.
     milvus_service_fixture.drop(collection_name)
 
@@ -315,10 +336,10 @@ def test_delete(milvus_service_fixture: MilvusVectorDBService,
     delete_expr = "id in [0,1]"
 
     # Delete data from the collection using the expression.
-    milvus_service_fixture.delete(collection_name, delete_expr)
+    delete_response = milvus_service_fixture.delete(collection_name, delete_expr)
+    assert delete_response["delete_count"] == 2
 
     response = milvus_service_fixture.search(collection_name, query="id > 0")
-
     assert len(response) == len(data_fixture) - 2
 
     for item in response:
@@ -329,14 +350,16 @@ def test_delete(milvus_service_fixture: MilvusVectorDBService,
 
 
 @pytest.mark.slow
-def test_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
-                              idx_part_collection_config_fixture: dict,
-                              data_fixture: list[dict]):
+def test_single_instance_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
+                                              idx_part_collection_config_fixture: dict,
+                                              data_fixture: list[dict]):
 
     # Create a collection.
     collection_name = "test_insert_and_search_order_with_collection_lock"
     milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
 
+    filter_query = "age == 26 or age == 27"
+    search_vec = np.random.random((1, 10))
     execution_order = []
 
     def insert_data():
@@ -345,8 +368,6 @@ def test_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
         execution_order.append("Insert Executed")
 
     def search_data():
-        filter_query = "age == 26 or age == 27"
-        search_vec = np.random.random((1, 10))
         result = milvus_service_fixture.search(collection_name, data=search_vec, filter=filter_query)
         execution_order.append("Search Executed")
         assert isinstance(result, list)
@@ -362,3 +383,69 @@ def test_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
 
     # Assert the execution order
     assert execution_order == ["Count Collection Entities Executed", "Insert Executed", "Search Executed"]
+
+
+@pytest.mark.slow
+def test_multi_instance_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
+                                             idx_part_collection_config_fixture: dict,
+                                             data_fixture: list[dict],
+                                             milvus_server_uri: str):
+
+    milvus_service_2 = MilvusVectorDBService(uri=milvus_server_uri)
+
+    collection_name = "test_insert_and_search_order_with_collection_lock"
+    filter_query = "age == 26 or age == 27"
+    search_vec = np.random.random((1, 10))
+
+    execution_order = []
+
+    def create_collection():
+        milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
+        execution_order.append("Create Executed")
+
+    def insert_data():
+        result = milvus_service_2.insert(collection_name, data_fixture)
+        assert result['insert_count'] == len(data_fixture)
+        execution_order.append("Insert Executed")
+
+    def search_data():
+        result = milvus_service_fixture.search(collection_name, data=search_vec, filter=filter_query)
+        execution_order.append("Search Executed")
+        assert isinstance(result, list)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        executor.submit(create_collection)
+        executor.submit(insert_data)
+        executor.submit(search_data)
+
+    # Assert the execution order
+    assert execution_order == ["Create Executed", "Insert Executed", "Search Executed"]
+
+
+def test_get_collection_lock():
+    collection_name = "test_collection_lock"
+    lock = MilvusVectorDBService.get_collection_lock(collection_name)
+    assert "lock" == type(lock).__name__
+    assert collection_name in MilvusVectorDBService._collection_locks
+
+
+def test_cleanup_collection_locks():
+
+    collection_name_1 = "test_cleanup_collection_lock"
+    MilvusVectorDBService.get_collection_lock(collection_name_1)
+    assert len(MilvusVectorDBService._collection_locks) == 1
+
+    MilvusVectorDBService._last_cleanup_time = time.time() - 400
+    collection_name_2 = "test_cleanup_collection_lock2"
+    MilvusVectorDBService._collection_locks[collection_name_1]["last_used"] = time.time() - 400
+    MilvusVectorDBService.get_collection_lock(collection_name_2)
+
+    assert len(MilvusVectorDBService._collection_locks) == 2
+
+    MilvusVectorDBService._last_cleanup_time = time.time() - 601
+    MilvusVectorDBService._collection_locks[collection_name_1]["last_used"] = time.time() - 600
+    MilvusVectorDBService._collection_locks[collection_name_2]["last_used"] = time.time() - 600
+    collection_name = "test_cleanup_collection_lock3"
+    MilvusVectorDBService.get_collection_lock(collection_name)
+
+    assert len(MilvusVectorDBService._collection_locks) == 1

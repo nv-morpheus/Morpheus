@@ -20,6 +20,7 @@ import typing
 
 import pandas as pd
 import pymilvus
+from pymilvus.orm.mutation import MutationResult
 
 import cudf
 
@@ -76,53 +77,8 @@ class MilvusVectorDBService(VectorDBService):
     """
 
     _collection_locks = {}
-    _cleanup_interval = 3600
-
-    @classmethod
-    def get_collection_lock(cls, name: str) -> threading.Lock:
-        """
-        Get a lock fora given collection name.
-
-        Parameters
-        ----------
-        name : str
-            Name of the collection for which to acquire the lock.
-
-        Returns
-        -------
-        threading.Lock
-            A thread lock specific to the given collection name.
-        """
-        if name not in cls._collection_locks:
-            cls._collection_locks[name] = {"lock": threading.Lock(), "last_used": time.time()}
-        else:
-            cls._collection_locks[name]["last_used"] = time.time()
-        return cls._collection_locks[name]["lock"]
-
-    @classmethod
-    def initiate_cleanup_thread(cls):
-        """
-        Start a cleanup thread for managing collection locks. This method starts a daemon thread that periodically
-        removes collection locks that have exceeded the cleanup interval.
-        """
-        cls.cleanup_thread = threading.Thread(target=cls.cleanup, daemon=True)
-        cls.cleanup_thread.start()
-
-    @classmethod
-    def cleanup(cls):
-        """
-        Cleanup thread for managing collection locks. This method runs as a thread and periodically removes
-        collection locks that have exceeded the cleanup interval. It helps to free up locks associated with
-        collections that are no longer in use.
-        """
-        while True:
-            current_time = time.time()
-            for name, lock_info in cls._collection_locks.copy().items():
-                last_used = lock_info["last_used"]
-                if current_time - last_used >= cls._cleanup_interval:
-                    logger.debug("Cleaning up lock for collection: %s", name)
-                    del cls._collection_locks[name]
-            time.sleep(cls._cleanup_interval)
+    _cleanup_interval = 600  # 10mins
+    _last_cleanup_time = time.time()
 
     def __init__(self,
                  uri: str,
@@ -240,8 +196,8 @@ class MilvusVectorDBService(VectorDBService):
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
 
     @with_collection_lock
-    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
-                                                                                                 typing.Any]) -> dict:
+    def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str,
+                                                                              typing.Any]) -> dict[str, typing.Any]:
         """
         Insert a collection specific data in the Milvus vector database.
 
@@ -249,7 +205,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        data : typing.Union[list[list], list[dict], dict]
+        data : list[list] | list[dict]
             Data to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
@@ -267,10 +223,8 @@ class MilvusVectorDBService(VectorDBService):
 
         return self._collection_insert(name, data, **kwargs)
 
-    def _collection_insert(self,
-                           name: str,
-                           data: typing.Union[list[list], list[dict], dict],
-                           **kwargs: dict[str, typing.Any]) -> dict:
+    def _collection_insert(self, name: str, data: list[list] | list[dict],
+                           **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
 
         if not self.has_store_object(name):
             raise RuntimeError(f"Collection {name} doesn't exist.")
@@ -301,10 +255,8 @@ class MilvusVectorDBService(VectorDBService):
         return result_dict
 
     @with_collection_lock
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, name: str, df: cudf.DataFrame | pd.DataFrame,
+                         **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Converts dataframe to rows and insert to a collection in the Milvus vector database.
 
@@ -312,7 +264,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : cudf.DataFrame | pd.DataFrame
             Dataframe to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
@@ -338,7 +290,7 @@ class MilvusVectorDBService(VectorDBService):
         return self._collection_insert(name, dict_of_rows, **kwargs)
 
     @with_collection_lock
-    def search(self, name: str, query: typing.Union[str, dict] = None, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def search(self, name: str, query: str = None, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Search for data in a collection in the Milvus vector database.
 
@@ -348,9 +300,8 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to search within.
-        query : Union[str, dict], optional
-            The search query, which can be a JSON-like string or a dictionary,
-            by default None.
+        query : str, optional
+            The search query, which can be a filter expression, by default None.
         **kwargs : dict
             Additional keyword arguments for the search operation.
 
@@ -392,7 +343,7 @@ class MilvusVectorDBService(VectorDBService):
             self._client.release_collection(collection_name=name)
 
     @with_collection_lock
-    def update(self, name: str, data: list[dict], **kwargs: dict[str, typing.Any]) -> dict:
+    def update(self, name: str, data: list[typing.Any], **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Update data in the vector database.
 
@@ -400,14 +351,14 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        data : list[dict]
-            Data to be updated in the resource.
+        data : list[typing.Any]
+            Data to be updated in the collection.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to upsert operation.
 
         Returns
         -------
-        dict
+        dict[str, typing.Any]
             Returns result of the updated operation stats.
         """
 
@@ -416,20 +367,10 @@ class MilvusVectorDBService(VectorDBService):
 
         result = self._client.upsert(collection_name=name, entities=data, **kwargs)
 
-        result_dict = {
-            "insert_count": result.insert_count,
-            "delete_count": result.delete_count,
-            "upsert_count": result.upsert_count,
-            "timestamp": result.timestamp,
-            "succ_count": result.succ_count,
-            "err_count": result.err_count
-        }
-
-        return result_dict
+        return self._convert_mutation_result_to_dict(result=result)
 
     @with_collection_lock
-    def delete_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
-                                                                                           typing.Any]) -> typing.Any:
+    def delete_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Delete vectors by keys from the resource.
 
@@ -437,7 +378,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        keys : typing.Union[int, str, list]
+        keys : int | str | list
             Primary keys to delete vectors.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -448,12 +389,12 @@ class MilvusVectorDBService(VectorDBService):
             Returns result of the given keys that are delete from the collection.
         """
 
-        response = self._client.delete(collection_name=name, pks=keys, **kwargs)
+        result = self._client.delete(collection_name=name, pks=keys, **kwargs)
 
-        return response
+        return result
 
     @with_collection_lock
-    def delete(self, name: str, expr: typing.Union[str, dict], **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def delete(self, name: str, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Delete vectors from the resource using expressions.
 
@@ -461,22 +402,23 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the resource.
-        expr : typing.Union[str, dict]
+        expr : str
             Delete expression.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
         -------
-        typing.Any
+        dict[str, typing.Any]
             Returns result of the given keys that are delete from the collection.
         """
 
-        return self._client.delete_by_expr(collection_name=name, expression=expr, **kwargs)
+        result = self._client.delete_by_expr(collection_name=name, expression=expr, **kwargs)
+
+        return self._convert_mutation_result_to_dict(result=result)
 
     @with_collection_lock
-    def retrieve_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
-                                                                                             typing.Any]) -> list[dict]:
+    def retrieve_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
         """
         Retrieve the inserted vectors using their primary keys from the Collection.
 
@@ -484,7 +426,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection.
-        keys : typing.Union[int, str, list]
+        keys : int | str | list
             Primary keys to get vectors for. Depending on pk_field type it can be int or str
             or a list of either.
         **kwargs :  dict[str, typing.Any]
@@ -492,7 +434,7 @@ class MilvusVectorDBService(VectorDBService):
 
         Returns
         -------
-        list[dict]
+        list[typing.Any]
             Returns result rows of the given keys from the collection.
         """
 
@@ -568,7 +510,9 @@ class MilvusVectorDBService(VectorDBService):
             resource = kwargs.get("resource", "collection")
             if resource == "collection":
                 self._client.drop_collection(collection_name=name)
-            elif resource == "partition" and "partition_name" in kwargs:
+            elif resource == "partition":
+                if "partition_name" not in kwargs:
+                    raise ValueError("Mandatory argument 'partition_name' is required when resource='partition'")
                 partition_name = kwargs["partition_name"]
                 if self._client.has_partition(collection_name=name, partition_name=partition_name):
                     self._client.drop_partition(collection_name=name, partition_name=partition_name)
@@ -578,7 +522,8 @@ class MilvusVectorDBService(VectorDBService):
                                             field_name=kwargs["field_name"],
                                             index_name=kwargs["index_name"])
                 else:
-                    raise ValueError("Mandatory arguments 'field_name' and 'index_name' are missing")
+                    raise ValueError(
+                        "Mandatory arguments 'field_name' and 'index_name' are required when resource='index'")
 
     def describe(self, name: str, **kwargs: dict[str, typing.Any]) -> dict:
         """
@@ -607,3 +552,47 @@ class MilvusVectorDBService(VectorDBService):
 
         """
         self._client.close()
+
+    def _convert_mutation_result_to_dict(self, result: MutationResult) -> dict[str, typing.Any]:
+        result_dict = {
+            "insert_count": result.insert_count,
+            "delete_count": result.delete_count,
+            "upsert_count": result.upsert_count,
+            "timestamp": result.timestamp,
+            "succ_count": result.succ_count,
+            "err_count": result.err_count
+        }
+        return result_dict
+
+    @classmethod
+    def get_collection_lock(cls, name: str) -> threading.Lock:
+        """
+        Get a lock for a given collection name.
+
+        Parameters
+        ----------
+        name : str
+            Name of the collection for which to acquire the lock.
+
+        Returns
+        -------
+        threading.Lock
+            A thread lock specific to the given collection name.
+        """
+
+        current_time = time.time()
+
+        if name not in cls._collection_locks:
+            cls._collection_locks[name] = {"lock": threading.Lock(), "last_used": current_time}
+        else:
+            cls._collection_locks[name]["last_used"] = current_time
+
+        if (current_time - cls._last_cleanup_time) >= cls._cleanup_interval:
+            for lock_name, lock_info in cls._collection_locks.copy().items():
+                last_used = lock_info["last_used"]
+                if current_time - last_used >= cls._cleanup_interval:
+                    logger.debug("Cleaning up lock for collection: %s", lock_name)
+                    del cls._collection_locks[lock_name]
+            cls._last_cleanup_time = current_time
+
+        return cls._collection_locks[name]["lock"]

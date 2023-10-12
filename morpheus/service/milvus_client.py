@@ -16,6 +16,7 @@ import logging
 import typing
 
 import pymilvus
+from pymilvus.orm.mutation import MutationResult
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ class MilvusClient(pymilvus.MilvusClient):
         conn.release_collection(collection_name=collection_name)
 
     @handle_exceptions("upsert", "Error upserting collection entities")
-    def upsert(self, collection_name: str, entities: list, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def upsert(self, collection_name: str, entities: list, **kwargs: dict[str, typing.Any]) -> MutationResult:
         """
         Upsert entities into a collection.
 
@@ -167,14 +168,14 @@ class MilvusClient(pymilvus.MilvusClient):
 
         Returns
         -------
-        typing.Any
+        MutationResult
             Result of the upsert operation.
         """
         conn = self._get_connection()
         return conn.upsert(collection_name=collection_name, entities=entities, **kwargs)
 
     @handle_exceptions("delete_by_expr", "Error deleting collection entities")
-    def delete_by_expr(self, collection_name: str, expression: str, **kwargs: dict[str, typing.Any]) -> None:
+    def delete_by_expr(self, collection_name: str, expression: str, **kwargs: dict[str, typing.Any]) -> MutationResult:
         """
         Delete entities from a collection using an expression.
 
@@ -186,9 +187,14 @@ class MilvusClient(pymilvus.MilvusClient):
             Deletion expression.
         **kwargs : dict
             Additional keyword arguments for the delete operation.
+
+        Returns
+        -------
+        MutationResult
+            Returns result of delete operation.
         """
         conn = self._get_connection()
-        conn.delete(collection_name=collection_name, expression=expression, **kwargs)
+        return conn.delete(collection_name=collection_name, expression=expression, **kwargs)
 
     @handle_exceptions("has_partition", "Error checking partition existence")
     def has_partition(self, collection_name: str, partition_name: str) -> bool:
@@ -223,7 +229,7 @@ class MilvusClient(pymilvus.MilvusClient):
             Name of the partition to drop.
         """
         conn = self._get_connection()
-        conn.drop(collection_name=collection_name, partition_name=partition_name)
+        conn.drop_partition(collection_name=collection_name, partition_name=partition_name)
 
     @handle_exceptions("drop_index", "Error dropping index")
     def drop_index(self, collection_name: str, field_name: str, index_name: str) -> None:
@@ -260,4 +266,5 @@ class MilvusClient(pymilvus.MilvusClient):
             Returns pymilvus Collection instance.
         """
         collection = pymilvus.Collection(name=collection_name, using=self._using, **kwargs)
+
         return collection

@@ -28,7 +28,6 @@ import warnings
 
 import pytest
 import requests
-from milvus import default_server
 
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
@@ -949,6 +948,8 @@ def milvus_server_uri():
     the URI as a yield value to the tests using this fixture. After all tests in the module are
     completed, the Milvus server is stopped.
     """
+    from milvus import default_server
+
     logger = logging.getLogger(f"morpheus.{__name__}")
     try:
         default_server.start()

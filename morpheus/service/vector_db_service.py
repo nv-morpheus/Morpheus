@@ -30,8 +30,7 @@ class VectorDBService(ABC):
     """
 
     @abstractmethod
-    def insert(self, name: str, data: typing.Union[list[list], list[dict], dict], **kwargs: dict[str,
-                                                                                                 typing.Any]) -> dict:
+    def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
         """
         Insert data into the vector database.
 
@@ -39,7 +38,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        data : typing.Union[list[list], list[dict], dict]
+        data : list[list] | list[dict]
             Data to be inserted into the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -53,10 +52,7 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def insert_dataframe(self,
-                         name: str,
-                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
-                         **kwargs: dict[str, typing.Any]) -> dict:
+    def insert_dataframe(self, name: str, df: cudf.DataFrame | pd.DataFrame, **kwargs: dict[str, typing.Any]) -> dict:
         """
         Converts dataframe to rows and insert into the vector database resource.
 
@@ -64,7 +60,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource to be inserted.
-        df : typing.Union[cudf.DataFrame, pd.DataFrame]
+        df : cudf.DataFrame | pd.DataFrame
             Dataframe to be inserted.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.
@@ -82,7 +78,7 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def search(self, name: str, query: typing.Union[str, dict] = None, **kwargs: dict[str, typing.Any]) -> typing.Any:
+    def search(self, name: str, query: str = None, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Search for content in the vector database.
 
@@ -90,7 +86,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        query : typing.Union[str, dict], default None
+        query : str, default None
             Query to execute on the given resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
@@ -119,7 +115,7 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
-    def update(self, name: str, data: typing.Any, **kwargs: dict[str, typing.Any]) -> dict:
+    def update(self, name: str, data: list[typing.Any], **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Update data in the vector database.
 
@@ -127,32 +123,37 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        data : typing.Any
+        data : list[typing.Any]
             Data to be updated in the resource.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
 
         Returns
         -------
-        dict
+        dict[str, typing.Any]
             Returns result of the updated operation stats.
         """
 
         pass
 
     @abstractmethod
-    def delete(self, name: str, expr: typing.Union[str, dict], **kwargs: dict[str, typing.Any]) -> None:
+    def delete(self, name: str, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Delete data in the vector database.
 
         Parameters
         ----------
-        name : typing.Union[str, dict]
+        name : str
             Name of the resource.
         expr : typing.Any
-            E.
+            Delete expression.
         **kwargs : dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        dict[str, typing.Any]
+            Returns result of the delete operation stats.
         """
 
         pass
@@ -258,8 +259,7 @@ class VectorDBService(ABC):
         return data
 
     @abstractmethod
-    def retrieve_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
-                                                                                             typing.Any]) -> typing.Any:
+    def retrieve_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> list[typing.Any]:
         """
         Retrieve the inserted vectors using keys from the resource.
 
@@ -274,14 +274,13 @@ class VectorDBService(ABC):
 
         Returns
         -------
-        typing.Any
+        list[typing.Any]
             Returns rows of the given keys that exists in the resource.
         """
         pass
 
     @abstractmethod
-    def delete_by_keys(self, name: str, keys: typing.Union[int, str, list], **kwargs: dict[str,
-                                                                                           typing.Any]) -> typing.Any:
+    def delete_by_keys(self, name: str, keys: int | str | list, **kwargs: dict[str, typing.Any]) -> typing.Any:
         """
         Delete vectors by keys from the resource.
 
@@ -289,7 +288,7 @@ class VectorDBService(ABC):
         ----------
         name : str
             Name of the resource.
-        keys : typing.Union[int, str, list]
+        keys : int | str | list
             Primary keys to delete vectors.
         **kwargs :  dict[str, typing.Any]
             Extra keyword arguments specific to the vector database implementation.
