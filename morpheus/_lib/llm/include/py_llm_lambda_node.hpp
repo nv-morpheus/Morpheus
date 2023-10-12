@@ -17,15 +17,15 @@
 
 #pragma once
 
-#include "py_llm_node.hpp"
-#include "py_llm_node_base.hpp"
-
-#include "morpheus/llm/fwd.hpp"
-#include "morpheus/llm/llm_engine.hpp"
-#include "morpheus/llm/llm_lambda_node.hpp"
+#include "morpheus/llm/llm_context.hpp"
+#include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus/types.hpp"
 
 #include <pybind11/pytypes.h>
-#include <pymrc/utilities/function_wrappers.hpp>
+
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace morpheus::llm {
 

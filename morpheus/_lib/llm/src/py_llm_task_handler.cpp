@@ -21,8 +21,10 @@
 
 #include "morpheus/llm/llm_context.hpp"
 
-#include <mrc/coroutines/task.hpp>
-#include <pymrc/types.hpp>
+#include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+#include <pybind11/pybind11.h>
+
+#include <coroutine>
 
 namespace morpheus::llm {
 namespace py = pybind11;

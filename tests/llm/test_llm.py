@@ -186,7 +186,10 @@ async def test_simple_engine():
                 # Reorder based on the indices
                 return [f"{q}{values[indices[i]]}" for i, q in enumerate(questions)]
 
-            self.add_node("node3", inputs=[("/node2", "questions"), "*"], node=LLMLambdaNode(node3), is_output=True)
+            self.add_node("node3",
+                          inputs=[("/node2", "questions"), ("*", "*")],
+                          node=LLMLambdaNode(node3),
+                          is_output=True)
 
     async def sink_node(nested_answers: list[str], answers: list[str]):
 
@@ -208,7 +211,9 @@ async def test_simple_engine():
 
     engine.add_node("source", node=LLMLambdaNode(source_node))
     engine.add_node("nested", inputs=[("/source/*", "*")], node=NestedNode())
-    engine.add_node("sink", inputs=["/nested"], node=LLMLambdaNode(sink_node))
+    engine.add_node("sink",
+                    inputs=[("/nested", "nested_answers"), ("/source/answers", "answers")],
+                    node=LLMLambdaNode(sink_node))
 
     # # Add our task handler
     engine.add_task_handler(inputs=["/sink"], handler=SimpleTaskHandler())
@@ -216,13 +221,18 @@ async def test_simple_engine():
     # Create a control message with a single task which uses the LangChain agent executor
     message = ControlMessage()
 
-    message.add_task("llm_engine", {})
+    message.add_task("llm_engine", {
+        "task_type": "template", "task_dict": {
+            "task_type": "dictionary",
+            "model_name": "test",
+        }
+    })
 
     payload = cudf.DataFrame()
     message.payload(MessageMeta(payload))
 
     # Finally, run the engine
-    run_task = asyncio.create_task(engine.run(message))
+    result = await engine.run(message)
 
     assert not run_task.done()
 

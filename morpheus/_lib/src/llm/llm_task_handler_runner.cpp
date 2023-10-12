@@ -20,7 +20,13 @@
 #include "morpheus/llm/llm_context.hpp"
 
 #include <glog/logging.h>
-#include <mrc/coroutines/task.hpp>
+#include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+
+#include <coroutine>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace morpheus::llm {
 

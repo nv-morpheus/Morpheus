@@ -19,6 +19,10 @@
 
 #include "morpheus/llm/input_map.hpp"
 
+#include <string>
+#include <string_view>
+#include <vector>
+
 namespace morpheus::llm {
 
 /**

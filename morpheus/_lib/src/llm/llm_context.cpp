@@ -17,7 +17,12 @@
 
 #include "morpheus/llm/llm_context.hpp"
 
-#include "morpheus/pybind11/json.hpp"
+#include "morpheus/utilities/string_util.hpp"
+
+#include <algorithm>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
 
 namespace morpheus::llm {
 
@@ -165,7 +170,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
     }
 }
 
-nlohmann::json_dict LLMContext::get_inputs() const
+nlohmann::json LLMContext::get_inputs() const
 {
     nlohmann::json inputs;
 

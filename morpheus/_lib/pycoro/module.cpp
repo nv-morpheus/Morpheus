@@ -16,14 +16,18 @@
  */
 #include "pycoro/pycoro.hpp"
 
-#include <genobject.h>
 #include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>
-#include <pybind11/detail/descr.h>
+#include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
-#include <type_traits>
+#include <coroutine>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <vector>
 
 namespace mrc::pycoro {
 

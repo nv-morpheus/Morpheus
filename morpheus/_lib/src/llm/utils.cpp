@@ -21,8 +21,12 @@
 
 #include <glog/logging.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 
 namespace morpheus::llm {

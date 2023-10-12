@@ -22,8 +22,13 @@
 #include "morpheus/llm/utils.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
-#include <mrc/coroutines/task.hpp>
-#include <nlohmann/detail/json_pointer.hpp>
+#include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+
+#include <algorithm>
+#include <coroutine>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
 
 namespace morpheus::llm {
 

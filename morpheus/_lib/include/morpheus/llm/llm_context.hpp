@@ -22,11 +22,13 @@
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/utilities/json_types.hpp"
-#include "morpheus/utilities/string_util.hpp"
 
 #include <mrc/types.hpp>
+#include <nlohmann/json.hpp>
 
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace morpheus::llm {
 
@@ -70,7 +72,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     nlohmann::json::const_reference get_input(const std::string& node_name) const;
 
-    nlohmann::json_dict get_inputs() const;
+    nlohmann::json get_inputs() const;
 
     void set_output(nlohmann::json outputs);
 

@@ -19,6 +19,10 @@
 
 #include "py_llm_task_handler.hpp"
 
+#include <pybind11/cast.h>
+
+#include <utility>
+
 namespace morpheus::llm {
 
 PyLLMEngine::PyLLMEngine() : PyLLMNode<LLMEngine>() {}

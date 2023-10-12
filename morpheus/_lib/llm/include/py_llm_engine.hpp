@@ -19,7 +19,14 @@
 
 #include "py_llm_node.hpp"
 
+#include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_engine.hpp"
+#include "morpheus/llm/llm_task_handler.hpp"
+
+#include <pybind11/pytypes.h>
+
+#include <map>
+#include <memory>
 
 namespace morpheus::llm {
 

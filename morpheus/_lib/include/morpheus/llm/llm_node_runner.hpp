@@ -21,8 +21,8 @@
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_node_base.hpp"
+#include "morpheus/types.hpp"
 
-#include <coroutine>
 #include <memory>
 #include <string>
 #include <vector>

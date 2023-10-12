@@ -17,6 +17,8 @@
 
 #include "morpheus/llm/llm_task.hpp"
 
+#include <utility>
+
 namespace morpheus::llm {
 
 LLMTask::LLMTask() = default;

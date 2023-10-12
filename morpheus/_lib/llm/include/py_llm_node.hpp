@@ -23,7 +23,13 @@
 #include "morpheus/llm/input_map.hpp"
 
 #include <pybind11/pytypes.h>
-#include <pymrc/types.hpp>
+
+#include <map>
+#include <memory>
+#include <string>
+
+// IWYU pragma: no_include "morpheus/llm/llm_engine.hpp"
+// IWYU pragma: no_include "morpheus/llm/llm_node.hpp"
 
 namespace morpheus::llm {
 

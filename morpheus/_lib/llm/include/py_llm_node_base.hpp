@@ -20,8 +20,14 @@
 #include "morpheus/llm/fwd.hpp"
 #include "morpheus/types.hpp"
 
-#include <pybind11/pytypes.h>
-#include <pymrc/types.hpp>
+#include <memory>
+#include <string>
+#include <vector>
+
+// We include these in the cpp file to avoid putting everything in the header
+// IWYU pragma: no_include "morpheus/llm/llm_engine.hpp"
+// IWYU pragma: no_include "morpheus/llm/llm_node.hpp"
+// IWYU pragma: no_include "morpheus/llm/llm_node_base.hpp"
 
 namespace morpheus::llm {
 

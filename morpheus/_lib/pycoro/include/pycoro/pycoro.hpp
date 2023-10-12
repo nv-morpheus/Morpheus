@@ -19,12 +19,19 @@
 
 #include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>
+#include <mrc/utils/string_utils.hpp>
+#include <pybind11/cast.h>
+#include <pybind11/detail/descr.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/types.hpp>
 
+#include <coroutine>
+#include <exception>
 #include <memory>
+#include <ostream>
+#include <utility>
 
 namespace mrc::pycoro {
 

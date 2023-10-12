@@ -17,10 +17,18 @@
 
 #include "morpheus/llm/llm_engine.hpp"
 
+#include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler_runner.hpp"
 #include "morpheus/llm/utils.hpp"
 
-#include <mrc/coroutines/task.hpp>
+#include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
+#include <nlohmann/json.hpp>
+
+#include <coroutine>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace morpheus::llm {
 
