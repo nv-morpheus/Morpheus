@@ -33,6 +33,9 @@
 #include <ostream>
 #include <utility>
 
+// Dont directly include python headers
+// IWYU pragma: no_include <genobject.h>
+
 namespace mrc::pycoro {
 
 class PYBIND11_EXPORT StopIteration : public pybind11::stop_iteration
@@ -294,8 +297,16 @@ class PYBIND11_EXPORT PyTaskToCppAwaitable
 
 }  // namespace mrc::pycoro
 
+// NOLINTNEXTLINE(modernize-concat-nested-namespaces)
 namespace PYBIND11_NAMESPACE {
 namespace detail {
+
+/**
+ * @brief Provides a type caster for converting a C++ coroutine to a python awaitable. Include this file in any pybind11
+ * module to automatically convert the types. Allows for converting arguments and return values.
+ *
+ * @tparam ReturnT The return type of the coroutine
+ */
 template <typename ReturnT>
 struct type_caster<mrc::coroutines::Task<ReturnT>>
 {
@@ -373,5 +384,6 @@ struct type_caster<mrc::coroutines::Task<ReturnT>>
         return py_awaitable.release();
     }
 };
+
 }  // namespace detail
 }  // namespace PYBIND11_NAMESPACE

@@ -20,7 +20,7 @@
 #include "./include/py_llm_node_base.hpp"
 #include "./include/py_llm_task_handler.hpp"
 #include "py_llm_lambda_node.hpp"
-#include "pycoro/pycoro.hpp"
+#include "pycoro/pycoro.hpp"  // IWYU pragma: keep
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"

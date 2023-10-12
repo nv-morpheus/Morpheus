@@ -170,7 +170,7 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
     }
 }
 
-nlohmann::json LLMContext::get_inputs() const
+nlohmann::json_dict LLMContext::get_inputs() const
 {
     nlohmann::json inputs;
 
