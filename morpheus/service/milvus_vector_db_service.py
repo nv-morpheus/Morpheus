@@ -255,7 +255,9 @@ class MilvusVectorDBService(VectorDBService):
         return result_dict
 
     @with_collection_lock
-    def insert_dataframe(self, name: str, df: cudf.DataFrame | pd.DataFrame,
+    def insert_dataframe(self,
+                         name: str,
+                         df: typing.Union[cudf.DataFrame, pd.DataFrame],
                          **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
         """
         Converts dataframe to rows and insert to a collection in the Milvus vector database.
@@ -264,7 +266,7 @@ class MilvusVectorDBService(VectorDBService):
         ----------
         name : str
             Name of the collection to be inserted.
-        df : cudf.DataFrame | pd.DataFrame
+        df : typing.Union[cudf.DataFrame, pd.DataFrame]
             Dataframe to be inserted in the collection.
         **kwargs : dict[str, typing.Any]
             Additional keyword arguments containing collection configuration.

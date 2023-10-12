@@ -18,7 +18,6 @@ import typing
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -29,7 +28,6 @@ from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
 logger = logging.getLogger(__name__)
 
 
-@register_stage("to-vector-db")
 class WriteToVectorDBStage(SinglePortStage):
     """
     Writes messages to a Vector Database.
