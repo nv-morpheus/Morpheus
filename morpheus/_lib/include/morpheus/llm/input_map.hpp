@@ -29,8 +29,7 @@ namespace morpheus::llm {
 struct InputMap
 {
     std::string external_name;       // The name of the upstream node to use as input
-    std::string internal_name{"-"};  // The name of the input that the upstream node maps to. '-' is a placeholder for
-                                     // the default input of the node
+    std::string internal_name{"-"};  // The name of the input that the upstream node maps to.
 };
 
 // NOLINTBEGIN(readability-identifier-naming)

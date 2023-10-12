@@ -106,13 +106,12 @@ auto make_lambda_node(std::function<ReturnT(ArgsT...)>&& fn)
 {
     using function_t = std::function<ReturnT(ArgsT...)>;
 
-    static_assert(utilities::is_specialization<typename function_t::result_type, Task>::value,
+    static_assert(utilities::is_specialization<typename function_t::result_type, mrc::coroutines::Task>::value,
                   "Return type must be a Task");
 
     using return_t = typename utilities::extract_value_type<typename function_t::result_type>::type;
 
-    auto make_args = []<std::size_t... Is>(std::index_sequence<Is...>)
-    {
+    auto make_args = []<std::size_t... Is>(std::index_sequence<Is...>) {
         return std::vector<std::string>{std::string{"arg"} + std::to_string(Is)...};
     };
 

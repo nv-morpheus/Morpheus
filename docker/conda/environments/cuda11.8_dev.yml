@@ -70,7 +70,7 @@ dependencies:
     - mrc=23.11
     - networkx=3.1
     - ninja=1.10
-    - nodejs=18.15.0
+    - nodejs=18.*
     - numba>=0.56.2
     - numpydoc=1.4
     - nvtabular=23.06
@@ -84,6 +84,7 @@ dependencies:
     - pydot
     - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
     - pytest
+    - pytest-asyncio
     - pytest-benchmark>=4.0
     - pytest-cov
     - python-confluent-kafka=1.9.2

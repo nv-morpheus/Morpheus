@@ -20,9 +20,11 @@ import collections
 import cudf
 
 from morpheus._lib import pycoro
+from morpheus.llm import LLMContext
 from morpheus.llm import LLMEngine
 from morpheus.llm import LLMLambdaNode
 from morpheus.llm import LLMNode
+from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 
@@ -192,12 +194,24 @@ async def test_simple_engine():
 
         return answers
 
+    class SimpleTaskHandler(LLMTaskHandler):
+
+        def get_input_names(self):
+            return ["response"]
+
+        async def try_handle(self, context: LLMContext):
+
+            with context.message().payload().mutable_dataframe() as df:
+                df["response"] = context.get_input()
+
+            return [context.message()]
+
     engine.add_node("source", node=LLMLambdaNode(source_node))
-    engine.add_node("nested", node=NestedNode())
-    engine.add_node("sink", node=LLMLambdaNode(sink_node))
+    engine.add_node("nested", inputs=[("/source/*", "*")], node=NestedNode())
+    engine.add_node("sink", inputs=["/nested"], node=LLMLambdaNode(sink_node))
 
     # # Add our task handler
-    # engine.add_task_handler(inputs=["/langchain"], handler=SimpleTaskHandler())
+    engine.add_task_handler(inputs=["/sink"], handler=SimpleTaskHandler())
 
     # Create a control message with a single task which uses the LangChain agent executor
     message = ControlMessage()

@@ -70,6 +70,9 @@ PYBIND11_MODULE(stages, _module)
     // Load the cudf helpers
     CudfHelper::load();
 
+    // Make sure to load mrc.core.segment to get ObjectProperties
+    mrc::pymrc::import(_module, "mrc.core.segment");
+
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
     py::class_<mrc::segment::Object<AddClassificationsStage>,
