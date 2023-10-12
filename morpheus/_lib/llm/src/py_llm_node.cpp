@@ -22,7 +22,7 @@
 #include "morpheus/llm/llm_node_base.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
-#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
 
 #include <utility>
 

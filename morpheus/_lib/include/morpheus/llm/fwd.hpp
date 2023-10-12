@@ -19,11 +19,13 @@
 
 namespace morpheus {
 
-class ControlMessage;
+class ControlMessage;  // IWYU pragma: export
 
 }  // namespace morpheus
 
 namespace morpheus::llm {
+
+// IWYU pragma: begin_exports
 
 class LLMContext;
 
@@ -40,5 +42,7 @@ class LLMTaskHandlerRunner;
 class LLMTaskHandler;
 
 struct LLMTask;
+
+// IWYU pragma: end_exports
 
 }  // namespace morpheus::llm

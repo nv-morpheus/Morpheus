@@ -106,6 +106,14 @@ dependencies:
     - watchdog=2.1
     - websockets
     - yapf=0.40.1
+
+    ####### Pip Transitive Dependencies (keep sorted!) #######
+    # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
+    # better to install them with conda than pip to allow for better dependency resolution.
+    - kafka-python=2.0
+    - port-for=0.7
+    - py4j=0.10
+
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
