@@ -98,6 +98,7 @@ function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
 
     # Update the packages
+    rm -rf /opt/conda/.condarc /opt/conda/envs/morpheus/lib/python3.10/site-packages/fastjsonschema-2.18.0.dist-info
     rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
 
     # Finally, reactivate
