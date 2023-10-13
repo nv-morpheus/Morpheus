@@ -158,4 +158,9 @@ TEST_F(TestLLMNode, AddChildNode)
     node.add_node("Root3", {{"/Root2"}}, make_single_input_node(), true);
 
     ASSERT_EQ(node.get_output_node_names(), std::vector<std::string>{"Root3"});
+
+    auto context     = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
+    auto out_context = coroutines::sync_wait(node.execute(context));
+
+    ASSERT_EQ(out_context->view_outputs()["Root3"], 3);
 }
