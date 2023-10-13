@@ -35,6 +35,8 @@ testpaths = ["tests"]
 
 addopts = "--benchmark-disable"
 
+asyncio_mode = "auto"
+
 [tool.yapfignore]
 ignore_patterns = [
   "**/*.pyx",
@@ -46,6 +48,14 @@ ignore_patterns = [
 implicit_optional = true
 
 [tool.pyright]
+# Only warn about using an Optional[T] as if it were T
+reportOptionalCall = "warning"
+reportOptionalContextManager = "warning"
+reportOptionalIterable = "warning"
+reportOptionalMemberAccess = "warning"
+reportOptionalOperand = "warning"
+reportOptionalSubscript = "warning"
+
 # Allow None for argument default values
 strictParameterNoneValue = false
 

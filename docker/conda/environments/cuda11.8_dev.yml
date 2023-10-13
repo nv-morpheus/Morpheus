@@ -70,7 +70,7 @@ dependencies:
     - mrc=23.11
     - networkx=3.1
     - ninja=1.10
-    - nodejs=18.15.0
+    - nodejs=18.*
     - numba>=0.56.2
     - numpydoc=1.4
     - nvtabular=23.06
@@ -84,6 +84,7 @@ dependencies:
     - pydot
     - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
     - pytest
+    - pytest-asyncio
     - pytest-benchmark>=4.0
     - pytest-cov
     - python-confluent-kafka=1.9.2
@@ -105,6 +106,14 @@ dependencies:
     - watchdog=2.1
     - websockets
     - yapf=0.40.1
+
+    ####### Pip Transitive Dependencies (keep sorted!) #######
+    # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
+    # better to install them with conda than pip to allow for better dependency resolution.
+    - kafka-python=2.0
+    - port-for=0.7
+    - py4j=0.10
+
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
