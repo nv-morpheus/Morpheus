@@ -30,8 +30,9 @@
 #include "morpheus/llm/llm_node_runner.hpp"
 #include "morpheus/llm/llm_task.hpp"
 #include "morpheus/llm/llm_task_handler.hpp"
-#include "morpheus/messages/control.hpp"  // IWYU pragma: keep
-#include "morpheus/pybind11/json.hpp"     // IWYU pragma: keep
+#include "morpheus/messages/control.hpp"    // IWYU pragma: keep
+#include "morpheus/pybind11/input_map.hpp"  // IWYU pragma: keep
+#include "morpheus/pybind11/json.hpp"       // IWYU pragma: keep
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/json_types.hpp"
 #include "morpheus/version.hpp"
@@ -72,7 +73,10 @@ PYBIND11_MODULE(llm, _module)
     CudfHelper::load();
 
     // Import the pycoro module
-    py::module_ pycoro = py::module_::import("morpheus._lib.pycoro");
+    mrc::pymrc::import(_module, "morpheus._lib.pycoro");
+
+    // Import the messages module
+    mrc::pymrc::import(_module, "morpheus._lib.messages");
 
     py::class_<InputMap>(_module, "InputMap")
         .def(py::init<>())
@@ -220,8 +224,7 @@ PYBIND11_MODULE(llm, _module)
                 // Populate the inputs from the node input_names
                 for (const auto& single_input : node->get_input_names())
                 {
-                    UserIntputMapping mapping = InputMap{.external_name = single_input};
-                    converted_inputs.push_back(mapping);
+                    converted_inputs.emplace_back(single_input);
                 }
 
                 return self.add_node(std::move(name), std::move(converted_inputs), std::move(node), is_output);

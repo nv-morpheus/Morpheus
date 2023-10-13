@@ -26,6 +26,7 @@ add_library(morpheus
   src/io/loaders/payload.cpp
   src/io/loaders/rest.cpp
   src/io/serializers.cpp
+  src/llm/input_map.cpp
   src/llm/llm_context.cpp
   src/llm/llm_engine.cpp
   src/llm/llm_node_runner.cpp

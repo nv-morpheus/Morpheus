@@ -43,7 +43,7 @@ bool is_valid_node_name(std::string_view name)
     return std::regex_match(name.begin(), name.end(), VALID_INPUT_NAME);
 }
 
-bool find_matching_input_for_placeholder(InputMap& input_map,
+bool find_matching_input_for_placeholder(UserInputMapping& input_map,
                                          size_t curr_idx,
                                          const std::vector<std::string>& input_names)
 {
@@ -97,55 +97,24 @@ bool find_matching_input_for_placeholder(InputMap& input_map,
     return false;
 }
 
-input_mappings_t process_input_names(const user_input_mappings_t& user_inputs,
-                                     const std::vector<std::string>& input_names)
+input_mappings_t process_input_names(user_input_mappings_t user_inputs, const std::vector<std::string>& input_names)
 {
     input_mappings_t intermediate_inputs;
     input_mappings_t final_inputs;
-    input_mappings_t wildcard_inputs;
+    user_input_mappings_t wildcard_inputs;
 
     // The process for converting user specified inputs into the final inputs is as follows:
-    // 1. Loop over all inputs and convert everything into the InputMap format
-    //    a. NodeRunners get converted into InputMaps with the node name as the external name
-    //    b. Strings get converted into InputMaps with the string as the external name
-    //    c. InputMaps get copied directly
-    // 2. Loop over all inputs and replace any placeholder inputs with the actual inputs
+    // 1. Loop over all inputs and replace any placeholder inputs with the actual inputs
     //    a. If the node name is "-", then replace it with the input name
     //    b. If the node name contains "*", then separate it out to process wildcards last
-    // 3. Loop over all wildcard inputs and replace wildcards with remaining input names
-
-    // Convert all user input mappings into InputMaps
-    for (const auto& user_input : user_inputs)
-    {
-        if (std::holds_alternative<InputMap>(user_input))
-        {
-            intermediate_inputs.push_back(std::get<InputMap>(user_input));
-        }
-        else if (std::holds_alternative<std::string>(user_input))
-        {
-            intermediate_inputs.push_back({std::get<std::string>(user_input)});
-        }
-        else if (std::holds_alternative<std::pair<std::string, std::string>>(user_input))
-        {
-            auto pair = std::get<std::pair<std::string, std::string>>(user_input);
-            intermediate_inputs.push_back({pair.first, pair.second});
-        }
-        else if (std::holds_alternative<std::shared_ptr<LLMNodeRunner>>(user_input))
-        {
-            intermediate_inputs.push_back({std::get<std::shared_ptr<LLMNodeRunner>>(user_input)->name()});
-        }
-        else
-        {
-            throw std::invalid_argument("Invalid input type provided to LLMNode::add_node()");
-        }
-    }
+    // 2. Loop over all wildcard inputs and replace wildcards with remaining input names
 
     bool is_matching_by_name = false;
 
     // Loop over all inputs replacing '-' placeholders and separating out wildcards
-    for (size_t i = 0; i < intermediate_inputs.size(); ++i)
+    for (size_t i = 0; i < user_inputs.size(); ++i)
     {
-        auto& single_input = intermediate_inputs[i];
+        auto& single_input = user_inputs[i];
 
         bool found_star_input_name = single_input.external_name.find('*') != std::string::npos;
         bool found_star_node_name  = single_input.internal_name == "*";
@@ -183,7 +152,7 @@ input_mappings_t process_input_names(const user_input_mappings_t& user_inputs,
             }
 
             // Add it to the final list
-            final_inputs.push_back(single_input);
+            final_inputs.emplace_back(single_input.external_name, single_input.internal_name);
         }
     }
 
@@ -221,7 +190,7 @@ input_mappings_t process_input_names(const user_input_mappings_t& user_inputs,
             // Make a copy of the string to avoid modifying the original
             auto replaced = std::string(wildcard_inputs[0].external_name);
             replaced.replace(star_input_name_loc, 1, remaining_name);
-            final_inputs.push_back({replaced, remaining_name});
+            final_inputs.emplace_back(replaced, remaining_name);
         }
     }
 

@@ -19,7 +19,6 @@ import collections
 
 import cudf
 
-from morpheus._lib import pycoro
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMEngine
 from morpheus.llm import LLMLambdaNode
@@ -28,6 +27,27 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from tests._utils.dataset_manager import DatasetManager
+
+
+async def yield_to_loop():
+    # Imitate what would happen with asyncio.sleep(0.001)
+    # This yields to the loop waiting for any ready and scheduled tasks to complete before returning
+    # Different from asyncio.sleep(0) which yields to the loop but get scheduled again immediately
+
+    def _set_result_unless_cancelled(fut, result):
+        """Helper setting the result only if the future was not cancelled."""
+        if fut.cancelled():
+            return
+        fut.set_result(result)
+
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+    handle = loop.call_later(0, _set_result_unless_cancelled, future, None)
+    try:
+        return await future
+    finally:
+        handle.cancel()
 
 
 class AutoResetEvent(asyncio.mixins._LoopBoundMixin):
@@ -99,68 +119,25 @@ class AutoResetEvent(asyncio.mixins._LoopBoundMixin):
             self._waiters.remove(fut)
 
 
-async def test_pycoro():
-
-    hit_inside = False
-
-    async def inner():
-
-        nonlocal hit_inside
-
-        result = await pycoro.wrap_coroutine(asyncio.sleep(1, result=['a', 'b', 'c']))
-
-        hit_inside = True
-
-        return [result]
-
-    returned_val = await pycoro.wrap_coroutine(inner())
-
-    assert returned_val == 'a'
-    assert hit_inside
-
-
-async def test_pycoro_many():
-
-    expected_count = 1000
-    hit_count = 0
-
-    start_time = asyncio.get_running_loop().time()
-
-    async def inner():
-
-        nonlocal hit_count
-
-        await asyncio.sleep(1)
-
-        hit_count += 1
-
-        return ['a', 'b', 'c']
-
-    coros = [pycoro.wrap_coroutine(inner()) for _ in range(expected_count)]
-
-    returned_vals = await asyncio.gather(*coros)
-
-    end_time = asyncio.get_running_loop().time()
-
-    assert returned_vals == ['a'] * expected_count
-    assert hit_count == expected_count
-    assert (end_time - start_time) < 1.5
-
-
 async def test_simple_engine():
 
     event = AutoResetEvent()
+    has_started = False
+
+    dataset = {
+        "questions": ["Question A", "Question B", "Question C"],
+        "indices": [1, 2, 0],
+        "values": [4, 5, 6],
+        "answers": ["Question A - 5", "Question B - 6", "Question C - 4"],
+    }
 
     async def source_node():
+        nonlocal has_started
+        has_started = True
 
         await event.wait()
 
-        return {
-            "questions": ["Question A", "Question B", "Question C"],
-            "indices": [1, 2, 0],
-            "values": [4, 5, 6],
-            "answers": ["Question A - 5", "Question B - 6", "Question C - 4"],
-        }
+        return dataset
 
     class NestedNode(LLMNode):
 
@@ -197,21 +174,8 @@ async def test_simple_engine():
 
         async def execute(self, context: LLMContext):
 
-            dict_inputs = context.get_inputs()
-
-            {
-                "nested_answers": [],
-                "answers": [],
-            }
-
-            nested_answers = dict_inputs["nested_answers"]
-            answers = dict_inputs["answers"]
-
-            context.get_input("nested_answers")
-            context.get_inputs()["nested_answers"]
-
-            # nested_answers = context.get_input("nested_answers")
-            # answers = context.get_input("answers")
+            nested_answers = context.get_input("nested_answers")
+            answers = context.get_input("answers")
 
             assert nested_answers == answers
 
@@ -254,26 +218,18 @@ async def test_simple_engine():
     message.payload(MessageMeta(payload))
 
     # Finally, run the engine
-    async def wrapper():
+    run_task = asyncio.ensure_future(engine.run(message))
 
-        return await engine.run(message)
+    # Yield to the engine
+    await yield_to_loop()
 
-    run_task = asyncio.create_task(wrapper())
-    # result = await engine.run(message)
-
+    # Should have started but waiting on the event
+    assert has_started
     assert not run_task.done()
 
     event.set()
 
     result = await run_task
 
-    assert run_task.done()
-
-
-def test_context_get_inputs():
-
-    context = LLMContext()
-
-    context.set_output({"a": 1})
-
-    assert context.view_outputs["a"] == 1
+    assert len(result) == 1
+    assert DatasetManager.df_equal(result[0].payload().df["response"], dataset["answers"])

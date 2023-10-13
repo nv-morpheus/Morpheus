@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/export.h"
 #include "morpheus/llm/fwd.hpp"
 
 #include <memory>
@@ -26,24 +27,37 @@
 
 namespace morpheus::llm {
 
-struct InputMap
+struct MORPHEUS_EXPORT InputMap
 {
-    std::string external_name;       // The name of the upstream node to use as input
-    std::string internal_name{"-"};  // The name of the input that the upstream node maps to.
+    InputMap();
+
+    InputMap(std::string external_name, std::string internal_name);
+
+    std::string external_name;  // The name of the upstream node to use as input
+    std::string internal_name;  // The name of the input that the upstream node maps to.
 };
 
-// NOLINTBEGIN(readability-identifier-naming)
 /**
  * @brief Represents the options that a user can specify for an input mapping. Will get converted into an InputMap.
  *
  */
-using UserIntputMapping =
-    std::variant<InputMap, std::string, std::pair<std::string, std::string>, std::shared_ptr<LLMNodeRunner>>;
-// NOLINTEND(readability-identifier-naming)
+struct MORPHEUS_EXPORT UserInputMapping
+{
+    UserInputMapping();
+
+    UserInputMapping(std::string external_name, std::string internal_name = "-");
+
+    UserInputMapping(const std::shared_ptr<LLMNodeRunner>& runner);
+
+    UserInputMapping(std::tuple<std::string, std::string>&& tuple);
+
+    std::string external_name;  // The name of the upstream node to use as input
+    std::string internal_name;  // The name of the input that the upstream node maps to.
+};
 
 // Ordered mapping of input names (current node) to output names (from previous nodes)
 using input_mappings_t = std::vector<InputMap>;
 
-using user_input_mappings_t = std::vector<UserIntputMapping>;
+using user_input_mappings_t = std::vector<UserInputMapping>;
 
 }  // namespace morpheus::llm

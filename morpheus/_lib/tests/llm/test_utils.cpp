@@ -73,7 +73,7 @@ TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
 TEST_F(TestLLMUtils, ProcessInputNamesCountMismatch)
 {
     auto input_names = std::vector<std::string>{"input1", "input2"};
-    auto user_inputs = llm::user_input_mappings_t{llm::InputMap{"/ext1", "input1"}, llm::InputMap{"/ext2", "input1"}};
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}, {"/ext2", "input1"}};
 
     EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
 }

@@ -9,6 +9,7 @@ from __future__ import annotations
 import morpheus._lib.llm
 import typing
 import morpheus._lib.messages
+import morpheus._lib.pycoro
 
 __all__ = [
     "InputMap",
