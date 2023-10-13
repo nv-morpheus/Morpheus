@@ -51,6 +51,9 @@ TEST_F(TestLLMUtils, IsValidNameSpecialCharacters)
     EXPECT_FALSE(llm::is_valid_node_name("my_name*"));
     EXPECT_FALSE(llm::is_valid_node_name("my_name/stuff"));
     EXPECT_FALSE(llm::is_valid_node_name("my_name[0]"));
+    EXPECT_FALSE(llm::is_valid_node_name("Piñata"));
+    EXPECT_FALSE(llm::is_valid_node_name("Kulübü"));
+    EXPECT_FALSE(llm::is_valid_node_name("漢字"));
 }
 
 TEST_F(TestLLMUtils, IsValidNameSpace)
