@@ -19,6 +19,7 @@ import collections
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMEngine
 from morpheus.llm import LLMLambdaNode
@@ -27,7 +28,6 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm import LLMTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from tests._utils.dataset_manager import DatasetManager
 
 
 async def yield_to_loop():
