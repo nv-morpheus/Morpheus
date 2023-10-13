@@ -102,7 +102,7 @@ def main():
         min_cats=1  # cut off for minority categories
     )
 
-    model.fit(x_train, epochs=25, validation_data=x_val)
+    model.fit(x_train, epochs=25, validation_data=x_val, run_validation=True)
 
     torch.save(model.state_dict(), args.trainingdata[:-4] + ".pkl")
     with open(args.trainingdata[:-4] + 'dill' + '.pkl', 'wb') as f:
