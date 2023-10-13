@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,20 @@
 # limitations under the License.
 
 channels:
-    - rapidsai
-    - nvidia
-    - dglteam/label/cu118
-    - pytorch
-    - conda-forge
+  - rapidsai
+  - nvidia
+  - dglteam/label/cu118
+  - pytorch
+  - conda-forge
 dependencies:
-    - click>=8
-    - cuml=23.06
-    - dgl
-    - jupyterlab
-    - matplotlib
-    - pytorch-cuda=11.8
-    - pytorch=2.0.1
-    - scikit-learn=1.2.2
-    - tqdm=4
-    - torchmetrics
-    - xgboost
+  - click>=8
+  - cuml=23.06
+  - dgl
+  - jupyterlab
+  - matplotlib
+  - pytorch-cuda=11.8
+  - pytorch=2.0.1
+  - scikit-learn=1.2.2
+  - tqdm=4
+  - torchmetrics
+  - xgboost

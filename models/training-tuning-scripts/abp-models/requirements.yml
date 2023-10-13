@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,12 @@
 # limitations under the License.
 
 channels:
-    - rapidsai
-    - nvidia
-    - conda-forge
+  - rapidsai
+  - nvidia
+  - conda-forge
 dependencies:
-    - cuml=23.06
-    - jupyterlab
-    - python=3.10
-    - scikit-learn=1.2.2
-    - xgboost
+  - cuml=23.06
+  - jupyterlab
+  - python=3.10
+  - scikit-learn=1.2.2
+  - xgboost

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,16 @@
 # limitations under the License.
 
 channels:
-    - nvidia
-    - pytorch
-    - conda-forge
+  - nvidia
+  - pytorch
+  - conda-forge
 dependencies:
-    - dill
-    - jupyterlab
-    - matplotlib
-    - pandas=1.3
-    - python=3.10
-    - pytorch-cuda=11.8
-    - pytorch=2.0.1
-    - scikit-learn=1.2.2
-    - seaborn
+  - dill
+  - jupyterlab
+  - matplotlib
+  - pandas=1.3
+  - python=3.10
+  - pytorch-cuda=11.8
+  - pytorch=2.0.1
+  - scikit-learn=1.2.2
+  - seaborn
