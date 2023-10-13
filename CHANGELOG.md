@@ -15,6 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 23.07.03 (11 Oct 2023)
+
+## 🐛 Bug Fixes
+- Add pinned libwebp to resolve CVE ([#1236](https://github.com/nv-morpheus/Morpheus/pull/1236)) [@drobison00](https://github.com/drobison00)
+- Add libwebp to meta.yaml for CVE 2307 ([#1242](https://github.com/nv-morpheus/Morpheus/pull/1242)) [@drobison00](https://github.com/drobison00)
+- [BUG] Fix Control Message Utils & SQL Max Connections Exhaust ([#1243](https://github.com/nv-morpheus/Morpheus/pull/1243)) [@bsuryadevara](https://github.com/bsuryadevara)
+
 # Morpheus 23.07.02 (25 Jul 2023)
 
 ## 🐛 Bug Fixes
