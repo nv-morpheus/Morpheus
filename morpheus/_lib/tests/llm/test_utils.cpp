@@ -59,6 +59,9 @@ TEST_F(TestLLMUtils, IsValidNameSpecialCharacters)
 TEST_F(TestLLMUtils, IsValidNameSpace)
 {
     EXPECT_FALSE(llm::is_valid_node_name("my_name other_name"));
+    EXPECT_FALSE(llm::is_valid_node_name("my_name\tother_name"));
+    EXPECT_FALSE(llm::is_valid_node_name("my_name\nother_name"));
+    EXPECT_FALSE(llm::is_valid_node_name("my_name\rother_name"));
 }
 
 TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
