@@ -12,28 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import typing
 
-import pymilvus
+from pymilvus import Collection
+from pymilvus import DataType
+from pymilvus import MilvusClient as PyMilvusClient
 from pymilvus.orm.mutation import MutationResult
-
-logger = logging.getLogger(__name__)
 
 # Milvus data type mapping dictionary
 MILVUS_DATA_TYPE_MAP = {
-    "int8": pymilvus.DataType.INT8,
-    "int16": pymilvus.DataType.INT16,
-    "int32": pymilvus.DataType.INT32,
-    "int64": pymilvus.DataType.INT64,
-    "bool": pymilvus.DataType.BOOL,
-    "float": pymilvus.DataType.FLOAT,
-    "double": pymilvus.DataType.DOUBLE,
-    "binary_vector": pymilvus.DataType.BINARY_VECTOR,
-    "float_vector": pymilvus.DataType.FLOAT_VECTOR,
-    "string": pymilvus.DataType.STRING,
-    "varchar": pymilvus.DataType.VARCHAR,
-    "json": pymilvus.DataType.JSON,
+    "int8": DataType.INT8,
+    "int16": DataType.INT16,
+    "int32": DataType.INT32,
+    "int64": DataType.INT64,
+    "bool": DataType.BOOL,
+    "float": DataType.FLOAT,
+    "double": DataType.DOUBLE,
+    "binary_vector": DataType.BINARY_VECTOR,
+    "float_vector": DataType.FLOAT_VECTOR,
+    "string": DataType.STRING,
+    "varchar": DataType.VARCHAR,
+    "json": DataType.JSON,
 }
 
 
@@ -60,17 +59,16 @@ def handle_exceptions(method_name: str, error_message: str) -> typing.Callable:
             try:
                 return method(*args, **kwargs)
             except Exception as ex:
-                logger.error("%s - Failed to execute %s.", error_message, method_name)
-                raise ex from ex
+                raise RuntimeError(f"{error_message} - Failed to execute {method_name}, {ex}") from ex
 
         return wrapper
 
     return decorator
 
 
-class MilvusClient(pymilvus.MilvusClient):
+class MilvusClient(PyMilvusClient):
     """
-    Extension of the `pymilvus.MilvusClient` class with custom functions.
+    Extension of the `MilvusClient` class with custom functions.
 
     Parameters
     ----------
@@ -163,7 +161,7 @@ class MilvusClient(pymilvus.MilvusClient):
             Name of the collection to upsert into.
         entities : list
             List of entities to upsert.
-        **kwargs : dict
+        **kwargs : dict[str, typing.Any]
             Additional keyword arguments for the upsert operation.
 
         Returns
@@ -185,7 +183,7 @@ class MilvusClient(pymilvus.MilvusClient):
             Name of the collection to delete from.
         expression : str
             Deletion expression.
-        **kwargs : dict
+        **kwargs : dict[str, typing.Any]
             Additional keyword arguments for the delete operation.
 
         Returns
@@ -249,22 +247,22 @@ class MilvusClient(pymilvus.MilvusClient):
         conn.drop_index(collection_name=collection_name, field_name=field_name, index_name=index_name)
 
     @handle_exceptions("get_collection", "Error getting collection object")
-    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> pymilvus.Collection:
+    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> Collection:
         """
-        Returns `pymilvus.Collection` object associated with the given collection name.
+        Returns `Collection` object associated with the given collection name.
 
         Parameters
         ----------
         collection_name : str
             Name of the collection to delete from.
-        **kwargs : dict
+        **kwargs : dict[str, typing.Any]
             Additional keyword arguments to get Collection instance.
 
         Returns
         -------
-        pymilvus.Collection
+        Collection
             Returns pymilvus Collection instance.
         """
-        collection = pymilvus.Collection(name=collection_name, using=self._using, **kwargs)
+        collection = Collection(name=collection_name, using=self._using, **kwargs)
 
         return collection
