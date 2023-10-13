@@ -20,6 +20,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.service.vector_db_service import VectorDBService
@@ -90,7 +91,7 @@ class WriteToVectorDBStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (ControlMessage, )
+        return (ControlMessage, MultiMessage)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
@@ -104,7 +105,7 @@ class WriteToVectorDBStage(SinglePortStage):
 
         stream = input_stream[0]
 
-        def on_data(ctrl_msg: ControlMessage) -> ControlMessage:
+        def on_data_control_message(ctrl_msg: ControlMessage) -> ControlMessage:
             # Insert entries in the dataframe to vector database.
             result = self._service.insert_dataframe(name=self._resource_name,
                                                     df=ctrl_msg.payload().df,
@@ -114,7 +115,22 @@ class WriteToVectorDBStage(SinglePortStage):
 
             return ctrl_msg
 
-        to_vector_db = builder.make_node(self.unique_name, ops.map(on_data), ops.on_completed(self.on_completed))
+        def on_data_multi_message(msg: MultiMessage) -> MultiMessage:
+            # Insert entries in the dataframe to vector database.
+            result = self._service.insert_dataframe(name=self._resource_name,
+                                                    df=msg.get_meta(),
+                                                    **self._resource_kwargs)
+
+            return msg
+
+        if (issubclass(input_stream[1], ControlMessage)):
+            on_data = ops.map(on_data_control_message)
+        elif (issubclass(input_stream[1], MultiMessage)):
+            on_data = ops.map(on_data_multi_message)
+        else:
+            raise RuntimeError(f"Unexpected input type {input_stream[1]}")
+
+        to_vector_db = builder.make_node(self.unique_name, on_data, ops.on_completed(self.on_completed))
 
         builder.make_edge(stream, to_vector_db)
         stream = to_vector_db
