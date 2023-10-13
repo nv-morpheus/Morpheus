@@ -36,14 +36,14 @@ MILVUS_DATA_TYPE_MAP = {
 }
 
 
-def handle_exceptions(method_name: str, error_message: str) -> typing.Callable:
+def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
     """
     Decorator function to handle exceptions and log errors.
 
     Parameters
     ----------
-    method_name : str
-        Name of the method being decorated.
+    func_name : str
+        Name of the func being decorated.
     error_message : str
         Error message to log in case of an exception.
 
@@ -53,13 +53,13 @@ def handle_exceptions(method_name: str, error_message: str) -> typing.Callable:
         Decorated function.
     """
 
-    def decorator(method):
+    def decorator(func):
 
         def wrapper(*args, **kwargs):
             try:
-                return method(*args, **kwargs)
+                return func(*args, **kwargs)
             except Exception as ex:
-                raise RuntimeError(f"{error_message} - Failed to execute {method_name}, {ex}") from ex
+                raise RuntimeError(f"{error_message} - Failed to execute {func_name}") from ex
 
         return wrapper
 
