@@ -13,22 +13,61 @@
 # limitations under the License.
 
 import copy
+import json
 import logging
 import threading
 import time
 import typing
+from functools import wraps
 
 import pandas as pd
 import pymilvus
 from pymilvus.orm.mutation import MutationResult
+from pymilvus.orm.types import infer_dtype_bydata
 
 import cudf
 
 from morpheus.service.milvus_client import MILVUS_DATA_TYPE_MAP
 from morpheus.service.milvus_client import MilvusClient
+from morpheus.service.vector_db_service import VectorDBResourceService
 from morpheus.service.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
+
+
+class FieldSchemaEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, pymilvus.DataType):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
+
+    @staticmethod
+    def object_hook(o):
+        if "DataType." in o:
+            return getattr(pymilvus.DataType, o.split(".")[1])
+        return o
+
+    @staticmethod
+    def dumps(field: pymilvus.FieldSchema):
+        return json.dumps(field, cls=FieldSchemaEncoder)
+
+    @staticmethod
+    def loads(field: str):
+        return pymilvus.FieldSchema.construct_from_dict(json.loads(field, object_hook=FieldSchemaEncoder.object_hook))
+
+    @staticmethod
+    def from_dict(field: dict):
+        # # FieldSchema converts dtype -> type when serialized. We need to convert any dtype to type before deserilaizing
+        # if ("dtype" in field and isinstance(field["dtype"], str)):
+        #     try:
+        #         field["type"] = MILVUS_DATA_TYPE_MAP[field["dtype"]]
+        #         del field["dtype"]
+        #     except KeyError:
+        #         raise ValueError(
+        #             f"Invalid string data type: {field['dtype']}. Must be one of: {[MILVUS_DATA_TYPE_MAP.keys()]}")
+
+        return pymilvus.FieldSchema.construct_from_dict(field)
 
 
 def with_collection_lock(func: typing.Callable) -> typing.Callable:
@@ -48,15 +87,91 @@ def with_collection_lock(func: typing.Callable) -> typing.Callable:
         The wrapped function with the lock acquisition logic.
     """
 
+    @wraps(func)
     def wrapper(self, name, *args, **kwargs):
         collection_lock = MilvusVectorDBService.get_collection_lock(name)
         with collection_lock:
-            logger.debug("Acquiring lock for collection: %s", name)
             result = func(self, name, *args, **kwargs)
-            logger.debug("Releasing lock for collection: %s", name)
             return result
 
     return wrapper
+
+
+class MilvusVectorDBResourceService(VectorDBResourceService):
+
+    def __init__(self, name: str, client: MilvusClient) -> None:
+        super().__init__()
+
+        self._name = name
+        self._client = client
+
+        self._collection = self._client.get_collection(collection_name=self._name)
+        self._fields: list[pymilvus.FieldSchema] = self._collection.schema.fields
+
+        self._collection.load()
+
+    def _set_up_collection(self):
+
+        self._fields = self._collection.schema.fields
+
+    def insert(self, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
+        # collection: pymilvus.Collection = None
+        # try:
+        #     collection_conf = kwargs.get("collection_conf", {})
+        #     partition_name = collection_conf.get("partition_name", "_default")
+
+        #     collection = self._client.get_collection(collection_name=self._name, **collection_conf)
+        #     result = collection.insert(data, partition_name=partition_name)
+        #     collection.flush()
+        # finally:
+        #     collection.release()
+
+        result = self._collection.insert(data, **kwargs)
+
+        result_dict = {
+            "primary_keys": result.primary_keys,
+            "insert_count": result.insert_count,
+            "delete_count": result.delete_count,
+            "upsert_count": result.upsert_count,
+            "timestamp": result.timestamp,
+            "succ_count": result.succ_count,
+            "err_count": result.err_count,
+            "succ_index": result.succ_index,
+            "err_index": result.err_index
+        }
+
+        return result_dict
+
+    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+
+        # From the schema, this is the list of columns we need, excluding any auto_id columns
+        column_names = [field.name for field in self._fields if not field.auto_id]
+
+        final_column_names = df.columns.intersection(column_names)
+
+        final_df = df[final_column_names]
+
+        if isinstance(final_df, cudf.DataFrame):
+            final_df = final_df.to_pandas()
+
+        result = self._collection.insert(data=final_df, **kwargs)
+
+        result_dict = {
+            "primary_keys": result.primary_keys,
+            "insert_count": result.insert_count,
+            "delete_count": result.delete_count,
+            "upsert_count": result.upsert_count,
+            "timestamp": result.timestamp,
+            "succ_count": result.succ_count,
+            "err_count": result.err_count,
+            "succ_index": result.succ_index,
+            "err_index": result.err_index
+        }
+
+        return result_dict
+
+    def describe(self, **kwargs: dict[str, typing.Any]) -> dict:
+        raise NotImplementedError()
 
 
 class MilvusVectorDBService(VectorDBService):
@@ -90,6 +205,10 @@ class MilvusVectorDBService(VectorDBService):
 
         self._client = MilvusClient(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
+    def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> MilvusVectorDBResourceService:
+
+        return MilvusVectorDBResourceService(name=name, client=self._client, **kwargs)
+
     def has_store_object(self, name: str) -> bool:
         """
         Check if a collection exists in the Milvus vector database.
@@ -119,12 +238,7 @@ class MilvusVectorDBService(VectorDBService):
 
     def _create_schema_field(self, field_conf: dict) -> pymilvus.FieldSchema:
 
-        name = field_conf.pop("name")
-        dtype = field_conf.pop("dtype")
-
-        dtype = MILVUS_DATA_TYPE_MAP[dtype.lower()]
-
-        field_schema = pymilvus.FieldSchema(name=name, dtype=dtype, **field_conf)
+        field_schema = pymilvus.FieldSchema.construct_from_dict(field_conf)
 
         return field_schema
 
@@ -170,20 +284,16 @@ class MilvusVectorDBService(VectorDBService):
             if len(schema_fields_conf) == 0:
                 raise ValueError("Cannot create collection as provided empty schema_fields configuration")
 
-            schema_fields = [self._create_schema_field(field_conf=field_conf) for field_conf in schema_fields_conf]
+            schema_fields = [FieldSchemaEncoder.from_dict(field_conf) for field_conf in schema_fields_conf]
 
             schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
 
-            if index_conf:
-                field_name = index_conf.pop("field_name")
-                metric_type = index_conf.pop("metric_type")
-                index_param = self._client.prepare_index_params(field_name=field_name,
-                                                                metric_type=metric_type,
-                                                                **index_conf)
+            # if index_conf:
+            #     index_param = self._client.prepare_index_params(**index_conf)
 
             self._client.create_collection_with_schema(collection_name=name,
                                                        schema=schema,
-                                                       index_param=index_param,
+                                                       index_param=index_conf,
                                                        auto_id=auto_id,
                                                        shards_num=collection_conf.get("shards", 2),
                                                        consistency_level=collection_conf.get(
@@ -194,6 +304,95 @@ class MilvusVectorDBService(VectorDBService):
                 # Iterate over each partition configuration
                 for part in partition_conf["partitions"]:
                     self._client.create_partition(collection_name=name, partition_name=part["name"], timeout=timeout)
+
+    def _build_schema_conf(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs) -> list[dict]:
+        from pandas.api.types import is_array_like
+        from pandas.api.types import is_list_like
+        from pandas.api.types import pandas_dtype
+        from pymilvus import Collection
+        from pymilvus import CollectionSchema
+        from pymilvus import DataType
+        from pymilvus import FieldSchema
+        from pymilvus import MilvusException
+        from pymilvus.orm.types import infer_dtype_bydata
+        from pymilvus.orm.types import is_numeric_datatype
+        from pymilvus.orm.types import map_numpy_dtype_to_datatype
+
+        fields = []
+
+        # Always add a primary key
+        fields.append({"name": "pk", "dtype": DataType.INT64, "is_primary": True, "auto_id": True})
+
+        # Loop over all of the columns of the first row and build the schema
+        for col_name, col_val in df.iloc[0].iteritems():
+
+            field_dict = {
+                "name": col_name,
+                "dtype": infer_dtype_bydata(col_val),
+                # "is_primary": col_name == kwargs.get("primary_key", None),
+                # "auto_id": col_name == kwargs.get("primary_key", None)
+            }
+
+            if (field_dict["dtype"] == DataType.VARCHAR):
+                field_dict["max_length"] = 65_535
+
+            if (field_dict["dtype"] == DataType.FLOAT_VECTOR or field_dict["dtype"] == DataType.BINARY_VECTOR):
+                field_dict["dim"] = len(col_val)
+
+            if (field_dict["dtype"] == DataType.UNKNOWN):
+                logger.warning("Could not infer data type for column '%s', with value: %s. Skipping column in schema.",
+                               col_name,
+                               col_val)
+                continue
+
+            fields.append(field_dict)
+
+        return fields
+
+    def create_from_dataframe(self,
+                              name: str,
+                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                              overwrite: bool = False,
+                              **kwargs: dict[str, typing.Any]) -> None:
+        """
+        Create resources in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        df : Union[cudf.DataFrame, pd.DataFrame]
+            The dataframe to create the resource from.
+        overwrite : bool, optional
+            Whether to overwrite the resource if it already exists. Default is False.
+        **kwargs : dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+        """
+
+        fields = self._build_schema_conf(df=df, **kwargs)
+
+        create_kwargs = {
+            "collection_conf": {
+                "schema_conf": {
+                    "description": "Auto generated schema from DataFrame in Morpheus",
+                    "schema_fields": fields,
+                }
+            }
+        }
+
+        if (kwargs.get("index_field", None) is not None):
+            # Check to make sure the column name exists in the fields
+            create_kwargs["collection_conf"]["index_conf"] = {
+                "field_name": kwargs.get("index_field"),  # Default index type
+                "metric_type": "L2",
+                "index_type": "HNSW",
+                "params": {
+                    "M": 8,
+                    "efConstruction": 64,
+                },
+            }
+
+        self.create(name=name, overwrite=overwrite, **create_kwargs)
 
     @with_collection_lock
     def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str,

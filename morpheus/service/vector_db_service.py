@@ -24,10 +24,29 @@ import cudf
 logger = logging.getLogger(__name__)
 
 
+class VectorDBResourceService(ABC):
+
+    @abstractmethod
+    def insert(self, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
+        pass
+
+    @abstractmethod
+    def insert_dataframe(self, df: typing.Union[cudf.DataFrame, pd.DataFrame], **kwargs: dict[str, typing.Any]) -> dict:
+        pass
+
+    @abstractmethod
+    def describe(self, **kwargs: dict[str, typing.Any]) -> dict:
+        pass
+
+
 class VectorDBService(ABC):
     """
     Class used for vectorstore specific implementation.
     """
+
+    @abstractmethod
+    def load_resource(self, name: str, **kwargs: dict[str, typing.Any]) -> VectorDBResourceService:
+        pass
 
     @abstractmethod
     def insert(self, name: str, data: list[list] | list[dict], **kwargs: dict[str, typing.Any]) -> dict:
@@ -176,6 +195,32 @@ class VectorDBService(ABC):
             Extra keyword arguments specific to the vector database implementation.
         """
 
+        pass
+
+    @abstractmethod
+    def create_from_dataframe(self,
+                              name: str,
+                              df: typing.Union[cudf.DataFrame, pd.DataFrame],
+                              overwrite: bool = False,
+                              **kwargs: dict[str, typing.Any]) -> None:
+        """
+        Create resources in the vector database.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource.
+        df : Union[cudf.DataFrame, pd.DataFrame]
+            The dataframe to create the resource from.
+        overwrite : bool, optional
+            Whether to overwrite the resource if it already exists. Default is False.
+        **kwargs : dict[str, typing.Any]
+            Extra keyword arguments specific to the vector database implementation.
+
+        Returns
+        -------
+        None
+        """
         pass
 
     @abstractmethod

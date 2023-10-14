@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
-from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.service.vector_db_service import VectorDBService
@@ -55,17 +55,20 @@ class WriteToVectorDBStage(SinglePortStage):
 
     def __init__(self,
                  config: Config,
+                 *,
                  resource_name: str,
+                 embedding_column_name: str = "embedding",
+                 recreate: bool = False,
+                 resource_kwargs: dict = None,
                  service: typing.Union[str, VectorDBService],
                  **service_kwargs: dict[str, typing.Any]):
 
         super().__init__(config)
 
         self._resource_name = resource_name
-        self._resource_kwargs = {}
-
-        if "resource_kwargs" in service_kwargs:
-            self._resource_kwargs = service_kwargs.pop("resource_kwargs")
+        self._embedding_column_name = embedding_column_name
+        self._recreate = recreate
+        self._resource_kwargs = resource_kwargs if resource_kwargs is not None else {}
 
         if isinstance(service, str):
             # If service is a string, assume it's the service name
@@ -76,6 +79,20 @@ class WriteToVectorDBStage(SinglePortStage):
             self._service: VectorDBService = service
         else:
             raise ValueError("service must be a string (service name) or an instance of VectorDBService")
+
+        has_object = self._service.has_store_object(name=self._resource_name)
+
+        if (self._recreate and has_object):
+            # Delete the existing resource
+            self._service.drop(name=self._resource_name)
+            has_object = False
+
+        # Ensure that the resource exists
+        if (not has_object):
+            self._service.create(name=self._resource_name, collection_conf=self._resource_kwargs)
+
+        # Get the service for just the resource we are interested in
+        self._resource_service = self._service.load_resource(name=self._resource_name)
 
     @property
     def name(self) -> str:
@@ -91,7 +108,7 @@ class WriteToVectorDBStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (ControlMessage, MultiMessage)
+        return (ControlMessage, MultiResponseMessage)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
@@ -115,17 +132,37 @@ class WriteToVectorDBStage(SinglePortStage):
 
             return ctrl_msg
 
-        def on_data_multi_message(msg: MultiMessage) -> MultiMessage:
+        def on_data_multi_message(msg: MultiResponseMessage) -> MultiResponseMessage:
+            # Probs tensor contains all of the embeddings
+            embeddings = msg.get_probs_tensor()
+            embeddings_list = embeddings.tolist()
+
+            # # Figure out which columns we need
+            # available_columns = set(msg.get_meta_column_names())
+
+            # if (self._include_columns is not None):
+            #     available_columns = available_columns.intersection(self._include_columns)
+            # if (self._exclude_columns is not None):
+            #     available_columns = available_columns.difference(self._exclude_columns)
+
+            # Build up the metadata from the message
+            metadata = msg.get_meta().to_pandas()
+
+            # Add in the embedding results to the dataframe
+            metadata[self._embedding_column_name] = embeddings_list
+
+            # if (not self._service.has_store_object(name=self._resource_name)):
+            #     # Create the vector database resource
+            #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
+
             # Insert entries in the dataframe to vector database.
-            result = self._service.insert_dataframe(name=self._resource_name,
-                                                    df=msg.get_meta(),
-                                                    **self._resource_kwargs)
+            result = self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
 
             return msg
 
         if (issubclass(input_stream[1], ControlMessage)):
             on_data = ops.map(on_data_control_message)
-        elif (issubclass(input_stream[1], MultiMessage)):
+        elif (issubclass(input_stream[1], MultiResponseMessage)):
             on_data = ops.map(on_data_multi_message)
         else:
             raise RuntimeError(f"Unexpected input type {input_stream[1]}")
