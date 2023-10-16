@@ -34,6 +34,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -48,14 +49,25 @@ TEST_F(TestLLMUtils, IsValidNameEmpty)
 
 TEST_F(TestLLMUtils, IsValidNameSpecialCharacters)
 {
-    EXPECT_FALSE(llm::is_valid_node_name("my_name*"));
-    EXPECT_FALSE(llm::is_valid_node_name("my_name/stuff"));
-    EXPECT_FALSE(llm::is_valid_node_name("my_name[0]"));
+    std::vector<std::string> check_list{"my_name*", "my_name/stuff", "my_name[0]", "Piñata", "Kulübü", "漢字"};
+    for (const auto& name : check_list)
+    {
+        EXPECT_FALSE(llm::is_valid_node_name(name));
+    }
 }
 
 TEST_F(TestLLMUtils, IsValidNameSpace)
 {
-    EXPECT_FALSE(llm::is_valid_node_name("my_name other_name"));
+    std::vector<std::string> check_list{"my_name other_name",
+                                        "my_name\tother_name",
+                                        "my_name\nother_name",
+                                        "my_name\rother_name",
+                                        " prefix",
+                                        "trailing "};
+    for (const auto& name : check_list)
+    {
+        EXPECT_FALSE(llm::is_valid_node_name(name));
+    }
 }
 
 TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
