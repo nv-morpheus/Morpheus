@@ -144,7 +144,7 @@ TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderInputSingleMapping)
     EXPECT_EQ(returned[0].internal_name, "input1");
 }
 
-TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMultipleMapping)
+TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMultipleMappings)
 {
     auto user_inputs = llm::user_input_mappings_t{{"/ext1/*", "*"}};
     auto input_names = std::vector<std::string>{"input1, input2"};
