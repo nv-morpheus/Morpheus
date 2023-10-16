@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import asyncio
 import logging
 import os
 import pickle
@@ -31,6 +32,9 @@ import cudf
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.llm import LLMEngine
+from morpheus.llm import LLMLambdaNode
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -45,9 +49,36 @@ from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
-from ..common.arxiv_source import ArxivSource
+from ..common.extracter_node import ExtracterNode
+from ..common.llm_engine_stage import LLMEngineStage
+from ..common.simple_task_handler import SimpleTaskHandler
 
 logger = logging.getLogger(f"morpheus.{__name__}")
+
+reset_event = asyncio.Event()
+
+
+def _build_engine():
+
+    engine = LLMEngine()
+
+    engine.add_node("extracter", node=ExtracterNode())
+
+    async def wait_for_event(values):
+
+        print("Waiting for event...")
+
+        await asyncio.sleep(1)
+
+        print("Waiting for event... Done.")
+
+        return values
+
+    engine.add_node("waiter", inputs=["/extracter"], node=LLMLambdaNode(wait_for_event))
+
+    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
+
+    return engine
 
 
 @click.group(name=__name__)
@@ -75,125 +106,40 @@ def run():
     type=click.IntRange(min=1),
     help="Max batch size to use for the model",
 )
-@click.option(
-    "--model_fea_length",
-    default=256,
-    type=click.IntRange(min=1),
-    help="Features length to use for the model",
-)
-@click.option(
-    "--embedding_size",
-    default=384,
-    type=click.IntRange(min=1),
-    help="Output size of the embedding model",
-)
-@click.option(
-    "--input_file",
-    default="output.csv",
-    help="The path to input event stream",
-)
-@click.option(
-    "--output_file",
-    default="output.csv",
-    help="The path to the file where the inference output will be saved.",
-)
-@click.option("--server_url", required=True, default='192.168.0.69:8000', help="Tritonserver url")
-@click.option(
-    "--model_name",
-    required=True,
-    default='all-mpnet-base-v2',
-    help="The name of the model that is deployed on Triton server",
-)
-@click.option("--pre_calc_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
-@click.option("--isolate_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
-@click.option("--use_cache",
-              type=click.Path(file_okay=True, dir_okay=False),
-              default=None,
-              help="What cache to use for the confluence documents")
-def pipeline(num_threads,
-             pipeline_batch_size,
-             model_max_batch_size,
-             model_fea_length,
-             embedding_size,
-             input_file,
-             output_file,
-             server_url,
-             model_name,
-             pre_calc_embeddings,
-             isolate_embeddings,
-             use_cache):
+def pipeline(
+    num_threads,
+    pipeline_batch_size,
+    model_max_batch_size,
+):
 
     CppConfig.set_should_use_cpp(False)
 
     config = Config()
-    config.mode = PipelineModes.NLP
+    config.mode = PipelineModes.OTHER
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
-    config.feature_length = model_fea_length
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
-    config.class_labels = [str(i) for i in range(embedding_size)]
-
     source_dfs = [cudf.DataFrame({"questions": ["Tell me a story about your best friend.", ]})]
 
-    completion_task = {
-        "what": "complete",
-    }
+    completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs))
-
-    pipe.add_stage(DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
-
-    pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
-
-    if (isolate_embeddings):
-        pipe.add_stage(TriggerStage(config))
-
-    if (pre_calc_embeddings):
-
-        # add deserialize stage
-        pipe.add_stage(DeserializeStage(config))
-
-        # add preprocessing stage
-        pipe.add_stage(
-            PreprocessNLPStage(config,
-                               vocab_hash_file="data/bert-base-uncased-hash.txt",
-                               do_lower_case=True,
-                               truncation=True,
-                               add_special_tokens=False,
-                               column='page_content'))
-
-        pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
-
-        pipe.add_stage(
-            TritonInferenceStage(config,
-                                 model_name=model_name,
-                                 server_url="localhost:8001",
-                                 force_convert_inputs=True,
-                                 use_shared_memory=True))
-        pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=10))
 
     pipe.add_stage(
-        WriteToVectorDBStage(config,
-                             resource_name="Arxiv",
-                             resource_kwargs=milvus_resource_kwargs,
-                             recreate=True,
-                             service="milvus",
-                             uri="http://localhost:19530"))
+        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    sink = pipe.add_stage(InMemorySinkStage(config, dataframes=source_dfs))
+    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine()))
+
+    sink = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
@@ -202,5 +148,7 @@ def pipeline(num_threads,
     pipe.run()
 
     duration = time.time() - start_time
+
+    print("Got messages: ", sink.get_messages())
 
     print(f"Total duration: {duration:.2f} seconds")

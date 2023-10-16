@@ -10,11 +10,13 @@ import morpheus._lib.llm
 import typing
 import morpheus._lib.messages
 import morpheus._lib.pycoro
+import mrc.core.segment
 
 __all__ = [
     "InputMap",
     "LLMContext",
     "LLMEngine",
+    "LLMEngineStage",
     "LLMLambdaNode",
     "LLMNode",
     "LLMNodeBase",
@@ -94,6 +96,9 @@ class LLMNodeBase():
     def __init__(self) -> None: ...
     def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
     def get_input_names(self) -> typing.List[str]: ...
+    pass
+class LLMEngineStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, engine: LLMEngine) -> None: ...
     pass
 class LLMLambdaNode(LLMNodeBase):
     def __init__(self, fn: function) -> None: ...

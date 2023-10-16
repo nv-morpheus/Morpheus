@@ -115,9 +115,8 @@ class DeserializeStage(MultiMessageStage):
         return x
 
     @staticmethod
-    def process_dataframe_to_multi_message(x: MessageMeta,
-                                           batch_size: int,
-                                           ensure_sliceable_index: bool = True) -> typing.List[MultiMessage]:
+    def process_dataframe_to_multi_message(x: MessageMeta, batch_size: int,
+                                           ensure_sliceable_index: bool) -> typing.List[MultiMessage]:
         """
         The deserialization of the cudf is implemented in this function.
 
@@ -147,7 +146,7 @@ class DeserializeStage(MultiMessageStage):
     @staticmethod
     def process_dataframe_to_control_message(x: MessageMeta,
                                              batch_size: int,
-                                             ensure_sliceable_index: bool = True,
+                                             ensure_sliceable_index: bool,
                                              task_tuple: tuple[str, dict] | None) -> typing.List[ControlMessage]:
         """
         The deserialization of the cudf is implemented in this function.
@@ -163,6 +162,10 @@ class DeserializeStage(MultiMessageStage):
 
         """
 
+        # Because ControlMessages only have a C++ implementation, we need to import the C++ MessageMeta and use that
+        # 100% of the time
+        from morpheus._lib.messages import MessageMeta as MessageMetaCpp
+
         x = DeserializeStage.check_slicable_index(x, ensure_sliceable_index)
 
         # Now break it up by batches
@@ -174,14 +177,18 @@ class DeserializeStage(MultiMessageStage):
             # Break the message meta into smaller chunks
             for i in range(0, x.count, batch_size):
 
-                cm = ControlMessage(MessageMeta(df=df.iloc[i:i + batch_size]))
+                cm = ControlMessage()
+
+                cm.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
 
                 if (task_tuple is not None):
                     cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
                 output.append(cm)
         else:
-            cm = ControlMessage(x)
+            cm = ControlMessage()
+
+            cm.payload(MessageMetaCpp(x.df))
 
             if (task_tuple is not None):
                 cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
@@ -193,23 +200,23 @@ class DeserializeStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
-        out_type = MultiMessage
 
         if self._build_cpp_node():
             stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
 
             if (self._message_type == MultiMessage):
-                map_func = partial(DeserializeStage.process_dataframe,
+                map_func = partial(DeserializeStage.process_dataframe_to_multi_message,
                                    batch_size=self._batch_size,
                                    ensure_sliceable_index=self._ensure_sliceable_index)
             else:
-                task_tuple = (self._task_type, self._task_payload)
 
-                if (self._task_type is None or self._task_payload is None):
+                if (self._task_type is not None and self._task_payload is not None):
+                    task_tuple = (self._task_type, self._task_payload)
+                else:
                     task_tuple = None
 
-                map_func = partial(DeserializeStage.process_dataframe,
+                map_func = partial(DeserializeStage.process_dataframe_to_control_message,
                                    batch_size=self._batch_size,
                                    ensure_sliceable_index=self._ensure_sliceable_index,
                                    task_tuple=task_tuple)
@@ -218,4 +225,4 @@ class DeserializeStage(MultiMessageStage):
 
         builder.make_edge(input_stream[0], stream)
 
-        return stream, out_type
+        return stream, self._message_type
