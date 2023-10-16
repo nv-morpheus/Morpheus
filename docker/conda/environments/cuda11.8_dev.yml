@@ -94,6 +94,7 @@ dependencies:
     - pytorch=2.0.1
     - rapidjson=1.1.0
     - requests=2.31
+    - requests-cache=1.1
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
     - sphinx
