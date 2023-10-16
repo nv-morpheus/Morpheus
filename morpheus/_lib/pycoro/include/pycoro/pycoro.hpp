@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <boost/fiber/operations.hpp>
 #include <glog/logging.h>
 #include <mrc/coroutines/task.hpp>
 #include <mrc/utils/string_utils.hpp>
@@ -64,12 +65,28 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         auto converter = [](mrc::coroutines::Task<T> incoming_task) -> mrc::coroutines::Task<mrc::pymrc::PyHolder> {
             DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL when resuming a C++ coroutine";
 
-            auto result = co_await incoming_task;
+            mrc::pymrc::PyHolder holder;
 
-            // Assume we are resumed without the GIL
-            pybind11::gil_scoped_acquire gil;
+            if constexpr (std::is_same_v<void, T>)
+            {
+                co_await incoming_task;
 
-            co_return mrc::pymrc::PyHolder(pybind11::cast(std::move(result)));
+                // Need the GIL to make the return object
+                pybind11::gil_scoped_acquire gil;
+
+                holder = pybind11::none();
+            }
+            else
+            {
+                auto result = co_await incoming_task;
+
+                // Need the GIL to cast the return object
+                pybind11::gil_scoped_acquire gil;
+
+                holder = pybind11::cast(std::move(result));
+            }
+
+            co_return holder;
         };
 
         m_task = converter(std::move(task));
@@ -92,16 +109,11 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         // Need to release the GIL before waiting
         pybind11::gil_scoped_release nogil;
 
-        if (!m_has_resumed)
-        {
-            m_has_resumed = true;
-
-            m_task.resume();
-        }
+        // Run the tick function which will resume the coroutine
+        this->tick();
 
         if (m_task.is_ready())
         {
-            // Grab the gil before moving and throwing
             pybind11::gil_scoped_acquire gil;
 
             // job done -> throw
@@ -114,79 +126,96 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         }
     }
 
-  private:
+  protected:
+    virtual void tick()
+    {
+        if (!m_has_resumed)
+        {
+            m_has_resumed = true;
+
+            m_task.resume();
+        }
+    }
+
     bool m_has_resumed{false};
     mrc::coroutines::Task<mrc::pymrc::PyHolder> m_task;
 };
 
+/**
+ * @brief Similar to CppToPyAwaitable but will yield to other fibers when waiting for the coroutine to finish. Use this
+ * once per loop at the main entry point for the asyncio loop
+ *
+ */
+class PYBIND11_EXPORT BoostFibersMainPyAwaitable : public CppToPyAwaitable
+{
+  public:
+    using CppToPyAwaitable::CppToPyAwaitable;
+
+  protected:
+    void tick() override
+    {
+        // Call the base class and then see if any fibers need processing by calling yield
+        CppToPyAwaitable::tick();
+
+        bool has_fibers = boost::fibers::has_ready_fibers();
+
+        if (has_fibers)
+        {
+            // Yield to other fibers
+            boost::this_fiber::yield();
+        }
+    }
+};
+
 class PYBIND11_EXPORT PyTaskToCppAwaitable
 {
-    struct Awaiter
-    {
-        Awaiter(const PyTaskToCppAwaitable& parent) noexcept : m_parent(parent) {}
-
-        bool await_ready() const noexcept
-        {
-            // pybind11::gil_scoped_acquire gil;
-
-            // return m_parent.m_task.attr("done")().cast<bool>();
-
-            // Always suspend
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> caller) noexcept
-        {
-            pybind11::gil_scoped_acquire gil;
-
-            auto done_callback = pybind11::cpp_function([this, caller](pybind11::object future) {
-                try
-                {
-                    // Save the result value
-                    m_result = future.attr("result")();
-                } catch (pybind11::error_already_set)
-                {
-                    m_exception_ptr = std::current_exception();
-                }
-
-                pybind11::gil_scoped_release nogil;
-
-                // Resume the coroutine
-                caller.resume();
-            });
-
-            m_parent.m_task.attr("add_done_callback")(done_callback);
-        }
-
-        mrc::pymrc::PyHolder await_resume()
-        {
-            if (m_exception_ptr)
-            {
-                std::rethrow_exception(m_exception_ptr);
-            }
-
-            return std::move(m_result);
-        }
-
-      private:
-        const PyTaskToCppAwaitable& m_parent;
-        mrc::pymrc::PyHolder m_result;
-        std::exception_ptr m_exception_ptr;
-    };
-
   public:
     PyTaskToCppAwaitable() = default;
     PyTaskToCppAwaitable(mrc::pymrc::PyObjectHolder&& task) : m_task(std::move(task)) {}
 
-    Awaiter operator co_await() const noexcept
+    bool await_ready() const noexcept
     {
-        return Awaiter{*this};
+        // Always suspend
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<> caller) noexcept
+    {
+        pybind11::gil_scoped_acquire gil;
+
+        auto done_callback = pybind11::cpp_function([this, caller](pybind11::object future) {
+            try
+            {
+                // Save the result value
+                m_result = future.attr("result")();
+            } catch (pybind11::error_already_set)
+            {
+                m_exception_ptr = std::current_exception();
+            }
+
+            pybind11::gil_scoped_release nogil;
+
+            // Resume the coroutine
+            caller.resume();
+        });
+
+        m_task.attr("add_done_callback")(done_callback);
+    }
+
+    mrc::pymrc::PyHolder await_resume()
+    {
+        if (m_exception_ptr)
+        {
+            std::rethrow_exception(m_exception_ptr);
+        }
+
+        return std::move(m_result);
     }
 
   private:
     mrc::pymrc::PyObjectHolder m_task;
-
-    friend struct Awaiter;
+    mrc::pymrc::PyHolder m_result;
+    std::exception_ptr m_exception_ptr;
 };
 
 // ====== HELPER MACROS ======

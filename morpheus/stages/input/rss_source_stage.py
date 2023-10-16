@@ -49,18 +49,25 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 feed_input: str,
+                 feed_input: str | list[str],
                  interval_secs: float = 600,
                  stop_after: int = 0,
-                 max_retries: int = 5):
+                 max_retries: int = 5,
+                 run_indefinitely: bool = None,
+                 batch_size: int = None):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
         self._interval_secs = interval_secs
         self._max_retries = max_retries
 
+        if (batch_size is None):
+            batch_size = c.pipeline_batch_size
+
         self._records_emitted = 0
-        self._controller = RSSController(feed_input=feed_input, batch_size=c.pipeline_batch_size)
+        self._controller = RSSController(feed_input=feed_input,
+                                         batch_size=batch_size,
+                                         run_indefinitely=run_indefinitely)
 
     @property
     def name(self) -> str:

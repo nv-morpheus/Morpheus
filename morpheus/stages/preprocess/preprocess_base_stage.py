@@ -55,7 +55,7 @@ class PreprocessBaseStage(MultiMessageStage):
         pass
 
     @abstractmethod
-    def _get_preprocess_node(self, builder: mrc.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         pass
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
@@ -73,6 +73,7 @@ class PreprocessBaseStage(MultiMessageStage):
 
         if self._build_cpp_node():
             stream = self._get_preprocess_node(builder)
+            stream.launch_options.pe_count = self._config.num_threads
         else:
             stream = builder.make_node(self.unique_name, ops.map(preprocess_fn))
 
