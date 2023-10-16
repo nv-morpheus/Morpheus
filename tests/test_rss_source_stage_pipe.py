@@ -32,7 +32,7 @@ def test_constructor_with_feed_url(config):
 
     ctlr = rss_source_stage._controller
 
-    assert ctlr._feed_input == "https://realpython.com/atom.xml"
+    assert ctlr._feed_input == ["https://realpython.com/atom.xml"]
     assert ctlr._run_indefinitely is True
     assert ctlr._batch_size == config.pipeline_batch_size
     assert rss_source_stage._interval_secs == 600
@@ -47,7 +47,7 @@ def test_constructor_with_feed_file(config):
 
     ctlr = rss_source_stage._controller
 
-    assert ctlr._feed_input == file_feed_input
+    assert ctlr._feed_input == [file_feed_input]
     assert ctlr._run_indefinitely is False
     assert ctlr._batch_size == config.pipeline_batch_size
     assert rss_source_stage._interval_secs == 5
