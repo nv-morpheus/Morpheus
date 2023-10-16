@@ -26,12 +26,10 @@ logger = logging.getLogger(__name__)
 
 class LLMGenerateNode(LLMNodeBase):
 
-    def __init__(self, llm_client: LLMClient, model_name: str, **model_kwargs) -> None:
+    def __init__(self, llm_client: LLMClient) -> None:
         super().__init__()
 
         self._llm_client = llm_client
-        self._model_name = model_name
-        self._model_kwargs = model_kwargs
 
     def get_input_names(self):
         return ["prompt"]

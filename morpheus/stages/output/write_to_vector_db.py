@@ -61,7 +61,7 @@ class WriteToVectorDBStage(SinglePortStage):
                  recreate: bool = False,
                  resource_kwargs: dict = None,
                  service: typing.Union[str, VectorDBService],
-                 **service_kwargs: dict[str, typing.Any]):
+                 **service_kwargs):
 
         super().__init__(config)
 

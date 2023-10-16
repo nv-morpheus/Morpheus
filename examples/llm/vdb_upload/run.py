@@ -15,136 +15,96 @@ import logging
 import os
 import pickle
 import time
-import typing
 
 import click
-import mrc
-import mrc.core.operators as ops
-import pandas as pd
-import pymilvus
-import requests_cache
-from bs4 import BeautifulSoup
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-import cudf
-
-from morpheus.config import Config
-from morpheus.messages import MessageMeta
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.input.rss_source_stage import RSSSourceStage
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class RSSDownloadStage(SinglePortStage):
+def _build_milvus_config(embedding_size: int):
+    import pymilvus
 
-    def __init__(self, c: Config, *, chunk_size, link_column: str = "link"):
-        super().__init__(c)
+    milvus_resource_kwargs = {
+        "index_conf": {
+            "field_name": "embedding",
+            "metric_type": "L2",
+            "index_type": "HNSW",
+            "params": {
+                "M": 8,
+                "efConstruction": 64,
+            },
+        },
+        "schema_conf": {
+            "enable_dynamic_field": True,
+            "schema_fields": [
+                pymilvus.FieldSchema(name="id",
+                                     dtype=pymilvus.DataType.INT64,
+                                     description="Primary key for the collection",
+                                     is_primary=True,
+                                     auto_id=True).to_dict(),
+                pymilvus.FieldSchema(name="title",
+                                     dtype=pymilvus.DataType.VARCHAR,
+                                     description="The title of the RSS Page",
+                                     max_length=65_535).to_dict(),
+                pymilvus.FieldSchema(name="link",
+                                     dtype=pymilvus.DataType.VARCHAR,
+                                     description="The URL of the RSS Page",
+                                     max_length=65_535).to_dict(),
+                pymilvus.FieldSchema(name="summary",
+                                     dtype=pymilvus.DataType.VARCHAR,
+                                     description="The summary of the RSS Page",
+                                     max_length=65_535).to_dict(),
+                pymilvus.FieldSchema(name="page_content",
+                                     dtype=pymilvus.DataType.VARCHAR,
+                                     description="A chunk of text from the RSS Page",
+                                     max_length=65_535).to_dict(),
+                pymilvus.FieldSchema(name="embedding",
+                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
+                                     description="Embedding vectors",
+                                     dim=embedding_size).to_dict(),
+            ],
+            "description": "Test collection schema"
+        }
+    }
 
-        self._link_column = link_column
-        self._chunk_size = chunk_size
+    return milvus_resource_kwargs
 
-        self._cache_dir = "./.cache/llm/rss/"
 
-        # Ensure the directory exists
-        os.makedirs(self._cache_dir, exist_ok=True)
-
-        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size,
-                                                             chunk_overlap=self._chunk_size // 10,
-                                                             length_function=len)
-
-        self._session = requests_cache.CachedSession(os.path.join("./.cache/http", "RSSDownloadStage.sqlite"),
-                                                     backend="sqlite")
-
-        self._session.headers.update({
-            "User-Agent":
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
-        })
-
-    @property
-    def name(self) -> str:
-        """Returns the name of this stage."""
-        return "rss-download"
-
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Returns accepted input types for this stage.
-
-        Returns
-        -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
-            Accepted input types.
-
-        """
-        return (MessageMeta, )
-
-    def supports_cpp_node(self):
-        """Indicates whether this stage supports a C++ node."""
-        return False
-
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        node = builder.make_node(self.unique_name, ops.map(self._download_and_split))
-        node.launch_options.pe_count = self._config.num_threads
-
-        builder.make_edge(input_stream[0], node)
-
-        return node, input_stream[1]
-
-    def _download_and_split(self, msg: MessageMeta) -> MessageMeta:
-
-        from bs4 import BeautifulSoup
-        from langchain.schema import Document
-        from newspaper import Article
-
-        # Convert the dataframe into a list of dictionaries
-        df_pd: pd.DataFrame = msg.df.to_pandas()
-        df_dicts = df_pd.to_dict(orient="records")
-
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
-
-        final_rows: list[dict] = []
-
-        for row in df_dicts:
-            url = row[self._link_column]
-
-            try:
-                # Try to get the page content
-                response = self._session.get(url)
-
-                if (not response.ok):
-                    logger.warning(
-                        f"Error downloading document from URL '{url}'. Returned code: {response.status_code}. With reason: '{response.reason}'"
-                    )
-                    continue
-
-                raw_html = response.text
-
-                soup = BeautifulSoup(raw_html, "html.parser")
-
-                text = soup.get_text(strip=True)
-
-                # article = Article(url)
-                # article.download()
-                # article.parse()
-                # print(article.text)
-                # text = article.text
-
-                split_text = splitter.split_text(text)
-
-                for text in split_text:
-                    r = row.copy()
-                    r.update({"page_content": text})
-                    final_rows.append(r)
-
-                logger.debug(f"Processed page: '{url}'. Cache hit: {response.from_cache}")
-
-            except ValueError as e:
-                logger.error(f"Error parsing document: {e}")
-                continue
-
-        return MessageMeta(cudf.from_pandas(pd.DataFrame(final_rows)))
+def _build_rss_urls():
+    return [
+        "https://www.theregister.com/security/headlines.atom",
+        "https://isc.sans.edu/dailypodcast.xml",
+        "https://threatpost.com/feed/",
+        "http://feeds.feedburner.com/TheHackersNews?format=xml",
+        "https://www.bleepingcomputer.com/feed/",
+        "https://therecord.media/feed/",
+        "https://blog.badsectorlabs.com/feeds/all.atom.xml",
+        "https://krebsonsecurity.com/feed/",
+        "https://www.darkreading.com/rss_simple.asp",
+        "https://blog.malwarebytes.com/feed/",
+        "https://msrc.microsoft.com/blog/feed",
+        "https://securelist.com/feed",
+        "https://www.crowdstrike.com/blog/feed/",
+        "https://threatconnect.com/blog/rss/",
+        "https://news.sophos.com/en-us/feed/",
+        "https://www.us-cert.gov/ncas/current-activity.xml",
+        "https://www.csoonline.com/feed",
+        "https://www.cyberscoop.com/feed",
+        "https://research.checkpoint.com/feed",
+        "https://feeds.fortinet.com/fortinet/blog/threat-research",
+        "https://www.mcafee.com/blogs/rss",
+        "https://www.digitalshadows.com/blog-and-research/rss.xml",
+        "https://www.nist.gov/news-events/cybersecurity/rss.xml",
+        "https://www.sentinelone.com/blog/rss/",
+        "https://www.bitdefender.com/blog/api/rss/labs/",
+        "https://www.welivesecurity.com/feed/",
+        "https://unit42.paloaltonetworks.com/feed/",
+        "https://mandiant.com/resources/blog/rss.xml",
+        "https://www.wired.com/feed/category/security/latest/rss",
+        "https://www.wired.com/feed/tag/ai/latest/rss",
+        "https://blog.google/threat-analysis-group/rss/",
+        "https://intezer.com/feed/",
+    ]
 
 
 @click.group(name=__name__)
@@ -233,11 +193,12 @@ def pipeline(num_threads,
     from morpheus.stages.general.monitor_stage import MonitorStage
     from morpheus.stages.general.trigger_stage import TriggerStage
     from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+    from morpheus.stages.input.rss_source_stage import RSSSourceStage
     from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
     from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
     from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
-    from ..common.arxiv_source import ArxivSource
+    from ..common.web_scraper_stage import WebScraperStage
 
     CppConfig.set_should_use_cpp(False)
 
@@ -256,57 +217,12 @@ def pipeline(num_threads,
 
     pipe = LinearPipeline(config)
 
-    rss_urls = [
-        "https://www.theregister.com/security/headlines.atom",
-        "https://isc.sans.edu/dailypodcast.xml",
-        "https://threatpost.com/feed/",
-        "http://feeds.feedburner.com/TheHackersNews?format=xml",
-        "https://www.bleepingcomputer.com/feed/",
-        "https://therecord.media/feed/",
-        "https://blog.badsectorlabs.com/feeds/all.atom.xml",
-        "https://krebsonsecurity.com/feed/",
-        "https://www.darkreading.com/rss_simple.asp",  # "https://blog.talosintelligence.com/feeds/posts/default",
-        "https://blog.malwarebytes.com/feed/",
-        "https://msrc.microsoft.com/blog/feed",
-        # "https://www.f-secure.com/en/business/resources/newsroom/blog",
-        # "https://otx.alienvault.com/api/v1/pulses.rss",
-        "https://securelist.com/feed",
-        "https://www.crowdstrike.com/blog/feed/",
-        "https://threatconnect.com/blog/rss/",
-        "https://news.sophos.com/en-us/feed/",  # "https://www.trendmicro.com/vinfo/us/security/news/feed",
-        "https://www.us-cert.gov/ncas/current-activity.xml",
-        "https://www.csoonline.com/feed",
-        "https://www.cyberscoop.com/feed",
-        "https://research.checkpoint.com/feed",
-        "https://feeds.fortinet.com/fortinet/blog/threat-research",
-        # "https://www.proofpoint.com/us/blog/threat-insight",
-        "https://www.mcafee.com/blogs/rss",
-        # "https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence",
-        "https://www.digitalshadows.com/blog-and-research/rss.xml",
-        "https://www.nist.gov/news-events/cybersecurity/rss.xml",
-        "https://www.sentinelone.com/blog/rss/",
-        "https://www.bitdefender.com/blog/api/rss/labs/",
-        "https://www.welivesecurity.com/feed/",
-        "https://unit42.paloaltonetworks.com/feed/",
-        "https://mandiant.com/resources/blog/rss.xml",
-        "https://www.wired.com/feed/category/security/latest/rss",
-        "https://www.wired.com/feed/tag/ai/latest/rss",
-        # "https://blog.talosintelligence.com/",
-        # "https://blog.fox-it.com/",
-        # "https://blog.qualys.com/vulnerabilities-threat-research",
-        "https://blog.google/threat-analysis-group/rss/",  # "https://securityintelligence.com/x-force/",
-        "https://intezer.com/feed/",  # "https://securelist.com",
-        # "https://socprime.com/blog/",
-    ]
-
     # add doca source stage
-    # pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=1))
-    # pipe.set_source(ArxivSource(config))
-    pipe.set_source(RSSSourceStage(config, feed_input=rss_urls, batch_size=128))
+    pipe.set_source(RSSSourceStage(config, feed_input=_build_rss_urls(), batch_size=128))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='pages'))
 
-    pipe.add_stage(RSSDownloadStage(config, chunk_size=model_fea_length))
+    pipe.add_stage(WebScraperStage(config, chunk_size=model_fea_length))
 
     pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
 
@@ -337,53 +253,10 @@ def pipeline(num_threads,
                                  use_shared_memory=True))
         pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
-    milvus_resource_kwargs = {
-        "index_conf": {
-            "field_name": "embedding",
-            "metric_type": "L2",
-            "index_type": "HNSW",
-            "params": {
-                "M": 8,
-                "efConstruction": 64,
-            },
-        },
-        "schema_conf": {
-            "enable_dynamic_field": True,
-            "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
-                pymilvus.FieldSchema(name="title",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The title of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="link",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The URL of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="summary",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The summary of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="page_content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="A chunk of text from the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="embedding",
-                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
-                                     description="Embedding vectors",
-                                     dim=embedding_size).to_dict(),
-            ],
-            "description": "Test collection schema"
-        }
-    }
-
     pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name="Arxiv",
-                             resource_kwargs=milvus_resource_kwargs,
+                             resource_kwargs=_build_milvus_config(embedding_size=embedding_size),
                              recreate=True,
                              service="milvus",
                              uri="http://localhost:19530"))
@@ -421,12 +294,11 @@ def chain(model_name, save_cache):
 
     with log_time(msg="Seeding with chain took {duration} ms. {rate_per_sec} docs/sec", log_fn=logger.debug) as l:
 
-        loader = ConfluenceLoader(
-            url="https://confluence.nvidia.com",
-            token=os.environ.get("CONFLUENCE_API_KEY", None),
-        )
+        from langchain.document_loaders.rss import RSSFeedLoader
 
-        documents = loader.load(space_key="PRODSEC", max_pages=2000)
+        loader = RSSFeedLoader(urls=_build_rss_urls())
+
+        documents = loader.load()
 
         if (save_cache is not None):
             with open(save_cache, "wb") as f:

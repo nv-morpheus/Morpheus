@@ -94,6 +94,6 @@ class NeMoLLMService(LLMService):
             org_id=self._org_id,
         )
 
-    def get_client(self, model_name: str, model_kwargs: dict | None = None) -> NeMoLLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict) -> NeMoLLMClient:
 
         return NeMoLLMClient(self, model_name, **model_kwargs)

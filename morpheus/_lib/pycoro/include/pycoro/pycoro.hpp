@@ -114,6 +114,8 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
 
         if (m_task.is_ready())
         {
+            pybind11::gil_scoped_acquire gil;
+
             // job done -> throw
             auto exception = StopIteration(std::move(m_task.promise().result()));
 
@@ -130,8 +132,6 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         if (!m_has_resumed)
         {
             m_has_resumed = true;
-
-            pybind11::gil_scoped_release nogil;
 
             m_task.resume();
         }

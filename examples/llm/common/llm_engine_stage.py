@@ -14,26 +14,15 @@
 
 import asyncio
 import logging
-import os
 import threading
 import typing
 
 import mrc
-import mrc.core.operators as ops
-import pandas as pd
-from langchain.document_loaders import PyPDFLoader
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pypdf.errors import PdfStreamError
-
-import cudf
 
 import morpheus._lib.llm as _llm
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.messages import ControlMessage
-from morpheus.messages import MessageMeta
-from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -82,7 +71,7 @@ class LLMEngineStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
-        # node.launch_options.pe_count = self._config.num_threads
+        node.launch_options.pe_count = 2
 
         builder.make_edge(input_stream[0], node)
 

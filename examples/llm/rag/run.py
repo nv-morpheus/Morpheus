@@ -78,7 +78,7 @@ class RetrieverNode(LLMNodeBase):
         input_strings: list[str] = typing.cast(list[str], context.get_input())
 
         # Call the embedding function to get the vector embeddings
-        embeddings = await self._embedding(input_strings)
+        embeddings = self._embedding(input_strings)
 
         # Query the vector database
         results = await self._service.similarity_search(embeddings=embeddings, k=4)
@@ -105,9 +105,11 @@ class RAGNode(LLMNode):
 
         self.add_node("retriever", inputs=["query"], node=RetrieverNode(service=vdb_service, embedding=embedding))
 
-        self.add_node("prompt", inputs=["/retriever"], node=PromptTemplateNode(self._prompt, template_format="jinja"))
+        self.add_node("prompt",
+                      inputs=[("/retriever", "contexts"), ("query", "query")],
+                      node=PromptTemplateNode(self._prompt, template_format="jinja"))
 
-        self.add_node("generate", inputs=["/prompt"], node=LLMGenerateNode(service=llm_client), is_output=True)
+        self.add_node("generate", inputs=["/prompt"], node=LLMGenerateNode(llm_client=llm_client), is_output=True)
 
 
 def _build_embeddings(model_name: str):
@@ -188,19 +190,27 @@ def _build_engine(model_name: str):
 
     engine.add_node("extracter", node=ExtracterNode())
 
-    prompt = ""
+    prompt = """You are a helpful assistant. Given the following background information:\n
+{% for c in contexts -%}
+Title: {{ c.title }}
+Summary: {{ c.summary }}
+Text: {{ c.page_content }}
+{% endfor %}
+
+Please answer the following question: \n{{ query }}"""
+
     vector_service = _build_milvus_service()
-    embedding_fn = _build_embeddings(model_name)
+    embeddings = _build_embeddings("all-MiniLM-L6-v2")
     llm_service = _build_llm_service(model_name)
 
     engine.add_node("rag",
                     inputs=["/extracter"],
                     node=RAGNode(prompt=prompt,
-                                 vdb_service=vector_service.get_resource(""),
-                                 embedding=embedding_fn,
+                                 vdb_service=vector_service,
+                                 embedding=embeddings.embed_documents,
                                  llm_client=llm_service))
 
-    engine.add_task_handler(inputs=["/rag"], handler=SimpleTaskHandler())
+    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
 
     return engine
 
@@ -256,7 +266,7 @@ def pipeline(
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
-    source_dfs = [cudf.DataFrame({"questions": ["Tell me a story about your best friend.", ]})]
+    source_dfs = [cudf.DataFrame({"questions": ["Tell me a story about your best friend."] * 5})]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
 

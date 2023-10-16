@@ -14,26 +14,21 @@
 # limitations under the License.
 
 channels:
+  - huggingface
   - conda-forge
 dependencies:
-  - arxiv=1.4
   - langchain=0.0.190
   - pip
-  - pypdf=3.16
-  - newspaper3k=0.2
   - requests-cache=1.1
-  - sentence-transformers=2
+  - sentence-transformers
+  - transformers
 
   ####### Pip Transitive Dependencies (keep sorted!) #######
   # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
   # better to install them with conda than pip to allow for better dependency resolution.
-  - environs=9.5
-  - minio=7.1
-  - python-dotenv=1.0
-  - ujson=5.8
+
 
   ####### Pip Dependencies (keep sorted!) #######
   - pip:
     - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
-    - pymilvus # The conda package is woefully out of date and incorrect
     - nemollm

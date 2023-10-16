@@ -181,7 +181,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         raise NotImplementedError()
 
     async def similarity_search(self,
-                                embedding: list[list[float]],
+                                embeddings: list[list[float]],
                                 k: int = 4,
                                 **kwargs: dict[str, typing.Any]) -> list[dict]:
 
@@ -190,13 +190,21 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         # Determine result metadata fields.
         output_fields = [x.name for x in self._fields if x.name != self._vector_field]
 
-        response = self._collection.search(data=[embedding],
+        params = {"metric_type": "L2", "params": {"ef": 10}}
+
+        response = self._collection.search(data=embeddings,
                                            anns_field=self._vector_field,
+                                           param=params,
                                            limit=k,
                                            output_fields=output_fields,
                                            **kwargs)
 
-        return [x for x in response]
+        outputs = []
+
+        for res in response:
+            outputs.append([{x: hit.entity.get(x) for x in output_fields} for hit in res])
+
+        return outputs
 
 
 class MilvusVectorDBService(VectorDBService):
