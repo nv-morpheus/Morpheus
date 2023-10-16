@@ -50,14 +50,14 @@ class RSSController:
 
         if (run_indefinitely is None):
             # If feed_input is URL. Runs indefinitely
-            run_indefinitely = any([RSSController.is_url(f) for f in self._feed_input])
+            run_indefinitely = any(RSSController.is_url(f) for f in self._feed_input)
 
         self._run_indefinitely = run_indefinitely
 
         self._session = requests_cache.CachedSession(os.path.join("./.cache/http", "RSSController.sqlite"),
                                                      backend="sqlite")
 
-        self._blacklisted_feeds = []  # Feeds that have thrown an error and wont be retried
+        self._errored_feeds = []  # Feeds that have thrown an error and wont be retried
 
     @property
     def run_indefinitely(self):
@@ -127,7 +127,7 @@ class RSSController:
         """
         for url in self._feed_input:
             try:
-                if (url in self._blacklisted_feeds):
+                if (url in self._errored_feeds):
                     continue
 
                 feed = self._try_parse_feed(url)
@@ -138,9 +138,9 @@ class RSSController:
                 yield feed
 
             except Exception as ex:
-                logger.warning(f"Failed to parse feed: {url}. The feed will be blacklisted and not retried.")
+                logger.warning(f"Failed to parse feed: {url}. The feed will be not be retried.")
 
-                self._blacklisted_feeds.append(url)
+                self._errored_feeds.append(url)
 
     def fetch_dataframes(self):
         """
