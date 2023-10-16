@@ -86,23 +86,30 @@ class RSSController:
         raise RuntimeError(f"Invalid feed input: {self._feed_input}. No entries found.")
 
     def _try_parse_feed(self, url: str):
+        is_url = RSSController.is_url(url)
+        if (is_url):
+            response = self._session.get(url)
+            cache_hit = response.from_cache
 
-        response = self._session.get(url)
+            feed_input = response.text
+        else:
+            cache_hit = False
+            feed_input = url
 
         # Try to use requests to get the object
-        feed = feedparser.parse(response.text)
+        feed = feedparser.parse(feed_input)
 
-        cache_hit = response.from_cache
         fallback = False
 
         if (feed["bozo"]):
             cache_hit = False
-            fallback = True
 
-            logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
+            if (is_url):
+                fallback = True
+                logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
 
-            # If that fails, use feedparser directly (cant cache this)
-            feed = feedparser.parse(url)
+                # If that fails, use feedparser directly (cant cache this)
+                feed = feedparser.parse(url)
 
             if (feed["bozo"]):
                 raise RuntimeError(f"Invalid feed input: {url}. Error: {feed['bozo_exception']}")
@@ -138,9 +145,12 @@ class RSSController:
                 yield feed
 
             except Exception as ex:
-                logger.warning(f"Failed to parse feed: {url}. The feed will be not be retried.")
+                if (RSSController.is_url(url)):
+                    logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
 
-                self._errored_feeds.append(url)
+                    self._errored_feeds.append(url)
+                else:
+                    raise
 
     def fetch_dataframes(self):
         """
