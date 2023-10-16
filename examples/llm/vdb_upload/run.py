@@ -161,10 +161,6 @@ def run():
     default='all-mpnet-base-v2',
     help="The name of the model that is deployed on Triton server",
 )
-@click.option("--pre_calc_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
 @click.option("--isolate_embeddings",
               is_flag=True,
               default=False,
@@ -182,7 +178,6 @@ def pipeline(num_threads,
              output_file,
              server_url,
              model_name,
-             pre_calc_embeddings,
              isolate_embeddings,
              use_cache):
 
@@ -229,33 +224,31 @@ def pipeline(num_threads,
     if (isolate_embeddings):
         pipe.add_stage(TriggerStage(config))
 
-    if (pre_calc_embeddings):
+    # add deserialize stage
+    pipe.add_stage(DeserializeStage(config))
 
-        # add deserialize stage
-        pipe.add_stage(DeserializeStage(config))
+    # add preprocessing stage
+    pipe.add_stage(
+        PreprocessNLPStage(config,
+                           vocab_hash_file="data/bert-base-uncased-hash.txt",
+                           do_lower_case=True,
+                           truncation=True,
+                           add_special_tokens=False,
+                           column='page_content'))
 
-        # add preprocessing stage
-        pipe.add_stage(
-            PreprocessNLPStage(config,
-                               vocab_hash_file="data/bert-base-uncased-hash.txt",
-                               do_lower_case=True,
-                               truncation=True,
-                               add_special_tokens=False,
-                               column='page_content'))
+    pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
-        pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
-
-        pipe.add_stage(
-            TritonInferenceStage(config,
-                                 model_name=model_name,
-                                 server_url="localhost:8001",
-                                 force_convert_inputs=True,
-                                 use_shared_memory=True))
-        pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    pipe.add_stage(
+        TritonInferenceStage(config,
+                             model_name=model_name,
+                             server_url="localhost:8001",
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
+    pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
-                             resource_name="Arxiv",
+                             resource_name="RSS",
                              resource_kwargs=_build_milvus_config(embedding_size=embedding_size),
                              recreate=True,
                              service="milvus",

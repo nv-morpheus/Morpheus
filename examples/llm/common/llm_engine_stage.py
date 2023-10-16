@@ -71,7 +71,7 @@ class LLMEngineStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
-        node.launch_options.pe_count = 2
+        # node.launch_options.pe_count = 2
 
         builder.make_edge(input_stream[0], node)
 

@@ -12,37 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import logging
-
-# import click
-# from vdb_upload import run as vdb_upload_run
-
-# from morpheus.cli.utils import get_log_levels
-# from morpheus.cli.utils import parse_log_level
-# from morpheus.utils.logger import configure_logging
-
-# @click.group(name="morpheus_llm", chain=False, invoke_without_command=True, no_args_is_help=True)
-# @click.option("--log_level",
-#               default=logging.getLevelName(logging.INFO),
-#               type=click.Choice(get_log_levels(), case_sensitive=False),
-#               callback=parse_log_level,
-#               help="Specify the logging level to use.")
-# @click.version_option()
-# def cli(log_level: int):
-#     """Main entrypoint for the LLM Examples"""
-
-#     # Configure the logging
-#     configure_logging(log_level=log_level)
-
-#     morpheus_logger = logging.getLogger("morpheus")
-
-#     logger = logging.getLogger(__name__)
-
-#     # Set the parent logger for all of the llm examples to use morpheus so we can take advantage of configure_logging
-#     logger.parent = morpheus_logger
-
-# cli.add_command(vdb_upload_run, name='vdb_upload')
-
+# The purpose of this function is to allow loading the current directory as a module. This allows relative imports and
+# more specifically `..common` to function correctly
 def run_cli():
     import os
     import sys

@@ -18,30 +18,17 @@ import time
 
 import click
 
-import cudf
-
-from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.config import PipelineModes
-from morpheus.llm import LLMEngine
-from morpheus.llm import LLMLambdaNode
-from morpheus.messages import ControlMessage
-from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-
-from ..common.extracter_node import ExtracterNode
-from ..common.llm_engine_stage import LLMEngineStage
-from ..common.simple_task_handler import SimpleTaskHandler
-
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 reset_event = asyncio.Event()
 
 
 def _build_engine():
+    from morpheus.llm import LLMEngine
+    from morpheus.llm import LLMLambdaNode
+
+    from ..common.extracter_node import ExtracterNode
+    from ..common.simple_task_handler import SimpleTaskHandler
 
     engine = LLMEngine()
 
@@ -49,11 +36,7 @@ def _build_engine():
 
     async def wait_for_event(values):
 
-        print("Waiting for event...")
-
         await asyncio.sleep(1)
-
-        print("Waiting for event... Done.")
 
         return values
 
@@ -94,6 +77,19 @@ def pipeline(
     pipeline_batch_size,
     model_max_batch_size,
 ):
+    import cudf
+
+    from morpheus.config import Config
+    from morpheus.config import CppConfig
+    from morpheus.config import PipelineModes
+    from morpheus.messages import ControlMessage
+    from morpheus.pipeline.linear_pipeline import LinearPipeline
+    from morpheus.stages.general.monitor_stage import MonitorStage
+    from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+    from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+    from ..common.llm_engine_stage import LLMEngineStage
 
     CppConfig.set_should_use_cpp(False)
 
@@ -113,7 +109,7 @@ def pipeline(
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=10))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=100))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))

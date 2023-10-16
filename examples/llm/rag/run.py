@@ -11,108 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import asyncio
 import logging
 import os
 import time
-import typing
 
 import click
-import numpy as np
-import pymilvus
-from langchain.embeddings import HuggingFaceEmbeddings
-
-import cudf
-
-from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.config import PipelineModes
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMEngine
-from morpheus.llm import LLMLambdaNode
-from morpheus.llm import LLMNode
-from morpheus.llm import LLMNodeBase
-from morpheus.messages import ControlMessage
-from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
-from morpheus.service.vector_db_service import VectorDBResourceService
-from morpheus.service.vector_db_service import VectorDBService
-from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
-
-from ..common.extracter_node import ExtracterNode
-from ..common.llm_engine_stage import LLMEngineStage
-from ..common.llm_generate_node import LLMGenerateNode
-from ..common.llm_service import LLMClient
-from ..common.llm_service import LLMService
-from ..common.nemo_llm_service import NeMoLLMService
-from ..common.simple_task_handler import SimpleTaskHandler
-from ..common.template_node import PromptTemplateNode
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
-reset_event = asyncio.Event()
-
-
-class RetrieverNode(LLMNodeBase):
-
-    def __init__(
-            self,
-            service: VectorDBResourceService,
-            embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any,
-                                                                     list[np.ndarray]]]) -> None:
-        super().__init__()
-
-        self._service = service
-        self._embedding = embedding
-
-    def get_input_names(self) -> list[str]:
-        return ["query"]
-
-    async def execute(self, context: LLMContext):
-
-        # Get the keys from the task
-        input_strings: list[str] = typing.cast(list[str], context.get_input())
-
-        # Call the embedding function to get the vector embeddings
-        embeddings = self._embedding(input_strings)
-
-        # Query the vector database
-        results = await self._service.similarity_search(embeddings=embeddings, k=4)
-
-        context.set_output(results)
-
-        return context
-
-
-class RAGNode(LLMNode):
-
-    def __init__(self,
-                 *,
-                 prompt: str,
-                 vdb_service: VectorDBResourceService,
-                 embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any, list[np.ndarray]]],
-                 llm_client: LLMClient) -> None:
-        super().__init__()
-
-        self._prompt = prompt
-        self._vdb_service = vdb_service
-        self._embedding = embedding
-        self._llm_service = llm_client
-
-        self.add_node("retriever", inputs=["query"], node=RetrieverNode(service=vdb_service, embedding=embedding))
-
-        self.add_node("prompt",
-                      inputs=[("/retriever", "contexts"), ("query", "query")],
-                      node=PromptTemplateNode(self._prompt, template_format="jinja"))
-
-        self.add_node("generate", inputs=["/prompt"], node=LLMGenerateNode(llm_client=llm_client), is_output=True)
-
 
 def _build_embeddings(model_name: str):
+    from langchain.embeddings import HuggingFaceEmbeddings
+
     model_name = f"sentence-transformers/{model_name}"
 
     model_kwargs = {'device': 'cuda'}
@@ -127,6 +37,11 @@ def _build_embeddings(model_name: str):
 
 
 def _build_milvus_service():
+    import pymilvus
+
+    from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
+    from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+
     milvus_resource_kwargs = {
         "index_conf": {
             "field_name": "embedding",
@@ -179,12 +94,20 @@ def _build_milvus_service():
 
 def _build_llm_service(model_name: str):
 
+    from ..common.nemo_llm_service import NeMoLLMService
+
     llm_service = NeMoLLMService()
 
     return llm_service.get_client(model_name=model_name, temperature=0.0)
 
 
 def _build_engine(model_name: str):
+
+    from morpheus.llm import LLMEngine
+
+    from ..common.extracter_node import ExtracterNode
+    from ..common.rag_node import RAGNode
+    from ..common.simple_task_handler import SimpleTaskHandler
 
     engine = LLMEngine()
 
@@ -253,6 +176,20 @@ def pipeline(
     model_max_batch_size,
     model_name,
 ):
+
+    import cudf
+
+    from morpheus.config import Config
+    from morpheus.config import CppConfig
+    from morpheus.config import PipelineModes
+    from morpheus.messages import ControlMessage
+    from morpheus.pipeline.linear_pipeline import LinearPipeline
+    from morpheus.stages.general.monitor_stage import MonitorStage
+    from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+    from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+    from ..common.llm_engine_stage import LLMEngineStage
 
     CppConfig.set_should_use_cpp(False)
 

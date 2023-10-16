@@ -171,9 +171,9 @@ class AsyncGeneratorAdvanceOperation
 template <typename T>
 class AsyncGeneratorPromise final : public AsyncGeneratorPromiseBase
 {
-    using value_type     = std::remove_reference_t<T>;
-    using reference_type = std::conditional_t<std::is_reference_v<T>, T, T&>;
-    using pointer_type   = value_type*;
+    using value_t     = std::remove_reference_t<T>;
+    using reference_t = std::conditional_t<std::is_reference_v<T>, T, T&>;
+    using pointer_t   = value_t*;
 
   public:
     AsyncGeneratorPromise() noexcept = default;
@@ -181,21 +181,21 @@ class AsyncGeneratorPromise final : public AsyncGeneratorPromiseBase
     AsyncGenerator<T> get_return_object() noexcept;
 
     template <typename U = T, std::enable_if_t<!std::is_rvalue_reference<U>::value, int> = 0>
-    auto yield_value(value_type& value) noexcept -> AsyncGeneratorYieldOperation
+    auto yield_value(value_t& value) noexcept -> AsyncGeneratorYieldOperation
     {
         m_value = std::addressof(value);
         return internal_yield_value();
     }
 
-    auto yield_value(value_type&& value) noexcept -> AsyncGeneratorYieldOperation
+    auto yield_value(value_t&& value) noexcept -> AsyncGeneratorYieldOperation
     {
         m_value = std::addressof(value);
         return internal_yield_value();
     }
 
-    auto value() const noexcept -> reference_type
+    auto value() const noexcept -> reference_t
     {
-        return *static_cast<pointer_type>(m_value);
+        return *static_cast<pointer_t>(m_value);
     }
 };
 
@@ -220,21 +220,21 @@ struct AsyncGeneratorSentinel
 template <typename T>
 class AsyncGeneratorIterator final
 {
-    using promise_type = AsyncGeneratorPromise<T>;
-    using handle_type  = std::coroutine_handle<promise_type>;
+    using promise_t = AsyncGeneratorPromise<T>;
+    using handle_t  = std::coroutine_handle<promise_t>;
 
   public:
     using iterator_category = std::input_iterator_tag;  // NOLINT
     // Not sure what type should be used for difference_type as we don't
     // allow calculating difference between two iterators.
-    using difference_type = std::ptrdiff_t;
-    using value_type      = std::remove_reference_t<T>;
-    using reference       = std::add_lvalue_reference_t<T>;  // NOLINT
-    using pointer         = std::add_pointer_t<value_type>;  // NOLINT
+    using difference_t = std::ptrdiff_t;
+    using value_t      = std::remove_reference_t<T>;
+    using reference    = std::add_lvalue_reference_t<T>;  // NOLINT
+    using pointer      = std::add_pointer_t<value_t>;     // NOLINT
 
     AsyncGeneratorIterator(std::nullptr_t) noexcept : m_coroutine(nullptr) {}
 
-    AsyncGeneratorIterator(handle_type coroutine) noexcept : m_coroutine(coroutine) {}
+    AsyncGeneratorIterator(handle_t coroutine) noexcept : m_coroutine(coroutine) {}
 
     AsyncGeneratorIncrementOperation<T> operator++() noexcept
     {
@@ -264,7 +264,7 @@ class AsyncGeneratorIterator final
   private:
     friend class AsyncGeneratorIncrementOperation<T>;
 
-    handle_type m_coroutine;
+    handle_t m_coroutine;
 };
 
 template <typename T>
@@ -283,13 +283,13 @@ inline AsyncGeneratorIterator<T>& AsyncGeneratorIncrementOperation<T>::await_res
 template <typename T>
 class AsyncGeneratorBeginOperation final : public AsyncGeneratorAdvanceOperation
 {
-    using promise_type = AsyncGeneratorPromise<T>;
-    using handle_type  = std::coroutine_handle<promise_type>;
+    using promise_t = AsyncGeneratorPromise<T>;
+    using handle_t  = std::coroutine_handle<promise_t>;
 
   public:
     AsyncGeneratorBeginOperation(std::nullptr_t) noexcept : AsyncGeneratorAdvanceOperation(nullptr) {}
 
-    AsyncGeneratorBeginOperation(handle_type producer) noexcept :
+    AsyncGeneratorBeginOperation(handle_t producer) noexcept :
       AsyncGeneratorAdvanceOperation(producer.promise(), producer)
     {}
 
@@ -313,7 +313,7 @@ class AsyncGeneratorBeginOperation final : public AsyncGeneratorAdvanceOperation
             return AsyncGeneratorIterator<T>{nullptr};
         }
 
-        return AsyncGeneratorIterator<T>{handle_type::from_promise(*static_cast<promise_type*>(m_promise))};
+        return AsyncGeneratorIterator<T>{handle_t::from_promise(*static_cast<promise_t*>(m_promise))};
     }
 };
 
@@ -323,8 +323,9 @@ template <typename T>
 class [[nodiscard]] AsyncGenerator
 {
   public:
-    using promise_type = detail::AsyncGeneratorPromise<T>;
-    using iterator     = detail::AsyncGeneratorIterator<T>;  // NOLINT
+    // There must be a type called `promise_type` for coroutines to work. Skil linting
+    using promise_type = detail::AsyncGeneratorPromise<T>;   // NOLINT(readability-identifier-naming)
+    using iterator     = detail::AsyncGeneratorIterator<T>;  // NOLINT(readability-identifier-naming)
 
     AsyncGenerator() noexcept : m_coroutine(nullptr) {}
 
