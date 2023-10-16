@@ -58,16 +58,14 @@ class FieldSchemaEncoder(json.JSONEncoder):
 
     @staticmethod
     def from_dict(field: dict):
-        # # FieldSchema converts dtype -> type when serialized. We need to convert any dtype to type before deserilaizing
-        # if ("dtype" in field and isinstance(field["dtype"], str)):
-        #     try:
-        #         field["type"] = MILVUS_DATA_TYPE_MAP[field["dtype"]]
-        #         del field["dtype"]
-        #     except KeyError:
-        #         raise ValueError(
-        #             f"Invalid string data type: {field['dtype']}. Must be one of: {[MILVUS_DATA_TYPE_MAP.keys()]}")
+        name = field.pop("name")
+        dtype = field.pop("dtype")
 
-        return pymilvus.FieldSchema.construct_from_dict(field)
+        dtype = MILVUS_DATA_TYPE_MAP[dtype.lower()]
+
+        field_schema = pymilvus.FieldSchema(name=name, dtype=dtype, **field)
+
+        return field_schema
 
 
 def with_collection_lock(func: typing.Callable) -> typing.Callable:
