@@ -58,10 +58,10 @@ TEST_F(TestLLMUtils, IsValidNameSpace)
     EXPECT_FALSE(llm::is_valid_node_name("my_name other_name"));
 }
 
-TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
+TEST_F(TestLLMUtils, ProcessInputNamesSingleMapping)
 {
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}};
     auto input_names = std::vector<std::string>{"input1"};
-    auto user_inputs = llm::user_input_mappings_t{{"/ext1"}};
 
     auto returned = llm::process_input_names(user_inputs, input_names);
 
@@ -70,10 +70,100 @@ TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
     EXPECT_EQ(returned[0].internal_name, "input1");
 }
 
+TEST_F(TestLLMUtils, ProcessInputNamesSingleString)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1"}};
+    auto input_names = std::vector<std::string>{"input1"};
+
+    auto returned = llm::process_input_names(user_inputs, input_names);
+
+    EXPECT_EQ(returned.size(), 1);
+    EXPECT_EQ(returned[0].external_name, "/ext1");
+    EXPECT_EQ(returned[0].internal_name, "input1");
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesMismatchInputName)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input2"}};
+    auto input_names = std::vector<std::string>{"input1"};
+
+    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesMultipleInputs)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}, {"/ext2", "input2"}};
+    auto input_names = std::vector<std::string>{"input1", "input2"};
+
+    auto returned = llm::process_input_names(user_inputs, input_names);
+
+    EXPECT_EQ(returned.size(), 2);
+    EXPECT_EQ(returned[0].external_name, "/ext1");
+    EXPECT_EQ(returned[0].internal_name, "input1");
+    EXPECT_EQ(returned[1].external_name, "/ext2");
+    EXPECT_EQ(returned[1].internal_name, "input2");
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesMultipleInputsMismatchInputNames)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}, {"/ext2", "input3"}};
+    auto input_names = std::vector<std::string>{"input1", "input2"};
+
+    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+}
+
 TEST_F(TestLLMUtils, ProcessInputNamesCountMismatch)
 {
-    auto input_names = std::vector<std::string>{"input1", "input2"};
     auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}, {"/ext2", "input1"}};
+    auto input_names = std::vector<std::string>{"input1", "input2"};
+
+    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderInputSingleMapping)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1/*", "*"}};
+    auto input_names = std::vector<std::string>{"input1"};
+
+    auto returned = llm::process_input_names(user_inputs, input_names);
+
+    EXPECT_EQ(returned.size(), 1);
+    EXPECT_EQ(returned[0].external_name, "/ext1/input1");
+    EXPECT_EQ(returned[0].internal_name, "input1");
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMultipleMapping)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1/*", "*"}};
+    auto input_names = std::vector<std::string>{"input1, input2"};
+
+    auto returned = llm::process_input_names(user_inputs, input_names);
+
+    EXPECT_EQ(returned.size(), 1);
+    EXPECT_EQ(returned[0].external_name, "/ext1/input1, input2");
+    EXPECT_EQ(returned[0].internal_name, "input1, input2");
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMismatchNoNodeNameStar)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1", "*"}};
+    auto input_names = std::vector<std::string>{"input1"};
+
+    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMismatchNoInputNameStar)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1/*", "input1"}};
+    auto input_names = std::vector<std::string>{"input1"};
+
+    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+}
+
+TEST_F(TestLLMUtils, ProcessInputNamesMixNameAndIndexMatching)
+{
+    auto user_inputs = llm::user_input_mappings_t{{"/ext1/input1"}, {"/ext2"}};
+    auto input_names = std::vector<std::string>{"input1", "input2"};
 
     EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
 }
