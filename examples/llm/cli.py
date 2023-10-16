@@ -18,7 +18,7 @@ import click
 
 # from llm.agents import run as run_agents
 from llm.completion import run as run_completion
-# from llm.rag import run as run_rag
+from llm.rag import run as run_rag
 from llm.vdb_upload import run as run_vdb_upload
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -48,5 +48,5 @@ def cli(log_level: int):
 
 cli.add_command(run_vdb_upload, name='vdb_upload')
 cli.add_command(run_completion, name='completion')
-# cli.add_command(run_rag, name='rag')
+cli.add_command(run_rag, name='rag')
 # cli.add_command(run_agents, name='agents')

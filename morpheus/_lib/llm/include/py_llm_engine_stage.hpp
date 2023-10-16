@@ -172,9 +172,6 @@ class CoroutineRunnableSubscriber
                 // Pull a message off of the upstream channel
                 auto status = co_await read_awaiter(std::ref(value));
 
-                // Do it again as a test
-                status = co_await read_awaiter(std::ref(value));
-
                 if (status != mrc::channel::Status::success)
                 {
                     break;
@@ -266,6 +263,8 @@ class CoroutineRunnable : public CoroutineRunnableSink<InputT>,
 
     Task<void> main_task();
 
+    virtual Task<void> on_data(InputT&& value, CoroutineRunnableSubscriber<InputT, OutputT>& subscriber) = 0;
+
     virtual Task<void> do_work(CoroutineRunnableSubscriber<InputT, OutputT>& subscriber) = 0;
 
     bool m_is_running{false};
@@ -332,7 +331,29 @@ Task<void> CoroutineRunnable<InputT, OutputT>::main_task()
     //     co_return;
     // };
 
-    co_await this->do_work(*m_subscriber);
+    auto& subscriber = *m_subscriber;
+
+    auto iter = co_await subscriber.begin();
+
+    while (iter != subscriber.end())
+    {
+        auto data = std::move(*iter);
+
+        // {
+        //     py::gil_scoped_acquire gil;
+
+        //     // Push the value into the coroutine
+        //     py::module_::import("asyncio").attr("ensure_future")(
+        //         mrc::pycoro::CppToPyAwaitable(this->on_data(std::move(data), *m_subscriber)));
+        // }
+
+        co_await this->on_data(std::move(data), *m_subscriber);
+
+        // Advance the iterator
+        co_await ++iter;
+    }
+
+    // co_await this->do_work(*m_subscriber);
 
     VLOG(10) << "CoroutineRunnable dropping edge connections";
 
@@ -381,6 +402,21 @@ class MORPHEUS_EXPORT PyLLMEngineStage
     }
 
   private:
+    Task<void> on_data(std::shared_ptr<ControlMessage>&& data,
+                       CoroutineRunnableSubscriber<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>&
+                           subscriber) override
+    {
+        VLOG(10) << "Got message in PyLLMEngineStage. Calling LLMEnging::run()";
+
+        auto result = co_await m_engine->run(std::move(data));
+
+        // Push the output messages
+        for (auto& out_message : result)
+        {
+            co_await subscriber.await_write(std::move(out_message));
+        }
+    }
+
     Task<void> do_work(CoroutineRunnableSubscriber<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>&
                            subscriber) override
     {

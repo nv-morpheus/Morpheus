@@ -65,24 +65,28 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         auto converter = [](mrc::coroutines::Task<T> incoming_task) -> mrc::coroutines::Task<mrc::pymrc::PyHolder> {
             DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL when resuming a C++ coroutine";
 
+            mrc::pymrc::PyHolder holder;
+
             if constexpr (std::is_same_v<void, T>)
             {
                 co_await incoming_task;
 
-                // Assume we are resumed without the GIL
+                // Need the GIL to make the return object
                 pybind11::gil_scoped_acquire gil;
 
-                co_return mrc::pymrc::PyHolder(pybind11::none());
+                holder = pybind11::none();
             }
             else
             {
                 auto result = co_await incoming_task;
 
-                // Assume we are resumed without the GIL
+                // Need the GIL to cast the return object
                 pybind11::gil_scoped_acquire gil;
 
-                co_return mrc::pymrc::PyHolder(pybind11::cast(std::move(result)));
+                holder = pybind11::cast(std::move(result));
             }
+
+            co_return holder;
         };
 
         m_task = converter(std::move(task));
@@ -110,9 +114,6 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
 
         if (m_task.is_ready())
         {
-            // Grab the gil before moving and throwing
-            pybind11::gil_scoped_acquire gil;
-
             // job done -> throw
             auto exception = StopIteration(std::move(m_task.promise().result()));
 
@@ -129,6 +130,8 @@ class PYBIND11_EXPORT CppToPyAwaitable : public std::enable_shared_from_this<Cpp
         if (!m_has_resumed)
         {
             m_has_resumed = true;
+
+            pybind11::gil_scoped_release nogil;
 
             m_task.resume();
         }

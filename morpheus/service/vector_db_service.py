@@ -38,6 +38,13 @@ class VectorDBResourceService(ABC):
     def describe(self, **kwargs: dict[str, typing.Any]) -> dict:
         pass
 
+    @abstractmethod
+    async def similarity_search(self,
+                                embeddings: list[list[float]],
+                                k: int = 4,
+                                **kwargs: dict[str, typing.Any]) -> list[list[dict]]:
+        pass
+
 
 class VectorDBService(ABC):
     """

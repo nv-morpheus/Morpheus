@@ -108,6 +108,13 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         self._collection = self._client.get_collection(collection_name=self._name)
         self._fields: list[pymilvus.FieldSchema] = self._collection.schema.fields
 
+        self._vector_field = None
+
+        for field in self._fields:
+            if field.dtype == pymilvus.DataType.FLOAT_VECTOR:
+                self._vector_field = field.name
+                break
+
         self._collection.load()
 
     def _set_up_collection(self):
@@ -172,6 +179,24 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
     def describe(self, **kwargs: dict[str, typing.Any]) -> dict:
         raise NotImplementedError()
+
+    async def similarity_search(self,
+                                embedding: list[list[float]],
+                                k: int = 4,
+                                **kwargs: dict[str, typing.Any]) -> list[dict]:
+
+        assert self._vector_field is not None, "Cannot perform similarity search on a collection without a vector field"
+
+        # Determine result metadata fields.
+        output_fields = [x.name for x in self._fields if x.name != self._vector_field]
+
+        response = self._collection.search(data=[embedding],
+                                           anns_field=self._vector_field,
+                                           limit=k,
+                                           output_fields=output_fields,
+                                           **kwargs)
+
+        return [x for x in response]
 
 
 class MilvusVectorDBService(VectorDBService):

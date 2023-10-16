@@ -15,34 +15,43 @@
 import importlib
 import typing
 
+import morpheus.service
+
 
 class VectorDBServiceFactory:
-    """
-    Factory for creating instances of vector database service classes. This factory allows dynamically
-    creating instances of vector database service classes based on the provided service name.
-    Each service name corresponds to a specific implementation class.
 
-    Parameters
-    ----------
-    service_name : str
-        The name of the vector database service to create.
-    *args : typing.Any
-        Variable-length argument list to pass to the service constructor.
-    **kwargs : dict[str, typing.Any]
-        Arbitrary keyword arguments to pass to the service constructor.
-
-    Returns
-    -------
-        An instance of the specified vector database service class.
-
-    Raises
-    ------
-    ValueError
-        If the specified service name is not found or does not correspond to a valid service class.
-    """
+    @typing.overload
+    @classmethod
+    def create_instance(
+            cls, service_name: typing.Literal["milvus"], *args: typing.Any,
+            **kwargs: dict[str, typing.Any]) -> "morpheus.service.milvus_vector_db_service.MilvusVectorDBService":
+        pass
 
     @classmethod
     def create_instance(cls, service_name: str, *args: typing.Any, **kwargs: dict[str, typing.Any]):
+        """
+        Factory for creating instances of vector database service classes. This factory allows dynamically
+        creating instances of vector database service classes based on the provided service name.
+        Each service name corresponds to a specific implementation class.
+
+        Parameters
+        ----------
+        service_name : str
+            The name of the vector database service to create.
+        *args : typing.Any
+            Variable-length argument list to pass to the service constructor.
+        **kwargs : dict[str, typing.Any]
+            Arbitrary keyword arguments to pass to the service constructor.
+
+        Returns
+        -------
+            An instance of the specified vector database service class.
+
+        Raises
+        ------
+        ValueError
+            If the specified service name is not found or does not correspond to a valid service class.
+        """
         try:
             module_name = f"morpheus.service.{service_name}_vector_db_service"
             module = importlib.import_module(module_name)

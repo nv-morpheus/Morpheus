@@ -49,6 +49,10 @@ PYBIND11_MODULE(pycoro, _module)
         .def("__await__", &CppToPyAwaitable::await)
         .def("__next__", &CppToPyAwaitable::next);
 
+    py::class_<BoostFibersMainPyAwaitable, CppToPyAwaitable, std::shared_ptr<BoostFibersMainPyAwaitable>>(
+        _module, "BoostFibersMainPyAwaitable")
+        .def(py::init<>());
+
     _module.def("wrap_coroutine", [](coroutines::Task<std::vector<std::string>> fn) -> coroutines::Task<std::string> {
         DCHECK_EQ(PyGILState_Check(), 0) << "Should not have the GIL when resuming a C++ coroutine";
 
