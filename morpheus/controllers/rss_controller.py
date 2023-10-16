@@ -33,7 +33,7 @@ class RSSController:
 
     Parameters
     ----------
-    feed_input : str
+    feed_input : str, list[str]
         The URL or file path of the RSS feed.
     batch_size : int, optional, default = 128
         Number of feed items to accumulate before creating a DataFrame.

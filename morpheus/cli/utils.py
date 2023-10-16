@@ -159,7 +159,10 @@ def parse_log_level(ctx, param, value):
 
 def is_enum(enum_class: typing.Type):
     """Returns True if the given class is an enum."""
-    return issubclass(enum_class, Enum) or is_pybind_enum(enum_class)
+    try:
+        return issubclass(enum_class, Enum) or is_pybind_enum(enum_class)
+    except TypeError:
+        return False
 
 
 def get_enum_members(enum_class: typing.Type):
