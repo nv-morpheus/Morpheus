@@ -145,12 +145,9 @@ class RSSController:
                 yield feed
 
             except Exception as ex:
-                if (RSSController.is_url(url)):
-                    logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
+                logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
 
-                    self._errored_feeds.append(url)
-                else:
-                    raise
+                self._errored_feeds.append(url)
 
     def fetch_dataframes(self):
         """

@@ -94,5 +94,7 @@ def test_invalid_input_rss_source_stage_pipe(config) -> None:
 
     pipe.add_edge(rss_source_stage, sink_stage)
 
-    with pytest.raises(RuntimeError):
-        pipe.run()
+    pipe.run()
+
+    assert len(sink_stage.get_messages()) == 0
+    assert rss_source_stage._controller._errored_feeds == [feed_input]
