@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+from os import path
 
 import pytest
 
@@ -30,7 +30,7 @@ test_invalid_urls = [
     "ftp://",
 ]
 
-test_file_paths = [os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")]
+test_file_paths = [path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")]
 
 test_invalid_file_paths = [
     "/path/to/nonexistent_file.xml",
@@ -39,42 +39,50 @@ test_invalid_file_paths = [
 
 
 @pytest.mark.parametrize("feed_input, expected_output", [(url, True) for url in test_urls])
-def test_run_indefinitely_true(feed_input, expected_output):
+def test_run_indefinitely_true(feed_input: str, expected_output: bool):
     controller = RSSController(feed_input=feed_input)
     assert controller.run_indefinitely == expected_output
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths + test_file_paths)
-def test_run_indefinitely_false(feed_input):
+def test_run_indefinitely_false(feed_input: str):
     controller = RSSController(feed_input=feed_input)
     assert controller.run_indefinitely is False
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_parse_feed_valid_url(feed_input):
+def test_parse_feed_valid_url(feed_input: str):
     controller = RSSController(feed_input=feed_input)
-    feed = controller.parse_feed()
+    feed = list(controller.parse_feeds())[0]
     assert feed.entries
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths)
-def test_parse_feed_invalid_input(feed_input):
+def test_parse_feed_invalid_input(feed_input: str):
     controller = RSSController(feed_input=feed_input)
-    with pytest.raises(RuntimeError):
-        controller.parse_feed()
+    list(controller.parse_feeds())
+    assert controller._errored_feeds == [feed_input]
 
 
-@pytest.mark.parametrize("feed_input", test_urls + test_file_paths)
-def test_fetch_dataframes(feed_input):
+@pytest.mark.parametrize("feed_input", [(test_urls + test_file_paths), test_urls, test_urls[0], test_file_paths[0]])
+def test_fetch_dataframes(feed_input: str | list[str]):
     controller = RSSController(feed_input=feed_input)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
+    assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
+@pytest.mark.parametrize("feed_input, expected_count", [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), 30)])
+def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
+    controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
+    dataframes_generator = controller.fetch_dataframes()
+    dataframe = next(dataframes_generator, None)
+    assert isinstance(dataframe, cudf.DataFrame)
+    assert len(dataframe) == expected_count
 
 @pytest.mark.parametrize("feed_input", test_file_paths)
-def test_create_dataframe(feed_input):
+def test_create_dataframe(feed_input: str):
     controller = RSSController(feed_input=feed_input)
     entries = [{"id": "1", "title": "Entry 1"}, {"id": "2", "title": "Entry 2"}]
     df = controller.create_dataframe(entries)
@@ -82,10 +90,17 @@ def test_create_dataframe(feed_input):
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_is_url_true(feed_input):
+def test_is_url_true(feed_input: str):
     assert RSSController.is_url(feed_input)
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths + test_file_paths)
-def test_is_url_false(feed_input):
+def test_is_url_false(feed_input: str):
     assert not RSSController.is_url(feed_input)
+
+@pytest.mark.parametrize("feed_input, batch_size", [(test_urls + test_file_paths, 5)])
+def test_batch_size(feed_input: str | list[str], batch_size: int):
+    controller = RSSController(feed_input=feed_input, batch_size=batch_size)
+    for df in controller.fetch_dataframes():
+        assert isinstance(df, cudf.DataFrame)
+        assert len(df) <= batch_size

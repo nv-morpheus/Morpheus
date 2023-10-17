@@ -37,7 +37,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    feed_input : str
+    feed_input : str, list[str]
         The URL or file path of the RSS feed.
     interval_secs : float, optional, default = 600
         Interval in seconds between fetching new feed items.
@@ -45,6 +45,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     max_retries : int, optional, default = 3
         Maximum number of retries for fetching entries on exception.
+    batch_size : int, optional, default = 128
+        Number of feed items to accumulate before creating a DataFrame.
     """
 
     def __init__(self,
@@ -54,15 +56,12 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  stop_after: int = 0,
                  max_retries: int = 5,
                  run_indefinitely: bool = None,
-                 batch_size: int = None):
+                 batch_size: int = 128):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
         self._interval_secs = interval_secs
         self._max_retries = max_retries
-
-        if (batch_size is None):
-            batch_size = c.pipeline_batch_size
 
         self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input,
