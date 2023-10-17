@@ -74,8 +74,8 @@ def test_has_store_object(milvus_service_fixture: MilvusVectorDBService):
 
 
 @pytest.mark.slow
-def test_create_and_drop_collection(milvus_service_fixture: MilvusVectorDBService,
-                                    idx_part_collection_config_fixture: dict):
+def test_create_and_drop_collection(idx_part_collection_config_fixture: dict,
+                                    milvus_service_fixture: MilvusVectorDBService):
     # Create a collection and check if it exists.
     collection_name = "test_collection"
     milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
