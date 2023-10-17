@@ -3,9 +3,12 @@ import morpheus._lib.tests.pycoro
 import typing
 
 __all__ = [
-    "hey"
+    "call_fib_async",
+    "int_as_task"
 ]
 
 
-def hey() -> None:
+def call_fib_async(arg0: object, arg1: int, arg2: int) -> typing.Awaitable[object]:
+    pass
+def int_as_task(arg0: int) -> typing.Awaitable[int]:
     pass

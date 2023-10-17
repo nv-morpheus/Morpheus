@@ -171,7 +171,14 @@ class PYBIND11_EXPORT PyTaskToCppAwaitable
 {
   public:
     PyTaskToCppAwaitable() = default;
-    PyTaskToCppAwaitable(mrc::pymrc::PyObjectHolder&& task) : m_task(std::move(task)) {}
+    PyTaskToCppAwaitable(mrc::pymrc::PyObjectHolder&& task) : m_task(std::move(task))
+    {
+        pybind11::gil_scoped_acquire acquire;
+        if (pybind11::module_::import("inspect").attr("iscoroutine")(m_task).cast<bool>())
+        {
+            m_task = pybind11::module_::import("asyncio").attr("create_task")(m_task);
+        }
+    }
 
     bool await_ready() const noexcept
     {
