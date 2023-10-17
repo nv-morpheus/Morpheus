@@ -976,3 +976,28 @@ def milvus_server_uri():
             default_server.stop()
         except Exception as exec_inf:
             logger.error("Error in stopping Milvus server: %s", exec_inf)
+
+
+@pytest.fixture(scope="function", name="milvus_service")
+def milvus_service_fixture(milvus_server_uri: str):
+    from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
+    service = MilvusVectorDBService(uri=milvus_server_uri)
+    yield service
+
+
+@pytest.fixture(scope="session", name="milvus_data")
+def milvus_data_fixture():
+    inital_data = [{"id": i, "embedding": [i / 10.0] * 10, "age": 25 + i} for i in range(10)]
+    yield inital_data
+
+
+@pytest.fixture(scope="session", name="idx_part_collection_config")
+def idx_part_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_idx_part_collection_conf.json")
+
+
+@pytest.fixture(scope="session", name="simple_collection_config")
+def simple_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_simple_collection_conf.json")
