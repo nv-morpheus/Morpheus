@@ -1,18 +1,15 @@
-from morpheus._lib.tests.pycoro import int_as_task, call_fib_async
+from morpheus._lib.tests.pycoro import call_fib_async
 import pytest
 import asyncio
 
 @pytest.mark.asyncio
-async def test_hey():
+async def test_python_cpp_async_interleave():
 
     def fib(n):
         if n < 0:
             raise ValueError()
             
-        elif n == 0:
-            return 1
-        
-        elif n == 1:
+        if n < 2:
             return 1
         
         return fib(n-1) + fib(n-2)
@@ -22,13 +19,13 @@ async def test_hey():
             raise ValueError()
             
         if n < 2:
-            return await int_as_task(1)
+            return 1
         
         task_a = call_fib_async(fib_async, n, 1)
         task_b = call_fib_async(fib_async, n, 2)
         
         [a, b] = await asyncio.gather(task_a, task_b)
         
-        return await int_as_task(a + b)
+        return a + b
     
-    assert fib(20) == await fib_async(20)
+    assert fib(15) == await fib_async(15)

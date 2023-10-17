@@ -8,11 +8,6 @@
 
 namespace morpheus::tests::pycoro {
 
-mrc::coroutines::Task<int> int_as_task(int value)
-{
-    co_return value;
-}
-
 mrc::coroutines::Task<int> subtract(int a, int b)
 {
     co_return a - b;
@@ -29,7 +24,6 @@ mrc::coroutines::Task<mrc::pymrc::PyHolder> call_fib_async(mrc::pymrc::PyHolder 
 
 PYBIND11_MODULE(pycoro, _module)
 {
-    _module.def("int_as_task", &int_as_task);
     _module.def("call_fib_async", &call_fib_async);
 }
 
