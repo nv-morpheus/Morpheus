@@ -951,7 +951,7 @@ def filter_probs_df(dataset, use_cpp: bool):
 
 
 @pytest.fixture(scope="session")
-def milvus_server_uri():
+def milvus_server_uri(tmp_path_factory):
     """
     Pytest fixture to start and stop a Milvus server and provide its URI for testing.
 
@@ -962,24 +962,23 @@ def milvus_server_uri():
     from milvus import default_server
 
     logger = logging.getLogger(f"morpheus.{__name__}")
-    try:
-        default_server.start()
-        host = "127.0.0.1"
+
+    # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
+    default_server.webservice_port = _get_random_port()
+    with default_server:
+        default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+
+        host = default_server.server_address
         port = default_server.listen_port
         uri = f"http://{host}:{port}"
 
         yield uri
-    except Exception as exec_inf:
-        logger.error("Error in starting Milvus server: %s", exec_inf)
-    finally:
-        try:
-            default_server.stop()
-        except Exception as exec_inf:
-            logger.error("Error in stopping Milvus server: %s", exec_inf)
 
 
 @pytest.fixture(scope="function", name="milvus_service")
 def milvus_service_fixture(milvus_server_uri: str):
+    # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
+    # pipeline completion
     from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
     service = MilvusVectorDBService(uri=milvus_server_uri)
     yield service
