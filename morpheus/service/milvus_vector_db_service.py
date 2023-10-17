@@ -49,8 +49,16 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return o
 
     @staticmethod
+    def dump(field: pymilvus.FieldSchema, f: typing.IO):
+        return json.dump(field, f, cls=FieldSchemaEncoder)
+
+    @staticmethod
     def dumps(field: pymilvus.FieldSchema):
         return json.dumps(field, cls=FieldSchemaEncoder)
+
+    @staticmethod
+    def load(f: typing.IO):
+        return pymilvus.FieldSchema.construct_from_dict(json.load(f, object_hook=FieldSchemaEncoder.object_hook))
 
     @staticmethod
     def loads(field: str):
@@ -58,14 +66,19 @@ class FieldSchemaEncoder(json.JSONEncoder):
 
     @staticmethod
     def from_dict(field: dict):
-        name = field.pop("name")
-        dtype = field.pop("dtype")
+        # FieldSchema converts dtype -> type when serialized. We need to convert any dtype to type before deserilaizing
 
-        dtype = MILVUS_DATA_TYPE_MAP[dtype.lower()]
+        # First convert any dtype to type
+        if ("dtype" in field):
+            field["type"] = field["dtype"]
+            del field["dtype"]
 
-        field_schema = pymilvus.FieldSchema(name=name, dtype=dtype, **field)
+        # Convert string type to DataType
+        if ("type" in field and isinstance(field["type"], str)):
+            field["type"] = FieldSchemaEncoder.object_hook(field["type"])
 
-        return field_schema
+        # Now use the normal from dict function
+        return pymilvus.FieldSchema.construct_from_dict(field)
 
 
 def with_collection_lock(func: typing.Callable) -> typing.Callable:
@@ -305,8 +318,6 @@ class MilvusVectorDBService(VectorDBService):
 
         schema_conf = collection_conf.get("schema_conf")
         schema_fields_conf = schema_conf.pop("schema_fields")
-
-        index_param = {}
 
         if not self.has_store_object(name) or overwrite:
             if overwrite and self.has_store_object(name):
