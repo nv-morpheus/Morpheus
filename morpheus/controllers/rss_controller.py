@@ -15,11 +15,9 @@
 import logging
 import os
 import typing
-import urllib
 from urllib.parse import urlparse
 
 import feedparser
-import requests
 import requests_cache
 
 import cudf
