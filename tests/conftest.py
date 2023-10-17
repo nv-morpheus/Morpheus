@@ -939,6 +939,13 @@ def filter_probs_df(dataset, use_cpp: bool):
     yield dataset["filter_probs.csv"]
 
 
+def _get_random_port():
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
+
+
 @pytest.fixture(scope="session")
 def milvus_server_uri():
     """
@@ -952,14 +959,22 @@ def milvus_server_uri():
 
     logger = logging.getLogger(f"morpheus.{__name__}")
     try:
+        # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
+        default_server.webservice_port = _get_random_port()
+
+        # Now start the server
         default_server.start()
-        host = "127.0.0.1"
+
+        host = default_server.server_address
         port = default_server.listen_port
         uri = f"http://{host}:{port}"
+
+        logger.info("Started Milvus at: %s", uri)
 
         yield uri
     except Exception as exec_inf:
         logger.error("Error in starting Milvus server: %s", exec_inf)
+        raise
     finally:
         try:
             default_server.stop()
