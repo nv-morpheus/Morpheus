@@ -64,6 +64,13 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
     parser.addoption(
+        "--run_milvus",
+        action="store_true",
+        dest="run_milvus",
+        help="Run milvus tests that would otherwise be skipped",
+    )
+
+    parser.addoption(
         "--run_benchmark",
         action="store_true",
         dest="run_benchmark",
@@ -145,6 +152,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_kafka")):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
+
+    if (not item.config.getoption("--run_milvus")):
+        if (item.get_closest_marker("milvus") is not None):
+            pytest.skip("Skipping milvus tests by default. Use --run_milvus to enable")
 
     if (not item.config.getoption("--run_benchmark")):
         if (item.get_closest_marker("benchmark") is not None):
