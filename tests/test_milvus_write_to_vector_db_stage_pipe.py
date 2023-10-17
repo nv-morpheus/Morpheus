@@ -63,7 +63,7 @@ def create_milvus_collection(collection_name: str, conf_file: str, service: Milv
     service.create(name=collection_name, overwrite=True, **collection_config)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 @pytest.mark.use_cpp
 @pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows", [(True, 5, 5), (False, 5, 5)])
 def test_write_to_vector_db_stage_pipe(milvus_service_fixture: MilvusVectorDBService,

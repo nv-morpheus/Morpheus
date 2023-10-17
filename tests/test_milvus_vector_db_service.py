@@ -58,23 +58,23 @@ def simple_collection_config():
     yield collection_config
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_list_store_objects(milvus_service_fixture: MilvusVectorDBService):
     # List all collections in the Milvus server.
     collections = milvus_service_fixture.list_store_objects()
     assert isinstance(collections, list)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_has_store_object(milvus_service_fixture: MilvusVectorDBService):
     # Check if a non-existing collection exists in the Milvus server.
     collection_name = "non_existing_collection"
     assert not milvus_service_fixture.has_store_object(collection_name)
 
 
-@pytest.mark.slow
-def test_create_and_drop_collection(milvus_service_fixture: MilvusVectorDBService,
-                                    idx_part_collection_config_fixture: dict):
+@pytest.mark.milvus
+def test_create_and_drop_collection(idx_part_collection_config_fixture: dict,
+                                    milvus_service_fixture: MilvusVectorDBService):
     # Create a collection and check if it exists.
     collection_name = "test_collection"
     milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
@@ -85,7 +85,7 @@ def test_create_and_drop_collection(milvus_service_fixture: MilvusVectorDBServic
     assert not milvus_service_fixture.has_store_object(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_insert_and_retrieve_by_keys(milvus_service_fixture: MilvusVectorDBService,
                                      idx_part_collection_config_fixture: dict,
                                      data_fixture: list[dict]):
@@ -106,7 +106,7 @@ def test_insert_and_retrieve_by_keys(milvus_service_fixture: MilvusVectorDBServi
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_search(milvus_service_fixture: MilvusVectorDBService,
                 idx_part_collection_config_fixture: dict,
                 data_fixture: list[dict]):
@@ -130,7 +130,7 @@ def test_search(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_search_with_data(milvus_service_fixture: MilvusVectorDBService,
                           idx_part_collection_config_fixture: dict,
                           data_fixture: list[dict]):
@@ -163,7 +163,7 @@ def test_search_with_data(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_count(milvus_service_fixture: MilvusVectorDBService,
                idx_part_collection_config_fixture: dict,
                data_fixture: list[dict]):
@@ -182,7 +182,7 @@ def test_count(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_overwrite_collection_on_create(milvus_service_fixture: MilvusVectorDBService,
                                         idx_part_collection_config_fixture: dict,
                                         data_fixture: list[dict]):
@@ -212,7 +212,7 @@ def test_overwrite_collection_on_create(milvus_service_fixture: MilvusVectorDBSe
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_insert_into_partition(milvus_service_fixture: MilvusVectorDBService,
                                idx_part_collection_config_fixture: dict,
                                data_fixture: list[dict]):
@@ -264,7 +264,7 @@ def test_insert_into_partition(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_update(milvus_service_fixture: MilvusVectorDBService,
                 simple_collection_config_fixture: dict,
                 data_fixture: list[dict]):
@@ -299,7 +299,7 @@ def test_update(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService,
                         idx_part_collection_config_fixture: dict,
                         data_fixture: list[dict]):
@@ -319,7 +319,7 @@ def test_delete_by_keys(milvus_service_fixture: MilvusVectorDBService,
     milvus_service_fixture.drop(collection_name)
 
 
-@pytest.mark.slow
+@pytest.mark.milvus
 def test_delete(milvus_service_fixture: MilvusVectorDBService,
                 idx_part_collection_config_fixture: dict,
                 data_fixture: list[dict]):
@@ -348,6 +348,9 @@ def test_delete(milvus_service_fixture: MilvusVectorDBService,
 
 
 def test_get_collection_lock():
+    """
+    This test doesn't require milvus server to be running.
+    """
     collection_name = "test_collection_lock"
     lock = MilvusVectorDBService.get_collection_lock(collection_name)
     assert "lock" == type(lock).__name__
