@@ -77,14 +77,6 @@ class FieldSchemaEncoder(json.JSONEncoder):
         if ("type" in field and isinstance(field["type"], str)):
             field["type"] = FieldSchemaEncoder.object_hook(field["type"])
 
-        # if ("dtype" in field and isinstance(field["dtype"], str)):
-        #     try:
-        #         field["type"] = MILVUS_DATA_TYPE_MAP[field["dtype"]]
-        #         del field["dtype"]
-        #     except KeyError:
-        #         raise ValueError(
-        #             f"Invalid string data type: {field['dtype']}. Must be one of: {[MILVUS_DATA_TYPE_MAP.keys()]}")
-
         # Now use the normal from dict function
         return pymilvus.FieldSchema.construct_from_dict(field)
 
