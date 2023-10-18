@@ -38,11 +38,26 @@
 namespace mrc::coroutines {
 
 template <typename SchedulerT, typename AwaitableT>
-auto schedule_on(SchedulerT& scheduler, AwaitableT awaitable) -> Task<boost::detail::remove_rvalue_ref<
-    typename mrc::coroutines::concepts::awaitable_traits<AwaitableT>::awaiter_return_type>>
+auto schedule_on(SchedulerT& scheduler, AwaitableT awaitable) -> Task<typename boost::detail::remove_rvalue_ref<
+    typename mrc::coroutines::concepts::awaitable_traits<AwaitableT>::awaiter_return_type>::type>
 {
+    using return_t = typename boost::detail::remove_rvalue_ref<
+        typename mrc::coroutines::concepts::awaitable_traits<AwaitableT>::awaiter_return_type>::type;
+
     co_await scheduler.schedule();
-    co_return co_await std::move(awaitable);
+
+    if constexpr (std::is_same_v<void, return_t>)
+    {
+        co_await std::move(awaitable);
+        VLOG(10) << "schedule_on completed";
+        co_return;
+    }
+    else
+    {
+        auto result = co_await std::move(awaitable);
+        VLOG(10) << "schedule_on completed";
+        co_return std::move(result);
+    }
 }
 
 template <typename T, typename SchedulerT>
@@ -54,15 +69,15 @@ mrc::coroutines::AsyncGenerator<T> schedule_on(SchedulerT& scheduler, mrc::corou
     // are executed on the execution context of the scheduler.
     co_await scheduler.schedule();
 
-    const auto itEnd = source.end();
-    auto it          = co_await source.begin();
-    while (it != itEnd)
+    const auto iter_end = source.end();
+    auto iter           = co_await source.begin();
+    while (iter != iter_end)
     {
-        co_yield *it;
+        co_yield *iter;
 
         co_await scheduler.schedule();
 
-        (void)co_await ++it;
+        (void)co_await ++iter;
     }
 }
 

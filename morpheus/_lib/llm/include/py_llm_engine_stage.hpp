@@ -53,6 +53,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/types.hpp>
+#include <pymrc/utilities/acquire_gil.hpp>
 
 #include <atomic>
 #include <chrono>
@@ -63,6 +64,7 @@
 #include <memory>
 #include <mutex>
 #include <ratio>
+#include <stdexcept>
 #include <stop_token>
 #include <utility>
 
@@ -90,10 +92,7 @@ class Scheduler
             m_scheduler.schedule_operation(this);
         }
 
-        void await_resume()
-        {
-            m_scheduler.resume_operation(this);
-        }
+        constexpr static void await_resume() {}
 
         Scheduler& m_scheduler;
         std::coroutine_handle<> m_awaiting_coroutine;
@@ -117,7 +116,7 @@ class Scheduler
 
   private:
     virtual std::coroutine_handle<> schedule_operation(Operation* operation) = 0;
-    virtual void resume_operation(Operation* operation)                      = 0;
+    virtual void schedule_coroutine(std::coroutine_handle<> handle)          = 0;
 };
 }  // namespace mrc::coroutines
 
@@ -134,8 +133,12 @@ class PythonAsyncioScheduler : public mrc::coroutines::Scheduler
         return Operation{*this};
     }
 
-    mrc::pymrc::PyHolder init_loop()
+    void schedule(Task<void>&& task) {}
+
+    mrc::pymrc::PyHolder& init_loop()
     {
+        CHECK_EQ(PyGILState_Check(), 1) << "Must have the GIL when calling PythonAsyncioScheduler::init_loop()";
+
         std::unique_lock lock(m_mutex);
 
         if (m_loop)
@@ -143,21 +146,24 @@ class PythonAsyncioScheduler : public mrc::coroutines::Scheduler
             return m_loop;
         }
 
-        py::gil_scoped_acquire gil;
+        auto asyncio_mod = py::module_::import("asyncio");
 
-        // Otherwise check if one is already allocated
-        auto loop = py::module_::import("asyncio").attr("get_running_loop")();
+        py::object loop;
 
-        if (!loop)
+        try
+        {
+            // Otherwise check if one is already allocated
+            loop = asyncio_mod.attr("get_running_loop")();
+        } catch (std::runtime_error&)
         {
             // Need to create a loop
             LOG(INFO) << "CoroutineRunnable::run() > Creating new event loop";
 
             // Gets (or more likely, creates) an event loop and runs it forever until stop is called
-            loop = py::module_::import("asyncio").attr("new_event_loop")();
+            loop = asyncio_mod.attr("new_event_loop")();
 
             // Set the event loop as the current event loop
-            py::module::import("asyncio").attr("set_event_loop")(loop);
+            asyncio_mod.attr("set_event_loop")(loop);
         }
 
         m_loop = std::move(loop);
@@ -168,7 +174,9 @@ class PythonAsyncioScheduler : public mrc::coroutines::Scheduler
     // Runs the task until its complete
     void run_until_complete(Task<> task) override
     {
-        auto loop = this->init_loop();
+        mrc::pymrc::AcquireGIL gil;
+
+        auto& loop = this->init_loop();
 
         LOG(INFO) << "CoroutineRunnable::run() > Calling run_until_complete() on main_task()";
 
@@ -177,6 +185,9 @@ class PythonAsyncioScheduler : public mrc::coroutines::Scheduler
 
         LOG(INFO)
             << "CoroutineRunnable::run() > run_until_complete() returned. Waiting for all enqueued tasks to complete";
+
+        // Release the GIL before waiting on coroutines
+        gil.release();
 
         std::unique_lock lock(m_mutex);
 
@@ -187,84 +198,158 @@ class PythonAsyncioScheduler : public mrc::coroutines::Scheduler
     }
 
   private:
-    class Operation
+    // class Operation
+    // {
+    //   public:
+    //     Operation(PythonAsyncioScheduler& parent) noexcept : m_parent(parent) {}
+
+    //     bool await_ready() noexcept
+    //     {
+    //         return false;
+    //     }
+
+    //     void await_suspend(std::coroutine_handle<> awaiting_coroutine)
+    //     {
+    //         std::unique_lock lock(m_parent.m_mutex);
+
+    //         m_awaiting_coroutine = awaiting_coroutine;
+
+    //         // Check if we have less than the number of concurrent coroutines
+    //         if (m_parent.m_outstanding < m_parent.m_concurrency)
+    //         {
+    //             this->enqueue_on_loop(lock);
+    //         }
+    //         else
+    //         {
+    //             // Add to the queue of waiting operations
+    //             m_parent.m_waiting_operations.push_back(this);
+    //         }
+    //     }
+
+    //     void await_resume() noexcept
+    //     {
+    //         std::unique_lock lock(m_parent.m_mutex);
+
+    //         // Decrement the number of outstanding coroutines
+    //         this->m_parent.m_outstanding--;
+
+    //         m_parent.m_cv.notify_all();
+
+    //         // Check if we have any more operations to schedule
+    //         if (!m_parent.m_waiting_operations.empty())
+    //         {
+    //             // Remove the operation from the queue
+    //             auto* to_resume = m_parent.m_waiting_operations.front();
+    //             m_parent.m_waiting_operations.pop_front();
+
+    //             // Drop the lock before resuming
+    //             lock.unlock();
+
+    //             // Resume the next operation
+    //             to_resume->enqueue_on_loop(lock);
+    //         }
+    //     }
+
+    //   private:
+    //     // lock is not used but helps make it clear that it should be held
+    //     void enqueue_on_loop(std::unique_lock<std::mutex>& lock)
+    //     {
+    //         py::gil_scoped_acquire gil;
+
+    //         auto asyncio_mod = py::module_::import("asyncio");
+
+    //         // Increment the number of outstanding coroutines
+    //         ++m_parent.m_outstanding;
+
+    //         auto& loop = m_parent.get_loop();
+
+    //         // TODO(MDD): Check whether or not we need thread safe version
+    //         loop.attr("call_soon_threadsafe")(
+    //             py::cpp_function([this, awaiting_coroutine = std::move(m_awaiting_coroutine)]() {
+    //                 awaiting_coroutine.resume();
+    //             }));
+    //     }
+
+    //     friend class PythonAsyncioScheduler;
+
+    //     PythonAsyncioScheduler& m_parent;
+    //     std::coroutine_handle<> m_awaiting_coroutine;
+    //     Operation* m_next{nullptr};
+    // };
+
+    // lock is not used but helps make it clear that it should be held
+    void enqueue_on_loop(std::unique_lock<std::mutex>& lock, Operation* operation)
     {
-      public:
-        Operation(PythonAsyncioScheduler& parent) noexcept : m_parent(parent) {}
+        py::gil_scoped_acquire gil;
 
-        bool await_ready() noexcept
+        auto asyncio_mod = py::module_::import("asyncio");
+
+        // Increment the number of outstanding coroutines
+        ++m_outstanding;
+
+        auto& loop = this->get_loop();
+
+        // TODO(MDD): Check whether or not we need thread safe version
+        loop.attr("call_soon_threadsafe")(
+            py::cpp_function([this, awaiting_coroutine = std::move(operation->m_awaiting_coroutine)]() {
+                this->schedule_coroutine(awaiting_coroutine);
+            }));
+    }
+
+    std::coroutine_handle<> schedule_operation(Operation* operation) override
+    {
+        std::unique_lock lock(m_mutex);
+
+        if (m_outstanding < m_concurrency)
         {
-            return false;
+            this->enqueue_on_loop(lock, operation);
+        }
+        else
+        {
+            // Add to the queue of waiting operations
+            m_waiting_operations.push_back(operation);
         }
 
-        void await_suspend(std::coroutine_handle<> awaiting_coroutine)
+        return std::noop_coroutine();
+    }
+
+    void schedule_coroutine(std::coroutine_handle<> handle) override
+    {
+        CHECK(handle) << "Cannot schedule a null coroutine";
+
+        // First, release the GIL and resume the coroutine
+        py::gil_scoped_release nogil;
+
+        VLOG(10) << "PythonAsyncioScheduler::resume() > Beginning resume completed";
+
+        handle.resume();
+
+        VLOG(10) << "PythonAsyncioScheduler::resume() > Resume completed";
+
+        std::unique_lock lock(m_mutex);
+
+        // Decrement the number of outstanding coroutines
+        m_outstanding--;
+
+        // Check if we have any more operations to schedule
+        if (!m_waiting_operations.empty())
         {
-            std::unique_lock lock(m_parent.m_mutex);
+            // Remove the operation from the queue
+            auto* to_resume = m_waiting_operations.front();
+            m_waiting_operations.pop_front();
 
-            m_awaiting_coroutine = awaiting_coroutine;
+            // Drop the lock before resuming
+            lock.unlock();
 
-            // Check if we have less than the number of concurrent coroutines
-            if (m_parent.m_outstanding < m_parent.m_concurrency)
-            {
-                this->enqueue_on_loop(lock);
-            }
-            else
-            {
-                // Add to the queue of waiting operations
-                m_parent.m_waiting_operations.push_back(this);
-            }
+            // Resume the next operation
+            this->enqueue_on_loop(lock, to_resume);
         }
-
-        void await_resume() noexcept
+        else
         {
-            std::unique_lock lock(m_parent.m_mutex);
-
-            // Decrement the number of outstanding coroutines
-            this->m_parent.m_outstanding--;
-
-            m_parent.m_cv.notify_all();
-
-            // Check if we have any more operations to schedule
-            if (!m_parent.m_waiting_operations.empty())
-            {
-                // Remove the operation from the queue
-                auto* to_resume = m_parent.m_waiting_operations.front();
-                m_parent.m_waiting_operations.pop_front();
-
-                // Drop the lock before resuming
-                lock.unlock();
-
-                // Resume the next operation
-                to_resume->enqueue_on_loop(lock);
-            }
+            // We decremented. Notify any waiters
+            m_cv.notify_all();
         }
-
-      private:
-        // lock is not used but helps make it clear that it should be held
-        void enqueue_on_loop(std::unique_lock<std::mutex>& lock)
-        {
-            py::gil_scoped_acquire gil;
-
-            auto asyncio_mod = py::module_::import("asyncio");
-
-            // Increment the number of outstanding coroutines
-            ++m_parent.m_outstanding;
-
-            auto& loop = m_parent.get_loop();
-
-            // TODO(MDD): Check whether or not we need thread safe version
-            loop.attr("call_soon_threadsafe")(
-                py::cpp_function([this, awaiting_coroutine = std::move(m_awaiting_coroutine)]() {
-                    awaiting_coroutine.resume();
-                }));
-        }
-
-        friend class PythonAsyncioScheduler;
-
-        PythonAsyncioScheduler& m_parent;
-        std::coroutine_handle<> m_awaiting_coroutine;
-        Operation* m_next{nullptr};
-    };
+    }
 
     mrc::pymrc::PyHolder& get_loop()
     {
@@ -614,8 +699,7 @@ Task<void> CoroutineRunnable<InputT, OutputT>::main_task(mrc::coroutines::Schedu
     while (iter != input_generator.end())
     {
         // Push the value into the coroutine
-        auto output_generator =
-            mrc::coroutines::schedule_on(scheduler, this->process_one(std::move(*iter), *output_receiver));
+        co_await mrc::coroutines::schedule_on(scheduler, this->process_one(std::move(*iter), *output_receiver));
 
         // Advance the iterator
         co_await ++iter;
