@@ -166,7 +166,7 @@ class DFPFileBatcherStage(SinglePortStage):
         # Now group the rows by the period
         resampled = df.resample(self._period)
 
-        n_groups = 0
+        n_groups = len(resampled)
 
         output_batches = []
 
@@ -177,14 +177,11 @@ class DFPFileBatcherStage(SinglePortStage):
             if (len(file_list) == 0):
                 continue
 
-            obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs)
+            obj_list = fsspec.core.OpenFiles(file_list, mode=file_objects.mode, fs=file_objects.fs)
 
-            output_batches.append(obj_list)
+            output_batches.append((obj_list, n_groups))
 
-            n_groups += len(file_list)
-
-        # Append the batch count with each item
-        return [(x, n_groups) for x in output_batches]
+        return output_batches
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())

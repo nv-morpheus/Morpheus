@@ -93,9 +93,11 @@ def test_on_data(config: Config, date_conversion_func: typing.Callable, file_spe
     stage = DFPFileBatcherStage(config, date_conversion_func)
 
     assert stage.on_data([]) == []
+    print(file_specs)
 
     # With a one-day batch all files will fit in the batch
     batches = stage.on_data(file_specs)
+    print(batches)
     assert len(batches) == 1
 
     batch = batches[0]
