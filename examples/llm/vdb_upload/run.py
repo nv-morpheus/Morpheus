@@ -135,7 +135,7 @@ def run():
 )
 @click.option(
     "--model_fea_length",
-    default=256,
+    default=512,
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
@@ -159,13 +159,9 @@ def run():
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
-@click.option("--pre_calc_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
 @click.option("--isolate_embeddings",
               is_flag=True,
               default=False,
@@ -189,7 +185,6 @@ def pipeline(num_threads,
              output_file,
              server_url,
              model_name,
-             pre_calc_embeddings,
              isolate_embeddings,
              use_cache,
              stop_after: int):
@@ -236,36 +231,30 @@ def pipeline(num_threads,
 
     pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
 
-    if (pre_calc_embeddings):
-        message_type = MessageMeta
-    else:
-        message_type = ControlMessage
-
     # add deserialize stage
-    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    pipe.add_stage(DeserializeStage(config))
 
     if (isolate_embeddings):
         pipe.add_stage(TriggerStage(config))
 
-    if (pre_calc_embeddings):
-        # add preprocessing stage
-        pipe.add_stage(
-            PreprocessNLPStage(config,
-                               vocab_hash_file="data/bert-base-uncased-hash.txt",
-                               do_lower_case=True,
-                               truncation=True,
-                               add_special_tokens=False,
-                               column='page_content'))
+    # add preprocessing stage
+    pipe.add_stage(
+        PreprocessNLPStage(config,
+                           vocab_hash_file="data/bert-base-uncased-hash.txt",
+                           do_lower_case=True,
+                           truncation=True,
+                           add_special_tokens=False,
+                           column='page_content'))
 
-        pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
+    pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
-        pipe.add_stage(
-            TritonInferenceStage(config,
-                                 model_name=model_name,
-                                 server_url="localhost:8001",
-                                 force_convert_inputs=True,
-                                 use_shared_memory=True))
-        pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    pipe.add_stage(
+        TritonInferenceStage(config,
+                             model_name=model_name,
+                             server_url="localhost:8001",
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
+    pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
