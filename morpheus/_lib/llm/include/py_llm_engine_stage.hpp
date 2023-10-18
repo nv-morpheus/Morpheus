@@ -37,6 +37,8 @@
 #include <boost/fiber/policy.hpp>
 #include <glog/logging.h>
 #include <mrc/channel/status.hpp>
+#include <mrc/coroutines/concepts/awaitable.hpp>
+#include <mrc/coroutines/task.hpp>
 #include <mrc/node/sink_channel_owner.hpp>
 #include <mrc/node/sink_properties.hpp>
 #include <mrc/node/source_channel_owner.hpp>
@@ -57,6 +59,14 @@
 #include <ratio>
 #include <stop_token>
 #include <utility>
+
+namespace mrc::coroutines {
+class Scheduler
+{
+  public:
+    void run_until_complete(Task<>)
+};
+}  // namespace mrc::coroutines
 
 namespace morpheus::llm {
 namespace py = pybind11;
@@ -89,19 +99,7 @@ class BoostFutureAwaiter
         template <typename... ArgsT>
         Awaiter(std::function<SignatureT> fn, ArgsT&&... args)
         {
-            m_future = boost::fibers::async(boost::fibers::launch::post, std::move(fn), std::forward<ArgsT>(args)...);
-
-            // m_inner_fn = [fn       = std::move(fn),
-            //               ... args = std::forward<ArgsT>(args)](std::coroutine_handle<> continuation) mutable {
-            //     // Call the function
-            //     auto result = fn(std::forward<ArgsT>(args)...);
-
-            //     // Set the result into the promise
-            //     // promise.set_value(std::move(result));
-
-            //     // Resume the coroutine
-            //     continuation.resume();
-            // };
+            m_future = boost::fibers::async(boost::fibers::launch::post, fn, std::forward<ArgsT>(args)...);
         }
 
         bool await_ready() noexcept
@@ -111,9 +109,6 @@ class BoostFutureAwaiter
 
         bool await_suspend(std::coroutine_handle<> continuation) noexcept
         {
-            // Launch the fiber
-            // m_future = boost::fibers::async(boost::fibers::launch::post, m_inner_fn, std::move(continuation));
-
             // Launch a new fiber that waits on the future and then resumes the coroutine
             boost::fibers::async(
                 boost::fibers::launch::post,
@@ -127,9 +122,6 @@ class BoostFutureAwaiter
                 std::move(continuation));
 
             return true;
-
-            // If its ready, return false to indicate that the coroutine has completed
-            // return !(m_future.wait_for(std::chrono::milliseconds::zero()) == boost::fibers::future_status::ready);
         }
 
         auto await_resume() noexcept
@@ -143,6 +135,54 @@ class BoostFutureAwaiter
     };
 
     std::function<SignatureT> m_fn;
+};
+
+template <typename T>
+class IReadable
+{
+  public:
+    virtual Task<mrc::channel::Status> async_read(T& value) = 0;
+};
+
+template <typename T>
+class BoostFutureReader : public IReadable<T>
+{
+  public:
+    template <typename FuncT>
+    BoostFutureReader(FuncT&& fn) : m_awaiter(std::forward<FuncT>(fn))
+    {}
+
+    Task<mrc::channel::Status> async_read(T& value) override
+    {
+        co_return co_await m_awaiter(std::ref(value));
+    }
+
+  private:
+    BoostFutureAwaiter<mrc::channel::Status(T&)> m_awaiter;
+};
+
+template <typename T>
+class IWritable
+{
+  public:
+    virtual Task<mrc::channel::Status> async_write(T&& value) = 0;
+};
+
+template <typename T>
+class BoostFutureWriter : public IWritable<T>
+{
+  public:
+    template <typename FuncT>
+    BoostFutureWriter(FuncT&& fn) : m_awaiter(std::forward<FuncT>(fn))
+    {}
+
+    Task<mrc::channel::Status> async_write(T&& value) override
+    {
+        co_return co_await m_awaiter(std::move(value));
+    }
+
+  private:
+    BoostFutureAwaiter<mrc::channel::Status(T&&)> m_awaiter;
 };
 
 template <typename InputT, typename OutputT>
@@ -254,111 +294,134 @@ class CoroutineRunnable : public CoroutineRunnableSink<InputT>,
     using state_t = mrc::runnable::Runnable::State;
 
   public:
-    CoroutineRunnable(size_t concurrency = 128) : m_work_queue({.capacity = concurrency}){};
+    CoroutineRunnable(size_t concurrency = 128) : m_concurrency(concurrency){};
     ~CoroutineRunnable() override = default;
 
   private:
     void run(mrc::runnable::Context& ctx) override;
     void on_state_update(const state_t& state) final;
 
-    Task<void> main_task();
+    Task<void> main_task(Scheduler& scheduler);
 
-    Task<void> process_one(InputT&& value, CoroutineRunnableSubscriber<InputT, OutputT>& subscriber);
+    Task<void> process_one(InputT&& value,
+                           IWritable<OutputT>& writer,
+                           mrc::coroutines::ClosableRingBuffer<char>& work_queue);
 
-    virtual Task<void> on_data(InputT&& value, CoroutineRunnableSubscriber<InputT, OutputT>& subscriber) = 0;
+    virtual mrc::coroutines::AsyncGenerator<OutputT> on_data(InputT&& value) = 0;
 
-    bool m_is_running{false};
+    std::stop_source m_stop_source;
 
-    mrc::pymrc::PyHolder m_loop;
-
-    mrc::coroutines::ClosableRingBuffer<char> m_work_queue{{.capacity = 8}};
-
-    std::unique_ptr<CoroutineRunnableSubscriber<InputT, OutputT>> m_subscriber;
+    size_t m_concurrency{8};
 };
 
 template <typename InputT, typename OutputT>
 void CoroutineRunnable<InputT, OutputT>::run(mrc::runnable::Context& ctx)
 {
+    auto& scheduler = ctx.scheduler();
+
+    scheduler.run_until_complete(this->main_task(scheduler));
+
+    VLOG(10) << "CoroutineRunnable dropping edge connections";
+
+    // Need to drop the output edges
+    mrc::node::SourceProperties<InputT>::release_edge_connection();
+    mrc::node::SinkProperties<OutputT>::release_edge_connection();
+
     py::gil_scoped_acquire gil;
 
     LOG(INFO) << "CoroutineRunnable::run() > Creating new event loop";
 
     // Gets (or more likely, creates) an event loop and runs it forever until stop is called
-    m_loop = py::module_::import("asyncio").attr("new_event_loop")();
+    auto loop = py::module_::import("asyncio").attr("new_event_loop")();
 
     // Set the event loop as the current event loop
-    py::module::import("asyncio").attr("set_event_loop")(m_loop);
+    py::module::import("asyncio").attr("set_event_loop")(loop);
 
     LOG(INFO) << "CoroutineRunnable::run() > Calling run_until_complete() on main_task()";
 
     // Use the BoostFibersMainPyAwaitable to allow fibers to be progressed
-    m_loop.attr("run_until_complete")(mrc::pycoro::BoostFibersMainPyAwaitable(this->main_task()));
+    loop.attr("run_until_complete")(mrc::pycoro::BoostFibersMainPyAwaitable(this->main_task()));
 
     LOG(INFO) << "CoroutineRunnable::run() > run_until_complete() returned. Exiting run()";
 }
 
 template <typename InputT, typename OutputT>
-Task<void> CoroutineRunnable<InputT, OutputT>::main_task()
+Task<void> CoroutineRunnable<InputT, OutputT>::main_task(Scheduler& scheduler)
 {
-    auto read_awaiter = BoostFutureAwaiter(std::function{[this](InputT& value) {
-        return this->get_readable_edge()->await_read(value);
-    }});
+    // Get the generator and receiver
+    auto input_generator = []() -> mrc::coroutines::AsyncGenerator<InputT> {};
+    auto output_receiver;
 
-    auto write_awaiter = BoostFutureAwaiter(std::function{[this](OutputT&& value) {
-        return this->get_writable_edge()->await_write(std::move(value));
-    }});
+    auto iter = co_await input_generator.begin();
 
-    m_subscriber = std::make_unique<CoroutineRunnableSubscriber<InputT, OutputT>>(std::move(read_awaiter),
-                                                                                  std::move(write_awaiter));
-
-    // auto main_generator = [this]() -> mrc::coroutines::AsyncGenerator<InputT> {
-    //     while (m_is_running)
-    //     {
-    //         InputT value;
-
-    //         // Pull a message off of the upstream channel
-    //         auto status = co_await read_awaiter(std::ref(value));
-
-    //         if (status != mrc::channel::Status::success)
-    //         {
-    //             break;
-    //         }
-
-    //         co_yield std::move(value);
-    //     }
-
-    //     co_return;
-    // };
-
-    auto& subscriber = *m_subscriber;
-
-    auto iter = co_await subscriber.begin();
-
-    while (iter != subscriber.end())
+    while (iter != input_generator.end())
     {
-        auto data = std::move(*iter);
+        // Push the value into the coroutine
+        auto output_generator = schedule_on(scheduler, this->process_one(std::move(*iter), output_receiver));
 
+        // Advance the iterator
+        co_await ++iter;
+    }
+
+    auto read_awaiter = BoostFutureReader<InputT>([this](InputT& value) {
+        return this->get_readable_edge()->await_read(value);
+    });
+
+    auto write_awaiter = BoostFutureWriter<OutputT>([this](OutputT&& value) {
+        return this->get_writable_edge()->await_write(std::move(value));
+    });
+
+    auto main_generator = [](std::stop_token stop_token,
+                             IReadable<InputT>& reader) -> mrc::coroutines::AsyncGenerator<InputT> {
+        while (!stop_token.stop_requested())
+        {
+            InputT value;
+
+            // Pull a message off of the upstream channel
+            auto status = co_await reader.async_read(std::ref(value));
+
+            if (status != mrc::channel::Status::success)
+            {
+                break;
+            }
+
+            co_yield std::move(value);
+        }
+
+        co_return;
+    }(m_stop_source.get_token(), read_awaiter);
+
+    // Use a work queue to limit the number of concurrent coroutines
+    mrc::coroutines::ClosableRingBuffer<char> work_queue{{.capacity = m_concurrency}};
+
+    auto iter = co_await main_generator.begin();
+
+    while (iter != main_generator.end())
+    {
         // Get an element from the work queue
-        co_await m_work_queue.write(0);
+        co_await work_queue.write(0);
 
+        if (m_concurrency > 1)
         {
             py::gil_scoped_acquire gil;
 
             // Push the value into the coroutine
             py::module_::import("asyncio").attr("ensure_future")(
-                mrc::pycoro::CppToPyAwaitable(this->process_one(std::move(data), *m_subscriber)));
+                mrc::pycoro::CppToPyAwaitable(this->process_one(std::move(*iter), write_awaiter, work_queue)));
         }
-
-        // co_await this->process_one(std::move(data), *m_subscriber);
+        else
+        {
+            co_await this->process_one(std::move(*iter), write_awaiter, work_queue);
+        }
 
         // Advance the iterator
         co_await ++iter;
     }
 
     // Close the queue to signal that we are done
-    m_work_queue.close();
+    work_queue.close();
 
-    co_await m_work_queue.completed();
+    co_await work_queue.completed();
 
     VLOG(10) << "CoroutineRunnable dropping edge connections";
 
@@ -369,13 +432,24 @@ Task<void> CoroutineRunnable<InputT, OutputT>::main_task()
 
 template <typename InputT, typename OutputT>
 Task<void> CoroutineRunnable<InputT, OutputT>::process_one(InputT&& value,
-                                                           CoroutineRunnableSubscriber<InputT, OutputT>& subscriber)
+                                                           IWritable<OutputT>& writer,
+                                                           mrc::coroutines::ClosableRingBuffer<char>& work_queue)
 {
     // Call the on_data function
-    co_await this->on_data(std::move(value), subscriber);
+    auto on_data_gen = this->on_data(std::move(value));
+
+    auto iter = co_await on_data_gen.begin();
+
+    while (iter != on_data_gen.end())
+    {
+        co_await writer.async_write(std::move(*iter));
+
+        // Advance the iterator
+        co_await ++iter;
+    }
 
     // and when completed, return the work item to allow more to be processed
-    co_await m_work_queue.read();
+    co_await work_queue.read();
 
     co_return;
 }
@@ -386,15 +460,13 @@ void CoroutineRunnable<InputT, OutputT>::on_state_update(const state_t& state)
     switch (state)
     {
     case state_t::Stop:
-        DCHECK(m_subscriber) << "Should never be null once started";
         // Do nothing, we wait for the upstream channel to return closed
-        m_subscriber->stop();
+        // m_stop_source.request_stop();
         break;
 
     case state_t::Kill:
-        DCHECK(m_subscriber) << "Should never be null once started";
 
-        m_subscriber->kill();
+        m_stop_source.request_stop();
         break;
 
     default:
@@ -420,19 +492,20 @@ class MORPHEUS_EXPORT PyLLMEngineStage
     }
 
   private:
-    Task<void> on_data(std::shared_ptr<ControlMessage>&& data,
-                       CoroutineRunnableSubscriber<std::shared_ptr<ControlMessage>, std::shared_ptr<ControlMessage>>&
-                           subscriber) override
+    mrc::coroutines::AsyncGenerator<std::shared_ptr<ControlMessage>> on_data(
+        std::shared_ptr<ControlMessage>&& data) override
     {
         VLOG(10) << "Got message in PyLLMEngineStage. Calling LLMEnging::run()";
 
         auto result = co_await m_engine->run(std::move(data));
 
         // Push the output messages
-        for (auto& out_message : result)
+        for (auto&& out_message : result)
         {
-            co_await subscriber.await_write(std::move(out_message));
+            co_yield std::move(out_message);
         }
+
+        co_return;
     }
 
     std::shared_ptr<LLMEngine> m_engine;
