@@ -32,7 +32,7 @@ def test_constructor_with_feed_url(config):
 
     ctlr = rss_source_stage._controller
 
-    assert ctlr._feed_input == "https://realpython.com/atom.xml"
+    assert ctlr._feed_input == ["https://realpython.com/atom.xml"]
     assert ctlr._run_indefinitely is True
     assert ctlr._batch_size == config.pipeline_batch_size
     assert rss_source_stage._interval_secs == 600
@@ -47,7 +47,7 @@ def test_constructor_with_feed_file(config):
 
     ctlr = rss_source_stage._controller
 
-    assert ctlr._feed_input == file_feed_input
+    assert ctlr._feed_input == [file_feed_input]
     assert ctlr._run_indefinitely is False
     assert ctlr._batch_size == config.pipeline_batch_size
     assert rss_source_stage._interval_secs == 5
@@ -94,5 +94,7 @@ def test_invalid_input_rss_source_stage_pipe(config) -> None:
 
     pipe.add_edge(rss_source_stage, sink_stage)
 
-    with pytest.raises(RuntimeError):
-        pipe.run()
+    pipe.run()
+
+    assert len(sink_stage.get_messages()) == 0
+    assert rss_source_stage._controller._errored_feeds == [feed_input]

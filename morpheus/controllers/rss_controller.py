@@ -15,11 +15,9 @@
 import logging
 import os
 import typing
-import urllib
 from urllib.parse import urlparse
 
 import feedparser
-import requests
 import requests_cache
 
 import cudf
@@ -33,7 +31,7 @@ class RSSController:
 
     Parameters
     ----------
-    feed_input : str
+    feed_input : str or list[str]
         The URL or file path of the RSS feed.
     batch_size : int, optional, default = 128
         Number of feed items to accumulate before creating a DataFrame.
@@ -50,14 +48,14 @@ class RSSController:
 
         if (run_indefinitely is None):
             # If feed_input is URL. Runs indefinitely
-            run_indefinitely = any([RSSController.is_url(f) for f in self._feed_input])
+            run_indefinitely = any(RSSController.is_url(f) for f in self._feed_input)
 
         self._run_indefinitely = run_indefinitely
 
         self._session = requests_cache.CachedSession(os.path.join("./.cache/http", "RSSController.sqlite"),
                                                      backend="sqlite")
 
-        self._blacklisted_feeds = []  # Feeds that have thrown an error and wont be retried
+        self._errored_feeds = []  # Feeds that have thrown an error and wont be retried
 
     @property
     def run_indefinitely(self):
@@ -86,23 +84,30 @@ class RSSController:
         raise RuntimeError(f"Invalid feed input: {self._feed_input}. No entries found.")
 
     def _try_parse_feed(self, url: str):
+        is_url = RSSController.is_url(url)
+        if (is_url):
+            response = self._session.get(url)
+            cache_hit = response.from_cache
 
-        response = self._session.get(url)
+            feed_input = response.text
+        else:
+            cache_hit = False
+            feed_input = url
 
         # Try to use requests to get the object
-        feed = feedparser.parse(response.text)
+        feed = feedparser.parse(feed_input)
 
-        cache_hit = response.from_cache
         fallback = False
 
         if (feed["bozo"]):
             cache_hit = False
-            fallback = True
 
-            logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
+            if (is_url):
+                fallback = True
+                logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
 
-            # If that fails, use feedparser directly (cant cache this)
-            feed = feedparser.parse(url)
+                # If that fails, use feedparser directly (cant cache this)
+                feed = feedparser.parse(url)
 
             if (feed["bozo"]):
                 raise RuntimeError(f"Invalid feed input: {url}. Error: {feed['bozo_exception']}")
@@ -127,7 +132,7 @@ class RSSController:
         """
         for url in self._feed_input:
             try:
-                if (url in self._blacklisted_feeds):
+                if (url in self._errored_feeds):
                     continue
 
                 feed = self._try_parse_feed(url)
@@ -138,9 +143,9 @@ class RSSController:
                 yield feed
 
             except Exception as ex:
-                logger.warning(f"Failed to parse feed: {url}. The feed will be blacklisted and not retried.")
+                logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
 
-                self._blacklisted_feeds.append(url)
+                self._errored_feeds.append(url)
 
     def fetch_dataframes(self):
         """

@@ -37,7 +37,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    feed_input : str
+    feed_input : list[str]
         The URL or file path of the RSS feed.
     interval_secs : float, optional, default = 600
         Interval in seconds between fetching new feed items.
@@ -49,7 +49,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 feed_input: str | list[str],
+                 feed_input: list[str],
                  interval_secs: float = 600,
                  stop_after: int = 0,
                  max_retries: int = 5,

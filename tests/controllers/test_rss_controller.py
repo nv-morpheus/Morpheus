@@ -53,15 +53,15 @@ def test_run_indefinitely_false(feed_input):
 @pytest.mark.parametrize("feed_input", test_urls)
 def test_parse_feed_valid_url(feed_input):
     controller = RSSController(feed_input=feed_input)
-    feed = controller.parse_feed()
+    feed = list(controller.parse_feeds())[0]
     assert feed.entries
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths)
 def test_parse_feed_invalid_input(feed_input):
     controller = RSSController(feed_input=feed_input)
-    with pytest.raises(RuntimeError):
-        controller.parse_feed()
+    list(controller.parse_feeds())
+    assert controller._errored_feeds == [feed_input]
 
 
 @pytest.mark.parametrize("feed_input", test_urls + test_file_paths)
