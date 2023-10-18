@@ -954,34 +954,34 @@ def filter_probs_df(dataset, use_cpp: bool):
 def milvus_server_uri(tmp_path_factory):
     """
     Pytest fixture to start and stop a Milvus server and provide its URI for testing.
+    Due to the high startup time for Milvus users can optionally start a Milvus server before running tests and
+    define a `MORPHEUS_MILVUS_URI` environment variable to use that server instead of starting a new one.
 
     This fixture starts a Milvus server, retrieves its URI (Uniform Resource Identifier), and provides
     the URI as a yield value to the tests using this fixture. After all tests in the module are
     completed, the Milvus server is stopped.
     """
-    from milvus import default_server
-
     logger = logging.getLogger(f"morpheus.{__name__}")
 
-    # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
-    default_server.webservice_port = _get_random_port()
-    with default_server:
-        default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
-
-        host = default_server.server_address
-        port = default_server.listen_port
-        uri = f"http://{host}:{port}"
-
+    uri = os.environ.get('MORPHEUS_MILVUS_URI')
+    if uri is not None:
         yield uri
 
+    else:
+        from milvus import default_server
 
-@pytest.fixture(scope="function", name="milvus_service")
-def milvus_service_fixture(milvus_server_uri: str):
-    # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
-    # pipeline completion
-    from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
-    service = MilvusVectorDBService(uri=milvus_server_uri)
-    yield service
+        # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
+        default_server.webservice_port = _get_random_port()
+        with default_server:
+            default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+
+            host = default_server.server_address
+            port = default_server.listen_port
+            uri = f"http://{host}:{port}"
+
+            logger.info("Started Milvus at: %s", uri)
+
+            yield uri
 
 
 @pytest.fixture(scope="session", name="milvus_data")
