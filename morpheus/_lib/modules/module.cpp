@@ -21,8 +21,11 @@
 
 #include <mrc/modules/module_registry_util.hpp>
 #include <nlohmann/json.hpp>
+#include <pybind11/cast.h>      // for object_api::operator(), object::cast
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>
 
+#include <array>  // for array
 #include <sstream>
 #include <vector>
 
@@ -39,11 +42,19 @@ PYBIND11_MODULE(modules, _module)
 
         )pbdoc";
 
-    const std::vector<unsigned int> MorpheusModuleVersion{
-        morpheus_VERSION_MAJOR, morpheus_VERSION_MINOR, morpheus_VERSION_PATCH};
+    // Get the MRC version that we are registering these modules for. Ideally, this would be able to get it directly
+    // from <mrc/version.hpp> but that file isnt exported
+    std::vector<unsigned int> mrc_version;
 
-    mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>(
-        "DataLoader", "morpheus", MorpheusModuleVersion);
+    auto mrc_version_list = pybind11::module_::import("mrc").attr("__version__").attr("split")(".").cast<py::list>();
+
+    for (const auto& l : mrc_version_list)
+    {
+        auto i = py::int_(py::reinterpret_borrow<py::object>(l));
+        mrc_version.push_back(i.cast<unsigned int>());
+    }
+
+    mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>("DataLoader", "morpheus", mrc_version);
 
     _module.attr("__version__") =
         MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
