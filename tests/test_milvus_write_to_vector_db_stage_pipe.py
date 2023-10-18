@@ -47,8 +47,7 @@ def get_test_df(num_input_rows):
 @pytest.mark.milvus
 @pytest.mark.use_cpp
 @pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows", [(True, 5, 5), (False, 5, 5)])
-def test_write_to_vector_db_stage_pipe(milvus_service: MilvusVectorDBService,
-                                       milvus_server_uri: str,
+def test_write_to_vector_db_stage_pipe(milvus_server_uri: str,
                                        idx_part_collection_config: dict,
                                        use_instance: bool,
                                        config: Config,
@@ -60,6 +59,7 @@ def test_write_to_vector_db_stage_pipe(milvus_service: MilvusVectorDBService,
     # Create milvus collection using config file.
     df = get_test_df(num_input_rows)
 
+    milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
     milvus_service.create(name=collection_name, overwrite=True, **idx_part_collection_config)
 
     to_cm_module_config = {
