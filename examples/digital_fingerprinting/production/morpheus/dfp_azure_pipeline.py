@@ -148,9 +148,7 @@ from morpheus.utils.logger import configure_logging
               type=str,
               default="DFP-azure-{user_id}",
               help="The MLflow model name template to use when logging models. ")
-@click.option('--inference_detection_file_name',
-              type=str,
-              default="dfp_detections_azure.csv")
+@click.option('--inference_detection_file_name', type=str, default="dfp_detections_azure.csv")
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
