@@ -15,6 +15,7 @@ import logging
 import os
 import pickle
 import time
+import typing
 
 import click
 
@@ -318,3 +319,219 @@ def chain(model_name, save_cache):
                       log_fn=logger.debug):
 
             Milvus.from_documents(documents, embeddings, collection_name="LangChain", drop_old=True)
+
+
+def _save_model(model, max_seq_length: int, batch_size: int, output_model_path: str):
+    import torch
+
+    try:
+        import onnx
+    except ImportError:
+        raise RuntimeError("Please install onnx to use this feature. Run `mamba install -c conda-forge onnx`")
+
+    device = torch.device("cuda")
+
+    input_ids = torch.ones(batch_size, max_seq_length, dtype=torch.int32).to(device)
+    input_mask = torch.ones(batch_size, max_seq_length, dtype=torch.int32).to(device)
+
+    torch.onnx.export(
+        model,
+        (input_ids, input_mask),
+        output_model_path,
+        opset_version=13,
+        input_names=['input_ids', 'attention_mask'],
+        output_names=['output'],
+        dynamic_axes={
+            'input_ids': {
+                0: 'batch_size',
+                1: "seq_length",
+            },  # variable length axes
+            'attention_mask': {
+                0: 'batch_size',
+                1: "seq_length",
+            },
+            'output': {
+                0: 'batch_size',
+            }
+        },
+        verbose=False)
+
+    onnx_model = onnx.load(output_model_path)
+
+    onnx.checker.check_model(onnx_model)
+
+
+@run.command()
+@click.option(
+    "--model_name",
+    required=True,
+    default='all-mpnet-base-v2',
+    help="The name of the model that is deployed on Triton server",
+)
+@click.option(
+    "--model_seq_length",
+    default=512,
+    type=click.IntRange(min=1),
+    help="Accepted input size of the text tokens",
+)
+@click.option(
+    "--max_batch_size",
+    default=256,
+    type=click.IntRange(min=1),
+    help="Max batch size for the model config",
+)
+@click.option(
+    "--triton_repo",
+    required=True,
+    type=click.Path(file_okay=False, dir_okay=True),
+    help="Directory of the Triton Model Repo where the model will be saved",
+)
+@click.option(
+    "--output_model_name",
+    default=None,
+    help="Overrides the model name that is used in triton. Defaults to `model_name`",
+)
+def export_triton_model(model_name, model_seq_length, max_batch_size, triton_repo, output_model_name):
+
+    import torch
+    import torch.nn.functional as F
+    from transformers import AutoModel
+    from tritonclient.grpc.model_config_pb2 import DataType
+    from tritonclient.grpc.model_config_pb2 import ModelConfig
+    from tritonclient.grpc.model_config_pb2 import ModelInput
+    from tritonclient.grpc.model_config_pb2 import ModelOptimizationPolicy
+    from tritonclient.grpc.model_config_pb2 import ModelOutput
+
+    if (output_model_name is None):
+        output_model_name = model_name
+
+    class CustomTokenizer(torch.nn.Module):
+
+        def __init__(self, model_name: str):
+            super().__init__()
+
+            from sentence_transformers import SentenceTransformer
+
+            # self.inner_model = AutoModel.from_pretrained(model_name)
+            self.inner_model = SentenceTransformer(f"sentence-transformers/{model_name}")
+
+            self._output_dim = self.inner_model.config.hidden_size
+
+        @property
+        def output_dim(self):
+            return self._output_dim
+
+        #Mean Pooling - Take attention mask into account for correct averaging
+        def mean_pooling(self, model_output, attention_mask):
+            # Adapted from https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+            #First element of model_output contains all token embeddings
+            token_embeddings = model_output[0]  # [batch_size, seq_length, hidden_size]
+
+            # Transpose to make broadcasting possible
+            token_embeddings = torch.transpose(token_embeddings, 0, 2)  # [hidden_size, seq_length, batch_size]
+
+            input_mask_expanded = torch.transpose(attention_mask.unsqueeze(-1).float(), 0,
+                                                  2)  # [1, seq_length, batch_size]
+
+            num = torch.sum(token_embeddings * input_mask_expanded, 1)  # [hidden_size, batch_size]
+            denom = torch.clamp(input_mask_expanded.sum(1), min=1e-9)  # [1, batch_size]
+
+            return torch.transpose(num / denom, 0, 1)  # [batch_size, hidden_size]
+
+        def normalize(self, embeddings):
+
+            # Use the same trick here to broadcast to avoid using the expand operator which breaks dynamic axes
+            denom = torch.transpose(embeddings.norm(2, 1, keepdim=True).clamp_min(1e-12), 0, 1)
+
+            return torch.transpose(torch.transpose(embeddings, 0, 1) / denom, 0, 1)
+
+        def forward(self, input_ids, attention_mask):
+            model_outputs = self.inner_model(input_ids=input_ids, attention_mask=attention_mask)
+
+            sentence_embeddings = self.mean_pooling(model_outputs, attention_mask)
+
+            sentence_embeddings = self.normalize(sentence_embeddings)
+
+            return sentence_embeddings
+
+    device = torch.device("cuda")
+
+    model_name = f'sentence-transformers/{model_name}'
+
+    model = CustomTokenizer(model_name)
+    model.to(device)
+    model.eval()
+    # test_output = model(**input_features)
+
+    # if (only_model):
+    #     # Build up the model name
+    #     onnx_path = model_name
+
+    #     if (onnx_path.startswith("sentence-transformers/")):
+    #         onnx_path = onnx_path.removeprefix("sentence-transformers/")
+    # else:
+
+    output_model_dir = os.path.join(triton_repo, output_model_name)
+
+    # Make sure we create the directory if it does not exist
+    os.makedirs(output_model_dir, exist_ok=True)
+
+    # Make the config file
+    config = ModelConfig()
+
+    config.name = output_model_name
+    config.platform = "onnxruntime_onnx"
+    config.max_batch_size = max_batch_size
+
+    config.input.append(ModelInput(
+        name="input_ids",
+        data_type=DataType.Value("TYPE_INT32"),
+        dims=[model_seq_length],
+    ))
+
+    config.input.append(
+        ModelInput(
+            name="attention_mask",
+            data_type=DataType.Value("TYPE_INT32"),
+            dims=[model_seq_length],
+        ))
+
+    config.output.append(ModelOutput(
+        name="output",
+        data_type=DataType.Value("TYPE_FP32"),
+        dims=[model.output_dim],
+    ))
+
+    def _powers_of_2(max_val: int):
+        val = 1
+
+        while (val <= max_val):
+            yield val
+            val *= 2
+
+    config.dynamic_batching.preferred_batch_size.extend([x for x in _powers_of_2(max_batch_size)])
+    config.dynamic_batching.max_queue_delay_microseconds = 50000
+
+    config.optimization.execution_accelerators.gpu_execution_accelerator.extend([
+        ModelOptimizationPolicy.ExecutionAccelerators.Accelerator(name="tensorrt",
+                                                                  parameters={
+                                                                      "precision_mode": "FP16",
+                                                                      "max_workspace_size_bytes": "1073741824",
+                                                                  })
+    ])
+
+    config_path = os.path.join(output_model_dir, "config.pbtxt")
+
+    with open(config_path, "w") as f:
+        f.write(str(config))
+
+    model_version_dir = os.path.join(output_model_dir, "1")
+
+    os.makedirs(model_version_dir, exist_ok=True)
+
+    output_model_path = os.path.join(model_version_dir, "model.onnx")
+
+    # Use 2 for the batch size to avoid running out of memory
+    _save_model(model, max_seq_length=model_seq_length, batch_size=2, output_model_path=output_model_path)
+
+    logger.info("Created Triton Model at %s", output_model_dir)
