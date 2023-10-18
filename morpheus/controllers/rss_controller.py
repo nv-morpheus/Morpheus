@@ -18,6 +18,7 @@ import typing
 from urllib.parse import urlparse
 
 import feedparser
+import requests
 import requests_cache
 from bs4 import BeautifulSoup
 
@@ -32,7 +33,7 @@ class RSSController:
 
     Parameters
     ----------
-    feed_input : str, list[str]
+    feed_input : str or list[str]
         The URL or file path of the RSS feed.
     batch_size : int, optional, default = 128
         Number of feed items to accumulate before creating a DataFrame.
@@ -41,14 +42,17 @@ class RSSController:
         If set to False, the controller will stop processing after the feed is fully fetched and processed.
         If not provided any value and if `feed_input` is of type URL, the controller will run indefinitely.
         Default is None.
-    expire_after : int, optional, default = 86400
-        Cached session expiration time in seconds.
+    enable_cache : bool, optional, default = False
+        Enable caching of RSS feed request data.
+    cache_dir : str, optional, default = "./.cache/http"
+        Cache directory for storing RSS feed request data.
     """
 
     def __init__(self, feed_input: str | list[str],
                  batch_size: int = 128,
                  run_indefinitely: bool = None,
-                 expire_after: int = 86400):
+                 enable_cache: bool = False,
+                 cache_dir: str = "./.cache/http"):
 
         if (isinstance(feed_input, str)):
             feed_input = [feed_input]
@@ -64,8 +68,10 @@ class RSSController:
 
         self._run_indefinitely = run_indefinitely
 
-        self._session = requests_cache.CachedSession(os.path.join("./.cache/http", "RSSController.sqlite"),
-                                                     backend="sqlite", expire_after=expire_after)
+        self._session = None
+        if enable_cache:
+            self._session = requests_cache.CachedSession(os.path.join(cache_dir, "RSSController.sqlite"),
+                                                         backend="sqlite")
 
         self._errored_feeds = []  # Feeds that have thrown an error and wont be retried
 
@@ -74,13 +80,20 @@ class RSSController:
         """Property that determines to run the source indefinitely"""
         return self._run_indefinitely
 
-    def _try_parse_feed_with_beautiful_soup(self, url: str, is_url: bool) -> feedparser.FeedParserDict:
-        if is_url:
+    def _get_response_text(self, url: str) -> str:
+        if self._session:
             response = self._session.get(url)
-            feed_input = response.text
         else:
-            with open(url, 'r', encoding="utf-8") as file:
-                feed_input = file.read()
+            response = requests.get(url)
+
+        return response.text
+
+    def _read_file_content(self, file_path: str) -> str:
+        with open(file_path, 'r', encoding="utf-8") as file:
+            return file.read()
+
+    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> feedparser.FeedParserDict:
+        feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
 
         soup = BeautifulSoup(feed_input, 'xml')
 
@@ -90,7 +103,7 @@ class RSSController:
         elif soup.find('entry'):
             items = soup.find_all("entry")
         else:
-            raise RuntimeError(f"Unable to find item or entry tags in {url}.")
+            raise RuntimeError(f"Unable to find item or entry tags in {feed_input}.")
 
         feed_items = []
         for item in items:
@@ -98,7 +111,7 @@ class RSSController:
             # Iterate over each children in an item
             for child in item.children:
                 if child.name is not None:
-                    # If child link does have a text, get it from href
+                    # If child link doesn't have a text, get it from href
                     if child.name == "link":
                         link_value = child.get_text()
                         if not link_value:
@@ -123,8 +136,9 @@ class RSSController:
 
         fallback = False
         cache_hit = False
+        is_url_with_session = is_url and self._session
 
-        if is_url:
+        if is_url_with_session:
             response = self._session.get(url)
             cache_hit = response.from_cache
             feed_input = response.text
@@ -136,7 +150,7 @@ class RSSController:
         if feed["bozo"]:
             cache_hit = False
 
-            if is_url:
+            if is_url_with_session:
                 fallback = True
                 try:
                     logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
@@ -157,12 +171,12 @@ class RSSController:
         return feed
 
 
-    def parse_feeds(self) -> feedparser.FeedParserDict:
+    def parse_feeds(self):
         """
         Parse the RSS feed using the feedparser library.
 
-        Returns
-        -------
+        Yeilds
+        ------
         feedparser.FeedParserDict
             The parsed feed content.
         """
@@ -179,12 +193,12 @@ class RSSController:
                 logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
                 self._errored_feeds.append(url)
 
-    def fetch_dataframes(self) -> cudf.DataFrame:
+    def fetch_dataframes(self):
         """
         Fetch and process RSS feed entries.
 
         Yeilds
-        -------
+        ------
         cudf.DataFrame
             A DataFrame containing feed entry data.
 

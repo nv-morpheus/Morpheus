@@ -108,11 +108,12 @@ def test_batch_size(feed_input: str | list[str], batch_size: int):
         assert len(df) <= batch_size
 
 
-@pytest.mark.parametrize("feed_input, is_url", [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), False),
-                                                ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", True),
-                                                ("https://www.mandiant.com/resources/blog/rss.xml", True)])
-def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool):
-    rss_controller = RSSController(feed_input=feed_input)
+@pytest.mark.parametrize("feed_input, is_url, enable_cache",
+                         [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), False, False),
+                          ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", True, True),
+                          ("https://www.mandiant.com/resources/blog/rss.xml", True, False)])
+def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool):
+    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 
     feed_data = rss_controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
 
@@ -134,3 +135,14 @@ def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool):
     assert isinstance(feed_data, dict)
     assert "entries" in feed_data
     assert isinstance(feed_data["entries"], list)
+
+
+@pytest.mark.parametrize("enable_cache", [True, False])
+def test_enable_disable_cache(enable_cache):
+    feed_input = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+
+    if enable_cache:
+        assert rss_controller._session
+    else:
+        assert not rss_controller._session

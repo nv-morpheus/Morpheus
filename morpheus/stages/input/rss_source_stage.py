@@ -37,7 +37,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    feed_input : str, list[str]
+    feed_input : str or list[str]
         The URL or file path of the RSS feed.
     interval_secs : float, optional, default = 600
         Interval in seconds between fetching new feed items.
@@ -47,8 +47,10 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Maximum number of retries for fetching entries on exception.
     batch_size : int, optional, default = 128
         Number of feed items to accumulate before creating a DataFrame.
-    expire_after : int, optional, default = 86400
-        Cached session expiration time in seconds.
+    enable_cache : bool, optional, default = False
+        Enable caching of RSS feed request data.
+    cache_dir : str, optional, default = "./.cache/http"
+        Cache directory for storing RSS feed request data.
     """
 
     def __init__(self,
@@ -59,7 +61,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  max_retries: int = 5,
                  run_indefinitely: bool = None,
                  batch_size: int = 128,
-                 expire_after: int = 86400):
+                 enable_cache: bool = False,
+                 cache_dir: str = "./.cache/http"):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
@@ -70,7 +73,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         self._controller = RSSController(feed_input=feed_input,
                                          batch_size=batch_size,
                                          run_indefinitely=run_indefinitely,
-                                         expire_after=expire_after)
+                                         enable_cache=enable_cache,
+                                         cache_dir=cache_dir)
 
     @property
     def name(self) -> str:

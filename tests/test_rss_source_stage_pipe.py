@@ -47,7 +47,9 @@ def test_constructor_with_feed_file(config):
                                       interval_secs=5,
                                       stop_after=10,
                                       max_retries=2,
-                                      batch_size=256)
+                                      batch_size=256,
+                                      enable_cache=True,
+                                      cache_dir="./.cache/http_cache")
 
     ctlr = rss_source_stage._controller
 
@@ -57,6 +59,8 @@ def test_constructor_with_feed_file(config):
     assert rss_source_stage._interval_secs == 5
     assert rss_source_stage._stop_after == 10
     assert rss_source_stage._max_retries == 2
+    assert rss_source_stage._controller._session is not None
+    assert rss_source_stage._controller._session.cache.cache_name == "./.cache/http_cache/RSSController.sqlite"
 
 
 @pytest.mark.use_python
@@ -68,16 +72,24 @@ def test_support_cpp_node(config):
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("feed_input, batch_size, expected_count", [(valid_feed_input, 30, 1),
-                                                                    (valid_feed_input, 12, 3),
-                                                                    ([valid_feed_input, valid_feed_input], 15, 2)
-                                                                    # Duplicate feed inputs
-                                                                    ])
-def test_rss_source_stage_pipe(config: Config, feed_input: list[str] | str, batch_size: int, expected_count: int):
+@pytest.mark.parametrize("feed_input, batch_size, expected_count, enable_cache",
+                         [(valid_feed_input, 30, 1, False),
+                          (valid_feed_input, 12, 3, True),
+                          ([valid_feed_input, valid_feed_input], 15, 2, False)
+                          # Duplicate feed inputs
+                          ])
+def test_rss_source_stage_pipe(config: Config,
+                               feed_input: list[str] | str,
+                               batch_size: int,
+                               expected_count: int,
+                               enable_cache: bool):
 
     pipe = Pipeline(config)
 
-    rss_source_stage = pipe.add_stage(RSSSourceStage(config, feed_input=feed_input, batch_size=batch_size))
+    rss_source_stage = pipe.add_stage(RSSSourceStage(config,
+                                                     feed_input=feed_input,
+                                                     batch_size=batch_size,
+                                                     enable_cache=enable_cache))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.add_edge(rss_source_stage, sink_stage)
