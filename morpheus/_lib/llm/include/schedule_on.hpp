@@ -35,7 +35,7 @@
 
 #include <type_traits>
 
-namespace mrc::coroutines::detail {
+namespace mrc::coroutines {
 
 template <typename SchedulerT, typename AwaitableT>
 auto schedule_on(SchedulerT& scheduler, AwaitableT awaitable) -> Task<boost::detail::remove_rvalue_ref<
@@ -66,4 +66,4 @@ mrc::coroutines::AsyncGenerator<T> schedule_on(SchedulerT& scheduler, mrc::corou
     }
 }
 
-}  // namespace mrc::coroutines::detail
+}  // namespace mrc::coroutines
