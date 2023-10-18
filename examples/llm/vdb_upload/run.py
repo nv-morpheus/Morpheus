@@ -135,7 +135,7 @@ def run():
 )
 @click.option(
     "--model_fea_length",
-    default=256,
+    default=512,
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
@@ -159,21 +159,23 @@ def run():
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
-@click.option("--pre_calc_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
 @click.option("--isolate_embeddings",
               is_flag=True,
               default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
+              help="Whether to fetch all data prior to executing the rest of the pipeline.")
 @click.option("--use_cache",
               type=click.Path(file_okay=True, dir_okay=False),
               default=None,
               help="What cache to use for the confluence documents")
+@click.option(
+    "--stop_after",
+    default=0,
+    type=click.IntRange(min=0),
+    help="Stop after emitting this many records from the RSS source stage. Useful for testing. Disabled if `0`",
+)
 def pipeline(num_threads,
              pipeline_batch_size,
              model_max_batch_size,
@@ -183,13 +185,15 @@ def pipeline(num_threads,
              output_file,
              server_url,
              model_name,
-             pre_calc_embeddings,
              isolate_embeddings,
-             use_cache):
+             use_cache,
+             stop_after: int):
 
     from morpheus.config import Config
     from morpheus.config import CppConfig
     from morpheus.config import PipelineModes
+    from morpheus.messages import ControlMessage
+    from morpheus.messages import MessageMeta
     from morpheus.pipeline.linear_pipeline import LinearPipeline
     from morpheus.stages.general.monitor_stage import MonitorStage
     from morpheus.stages.general.trigger_stage import TriggerStage
@@ -219,7 +223,7 @@ def pipeline(num_threads,
     pipe = LinearPipeline(config)
 
     # add doca source stage
-    pipe.set_source(RSSSourceStage(config, feed_input=_build_rss_urls(), batch_size=128))
+    pipe.set_source(RSSSourceStage(config, feed_input=_build_rss_urls(), batch_size=128, stop_after=stop_after))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='pages'))
 
@@ -227,32 +231,30 @@ def pipeline(num_threads,
 
     pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
 
+    # add deserialize stage
+    pipe.add_stage(DeserializeStage(config))
+
     if (isolate_embeddings):
         pipe.add_stage(TriggerStage(config))
 
-    if (pre_calc_embeddings):
+    # add preprocessing stage
+    pipe.add_stage(
+        PreprocessNLPStage(config,
+                           vocab_hash_file="data/bert-base-uncased-hash.txt",
+                           do_lower_case=True,
+                           truncation=True,
+                           add_special_tokens=False,
+                           column='page_content'))
 
-        # add deserialize stage
-        pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
-        # add preprocessing stage
-        pipe.add_stage(
-            PreprocessNLPStage(config,
-                               vocab_hash_file="data/bert-base-uncased-hash.txt",
-                               do_lower_case=True,
-                               truncation=True,
-                               add_special_tokens=False,
-                               column='page_content'))
-
-        pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
-
-        pipe.add_stage(
-            TritonInferenceStage(config,
-                                 model_name=model_name,
-                                 server_url="localhost:8001",
-                                 force_convert_inputs=True,
-                                 use_shared_memory=True))
-        pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    pipe.add_stage(
+        TritonInferenceStage(config,
+                             model_name=model_name,
+                             server_url="localhost:8001",
+                             force_convert_inputs=True,
+                             use_shared_memory=True))
+    pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
@@ -277,7 +279,7 @@ def pipeline(num_threads,
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(
@@ -372,7 +374,7 @@ def _save_model(model, max_seq_length: int, batch_size: int, output_model_path: 
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(

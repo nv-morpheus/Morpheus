@@ -64,6 +64,12 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         if (batch_size is None):
             batch_size = c.pipeline_batch_size
 
+        if (stop_after > 0):
+            if (run_indefinitely):
+                raise ValueError("Cannot set both `stop_after` and `run_indefinitely` to True.")
+
+            run_indefinitely = False
+
         self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input,
                                          batch_size=batch_size,
@@ -101,13 +107,13 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                     yield MessageMeta(df=df)
 
+                    if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
+                        self._stop_requested = True
+                        logger.debug("Stop limit reached...preparing to halt the source.")
+                        break
+
                 if not self._controller.run_indefinitely:
                     self._stop_requested = True
-                    continue
-
-                if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
-                    self._stop_requested = True
-                    logger.debug("Stop limit reached...preparing to halt the source.")
                     continue
 
                 logger.debug("Waiting for %d seconds before fetching again...", self._interval_secs)
@@ -127,6 +133,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 if retries == self._max_retries:  # Check if retries exceeded the limit
                     logger.error("Max retries reached. Unable to fetch feed entries.")
                     raise RuntimeError(f"Failed to fetch feed entries after max retries: {exc}") from exc
+
+        logger.debug("Source stopped.")
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         source = builder.make_source(self.unique_name, self._fetch_feeds)
