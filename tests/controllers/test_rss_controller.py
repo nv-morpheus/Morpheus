@@ -74,6 +74,7 @@ def test_fetch_dataframes(feed_input: str | list[str]):
     assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
+
 @pytest.mark.parametrize("feed_input, expected_count", [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), 30)])
 def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
     controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
@@ -81,6 +82,7 @@ def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
     assert len(dataframe) == expected_count
+
 
 @pytest.mark.parametrize("feed_input", test_file_paths)
 def test_create_dataframe(feed_input: str):

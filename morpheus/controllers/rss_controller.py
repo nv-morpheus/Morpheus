@@ -48,7 +48,8 @@ class RSSController:
         Cache directory for storing RSS feed request data.
     """
 
-    def __init__(self, feed_input: str | list[str],
+    def __init__(self,
+                 feed_input: str | list[str],
                  batch_size: int = 128,
                  run_indefinitely: bool = None,
                  enable_cache: bool = False,
@@ -84,7 +85,7 @@ class RSSController:
         if self._session:
             response = self._session.get(url)
         else:
-            response = requests.get(url)
+            response = requests.get(url, timeout=1.0)
 
         return response.text
 
@@ -153,23 +154,23 @@ class RSSController:
             if is_url_with_session:
                 fallback = True
                 try:
-                    logger.info(f"Failed to parse feed: {url}. Trying to parse using feedparser directly.")
+                    logger.info("Failed to parse feed: %s. Trying to parse using feedparser directly.", url)
                     feed = feedparser.parse(url)
                 except Exception as ex:
                     raise RuntimeError(f"Failed to parse feed using fallback: {url}: {ex}") from ex
 
             if feed["bozo"]:
                 try:
-                    logger.warning("Failed to parse feed: %s, %s. Trying with other source", url,
+                    logger.warning("Failed to parse feed: %s, %s. Trying with other source",
+                                   url,
                                    feed['bozo_exception'])
                     feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
                 except Exception as exec_info:
-                    raise RuntimeError(f"Invalid feed input: {url}. Error: {exec_info}")
+                    raise RuntimeError(f"Invalid feed input: {url}. Error: {exec_info}") from exec_info
 
         logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
 
         return feed
-
 
     def parse_feeds(self):
         """

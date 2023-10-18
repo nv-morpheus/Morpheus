@@ -27,6 +27,7 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 valid_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")
 invalid_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xm")
 
+
 @pytest.mark.use_python
 def test_constructor_with_feed_url(config):
 
@@ -72,12 +73,12 @@ def test_support_cpp_node(config):
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("feed_input, batch_size, expected_count, enable_cache",
-                         [(valid_feed_input, 30, 1, False),
-                          (valid_feed_input, 12, 3, True),
-                          ([valid_feed_input, valid_feed_input], 15, 2, False)
-                          # Duplicate feed inputs
-                          ])
+@pytest.mark.parametrize(
+    "feed_input, batch_size, expected_count, enable_cache",
+    [(valid_feed_input, 30, 1, False), (valid_feed_input, 12, 3, True),
+     ([valid_feed_input, valid_feed_input], 15, 2, False)
+     # Duplicate feed inputs
+     ])
 def test_rss_source_stage_pipe(config: Config,
                                feed_input: list[str] | str,
                                batch_size: int,
@@ -86,10 +87,8 @@ def test_rss_source_stage_pipe(config: Config,
 
     pipe = Pipeline(config)
 
-    rss_source_stage = pipe.add_stage(RSSSourceStage(config,
-                                                     feed_input=feed_input,
-                                                     batch_size=batch_size,
-                                                     enable_cache=enable_cache))
+    rss_source_stage = pipe.add_stage(
+        RSSSourceStage(config, feed_input=feed_input, batch_size=batch_size, enable_cache=enable_cache))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.add_edge(rss_source_stage, sink_stage)
@@ -104,10 +103,8 @@ def test_invalid_input_rss_source_stage_pipe(config):
 
     pipe = Pipeline(config)
 
-    rss_source_stage = pipe.add_stage(RSSSourceStage(config,
-                                                     feed_input=invalid_feed_input,
-                                                     interval_secs=1,
-                                                     max_retries=1))
+    rss_source_stage = pipe.add_stage(
+        RSSSourceStage(config, feed_input=invalid_feed_input, interval_secs=1, max_retries=1))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.add_edge(rss_source_stage, sink_stage)
