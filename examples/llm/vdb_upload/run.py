@@ -279,7 +279,7 @@ def pipeline(num_threads,
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(
@@ -374,7 +374,7 @@ def _save_model(model, max_seq_length: int, batch_size: int, output_model_path: 
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(
