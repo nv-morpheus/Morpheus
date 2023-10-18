@@ -179,8 +179,7 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         raise RuntimeError("All types must be specified to auto register stage.")
 
     if (is_union_type(annotation)):
-        # For the purposes of the CLI, we treat unions as the first type
-        annotation = typing.get_args(annotation)[0]
+        raise RuntimeError("Union types are not supported for auto registering stages.")
 
     if (issubtype(annotation, typing.List)):
         # For variable length array, use multiple=True
