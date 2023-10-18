@@ -47,6 +47,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Maximum number of retries for fetching entries on exception.
     batch_size : int, optional, default = 128
         Number of feed items to accumulate before creating a DataFrame.
+    expire_after : int, optional, default = 86400
+        Cached session expiration time in seconds.
     """
 
     def __init__(self,
@@ -56,7 +58,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  stop_after: int = 0,
                  max_retries: int = 5,
                  run_indefinitely: bool = None,
-                 batch_size: int = 128):
+                 batch_size: int = 128,
+                 expire_after: int = 86400):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
@@ -66,7 +69,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input,
                                          batch_size=batch_size,
-                                         run_indefinitely=run_indefinitely)
+                                         run_indefinitely=run_indefinitely,
+                                         expire_after=expire_after)
 
     @property
     def name(self) -> str:

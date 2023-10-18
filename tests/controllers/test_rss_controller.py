@@ -15,6 +15,7 @@
 
 from os import path
 
+import feedparser
 import pytest
 
 import cudf
@@ -98,9 +99,38 @@ def test_is_url_true(feed_input: str):
 def test_is_url_false(feed_input: str):
     assert not RSSController.is_url(feed_input)
 
+
 @pytest.mark.parametrize("feed_input, batch_size", [(test_urls + test_file_paths, 5)])
 def test_batch_size(feed_input: str | list[str], batch_size: int):
     controller = RSSController(feed_input=feed_input, batch_size=batch_size)
     for df in controller.fetch_dataframes():
         assert isinstance(df, cudf.DataFrame)
         assert len(df) <= batch_size
+
+
+@pytest.mark.parametrize("feed_input, is_url", [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), False),
+                                                ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", True),
+                                                ("https://www.mandiant.com/resources/blog/rss.xml", True)])
+def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool):
+    rss_controller = RSSController(feed_input=feed_input)
+
+    feed_data = rss_controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
+
+    assert isinstance(feed_data, feedparser.FeedParserDict)
+
+    assert len(feed_data.entries) > 0
+
+    for entry in feed_data.entries:
+        assert "title" in entry
+        assert "link" in entry
+        assert "id" in entry
+
+        # Add more assertions as needed to validate the content of each entry
+        for key, value in entry.items():
+            if key not in ["title", "link", "id"]:
+                assert value is not None
+
+    # Additional assertions to validate the overall structure of the feed data
+    assert isinstance(feed_data, dict)
+    assert "entries" in feed_data
+    assert isinstance(feed_data["entries"], list)
