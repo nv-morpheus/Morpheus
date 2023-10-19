@@ -34,6 +34,9 @@ class PromptTemplateNode(LLMNodeBase):
 
         if (self._template_format == "f-string"):
             formatter = string.Formatter()
+            # The parse method is returning an iterable of tuples in the form of:
+            # (literal_text, field_name, format_spec, conversion)
+            # https://docs.python.org/3.10/library/string.html#string.Formatter.parse
             self._input_names = [x[1] for x in formatter.parse(self._template) if x[1] is not None]
         elif (self._template_format == "jinja"):
             from jinja2 import Template
