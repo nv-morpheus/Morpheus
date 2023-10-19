@@ -14,7 +14,6 @@
 
 import logging
 import os
-import typing
 
 import mrc
 import mrc.core.operators as ops
@@ -26,6 +25,7 @@ from pypdf.errors import PdfStreamError
 
 import cudf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -34,12 +34,24 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
+@register_stage("from-arxiv")
 class ArxivSource(SingleOutputSource):
+    """
+    Source stage that downloads PDFs from arxiv and converts them to dataframes
+    
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    query : `str`, default = "large language models"
+        Query to use for arxiv search.
+    """
 
-    def __init__(self, c: Config):
+    def __init__(self, c: Config, query: str = "large language models"):
 
         super().__init__(c)
 
+        self._query = query
         self._max_pages = 10000
 
         self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
@@ -80,10 +92,11 @@ class ArxivSource(SingleOutputSource):
         import arxiv
 
         search_results = arxiv.Search(
-            query="large language models",
+            query=self._query,
             max_results=50,
         )
 
+        # TODO: Move this to a config
         dir_path = "./shared-dir/dataset/pdfs/"
 
         for x in search_results.results():
