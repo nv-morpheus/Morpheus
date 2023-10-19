@@ -11,12 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import asyncio
 import logging
 import os
 import time
 
 import click
+
+from ..common.llm_generate_node import LLMGenerateNode
+from ..common.nemo_llm_service import NeMoLLMService
+from ..common.prompt_template_node import PromptTemplateNode
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -25,22 +30,23 @@ reset_event = asyncio.Event()
 
 def _build_engine():
     from morpheus.llm import LLMEngine
-    from morpheus.llm import LLMLambdaNode
 
     from ..common.extracter_node import ExtracterNode
     from ..common.simple_task_handler import SimpleTaskHandler
+
+    llm_service = NeMoLLMService()
+
+    llm_clinet = llm_service.get_client(model_name="gpt-43b-002")
 
     engine = LLMEngine()
 
     engine.add_node("extracter", node=ExtracterNode())
 
-    async def wait_for_event(values):
+    engine.add_node("prompts",
+                    inputs=["/extracter"],
+                    node=PromptTemplateNode(template="What is the capital of {{country}}?", template_format="jinja"))
 
-        await asyncio.sleep(1)
-
-        return values
-
-    engine.add_node("waiter", inputs=["/extracter"], node=LLMLambdaNode(wait_for_event))
+    engine.add_node("completion", inputs=["/prompts"], node=LLMGenerateNode(llm_client=llm_clinet))
 
     engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
 
@@ -103,24 +109,39 @@ def pipeline(
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
-    source_dfs = [cudf.DataFrame({"questions": ["Tell me a story about your best friend.", ]})]
+    source_dfs = [
+        cudf.DataFrame({
+            "country": [
+                "France",
+                "Spain",
+                "Italy",
+                "Germany",
+                "United Kingdom",
+                "China",
+                "Japan",
+                "India",
+                "Brazil",
+                "United States",
+            ]
+        })
+    ]
 
-    completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
+    completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["country"], }}
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=100))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=10))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine()))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
-    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    pipe.add_stage(MonitorStage(config, description="Inference rate", unit="req", delayed_start=True))
 
     start_time = time.time()
 
