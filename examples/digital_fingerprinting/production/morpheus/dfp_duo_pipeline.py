@@ -66,12 +66,12 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
     """Converts a file type name to a FileTypes enum."""
     if (file_type == "JSON"):
         return FileTypes.JSON
-    elif (file_type == "CSV"):
+    if (file_type == "CSV"):
         return FileTypes.CSV
-    elif (file_type == "PARQUET"):
+    if (file_type == "PARQUET"):
         return FileTypes.PARQUET
-    else:
-        return FileTypes.Auto
+
+    return FileTypes.Auto
 
 
 @click.command()

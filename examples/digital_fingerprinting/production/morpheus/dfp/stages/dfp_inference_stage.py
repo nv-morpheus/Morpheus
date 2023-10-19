@@ -102,8 +102,8 @@ class DFPInferenceStage(SinglePortStage):
             post_model_time = time.time()
 
             results_df = loaded_model.get_results(df_user, return_abs=True)
-        except Exception as e:  # TODO
-            logger.exception(f"({user_id}) Error trying to get model: {str(e)}")
+        except Exception as e:
+            logger.exception("(%s) Error trying to get model: %s", user_id, str(e))
             return None
 
         # Create an output message to allow setting meta
