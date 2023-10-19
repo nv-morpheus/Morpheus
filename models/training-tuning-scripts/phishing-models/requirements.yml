@@ -16,18 +16,15 @@
 channels:
   - rapidsai
   - nvidia
-  - dglteam/label/cu118
   - pytorch
   - conda-forge
 dependencies:
-  - click>=8
-  - cuml=23.06
-  - dgl
+  - cudf=23.06
   - jupyterlab
-  - matplotlib
+  - onnx
+  - python=3.10
   - pytorch-cuda=11.8
   - pytorch=2.0.1
   - scikit-learn=1.2.2
   - tqdm=4
-  - torchmetrics
-  - xgboost
+  - transformers

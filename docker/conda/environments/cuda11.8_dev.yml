@@ -70,7 +70,7 @@ dependencies:
     - mrc=23.11
     - networkx=3.1
     - ninja=1.10
-    - nodejs=18.15.0
+    - nodejs=18.*
     - numba>=0.56.2
     - numpydoc=1.4
     - nvtabular=23.06
@@ -110,3 +110,5 @@ dependencies:
         # Add additional dev dependencies here
         - databricks-connect
         - pytest-kafka==0.6.0
+        - pymilvus==2.3.1
+        - milvus

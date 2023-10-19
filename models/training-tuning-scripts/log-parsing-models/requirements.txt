@@ -1,3 +1,0 @@
-onnx=1.14.0
-seqeval==1.2.2
-transformers==4.22.2
