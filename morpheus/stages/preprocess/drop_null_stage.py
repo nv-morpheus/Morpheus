@@ -21,12 +21,12 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("dropna", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class DropNullStage(SinglePortStage):
+class DropNullStage(PassThruTypeMixin, SinglePortStage):
     """
     Drop null data entries from a DataFrame.
 
@@ -67,8 +67,7 @@ class DropNullStage(SinglePortStage):
         # Enable support by default
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def on_next(x: MessageMeta):
 
@@ -77,7 +76,6 @@ class DropNullStage(SinglePortStage):
             return y
 
         node = builder.make_node(self.unique_name, ops.map(on_next), ops.filter(lambda x: not x.df.empty))
-        builder.make_edge(stream, node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        return stream, input_stream[1]
+        return node

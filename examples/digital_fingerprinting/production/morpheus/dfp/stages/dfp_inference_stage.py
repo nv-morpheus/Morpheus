@@ -24,7 +24,7 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
@@ -71,6 +71,9 @@ class DFPInferenceStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         """Accepted input types."""
         return (MultiDFPMessage, )
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
 
     def get_model(self, user: str) -> ModelCache:
         """
@@ -127,10 +130,10 @@ class DFPInferenceStage(SinglePortStage):
 
         return output_message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
         # node.launch_options.pe_count = self._config.num_threads
 
-        return node, MultiAEMessage
+        return node

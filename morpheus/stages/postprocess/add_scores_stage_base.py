@@ -23,13 +23,13 @@ import mrc.core.operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class AddScoresStageBase(SinglePortStage):
+class AddScoresStageBase(PassThruTypeMixin, SinglePortStage):
     """
     Base class for the `AddScoresStage` and `AddClassificationStage`
 
@@ -96,20 +96,20 @@ class AddScoresStageBase(SinglePortStage):
     def _get_cpp_node(self, builder: mrc.Builder):
         pass
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():
-            stream = self._get_cpp_node(builder=builder)
+            node = self._get_cpp_node(builder=builder)
         else:
-            stream = builder.make_node(
+            node = builder.make_node(
                 self.unique_name,
                 ops.map(functools.partial(self._add_labels, idx2label=self._idx2label, threshold=self._threshold)))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
         # Return input type unchanged
-        return stream, input_stream[1]
+        return node
 
     @staticmethod
     def _add_labels(x: MultiResponseMessage, idx2label: typing.Dict[int, str], threshold: typing.Optional[float]):
@@ -118,7 +118,7 @@ class AddScoresStageBase(SinglePortStage):
 
         if (probs.shape[1] <= max(idx2label.keys())):
             raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
-                                "Label indexes: {}, Model output columns: {}").format(idx2label, probs.shape[1]))
+                                f"Label indexes: {idx2label}, Model output columns: {probs.shape[1]}"))
 
         if (threshold is not None):
             probs = (probs > threshold).astype(bool)

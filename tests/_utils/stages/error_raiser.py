@@ -19,12 +19,12 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
-class ErrorRaiserStage(SinglePortStage):
+class ErrorRaiserStage(PassThruTypeMixin, SinglePortStage):
     """
     Stage that raises an exception in the on_data method
     """
@@ -59,8 +59,8 @@ class ErrorRaiserStage(SinglePortStage):
     def error_raised(self) -> bool:
         return self._error_raised
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
