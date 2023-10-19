@@ -109,7 +109,7 @@ def pipeline(
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=2))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=100))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
