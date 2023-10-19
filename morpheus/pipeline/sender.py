@@ -24,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 class Sender():
     """
-    The `Sender` object represents a port on a `BaseStage` object that sends messages to a `Receiver`.
+    The `Sender` object represents a port on a `StageBase` object that sends messages to a `Receiver`.
 
     Parameters
         ----------
-        parent : `morpheus.pipeline.pipeline.BaseStage`
-            Parent `BaseStage` object.
+        parent : `morpheus.pipeline.pipeline.StageBase`
+            Parent `StageBase` object.
         port_number : int
             Sender port number.
     """

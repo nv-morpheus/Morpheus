@@ -106,7 +106,7 @@ class StageSchema:
         Calls `_complete` on all output port schemas.
         This will trigger an assertion error if any of the output port schemas do not have a type set, or have
         previously been completed. Users should not call this function directly, as this is called internally by the
-        `BaseStage` and `Receiver` classes.
+        `StageBase` and `Receiver` classes.
         """
         for port_schema in self.output_schemas:
             # This locks the port schema

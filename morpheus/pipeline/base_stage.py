@@ -234,7 +234,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
         Returns
         -------
-        list[`morpheus.pipeline.pipeline.BaseStage`]
+        list[`morpheus.pipeline.pipeline.StageBase`]
             All input stages.
         """
         return [x.parent for x in self.get_all_inputs()]
@@ -261,7 +261,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
         Returns
         -------
-        list[`morpheus.pipeline.pipeline.BaseStage`]
+        list[`morpheus.pipeline.pipeline.StageBase`]
             All output stages.
         """
         return [x.parent for x in self.get_all_outputs()]
