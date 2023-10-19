@@ -16,7 +16,6 @@
  */
 
 #pragma once
-#include "mrc/coroutines/task_container.hpp"
 #include "py_llm_node.hpp"
 #include "pycoro/pycoro.hpp"
 
@@ -42,6 +41,7 @@
 #include <mrc/coroutines/schedule_on.hpp>
 #include <mrc/coroutines/scheduler.hpp>
 #include <mrc/coroutines/task.hpp>
+#include <mrc/coroutines/task_container.hpp>
 #include <mrc/node/sink_channel_owner.hpp>
 #include <mrc/node/sink_properties.hpp>
 #include <mrc/node/source_channel_owner.hpp>
