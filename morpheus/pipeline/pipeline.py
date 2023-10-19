@@ -29,12 +29,12 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.stage import Stage
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
