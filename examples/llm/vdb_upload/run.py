@@ -136,7 +136,7 @@ def run():
 )
 @click.option(
     "--model_fea_length",
-    default=256,
+    default=512,
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
@@ -160,17 +160,23 @@ def run():
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option("--isolate_embeddings",
               is_flag=True,
               default=False,
-              help="Whether to pre-calculate the embeddings using Triton")
+              help="Whether to fetch all data prior to executing the rest of the pipeline.")
 @click.option("--use_cache",
               type=click.Path(file_okay=True, dir_okay=False),
               default=None,
               help="What cache to use for the confluence documents")
+@click.option(
+    "--stop_after",
+    default=0,
+    type=click.IntRange(min=0),
+    help="Stop after emitting this many records from the RSS source stage. Useful for testing. Disabled if `0`",
+)
 def pipeline(num_threads,
              pipeline_batch_size,
              model_max_batch_size,
@@ -181,11 +187,14 @@ def pipeline(num_threads,
              server_url,
              model_name,
              isolate_embeddings,
-             use_cache):
+             use_cache,
+             stop_after: int):
 
     from morpheus.config import Config
     from morpheus.config import CppConfig
     from morpheus.config import PipelineModes
+    from morpheus.messages import ControlMessage
+    from morpheus.messages import MessageMeta
     from morpheus.pipeline.linear_pipeline import LinearPipeline
     from morpheus.stages.general.monitor_stage import MonitorStage
     from morpheus.stages.general.trigger_stage import TriggerStage
@@ -215,7 +224,7 @@ def pipeline(num_threads,
     pipe = LinearPipeline(config)
 
     # add doca source stage
-    pipe.set_source(RSSSourceStage(config, feed_input=_build_rss_urls(), batch_size=128))
+    pipe.set_source(RSSSourceStage(config, feed_input=_build_rss_urls(), batch_size=128, stop_after=stop_after))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='pages'))
 
@@ -223,11 +232,11 @@ def pipeline(num_threads,
 
     pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
 
-    if (isolate_embeddings):
-        pipe.add_stage(TriggerStage(config))
-
     # add deserialize stage
     pipe.add_stage(DeserializeStage(config))
+
+    if (isolate_embeddings):
+        pipe.add_stage(TriggerStage(config))
 
     # add preprocessing stage
     pipe.add_stage(
@@ -271,7 +280,7 @@ def pipeline(num_threads,
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(
@@ -372,7 +381,7 @@ def _save_model(model, sample_input: dict, output_model_path: str):
 @click.option(
     "--model_name",
     required=True,
-    default='all-mpnet-base-v2',
+    default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(

@@ -116,8 +116,8 @@ input_mappings_t process_input_names(user_input_mappings_t user_inputs, const st
     {
         auto& single_input = user_inputs[i];
 
-        bool found_star_input_name = single_input.external_name.find('*') != std::string::npos;
-        bool found_star_node_name  = single_input.internal_name == "*";
+        bool found_star_node_name  = single_input.external_name.find('*') != std::string::npos;
+        bool found_star_input_name = single_input.internal_name == "*";
 
         if (found_star_input_name != found_star_node_name)
         {
