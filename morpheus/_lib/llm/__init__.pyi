@@ -27,7 +27,10 @@ __all__ = [
 
 
 class InputMap():
+    @typing.overload
     def __init__(self) -> None: ...
+    @typing.overload
+    def __init__(self, arg0: str, arg1: str) -> None: ...
     @property
     def external_name(self) -> str:
         """
@@ -54,7 +57,10 @@ class InputMap():
         """
     pass
 class LLMContext():
+    @typing.overload
     def __init__(self) -> None: ...
+    @typing.overload
+    def __init__(self, arg0: LLMContext, arg1: str, arg2: typing.List[InputMap]) -> None: ...
     @typing.overload
     def get_input(self) -> object: ...
     @typing.overload

@@ -81,6 +81,7 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<InputMap>(_module, "InputMap")
         .def(py::init<>())
+        .def(py::init<std::string, std::string>())
         .def_readwrite("external_name",
                        &InputMap::external_name,
                        "The name of node that will be mapped to this input. Use a leading '/' to indicate it is a "
@@ -180,7 +181,8 @@ PYBIND11_MODULE(llm, _module)
     //     py::keep_alive<0, 1>());
 
     py::class_<LLMContext, std::shared_ptr<LLMContext>>(_module, "LLMContext")
-        .def(py::init())
+        .def(py::init<>())
+        .def(py::init<std::shared_ptr<LLMContext>, std::string, input_mappings_t>())
         .def_property_readonly("name", &LLMContext::name)
         .def_property_readonly("full_name", &LLMContext::full_name)
         .def_property_readonly("view_outputs", &LLMContext::view_outputs)
