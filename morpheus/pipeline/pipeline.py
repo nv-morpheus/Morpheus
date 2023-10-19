@@ -29,7 +29,7 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.base_stage import StageBase
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender

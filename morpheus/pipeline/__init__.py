@@ -22,7 +22,7 @@ from morpheus.pipeline.stage_schema import PortSchema
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.receiver import Receiver
-from morpheus.pipeline.base_stage import StageBase
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage

@@ -16,7 +16,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from .base_stage import StageBase
+    from .stage_base import StageBase
 
 
 class PortSchema:
