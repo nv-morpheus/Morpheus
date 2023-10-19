@@ -109,18 +109,18 @@ def pipeline(
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=100))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=2))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine()))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
-    pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
     start_time = time.time()
 
