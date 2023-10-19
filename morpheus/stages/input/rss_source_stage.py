@@ -45,6 +45,12 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     max_retries : int, optional, default = 3
         Maximum number of retries for fetching entries on exception.
+    batch_size : int, optional, default = None
+        Number of feed items to accumulate before creating a DataFrame.
+    enable_cache : bool, optional, default = False
+        Enable caching of RSS feed request data.
+    cache_dir : str, optional, default = "./.cache/http"
+        Cache directory for storing RSS feed request data.
     """
 
     def __init__(self,
@@ -54,7 +60,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  stop_after: int = 0,
                  max_retries: int = 5,
                  run_indefinitely: bool = None,
-                 batch_size: int = None):
+                 batch_size: int = None,
+                 enable_cache: bool = False,
+                 cache_dir: str = "./.cache/http"):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
@@ -73,7 +81,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input,
                                          batch_size=batch_size,
-                                         run_indefinitely=run_indefinitely)
+                                         run_indefinitely=run_indefinitely,
+                                         enable_cache=enable_cache,
+                                         cache_dir=cache_dir)
 
     @property
     def name(self) -> str:
