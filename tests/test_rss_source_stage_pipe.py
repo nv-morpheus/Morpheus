@@ -80,7 +80,7 @@ def test_support_cpp_node(config):
      # Duplicate feed inputs
      ])
 def test_rss_source_stage_pipe(config: Config,
-                               feed_input: list[str] | str,
+                               feed_input: list[str],
                                batch_size: int,
                                expected_count: int,
                                enable_cache: bool):
@@ -99,7 +99,7 @@ def test_rss_source_stage_pipe(config: Config,
 
 
 @pytest.mark.use_python
-def test_invalid_input_rss_source_stage_pipe(config):
+def test_invalid_input_rss_source_stage_pipe(config: Config):
 
     pipe = Pipeline(config)
 
