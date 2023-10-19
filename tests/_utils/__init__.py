@@ -167,3 +167,10 @@ def remove_module(mod_to_remove: str):
     for mod_name in list(sys.modules.keys()):
         if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
             del sys.modules[mod_name]
+
+
+def load_json_file(filename):
+    filepath = os.path.join(TEST_DIRS.tests_data_dir, filename)
+
+    with open(filepath, 'r', encoding="utf-8") as json_file:
+        return json.load(json_file)

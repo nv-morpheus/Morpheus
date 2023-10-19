@@ -37,7 +37,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    feed_input : str or list[str]
+    feed_input : list[str]
         The URL or file path of the RSS feed.
     interval_secs : float, optional, default = 600
         Interval in seconds between fetching new feed items.
@@ -45,7 +45,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     max_retries : int, optional, default = 3
         Maximum number of retries for fetching entries on exception.
-    batch_size : int, optional, default = 128
+    batch_size : int, optional, default = None
         Number of feed items to accumulate before creating a DataFrame.
     enable_cache : bool, optional, default = False
         Enable caching of RSS feed request data.
@@ -55,12 +55,12 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 feed_input: str | list[str],
+                 feed_input: list[str],
                  interval_secs: float = 600,
                  stop_after: int = 0,
                  max_retries: int = 5,
                  run_indefinitely: bool = None,
-                 batch_size: int = 128,
+                 batch_size: int = None,
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http"):
         super().__init__(c)
@@ -68,6 +68,15 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         self._stop_after = stop_after
         self._interval_secs = interval_secs
         self._max_retries = max_retries
+
+        if (batch_size is None):
+            batch_size = c.pipeline_batch_size
+
+        if (stop_after > 0):
+            if (run_indefinitely):
+                raise ValueError("Cannot set both `stop_after` and `run_indefinitely` to True.")
+
+            run_indefinitely = False
 
         self._records_emitted = 0
         self._controller = RSSController(feed_input=feed_input,
@@ -108,13 +117,13 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                     yield MessageMeta(df=df)
 
+                    if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
+                        self._stop_requested = True
+                        logger.debug("Stop limit reached...preparing to halt the source.")
+                        break
+
                 if not self._controller.run_indefinitely:
                     self._stop_requested = True
-                    continue
-
-                if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
-                    self._stop_requested = True
-                    logger.debug("Stop limit reached...preparing to halt the source.")
                     continue
 
                 logger.debug("Waiting for %d seconds before fetching again...", self._interval_secs)
@@ -134,6 +143,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                 if retries == self._max_retries:  # Check if retries exceeded the limit
                     logger.error("Max retries reached. Unable to fetch feed entries.")
                     raise RuntimeError(f"Failed to fetch feed entries after max retries: {exc}") from exc
+
+        logger.debug("Source stopped.")
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
         source = builder.make_source(self.unique_name, self._fetch_feeds)

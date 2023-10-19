@@ -75,7 +75,7 @@ def test_support_cpp_node(config):
 @pytest.mark.use_python
 @pytest.mark.parametrize(
     "feed_input, batch_size, expected_count, enable_cache",
-    [(valid_feed_input, 30, 1, False), (valid_feed_input, 12, 3, True),
+    [([valid_feed_input], 30, 1, False), ([valid_feed_input], 12, 3, True),
      ([valid_feed_input, valid_feed_input], 15, 2, False)
      # Duplicate feed inputs
      ])
@@ -104,7 +104,7 @@ def test_invalid_input_rss_source_stage_pipe(config):
     pipe = Pipeline(config)
 
     rss_source_stage = pipe.add_stage(
-        RSSSourceStage(config, feed_input=invalid_feed_input, interval_secs=1, max_retries=1))
+        RSSSourceStage(config, feed_input=[invalid_feed_input], interval_secs=1, max_retries=1))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.add_edge(rss_source_stage, sink_stage)

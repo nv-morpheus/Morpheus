@@ -34,7 +34,9 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@register_stage("deserialize",
+                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                ignore_args=["message_type", "task_type", "task_payload"])
 class DeserializeStage(MultiMessageStage):
     """
     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+import types
 import typing
 from collections import defaultdict
 
@@ -43,6 +44,15 @@ def greatest_ancestor(*cls_list):
             if len(mro) == 0:
                 mros.remove(mro)
     return None  # or raise, if that's more appropriate
+
+
+def is_union_type(type_: type) -> bool:
+    """
+    Returns True if the type is a `typing.Union` or a `types.UnionType`.
+    """
+    # Unions in the form of `(float | int)` are instances of `types.UnionType`.
+    # However, unions in the form of `typing.Union[float, int]` are instances of `typing._UnionGenericAlias`.
+    return isinstance(type_, (types.UnionType, typing._UnionGenericAlias))
 
 
 @typing.overload
