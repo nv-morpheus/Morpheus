@@ -32,6 +32,7 @@ from morpheus.llm import LLMEngine
 from morpheus.llm import LLMLambdaNode
 from morpheus.llm import LLMNode
 from morpheus.llm import LLMNodeBase
+from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
@@ -50,7 +51,6 @@ from ..common.llm_service import LLMClient
 from ..common.llm_service import LLMService
 from ..common.nemo_llm_service import NeMoLLMService
 from ..common.simple_task_handler import SimpleTaskHandler
-from ..common.template_node import PromptTemplateNode
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
