@@ -27,7 +27,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -109,6 +109,9 @@ class DFPFileBatcherStage(SinglePortStage):
         """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(typing.Tuple[fsspec.core.OpenFiles, int])
+
     def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
         """
         Batches incoming data according to date, period and sampling, potentially filtering data based on file dates.
@@ -183,8 +186,8 @@ class DFPFileBatcherStage(SinglePortStage):
 
         return output_batches
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
+        builder.make_edge(input_node, node)
 
-        return stream, typing.Tuple[fsspec.core.OpenFiles, int]
+        return node

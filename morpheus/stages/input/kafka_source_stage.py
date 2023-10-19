@@ -31,7 +31,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +137,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def stop(self):
         """
         Performs cleanup steps when pipeline is stopped.
@@ -229,7 +232,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             if (consumer):
                 consumer.close()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,
@@ -249,4 +252,4 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         else:
             source = builder.make_source(self.unique_name, self._source_generator)
 
-        return source, MessageMeta
+        return source

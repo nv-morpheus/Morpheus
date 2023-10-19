@@ -169,6 +169,7 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
               default="DFP-azure-{user_id}",
               help="The MLflow model name template to use when logging models. ")
 @click.option('--use_postproc_schema', is_flag=True, help='Assume that input data has already been preprocessed.')
+@click.option('--inference_detection_file_name', type=str, default="dfp_detections_azure.csv")
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -182,6 +183,7 @@ def run_pipeline(train_users,
                  mlflow_model_name_template,
                  file_type_override,
                  use_postproc_schema,
+                 inference_detection_file_name,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -190,7 +192,7 @@ def run_pipeline(train_users,
     # To include individual, we must be either training or inferring
     include_individual = train_users != "generic"
 
-    # None indicates we arent training anything
+    # None indicates we aren't training anything
     is_training = train_users != "none"
 
     skip_users = list(skip_user)
@@ -451,7 +453,7 @@ def run_pipeline(train_users,
         pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         # Write all anomalies to a CSV file
-        pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
+        pipeline.add_stage(WriteToFileStage(config, filename=inference_detection_file_name, overwrite=True))
 
     # Run the pipeline
     pipeline.run()

@@ -24,12 +24,12 @@ from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.controllers.write_to_file_controller import WriteToFileController
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
-class WriteToFileStage(SinglePortStage):
+class WriteToFileStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a file.
 
@@ -89,25 +89,20 @@ class WriteToFileStage(SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return True
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = _stages.WriteToFileStage(builder,
-                                               self.unique_name,
-                                               self._controller.output_file,
-                                               "w",
-                                               self._controller.file_type,
-                                               self._controller.include_index_col,
-                                               self._controller.flush)
+            to_file_node = _stages.WriteToFileStage(builder,
+                                                    self.unique_name,
+                                                    self._controller.output_file,
+                                                    "w",
+                                                    self._controller.file_type,
+                                                    self._controller.include_index_col,
+                                                    self._controller.flush)
         else:
 
-            to_file = builder.make_node(self.unique_name, ops.build(self._controller.node_fn))
+            to_file_node = builder.make_node(self.unique_name, ops.build(self._controller.node_fn))
 
-        builder.make_edge(stream, to_file)
-        stream = to_file
+        builder.make_edge(input_node, to_file_node)
 
-        # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return to_file_node

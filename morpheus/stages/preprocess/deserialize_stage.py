@@ -28,7 +28,6 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -118,15 +117,11 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiMessage
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
-            stream = builder.make_node(
+            node = builder.make_node(
                 self.unique_name,
                 ops.map(
                     partial(DeserializeStage.process_dataframe,
@@ -134,6 +129,6 @@ class DeserializeStage(MultiMessageStage):
                             ensure_sliceable_index=self._ensure_sliceable_index)),
                 ops.flatten())
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, out_type
+        return node

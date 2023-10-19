@@ -26,6 +26,7 @@ import pytest
 from _utils import TEST_DIRS
 from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
 from _utils.kafka import write_file_to_kafka
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
@@ -59,7 +60,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
                     dataset_pandas: DatasetManager,
                     config: Config,
                     kafka_bootstrap_servers: str,
-                    kafka_topics: typing.Tuple[str, str],
+                    kafka_topics: KafkaTopics,
                     kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
@@ -149,7 +150,7 @@ def test_abp_no_cpp(mock_triton_client: mock.MagicMock,
 def test_abp_cpp(config: Config,
                  dataset_pandas: DatasetManager,
                  kafka_bootstrap_servers: str,
-                 kafka_topics: typing.Tuple[str, str],
+                 kafka_topics: KafkaTopics,
                  kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
