@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+import string
 import typing
 
 from morpheus.llm import LLMContext
@@ -32,7 +33,8 @@ class PromptTemplateNode(LLMNodeBase):
         self._template_format = template_format
 
         if (self._template_format == "f-string"):
-            self._input_names = []
+            formatter = string.Formatter()
+            self._input_names = [x[1] for x in formatter.parse(self._template) if x[1] is not None]
         elif (self._template_format == "jinja"):
             from jinja2 import Template
             from jinja2 import meta
