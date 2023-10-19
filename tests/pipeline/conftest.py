@@ -22,7 +22,7 @@ from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from _utils.stages.split_stage import SplitStage
 from morpheus.config import Config
 from morpheus.pipeline import Pipeline
-from morpheus.pipeline.base_stage import BaseStage
+from morpheus.pipeline.base_stage import StageBase
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -40,7 +40,7 @@ def in_mem_multi_source_stage_fixture(config: Config):
     yield InMemoryMultiSourceStage(config, data=data)
 
 
-def _build_ports(config: Config, source_stage: SourceStage, stage: BaseStage):
+def _build_ports(config: Config, source_stage: SourceStage, stage: StageBase):
     pipe = Pipeline(config)
     pipe.add_stage(source_stage)
     pipe.add_stage(stage)

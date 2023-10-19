@@ -29,7 +29,7 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.base_stage import BaseStage
+from morpheus.pipeline.base_stage import StageBase
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
@@ -39,7 +39,7 @@ from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
-StageT = typing.TypeVar("StageT", bound=BaseStage)
+StageT = typing.TypeVar("StageT", bound=StageBase)
 
 
 class Pipeline():
@@ -131,7 +131,7 @@ class Pipeline():
         return stage
 
     def add_edge(self,
-                 start: typing.Union[BaseStage, Sender],
+                 start: typing.Union[StageBase, Sender],
                  end: typing.Union[Stage, Receiver],
                  segment_id: str = "main"):
         """
@@ -151,7 +151,7 @@ class Pipeline():
         """
         self._assert_not_built()
 
-        if (isinstance(start, BaseStage)):
+        if (isinstance(start, StageBase)):
             assert len(start.output_ports) > 0, \
                 "Cannot call `add_edge` with a stage with no output ports as the `start` parameter"
             assert len(start.output_ports) == 1, \
@@ -268,7 +268,7 @@ class Pipeline():
             # Finally, execute the link phase (only necessary for circular pipelines)
             # for s in source_and_stages:
             for stage in segment_graph.nodes():
-                for port in typing.cast(BaseStage, stage).input_ports:
+                for port in typing.cast(StageBase, stage).input_ports:
                     port.link_schema()
 
             logger.info("====Pre-Building Segment Complete!====")
@@ -324,7 +324,7 @@ class Pipeline():
 
             # Finally, execute the link phase (only necessary for circular pipelines)
             for stage in segment_graph.nodes():
-                for port in typing.cast(BaseStage, stage).input_ports:
+                for port in typing.cast(StageBase, stage).input_ports:
                     port.link_node(builder=builder)
 
             asyncio.run(self._async_start(segment_graph.nodes()))
@@ -467,7 +467,7 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def has_ports(node: BaseStage, is_input):
+        def has_ports(node: StageBase, is_input):
             if (is_input):
                 return len(node.input_ports) > 0
 
@@ -478,7 +478,7 @@ class Pipeline():
             gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
-            for name, attrs in typing.cast(typing.Mapping[BaseStage, dict],
+            for name, attrs in typing.cast(typing.Mapping[StageBase, dict],
                                            self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
@@ -517,7 +517,7 @@ class Pipeline():
         # Build up edges
         for segment_id in self._segments:
             gv_subgraph = gv_subgraphs[segment_id]
-            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[BaseStage, BaseStage], dict],
+            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StageBase, StageBase], dict],
                                         self._segment_graphs[segment_id].edges()).items():  # noqa: E501
 
                 edge_attrs = {}

@@ -44,7 +44,7 @@ class LinearPipeline(_pipeline.Pipeline):
         self._next_segment_index = 0
         self._increment_segment_id()
 
-        self._linear_stages: typing.List[_pipeline.BaseStage] = []
+        self._linear_stages: typing.List[_pipeline.StageBase] = []
 
     def _increment_segment_id(self):
         self._linear_stages = []

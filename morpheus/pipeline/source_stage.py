@@ -24,7 +24,7 @@ from morpheus.config import Config
 logger = logging.getLogger(__name__)
 
 
-class SourceStage(_pipeline.BaseStage):
+class SourceStage(_pipeline.StageBase):
     """
     The SourceStage is mandatory for the Morpheus pipeline to run. This stage represents the start of the pipeline. All
     `SourceStage` object take no input but generate output.

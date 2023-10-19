@@ -34,7 +34,7 @@ class Sender():
             Sender port number.
     """
 
-    def __init__(self, parent: "_pipeline.BaseStage", port_number: int):
+    def __init__(self, parent: "_pipeline.StageBase", port_number: int):
 
         self._parent = parent
         self.port_number = port_number
@@ -45,7 +45,7 @@ class Sender():
         self._output_node: mrc.SegmentObject = None
 
     @property
-    def parent(self) -> "_pipeline.BaseStage":
+    def parent(self) -> "_pipeline.StageBase":
         return self._parent
 
     @property

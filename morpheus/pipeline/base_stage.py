@@ -38,7 +38,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
     sig = inspect.signature(func, follow_wrapped=True)
 
     @functools.wraps(func)
-    def inner(self: "BaseStage", *args, **kwargs):
+    def inner(self: "StageBase", *args, **kwargs):
 
         # Actually call init first. This way any super classes strings will be overridden
         func(self, *args, **kwargs)
@@ -63,7 +63,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
     return typing.cast(_DecoratorType, inner)
 
 
-class BaseStage(ABC, collections.abc.Hashable):
+class StageBase(ABC, collections.abc.Hashable):
     """
     This abstract class serves as the morpheus pipeline's base class. This class wraps a `mrc.SegmentObject`
     object and aids in hooking stages up together.
@@ -81,7 +81,7 @@ class BaseStage(ABC, collections.abc.Hashable):
         # Save the config
         self._config = config
 
-        self._id = BaseStage.__ID_COUNTER.get_and_inc()
+        self._id = StageBase.__ID_COUNTER.get_and_inc()
         self._pipeline: _pipeline.Pipeline = None
         self._init_str: str = ""  # Stores the initialization parameters used for creation. Needed for __repr__
 
@@ -228,7 +228,7 @@ class BaseStage(ABC, collections.abc.Hashable):
 
         return senders
 
-    def get_all_input_stages(self) -> list["BaseStage"]:
+    def get_all_input_stages(self) -> list["StageBase"]:
         """
         Get all input stages to this stage.
 
@@ -255,7 +255,7 @@ class BaseStage(ABC, collections.abc.Hashable):
 
         return receivers
 
-    def get_all_output_stages(self) -> list["BaseStage"]:
+    def get_all_output_stages(self) -> list["StageBase"]:
         """
         Get all output stages from this stage.
 

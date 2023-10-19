@@ -16,7 +16,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from .base_stage import BaseStage
+    from .base_stage import StageBase
 
 
 class PortSchema:
@@ -43,7 +43,7 @@ class PortSchema:
 
 class StageSchema:
 
-    def __init__(self, stage: "BaseStage"):
+    def __init__(self, stage: "StageBase"):
         self._input_schemas = []
         for port in stage.input_ports:
             input_schema = port.get_input_schema()

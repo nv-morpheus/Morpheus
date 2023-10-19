@@ -22,7 +22,7 @@ import morpheus.pipeline as _pipeline
 logger = logging.getLogger(__name__)
 
 
-class Stage(_pipeline.BaseStage):
+class Stage(_pipeline.StageBase):
     """
     This class serves as the base for all pipeline stage implementations that are not source objects.
 
