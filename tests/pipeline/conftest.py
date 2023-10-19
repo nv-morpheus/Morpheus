@@ -22,8 +22,8 @@ from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from _utils.stages.split_stage import SplitStage
 from morpheus.config import Config
 from morpheus.pipeline import Pipeline
-from morpheus.pipeline.stage_base import StageBase
 from morpheus.pipeline.source_stage import SourceStage
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
