@@ -31,8 +31,8 @@ def execute_node(node: LLMNodeBase, **input_values: dict) -> typing.Any:
         inputs.append(InputMap(f"/{input_name}", input_name))
         parent_context.set_output(input_name, input_value)
 
-    context = LLMContext(parent_context, "test", inputs)
+    context = parent_context.push("test", inputs)
 
-    asyncio.run(node.execute(context))
+    context = asyncio.run(node.execute(context))
 
     return context.view_outputs
