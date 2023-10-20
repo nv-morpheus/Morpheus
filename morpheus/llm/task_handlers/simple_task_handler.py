@@ -13,34 +13,31 @@
 # limitations under the License.
 
 import logging
-import typing
 
 from morpheus.llm import LLMContext
-from morpheus.llm import LLMNodeBase
+from morpheus.llm import LLMTaskHandler
 
 logger = logging.getLogger(__name__)
 
 
-class ExtracterNode(LLMNodeBase):
+class SimpleTaskHandler(LLMTaskHandler):
 
-    def __init__(self) -> None:
+    def __init__(self, output_columns: list[str] = None) -> None:
         super().__init__()
 
-    def get_input_names(self) -> list[str]:
-        return []
+        if (output_columns is None):
+            self._output_columns = ["response"]
 
-    async def execute(self, context: LLMContext):
+    def get_input_names(self):
+        return self._output_columns
 
-        # Get the keys from the task
-        input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
+    async def try_handle(self, context: LLMContext):
+
+        input_dict = context.get_inputs()
 
         with context.message().payload().mutable_dataframe() as df:
-            input_dict: list[dict] = df[input_keys].to_dict(orient="list")
+            # Write the values to the dataframe
+            for key, value in input_dict.items():
+                df[key] = value
 
-        if (len(input_keys) == 1):
-            # Extract just the first key if there is only 1
-            context.set_output(input_dict[input_keys[0]])
-        else:
-            context.set_output(input_dict)
-
-        return context
+        return [context.message()]

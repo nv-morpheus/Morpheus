@@ -18,29 +18,26 @@ import typing
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
-from .llm_service import LLMClient
-from .llm_service import LLMService
-
 logger = logging.getLogger(__name__)
 
 
-class LLMGenerateNode(LLMNodeBase):
+class ExtracterNode(LLMNodeBase):
 
-    def __init__(self, llm_client: LLMClient) -> None:
-        super().__init__()
-
-        self._llm_client = llm_client
-
-    def get_input_names(self):
-        return ["prompt"]
+    def get_input_names(self) -> list[str]:
+        return []
 
     async def execute(self, context: LLMContext):
 
-        # Get the list of inputs
-        prompts: list[str] = typing.cast(list[str], context.get_input())
+        # Get the keys from the task
+        input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
 
-        results = await self._llm_client.generate_batch_async(prompts)
+        with context.message().payload().mutable_dataframe() as df:
+            input_dict: list[dict] = df[input_keys].to_dict(orient="list")
 
-        context.set_output(results)
+        if (len(input_keys) == 1):
+            # Extract just the first key if there is only 1
+            context.set_output(input_dict[input_keys[0]])
+        else:
+            context.set_output(input_dict)
 
         return context

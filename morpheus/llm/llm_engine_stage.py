@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
-import threading
 import typing
 
 import mrc
@@ -26,7 +24,7 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 class LLMEngineStage(SinglePortStage):
@@ -56,17 +54,6 @@ class LLMEngineStage(SinglePortStage):
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
         return True
-
-    def _start(self):
-        # Create a thread with its own asyncio loop
-
-        self._thread = threading.Thread(target=self._engine.run)
-
-    def _async_main(self):
-
-        self._loop = asyncio.new_event_loop()
-
-        self._loop.run_forever()
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 

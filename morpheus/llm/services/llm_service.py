@@ -13,21 +13,33 @@
 # limitations under the License.
 
 import logging
-
-from morpheus.llm import LLMContext
-from morpheus.llm import LLMTaskHandler
+from abc import ABC
+from abc import abstractmethod
 
 logger = logging.getLogger(__name__)
 
 
-class SimpleTaskHandler(LLMTaskHandler):
+class LLMClient(ABC):
 
-    def get_input_names(self):
-        return ["response"]
+    @abstractmethod
+    def generate(self, prompt: str) -> str:
+        pass
 
-    async def try_handle(self, context: LLMContext):
+    @abstractmethod
+    async def generate_async(self, prompt: str) -> str:
+        pass
 
-        with context.message().payload().mutable_dataframe() as df:
-            df["response"] = context.get_input()
+    @abstractmethod
+    def generate_batch(self, prompts: list[str]) -> list[str]:
+        pass
 
-        return [context.message()]
+    @abstractmethod
+    async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        pass
+
+
+class LLMService(ABC):
+
+    @abstractmethod
+    def get_client(self, model_name: str, **model_kwargs) -> LLMClient:
+        pass
