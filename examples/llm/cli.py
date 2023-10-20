@@ -32,7 +32,7 @@ from morpheus.cli.utils import parse_log_level
               callback=parse_log_level,
               help="Specify the logging level to use.")
 @click.option('--use_cpp',
-              default=True,
+              default=False,
               type=bool,
               help=("Whether or not to use C++ node and message types or to prefer python. "
                     "Only use as a last resort if bugs are encountered"))

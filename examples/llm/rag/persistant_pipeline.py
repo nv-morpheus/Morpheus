@@ -19,8 +19,14 @@ import mrc
 import mrc.core.operators as ops
 from mrc.core.node import Broadcast
 
+from morpheus._lib.llm import LLMEngine
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.llm.llm_engine_stage import LLMEngineStage
+from morpheus.llm.nodes.extracter_node import ExtracterNode
+from morpheus.llm.nodes.rag_node import RAGNode
+from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
@@ -35,9 +41,6 @@ from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
-
-from ..common.llm_engine_stage import LLMEngineStage
-from ..common.nemo_llm_service import NeMoLLMService
 
 
 class SplitStage(Stage):
@@ -145,12 +148,6 @@ def _build_llm_service(model_name: str):
 
 
 def _build_engine(model_name: str, vdb_service: VectorDBResourceService):
-
-    from morpheus.llm import LLMEngine
-
-    from ..common.extracter_node import ExtracterNode
-    from ..common.rag_node import RAGNode
-    from ..common.simple_task_handler import SimpleTaskHandler
 
     engine = LLMEngine()
 

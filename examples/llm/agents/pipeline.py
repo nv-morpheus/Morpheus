@@ -12,16 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 import time
 
+import langchain
 import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings
+from requests_cache import SQLiteCache
 
 import cudf
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
+from morpheus.llm.llm_engine_stage import LLMEngineStage
+from morpheus.llm.nodes.extracter_node import ExtracterNode
+from morpheus.llm.nodes.rag_node import RAGNode
+from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
@@ -31,11 +39,10 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
 
-from ..common.extracter_node import ExtracterNode
-from ..common.llm_engine_stage import LLMEngineStage
-from ..common.nemo_llm_service import NeMoLLMService
-from ..common.rag_node import RAGNode
-from ..common.simple_task_handler import SimpleTaskHandler
+# Setup the cache to avoid repeated calls
+langchain_cache_path = "./.cache/langchain"
+os.makedirs(langchain_cache_path, exist_ok=True)
+langchain.llm_cache = SQLiteCache(database_path=os.path.join(langchain_cache_path, ".langchain.db"))
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -133,11 +140,15 @@ Please answer the following question: \n{{ query }}"""
     embeddings = _build_embeddings("all-MiniLM-L6-v2")
     llm_service = _build_llm_service(model_name)
 
+    # Wrap the embeddings in an async function
+    async def calc_embeddings(texts: list[str]) -> list[list[float]]:
+        return embeddings.embed_documents(texts)
+
     engine.add_node("rag",
                     inputs=["/extracter"],
                     node=RAGNode(prompt=prompt,
                                  vdb_service=vector_service,
-                                 embedding=embeddings.embed_documents,
+                                 embedding=calc_embeddings,
                                  llm_client=llm_service))
 
     engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())

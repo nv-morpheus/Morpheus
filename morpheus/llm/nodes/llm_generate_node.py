@@ -17,9 +17,7 @@ import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
-
-from .llm_service import LLMClient
-from .llm_service import LLMService
+from morpheus.llm.services.llm_service import LLMClient
 
 logger = logging.getLogger(__name__)
 

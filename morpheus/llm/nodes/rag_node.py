@@ -16,12 +16,11 @@ import logging
 import typing
 
 from morpheus.llm import LLMNode
+from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
+from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
+from morpheus.llm.nodes.retriever_node import RetrieverNode
+from morpheus.llm.services.llm_service import LLMClient
 from morpheus.service.vector_db_service import VectorDBResourceService
-
-from .llm_generate_node import LLMGenerateNode
-from .llm_service import LLMClient
-from .prompt_template_node import PromptTemplateNode
-from .retriever_node import RetrieverNode
 
 logger = logging.getLogger(__name__)
 

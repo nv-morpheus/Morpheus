@@ -41,5 +41,5 @@ class LLMClient(ABC):
 class LLMService(ABC):
 
     @abstractmethod
-    def get_client(self, model_name: str, **model_kwargs: dict) -> LLMClient:
+    def get_client(self, model_name: str, **model_kwargs) -> LLMClient:
         pass
