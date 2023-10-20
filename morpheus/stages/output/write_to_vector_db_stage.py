@@ -23,8 +23,8 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.service.vector_db_service import VectorDBService
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+from morpheus.service.vdb.utils import VectorDBServiceFactory
+from morpheus.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ class WriteToVectorDBStage(SinglePortStage):
             #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
 
             # Insert entries in the dataframe to vector database.
-            result = self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
+            self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
 
             return msg
 

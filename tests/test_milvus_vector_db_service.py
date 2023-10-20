@@ -15,19 +15,24 @@
 # limitations under the License.
 
 import concurrent.futures
+import json
+import random
 
 import numpy as np
+import pymilvus
 import pytest
 
-from morpheus.service.milvus_client import MILVUS_DATA_TYPE_MAP
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
+import cudf
+
+from morpheus.service.vdb.milvus_client import MILVUS_DATA_TYPE_MAP
+from morpheus.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
+from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 
 
 @pytest.fixture(scope="module", name="milvus_service")
 def milvus_service_fixture(milvus_server_uri: str):
     # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
     # pipeline completion
-    from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
     service = MilvusVectorDBService(uri=milvus_server_uri)
     yield service
 
@@ -44,6 +49,11 @@ def test_has_store_object(milvus_service: MilvusVectorDBService):
     # Check if a non-existing collection exists in the Milvus server.
     collection_name = "non_existing_collection"
     assert not milvus_service.has_store_object(collection_name)
+
+
+@pytest.fixture
+def sample_field():
+    return pymilvus.FieldSchema(name="test_field", dtype=pymilvus.DataType.INT64)
 
 
 @pytest.mark.milvus
@@ -80,7 +90,7 @@ def test_insert_and_retrieve_by_keys(milvus_service: MilvusVectorDBService,
 
 
 @pytest.mark.milvus
-def test_search(milvus_service: MilvusVectorDBService, idx_part_collection_config: dict, milvus_data: list[dict]):
+def test_query(milvus_service: MilvusVectorDBService, idx_part_collection_config: dict, milvus_data: list[dict]):
     # Create a collection.
     collection_name = "test_search_collection"
     milvus_service.create(collection_name, **idx_part_collection_config)
@@ -92,7 +102,7 @@ def test_search(milvus_service: MilvusVectorDBService, idx_part_collection_confi
     query = "age==26 or age==27"
 
     # Perform a search in the collection.
-    search_result = milvus_service.search(collection_name, query)
+    search_result = milvus_service.query(collection_name, query)
     assert len(search_result) == 2
     assert search_result[0]["age"] in [26, 27]
     assert search_result[1]["age"] in [26, 27]
@@ -102,9 +112,10 @@ def test_search(milvus_service: MilvusVectorDBService, idx_part_collection_confi
 
 
 @pytest.mark.milvus
-def test_search_with_data(milvus_service: MilvusVectorDBService,
-                          idx_part_collection_config: dict,
-                          milvus_data: list[dict]):
+@pytest.mark.asyncio
+async def test_similarity_search_with_data(milvus_service: MilvusVectorDBService,
+                                           idx_part_collection_config: dict,
+                                           milvus_data: list[dict]):
     # Create a collection.
     collection_name = "test_search_with_data_collection"
     milvus_service.create(collection_name, **idx_part_collection_config)
@@ -116,16 +127,19 @@ def test_search_with_data(milvus_service: MilvusVectorDBService,
     search_vec = rng.random((1, 10))
 
     # Define a search filter.
-    fltr = "age==26 or age==27"
+    expr = "age==26 or age==27"
 
     # Perform a search in the collection.
-    search_result = milvus_service.search(collection_name, data=search_vec, filter=fltr, output_fields=["id", "age"])
+    similarity_search_coroutine = await milvus_service.similarity_search(collection_name,
+                                                                         embeddings=search_vec,
+                                                                         expr=expr)
+    search_result = await similarity_search_coroutine
 
     assert len(search_result[0]) == 2
-    assert search_result[0][0]["entity"]["age"] in [26, 27]
-    assert search_result[0][1]["entity"]["age"] in [26, 27]
-    assert len(search_result[0][0]["entity"].keys()) == 2
-    assert sorted(list(search_result[0][0]["entity"].keys())) == ["age", "id"]
+    assert search_result[0][0]["age"] in [26, 27]
+    assert search_result[0][1]["age"] in [26, 27]
+    assert len(search_result[0][0].keys()) == 2
+    assert sorted(list(search_result[0][0].keys())) == ["age", "id"]
 
     # Clean up the collection.
     milvus_service.drop(collection_name)
@@ -184,11 +198,12 @@ def test_insert_into_partition(milvus_service: MilvusVectorDBService,
                                milvus_data: list[dict]):
     # Create a collection with a partition.
     collection_name = "test_partition_collection"
+
     partition_name = idx_part_collection_config["collection_conf"]["partition_conf"]["partitions"][0]["name"]
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the specified partition.
-    response = milvus_service.insert(collection_name, milvus_data, collection_conf={"partition_name": partition_name})
+    response = milvus_service.insert(collection_name, milvus_data, partition_name=partition_name)
     assert response["insert_count"] == len(milvus_data)
 
     # Retrieve inserted data by primary keys.
@@ -228,7 +243,7 @@ def test_insert_into_partition(milvus_service: MilvusVectorDBService,
 @pytest.mark.milvus
 def test_update(milvus_service: MilvusVectorDBService, simple_collection_config: dict, milvus_data: list[dict]):
     collection_name = "test_update_collection"
-
+    milvus_service.drop(collection_name)
     # Create a collection with the specified schema configuration.
     milvus_service.create(collection_name, **simple_collection_config)
 
@@ -294,7 +309,7 @@ def test_delete(milvus_service: MilvusVectorDBService, idx_part_collection_confi
     delete_response = milvus_service.delete(collection_name, delete_expr)
     assert delete_response["delete_count"] == 2
 
-    response = milvus_service.search(collection_name, query="id > 0")
+    response = milvus_service.query(collection_name, query="id > 0")
     assert len(response) == len(milvus_data) - 2
 
     for item in response:
@@ -314,7 +329,6 @@ def test_single_instance_with_collection_lock(milvus_service: MilvusVectorDBServ
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     filter_query = "age == 26 or age == 27"
-    search_vec = np.random.random((1, 10))
     execution_order = []
 
     def insert_data():
@@ -322,8 +336,8 @@ def test_single_instance_with_collection_lock(milvus_service: MilvusVectorDBServ
         assert result['insert_count'] == len(milvus_data)
         execution_order.append("Insert Executed")
 
-    def search_data():
-        result = milvus_service.search(collection_name, data=search_vec, filter=filter_query)
+    def query_data():
+        result = milvus_service.query(collection_name, query=filter_query)
         execution_order.append("Search Executed")
         assert isinstance(result, list)
 
@@ -333,7 +347,7 @@ def test_single_instance_with_collection_lock(milvus_service: MilvusVectorDBServ
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(insert_data)
-        executor.submit(search_data)
+        executor.submit(query_data)
         executor.submit(count_entities)
 
     # Assert the execution order
@@ -350,7 +364,6 @@ def test_multi_instance_with_collection_lock(milvus_service: MilvusVectorDBServi
 
     collection_name = "test_insert_and_search_order_with_collection_lock"
     filter_query = "age == 26 or age == 27"
-    search_vec = np.random.random((1, 10))
 
     execution_order = []
 
@@ -363,18 +376,18 @@ def test_multi_instance_with_collection_lock(milvus_service: MilvusVectorDBServi
         assert result['insert_count'] == len(milvus_data)
         execution_order.append("Insert Executed")
 
-    def search_data():
-        result = milvus_service.search(collection_name, data=search_vec, filter=filter_query)
-        execution_order.append("Search Executed")
+    def query_data():
+        result = milvus_service.query(collection_name, query=filter_query)
+        execution_order.append("Query Executed")
         assert isinstance(result, list)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(create_collection)
         executor.submit(insert_data)
-        executor.submit(search_data)
+        executor.submit(query_data)
 
     # Assert the execution order
-    assert execution_order == ["Create Executed", "Insert Executed", "Search Executed"]
+    assert execution_order == ["Create Executed", "Insert Executed", "Query Executed"]
 
 
 def test_get_collection_lock():
@@ -385,3 +398,60 @@ def test_get_collection_lock():
     lock = MilvusVectorDBService.get_collection_lock(collection_name)
     assert "lock" == type(lock).__name__
     assert collection_name in MilvusVectorDBService._collection_locks
+
+
+@pytest.mark.milvus
+def test_create_from_dataframe(milvus_service: MilvusVectorDBService):
+
+    df = cudf.DataFrame({
+        "id": list(range(10)),
+        "age": [random.randint(20, 40) for i in range(10)],
+        "embedding": [[random.random() for _ in range(10)] for _ in range(10)]
+    })
+
+    collection_name = "test_create_from_dataframe_collection"
+
+    # Create a collection using dataframe schema.
+    milvus_service.create_from_dataframe(collection_name, df=df, index_field="embedding")
+
+    assert milvus_service.has_store_object(collection_name)
+
+    # Clean up the collection.
+    milvus_service.drop(collection_name)
+
+
+def test_fse_default():
+    encoder = FieldSchemaEncoder()
+    result = encoder.default(pymilvus.DataType.INT32)
+    assert result == "DataType.INT32"
+
+
+def test_fse_object_hook():
+    data = {"name": "test_field", "type": "DataType.INT64"}
+    result = FieldSchemaEncoder.object_hook(data)
+    assert result["type"] == pymilvus.DataType.INT64
+
+
+def test_fse_load(tmp_path):
+    data = {"name": "test_field", "type": "DataType.INT64"}
+    file_path = tmp_path / "test.json"
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
+    with open(file_path, "r", encoding="utf-8") as f:
+        result = FieldSchemaEncoder.load(f)
+    assert result.name == "test_field"
+    assert result.dtype == pymilvus.DataType.INT64
+
+
+def test_fse_loads():
+    data = '{"name": "test_field", "type": "DataType.INT64"}'
+    result = FieldSchemaEncoder.loads(data)
+    assert result.name == "test_field"
+    assert result.dtype == pymilvus.DataType.INT64
+
+
+def test_fse_from_dict():
+    data = {"name": "test_field", "dtype": "DataType.INT64"}
+    result = FieldSchemaEncoder.from_dict(data)
+    assert result.name == "test_field"
+    assert result.dtype == pymilvus.DataType.INT64

@@ -15,8 +15,6 @@
 import importlib
 import typing
 
-import morpheus.service
-
 
 class VectorDBServiceFactory:
 
@@ -24,7 +22,7 @@ class VectorDBServiceFactory:
     @classmethod
     def create_instance(
             cls, service_name: typing.Literal["milvus"], *args: typing.Any,
-            **kwargs: dict[str, typing.Any]) -> "morpheus.service.milvus_vector_db_service.MilvusVectorDBService":
+            **kwargs: dict[str, typing.Any]) -> "morpheus.service.vdb.milvus_vector_db_service.MilvusVectorDBService":
         pass
 
     @classmethod
@@ -53,7 +51,7 @@ class VectorDBServiceFactory:
             If the specified service name is not found or does not correspond to a valid service class.
         """
         try:
-            module_name = f"morpheus.service.{service_name}_vector_db_service"
+            module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
             module = importlib.import_module(module_name)
             class_name = f"{service_name.capitalize()}VectorDBService"
             class_ = getattr(module, class_name)
