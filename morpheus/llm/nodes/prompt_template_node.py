@@ -49,7 +49,7 @@ class PromptTemplateNode(LLMNodeBase):
             for (_, field_name, _, _) in formatter.parse(self._template):
                 if field_name == '':
                     raise ValueError("Unnamed fields in templates are not supported")
-                
+
                 if field_name is not None:
                     self._input_names.append(field_name)
 
@@ -63,9 +63,6 @@ class PromptTemplateNode(LLMNodeBase):
             self._input_names = list(meta.find_undeclared_variables(jinja_template.environment.parse(self._template)))
         else:
             raise ValueError(f"Invalid template format: {self._template_format}, must be one of: f-string, jinja")
-
-        if (len(self._input_names) == 0):
-            raise ValueError("No input variables found in template")
 
     def get_input_names(self):
         return self._input_names

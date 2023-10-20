@@ -55,23 +55,26 @@ MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
           "Testing a loop:\nTitle: rockets, Summary: space\n\nquery2",
       ])],
     ids=["f-string-hello-world", "f-string-fruit-vegetable", "jinja-fruit-vegetable", "jinja-multi-line"])
-def test_prompt_template_node(template: str, template_format: str, values: dict, expected_output: str):
+def test_prompt_template_node(template: str, template_format: str, values: dict, expected_output: list[str]):
     node = PromptTemplateNode(template=template, template_format=template_format)
     assert sorted(node.get_input_names()) == sorted(values.keys())
 
     assert execute_node(node, **values) == expected_output
 
 
+@pytest.mark.parametrize("template_format", ["f-string", "jinja"])
+def test_prompt_template_pass_thru(template_format: str):
+    template = "template without any variables should rase an exception"
+    node = PromptTemplateNode(template=template, template_format=template_format)
+    assert node.get_input_names() == []
+
+    inputs = {'input': ['unused', 'placeholder']}
+    assert execute_node(node, **inputs) == [template, template]
+
+
 def test_unsupported_template_format():
     with pytest.raises(ValueError):
         PromptTemplateNode(template="Hello {name}!", template_format="unsupported")
-
-
-@pytest.mark.parametrize("template_format", ["f-string", "jinja"])
-def test_no_placeholders(template_format: str):
-    with pytest.raises(ValueError):
-        PromptTemplateNode(template="template without any variables should rase an exception",
-                           template_format=template_format)
 
 
 @pytest.mark.parametrize("template", ["Hello {}!", "fruit: {fruit}, vegetable: {}, juice: {juice}"])
