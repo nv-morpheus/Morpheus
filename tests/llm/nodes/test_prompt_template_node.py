@@ -66,7 +66,7 @@ def test_prompt_template_node(template: str, template_format: str, values: dict,
 def test_prompt_template_pass_thru(template_format: str):
     template = "template without any variables should rase an exception"
     node = PromptTemplateNode(template=template, template_format=template_format)
-    assert node.get_input_names() == []
+    assert len(node.get_input_names()) == 0
 
     inputs = {'input': ['unused', 'placeholder']}
     assert execute_node(node, **inputs) == [template, template]
