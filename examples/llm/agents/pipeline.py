@@ -40,11 +40,11 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
 
 # Setup the cache to avoid repeated calls
-langchain_cache_path = "./.cache/langchain"
-os.makedirs(langchain_cache_path, exist_ok=True)
-langchain.llm_cache = SQLiteCache(database_path=os.path.join(langchain_cache_path, ".langchain.db"))
+LANGCHAIN_CACHE_PATH = "./.cache/langchain"
+os.makedirs(LANGCHAIN_CACHE_PATH, exist_ok=True)
+langchain.llm_cache = SQLiteCache(database_path=os.path.join(LANGCHAIN_CACHE_PATH, ".langchain.db"))
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 def _build_embeddings(model_name: str):

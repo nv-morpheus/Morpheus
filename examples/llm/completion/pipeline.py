@@ -33,7 +33,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 def _build_engine():
@@ -57,11 +57,7 @@ def _build_engine():
     return engine
 
 
-def pipeline(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-):
+def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_count: int):
 
     config = Config()
     config.mode = PipelineModes.OTHER
@@ -94,7 +90,7 @@ def pipeline(
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=1))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=repeat_count))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))

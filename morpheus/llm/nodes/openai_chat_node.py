@@ -26,7 +26,7 @@ from morpheus.llm import LLMNodeBase
 logger = logging.getLogger(__name__)
 
 
-class OpenAIChatCompletionNode(LLMNodeBase):
+class OpenAIChatNode(LLMNodeBase):
 
     def __init__(self, model_name: str, set_assistant=False) -> None:
         super().__init__()

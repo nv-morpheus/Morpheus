@@ -29,7 +29,7 @@ from ..common.web_scraper_stage import WebScraperStage
 from .common import build_milvus_config
 from .common import build_rss_urls
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 def pipeline(num_threads,

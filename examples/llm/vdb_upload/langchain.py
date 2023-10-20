@@ -22,7 +22,7 @@ from langchain.vectorstores.milvus import Milvus
 
 from morpheus.utils.logging_timer import log_time
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 def chain(model_name, save_cache):

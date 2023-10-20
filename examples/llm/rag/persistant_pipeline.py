@@ -19,9 +19,9 @@ import mrc
 import mrc.core.operators as ops
 from mrc.core.node import Broadcast
 
-from morpheus._lib.llm import LLMEngine
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.llm import LLMEngine
 from morpheus.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.rag_node import RAGNode

@@ -23,9 +23,6 @@ logger = logging.getLogger(__name__)
 
 class ExtracterNode(LLMNodeBase):
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def get_input_names(self) -> list[str]:
         return []
 

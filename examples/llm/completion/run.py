@@ -17,7 +17,7 @@ import os
 
 import click
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 @click.group(name=__name__)
@@ -44,6 +44,12 @@ def run():
     default=64,
     type=click.IntRange(min=1),
     help="Max batch size to use for the model",
+)
+@click.option(
+    "--repeat_count",
+    default=1,
+    type=click.IntRange(min=1),
+    help="Number of times to repeat the input query. Useful for testing performance.",
 )
 def pipeline(**kwargs):
     from .pipeline import pipeline as _pipeline

@@ -35,7 +35,7 @@ try:
 except ImportError as exc:
     raise RuntimeError("Please install onnx to use this feature. Run `mamba install -c conda-forge onnx`") from exc
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 class CustomTokenizer(torch.nn.Module):

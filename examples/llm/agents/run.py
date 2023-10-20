@@ -16,7 +16,7 @@ import os
 
 import click
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 @click.group(name=__name__)

@@ -30,11 +30,11 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate_batch(self, prompt: list[str]) -> list[str]:
+    def generate_batch(self, prompts: list[str]) -> list[str]:
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, prompt: list[str]) -> list[str]:
+    async def generate_batch_async(self, prompts: list[str]) -> list[str]:
         pass
 
 
