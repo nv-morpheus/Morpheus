@@ -17,8 +17,8 @@ import logging
 import os
 import typing
 
-from .llm_service import LLMClient
-from .llm_service import LLMService
+from morpheus.llm.services.llm_service import LLMClient
+from morpheus.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +94,6 @@ class NeMoLLMService(LLMService):
             org_id=self._org_id,
         )
 
-    def get_client(self, model_name: str, **model_kwargs: dict) -> NeMoLLMClient:
+    def get_client(self, model_name: str, **model_kwargs) -> NeMoLLMClient:
 
         return NeMoLLMClient(self, model_name, **model_kwargs)

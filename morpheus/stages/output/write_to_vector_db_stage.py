@@ -108,11 +108,11 @@ class WriteToVectorDBStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
+        typing.Tuple(ControlMessage, MultiResponseMessage, MultiMessage)
             Accepted input types.
 
         """
-        return (ControlMessage, MultiResponseMessage)
+        return (ControlMessage, MultiResponseMessage, MultiMessage)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""

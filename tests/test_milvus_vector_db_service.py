@@ -51,15 +51,19 @@ def test_has_store_object(milvus_service: MilvusVectorDBService):
     assert not milvus_service.has_store_object(collection_name)
 
 
-@pytest.fixture
-def sample_field():
+@pytest.fixture(scope="module", name="sample_field")
+def sample_field_fixture():
     return pymilvus.FieldSchema(name="test_field", dtype=pymilvus.DataType.INT64)
 
 
 @pytest.mark.milvus
 def test_create_and_drop_collection(idx_part_collection_config: dict, milvus_service: MilvusVectorDBService):
-    # Create a collection and check if it exists.
     collection_name = "test_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection and check if it exists.
     milvus_service.create(collection_name, **idx_part_collection_config)
     assert milvus_service.has_store_object(collection_name)
 
@@ -72,8 +76,12 @@ def test_create_and_drop_collection(idx_part_collection_config: dict, milvus_ser
 def test_insert_and_retrieve_by_keys(milvus_service: MilvusVectorDBService,
                                      idx_part_collection_config: dict,
                                      milvus_data: list[dict]):
-    # Create a collection.
     collection_name = "test_insert_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the collection.
@@ -91,8 +99,12 @@ def test_insert_and_retrieve_by_keys(milvus_service: MilvusVectorDBService,
 
 @pytest.mark.milvus
 def test_query(milvus_service: MilvusVectorDBService, idx_part_collection_config: dict, milvus_data: list[dict]):
-    # Create a collection.
     collection_name = "test_search_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the collection.
@@ -116,15 +128,19 @@ def test_query(milvus_service: MilvusVectorDBService, idx_part_collection_config
 async def test_similarity_search_with_data(milvus_service: MilvusVectorDBService,
                                            idx_part_collection_config: dict,
                                            milvus_data: list[dict]):
-    # Create a collection.
     collection_name = "test_search_with_data_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data to the collection.
     milvus_service.insert(collection_name, milvus_data)
 
     rng = np.random.default_rng(seed=100)
-    search_vec = rng.random((1, 10))
+    search_vec = rng.random((1, 3))
 
     # Define a search filter.
     expr = "age==26 or age==27"
@@ -147,8 +163,12 @@ async def test_similarity_search_with_data(milvus_service: MilvusVectorDBService
 
 @pytest.mark.milvus
 def test_count(milvus_service: MilvusVectorDBService, idx_part_collection_config: dict, milvus_data: list[dict]):
-    # Create a collection.
     collection_name = "test_count_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the collection.
@@ -166,8 +186,13 @@ def test_count(milvus_service: MilvusVectorDBService, idx_part_collection_config
 def test_overwrite_collection_on_create(milvus_service: MilvusVectorDBService,
                                         idx_part_collection_config: dict,
                                         milvus_data: list[dict]):
-    # Create a collection.
+
     collection_name = "test_overwrite_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data to the collection.
@@ -178,7 +203,7 @@ def test_overwrite_collection_on_create(milvus_service: MilvusVectorDBService,
     milvus_service.create(collection_name, overwrite=True, **idx_part_collection_config)
 
     # Insert different data into the collection.
-    data2 = [{"id": i, "embedding": [i / 10] * 10, "age": 26 + i} for i in range(10)]
+    data2 = [{"id": i, "embedding": [i / 10] * 3, "age": 26 + i} for i in range(10)]
 
     response2 = milvus_service.insert(collection_name, data2)
     assert response2["insert_count"] == len(data2)
@@ -196,10 +221,14 @@ def test_overwrite_collection_on_create(milvus_service: MilvusVectorDBService,
 def test_insert_into_partition(milvus_service: MilvusVectorDBService,
                                idx_part_collection_config: dict,
                                milvus_data: list[dict]):
-    # Create a collection with a partition.
     collection_name = "test_partition_collection"
 
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
     partition_name = idx_part_collection_config["collection_conf"]["partition_conf"]["partitions"][0]["name"]
+
+    # Create a collection with a partition.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the specified partition.
@@ -243,7 +272,10 @@ def test_insert_into_partition(milvus_service: MilvusVectorDBService,
 @pytest.mark.milvus
 def test_update(milvus_service: MilvusVectorDBService, simple_collection_config: dict, milvus_data: list[dict]):
     collection_name = "test_update_collection"
+
+    # Make sure to drop any existing collection from previous runs.
     milvus_service.drop(collection_name)
+
     # Create a collection with the specified schema configuration.
     milvus_service.create(collection_name, **simple_collection_config)
 
@@ -257,7 +289,7 @@ def test_update(milvus_service: MilvusVectorDBService, simple_collection_config:
                     {
                         "type": MILVUS_DATA_TYPE_MAP["float_vector"],
                         "name": "embedding",
-                        "values": [[i / 5.0] * 10 for i in range(5, 12)]
+                        "values": [[i / 5.0] * 3 for i in range(5, 12)]
                     }, {
                         "type": MILVUS_DATA_TYPE_MAP["int64"], "name": "age", "values": [25 + i for i in range(5, 12)]
                     }]
@@ -277,8 +309,12 @@ def test_update(milvus_service: MilvusVectorDBService, simple_collection_config:
 def test_delete_by_keys(milvus_service: MilvusVectorDBService,
                         idx_part_collection_config: dict,
                         milvus_data: list[dict]):
-    # Create a collection.
     collection_name = "test_delete_by_keys_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the collection.
@@ -295,8 +331,13 @@ def test_delete_by_keys(milvus_service: MilvusVectorDBService,
 
 @pytest.mark.milvus
 def test_delete(milvus_service: MilvusVectorDBService, idx_part_collection_config: dict, milvus_data: list[dict]):
-    # Create a collection.
+
     collection_name = "test_delete_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     # Insert data into the collection.
@@ -324,8 +365,12 @@ def test_single_instance_with_collection_lock(milvus_service: MilvusVectorDBServ
                                               idx_part_collection_config: dict,
                                               milvus_data: list[dict]):
 
-    # Create a collection.
     collection_name = "test_insert_and_search_order_with_collection_lock"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
     milvus_service.create(collection_name, **idx_part_collection_config)
 
     filter_query = "age == 26 or age == 27"
@@ -364,6 +409,9 @@ def test_multi_instance_with_collection_lock(milvus_service: MilvusVectorDBServi
 
     collection_name = "test_insert_and_search_order_with_collection_lock"
     filter_query = "age == 26 or age == 27"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
 
     execution_order = []
 
@@ -410,6 +458,9 @@ def test_create_from_dataframe(milvus_service: MilvusVectorDBService):
     })
 
     collection_name = "test_create_from_dataframe_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
 
     # Create a collection using dataframe schema.
     milvus_service.create_from_dataframe(collection_name, df=df, index_field="embedding")
