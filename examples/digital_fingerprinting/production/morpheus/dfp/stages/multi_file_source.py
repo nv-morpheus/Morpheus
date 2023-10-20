@@ -50,11 +50,11 @@ class MultiFileSource(SingleOutputSource):
     """
 
     def __init__(
-            self,
-            c: Config,
-            filenames: typing.List[str],
-            watch: bool = False,
-            watch_interval: float = 1.0,
+        self,
+        c: Config,
+        filenames: typing.List[str],
+        watch: bool = False,
+        watch_interval: float = 1.0,
     ):
         super().__init__(c)
 
