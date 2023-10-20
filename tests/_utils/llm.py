@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import asyncio
+import typing
 
 from morpheus.llm import InputMap
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
 
-def execute_node(node: LLMNodeBase, **input_values) -> dict:
+def execute_node(node: LLMNodeBase, **input_values: dict) -> typing.Any:
     """
     Executes an LLM Node with the necessary LLM context, and extracts the output values.
     """
