@@ -50,11 +50,11 @@ class MultiFileSource(SingleOutputSource):
     """
 
     def __init__(
-        self,
-        c: Config,
-        filenames: typing.List[str],
-        watch: bool = False,
-        watch_interval: float = 1.0,
+            self,
+            c: Config,
+            filenames: typing.List[str],
+            watch: bool = False,
+            watch_interval: float = 1.0,
     ):
         super().__init__(c)
 
@@ -71,12 +71,24 @@ class MultiFileSource(SingleOutputSource):
     @staticmethod
     def _expand_directories(filenames: typing.List[str]) -> typing.List[str]:
         """
-        Expand to glob all files in any directories in the input filenames.
+        Expand to glob all files in any directories in the input filenames,
+        provided they actually exist.
 
         ex. /path/to/dir -> /path/to/dir/*
         """
         updated_list = []
         for file_name in filenames:
+            # Skip any filenames that already contain wildcards
+            if '*' in file_name or '?' in file_name:
+                updated_list.append(file_name)
+                continue
+
+            # Check if the file or directory actually exists
+            fs = fsspec.filesystem(protocol='file')
+            if not fs.exists(file_name):
+                updated_list.append(file_name)
+                continue
+
             with fsspec.open(file_name) as f:
                 if f.fs.isdir(file_name):
                     updated_list.append(f"{file_name}/*")
