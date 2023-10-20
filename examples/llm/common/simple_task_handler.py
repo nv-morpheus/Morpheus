@@ -22,12 +22,22 @@ logger = logging.getLogger(__name__)
 
 class SimpleTaskHandler(LLMTaskHandler):
 
+    def __init__(self, output_columns: list[str] = None) -> None:
+        super().__init__()
+
+        if (output_columns is None):
+            self._output_columns = ["response"]
+
     def get_input_names(self):
-        return ["response"]
+        return self._output_columns
 
     async def try_handle(self, context: LLMContext):
 
+        input_dict = context.get_inputs()
+
         with context.message().payload().mutable_dataframe() as df:
-            df["response"] = context.get_input()
+            # Write the values to the dataframe
+            for key, value in input_dict.items():
+                df[key] = value
 
         return [context.message()]

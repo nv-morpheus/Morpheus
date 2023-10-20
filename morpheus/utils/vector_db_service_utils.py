@@ -15,20 +15,19 @@
 import importlib
 import typing
 
-import morpheus.service
+import morpheus.service  # pylint: disable=unused-import
 
 
 class VectorDBServiceFactory:
 
     @typing.overload
     @classmethod
-    def create_instance(
-            cls, service_name: typing.Literal["milvus"], *args: typing.Any,
-            **kwargs: dict[str, typing.Any]) -> "morpheus.service.milvus_vector_db_service.MilvusVectorDBService":
+    def create_instance(cls, service_name: typing.Literal["milvus"], *args: typing.Any,
+                        **kwargs) -> "morpheus.service.milvus_vector_db_service.MilvusVectorDBService":
         pass
 
     @classmethod
-    def create_instance(cls, service_name: str, *args: typing.Any, **kwargs: dict[str, typing.Any]):
+    def create_instance(cls, service_name: str, *args: typing.Any, **kwargs):
         """
         Factory for creating instances of vector database service classes. This factory allows dynamically
         creating instances of vector database service classes based on the provided service name.
@@ -52,8 +51,10 @@ class VectorDBServiceFactory:
         ValueError
             If the specified service name is not found or does not correspond to a valid service class.
         """
+
+        module_name = f"morpheus.service.{service_name}_vector_db_service"
+
         try:
-            module_name = f"morpheus.service.{service_name}_vector_db_service"
             module = importlib.import_module(module_name)
             class_name = f"{service_name.capitalize()}VectorDBService"
             class_ = getattr(module, class_name)

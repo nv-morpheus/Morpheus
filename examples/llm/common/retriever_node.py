@@ -15,8 +15,6 @@
 import logging
 import typing
 
-import numpy as np
-
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 from morpheus.service.vector_db_service import VectorDBResourceService
@@ -27,28 +25,37 @@ logger = logging.getLogger(__name__)
 class RetrieverNode(LLMNodeBase):
 
     def __init__(
-            self,
-            service: VectorDBResourceService,
-            embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any,
-                                                                     list[np.ndarray]]]) -> None:
+        self,
+        *,
+        embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any, list[list[float]]]] | None,
+        service: VectorDBResourceService,
+        **similarity_search_kwargs,
+    ) -> None:
         super().__init__()
 
         self._service = service
         self._embedding = embedding
+        self._similarity_search_kwargs = similarity_search_kwargs
 
     def get_input_names(self) -> list[str]:
+        if (self._embedding is None):
+            return ["embedding"]
+
         return ["query"]
 
     async def execute(self, context: LLMContext):
 
-        # Get the keys from the task
-        input_strings: list[str] = typing.cast(list[str], context.get_input())
+        if (self._embedding is not None):
+            # Get the keys from the task
+            input_strings: list[str] = typing.cast(list[str], context.get_input())
 
-        # Call the embedding function to get the vector embeddings
-        embeddings = self._embedding(input_strings)
+            # Call the embedding function to get the vector embeddings
+            embeddings = await self._embedding(input_strings)
+        else:
+            embeddings: list[list[float]] = typing.cast(list[list[float]], context.get_input())
 
         # Query the vector database
-        results = await self._service.similarity_search(embeddings=embeddings, k=4)
+        results = await self._service.similarity_search(embeddings=embeddings, **self._similarity_search_kwargs)
 
         context.set_output(results)
 

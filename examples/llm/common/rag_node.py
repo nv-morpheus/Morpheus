@@ -15,8 +15,6 @@
 import logging
 import typing
 
-import numpy as np
-
 from morpheus.llm import LLMNode
 from morpheus.service.vector_db_service import VectorDBResourceService
 
@@ -34,7 +32,8 @@ class RAGNode(LLMNode):
                  *,
                  prompt: str,
                  vdb_service: VectorDBResourceService,
-                 embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any, list[np.ndarray]]],
+                 embedding: typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any,
+                                                                          list[list[float]]]] = None,
                  llm_client: LLMClient) -> None:
         super().__init__()
 
@@ -43,7 +42,7 @@ class RAGNode(LLMNode):
         self._embedding = embedding
         self._llm_service = llm_client
 
-        self.add_node("retriever", inputs=["query"], node=RetrieverNode(service=vdb_service, embedding=embedding))
+        self.add_node("retriever", node=RetrieverNode(service=vdb_service, embedding=embedding))
 
         self.add_node("prompt",
                       inputs=[("/retriever", "contexts"), ("query", "query")],
