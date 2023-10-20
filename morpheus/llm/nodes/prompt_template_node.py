@@ -27,8 +27,6 @@ class PromptTemplateNode(LLMNodeBase):
 
     def __init__(self, template: str, template_format: typing.Literal["f-string", "jinja"] = "f-string") -> None:
         super().__init__()
-
-        self._input_variables = ["question"]
         self._template = template
         self._template_format = template_format
 
