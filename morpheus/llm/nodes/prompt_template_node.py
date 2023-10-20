@@ -51,9 +51,6 @@ class PromptTemplateNode(LLMNodeBase):
 
     async def execute(self, context: LLMContext):
 
-        # if ("0" in context.input_map[0].input_name):
-        #     context.parent.get_input("$.chat1.choices[*][0].message.content")
-
         # Get the keys from the task
         input_dict = context.get_inputs()
 

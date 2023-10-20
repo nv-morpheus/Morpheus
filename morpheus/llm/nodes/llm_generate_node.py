@@ -13,33 +13,32 @@
 # limitations under the License.
 
 import logging
-from abc import ABC
-from abc import abstractmethod
+import typing
+
+from morpheus.llm import LLMContext
+from morpheus.llm import LLMNodeBase
+from morpheus.llm.services.llm_service import LLMClient
 
 logger = logging.getLogger(__name__)
 
 
-class LLMClient(ABC):
+class LLMGenerateNode(LLMNodeBase):
 
-    @abstractmethod
-    def generate(self, prompt: str) -> str:
-        pass
+    def __init__(self, llm_client: LLMClient) -> None:
+        super().__init__()
 
-    @abstractmethod
-    async def generate_async(self, prompt: str) -> str:
-        pass
+        self._llm_client = llm_client
 
-    @abstractmethod
-    def generate_batch(self, prompt: list[str]) -> list[str]:
-        pass
+    def get_input_names(self):
+        return ["prompt"]
 
-    @abstractmethod
-    async def generate_batch_async(self, prompt: list[str]) -> list[str]:
-        pass
+    async def execute(self, context: LLMContext):
 
+        # Get the list of inputs
+        prompts: list[str] = typing.cast(list[str], context.get_input())
 
-class LLMService(ABC):
+        results = await self._llm_client.generate_batch_async(prompts)
 
-    @abstractmethod
-    def get_client(self, model_name: str, **model_kwargs: dict) -> LLMClient:
-        pass
+        context.set_output(results)
+
+        return context

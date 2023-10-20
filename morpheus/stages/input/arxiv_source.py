@@ -31,7 +31,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
 @register_stage("from-arxiv")
