@@ -21,6 +21,7 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.service.vdb.utils import VectorDBServiceFactory
@@ -35,16 +36,20 @@ class WriteToVectorDBStage(SinglePortStage):
 
     Parameters
     ----------
-    config : `morpheus.config.Config`
+    config : Config
         Pipeline configuration instance.
-    resource_name : str
-        The name of the resource managed by this instance.
-    resource_conf : dict
-        Additional resource configuration when performing vector database writes.
     service : typing.Union[str, VectorDBService]
         Either the name of the vector database service to use or an instance of VectorDBService
         for managing the resource.
-    **service_kwargs : dict[str, typing.Any]
+    resource_name : str
+        The identifier of the resource on which operations are to be performed in the vector database.
+    embedding_column_name : str, optional
+        Name of the embedding column, by default "embedding".
+    recreate : bool, optional
+        Specifies whether to recreate the resource if it already exists, by default False.
+    resource_kwargs : dict, optional
+        Additional keyword arguments to pass when performing vector database writes on a given resource.
+    **service_kwargs : dict
         Additional keyword arguments to pass when creating a VectorDBService instance.
 
     Raises
@@ -55,12 +60,11 @@ class WriteToVectorDBStage(SinglePortStage):
 
     def __init__(self,
                  config: Config,
-                 *,
+                 service: typing.Union[str, VectorDBService],
                  resource_name: str,
                  embedding_column_name: str = "embedding",
                  recreate: bool = False,
                  resource_kwargs: dict = None,
-                 service: typing.Union[str, VectorDBService],
                  **service_kwargs):
 
         super().__init__(config)
@@ -89,7 +93,7 @@ class WriteToVectorDBStage(SinglePortStage):
 
         # Ensure that the resource exists
         if (not has_object):
-            self._service.create(name=self._resource_name, collection_conf=self._resource_kwargs)
+            self._service.create(name=self._resource_name, **self._resource_kwargs)
 
         # Get the service for just the resource we are interested in
         self._resource_service = self._service.load_resource(name=self._resource_name)
@@ -132,7 +136,7 @@ class WriteToVectorDBStage(SinglePortStage):
 
             return ctrl_msg
 
-        def on_data_multi_message(msg: MultiResponseMessage) -> MultiResponseMessage:
+        def on_data_multi_response_message(msg: MultiResponseMessage) -> MultiResponseMessage:
             # Probs tensor contains all of the embeddings
             embeddings = msg.get_probs_tensor()
             embeddings_list = embeddings.tolist()
@@ -160,9 +164,17 @@ class WriteToVectorDBStage(SinglePortStage):
 
             return msg
 
+        def on_data_multi_message(msg: MultiMessage):
+            # Insert entries in the dataframe to vector database.
+            self._service.insert_dataframe(name=self._resource_name, df=msg.get_meta(), **self._resource_kwargs)
+
+            return msg
+
         if (issubclass(input_stream[1], ControlMessage)):
             on_data = ops.map(on_data_control_message)
         elif (issubclass(input_stream[1], MultiResponseMessage)):
+            on_data = ops.map(on_data_multi_response_message)
+        elif (issubclass(input_stream[1], MultiMessage)):
             on_data = ops.map(on_data_multi_message)
         else:
             raise RuntimeError(f"Unexpected input type {input_stream[1]}")

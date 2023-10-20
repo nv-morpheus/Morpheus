@@ -46,13 +46,18 @@ def get_test_df(num_input_rows):
 
 @pytest.mark.milvus
 @pytest.mark.use_cpp
-@pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows", [(True, 5, 5), (False, 5, 5)])
+@pytest.mark.parametrize("use_instance, num_input_rows, expected_num_output_rows, resource_kwargs, recreate",
+                         [(True, 5, 5, {
+                             "partition_name": "age_partition"
+                         }, True), (False, 5, 5, {}, False), (False, 5, 5, {}, True)])
 def test_write_to_vector_db_stage_pipe(milvus_server_uri: str,
                                        idx_part_collection_config: dict,
                                        use_instance: bool,
                                        config: Config,
                                        num_input_rows: int,
-                                       expected_num_output_rows: int):
+                                       expected_num_output_rows: int,
+                                       resource_kwargs: dict,
+                                       recreate: bool):
 
     collection_name = "test_stage_insert_collection"
 
@@ -60,7 +65,12 @@ def test_write_to_vector_db_stage_pipe(milvus_server_uri: str,
     df = get_test_df(num_input_rows)
 
     milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
+
     milvus_service.create(name=collection_name, overwrite=True, **idx_part_collection_config)
+
+    if recreate:
+        # Update resource kwargs with collection configuration if recreate is True
+        resource_kwargs.update(idx_part_collection_config)
 
     to_cm_module_config = {
         "module_id": TO_CONTROL_MESSAGE, "module_name": "to_control_message", "namespace": MORPHEUS_MODULE_NAMESPACE
@@ -75,22 +85,24 @@ def test_write_to_vector_db_stage_pipe(milvus_server_uri: str,
                            output_port_name="output",
                            output_type=ControlMessage))
 
-    # Provide partition name to insert data into the partition otherwise goes to '_default' partition.
-    resource_kwargs = {"collection_conf": {"partition_name": "age_partition"}}
-
+    # Provide partition name in the resource_kwargs to insert data into the partition
+    # otherwise goes to '_default' partition.
     if use_instance:
         # Instantiate stage with service instance and insert options.
         write_to_vdb_stage = WriteToVectorDBStage(config,
                                                   resource_name=collection_name,
                                                   service=milvus_service,
+                                                  recreate=recreate,
                                                   resource_kwargs=resource_kwargs)
     else:
+        service_kwargs = {"uri": milvus_server_uri}
         # Instantiate stage with service name, uri and insert options.
         write_to_vdb_stage = WriteToVectorDBStage(config,
                                                   resource_name=collection_name,
                                                   service="milvus",
-                                                  uri=milvus_server_uri,
-                                                  resource_kwargs=resource_kwargs)
+                                                  recreate=recreate,
+                                                  resource_kwargs=resource_kwargs,
+                                                  **service_kwargs)
 
     pipe.add_stage(write_to_vdb_stage)
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
