@@ -45,7 +45,15 @@ class PromptTemplateNode(LLMNodeBase):
             # The parse method is returning an iterable of tuples in the form of:
             # (literal_text, field_name, format_spec, conversion)
             # https://docs.python.org/3.10/library/string.html#string.Formatter.parse
-            self._input_names = [x[1] for x in formatter.parse(self._template) if x[1] is not None]
+            self._input_names = []
+            for (_, field_name, _, _) in formatter.parse(self._template):
+                if field_name == '':
+                    raise ValueError("Unnamed fields in templates are not supported")
+                
+                if field_name is not None:
+                    self._input_names.append(field_name)
+
+            # self._input_names = [x[1] for x in formatter.parse(self._template) if x[1] is not None]
         elif (self._template_format == "jinja"):
             from jinja2 import Template
             from jinja2 import meta
@@ -55,6 +63,9 @@ class PromptTemplateNode(LLMNodeBase):
             self._input_names = list(meta.find_undeclared_variables(jinja_template.environment.parse(self._template)))
         else:
             raise ValueError(f"Invalid template format: {self._template_format}, must be one of: f-string, jinja")
+
+        if (len(self._input_names) == 0):
+            raise ValueError("No input variables found in template")
 
     def get_input_names(self):
         return self._input_names

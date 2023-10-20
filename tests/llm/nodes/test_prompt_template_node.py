@@ -65,3 +65,16 @@ def test_prompt_template_node(template: str, template_format: str, values: dict,
 def test_unsupported_template_format():
     with pytest.raises(ValueError):
         PromptTemplateNode(template="Hello {name}!", template_format="unsupported")
+
+
+@pytest.mark.parametrize("template_format", ["f-string", "jinja"])
+def test_no_placeholders(template_format: str):
+    with pytest.raises(ValueError):
+        PromptTemplateNode(template="template without any variables should rase an exception",
+                           template_format=template_format)
+
+
+@pytest.mark.parametrize("template", ["Hello {}!", "fruit: {fruit}, vegetable: {}, juice: {juice}"])
+def test_no_unnamed_fields(template: str):
+    with pytest.raises(ValueError):
+        PromptTemplateNode(template=template, template_format="f-string")
