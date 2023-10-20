@@ -43,11 +43,11 @@ class ArxivSource(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    query : `str`, default = "large language models"
+    query : `str`
         Query to use for arxiv search.
     """
 
-    def __init__(self, c: Config, query: str = "large language models"):
+    def __init__(self, c: Config, query: str):
 
         super().__init__(c)
 
