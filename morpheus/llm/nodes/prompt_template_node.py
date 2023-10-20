@@ -43,6 +43,8 @@ class PromptTemplateNode(LLMNodeBase):
             jinja_template = Template(self._template)
 
             self._input_names = list(meta.find_undeclared_variables(jinja_template.environment.parse(self._template)))
+        else:
+            raise ValueError(f"Invalid template format: {self._template_format}, must be one of: f-string, jinja")
 
     def get_input_names(self):
         return self._input_names
