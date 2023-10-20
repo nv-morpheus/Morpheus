@@ -28,6 +28,7 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-arxiv")
-class ArxivSource(SingleOutputSource):
+class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes
     

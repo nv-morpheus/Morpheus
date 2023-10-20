@@ -24,6 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 class PromptTemplateNode(LLMNodeBase):
+    """
+    Populates a template string with the values from the upstream node.
+
+    Parameters
+    ----------
+    template : str
+        The template string to populate.
+    template_format : str, optional default="f-string"
+        The format of the template string. Must be one of: f-string, jinja.
+    """
 
     def __init__(self, template: str, template_format: typing.Literal["f-string", "jinja"] = "f-string") -> None:
         super().__init__()
