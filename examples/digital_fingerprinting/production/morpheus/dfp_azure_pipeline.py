@@ -40,6 +40,7 @@ from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.cli.utils import parse_log_level
+from morpheus.cli.utils import str_to_file_type
 from morpheus.common import FileTypes
 from morpheus.common import FilterSource
 from morpheus.config import Config
@@ -59,18 +60,6 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
-
-
-def _file_type_name_to_enum(file_type: str) -> FileTypes:
-    """Converts a file type name to a FileTypes enum."""
-    if (file_type == "JSON"):
-        return FileTypes.JSON
-    if (file_type == "CSV"):
-        return FileTypes.CSV
-    if (file_type == "PARQUET"):
-        return FileTypes.PARQUET
-
-    return FileTypes.Auto
 
 
 @click.command()
@@ -144,7 +133,7 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
               help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
               callback=lambda _,
               __,
-              value: None if value is None else _file_type_name_to_enum(value))
+              value: None if value is None else str_to_file_type(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
