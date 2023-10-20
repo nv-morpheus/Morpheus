@@ -45,9 +45,12 @@ class ArxivSource(SingleOutputSource):
         Pipeline configuration instance.
     query : `str`
         Query to use for arxiv search.
+    cache_dir : `str`, optional
+        Directory to store downloaded PDFs in, any PDFs already in the directory will be skipped.
+        This directory, will be created if it does not already exist.
     """
 
-    def __init__(self, c: Config, query: str):
+    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache"):
 
         super().__init__(c)
 
@@ -59,6 +62,7 @@ class ArxivSource(SingleOutputSource):
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
+        self._cache_dir = cache_dir
 
     @property
     def name(self) -> str:
@@ -72,7 +76,6 @@ class ArxivSource(SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames())
-
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
         process_pages.launch_options.pe_count = 6
 
@@ -88,6 +91,7 @@ class ArxivSource(SingleOutputSource):
         return splitting_pages, out_type
 
     def _generate_frames(self):
+        os.makedirs(self._cache_dir, exist_ok=True)
 
         import arxiv
 
@@ -96,15 +100,12 @@ class ArxivSource(SingleOutputSource):
             max_results=50,
         )
 
-        # TODO: Move this to a config
-        dir_path = "./shared-dir/dataset/pdfs/"
-
         for x in search_results.results():
 
-            full_path = os.path.join(dir_path, x._get_default_filename())
+            full_path = os.path.join(self._cache_dir, x._get_default_filename())
 
             if (not os.path.exists(full_path)):
-                x.download_pdf(dir_path)
+                x.download_pdf(self._cache_dir)
                 logger.debug(f"Downloaded: {full_path}")
 
             yield full_path
