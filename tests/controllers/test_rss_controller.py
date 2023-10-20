@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+from os import path
 
+import feedparser
 import pytest
 
 import cudf
@@ -30,7 +31,7 @@ test_invalid_urls = [
     "ftp://",
 ]
 
-test_file_paths = [os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")]
+test_file_paths = [path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")]
 
 test_invalid_file_paths = [
     "/path/to/nonexistent_file.xml",
@@ -39,42 +40,52 @@ test_invalid_file_paths = [
 
 
 @pytest.mark.parametrize("feed_input, expected_output", [(url, True) for url in test_urls])
-def test_run_indefinitely_true(feed_input, expected_output):
+def test_run_indefinitely_true(feed_input: str, expected_output: bool):
     controller = RSSController(feed_input=feed_input)
     assert controller.run_indefinitely == expected_output
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths + test_file_paths)
-def test_run_indefinitely_false(feed_input):
+def test_run_indefinitely_false(feed_input: str):
     controller = RSSController(feed_input=feed_input)
     assert controller.run_indefinitely is False
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_parse_feed_valid_url(feed_input):
+def test_parse_feed_valid_url(feed_input: str):
     controller = RSSController(feed_input=feed_input)
-    feed = controller.parse_feed()
+    feed = list(controller.parse_feeds())[0]
     assert feed.entries
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths)
-def test_parse_feed_invalid_input(feed_input):
+def test_parse_feed_invalid_input(feed_input: str):
     controller = RSSController(feed_input=feed_input)
-    with pytest.raises(RuntimeError):
-        controller.parse_feed()
+    list(controller.parse_feeds())
+    assert controller._errored_feeds == [feed_input]
 
 
-@pytest.mark.parametrize("feed_input", test_urls + test_file_paths)
-def test_fetch_dataframes(feed_input):
+@pytest.mark.parametrize("feed_input", [(test_urls + test_file_paths), test_urls, test_urls[0], test_file_paths[0]])
+def test_fetch_dataframes(feed_input: str | list[str]):
     controller = RSSController(feed_input=feed_input)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
+    assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
 
+@pytest.mark.parametrize("feed_input, expected_count", [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), 30)])
+def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
+    controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
+    dataframes_generator = controller.fetch_dataframes()
+    dataframe = next(dataframes_generator, None)
+    assert isinstance(dataframe, cudf.DataFrame)
+    assert len(dataframe) == expected_count
+
+
 @pytest.mark.parametrize("feed_input", test_file_paths)
-def test_create_dataframe(feed_input):
+def test_create_dataframe(feed_input: str):
     controller = RSSController(feed_input=feed_input)
     entries = [{"id": "1", "title": "Entry 1"}, {"id": "2", "title": "Entry 2"}]
     df = controller.create_dataframe(entries)
@@ -82,10 +93,58 @@ def test_create_dataframe(feed_input):
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_is_url_true(feed_input):
+def test_is_url_true(feed_input: str):
     assert RSSController.is_url(feed_input)
 
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths + test_file_paths)
-def test_is_url_false(feed_input):
+def test_is_url_false(feed_input: str):
     assert not RSSController.is_url(feed_input)
+
+
+@pytest.mark.parametrize("feed_input, batch_size", [(test_urls + test_file_paths, 5)])
+def test_batch_size(feed_input: str | list[str], batch_size: int):
+    controller = RSSController(feed_input=feed_input, batch_size=batch_size)
+    for df in controller.fetch_dataframes():
+        assert isinstance(df, cudf.DataFrame)
+        assert len(df) <= batch_size
+
+
+@pytest.mark.parametrize("feed_input, is_url, enable_cache",
+                         [(path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml"), False, False),
+                          ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", True, True),
+                          ("https://www.mandiant.com/resources/blog/rss.xml", True, False)])
+def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool):
+    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+
+    feed_data = rss_controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
+
+    assert isinstance(feed_data, feedparser.FeedParserDict)
+
+    assert len(feed_data.entries) > 0
+
+    for entry in feed_data.entries:
+        assert "title" in entry
+        assert "link" in entry
+        assert "id" in entry
+
+        # Add more assertions as needed to validate the content of each entry
+        for key, value in entry.items():
+            if key not in ["title", "link", "id"]:
+                assert value is not None
+
+    # Additional assertions to validate the overall structure of the feed data
+    assert isinstance(feed_data, dict)
+    assert "entries" in feed_data
+    assert isinstance(feed_data["entries"], list)
+
+
+@pytest.mark.parametrize("enable_cache", [True, False])
+def test_enable_disable_cache(enable_cache):
+    feed_input = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+
+    if enable_cache:
+        assert rss_controller._session
+    else:
+        assert not rss_controller._session

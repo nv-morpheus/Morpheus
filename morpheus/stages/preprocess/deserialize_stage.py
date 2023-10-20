@@ -34,7 +34,9 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@register_stage("deserialize",
+                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                ignore_args=["message_type", "task_type", "task_payload"])
 class DeserializeStage(MultiMessageStage):
     """
     Messages are logically partitioned based on the pipeline config's `pipeline_batch_size` parameter.
@@ -53,7 +55,7 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: MultiMessage | ControlMessage = MultiMessage,
+                 message_type: typing.Literal[MultiMessage, ControlMessage] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -159,11 +161,15 @@ class DeserializeStage(MultiMessageStage):
             Batch size.
         ensure_sliceable_index : bool
             Calls `MessageMeta.ensure_sliceable_index()` on incoming messages to ensure unique and monotonic indices.
+        task_tuple: typing.Tuple[str, dict] | None
+            If specified, adds the specified task to the ControlMessage. The first parameter is the task type and second
+            parameter is the task payload
 
         """
 
         # Because ControlMessages only have a C++ implementation, we need to import the C++ MessageMeta and use that
         # 100% of the time
+        # pylint: disable=morpheus-incorrect-lib-from-import
         from morpheus._lib.messages import MessageMeta as MessageMetaCpp
 
         x = DeserializeStage.check_slicable_index(x, ensure_sliceable_index)
@@ -177,23 +183,23 @@ class DeserializeStage(MultiMessageStage):
             # Break the message meta into smaller chunks
             for i in range(0, x.count, batch_size):
 
-                cm = ControlMessage()
+                message = ControlMessage()
 
-                cm.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
+                message.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
 
                 if (task_tuple is not None):
-                    cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
+                    message.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-                output.append(cm)
+                output.append(message)
         else:
-            cm = ControlMessage()
+            message = ControlMessage()
 
-            cm.payload(MessageMetaCpp(x.df))
+            message.payload(MessageMetaCpp(x.df))
 
             if (task_tuple is not None):
-                cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
+                message.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-            output.append(cm)
+            output.append(message)
 
         return output
 

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import logging
 import os
 
@@ -46,12 +45,14 @@ def run():
     help="Max batch size to use for the model",
 )
 @click.option(
-    "--repeat_count",
-    default=1,
-    type=click.IntRange(min=1),
-    help="Number of times to repeat the input query. Useful for testing performance.",
+    "--model_name",
+    required=True,
+    type=str,
+    default='gpt-43b-002',
+    help="The name of the model that is deployed on Triton server",
 )
 def pipeline(**kwargs):
+
     from .pipeline import pipeline as _pipeline
 
     return _pipeline(**kwargs)
