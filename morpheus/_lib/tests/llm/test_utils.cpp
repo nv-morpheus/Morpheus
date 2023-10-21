@@ -217,7 +217,11 @@ TEST_F(TestLLMUtils, ProcessInputNamesSiblingWithInputNameMatching)
     auto user_inputs = llm::user_input_mappings_t{{"/ext1/input1"}};
     auto input_names = std::vector<std::string>{"input1"};
 
-    EXPECT_THROW(llm::process_input_names(user_inputs, input_names), std::invalid_argument);
+    auto returned = llm::process_input_names(user_inputs, input_names);
+
+    EXPECT_EQ(returned.size(), 1);
+    EXPECT_EQ(returned[0].external_name, "/ext1/input1");
+    EXPECT_EQ(returned[0].internal_name, "input1");
 }
 
 TEST_F(TestLLMUtils, ProcessInputNamesMatchingIndexExceeded)
