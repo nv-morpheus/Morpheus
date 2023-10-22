@@ -103,7 +103,7 @@ def _build_milvus_service():
                                                                                 uri="http://localhost:19530",
                                                                                 **milvus_resource_kwargs)
 
-    return vdb_service.load_resource("Arxiv")
+    return vdb_service
 
 
 def _build_llm_service(model_name: str):
@@ -113,7 +113,7 @@ def _build_llm_service(model_name: str):
     return llm_service.get_client(model_name=model_name, temperature=0.5, tokens_to_generate=200)
 
 
-def _build_engine(model_name: str):
+def _build_engine(model_name: str, vdb_resource_name: str):
 
     engine = LLMEngine()
 
@@ -139,7 +139,7 @@ Please answer the following question: \n{{ query }}"""
     engine.add_node("rag",
                     inputs=["/extracter"],
                     node=RAGNode(prompt=prompt,
-                                 vdb_service=vector_service,
+                                 vdb_service=vector_service.load_resource(vdb_resource_name),
                                  embedding=calc_embeddings,
                                  llm_client=llm_service))
 
@@ -153,6 +153,7 @@ def standalone(
     pipeline_batch_size,
     model_max_batch_size,
     model_name,
+    vdb_resource_name,
     repeat_count,
 ):
     config = Config()
@@ -180,7 +181,7 @@ def standalone(
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
