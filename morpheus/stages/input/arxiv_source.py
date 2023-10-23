@@ -42,7 +42,10 @@ IMPORT_ERROR_MESSAGE = (
 @register_stage("from-arxiv")
 class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
-    Source stage that downloads PDFs from arxiv and converts them to dataframes
+    Source stage that downloads PDFs from arxiv and converts them to dataframes.
+
+    This stage requires several additional dependencies to be installed. Install them by running the following command:
+    `mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`
 
     Parameters
     ----------
@@ -120,6 +123,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
             if (not os.path.exists(full_path)):
                 x.download_pdf(self._cache_dir)
                 logger.debug("Downloaded: %s", full_path)
+            else:
+                logger.debug("Using cached: %s", full_path)
 
             yield full_path
 
