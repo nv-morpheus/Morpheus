@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage that downloads PDFs from arxiv and converts them to dataframes
-    
+
     Parameters
     ----------
     c : `morpheus.config.Config`
@@ -131,7 +131,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
                 logger.error("Failed to load PDF (retrying): %s", pdf_path)
                 documents = []
 
-        raise RuntimeError("Failed to load PDF: %s", pdf_path)
+        raise RuntimeError(f"Failed to load PDF: {pdf_path}")
 
     def _splitting_pages(self, documents: list[Document]):
 
