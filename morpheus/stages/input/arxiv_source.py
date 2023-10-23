@@ -107,13 +107,13 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
             if (not os.path.exists(full_path)):
                 x.download_pdf(self._cache_dir)
-                logger.debug(f"Downloaded: {full_path}")
+                logger.debug("Downloaded: %s", full_path)
 
             yield full_path
 
             self._total_pdfs += 1
 
-        logger.debug(f"Downloading complete {self._total_pdfs} pages")
+        logger.debug("Downloading complete %s pages", self._total_pdfs)
 
     def _process_pages(self, pdf_path: str):
 
@@ -124,14 +124,14 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
                 self._total_pages += len(documents)
 
-                logger.debug(f"Processing {len(documents)}/{self._total_pages}: {pdf_path}")
+                logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
 
                 return documents
             except PdfStreamError:
-                logger.error(f"Failed to load PDF (retrying): {pdf_path}")
+                logger.error("Failed to load PDF (retrying): %s", pdf_path)
                 documents = []
 
-        raise RuntimeError(f"Failed to load PDF: {pdf_path}")
+        raise RuntimeError("Failed to load PDF: %s", pdf_path)
 
     def _splitting_pages(self, documents: list[Document]):
 
