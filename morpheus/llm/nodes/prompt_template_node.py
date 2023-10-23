@@ -53,7 +53,6 @@ class PromptTemplateNode(LLMNodeBase):
                 if field_name is not None:
                     self._input_names.append(field_name)
 
-            # self._input_names = [x[1] for x in formatter.parse(self._template) if x[1] is not None]
         elif (self._template_format == "jinja"):
             from jinja2 import Template
             from jinja2 import meta

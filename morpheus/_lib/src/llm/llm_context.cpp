@@ -160,7 +160,23 @@ nlohmann::json::const_reference LLMContext::get_input(const std::string& node_na
 
         if (found == m_inputs.end())
         {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Input '" << node_name << "' not found in the input list"));
+            std::stringstream error_msg;
+            error_msg << "Input '" << node_name << "' not found in the input list.";
+
+            if (!m_inputs.empty())
+            {
+                error_msg << " Available inputs are:";
+                for (const auto& input : m_inputs)
+                {
+                    error_msg << " '" << input.internal_name << "'";
+                }
+            }
+            else
+            {
+                error_msg << " Input list is empty.";
+            }
+
+            throw std::runtime_error(error_msg.str());
         }
 
         auto& input_name = found->external_name;
