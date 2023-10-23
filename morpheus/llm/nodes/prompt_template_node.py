@@ -70,7 +70,11 @@ class PromptTemplateNode(LLMNodeBase):
     async def execute(self, context: LLMContext):
 
         # Get the keys from the task
-        input_dict = context.get_inputs()
+        try:
+            input_dict = context.get_inputs()
+        except Exception as e:
+            print(f"Exception in PromptTemplateNode: {e}")
+            raise
 
         # Transform from dict[str, list[Any]] to list[dict[str, Any]]
         input_list = [dict(zip(input_dict, t)) for t in zip(*input_dict.values())]
@@ -87,6 +91,7 @@ class PromptTemplateNode(LLMNodeBase):
 
             output_list = await asyncio.gather(*render_coros)
 
+        print(output_list)
         context.set_output(output_list)
 
         return context
