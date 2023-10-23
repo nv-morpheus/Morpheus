@@ -14,14 +14,11 @@
 
 import logging
 import os
+import typing
 
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
-from langchain.document_loaders import PyPDFLoader
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pypdf.errors import PdfStreamError
 
 import cudf
 
@@ -33,6 +30,13 @@ from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
+
+if typing.TYPE_CHECKING:
+    from langchain.schema import Document
+
+IMPORT_ERROR_MESSAGE = (
+    "ArxivSource requires additional dependencies to be installed. Install them by runnign the following command: "
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 
 @register_stage("from-arxiv")
@@ -54,6 +58,11 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache"):
 
         super().__init__(c)
+
+        try:
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         self._query = query
         self._max_pages = 10000
@@ -94,7 +103,10 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     def _generate_frames(self):
         os.makedirs(self._cache_dir, exist_ok=True)
 
-        import arxiv
+        try:
+            import arxiv
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         search_results = arxiv.Search(
             query=self._query,
@@ -116,6 +128,11 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         logger.debug("Downloading complete %s pages", self._total_pdfs)
 
     def _process_pages(self, pdf_path: str):
+        try:
+            from langchain.document_loaders import PyPDFLoader
+            from pypdf.errors import PdfStreamError
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         for _ in range(5):
             try:
@@ -133,7 +150,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         raise RuntimeError(f"Failed to load PDF: {pdf_path}")
 
-    def _splitting_pages(self, documents: list[Document]):
+    def _splitting_pages(self, documents: list["Document"]):
 
         # texts1 = self._text_splitter1.split_documents(documents)
         texts = self._text_splitter.split_documents(documents)
