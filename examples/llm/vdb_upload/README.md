@@ -200,7 +200,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     ```bash
     $ ls ${MORPHEUS_ROOT}/models/triton-model-repo | grep paraphrase-multilingual-mpnet-base-v2
     
-    paraphrase-multilingual-mpnet-base-v2 
+    sentence-transformers/paraphrase-multilingual-mpnet-base-v2 
     ```
 
 5. **Deploy the Model**:
