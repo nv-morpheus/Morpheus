@@ -24,7 +24,7 @@ def run():
     pass
 
 
-@run.command()
+@run.command(help="Runs a simple finite pipeline with a single execution of a LangChain agent from a fixed input")
 @click.option(
     "--num_threads",
     default=os.cpu_count(),
@@ -48,11 +48,57 @@ def run():
     "--model_name",
     required=True,
     type=str,
-    default='gpt-43b-002',
-    help="The name of the model that is deployed on Triton server",
+    default='gpt-3.5-turbo-instruct',
+    help="The name of the model to use in OpenAI",
 )
-def pipeline(**kwargs):
+@click.option(
+    "--repeat_count",
+    default=1,
+    type=click.IntRange(min=1),
+    help="Number of times to repeat the input query. Useful for testing performance.",
+)
+def simple(**kwargs):
 
-    from .pipeline import pipeline as _pipeline
+    from .simple_pipeline import pipeline as _pipeline
+
+    return _pipeline(**kwargs)
+
+
+@run.command(help="Runs a pipeline LangChain agents which pulls inputs from a Kafka message bus")
+@click.option(
+    "--num_threads",
+    default=os.cpu_count(),
+    type=click.IntRange(min=1),
+    help="Number of internal pipeline threads to use",
+)
+@click.option(
+    "--pipeline_batch_size",
+    default=1024,
+    type=click.IntRange(min=1),
+    help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
+          "Also used for Kafka consumers"),
+)
+@click.option(
+    "--model_max_batch_size",
+    default=64,
+    type=click.IntRange(min=1),
+    help="Max batch size to use for the model",
+)
+@click.option(
+    "--model_name",
+    required=True,
+    type=str,
+    default='gpt-3.5-turbo-instruct',
+    help="The name of the model to use in OpenAI",
+)
+@click.option(
+    "--repeat_count",
+    default=1,
+    type=click.IntRange(min=1),
+    help="Number of times to repeat the input query. Useful for testing performance.",
+)
+def kafka(**kwargs):
+
+    from .kafka_pipeline import pipeline as _pipeline
 
     return _pipeline(**kwargs)

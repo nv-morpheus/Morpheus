@@ -37,27 +37,31 @@ class LangChainAgentNode(LLMNodeBase):
 
     async def _run_single(self, **kwargs):
 
-        # Transform from dict[str, list[Any]] to list[dict[str, Any]]
-        input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
+        # Check if all values are a list
+        if (all([isinstance(v, list) for v in kwargs.values()])):
 
-        results_async = [self._agent_executor.arun(**x) for x in input_list]
+            # Transform from dict[str, list[Any]] to list[dict[str, Any]]
+            input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
 
-        results = await asyncio.gather(*results_async)
+            # Run multiple again
+            results_async = [self._run_single(**x) for x in input_list]
 
-        return results
+            results = await asyncio.gather(*results_async)
+
+            # # Transform from list[dict[str, Any]] to dict[str, list[Any]]
+            # results = {k: [x[k] for x in results] for k in results[0]}
+
+            return results
+
+        # We are not dealing with a list, so run single
+        return await self._agent_executor.arun(**kwargs)
 
     async def execute(self, context: LLMContext):
 
         input_dict = context.get_inputs()
 
-        # Transform from dict[str, list[Any]] to list[dict[str, Any]]
-        input_list = [dict(zip(input_dict, t)) for t in zip(*input_dict.values())]
-
-        results_async = [self._run_single(**x) for x in input_list]
-
-        results = await asyncio.gather(*results_async)
-
-        # Transform from list[dict[str, Any]] to dict[str, list[Any]]
-        # results = {k: [x[k] for x in results] for k in results[0]}
+        results = await self._run_single(**input_dict)
 
         context.set_output(results)
+
+        return context

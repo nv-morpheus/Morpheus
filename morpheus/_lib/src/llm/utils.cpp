@@ -52,26 +52,14 @@ bool find_matching_input_for_placeholder(UserInputMapping& input_map,
 
     std::string raw_name = input_map.external_name;
 
-    // If we start with a slash, that means we are mapping from another node, not a parent.
+    // If we start with a slash, that means we are mapping from another node, not a parent. Try to find a matching name
+    // from the last name. i.e. /node/input -> input
     if (raw_name[0] == '/')
     {
         // Decompose it
         auto name_j_pointer = nlohmann::json::json_pointer(raw_name);
 
         raw_name = name_j_pointer.back();
-
-        name_j_pointer.pop_back();
-
-        // If we still have elements, then they have /node/input style which isnt possible
-        if (!name_j_pointer.empty())
-        {
-            throw std::invalid_argument(
-                MORPHEUS_CONCAT_STR(
-                    "Invalid input name '"
-                    << input_map.external_name
-                    << "'. Unable to automatically map the external node to an internal name. Cannot automatically map "
-                       "from siblings when using the form '/sibling/input_name'. Only '/sibling' is supported."));
-        }
     }
 
     // Match by name

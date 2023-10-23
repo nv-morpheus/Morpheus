@@ -52,6 +52,13 @@ def run():
     help="The name of the model that is deployed on Triton server",
 )
 @click.option(
+    "--vdb_resource_name",
+    required=True,
+    type=str,
+    default='RSS',
+    help="The name resource on the Vector Database where the embeddings are stored",
+)
+@click.option(
     "--repeat_count",
     default=1,
     type=click.IntRange(min=1),
