@@ -51,20 +51,9 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
 
     // Get the inputs of the current node
     auto input_names = node->get_input_names();
-    std::cerr << "\nNode input names: ";
-    for (const auto& n : input_names)
-    {
-        std::cerr << n << ", ";
-    }
 
     auto final_inputs = process_input_names(inputs, input_names);
-    std::cerr << "\nFinal inputs: ";
-    for (const auto& inp : final_inputs)
-    {
-        std::cerr << inp.external_name << ":" << inp.internal_name << ", ";
-    }
 
-    std::cerr << "\n";
     // Check the final inputs to ensure they match existing nodes
     for (const auto& inp : final_inputs)
     {
@@ -94,42 +83,16 @@ std::shared_ptr<LLMNodeRunner> LLMNode::add_node(std::string name,
         }
     }
 
-    std::cerr << "\nFinal inputs pp: ";
-    for (const auto& inp : final_inputs)
-    {
-        std::cerr << inp.external_name << ":" << inp.internal_name << ", ";
-    }
-
-    std::cerr << "\n";
-
     auto node_runner = std::make_shared<LLMNodeRunner>(std::move(name), std::move(final_inputs), std::move(node));
-
-    std::cerr << "\nParent inputs: ";
 
     // Add the child inputs to the current inputs
     for (const auto& parent_input : node_runner->parent_input_names())
     {
-        std::cerr << parent_input << ":";
         if (std::find(m_input_names.begin(), m_input_names.end(), parent_input) == m_input_names.end())
         {
-            std::cerr << "added, ";
             m_input_names.push_back(parent_input);
         }
-        else
-        {
-            std::cerr << "matched, ";
-        }
     }
-
-    std::cerr << "\n";
-
-    std::cerr << "\nActual inputs: ";
-    for (const auto& inp : m_input_names)
-    {
-        std::cerr << inp << ", ";
-    }
-
-    std::cerr << "\n";
 
     // Perform checks that the existing nodes meet the requirements
 

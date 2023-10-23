@@ -33,11 +33,7 @@ class SimpleTaskHandler(LLMTaskHandler):
 
     async def try_handle(self, context: LLMContext):
 
-        try:
-            input_dict = context.get_inputs()
-        except Exception as e:
-            print(f"Exception in SimpleTaskHandler: {e}")
-            raise
+        input_dict = context.get_inputs()
 
         with context.message().payload().mutable_dataframe() as df:
             # Write the values to the dataframe

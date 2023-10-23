@@ -32,16 +32,12 @@ class ExtracterNode(LLMNodeBase):
         input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
 
         with context.message().payload().mutable_dataframe() as df:
-            print(f"\n=============\ninput_keys={input_keys}\ndf={df}\ndf[]={df[input_keys]}\nto_dict={df[input_keys].to_dict(orient='list')}=============\n")
             input_dict: list[dict] = df[input_keys].to_dict(orient="list")
-            print(f"\n=============\ninput_dict={input_dict}\n=============\n")
 
         if (len(input_keys) == 1):
             # Extract just the first key if there is only 1
             context.set_output(input_dict[input_keys[0]])
         else:
             context.set_output(input_dict)
-        
-        print(f"\n=================\ncontext={context.view_outputs}\n=================\n")
 
         return context
