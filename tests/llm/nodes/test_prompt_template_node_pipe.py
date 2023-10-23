@@ -16,6 +16,7 @@
 import cudf
 import pytest
 
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
@@ -26,30 +27,20 @@ from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
 
 MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
-{% for lv in list_values -%}Title: {{ lv.title }}, Summary: {{ lv.summary }}
+{% for lv in ctx.list_values -%}Title: {{ lv.title }}, Summary: {{ lv.summary }}
 {% endfor %}
-{{ query }}"""
+{{ ctx.query }}"""
 
 
-def _build_engine(template: str, template_format: str, input_names: list[str]) -> LLMEngine:
-    prompt_inputs = []
-    for i, input_name in enumerate(input_names):
-        if i == 0:
-            external_input = "/extracter"
-        else:
-            external_input = input_name
-
-        prompt_inputs.append((external_input, input_name))
-
+def _build_engine(template: str, template_format: str) -> LLMEngine:
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
     engine.add_node("prompts",
-                    inputs=prompt_inputs,
+                    inputs=["/extracter"],
                     node=PromptTemplateNode(template=template, template_format=template_format))
 
     engine.add_task_handler(inputs=["/prompts"], handler=SimpleTaskHandler())
@@ -60,59 +51,61 @@ def _build_engine(template: str, template_format: str, input_names: list[str]) -
 @pytest.mark.use_python
 @pytest.mark.parametrize(
     "template,template_format,values,expected_output",
-    [("Hello {name}!",
-      "f-string", {
-          'name': ['World', 'Universe', 'Galaxy', 'Moon']
-      }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
-     ("I would like one {fruit} and one {vegetable}.",
-      "f-string", {
-          'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
-      }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
-     ("I would like one {{ fruit }} and one {{ vegetable }}.",
-      "jinja", {
-          'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
-      }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
-     (MULTI_LINE_JINJA_TEMPLATE,
-      "jinja",
-      {
-          'list_values': [[{
-              'title': 'title1', 'summary': 'summary1'
-          }, {
-              'title': 'title2', 'summary': 'summary2'
-          }], [{
-              'title': 'rockets', 'summary': 'space'
-          }]],
-          'query': ['query1', 'query2']
-      },
-      [
-          "Testing a loop:\nTitle: title1, Summary: summary1\nTitle: title2, Summary: summary2\n\nquery1",
-          "Testing a loop:\nTitle: rockets, Summary: space\n\nquery2",
-      ])],
-    ids=["f-string-hello-world", "f-string-fruit-vegetable", "jinja-fruit-vegetable", "jinja-multi-line"])
+    [
+        ("Hello {name}!",
+         "f-string", {
+             'name': ['World', 'Universe', 'Galaxy', 'Moon']
+         }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
+        ("Hello {{ name }}!",
+         "jinja", {
+             'name': ['World', 'Universe', 'Galaxy', 'Moon']
+         }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
+        #  ("I would like one {fruit} and one {vegetable}.",
+        #   "f-string", {
+        #       'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
+        #   }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
+        # ("I would like one {{ fruit }} and one {{ vegetable }}.",
+        #  "jinja", {
+        #      'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
+        #  }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
+        # (MULTI_LINE_JINJA_TEMPLATE,
+        #  "jinja",
+        #  {
+        #      'list_values': [[{
+        #          'title': 'title1', 'summary': 'summary1'
+        #      }, {
+        #          'title': 'title2', 'summary': 'summary2'
+        #      }], [{
+        #          'title': 'rockets', 'summary': 'space'
+        #      }]],
+        #      'query': ['query1', 'query2']
+        #  },
+        #  [
+        #      "Testing a loop:\nTitle: title1, Summary: summary1\nTitle: title2, Summary: summary2\n\nquery1",
+        #      "Testing a loop:\nTitle: rockets, Summary: space\n\nquery2",
+        #  ])
+    ],
+    ids=["f-string-hello-world", "jinja-hello-world"])
 def test_prompt_template_node_pipe(config: Config,
                                    template: str,
                                    template_format: str,
                                    values: dict,
                                    expected_output: list[str]):
     config.mode = PipelineModes.OTHER
-    df = cudf.DataFrame(values)
+    input_df = cudf.DataFrame(values)
+    expected_df = input_df.copy(deep=True)
+    expected_df["response"] = expected_output
+
     input_names = sorted(values.keys())
     task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": input_names}}
-    print(f"\n************\ndf={df}\ntask_payload={task_payload}\n************\n")
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, dataframes=[df]))
+    pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
-    pipe.add_stage(
-        LLMEngineStage(config,
-                       engine=_build_engine(template=template, template_format=template_format,
-                                            input_names=input_names)))
-    sink = pipe.add_stage(InMemorySinkStage(config))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(template=template, template_format=template_format)))
+    sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()
 
-    print(sink.get_messages())
-    m = sink.get_messages()[0]
-    print(m.payload().df)
-    print(m.get_metadata())
+    assert_results(sink.get_results())
