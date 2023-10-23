@@ -49,43 +49,16 @@ def _build_engine(template: str, template_format: str) -> LLMEngine:
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize(
-    "template,template_format,values,expected_output",
-    [
-        ("Hello {name}!",
-         "f-string", {
-             'name': ['World', 'Universe', 'Galaxy', 'Moon']
-         }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
-        ("Hello {{ name }}!",
-         "jinja", {
-             'name': ['World', 'Universe', 'Galaxy', 'Moon']
-         }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
-        #  ("I would like one {fruit} and one {vegetable}.",
-        #   "f-string", {
-        #       'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
-        #   }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
-        # ("I would like one {{ fruit }} and one {{ vegetable }}.",
-        #  "jinja", {
-        #      'fruit': ['apple', 'plum'], 'vegetable': ['carrot', 'broccoli']
-        #  }, ["I would like one apple and one carrot.", "I would like one plum and one broccoli."]),
-        # (MULTI_LINE_JINJA_TEMPLATE,
-        #  "jinja",
-        #  {
-        #      'list_values': [[{
-        #          'title': 'title1', 'summary': 'summary1'
-        #      }, {
-        #          'title': 'title2', 'summary': 'summary2'
-        #      }], [{
-        #          'title': 'rockets', 'summary': 'space'
-        #      }]],
-        #      'query': ['query1', 'query2']
-        #  },
-        #  [
-        #      "Testing a loop:\nTitle: title1, Summary: summary1\nTitle: title2, Summary: summary2\n\nquery1",
-        #      "Testing a loop:\nTitle: rockets, Summary: space\n\nquery2",
-        #  ])
-    ],
-    ids=["f-string-hello-world", "jinja-hello-world"])
+@pytest.mark.parametrize("template,template_format,values,expected_output",
+                         [("Hello {name}!",
+                           "f-string", {
+                               'name': ['World', 'Universe', 'Galaxy', 'Moon']
+                           }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
+                          ("Hello {{ name }}!",
+                           "jinja", {
+                               'name': ['World', 'Universe', 'Galaxy', 'Moon']
+                           }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"])],
+                         ids=["f-string-hello-world", "jinja-hello-world"])
 def test_prompt_template_node_pipe(config: Config,
                                    template: str,
                                    template_format: str,
