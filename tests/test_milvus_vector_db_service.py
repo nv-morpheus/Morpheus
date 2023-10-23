@@ -226,7 +226,7 @@ def test_insert_into_partition(milvus_service: MilvusVectorDBService,
     # Make sure to drop any existing collection from previous runs.
     milvus_service.drop(collection_name)
 
-    partition_name = idx_part_collection_config["collection_conf"]["partition_conf"]["partitions"][0]["name"]
+    partition_name = idx_part_collection_config["partition_conf"]["partitions"][0]["name"]
 
     # Create a collection with a partition.
     milvus_service.create(collection_name, **idx_part_collection_config)

@@ -627,10 +627,10 @@ class MilvusVectorDBService(VectorDBService):
             If the provided schema fields configuration is empty.
         """
         logger.debug("Creating collection: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
-        # Preserve original configuration.
-        kwargs = copy.deepcopy(kwargs)
 
-        collection_conf = kwargs.get("collection_conf")
+        # Preserve original configuration.
+        collection_conf = copy.deepcopy(kwargs)
+
         auto_id = collection_conf.get("auto_id", False)
         index_conf = collection_conf.get("index_conf", None)
         partition_conf = collection_conf.get("partition_conf", None)
@@ -725,17 +725,15 @@ class MilvusVectorDBService(VectorDBService):
         fields = self._build_schema_conf(df=df)
 
         create_kwargs = {
-            "collection_conf": {
                 "schema_conf": {
                     "description": "Auto generated schema from DataFrame in Morpheus",
                     "schema_fields": fields,
                 }
-            }
         }
 
         if (kwargs.get("index_field", None) is not None):
             # Check to make sure the column name exists in the fields
-            create_kwargs["collection_conf"]["index_conf"] = {
+            create_kwargs["index_conf"] = {
                 "field_name": kwargs.get("index_field"),  # Default index type
                 "metric_type": "L2",
                 "index_type": "HNSW",
