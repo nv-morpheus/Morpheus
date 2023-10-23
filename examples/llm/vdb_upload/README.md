@@ -14,7 +14,6 @@
     - [Options for vdb_upload Command](#Options-for-vdb_upload-Command)
     - [Exporting and Deploying a Different Model from Huggingface](#Exporting-and-Deploying-a-Different-Model-from-Huggingface)
 
-
 ## Background Information
 
 ### Purpose
@@ -58,8 +57,36 @@ tasks:
 
 ## Implementation and Design Decisions
 
-- A detailed explanation of the implementation.
-- Rationale behind design decisions, possibly citing the GitHub issue for context.
+### Implementation Details
+
+[Original GitHub issue](https://github.com/nv-morpheus/Morpheus/issues/1298)
+
+The pipeline is composed of three primary components:
+
+1. **Document Source Handler**: This component is responsible for acquiring and preprocessing the text data. Given that
+   we are using RSS feeds and a web scraper in this example, the handler's function is to fetch the latest updates from
+   the feeds, perform preliminary data cleaning, and standardize the format for subsequent steps.
+
+2. **Embedding Generator**: This is the heart of the pipeline, which takes the preprocessed text chunks and computes
+   their embeddings. Leveraging the model `all-MiniLM-L6-v2` from Huggingface, the text data is transformed into
+   embeddings with a dimension of 384.
+
+3. **Vector Database Uploader**: Post embedding generation, this module takes the embeddings alongside their associated
+   metadata and pushes them to a Vector Database (VDB). For our implementation, Milvus, a GPU-accelerated vector
+   database, has been chosen.
+
+### Rationale Behind Design Decisions
+
+The selection of specific components and models was influenced by several factors:
+
+- **Document Source Choice**: RSS feeds and web scraping offer a dynamic and continuously updating source of data. For
+  the use-case of building a repository for a cybersecurity, real-time information fetching is a reasonable choice.
+
+- **Model Selection for Embeddings**: `all-MiniLM-L6-v2` was chosen due to its efficiency in generating embeddings. Its
+  smaller dimension ensures quick computations without compromising the quality of embeddings.
+
+- **Vector Database**: For the purposes of this pipeline, Milvus was chosen due to its popularity, ease of use, and
+  availability.
 
 ## Getting Started
 
