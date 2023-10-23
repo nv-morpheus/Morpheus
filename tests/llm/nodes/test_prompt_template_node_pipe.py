@@ -37,10 +37,19 @@ MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
 
 
 def _build_engine(template: str, template_format: str, input_names: list[str]) -> LLMEngine:
+    prompt_inputs = []
+    for i, input_name in enumerate(input_names):
+        if i == 0:
+            external_input = "/extracter"
+        else:
+            external_input = input_name
+
+        prompt_inputs.append((external_input, input_name))
+
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
     engine.add_node("prompts",
-                    inputs=["/extracter"],
+                    inputs=prompt_inputs,
                     node=PromptTemplateNode(template=template, template_format=template_format))
 
     engine.add_task_handler(inputs=["/prompts"], handler=SimpleTaskHandler())
