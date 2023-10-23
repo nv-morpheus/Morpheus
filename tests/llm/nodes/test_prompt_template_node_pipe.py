@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import pytest
+
+import cudf
 
 from _utils import assert_results
 from morpheus.config import Config
