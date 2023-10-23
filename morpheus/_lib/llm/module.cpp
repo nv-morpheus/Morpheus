@@ -81,6 +81,7 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<InputMap>(_module, "InputMap")
         .def(py::init<>())
+        .def(py::init<std::string, std::string>(), py::arg("external_name"), py::arg("internal_name"))
         .def_readwrite("external_name",
                        &InputMap::external_name,
                        "The name of node that will be mapped to this input. Use a leading '/' to indicate it is a "
@@ -180,7 +181,11 @@ PYBIND11_MODULE(llm, _module)
     //     py::keep_alive<0, 1>());
 
     py::class_<LLMContext, std::shared_ptr<LLMContext>>(_module, "LLMContext")
-        .def(py::init())
+        .def(py::init<>())
+        .def(py::init<std::shared_ptr<LLMContext>, std::string, input_mappings_t>(),
+             py::arg("prent"),
+             py::arg("name"),
+             py::arg("inputs"))
         .def_property_readonly("name", &LLMContext::name)
         .def_property_readonly("full_name", &LLMContext::full_name)
         .def_property_readonly("view_outputs", &LLMContext::view_outputs)
@@ -201,7 +206,8 @@ PYBIND11_MODULE(llm, _module)
         .def("set_output",
              py::overload_cast<const std::string&, nlohmann::json>(&LLMContext::set_output),
              py::arg("output_name"),
-             py::arg("output"));
+             py::arg("output"))
+        .def("push", &LLMContext::push, py::arg("name"), py::arg("inputs"));
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
