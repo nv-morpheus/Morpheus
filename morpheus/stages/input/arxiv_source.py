@@ -14,7 +14,6 @@
 
 import logging
 import os
-import typing
 
 import mrc
 import mrc.core.operators as ops
@@ -26,20 +25,37 @@ from pypdf.errors import PdfStreamError
 
 import cudf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class ArxivSource(SingleOutputSource):
+@register_stage("from-arxiv")
+class ArxivSource(PreallocatorMixin, SingleOutputSource):
+    """
+    Source stage that downloads PDFs from arxiv and converts them to dataframes
 
-    def __init__(self, c: Config):
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    query : `str`
+        Query to use for arxiv search.
+    cache_dir : `str`, optional
+        Directory to store downloaded PDFs in, any PDFs already in the directory will be skipped.
+        This directory, will be created if it does not already exist.
+    """
+
+    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache"):
 
         super().__init__(c)
 
+        self._query = query
         self._max_pages = 10000
 
         self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
@@ -47,6 +63,7 @@ class ArxivSource(SingleOutputSource):
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
+        self._cache_dir = cache_dir
 
     @property
     def name(self) -> str:
@@ -60,7 +77,6 @@ class ArxivSource(SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames())
-
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
         process_pages.launch_options.pe_count = 6
 
@@ -76,29 +92,28 @@ class ArxivSource(SingleOutputSource):
         return splitting_pages, out_type
 
     def _generate_frames(self):
+        os.makedirs(self._cache_dir, exist_ok=True)
 
         import arxiv
 
         search_results = arxiv.Search(
-            query="large language models",
+            query=self._query,
             max_results=50,
         )
 
-        dir_path = "./shared-dir/dataset/pdfs/"
-
         for x in search_results.results():
 
-            full_path = os.path.join(dir_path, x._get_default_filename())
+            full_path = os.path.join(self._cache_dir, x._get_default_filename())
 
             if (not os.path.exists(full_path)):
-                x.download_pdf(dir_path)
-                logger.debug(f"Downloaded: {full_path}")
+                x.download_pdf(self._cache_dir)
+                logger.debug("Downloaded: %s", full_path)
 
             yield full_path
 
             self._total_pdfs += 1
 
-        logger.debug(f"Downloading complete {self._total_pdfs} pages")
+        logger.debug("Downloading complete %s pages", self._total_pdfs)
 
     def _process_pages(self, pdf_path: str):
 
@@ -109,11 +124,11 @@ class ArxivSource(SingleOutputSource):
 
                 self._total_pages += len(documents)
 
-                logger.debug(f"Processing {len(documents)}/{self._total_pages}: {pdf_path}")
+                logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
 
                 return documents
             except PdfStreamError:
-                logger.error(f"Failed to load PDF (retrying): {pdf_path}")
+                logger.error("Failed to load PDF (retrying): %s", pdf_path)
                 documents = []
 
         raise RuntimeError(f"Failed to load PDF: {pdf_path}")
