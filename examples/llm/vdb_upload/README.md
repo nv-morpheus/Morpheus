@@ -188,7 +188,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
 3. **Handling Unauthorized Errors**:
     - Please ensure you provide the correct model name. A common pitfall is encountering an `unauthorized error`. If
       you see the following error:
-      ```bash
+      ```text
       requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url:
       ```
       This typically means the model name you provided does not match the one available on Huggingface. Double-check
@@ -223,7 +223,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
     | model_repository_path[0]         | /models/triton-model-repo                                                                |
     | model_control_mode               | MODE_EXPLICIT                                                                            |
     | startup_models_0                 | all-MiniLM-L6-v2                                                                         |
-    | startup_models_1                 | paraphrase-multilingual-mpnet-base-v2                                                    |
+    | startup_models_1                 | sentence-transformers/paraphrase-multilingual-mpnet-base-v2                              |
     | strict_model_config              | 0                                                                                        |
     | rate_limit                       | OFF                                                                                      |
     | pinned_memory_pool_byte_size     | 268435456                                                                                |
@@ -238,7 +238,8 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
 6. **Update the Pipeline Call**:
     - Now that the model has been exported and deployed, we can update the pipeline call to use the new model:
     ```bash
-    python examples/llm/main.py vdb_upload pipeline --model_name paraphrase-multilingual-mpnet-base-v2
+    python examples/llm/main.py vdb_upload pipeline --model_name 
+     sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
 ### Running the Langchain Pipeline (Optional)
