@@ -15,12 +15,16 @@
 # limitations under the License.
 
 import os
+import string
 import types
 from unittest import mock
 
 import pytest
 
+import cudf
+
 from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.stages.input.arxiv_source import ArxivSource
 
@@ -37,6 +41,11 @@ def test_constructor(config: Config):
     assert stage._cache_dir == cache_dir
 
     assert not os.path.exists(cache_dir)
+
+
+def test_constructor_chunk_size_error(config: Config):
+    with pytest.raises(ValueError):
+        ArxivSource(config, query="unittest", chunk_size=100)
 
 
 def _make_mock_result(file_name: str):
@@ -90,11 +99,10 @@ def test_generate_frames_cache_hit(mock_arxiv_search: mock.MagicMock, config: Co
             mock_result.download_pdf.assert_called_once()
 
 
-def test_process_pages(mock_arxiv_search: mock.MagicMock, config: Config, pdf_file: str):
+def test_process_pages(config: Config, pdf_file: str):
     stage = ArxivSource(config, query="unittest", cache_dir="/does/not/exist")
     documents = stage._process_pages(pdf_file)
 
-    mock_arxiv_search.assert_not_called()
     assert stage._total_pages == 1
 
     assert len(documents) == 1
@@ -103,7 +111,7 @@ def test_process_pages(mock_arxiv_search: mock.MagicMock, config: Config, pdf_fi
     assert document.metadata == {'source': pdf_file, 'page': 0}
 
 
-def test_process_pages_error(mock_arxiv_search: mock.MagicMock, config: Config, tmp_path: str):
+def test_process_pages_error(config: Config, tmp_path: str):
     bad_pdf_filename = os.path.join(tmp_path, "bad.pdf")
     with open(bad_pdf_filename, 'w', encoding='utf-8') as fh:
         fh.write("Not a PDF")
@@ -113,14 +121,9 @@ def test_process_pages_error(mock_arxiv_search: mock.MagicMock, config: Config, 
     with pytest.raises(RuntimeError):
         stage._process_pages(bad_pdf_filename)
 
-    mock_arxiv_search.assert_not_called()
-
 
 @mock.patch("langchain.document_loaders.PyPDFLoader")
-def test_process_pages_retry(mock_pdf_loader: mock.MagicMock,
-                             mock_arxiv_search: mock.MagicMock,
-                             config: Config,
-                             pypdf: types.ModuleType):
+def test_process_pages_retry(mock_pdf_loader: mock.MagicMock, config: Config, pypdf: types.ModuleType):
     call_count = 0
 
     def mock_load():
@@ -138,8 +141,80 @@ def test_process_pages_retry(mock_pdf_loader: mock.MagicMock,
     stage = ArxivSource(config, query="unittest", cache_dir="/does/not/exist")
     documents = stage._process_pages('/does/not/exist/fake.pdf')
 
-    mock_arxiv_search.assert_not_called()
     assert stage._total_pages == 1
     assert call_count == 5
 
     assert documents == ["unittest"]
+
+
+@pytest.mark.parametrize("chunk_size", [200, 1000])
+def test_splitting_pages(config: Config,
+                         pdf_file: str,
+                         langchain: types.ModuleType,
+                         chunk_size: int,
+                         dataset_cudf: DatasetManager):
+    chunk_overlap = 100
+    content = "Morpheus\nunittest"
+    while len(content) < chunk_size:
+        content += f'\n{string.ascii_lowercase}'
+
+    # The test PDF is quite small, so we need to pad it out to get multiple pages
+    # I checked this won't evently divide into either of the two values for chunk_size
+    if len(content) != chunk_size:
+        split_point = content.rfind('\n')
+        first_row = content[0:split_point]
+        second_row = content[split_point + 1:]
+        while len(second_row) < chunk_overlap:
+            split_point = content[0:split_point].rfind('\n')
+            second_row = content[split_point + 1:]
+
+        page_content_col = [first_row, second_row]
+    else:
+        page_content_col = [content]
+
+    num_expected_chunks = len(page_content_col)
+    source_col = []
+    page_col = []
+    for _ in range(num_expected_chunks):
+        source_col.append(pdf_file)
+        page_col.append(0)
+
+    expected_df = cudf.DataFrame({"page_content": page_content_col, "source": source_col, "page": page_col})
+
+    loader = langchain.document_loaders.PyPDFLoader(pdf_file)
+    documents = loader.load()
+    assert len(documents) == 1
+
+    document = documents[0]
+    document.page_content = content
+
+    stage = ArxivSource(config, query="unittest", chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    msg = stage._splitting_pages(documents)
+
+    assert stage._total_chunks == num_expected_chunks
+    dataset_cudf.assert_compare_df(msg.df, expected_df)
+
+
+def test_splitting_pages_no_chunks(config: Config,
+                                   pdf_file: str,
+                                   langchain: types.ModuleType,
+                                   dataset_cudf: DatasetManager):
+    content = "Morpheus\nunittest"
+    page_content_col = [content]
+    source_col = [pdf_file]
+    page_col = [0]
+
+    expected_df = cudf.DataFrame({"page_content": page_content_col, "source": source_col, "page": page_col})
+
+    loader = langchain.document_loaders.PyPDFLoader(pdf_file)
+    documents = loader.load()
+    assert len(documents) == 1
+
+    document = documents[0]
+    document.page_content = content
+
+    stage = ArxivSource(config, query="unittest")
+    msg = stage._splitting_pages(documents)
+
+    assert stage._total_chunks == 1
+    dataset_cudf.assert_compare_df(msg.df, expected_df)

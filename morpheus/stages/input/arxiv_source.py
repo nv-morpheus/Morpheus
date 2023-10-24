@@ -56,9 +56,15 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     cache_dir : `str`, optional
         Directory to store downloaded PDFs in, any PDFs already in the directory will be skipped.
         This directory, will be created if it does not already exist.
+    chunk_size : `int`, optional
+        The number of characters to split each PDF into. This is used to split the PDF into multiple chunks each chunk
+        will be converted into a row in the resulting dataframe. This value must be larger than `chunk_overlap`.
+    chunk_overlap: `int`, optional
+        When splitting documents into chunks, this is the number of characters that will overlap from the previus
+        chunk.
     """
 
-    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache"):
+    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache", chunk_size: int = 1000, chunk_overlap: int = 100):
 
         super().__init__(c)
 
@@ -70,7 +76,10 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._query = query
         self._max_pages = 10000
 
-        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
+        if chunk_size <= chunk_overlap:
+            raise ValueError(f"chunk_size must be greater than {chunk_overlap}")
+
+        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len)
 
         self._total_pdfs = 0
         self._total_pages = 0
@@ -156,8 +165,6 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         raise RuntimeError(f"Failed to load PDF: {pdf_path}")
 
     def _splitting_pages(self, documents: list["Document"]):
-
-        # texts1 = self._text_splitter1.split_documents(documents)
         texts = self._text_splitter.split_documents(documents)
 
         self._total_chunks += len(texts)
