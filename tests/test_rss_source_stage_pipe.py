@@ -101,5 +101,5 @@ def test_rss_source_stage_pipe(config: Config,
 @pytest.mark.use_python
 def test_invalid_input_rss_source_stage(config: Config):
 
-    with pytest.raises(ValueError, match=f"Passed invalid filepath: {invalid_feed_input}"):
+    with pytest.raises(ValueError, match=f"Invalid URL or file path: {invalid_feed_input}"):
         RSSSourceStage(config, feed_input=[invalid_feed_input], interval_secs=1, cooldown_interval=500)
