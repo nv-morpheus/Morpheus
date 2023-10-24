@@ -43,14 +43,14 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Interval in seconds between fetching new feed items.
     stop_after: int, default = 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
-    max_retries : int, optional, default = 3
-        Maximum number of retries for fetching entries on exception.
     batch_size : int, optional, default = None
         Number of feed items to accumulate before creating a DataFrame.
     enable_cache : bool, optional, default = False
         Enable caching of RSS feed request data.
     cache_dir : str, optional, default = "./.cache/http"
         Cache directory for storing RSS feed request data.
+    cooldown_interval : int, optional, default = 600
+         Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
     """
 
     def __init__(self,
@@ -58,16 +58,15 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  feed_input: list[str],
                  interval_secs: float = 600,
                  stop_after: int = 0,
-                 max_retries: int = 5,
                  run_indefinitely: bool = None,
                  batch_size: int = None,
                  enable_cache: bool = False,
-                 cache_dir: str = "./.cache/http"):
+                 cache_dir: str = "./.cache/http",
+                 cooldown_interval: int = 600):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
         self._interval_secs = interval_secs
-        self._max_retries = max_retries
 
         if (batch_size is None):
             batch_size = c.pipeline_batch_size
@@ -83,7 +82,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                                          batch_size=batch_size,
                                          run_indefinitely=run_indefinitely,
                                          enable_cache=enable_cache,
-                                         cache_dir=cache_dir)
+                                         cache_dir=cache_dir,
+                                         cooldown_interval=cooldown_interval)
 
     @property
     def name(self) -> str:
@@ -103,13 +103,11 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         """
         Fetch RSS feed entries and yield as MessageMeta object.
         """
-        retries = 0
 
-        while (not self._stop_requested) and (retries < self._max_retries):
+        while (not self._stop_requested):
             try:
                 for df in self._controller.fetch_dataframes():
                     df_size = len(df)
-                    self._records_emitted += df_size
 
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("Received %d new entries...", df_size)
@@ -117,32 +115,24 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                     yield MessageMeta(df=df)
 
-                    if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
-                        self._stop_requested = True
-                        logger.debug("Stop limit reached...preparing to halt the source.")
-                        break
-
-                if not self._controller.run_indefinitely:
-                    self._stop_requested = True
-                    continue
-
-                logger.debug("Waiting for %d seconds before fetching again...", self._interval_secs)
-                time.sleep(self._interval_secs)
+                    self._records_emitted += df_size
 
             except Exception as exc:
                 if not self._controller.run_indefinitely:
-                    logger.error("The input provided is not a URL or a valid path, therefore, the maximum " +
-                                 "retries are being overridden, and early exiting is triggered.")
-                    raise RuntimeError(f"Failed to fetch feed entries : {exc}") from exc
+                    logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
+                    raise
 
-                retries += 1
-                logger.warning("Error fetching feed entries. Retrying (%d/%d)...", retries, self._max_retries)
-                logger.debug("Waiting for 5 secs before retrying...")
-                time.sleep(5)  # Wait before retrying
+            if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
+                self._stop_requested = True
+                logger.debug("Stop limit reached... preparing to halt the source.")
+                break
 
-                if retries == self._max_retries:  # Check if retries exceeded the limit
-                    logger.error("Max retries reached. Unable to fetch feed entries.")
-                    raise RuntimeError(f"Failed to fetch feed entries after max retries: {exc}") from exc
+            if not self._controller.run_indefinitely:
+                self._stop_requested = True
+                continue
+
+            logger.debug("Waiting for %d seconds before fetching again...", self._interval_secs)
+            time.sleep(self._interval_secs)
 
         logger.debug("Source stopped.")
 

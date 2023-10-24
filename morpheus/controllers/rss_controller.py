@@ -14,7 +14,9 @@
 
 import logging
 import os
-import typing
+import time
+from dataclasses import asdict
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
 import feedparser
@@ -25,6 +27,17 @@ from bs4 import BeautifulSoup
 import cudf
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FeedStats:
+    """Data class to hold error feed stats"""
+
+    failure_count: int
+    success_count: int
+    last_failure: float
+    last_success: float
+    last_try_result: str
 
 
 class RSSController:
@@ -46,6 +59,8 @@ class RSSController:
         Enable caching of RSS feed request data.
     cache_dir : str, optional, default = "./.cache/http"
         Cache directory for storing RSS feed request data.
+    cooldown_interval : int, optional, default = 600
+         Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
     """
 
     def __init__(self,
@@ -53,7 +68,8 @@ class RSSController:
                  batch_size: int = 128,
                  run_indefinitely: bool = None,
                  enable_cache: bool = False,
-                 cache_dir: str = "./.cache/http"):
+                 cache_dir: str = "./.cache/http",
+                 cooldown_interval: int = 600):
 
         if (isinstance(feed_input, str)):
             feed_input = [feed_input]
@@ -62,6 +78,12 @@ class RSSController:
         self._feed_input = set(feed_input)
         self._batch_size = batch_size
         self._previous_entries = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
+        self._cooldown_interval = cooldown_interval
+
+        # Validate feed_input
+        for f in self._feed_input:
+            if not RSSController.is_url(f) and not os.path.exists(f):
+                raise ValueError(f"Invalid URL or file path: {f}")
 
         if (run_indefinitely is None):
             # If feed_input is URL. Runs indefinitely
@@ -74,7 +96,11 @@ class RSSController:
             self._session = requests_cache.CachedSession(os.path.join(cache_dir, "RSSController.sqlite"),
                                                          backend="sqlite")
 
-        self._errored_feeds = []  # Feeds that have thrown an error and wont be retried
+        self._feed_stats_dict = {input: FeedStats(failure_count=0,
+                                                  success_count=0,
+                                                  last_failure=-1,
+                                                  last_success=-1,
+                                                  last_try_result="Unknown") for input in self._feed_input}
 
     @property
     def run_indefinitely(self):
@@ -94,6 +120,7 @@ class RSSController:
             return file.read()
 
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> feedparser.FeedParserDict:
+
         feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
 
         soup = BeautifulSoup(feed_input, 'xml')
@@ -116,7 +143,7 @@ class RSSController:
                     if child.name == "link":
                         link_value = child.get_text()
                         if not link_value:
-                            feed_item[child.name] = child.get('href')
+                            feed_item[child.name] = child.get('href', 'Unknown value')
                         else:
                             feed_item[child.name] = link_value
                     # To be consistant with feedparser entries, rename guid to id
@@ -153,20 +180,17 @@ class RSSController:
 
             if is_url_with_session:
                 fallback = True
-                try:
-                    logger.info("Failed to parse feed: %s. Trying to parse using feedparser directly.", url)
-                    feed = feedparser.parse(url)
-                except Exception as ex:
-                    raise RuntimeError(f"Failed to parse feed using fallback: {url}: {ex}") from ex
+                logger.info("Failed to parse feed: %s. Trying to parse using feedparser directly.", url)
+                feed = feedparser.parse(url)
 
             if feed["bozo"]:
                 try:
-                    logger.warning("Failed to parse feed: %s, %s. Trying with other source",
-                                   url,
-                                   feed['bozo_exception'])
+                    logger.info("Failed to parse feed: %s, %s. Try parsing the feed manually",
+                                url,
+                                feed['bozo_exception'])
                     feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
-                except Exception as exec_info:
-                    raise RuntimeError(f"Invalid feed input: {url}. Error: {exec_info}") from exec_info
+                except Exception:
+                    raise
 
         logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
 
@@ -182,17 +206,25 @@ class RSSController:
             The parsed feed content.
         """
         for url in self._feed_input:
+            feed_stats: FeedStats = self._feed_stats_dict[url]
+            current_time = time.time()
             try:
-                if (url in self._errored_feeds):
-                    continue
+                if ((current_time - feed_stats.last_failure) >= self._cooldown_interval):
+                    feed = self._try_parse_feed(url)
 
-                feed = self._try_parse_feed(url)
+                    feed_stats.last_success = current_time
+                    feed_stats.success_count += 1
+                    feed_stats.last_try_result = "Success"
 
-                yield feed
+                    yield feed
 
             except Exception as ex:
-                logger.warning("Failed to parse feed: %s: %s. The feed will be not be retried.", url, ex)
-                self._errored_feeds.append(url)
+                logger.warning("Failed to parse feed: %s: %s.", url, ex)
+                feed_stats.last_failure = current_time
+                feed_stats.failure_count += 1
+                feed_stats.last_try_result = "Failure"
+
+            logger.debug("Feed stats: %s", asdict(feed_stats))
 
     def fetch_dataframes(self):
         """
@@ -222,45 +254,22 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            yield self.create_dataframe(entry_accumulator)
+                            yield cudf.DataFrame(entry_accumulator)
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries
 
             # Yield any remaining entries.
             if entry_accumulator:
-                df = self.create_dataframe(entry_accumulator)
+                # TODO (Bhargav): Debug : cannot mix list and non-list, non-null values error
+                df = cudf.DataFrame(entry_accumulator)
                 yield df
             else:
                 logger.debug("No new entries found.")
 
         except Exception as exc:
-            raise RuntimeError(f"Error fetching or processing feed entries: {exc}") from exc
-
-    def create_dataframe(self, entries: typing.List[typing.Tuple]) -> cudf.DataFrame:
-        """
-        Create a DataFrame from accumulated entry data.
-
-        Parameters
-        ----------
-        entries : typing.List[typing.Tuple]
-            List of accumulated feed entries.
-
-        Returns
-        -------
-        cudf.DataFrame
-            A DataFrame containing feed entry data.
-
-        Raises
-        ------
-        RuntimeError
-            Error creating DataFrame.
-        """
-        try:
-            return cudf.DataFrame(entries)
-        except Exception as exc:
-            logger.error("Error creating DataFrame: %s", exc)
-            raise RuntimeError(f"Error creating DataFrame: {exc}") from exc
+            logger.error(f"Error fetching or processing feed entries: {exc}")
+            raise
 
     @classmethod
     def is_url(cls, feed_input: str) -> bool:

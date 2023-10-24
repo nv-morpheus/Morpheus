@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 from os import path
+from unittest.mock import patch
 
 import feedparser
 import pytest
@@ -21,6 +23,7 @@ import pytest
 import cudf
 
 from _utils import TEST_DIRS
+from morpheus.controllers.rss_controller import FeedStats
 from morpheus.controllers.rss_controller import RSSController
 
 test_urls = ["https://realpython.com/atom.xml", "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"]
@@ -45,7 +48,7 @@ def test_run_indefinitely_true(feed_input: str, expected_output: bool):
     assert controller.run_indefinitely == expected_output
 
 
-@pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths + test_file_paths)
+@pytest.mark.parametrize("feed_input", test_file_paths)
 def test_run_indefinitely_false(feed_input: str):
     controller = RSSController(feed_input=feed_input)
     assert controller.run_indefinitely is False
@@ -60,9 +63,8 @@ def test_parse_feed_valid_url(feed_input: str):
 
 @pytest.mark.parametrize("feed_input", test_invalid_urls + test_invalid_file_paths)
 def test_parse_feed_invalid_input(feed_input: str):
-    controller = RSSController(feed_input=feed_input)
-    list(controller.parse_feeds())
-    assert controller._errored_feeds == [feed_input]
+    with pytest.raises(ValueError, match=f"Invalid URL or file path: {feed_input}"):
+        RSSController(feed_input=feed_input)
 
 
 @pytest.mark.parametrize("feed_input", [(test_urls + test_file_paths), test_urls, test_urls[0], test_file_paths[0]])
@@ -82,14 +84,6 @@ def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
     dataframe = next(dataframes_generator, None)
     assert isinstance(dataframe, cudf.DataFrame)
     assert len(dataframe) == expected_count
-
-
-@pytest.mark.parametrize("feed_input", test_file_paths)
-def test_create_dataframe(feed_input: str):
-    controller = RSSController(feed_input=feed_input)
-    entries = [{"id": "1", "title": "Entry 1"}, {"id": "2", "title": "Entry 2"}]
-    df = controller.create_dataframe(entries)
-    assert len(df) == len(entries)
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
@@ -115,9 +109,9 @@ def test_batch_size(feed_input: str | list[str], batch_size: int):
                           ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", True, True),
                           ("https://www.mandiant.com/resources/blog/rss.xml", True, False)])
 def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool):
-    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 
-    feed_data = rss_controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
+    feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
 
     assert isinstance(feed_data, feedparser.FeedParserDict)
 
@@ -142,9 +136,52 @@ def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enabl
 @pytest.mark.parametrize("enable_cache", [True, False])
 def test_enable_disable_cache(enable_cache):
     feed_input = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
-    rss_controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
+    controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 
     if enable_cache:
-        assert rss_controller._session
+        assert controller._session
     else:
-        assert not rss_controller._session
+        assert not controller._session
+
+
+def test_parse_feeds():
+    feed_input = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+    controller = RSSController(feed_input=feed_input, enable_cache=False)
+
+    with patch.object(controller, '_try_parse_feed') as mock_try_parse_feed:
+        dataframes_generator = controller.parse_feeds()
+        next(dataframes_generator, None)
+        feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+        assert feed_stats.last_try_result == "Success"
+        assert feed_stats.failure_count == 0
+        assert feed_stats.success_count == 1
+
+        # Raise exception to test failure scenario
+        mock_try_parse_feed.side_effect = Exception("SampleException")
+        dataframes_generator = controller.parse_feeds()
+        next(dataframes_generator, None)
+
+        feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+        assert feed_stats.last_try_result == "Failure"
+        assert feed_stats.failure_count == 1
+        assert feed_stats.success_count == 1
+
+        # Skip trying until cooldown period is met.
+        dataframes_generator = controller.parse_feeds()
+        next(dataframes_generator, None)
+
+        feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+        assert feed_stats.last_try_result == "Failure"
+        assert feed_stats.failure_count == 1
+        assert feed_stats.success_count == 1
+
+        # Resume trying after cooldown period
+        with patch("time.time", return_value=time.time() + controller._cooldown_interval):
+
+            dataframes_generator = controller.parse_feeds()
+            next(dataframes_generator, None)
+
+            feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+            assert feed_stats.last_try_result == "Failure"
+            assert feed_stats.failure_count == 2
+            assert feed_stats.success_count == 1
