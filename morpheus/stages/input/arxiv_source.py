@@ -62,9 +62,11 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     chunk_overlap: `int`, optional
         When splitting documents into chunks, this is the number of characters that will overlap from the previus
         chunk.
+    max_pages: `int`, optional
+        Maximum number of PDF pages to parse.
     """
 
-    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache", chunk_size: int = 1000, chunk_overlap: int = 100):
+    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache", chunk_size: int = 1000, chunk_overlap: int = 100, max_pages: int = 10000):
 
         super().__init__(c)
 
@@ -74,7 +76,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         self._query = query
-        self._max_pages = 10000
+        self._max_pages = max_pages
 
         if chunk_size <= chunk_overlap:
             raise ValueError(f"chunk_size must be greater than {chunk_overlap}")
@@ -84,6 +86,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
+        self._stop_requested = False
         self._cache_dir = cache_dir
 
     @property
@@ -120,12 +123,15 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
+        # Since each result contains at least one page, we know the upper-bound is _max_pages results
         search_results = arxiv.Search(
             query=self._query,
-            max_results=50,
+            max_results=self._max_pages,
         )
 
         for x in search_results.results():
+            if self._stop_requested:
+                break
 
             full_path = os.path.join(self._cache_dir, x._get_default_filename())
 
@@ -156,6 +162,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
                 self._total_pages += len(documents)
 
                 logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
+                if self._total_pages > self._max_pages:
+                    self._stop_requested = True
 
                 return documents
             except PdfStreamError:

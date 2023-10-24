@@ -34,18 +34,23 @@ def pdf_file_fixture():
     yield os.path.join(TEST_DIRS.tests_data_dir, "test.pdf")
 
 
-def test_constructor(config: Config):
+@mock.patch("langchain.text_splitter.RecursiveCharacterTextSplitter")
+def test_constructor(mock_splitter: mock.MagicMock, config: Config):
     cache_dir = "/does/not/exist"
-    stage = ArxivSource(config, query="unittest", cache_dir=cache_dir)
+    stage = ArxivSource(config, query="unittest", cache_dir=cache_dir, chunk_size=77, chunk_overlap=33, max_pages=100)
     assert stage._query == "unittest"
     assert stage._cache_dir == cache_dir
+    assert stage._max_pages == 100
+
+    mock_splitter.assert_called_once_with(chunk_size=77, chunk_overlap=33, length_function=len)
 
     assert not os.path.exists(cache_dir)
 
 
-def test_constructor_chunk_size_error(config: Config):
+@pytest.mark.parametrize("chunk_size,chunk_overlap", [(99, 100), (100, 100)])
+def test_constructor_chunk_size_error(config: Config, chunk_size: int, chunk_overlap: int):
     with pytest.raises(ValueError):
-        ArxivSource(config, query="unittest", chunk_size=100)
+        ArxivSource(config, query="unittest", chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 
 def _make_mock_result(file_name: str):
