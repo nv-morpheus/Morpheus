@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 import pytest
 
 from _utils import import_or_skip
@@ -44,3 +46,18 @@ def pypdf_fixture(fail_missing: bool):
     All of the tests in this subdir require pypdf
     """
     yield import_or_skip("pypdf", reason=SKIP_REASON, fail_missing=fail_missing)
+
+def _make_mock_result(file_name: str):
+    result = mock.MagicMock()
+    result._get_default_filename.return_value = file_name
+    return result
+
+@pytest.fixture(name="mock_arxiv_search")
+def mock_arxiv_search_fixture(arxiv: object):
+    """
+    Mocks the arxiv search function to prevent tests from performing actual searches.
+    """
+    with mock.patch("arxiv.Search") as mock_search:
+        mock_search.return_value = mock_search
+        mock_search.results.return_value = [_make_mock_result("apples.pdf"), _make_mock_result("plums.pdf")]
+        yield mock_search
