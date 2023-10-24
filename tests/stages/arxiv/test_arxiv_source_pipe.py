@@ -18,8 +18,6 @@ import os
 import shutil
 from unittest import mock
 
-import pytest
-
 import cudf
 
 from _utils import assert_results
