@@ -23,15 +23,9 @@ import pytest
 
 import cudf
 
-from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.stages.input.arxiv_source import ArxivSource
-
-
-@pytest.fixture(name="pdf_file")
-def pdf_file_fixture():
-    yield os.path.join(TEST_DIRS.tests_data_dir, "test.pdf")
 
 
 @mock.patch("langchain.text_splitter.RecursiveCharacterTextSplitter")

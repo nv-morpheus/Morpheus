@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from unittest import mock
 
 import pytest
@@ -61,3 +62,8 @@ def mock_arxiv_search_fixture(arxiv: object):
         mock_search.return_value = mock_search
         mock_search.results.return_value = [_make_mock_result("apples.pdf"), _make_mock_result("plums.pdf")]
         yield mock_search
+
+@pytest.fixture(name="pdf_file")
+def pdf_file_fixture():
+    from _utils import TEST_DIRS
+    yield os.path.join(TEST_DIRS.tests_data_dir, "test.pdf")
