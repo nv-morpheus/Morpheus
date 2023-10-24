@@ -48,13 +48,15 @@ def pypdf_fixture(fail_missing: bool):
     """
     yield import_or_skip("pypdf", reason=SKIP_REASON, fail_missing=fail_missing)
 
+
 def _make_mock_result(file_name: str):
     result = mock.MagicMock()
     result._get_default_filename.return_value = file_name
     return result
 
+
 @pytest.fixture(name="mock_arxiv_search")
-def mock_arxiv_search_fixture(arxiv: object):
+def mock_arxiv_search_fixture():
     """
     Mocks the arxiv search function to prevent tests from performing actual searches.
     """
@@ -62,6 +64,7 @@ def mock_arxiv_search_fixture(arxiv: object):
         mock_search.return_value = mock_search
         mock_search.results.return_value = [_make_mock_result("apples.pdf"), _make_mock_result("plums.pdf")]
         yield mock_search
+
 
 @pytest.fixture(name="pdf_file")
 def pdf_file_fixture():

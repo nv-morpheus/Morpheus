@@ -130,7 +130,8 @@ def test_process_pages_retry(mock_pdf_loader: mock.MagicMock, config: Config, py
         call_count += 1
         if call_count < 5:
             raise pypdf.errors.PdfStreamError()
-        elif call_count == 5:
+
+        if call_count == 5:
             return ["unittest"]
 
         assert False, "Should not be called more than 5 times"

@@ -66,7 +66,13 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         Maximum number of PDF pages to parse.
     """
 
-    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache", chunk_size: int = 1000, chunk_overlap: int = 100, max_pages: int = 10000):
+    def __init__(self,
+                 c: Config,
+                 query: str,
+                 cache_dir: str = "./.cache/arvix_source_cache",
+                 chunk_size: int = 1000,
+                 chunk_overlap: int = 100,
+                 max_pages: int = 10000):
 
         super().__init__(c)
 
@@ -81,7 +87,9 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         if chunk_size <= chunk_overlap:
             raise ValueError(f"chunk_size must be greater than {chunk_overlap}")
 
-        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len)
+        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size,
+                                                             chunk_overlap=chunk_overlap,
+                                                             length_function=len)
 
         self._total_pdfs = 0
         self._total_pages = 0
