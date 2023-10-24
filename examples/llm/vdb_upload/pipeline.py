@@ -52,11 +52,13 @@ def pipeline(num_threads,
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
+    # TODO(Devin): Do we need class labels to be numbers?
     config.class_labels = [str(i) for i in range(embedding_size)]
 
     pipe = LinearPipeline(config)
 
     # add doca source stage
+    # TODO(Devin): Is a DOCA source stage actually outstanding, or just nice to have?
     pipe.set_source(
         RSSSourceStage(config,
                        feed_input=build_rss_urls(),
