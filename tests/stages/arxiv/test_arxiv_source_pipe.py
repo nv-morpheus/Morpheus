@@ -29,7 +29,6 @@ from morpheus.stages.input.arxiv_source import ArxivSource
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 
-@pytest.mark.slow
 def test_arxiv_source_pipeline(mock_arxiv_search: mock.MagicMock, config: Config, tmp_path: str, pdf_file: str):
     # just take the first PDF file
     mock_arxiv_search.results.return_value = [mock_arxiv_search.results.return_value[0]]
