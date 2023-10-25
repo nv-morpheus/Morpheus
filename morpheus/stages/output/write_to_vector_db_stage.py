@@ -127,46 +127,54 @@ class WriteToVectorDBStage(SinglePortStage):
         stream = input_stream[0]
 
         def on_data_control_message(ctrl_msg: ControlMessage) -> ControlMessage:
-            # Insert entries in the dataframe to vector database.
-            result = self._service.insert_dataframe(name=self._resource_name,
-                                                    df=ctrl_msg.payload().df,
-                                                    **self._resource_kwargs)
 
-            ctrl_msg.set_metadata("insert_response", result)
+            df = ctrl_msg.payload().df
+
+            if not df.empty:
+                # Insert entries in the dataframe to vector database.
+                result = self._service.insert_dataframe(name=self._resource_name,
+                                                        df=df,
+                                                        **self._resource_kwargs)
+
+                ctrl_msg.set_metadata("insert_response", result)
 
             return ctrl_msg
 
         def on_data_multi_response_message(msg: MultiResponseMessage) -> MultiResponseMessage:
-            # Probs tensor contains all of the embeddings
-            embeddings = msg.get_probs_tensor()
-            embeddings_list = embeddings.tolist()
 
-            # # Figure out which columns we need
-            # available_columns = set(msg.get_meta_column_names())
+            metadata = msg.get_meta()
 
-            # if (self._include_columns is not None):
-            #     available_columns = available_columns.intersection(self._include_columns)
-            # if (self._exclude_columns is not None):
-            #     available_columns = available_columns.difference(self._exclude_columns)
+            if not metadata.empty:
+                # Probs tensor contains all of the embeddings
+                embeddings = msg.get_probs_tensor()
+                embeddings_list = embeddings.tolist()
 
-            # Build up the metadata from the message
-            metadata = msg.get_meta().to_pandas()
+                # # Figure out which columns we need
+                # available_columns = set(msg.get_meta_column_names())
 
-            # Add in the embedding results to the dataframe
-            metadata[self._embedding_column_name] = embeddings_list
+                # if (self._include_columns is not None):
+                #     available_columns = available_columns.intersection(self._include_columns)
+                # if (self._exclude_columns is not None):
+                #     available_columns = available_columns.difference(self._exclude_columns)
 
-            # if (not self._service.has_store_object(name=self._resource_name)):
-            #     # Create the vector database resource
-            #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
+                # Add in the embedding results to the dataframe
+                metadata[self._embedding_column_name] = embeddings_list
 
-            # Insert entries in the dataframe to vector database.
-            self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
+                # if (not self._service.has_store_object(name=self._resource_name)):
+                #     # Create the vector database resource
+                #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
+
+                # Insert entries in the dataframe to vector database.
+                self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
 
             return msg
 
         def on_data_multi_message(msg: MultiMessage):
-            # Insert entries in the dataframe to vector database.
-            self._service.insert_dataframe(name=self._resource_name, df=msg.get_meta(), **self._resource_kwargs)
+            metadata = msg.get_meta()
+
+            if not metadata.empty:
+                # Insert entries in the dataframe to vector database.
+                self._service.insert_dataframe(name=self._resource_name, df=metadata, **self._resource_kwargs)
 
             return msg
 

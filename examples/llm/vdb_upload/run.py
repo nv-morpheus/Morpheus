@@ -72,6 +72,48 @@ def run():
     type=click.IntRange(min=0),
     help="Stop after emitting this many records from the RSS source stage. Useful for testing. Disabled if `0`",
 )
+@click.option(
+    "--enable_cache",
+    is_flag=True,
+    default=False,
+    help="Enable caching of RSS feed request data.",
+)
+@click.option(
+    "--interval_secs",
+    default=600,
+    type=click.IntRange(min=1),
+    help="Interval in seconds between fetching new feed items.",
+)
+@click.option(
+    "--run_indefinitely",
+    is_flag=True,
+    default=False,
+    help=" Indicates whether the process should run continuously.",
+)
+@click.option(
+    "--vector_db_uri",
+    type=str,
+    default="http://localhost:19530",
+    help="URI for connecting to Vector Database server.",
+)
+@click.option(
+    "--vector_db_service",
+    type=str,
+    default="milvus",
+    help="Name of the vector database service to use.",
+)
+@click.option(
+    "--vector_db_resource_name",
+    type=str,
+    default="RSS",
+    help="The identifier of the resource on which operations are to be performed in the vector database.",
+)
+@click.option(
+    "--triton_server_url",
+    type=str,
+    default="localhost:8001",
+    help="Triton server URL.",
+)
 def pipeline(**kwargs):
 
     from .pipeline import pipeline as _pipeline

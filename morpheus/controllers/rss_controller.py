@@ -14,17 +14,17 @@
 
 import logging
 import os
+import pickle
 import time
 from dataclasses import asdict
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
 import feedparser
+import pandas as pd
 import requests
 import requests_cache
 from bs4 import BeautifulSoup
-
-import cudf
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class RSSController:
         if self._session:
             response = self._session.get(url)
         else:
-            response = requests.get(url, timeout=1.0)
+            response = requests.get(url, timeout=2.0)
 
         return response.text
 
@@ -185,7 +185,7 @@ class RSSController:
 
             if feed["bozo"]:
                 try:
-                    logger.info("Failed to parse feed: %s, %s. Try parsing the feed manually",
+                    logger.info("Failed to parse feed: %s, %s. Try parsing feed manually",
                                 url,
                                 feed['bozo_exception'])
                     feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
@@ -254,16 +254,14 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            yield cudf.DataFrame(entry_accumulator)
+                            yield pd.DataFrame(entry_accumulator)
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries
 
             # Yield any remaining entries.
             if entry_accumulator:
-                # TODO (Bhargav): Debug : cannot mix list and non-list, non-null values error
-                df = cudf.DataFrame(entry_accumulator)
-                yield df
+                yield pd.DataFrame(entry_accumulator)
             else:
                 logger.debug("No new entries found.")
 

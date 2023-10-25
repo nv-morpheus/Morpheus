@@ -21,7 +21,6 @@ import mrc.core.operators as ops
 import pandas as pd
 import requests_cache
 from bs4 import BeautifulSoup
-from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 import cudf
@@ -82,7 +81,9 @@ class WebScraperStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        node = builder.make_node(self.unique_name, ops.map(self._download_and_split))
+        node = builder.make_node(self.unique_name,
+                                 ops.map(self._download_and_split),
+                                 ops.filter(lambda x: x is not None))
         node.launch_options.pe_count = self._config.num_threads
 
         builder.make_edge(input_stream[0], node)
@@ -91,15 +92,21 @@ class WebScraperStage(SinglePortStage):
 
     def _download_and_split(self, msg: MessageMeta) -> MessageMeta:
 
-        # Convert the dataframe into a list of dictionaries
-        df_pd: pd.DataFrame = msg.df.to_pandas()
-        df_dicts = df_pd.to_dict(orient="records")
+        if self._link_column not in msg.get_column_names():
+            return None
 
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
+        df = msg.df
+
+        if isinstance(df, cudf.DataFrame):
+            df: pd.DataFrame = df.to_pandas()
+
+        # Convert the dataframe into a list of dictionaries
+        df_dicts = df.to_dict(orient="records")
 
         final_rows: list[dict] = []
 
         for row in df_dicts:
+
             url = row[self._link_column]
 
             try:
@@ -124,7 +131,7 @@ class WebScraperStage(SinglePortStage):
                 # print(article.text)
                 # text = article.text
 
-                split_text = splitter.split_text(text)
+                split_text = self._text_splitter.split_text(text)
 
                 for text in split_text:
                     r = row.copy()
@@ -137,4 +144,5 @@ class WebScraperStage(SinglePortStage):
                 logger.error(f"Error parsing document: {e}")
                 continue
 
-        return MessageMeta(cudf.from_pandas(pd.DataFrame(final_rows)))
+        # Not using cudf to avoid error: pyarrow.lib.ArrowInvalid: cannot mix list and non-list, non-null values
+        return MessageMeta(pd.DataFrame(final_rows))

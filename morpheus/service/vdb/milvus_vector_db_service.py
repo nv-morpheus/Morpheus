@@ -725,10 +725,10 @@ class MilvusVectorDBService(VectorDBService):
         fields = self._build_schema_conf(df=df)
 
         create_kwargs = {
-                "schema_conf": {
-                    "description": "Auto generated schema from DataFrame in Morpheus",
-                    "schema_fields": fields,
-                }
+            "schema_conf": {
+                "description": "Auto generated schema from DataFrame in Morpheus",
+                "schema_fields": fields,
+            }
         }
 
         if (kwargs.get("index_field", None) is not None):
