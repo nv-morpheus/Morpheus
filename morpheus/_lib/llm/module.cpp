@@ -243,8 +243,7 @@ PYBIND11_MODULE(llm, _module)
             py::arg("name"),
             py::kw_only(),
             py::arg("node"),
-            py::arg("is_output") = false,
-            "Add an LLMNode to the current node")
+            py::arg("is_output") = false)
         .def("add_node",
              &LLMNode::add_node,
              py::arg("name"),
@@ -252,7 +251,25 @@ PYBIND11_MODULE(llm, _module)
              py::arg("inputs"),
              py::arg("node"),
              py::arg("is_output") = false,
-             "Add an LLMNode to the current node");
+             R"pbdoc(
+                Add an LLMNode to the current node.
+
+                Parameters
+                ----------
+                name : str
+                    The name of the node to add
+
+                inputs : list[tuple[str, str]], optional
+                    List of input mappings to use for the node, in the form of `[(external_name, internal_name), ...]`
+                    If unspecified the node's input_names will be used.
+
+                node : LLMNodeBase
+                    The node to add
+
+                is_output : bool, optional
+                    Indicates if the node is an output node, by default False
+
+            )pbdoc");
 
     options.enable_function_signatures();
 
