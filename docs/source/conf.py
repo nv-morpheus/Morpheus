@@ -170,6 +170,7 @@ autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "databricks.connect",
+    "langchain",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "nvtabular",
