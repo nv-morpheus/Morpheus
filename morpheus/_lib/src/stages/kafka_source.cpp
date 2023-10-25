@@ -21,7 +21,6 @@
 #include "mrc/node/rx_source_base.hpp"
 #include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
-#include "pymrc/utilities/function_wrappers.hpp"  // for PyFuncWrapper
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
@@ -36,8 +35,6 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 
 #include <algorithm>  // for find, min, transform
@@ -48,14 +45,11 @@
 #include <functional>
 #include <initializer_list>  // for initializer_list
 #include <iterator>          // for back_insert_iterator, back_inserter
-#include <list>
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 // IWYU thinks we need atomic for vector.emplace_back of a unique_ptr
 // and __alloc_traits<>::value_type for vector assignments
@@ -80,29 +74,6 @@
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace morpheus {
-
-KafkaOAuthCallback::KafkaOAuthCallback(const std::function<std::map<std::string, std::string>()>& oauth_callback) :
-  m_oauth_callback(oauth_callback)
-{}
-
-void KafkaOAuthCallback::oauthbearer_token_refresh_cb(RdKafka::Handle* handle, const std::string& oauthbearer_config)
-{
-    try
-    {
-        auto response = m_oauth_callback();
-        // Build parameters to pass to librdkafka
-        std::string token         = response["token"];
-        int64_t token_lifetime_ms = std::stoll(response["token_expiration_in_epoch"]);
-        std::list<std::string> extensions;  // currently not supported
-        std::string errstr;
-        auto result = handle->oauthbearer_set_token(token, token_lifetime_ms, "kafka", extensions, errstr);
-        CHECK(result == RdKafka::ErrorCode::ERR_NO_ERROR) << "Error occurred while setting the oauthbearer token";
-    } catch (std::exception ex)
-    {
-        LOG(FATAL) << "Exception occured oauth refresh: " << ex.what();
-    }
-}
-
 // Component-private classes.
 // ************ KafkaSourceStage__UnsubscribedException**************//
 class KafkaSourceStageUnsubscribedException : public std::exception
@@ -210,12 +181,8 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer* consumer
     std::vector<RdKafka::TopicPartition*> current_assignment;
     CHECK_KAFKA(consumer->assignment(current_assignment), RdKafka::ERR_NO_ERROR, "Error retrieving current assignment");
 
-    auto old_partition_ids = foreach_map(current_assignment, [](const auto& x) {
-        return x->partition();
-    });
-    auto new_partition_ids = foreach_map(partitions, [](const auto& x) {
-        return x->partition();
-    });
+    auto old_partition_ids = foreach_map(current_assignment, [](const auto& x) { return x->partition(); });
+    auto new_partition_ids = foreach_map(partitions, [](const auto& x) { return x->partition(); });
 
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS)
     {
@@ -296,9 +263,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   std::size_t stop_after,
-                                   bool async_commits,
-                                   std::unique_ptr<KafkaOAuthCallback> oauth_callback) :
+                                   TensorIndex stop_after,
+                                   bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::vector<std::string>{std::move(topic)}),
@@ -307,8 +273,7 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
   m_stop_after{stop_after},
-  m_async_commits(async_commits),
-  m_oauth_callback(std::move(oauth_callback))
+  m_async_commits(async_commits)
 {}
 
 KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
@@ -317,9 +282,8 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   std::size_t stop_after,
-                                   bool async_commits,
-                                   std::unique_ptr<KafkaOAuthCallback> oauth_callback) :
+                                   TensorIndex stop_after,
+                                   bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topics(std::move(topics)),
@@ -328,22 +292,17 @@ KafkaSourceStage::KafkaSourceStage(TensorIndex max_batch_size,
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
   m_stop_after{stop_after},
-  m_async_commits(async_commits),
-  m_oauth_callback(std::move(oauth_callback))
+  m_async_commits(async_commits)
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> sub) -> void {
-        std::size_t records_emitted = 0;
+        TensorIndex records_emitted = 0;
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
-            [this]() {
-                return this->batch_timeout_ms();
-            },
-            [this]() {
-                return this->max_batch_size();
-            },
+            [this]() { return this->batch_timeout_ms(); },
+            [this]() { return this->max_batch_size(); },
             [this](const std::string str_to_display) {
                 auto& ctx = mrc::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
@@ -494,15 +453,6 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         LOG(FATAL) << "Error occurred while setting Kafka rebalance function. Error: " << errstr;
     }
 
-    if (m_oauth_callback != nullptr)
-    {
-        if (RdKafka::Conf::ConfResult::CONF_OK !=
-            kafka_conf->set("oauthbearer_token_refresh_cb", m_oauth_callback.get(), errstr))
-        {
-            LOG(FATAL) << "Error occurred while setting Kafka OAuth Callback function. Error: " << errstr;
-        }
-    }
-
     auto consumer = std::unique_ptr<RdKafka::KafkaConsumer>(RdKafka::KafkaConsumer::create(kafka_conf.get(), errstr));
 
     if (!consumer)
@@ -560,9 +510,8 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
         auto const& parts = *(topic->partitions());
 
-        std::transform(parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const& part) {
-            return part->id();
-        });
+        std::transform(
+            parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const& part) { return part->id(); });
 
         auto toppar_list = foreach_map(parts, [&topic](const auto& part) {
             return std::unique_ptr<RdKafka::TopicPartition>{
@@ -570,24 +519,20 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         });
 
         std::vector<RdKafka::TopicPartition*> toppar_ptrs =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
-                return x.get();
-            });
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x.get(); });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(
             consumer->committed(toppar_ptrs, 2000), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka committed offsets");
 
-        auto committed = foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
-            return x->offset();
-        });
+        auto committed =
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(consumer->position(toppar_ptrs), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka positions");
 
-        auto positions = foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) {
-            return x->offset();
-        });
+        auto positions =
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
 
         auto watermarks = foreach_map(toppar_list, [&consumer](const std::unique_ptr<RdKafka::TopicPartition>& x) {
             int64_t low;
@@ -673,12 +618,9 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commit,
     bool disable_pre_filtering,
-    std::size_t stop_after,
-    bool async_commits,
-    std::optional<pybind11::function> oauth_callback)
+    TensorIndex stop_after,
+    bool async_commits)
 {
-    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(std::move(oauth_callback));
-
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
                                                             topic,
@@ -687,8 +629,7 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_commit,
                                                             disable_pre_filtering,
                                                             stop_after,
-                                                            async_commits,
-                                                            std::move(oauth_callback_cpp));
+                                                            async_commits);
 
     return stage;
 }
@@ -702,12 +643,9 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commit,
     bool disable_pre_filtering,
-    std::size_t stop_after,
-    bool async_commits,
-    std::optional<pybind11::function> oauth_callback)
+    TensorIndex stop_after,
+    bool async_commits)
 {
-    auto oauth_callback_cpp = KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(std::move(oauth_callback));
-
     auto stage = builder.construct_object<KafkaSourceStage>(name,
                                                             max_batch_size,
                                                             topics,
@@ -716,31 +654,8 @@ std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             disable_commit,
                                                             disable_pre_filtering,
                                                             stop_after,
-                                                            async_commits,
-                                                            std::move(oauth_callback_cpp));
+                                                            async_commits);
 
     return stage;
 }
-
-std::unique_ptr<KafkaOAuthCallback> KafkaSourceStageInterfaceProxy::make_kafka_oauth_callback(
-    std::optional<pybind11::function>&& oauth_callback)
-{
-    if (oauth_callback == std::nullopt)
-    {
-        return static_cast<std::unique_ptr<KafkaOAuthCallback>>(nullptr);
-    }
-
-    auto oauth_callback_wrapped = mrc::pymrc::PyFuncWrapper(std::move(oauth_callback.value()));
-
-    return std::make_unique<KafkaOAuthCallback>([oauth_callback_wrapped = std::move(oauth_callback_wrapped)]() {
-        auto kvp_cpp = std::map<std::string, std::string>();
-        auto kvp     = oauth_callback_wrapped.operator()<pybind11::dict>();
-        for (auto [key, value] : kvp)
-        {
-            kvp_cpp[key.cast<std::string>()] = value.cast<std::string>();
-        }
-        return kvp_cpp;
-    });
-}
-
 }  // namespace morpheus
