@@ -238,7 +238,7 @@ def pipeline(
     split = pipe.add_stage(SplitStage(config))
     pipe.add_edge(inference, split)
 
-    # If its a retrieve task, branch to the LLM enging for RAG
+    # If it's a retrieve task, branch to the LLM engine for RAG
     retrieve_llm_engine = pipe.add_stage(
         LLMEngineStage(config,
                        engine=_build_engine(model_name=model_name, vdb_service=vdb_service.load_resource("RSS"))))

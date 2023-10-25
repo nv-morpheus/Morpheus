@@ -133,7 +133,7 @@ class WriteToVectorDBStage(SinglePortStage):
             return ctrl_msg
 
         def on_data_multi_message(msg: MultiResponseMessage) -> MultiResponseMessage:
-            # Probs tensor contains all of the embeddings
+            # Probs tensor contains all the embeddings
             embeddings = msg.get_probs_tensor()
             embeddings_list = embeddings.tolist()
 

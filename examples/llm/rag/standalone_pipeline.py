@@ -108,6 +108,7 @@ def _build_milvus_service():
 
 def _build_llm_service(model_name: str):
 
+    # TODO(Devin) : Hard coded, should be able to use OpenAPI to get this.
     llm_service = NeMoLLMService()
 
     return llm_service.get_client(model_name=model_name, temperature=0.5, tokens_to_generate=200)

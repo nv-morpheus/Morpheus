@@ -55,11 +55,24 @@ the LLM can pull from for its response.
 
 [Original GitHub issue](https://github.com/nv-morpheus/Morpheus/issues/1306)
 
-**TODO**
+In order to cater to the unique requirements of the Retrieval Augmented Generation (RAG) mechanism, the following steps
+were incorporated:
+
+- **Embedding Retrieval:** Before the LLM can make a completion, relevant context is retrieved from the Vector Database.
+  This context is in the form of embeddings that represent pieces of information closely related to the query.
+- **Context Augmentation:** The retrieved context is then appended to the user's query, enriching it with the necessary
+  background to assist the LLM in generating a more informed completion.
+- **LLM Query Execution:** The augmented query is then sent to the LLM, which generates a response based on the
+  combination of the original query and the appended context.
 
 ### Rationale Behind Design Decisions
 
-**TODO**
+- **Choice of Embedding Model:** all-MiniLM-L6-v2 was chosen due to its compactness and accuracy. This makes it ideal
+  for real-time operations and ensures that the embeddings are of high quality.
+- **Using Milvus as VDB:** Milvus offers scalable and efficient vector search capabilities, making it a natural choice
+  for embedding retrieval in real-time.
+- **Integration with LLM:** By directly appending the context to the LLM query, the implementation remains streamlined
+  and avoids excessive modifications to the LLM engine itself.`
 
 ### Standalone Morpheus Pipeline
 
@@ -82,22 +95,83 @@ The standalone Morpheus pipeline is built using the following components:
 
 ### Persistent Morpheus Pipeline
 
-The persistent Morpheus pipeline is functionally similar to the standalone pipeline, but it uses multiple sources and
-multiple sinks to perform both the upload and retrieval portions in the same pipeline. The benefit of this pipeline over
-the standalone pipeline is that no VDB upload process needs to be run beforehand. Everything runs in a single pipeline.
+#### Technical Overview
 
-### Getting Started
+![Example RAG Pipeline Diagram](./images/persistent_pipeline.png)
 
-### Prerequisites
+The provided diagram illustrates the structural composition of the Morpheus data processing pipeline. This pipeline is
+designed with the intent to handle various data streams in support of Retrieval Augmented Generation.
+
+> **Note**: The current `persistent` pipeline implementation differs from the above diagram in the follwing ways:
+
+- The source for the upload and retrieval are both KafkaSourceStage to make it easy for the user to control when
+  messages are processed by the example pipeline.
+- There is a SplitStage added after the embedding portion of the pipeline which determines which sink to send each
+  message to.
+- The final sink for the retrieval task is sent to another Kafka topic retrieve_output.
+
+#### Data Input Points
+
+The pipeline has multiple data input avenues:
+
+1. **User Uploaded Documents**: Raw documents provided by users for further processing.
+2. **Streaming Event Logs**: Logs that are streamed in real-time.
+3. **Streaming Data Feeds**: Continuous streams of data that could be dynamic in nature.
+4. **RSS Threat Intel Feeds**: RSS-based feeds that might focus on threat intelligence.
+5. **LLM Input Query**: Queries that are inputted for processing by the Large Language Model.
+
+#### Data Processing Stages
+
+The ingested data traverses several processing stages:
+
+1. **Sources Integration**: Data from different origins such as REST Server, Kafka, and RSS Scraper are directed into
+   the pipeline.
+2. **Batching**: Data items are grouped together for more efficient bulk processing.
+3. **Data Transformation**:
+    - **Chunking**: Data might be broken into smaller chunks if too large.
+    - **Tokenization**: Textual data is typically converted into tokens suitable for model processing.
+    - **Embedding**: This step likely converts data into its vector representation.
+    - **Mean Pooling**: Embeddings might be combined to yield a mean vector.
+
+4. **Inference**: Models may be used to extract patterns or make predictions from the data.
+5. **Storage and Retrieval**: Vector representations are stored in the Vector DB and can be fetched upon request.
+   Retrieval might employ GPU-based IVF indexes (such as RAFT or FAISS).
+
+### Backend Components
+
+The pipeline is supported by a set of backend components:
+
+1. **Knowledge Graph DB & Service**: This serves as a potential repository and query mechanism for stored knowledge.
+2. **Vector DB & Service**: Appears to handle the storage and querying of vector data.
+3. **Triton Inference Server**: An inference component that interfaces with the LLM Service.
+
+## Getting Started
+
+## Prerequisites
+
+Before running the pipeline, we need obtain service API keys for the following services:
+
+### Obtain an OpenAI API or NGC API Key
+
+#### NGC
+
+- Follow the instructions [here](TODO)
+- We'll refer to your NGC API key as ${NGC_API_KEY} for the rest of this document.
+
+#### OpenAI
+
+- Follow the instructions [here](https://platform.openai.com/docs/quickstart?context=python) to obtain an OpenAI
+  API key.
+- We'll refer to your OpenAI API key as ${OPENAI_API_KEY} for the rest of this document.
 
 Before running the pipeline, we need to ensure that the following services are running:
 
-#### Milvus Service
+### Milvus Service
 
 - Follow the instructions [here](https://milvus.io/docs/install_standalone-docker.md) to install and run a Milvus
   service.
 
-#### Triton Service
+### Triton Service
 
 - Pull the Docker image for Triton:
   ```bash
@@ -123,6 +197,7 @@ Before running the pipeline, we need to ensure that the following services are r
     ```
 
 ### Running the Morpheus Pipeline
+
 The top level entrypoint to each of the LLM example pipelines is `examples/llm/main.py`. This script accepts a set
 of Options and a Pipeline to run. Baseline options are below, and for the purposes of this document we'll assume a
 pipeline option of `rag`:
