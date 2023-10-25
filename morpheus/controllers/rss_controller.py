@@ -189,6 +189,7 @@ class RSSController:
                                 feed['bozo_exception'])
                     feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
                 except Exception:
+                    logger.error("Failed to parse the feed manually: %s", url)
                     raise
 
         logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
@@ -218,7 +219,7 @@ class RSSController:
                     yield feed
 
             except Exception as ex:
-                logger.warning("Failed to parse feed: %s: %s.", url, ex)
+                logger.info("Failed to parse feed: %s: %s.", url, ex)
                 feed_stats.last_failure = current_time
                 feed_stats.failure_count += 1
                 feed_stats.last_try_result = "Failure"
