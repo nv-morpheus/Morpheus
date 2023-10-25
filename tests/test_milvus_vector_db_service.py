@@ -321,9 +321,15 @@ def test_delete_by_keys(milvus_service: MilvusVectorDBService,
     milvus_service.insert(collection_name, milvus_data)
 
     # Delete data by keys from the collection.
-    keys_to_delete = [2, 4, 6]
+    keys_to_delete = [5, 6]
     response = milvus_service.delete_by_keys(collection_name, keys_to_delete)
     assert response == keys_to_delete
+
+    response = milvus_service.query(collection_name, query="id >= 0")
+    assert len(response) == len(milvus_data) - 2
+
+    for item in response:
+        assert item["id"] not in [5, 6]
 
     # Clean up the collection.
     milvus_service.drop(collection_name)

@@ -429,8 +429,6 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         result = self._client.delete(collection_name=self._name, pks=keys, **kwargs)
 
-        self._collection.load()
-
         return result
 
     def delete(self, expr: str, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:

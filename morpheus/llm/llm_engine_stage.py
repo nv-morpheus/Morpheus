@@ -45,7 +45,7 @@ class LLMEngineStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
+        typing.Tuple(`ControlMessage`, )
             Accepted input types.
 
         """
