@@ -87,13 +87,14 @@ PYBIND11_MODULE(llm, _module)
                        "The name of node that will be mapped to this input. Use a leading '/' to indicate it is a "
                        "sibling node otherwise it will be treated as a parent node. Can also specify a specific node "
                        "output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this "
-                       "input. Can also use a wild card such as '/sibling_node/*' to match all internal node names")
-        .def_readwrite("internal_name",
-                       &InputMap::internal_name,
-                       "The internal node name that the external node maps to. Must match an input returned from "
-                       "`get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the "
-                       "default input of the node. Use a wildcard '*' to match all inputs of the node (Must also use a "
-                       "wild card on the external mapping).");
+                       "input. Can also use a wild card such as '/sibling_node/\\*' to match all internal node names")
+        .def_readwrite(
+            "internal_name",
+            &InputMap::internal_name,
+            "The internal node name that the external node maps to. Must match an input returned from "
+            "`get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the "
+            "default input of the node. Use a wildcard '\\*' to match all inputs of the node (Must also use a "
+            "wild card on the external mapping).");
 
     py::class_<LLMTask>(_module, "LLMTask")
         .def(py::init<>())
@@ -221,6 +222,9 @@ PYBIND11_MODULE(llm, _module)
         .def_property_readonly("sibling_input_names", &LLMNodeRunner::sibling_input_names)
         .def("execute", &LLMNodeRunner::execute, py::arg("context"));
 
+    // The auto-generated docstrings for the overloaded function in this class cause sphinx errors
+    py::options options;
+    options.disable_function_signatures();
     py::class_<LLMNode, LLMNodeBase, PyLLMNode<>, std::shared_ptr<LLMNode>>(_module, "LLMNode")
         .def(py::init_alias<>())
         .def(
@@ -239,14 +243,18 @@ PYBIND11_MODULE(llm, _module)
             py::arg("name"),
             py::kw_only(),
             py::arg("node"),
-            py::arg("is_output") = false)
+            py::arg("is_output") = false,
+            "Add an LLMNode to the current node")
         .def("add_node",
              &LLMNode::add_node,
              py::arg("name"),
              py::kw_only(),
              py::arg("inputs"),
              py::arg("node"),
-             py::arg("is_output") = false);
+             py::arg("is_output") = false,
+             "Add an LLMNode to the current node");
+
+    options.enable_function_signatures();
 
     py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(_module, "LLMTaskHandler")
         .def(py::init<>())

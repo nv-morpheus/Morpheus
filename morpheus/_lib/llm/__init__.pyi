@@ -34,26 +34,26 @@ class InputMap():
     @property
     def external_name(self) -> str:
         """
-        The name of node that will be mapped to this input. Use a leading '/' to indicate it is a sibling node otherwise it will be treated as a parent node. Can also specify a specific node output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this input. Can also use a wild card such as '/sibling_node/*' to match all internal node names
+        The name of node that will be mapped to this input. Use a leading '/' to indicate it is a sibling node otherwise it will be treated as a parent node. Can also specify a specific node output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this input. Can also use a wild card such as '/sibling_node/\*' to match all internal node names
 
         :type: str
         """
     @external_name.setter
     def external_name(self, arg0: str) -> None:
         """
-        The name of node that will be mapped to this input. Use a leading '/' to indicate it is a sibling node otherwise it will be treated as a parent node. Can also specify a specific node output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this input. Can also use a wild card such as '/sibling_node/*' to match all internal node names
+        The name of node that will be mapped to this input. Use a leading '/' to indicate it is a sibling node otherwise it will be treated as a parent node. Can also specify a specific node output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this input. Can also use a wild card such as '/sibling_node/\*' to match all internal node names
         """
     @property
     def internal_name(self) -> str:
         """
-        The internal node name that the external node maps to. Must match an input returned from `get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the default input of the node. Use a wildcard '*' to match all inputs of the node (Must also use a wild card on the external mapping).
+        The internal node name that the external node maps to. Must match an input returned from `get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the default input of the node. Use a wildcard '\*' to match all inputs of the node (Must also use a wild card on the external mapping).
 
         :type: str
         """
     @internal_name.setter
     def internal_name(self, arg0: str) -> None:
         """
-        The internal node name that the external node maps to. Must match an input returned from `get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the default input of the node. Use a wildcard '*' to match all inputs of the node (Must also use a wild card on the external mapping).
+        The internal node name that the external node maps to. Must match an input returned from `get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the default input of the node. Use a wildcard '\*' to match all inputs of the node (Must also use a wild card on the external mapping).
         """
     pass
 class LLMContext():
@@ -113,11 +113,6 @@ class LLMLambdaNode(LLMNodeBase):
     def get_input_names(self) -> typing.List[str]: ...
     pass
 class LLMNode(LLMNodeBase):
-    def __init__(self) -> None: ...
-    @typing.overload
-    def add_node(self, name: str, *, inputs: typing.List[typing.Union[InputMap, str, typing.Tuple[str, str], LLMNodeRunner]], node: LLMNodeBase, is_output: bool = False) -> LLMNodeRunner: ...
-    @typing.overload
-    def add_node(self, name: str, *, node: LLMNodeBase, is_output: bool = False) -> LLMNodeRunner: ...
     pass
 class LLMEngine(LLMNode, LLMNodeBase):
     def __init__(self) -> None: ...
