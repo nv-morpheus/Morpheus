@@ -226,11 +226,14 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         self._fields: list[pymilvus.FieldSchema] = self._collection.schema.fields
 
         self._vector_field = None
+        self._fillna_fields_dict = {}
 
         for field in self._fields:
             if field.dtype == pymilvus.DataType.FLOAT_VECTOR:
                 self._vector_field = field.name
-                break
+            else:
+                if not field.auto_id:
+                    self._fillna_fields_dict[field.name] = field.dtype
 
         self._collection.load()
 
@@ -287,6 +290,22 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         if isinstance(final_df, cudf.DataFrame):
             final_df = final_df.to_pandas()
+
+        # Ensure that there are no None values in the DataFrame entries.
+        for field_name, dtype in self._fillna_fields_dict.items():
+            if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
+                final_df[field_name] = final_df[field_name].fillna("")
+            elif dtype in (pymilvus.DataType.INT8,
+                           pymilvus.DataType.INT16,
+                           pymilvus.DataType.INT32,
+                           pymilvus.DataType.INT64):
+                final_df[field_name] = final_df[field_name].fillna(0)
+            elif dtype in (pymilvus.DataType.FLOAT, pymilvus.DataType.DOUBLE):
+                final_df[field_name] = final_df[field_name].fillna(0.0)
+            elif dtype == pymilvus.DataType.BOOL:
+                final_df[field_name] = final_df[field_name].fillna(False)
+            else:
+                logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
         result = self._collection.insert(data=final_df, **kwargs)
         self._collection.flush()
