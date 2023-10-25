@@ -138,6 +138,12 @@ exhale_args = {
         INPUT = ../../morpheus/_lib
         INTERACTIVE_SVG = YES
         SOURCE_BROWSER = YES
+        ENABLE_PREPROCESSING = YES
+        MACRO_EXPANSION = YES
+        EXPAND_ONLY_PREDEF = NO
+        PREDEFINED = "MORPHEUS_EXPORT=" \
+                     "PYBIND11_TYPE_CASTER=" \
+                     "DOXYGEN_SHOULD_SKIP_THIS=1"
     ''')
 }
 

@@ -17,8 +17,8 @@ name: morpheus
 channels:
   - conda-forge
 dependencies:
-  - breathe=4.34.0
-  - doxygen>=1.9.8,<2.0
+  - breathe=4.35.0
+  - doxygen=1.9.2
   - exhale=0.3.6
   - ipython
   - myst-parser=0.17.2
