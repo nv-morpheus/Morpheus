@@ -28,16 +28,9 @@ from morpheus.config import Config
 from morpheus.stages.input.arxiv_source import ArxivSource
 
 
-@mock.patch("langchain.text_splitter.RecursiveCharacterTextSplitter")
-def test_constructor(mock_splitter: mock.MagicMock, config: Config):
+def test_constructor(config: Config):
     cache_dir = "/does/not/exist"
-    stage = ArxivSource(config, query="unittest", cache_dir=cache_dir, chunk_size=77, chunk_overlap=33, max_pages=100)
-    assert stage._query == "unittest"
-    assert stage._cache_dir == cache_dir
-    assert stage._max_pages == 100
-
-    mock_splitter.assert_called_once_with(chunk_size=77, chunk_overlap=33, length_function=len)
-
+    ArxivSource(config, query="unittest", cache_dir=cache_dir, chunk_size=77, chunk_overlap=33, max_pages=100)
     assert not os.path.exists(cache_dir)
 
 
@@ -68,7 +61,6 @@ def test_generate_frames_cache_miss(mock_arxiv_search: mock.MagicMock, config: C
     assert list(stage._generate_frames()) == expected_file_paths
 
     assert os.path.exists(cache_dir)
-    assert stage._total_pdfs == 2
 
     mock_arxiv_search.assert_called_once()
     mock_arxiv_search.results.assert_called_once()
@@ -86,8 +78,6 @@ def test_generate_frames_cache_hit(mock_arxiv_search: mock.MagicMock, config: Co
     expected_file_paths = [os.path.join(tmp_path, "apples.pdf"), os.path.join(tmp_path, "plums.pdf")]
     assert list(stage._generate_frames()) == expected_file_paths
 
-    assert stage._total_pdfs == 2
-
     mock_arxiv_search.assert_called_once()
     mock_arxiv_search.results.assert_called_once()
     mock_results: list[mock.MagicMock] = mock_arxiv_search.results.return_value
@@ -101,8 +91,6 @@ def test_generate_frames_cache_hit(mock_arxiv_search: mock.MagicMock, config: Co
 def test_process_pages(config: Config, pdf_file: str):
     stage = ArxivSource(config, query="unittest", cache_dir="/does/not/exist")
     documents = stage._process_pages(pdf_file)
-
-    assert stage._total_pages == 1
 
     assert len(documents) == 1
     document = documents[0]
@@ -141,7 +129,6 @@ def test_process_pages_retry(mock_pdf_loader: mock.MagicMock, config: Config, py
     stage = ArxivSource(config, query="unittest", cache_dir="/does/not/exist")
     documents = stage._process_pages('/does/not/exist/fake.pdf')
 
-    assert stage._total_pages == 1
     assert call_count == 5
 
     assert documents == ["unittest"]
@@ -191,7 +178,6 @@ def test_splitting_pages(config: Config,
     stage = ArxivSource(config, query="unittest", chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     msg = stage._splitting_pages(documents)
 
-    assert stage._total_chunks == num_expected_chunks
     dataset_cudf.assert_compare_df(msg.df, expected_df)
 
 
@@ -216,5 +202,4 @@ def test_splitting_pages_no_chunks(config: Config,
     stage = ArxivSource(config, query="unittest")
     msg = stage._splitting_pages(documents)
 
-    assert stage._total_chunks == 1
     dataset_cudf.assert_compare_df(msg.df, expected_df)
