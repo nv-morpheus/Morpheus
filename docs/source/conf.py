@@ -129,7 +129,7 @@ exhale_args = {
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
         EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/* */doca/*
-        EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
+        EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*" "PYBIND11_NAMESPACE*"
         EXTENSION_MAPPING = cu=C++ cuh=C++
         EXTRACT_ALL = YES
         FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
@@ -142,7 +142,6 @@ exhale_args = {
         MACRO_EXPANSION = YES
         EXPAND_ONLY_PREDEF = NO
         PREDEFINED = "MORPHEUS_EXPORT=" \
-                     "PYBIND11_TYPE_CASTER=" \
                      "DOXYGEN_SHOULD_SKIP_THIS=1"
     ''')
 }
