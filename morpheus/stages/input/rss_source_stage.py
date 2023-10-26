@@ -51,6 +51,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         Cache directory for storing RSS feed request data.
     cooldown_interval : int, optional, default = 600
          Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
+    request_timeout : float, optional, default = 2.0
+        Request timeout in secs to fetch the feed.
     """
 
     def __init__(self,
@@ -62,7 +64,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  batch_size: int = None,
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http",
-                 cooldown_interval: int = 600):
+                 cooldown_interval: int = 600,
+                 request_timeout: float = 2.0):
         super().__init__(c)
         self._stop_requested = False
         self._stop_after = stop_after
@@ -83,7 +86,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                                          run_indefinitely=run_indefinitely,
                                          enable_cache=enable_cache,
                                          cache_dir=cache_dir,
-                                         cooldown_interval=cooldown_interval)
+                                         cooldown_interval=cooldown_interval,
+                                         request_timeout=request_timeout)
 
     @property
     def name(self) -> str:

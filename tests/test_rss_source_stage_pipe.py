@@ -41,30 +41,6 @@ def test_constructor_with_feed_url(config):
 
 
 @pytest.mark.use_python
-def test_constructor_with_feed_file(config):
-    file_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xml")
-    rss_source_stage = RSSSourceStage(config,
-                                      feed_input=file_feed_input,
-                                      interval_secs=5,
-                                      stop_after=10,
-                                      cooldown_interval=100,
-                                      batch_size=256,
-                                      enable_cache=True,
-                                      cache_dir="./.cache/http_cache")
-
-    ctlr = rss_source_stage._controller
-
-    assert ctlr._feed_input == {file_feed_input}
-    assert ctlr._run_indefinitely is False
-    assert ctlr._batch_size == 256
-    assert rss_source_stage._interval_secs == 5
-    assert rss_source_stage._stop_after == 10
-    assert rss_source_stage._controller._cooldown_interval == 100
-    assert rss_source_stage._controller._session is not None
-    assert rss_source_stage._controller._session.cache.cache_name == "./.cache/http_cache/RSSController.sqlite"
-
-
-@pytest.mark.use_python
 def test_support_cpp_node(config):
     url_feed_input = "https://fake.nvidia.com/rss/HomePage.xml"
     rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)

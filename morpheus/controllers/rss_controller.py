@@ -60,6 +60,8 @@ class RSSController:
         Cache directory for storing RSS feed request data.
     cooldown_interval : int, optional, default = 600
          Cooldown interval in seconds if there is a failure in fetching or parsing the feed.
+    request_timeout : float, optional, default = 2.0
+        Request timeout in secs to fetch the feed.
     """
 
     def __init__(self,
@@ -68,7 +70,8 @@ class RSSController:
                  run_indefinitely: bool = None,
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http",
-                 cooldown_interval: int = 600):
+                 cooldown_interval: int = 600,
+                 request_timeout: float = 2.0):
 
         if (isinstance(feed_input, str)):
             feed_input = [feed_input]
@@ -78,6 +81,7 @@ class RSSController:
         self._batch_size = batch_size
         self._previous_entries = set()  # Stores the IDs of previous entries to prevent the processing of duplicates.
         self._cooldown_interval = cooldown_interval
+        self._request_timeout = request_timeout
 
         # Validate feed_input
         for f in self._feed_input:
@@ -106,11 +110,40 @@ class RSSController:
         """Property that determines to run the source indefinitely"""
         return self._run_indefinitely
 
+    @property
+    def session_exist(self) -> bool:
+        """Property that indicates the existence of a session."""
+        return True if self._session is not None else False
+
+    def get_feed_stats(self, feed_url: str) -> FeedStats:
+        """
+        Get feed input stats.
+
+        Parameters
+        ----------
+        feed_url : str
+            Feed URL that is part of feed_input passed to the constructor.
+
+        Returns
+        -------
+        FeedStats
+            FeedStats instance for the given feed URL if it exists.
+
+        Raises
+        ------
+        ValueError
+            If the feed URL is not found in the feed input provided to the constructor.
+        """
+        if feed_url not in self._feed_stats_dict:
+            raise ValueError("The feed URL is not part of the feed input provided to the constructor.")
+
+        return self._feed_stats_dict[feed_url]
+
     def _get_response_text(self, url: str) -> str:
-        if self._session:
+        if self.session_exist:
             response = self._session.get(url)
         else:
-            response = requests.get(url, timeout=2.0)
+            response = requests.get(url, timeout=self._request_timeout)
 
         return response.text
 
@@ -163,7 +196,7 @@ class RSSController:
 
         fallback = False
         cache_hit = False
-        is_url_with_session = is_url and self._session
+        is_url_with_session = is_url and self.session_exist
 
         if is_url_with_session:
             response = self._session.get(url)
@@ -219,7 +252,7 @@ class RSSController:
                     yield feed
 
             except Exception as ex:
-                logger.info("Failed to parse feed: %s: %s.", url, ex)
+                logger.warning("Failed to parse feed: %s Feed stats: %s\n%s.", url, asdict(feed_stats), ex)
                 feed_stats.last_failure = current_time
                 feed_stats.failure_count += 1
                 feed_stats.last_try_result = "Failure"

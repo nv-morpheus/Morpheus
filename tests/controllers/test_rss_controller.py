@@ -185,14 +185,15 @@ def test_enable_disable_cache(enable_cache):
     controller = RSSController(feed_input=test_urls, enable_cache=enable_cache)
 
     if enable_cache:
-        assert controller._session
+        assert controller.session_exist
     else:
-        assert not controller._session
+        assert not controller.session_exist
 
 
 def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
     feed_input = test_urls[0]
-    controller = RSSController(feed_input=feed_input, enable_cache=False)
+    cooldown_interval = 620
+    controller = RSSController(feed_input=feed_input, enable_cache=False, cooldown_interval=cooldown_interval)
 
     with patch("morpheus.controllers.rss_controller.feedparser.parse") as mock_feedparser_parse:
 
@@ -201,7 +202,7 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
         with patch.object(controller, '_try_parse_feed') as mock_try_parse_feed:
             dataframes_generator = controller.parse_feeds()
             next(dataframes_generator, None)
-            feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+            feed_stats: FeedStats = controller.get_feed_stats(feed_input)
             assert feed_stats.last_try_result == "Success"
             assert feed_stats.failure_count == 0
             assert feed_stats.success_count == 1
@@ -211,7 +212,7 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
             dataframes_generator = controller.parse_feeds()
             next(dataframes_generator, None)
 
-            feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+            feed_stats: FeedStats = controller.get_feed_stats(feed_input)
             assert feed_stats.last_try_result == "Failure"
             assert feed_stats.failure_count == 1
             assert feed_stats.success_count == 1
@@ -220,18 +221,21 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
             dataframes_generator = controller.parse_feeds()
             next(dataframes_generator, None)
 
-            feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+            feed_stats: FeedStats = controller.get_feed_stats(feed_input)
             assert feed_stats.last_try_result == "Failure"
             assert feed_stats.failure_count == 1
             assert feed_stats.success_count == 1
 
             # Resume trying after cooldown period
-            with patch("time.time", return_value=time.time() + controller._cooldown_interval):
+            with patch("time.time", return_value=time.time() + cooldown_interval):
 
                 dataframes_generator = controller.parse_feeds()
                 next(dataframes_generator, None)
 
-                feed_stats: FeedStats = controller._feed_stats_dict[feed_input]
+                feed_stats: FeedStats = controller.get_feed_stats(feed_input)
                 assert feed_stats.last_try_result == "Failure"
                 assert feed_stats.failure_count == 2
                 assert feed_stats.success_count == 1
+
+        with pytest.raises(ValueError):
+            controller.get_feed_stats("http://testfeed.com")
