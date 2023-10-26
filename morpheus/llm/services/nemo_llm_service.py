@@ -119,10 +119,16 @@ class NeMoLLMClient(LLMClient):
 
         results = await asyncio.gather(*futures)
 
-        return [
-            typing.cast(str, NemoLLM.post_process_generate_response(r, return_text_completion_only=True))
-            for r in results
-        ]
+        responses = []
+
+        for result in results:
+            result = NemoLLM.post_process_generate_response(result, return_text_completion_only=False)
+            if result.get('status', None) == 'fail':
+                raise RuntimeError(result.get('msg', 'Unknown error'))
+
+            responses.append(result['text'])
+
+        return responses
 
 
 class NeMoLLMService(LLMService):
