@@ -16,7 +16,7 @@
 
 function print_env_vars() {
     rapids-logger "Environ:"
-    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
+    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN|NGC_API_KEY" | sort
 }
 
 rapids-logger "Env Setup"
