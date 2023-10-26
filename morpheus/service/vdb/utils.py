@@ -16,6 +16,60 @@ import importlib
 import typing
 
 
+def handle_service_exceptions(func):
+    """
+    A decorator that handles common exceptions for the given service.
+
+    Parameters
+    ----------
+    func : function
+        The function to be decorated.
+
+    Returns
+    -------
+    function
+        A wrapped function with exception handling.
+
+    Raises
+    ------
+    ValueError
+        If the specified service name is not found or does not correspond to a valid service class.
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (ModuleNotFoundError, AttributeError) as exc:
+            service_name = args[0] if args else kwargs.get('service_name', 'Unknown')
+            module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+            raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class, " +
+                             f"such as {module_name}, has been implemented.") from exc
+    return wrapper
+
+
+@handle_service_exceptions
+def validate_service(service_name: str):
+    """
+    Parameters
+    ----------
+    service_name : str
+        The name of the vector database service to create.
+
+    Returns
+    -------
+        Returns `service_name` if implementation exist.
+
+    Raises
+    ------
+    ValueError
+        If the specified service name is not found or does not correspond to a valid service class.
+    """
+
+    module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+    importlib.import_module(module_name)
+
+    return service_name
+
+
 class VectorDBServiceFactory:
 
     @typing.overload
@@ -26,6 +80,7 @@ class VectorDBServiceFactory:
         pass
 
     @classmethod
+    @handle_service_exceptions
     def create_instance(cls, service_name: str, *args: typing.Any, **kwargs: dict[str, typing.Any]):
         """
         Factory for creating instances of vector database service classes. This factory allows dynamically
@@ -50,13 +105,9 @@ class VectorDBServiceFactory:
         ValueError
             If the specified service name is not found or does not correspond to a valid service class.
         """
-        try:
-            module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
-            module = importlib.import_module(module_name)
-            class_name = f"{service_name.capitalize()}VectorDBService"
-            class_ = getattr(module, class_name)
-            instance = class_(*args, **kwargs)
-            return instance
-        except (ModuleNotFoundError, AttributeError) as exc:
-            raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class," +
-                             f"such as {module_name}, has been implemented.") from exc
+        module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
+        module = importlib.import_module(module_name)
+        class_name = f"{service_name.capitalize()}VectorDBService"
+        class_ = getattr(module, class_name)
+        instance = class_(*args, **kwargs)
+        return instance

@@ -139,26 +139,26 @@ class WriteToVectorDBStage(SinglePortStage):
             elif isinstance(msg, MultiMessage):
                 df = msg.get_meta()
             else:
-                logger.error(f"Unexpected message type '{type(msg)}' was encountered. Skipping insertion.")
+                raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
 
             return df
 
         def on_data(msg):
+            try:
+                df = extract_df(msg)
 
-            df = extract_df(msg)
-
-            if df is not None and not df.empty:
-                try:
+                if df is not None and not df.empty:
                     result = self._service.insert_dataframe(name=self._resource_name, df=df, **self._resource_kwargs)
 
                     if isinstance(msg, ControlMessage):
                         msg.set_metadata("insert_response", result)
 
-                except Exception as exc:
-                    logger.error(f"Unable to insert into collection: {self._resource_name} due to {exc}")
-                    return None
+                    return msg
 
-            return msg if df is not None and not df.empty else None
+            except Exception as exc:
+                logger.error("Unable to insert into collection: %s due to %s", self._resource_name, exc)
+
+            return None
 
         to_vector_db = builder.make_node(self.unique_name, ops.map(on_data),
                                          ops.filter(lambda x: x is not None),
