@@ -14,9 +14,6 @@
 import logging
 import time
 
-import pymilvus
-from langchain.embeddings import HuggingFaceEmbeddings
-
 import cudf
 
 from morpheus.config import Config
@@ -25,97 +22,22 @@ from morpheus.llm import LLMEngine
 from morpheus.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.rag_node import RAGNode
-from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+
+from ..common.utils import build_milvus_service
+from ..common.utils import build_llm_service
+from ..common.utils import build_huggingface_embeddings
 
 logger = logging.getLogger(__name__)
 
 
-def _build_embeddings(model_name: str):
-
-    model_name = f"sentence-transformers/{model_name}"
-
-    model_kwargs = {'device': 'cuda'}
-    encode_kwargs = {
-        # 'normalize_embeddings': True, # set True to compute cosine similarity
-        "batch_size": 100,
-    }
-
-    embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
-
-    return embeddings
-
-
-def _build_milvus_service():
-
-    milvus_resource_kwargs = {
-        "index_conf": {
-            "field_name": "embedding",
-            "metric_type": "L2",
-            "index_type": "HNSW",
-            "params": {
-                "M": 8,
-                "efConstruction": 64,
-            },
-        },
-        "schema_conf": {
-            "enable_dynamic_field": True,
-            "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
-                pymilvus.FieldSchema(name="title",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The title of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="link",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The URL of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="summary",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The summary of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="page_content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="A chunk of text from the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="embedding",
-                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
-                                     description="Embedding vectors",
-                                     dim=384).to_dict(),
-            ],
-            "description": "Test collection schema"
-        }
-    }
-
-    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
-                                                                                uri="http://localhost:19530",
-                                                                                **milvus_resource_kwargs)
-
-    return vdb_service
-
-
-def _build_llm_service(model_name: str):
-
-    # TODO(Devin) : Hard coded, should be able to use OpenAPI to get this.
-    llm_service = NeMoLLMService()
-
-    return llm_service.get_client(model_name=model_name, temperature=0.5, tokens_to_generate=200)
-
-
 def _build_engine(model_name: str, vdb_resource_name: str):
-
     engine = LLMEngine()
 
     engine.add_node("extracter", node=ExtracterNode())
@@ -129,9 +51,11 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 
-    vector_service = _build_milvus_service()
-    embeddings = _build_embeddings("all-MiniLM-L6-v2")
-    llm_service = _build_llm_service(model_name)
+    vector_service = build_milvus_service(384)
+    embeddings = build_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2",
+                                              model_kwargs={'device': 'cuda'},
+                                              encode_kwargs={'batch_size': 100})
+    llm_service = build_llm_service(model_name, 'nemo', temperature=0.5, tokens_to_generate=200)
 
     # Async wrapper around embeddings
     async def calc_embeddings(texts: list[str]) -> list[list[float]]:
@@ -150,12 +74,12 @@ Please answer the following question: \n{{ query }}"""
 
 
 def standalone(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_name,
-    vdb_resource_name,
-    repeat_count,
+        num_threads,
+        pipeline_batch_size,
+        model_max_batch_size,
+        model_name,
+        vdb_resource_name,
+        repeat_count,
 ):
     config = Config()
     config.mode = PipelineModes.OTHER
@@ -182,7 +106,8 @@ def standalone(
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+    pipe.add_stage(
+        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 

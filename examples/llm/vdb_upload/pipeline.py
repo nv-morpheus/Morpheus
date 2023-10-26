@@ -26,8 +26,8 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 from ..common.web_scraper_stage import WebScraperStage
-from .common import build_milvus_config
-from .common import build_rss_urls
+from ..common.utils import build_milvus_config
+from ..common.utils import build_rss_urls
 
 logger = logging.getLogger(__name__)
 

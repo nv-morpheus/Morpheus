@@ -25,14 +25,12 @@ from morpheus.llm import LLMEngine
 from morpheus.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.rag_node import RAGNode
-from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vector_db_service import VectorDBResourceService
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
@@ -40,7 +38,10 @@ from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+
+from ..common.utils import build_milvus_config
+from ..common.utils import build_milvus_service
+from ..common.utils import build_llm_service
 
 
 class SplitStage(Stage):
@@ -58,7 +59,6 @@ class SplitStage(Stage):
         return False
 
     def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
-
         assert len(in_ports_streams) == 1, "Only 1 input supported"
 
         # Create a broadcast node
@@ -82,73 +82,7 @@ class SplitStage(Stage):
         return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
 
 
-def _build_milvus_config(embedding_size: int):
-    import pymilvus
-
-    milvus_resource_kwargs = {
-        "index_conf": {
-            "field_name": "embedding",
-            "metric_type": "L2",
-            "index_type": "HNSW",
-            "params": {
-                "M": 8,
-                "efConstruction": 64,
-            },
-        },
-        "schema_conf": {
-            "enable_dynamic_field": True,
-            "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
-                pymilvus.FieldSchema(name="title",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The title of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="link",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The URL of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="summary",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The summary of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="page_content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="A chunk of text from the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="embedding",
-                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
-                                     description="Embedding vectors",
-                                     dim=embedding_size).to_dict(),
-            ],
-            "description": "Test collection schema"
-        }
-    }
-
-    return milvus_resource_kwargs
-
-
-def _build_milvus_service(embedding_size: int):
-
-    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
-                                                                                uri="http://localhost:19530",
-                                                                                **_build_milvus_config(embedding_size))
-
-    return vdb_service
-
-
-def _build_llm_service(model_name: str):
-
-    llm_service = NeMoLLMService()
-
-    return llm_service.get_client(model_name=model_name, temperature=0.5, tokens_to_generate=200)
-
-
 def _build_engine(model_name: str, vdb_service: VectorDBResourceService):
-
     engine = LLMEngine()
 
     engine.add_node("extracter", node=ExtracterNode())
@@ -162,7 +96,7 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 
-    llm_service = _build_llm_service(model_name)
+    llm_service = build_llm_service(model_name, model_type="nemo", temperature=0.5, tokens_to_generate=200)
 
     engine.add_node("rag",
                     inputs=[("/extracter/*", "*")],
@@ -174,13 +108,12 @@ Please answer the following question: \n{{ query }}"""
 
 
 def pipeline(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    embedding_size,
-    model_name,
+        num_threads,
+        pipeline_batch_size,
+        model_max_batch_size,
+        embedding_size,
+        model_name,
 ):
-
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -191,7 +124,7 @@ def pipeline(
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
-    vdb_service = _build_milvus_service(embedding_size=embedding_size)
+    vdb_service = build_milvus_service(embedding_size=embedding_size)
 
     upload_task = {"task_type": "upload", "task_dict": {"input_keys": ["questions"], }}
     retrieve_task = {"task_type": "retrieve", "task_dict": {"input_keys": ["questions", "embedding"], }}
@@ -252,7 +185,7 @@ def pipeline(
     upload_vdb = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name="RSS",
-                             resource_kwargs=_build_milvus_config(embedding_size=embedding_size),
+                             resource_kwargs=build_milvus_config(embedding_size=embedding_size),
                              recreate=True,
                              service=vdb_service))
     pipe.add_edge(split.output_ports[1], upload_vdb)
