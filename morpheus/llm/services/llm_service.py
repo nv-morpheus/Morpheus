@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import typing
 from abc import ABC
 from abc import abstractmethod
 
@@ -23,23 +24,66 @@ class LLMClient(ABC):
 
     @abstractmethod
     def generate(self, prompt: str) -> str:
+        """
+        Issue a request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         pass
 
     @abstractmethod
     async def generate_async(self, prompt: str) -> str:
+        """
+        Issue an asynchronous request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         pass
 
     @abstractmethod
     def generate_batch(self, prompts: list[str]) -> list[str]:
+        """
+        Issue a request to generate a list of responses based on a list of prompts.
+
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         pass
 
     @abstractmethod
     async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        """
+        Issue an asynchronous request to generate a list of responses based on a list of prompts.
+
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         pass
 
 
 class LLMService(ABC):
 
     @abstractmethod
-    def get_client(self, model_name: str, **model_kwargs) -> LLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> LLMClient:
+        """
+        Returns a client for interacting with a specific model.
+
+        Parameters
+        ----------
+        model_name : str
+            The name of the model to create a client for.
+
+        model_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the model when generating text.
+        """
         pass
