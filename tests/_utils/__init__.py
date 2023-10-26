@@ -122,6 +122,8 @@ def import_or_skip(modname: str,
             raise ImportError(e) from e
         raise
 
+
+# pylint: disable=inconsistent-return-statements
 def require_env_variable(varname: str, reason: str, fail_missing: bool = False) -> str:
     """
     Checks if the given environment variable is set, and returns its value if it is. If the variable is not set, and
@@ -132,8 +134,12 @@ def require_env_variable(varname: str, reason: str, fail_missing: bool = False) 
     except KeyError as e:
         if fail_missing:
             raise RuntimeError(reason) from e
-        
+
         pytest.skip(reason=reason)
+
+
+# pylint: enable=inconsistent-return-statements
+
 
 def make_url(port: int, endpoint: str) -> str:
     if not endpoint.startswith("/"):

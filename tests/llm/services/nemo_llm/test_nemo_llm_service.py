@@ -18,8 +18,8 @@ from unittest import mock
 
 import pytest
 
-from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.nemo_llm_service import NeMoLLMClient
+from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 
 
 @pytest.mark.usefixtures("restore_environ")
