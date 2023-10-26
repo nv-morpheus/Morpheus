@@ -35,8 +35,11 @@
 
 namespace morpheus::llm {
 
+// Doxygen has problems parsing this regex
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
 // Use this regex
 const std::regex VALID_INPUT_NAME(R"([a-zA-Z_][a-zA-Z0-9_]*)", std::regex_constants::ECMAScript);
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 bool is_valid_node_name(std::string_view name)
 {
