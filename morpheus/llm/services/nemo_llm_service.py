@@ -41,8 +41,22 @@ def _verify_nemo_llm():
 
 
 class NeMoLLMClient(LLMClient):
+    """
+    Client for interacting with a specific model in Nemo. This class should be constructed with the
+    `NeMoLLMService.get_client` method.
 
-    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs) -> None:
+    Parameters
+    ----------
+    parent : NeMoLLMService
+        The parent service for this client.
+    model_name : str
+        The name of the model to interact with.
+
+    model_kwargs : dict[str, typing.Any]
+        Additional keyword arguments to pass to the model when generating text.
+    """
+
+    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
         _verify_nemo_llm()
 
@@ -51,13 +65,36 @@ class NeMoLLMClient(LLMClient):
         self._model_kwargs = model_kwargs
 
     def generate(self, prompt: str) -> str:
+        """
+        Issue a request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         return self.generate_batch([prompt])[0]
 
     async def generate_async(self, prompt: str) -> str:
+        """
+        Issue an asynchronous request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         return (await self.generate_batch_async([prompt]))[0]
 
     def generate_batch(self, prompts: list[str]) -> list[str]:
+        """
+        Issue a request to generate a list of responses based on a list of prompts.
 
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         return typing.cast(
             list[str],
             self._parent._conn.generate_multiple(model=self._model_name,
@@ -66,7 +103,14 @@ class NeMoLLMClient(LLMClient):
                                                  **self._model_kwargs))
 
     async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        """
+        Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         futures = [
             asyncio.wrap_future(
                 self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
@@ -104,7 +148,6 @@ class NeMoLLMService(LLMService):
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
-        # Class variables
         self._conn: NemoLLM = NemoLLM(
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
@@ -117,6 +160,17 @@ class NeMoLLMService(LLMService):
             org_id=org_id,
         )
 
-    def get_client(self, model_name: str, **model_kwargs) -> NeMoLLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> NeMoLLMClient:
+        """
+        Returns a client for interacting with a specific model. This method is the preferred way to create a client.
+
+        Parameters
+        ----------
+        model_name : str
+            The name of the model to create a client for.
+
+        model_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the model when generating text.
+        """
 
         return NeMoLLMClient(self, model_name, **model_kwargs)
