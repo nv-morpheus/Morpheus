@@ -23,11 +23,11 @@ limitations under the License.
 
 ### Purpose
 
-The purpose of this example is to illustrate how a user could build a pipeline which will integrate an LLM service
-into a Morpheus pipeline. This example builds on the previous example [completion pipeline](../completion/README.md),
-by adding the ability to augment LLM queries with context information from a knowledge base. Appending this context
-helps improve the responses from the LLM by providing additional background contextual and factual information which
-the LLM can pull from for its response.
+The purpose of this example is to illustrate how a user could build a Retrieval Augmented Generation pipeline
+integrating informational feeds and an LLM service into a Morpheus pipeline. This example builds on the previous
+example [completionpipeline](../completion/README.md), by adding the ability to augment LLM queries with context
+information from a knowledge base. Appending this context helps improve the responses from the LLM by providing
+additional background contextual and factual information which the LLM can pull from for its response.
 
 ### Source Documents
 
@@ -76,11 +76,10 @@ were incorporated:
 
 ### Standalone Morpheus Pipeline
 
-**TODO**
-
 The standalone Morpheus pipeline is built using the following components:
 
 - An InMemorySourceStage to hold the LLM queries in a DataFrame.
+    - We supply a fixed set of questions in a `source_df` which are then processed by the LLMEngineStage
 - A DeserializationStage to convert the MessageMeta objects into ControlMessages needed by the LLMEngine.
     - New functionality was added to the DeserializeStage to support ControlMessages and add a default task to each
       message.
@@ -202,10 +201,41 @@ The top level entrypoint to each of the LLM example pipelines is `examples/llm/m
 of Options and a Pipeline to run. Baseline options are below, and for the purposes of this document we'll assume a
 pipeline option of `rag`:
 
-### Run example:
+### Run example (Standalone Pipeline):
+
+**TODO:** Add model specification syntax
+
+**Using NGC Nemo LLMs**
 
 ```bash
-python examples/llm/main.py [OPTIONS...] rag [ACTION] --model_name all-MiniLM-L6-v2
+export NGC_API_KEY=[YOUR_KEY_HERE]
+python examples/llm/main.py rag pipeline
+```
+
+**Using OpenAI LLM models**
+
+```bash
+export OPENAI_API_KEY=[YOUR_KEY_HERE]
+python examples/llm/main.py rag pipeline
+
+```
+
+### Run example (Persistent Pipeline):
+
+**TODO**
+
+**Using NGC Nemo LLMs**
+
+```bash
+export NGC_API_KEY=[YOUR_KEY_HERE]
+python examples/llm/main.py rag persistent 
+```
+
+**Using OpenAI LLM models**
+
+```bash
+export OPENAI_API_KEY=[YOUR_KEY_HERE]
+python examples/llm/main.py rag persistent 
 ```
 
 ### Options:
