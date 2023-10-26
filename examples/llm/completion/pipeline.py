@@ -61,7 +61,6 @@ def _build_engine():
 def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_count: int):
 
     config = Config()
-    config.mode = PipelineModes.OTHER
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
