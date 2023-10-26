@@ -126,68 +126,43 @@ class WriteToVectorDBStage(SinglePortStage):
 
         stream = input_stream[0]
 
-        def on_data_control_message(ctrl_msg: ControlMessage) -> ControlMessage:
+        def extract_df(msg):
+            df = None
 
-            df = ctrl_msg.payload().df
+            if isinstance(msg, ControlMessage):
+                df = msg.payload().df
+            elif isinstance(msg, MultiResponseMessage):
+                df = msg.get_meta()
+                if df is not None and not df.empty:
+                    embeddings = msg.get_probs_tensor()
+                    df[self._embedding_column_name] = embeddings.tolist()
+            elif isinstance(msg, MultiMessage):
+                df = msg.get_meta()
+            else:
+                logger.error(f"Unexpected message type '{type(msg)}' was encountered. Skipping insertion.")
 
-            if not df.empty:
-                # Insert entries in the dataframe to vector database.
-                result = self._service.insert_dataframe(name=self._resource_name,
-                                                        df=df,
-                                                        **self._resource_kwargs)
+            return df
 
-                ctrl_msg.set_metadata("insert_response", result)
+        def on_data(msg):
 
-            return ctrl_msg
+            df = extract_df(msg)
 
-        def on_data_multi_response_message(msg: MultiResponseMessage) -> MultiResponseMessage:
+            if df is not None and not df.empty:
+                try:
+                    result = self._service.insert_dataframe(name=self._resource_name, df=df, **self._resource_kwargs)
 
-            metadata = msg.get_meta()
+                    if isinstance(msg, ControlMessage):
+                        msg.set_metadata("insert_response", result)
 
-            if not metadata.empty:
-                # Probs tensor contains all of the embeddings
-                embeddings = msg.get_probs_tensor()
-                embeddings_list = embeddings.tolist()
+                except Exception as exc:
+                    logger.error(f"Unable to insert into collection: {self._resource_name} due to {exc}")
+                    return None
 
-                # # Figure out which columns we need
-                # available_columns = set(msg.get_meta_column_names())
+            return msg if df is not None and not df.empty else None
 
-                # if (self._include_columns is not None):
-                #     available_columns = available_columns.intersection(self._include_columns)
-                # if (self._exclude_columns is not None):
-                #     available_columns = available_columns.difference(self._exclude_columns)
-
-                # Add in the embedding results to the dataframe
-                metadata[self._embedding_column_name] = embeddings_list
-
-                # if (not self._service.has_store_object(name=self._resource_name)):
-                #     # Create the vector database resource
-                #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
-
-                # Insert entries in the dataframe to vector database.
-                self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
-
-            return msg
-
-        def on_data_multi_message(msg: MultiMessage):
-            metadata = msg.get_meta()
-
-            if not metadata.empty:
-                # Insert entries in the dataframe to vector database.
-                self._service.insert_dataframe(name=self._resource_name, df=metadata, **self._resource_kwargs)
-
-            return msg
-
-        if (issubclass(input_stream[1], ControlMessage)):
-            on_data = ops.map(on_data_control_message)
-        elif (issubclass(input_stream[1], MultiResponseMessage)):
-            on_data = ops.map(on_data_multi_response_message)
-        elif (issubclass(input_stream[1], MultiMessage)):
-            on_data = ops.map(on_data_multi_message)
-        else:
-            raise RuntimeError(f"Unexpected input type {input_stream[1]}")
-
-        to_vector_db = builder.make_node(self.unique_name, on_data, ops.on_completed(self.on_completed))
+        to_vector_db = builder.make_node(self.unique_name, ops.map(on_data),
+                                         ops.filter(lambda x: x is not None),
+                                         ops.on_completed(self.on_completed))
 
         builder.make_edge(stream, to_vector_db)
         stream = to_vector_db

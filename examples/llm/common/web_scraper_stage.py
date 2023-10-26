@@ -30,7 +30,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class WebScraperStage(SinglePortStage):
