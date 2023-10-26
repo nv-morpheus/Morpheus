@@ -13,8 +13,8 @@
 # limitations under the License.
 import logging
 
-from langchain.embeddings import HuggingFaceEmbeddings
 import pymilvus
+from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
@@ -30,7 +30,7 @@ def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, enc
 
 
 def build_llm_service(model_name: str, model_type, **model_kwargs):
-    if (model_type.lower() in ('nemo',)):
+    if (model_type.lower() in ('nemo', )):
         llm_service = NeMoLLMService()
     else:
         # TODO(Devin) : Add additional options

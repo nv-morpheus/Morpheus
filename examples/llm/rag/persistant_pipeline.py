@@ -39,9 +39,9 @@ from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
+from ..common.utils import build_llm_service
 from ..common.utils import build_milvus_config
 from ..common.utils import build_milvus_service
-from ..common.utils import build_llm_service
 
 
 class SplitStage(Stage):
@@ -108,11 +108,11 @@ Please answer the following question: \n{{ query }}"""
 
 
 def pipeline(
-        num_threads,
-        pipeline_batch_size,
-        model_max_batch_size,
-        embedding_size,
-        model_name,
+    num_threads,
+    pipeline_batch_size,
+    model_max_batch_size,
+    embedding_size,
+    model_name,
 ):
     config = Config()
     config.mode = PipelineModes.OTHER

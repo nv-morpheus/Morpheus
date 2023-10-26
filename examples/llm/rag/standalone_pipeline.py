@@ -30,9 +30,9 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-from ..common.utils import build_milvus_service
-from ..common.utils import build_llm_service
 from ..common.utils import build_huggingface_embeddings
+from ..common.utils import build_llm_service
+from ..common.utils import build_milvus_service
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +74,12 @@ Please answer the following question: \n{{ query }}"""
 
 
 def standalone(
-        num_threads,
-        pipeline_batch_size,
-        model_max_batch_size,
-        model_name,
-        vdb_resource_name,
-        repeat_count,
+    num_threads,
+    pipeline_batch_size,
+    model_max_batch_size,
+    model_name,
+    vdb_resource_name,
+    repeat_count,
 ):
     config = Config()
     config.mode = PipelineModes.OTHER

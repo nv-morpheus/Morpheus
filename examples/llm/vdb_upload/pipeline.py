@@ -25,9 +25,9 @@ from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
-from ..common.web_scraper_stage import WebScraperStage
 from ..common.utils import build_milvus_config
 from ..common.utils import build_rss_urls
+from ..common.web_scraper_stage import WebScraperStage
 
 logger = logging.getLogger(__name__)
 
