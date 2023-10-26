@@ -44,6 +44,7 @@ def _build_engine(model_name: str):
     return engine
 
 
+@pytest.mark.skip(reason="Skipping until we can generate a new API key for the test account")
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.usefixtures("ngc_api_key")
