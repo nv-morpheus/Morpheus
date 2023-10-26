@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(ABC):
+    """
+    Abstract interface for clients which are able to interact with LLM models. Concrete implementations of this class
+    will have an associated implementation of `LLMService` which is able to construct instances of this class.
+    """
 
     @abstractmethod
     def generate(self, prompt: str) -> str:
@@ -72,6 +76,9 @@ class LLMClient(ABC):
 
 
 class LLMService(ABC):
+    """
+    Abstract interface for services which are able to construct clients for interacting with LLM models.
+    """
 
     @abstractmethod
     def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> LLMClient:
@@ -84,6 +91,6 @@ class LLMService(ABC):
             The name of the model to create a client for.
 
         model_kwargs : dict[str, typing.Any]
-            Additional keyword arguments to pass to the model when generating text.
+            Additional keyword arguments to pass to the model.
         """
         pass
