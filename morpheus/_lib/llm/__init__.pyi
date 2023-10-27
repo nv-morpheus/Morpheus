@@ -9,7 +9,7 @@ from __future__ import annotations
 import morpheus._lib.llm
 import typing
 import morpheus._lib.messages
-import morpheus._lib.pycoro
+import mrc.core.coro
 import mrc.core.segment
 
 __all__ = [
