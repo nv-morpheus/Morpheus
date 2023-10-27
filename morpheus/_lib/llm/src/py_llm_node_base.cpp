@@ -17,8 +17,6 @@
 
 #include "py_llm_node_base.hpp"
 
-#include "pycoro/pycoro.hpp"
-
 #include "morpheus/llm/llm_context.hpp"
 #include "morpheus/llm/llm_engine.hpp"
 #include "morpheus/llm/llm_node.hpp"
@@ -27,6 +25,7 @@
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pymrc/coro.hpp>  // IWYU pragma: keep
 
 #include <coroutine>
 

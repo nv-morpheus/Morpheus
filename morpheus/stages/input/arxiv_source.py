@@ -14,14 +14,11 @@
 
 import logging
 import os
+import typing
 
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
-from langchain.document_loaders import PyPDFLoader
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pypdf.errors import PdfStreamError
 
 import cudf
 
@@ -34,11 +31,21 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
+if typing.TYPE_CHECKING:
+    from langchain.schema import Document
+
+IMPORT_ERROR_MESSAGE = (
+    "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+
 
 @register_stage("from-arxiv")
 class ArxivSource(PreallocatorMixin, SingleOutputSource):
     """
-    Source stage that downloads PDFs from arxiv and converts them to dataframes
+    Source stage that downloads PDFs from arxiv and converts them to dataframes.
+
+    This stage requires several additional dependencies to be installed. Install them by running the following command:
+    `mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`
 
     Parameters
     ----------
@@ -49,20 +56,45 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     cache_dir : `str`, optional
         Directory to store downloaded PDFs in, any PDFs already in the directory will be skipped.
         This directory, will be created if it does not already exist.
+    chunk_size : `int`, optional
+        The number of characters to split each PDF into. This is used to split the PDF into multiple chunks each chunk
+        will be converted into a row in the resulting dataframe. This value must be larger than `chunk_overlap`.
+    chunk_overlap: `int`, optional
+        When splitting documents into chunks, this is the number of characters that will overlap from the previus
+        chunk.
+    max_pages: `int`, optional
+        Maximum number of PDF pages to parse.
     """
 
-    def __init__(self, c: Config, query: str, cache_dir: str = "./.cache/arvix_source_cache"):
+    def __init__(self,
+                 c: Config,
+                 query: str,
+                 cache_dir: str = "./.cache/arvix_source_cache",
+                 chunk_size: int = 1000,
+                 chunk_overlap: int = 100,
+                 max_pages: int = 10000):
 
         super().__init__(c)
 
-        self._query = query
-        self._max_pages = 10000
+        try:
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
-        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, length_function=len)
+        self._query = query
+        self._max_pages = max_pages
+
+        if chunk_size <= chunk_overlap:
+            raise ValueError(f"chunk_size must be greater than {chunk_overlap}")
+
+        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size,
+                                                             chunk_overlap=chunk_overlap,
+                                                             length_function=len)
 
         self._total_pdfs = 0
         self._total_pages = 0
         self._total_chunks = 0
+        self._stop_requested = False
         self._cache_dir = cache_dir
 
     @property
@@ -94,20 +126,28 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     def _generate_frames(self):
         os.makedirs(self._cache_dir, exist_ok=True)
 
-        import arxiv
+        try:
+            import arxiv
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
+        # Since each result contains at least one page, we know the upper-bound is _max_pages results
         search_results = arxiv.Search(
             query=self._query,
-            max_results=50,
+            max_results=self._max_pages,
         )
 
         for x in search_results.results():
+            if self._stop_requested:
+                break
 
             full_path = os.path.join(self._cache_dir, x._get_default_filename())
 
             if (not os.path.exists(full_path)):
                 x.download_pdf(self._cache_dir)
                 logger.debug("Downloaded: %s", full_path)
+            else:
+                logger.debug("Using cached: %s", full_path)
 
             yield full_path
 
@@ -116,6 +156,11 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         logger.debug("Downloading complete %s pages", self._total_pdfs)
 
     def _process_pages(self, pdf_path: str):
+        try:
+            from langchain.document_loaders import PyPDFLoader
+            from pypdf.errors import PdfStreamError
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         for _ in range(5):
             try:
@@ -125,6 +170,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
                 self._total_pages += len(documents)
 
                 logger.debug("Processing %s/%s: %s", len(documents), self._total_pages, pdf_path)
+                if self._total_pages > self._max_pages:
+                    self._stop_requested = True
 
                 return documents
             except PdfStreamError:
@@ -133,9 +180,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         raise RuntimeError(f"Failed to load PDF: {pdf_path}")
 
-    def _splitting_pages(self, documents: list[Document]):
-
-        # texts1 = self._text_splitter1.split_documents(documents)
+    def _splitting_pages(self, documents: list["Document"]):
         texts = self._text_splitter.split_documents(documents)
 
         self._total_chunks += len(texts)

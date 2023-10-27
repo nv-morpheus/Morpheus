@@ -21,7 +21,6 @@
 #include "./include/py_llm_task_handler.hpp"
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
-#include "pycoro/pycoro.hpp"  // IWYU pragma: keep
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
@@ -47,6 +46,7 @@
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>     // for dict, sequence
 #include <pybind11/stl.h>         // IWYU pragma: keep
+#include <pymrc/coro.hpp>         // IWYU pragma: keep
 #include <pymrc/utils.hpp>        // for pymrc::import
 
 #include <memory>
@@ -73,8 +73,8 @@ PYBIND11_MODULE(llm, _module)
     // Load the cudf helpers
     CudfHelper::load();
 
-    // Import the pycoro module
-    mrc::pymrc::import(_module, "morpheus._lib.pycoro");
+    // Import the mrc coro module
+    mrc::pymrc::import(_module, "mrc.core.coro");
 
     // Import the messages module
     mrc::pymrc::import(_module, "morpheus._lib.messages");
@@ -87,13 +87,14 @@ PYBIND11_MODULE(llm, _module)
                        "The name of node that will be mapped to this input. Use a leading '/' to indicate it is a "
                        "sibling node otherwise it will be treated as a parent node. Can also specify a specific node "
                        "output such as '/sibling_node/output1' to map the output 'output1' of 'sibling_node' to this "
-                       "input. Can also use a wild card such as '/sibling_node/*' to match all internal node names")
-        .def_readwrite("internal_name",
-                       &InputMap::internal_name,
-                       "The internal node name that the external node maps to. Must match an input returned from "
-                       "`get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the "
-                       "default input of the node. Use a wildcard '*' to match all inputs of the node (Must also use a "
-                       "wild card on the external mapping).");
+                       "input. Can also use a wild card such as '/sibling_node/\\*' to match all internal node names")
+        .def_readwrite(
+            "internal_name",
+            &InputMap::internal_name,
+            "The internal node name that the external node maps to. Must match an input returned from "
+            "`get_input_names()` of the desired node. Defaults to '-' which is a placeholder for the "
+            "default input of the node. Use a wildcard '\\*' to match all inputs of the node (Must also use a "
+            "wild card on the external mapping).");
 
     py::class_<LLMTask>(_module, "LLMTask")
         .def(py::init<>())
@@ -211,8 +212,33 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
-        .def("get_input_names", &LLMNodeBase::get_input_names)
-        .def("execute", &LLMNodeBase::execute, py::arg("context"));
+        .def("get_input_names",
+             &LLMNodeBase::get_input_names,
+             R"pbdoc(
+                Get the input names for the node.
+
+                Returns
+                -------
+                list[str]
+                    The input names for the node
+             )pbdoc")
+        .def("execute",
+             &LLMNodeBase::execute,
+             py::arg("context"),
+             R"pbdoc(
+                Execute the current node with the given `context` instance.
+
+                All inputs for the given node should be fetched from the context, typically by calling either
+                `context.get_inputs` to fetch all inputs as a `dict`, or `context.get_input` to fetch a specific input.
+
+                Similarly the output of the node is written to the context using `context.set_output`.
+
+                Parameters
+                ----------
+                context : `morpheus._lib.llm.LLMContext`
+                    Context instance to use for the execution
+
+            )pbdoc");
 
     py::class_<LLMNodeRunner, std::shared_ptr<LLMNodeRunner>>(_module, "LLMNodeRunner")
         .def_property_readonly("inputs", &LLMNodeRunner::inputs)
@@ -221,6 +247,9 @@ PYBIND11_MODULE(llm, _module)
         .def_property_readonly("sibling_input_names", &LLMNodeRunner::sibling_input_names)
         .def("execute", &LLMNodeRunner::execute, py::arg("context"));
 
+    // The auto-generated docstrings for the overloaded function in this class cause sphinx errors
+    py::options options;
+    options.disable_function_signatures();
     py::class_<LLMNode, LLMNodeBase, PyLLMNode<>, std::shared_ptr<LLMNode>>(_module, "LLMNode")
         .def(py::init_alias<>())
         .def(
@@ -246,7 +275,28 @@ PYBIND11_MODULE(llm, _module)
              py::kw_only(),
              py::arg("inputs"),
              py::arg("node"),
-             py::arg("is_output") = false);
+             py::arg("is_output") = false,
+             R"pbdoc(
+                Add an LLMNode to the current node.
+
+                Parameters
+                ----------
+                name : str
+                    The name of the node to add
+
+                inputs : list[tuple[str, str]], optional
+                    List of input mappings to use for the node, in the form of `[(external_name, internal_name), ...]`
+                    If unspecified the node's input_names will be used.
+
+                node : LLMNodeBase
+                    The node to add
+
+                is_output : bool, optional
+                    Indicates if the node is an output node, by default False
+
+            )pbdoc");
+
+    options.enable_function_signatures();
 
     py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(_module, "LLMTaskHandler")
         .def(py::init<>())
