@@ -20,7 +20,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.llm.llm_engine_stage import LLMEngineStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode

@@ -22,7 +22,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.llm.llm_engine_stage import LLMEngineStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.rag_node import RAGNode
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -181,7 +181,8 @@ def standalone(
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+    pipe.add_stage(
+        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
