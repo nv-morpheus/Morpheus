@@ -9,7 +9,7 @@ from __future__ import annotations
 import morpheus._lib.llm
 import typing
 import morpheus._lib.messages
-import morpheus._lib.pycoro
+import mrc.core.coro
 import mrc.core.segment
 
 __all__ = [
@@ -101,8 +101,29 @@ class LLMContext():
     pass
 class LLMNodeBase():
     def __init__(self) -> None: ...
-    def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: ...
-    def get_input_names(self) -> typing.List[str]: ...
+    def execute(self, context: LLMContext) -> typing.Awaitable[LLMContext]: 
+        """
+        Execute the current node with the given `context` instance.
+
+        All inputs for the given node should be fetched from the context, typically by calling either
+        `context.get_inputs` to fetch all inputs as a `dict`, or `context.get_input` to fetch a specific input.
+
+        Similarly the output of the node is written to the context using `context.set_output`.
+
+        Parameters
+        ----------
+        context : `morpheus._lib.llm.LLMContext`
+            Context instance to use for the execution
+        """
+    def get_input_names(self) -> typing.List[str]: 
+        """
+        Get the input names for the node.
+
+        Returns
+        -------
+        list[str]
+            The input names for the node
+        """
     pass
 class LLMEngineStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, engine: LLMEngine) -> None: ...

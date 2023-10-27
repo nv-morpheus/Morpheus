@@ -55,13 +55,13 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
     @staticmethod
-    def object_hook(o: dict) -> dict:
+    def object_hook(obj: dict) -> dict:
         """
         Updated dictionary with pymilvus datatype.
 
         Parameters
         ----------
-        o : dict
+        obj : dict
             Dictionary to be converted.
 
         Returns
@@ -70,9 +70,9 @@ class FieldSchemaEncoder(json.JSONEncoder):
             Dictionary with changes to its original format.
         """
 
-        if "type" in o and "DataType." in o["type"]:
-            o["type"] = getattr(pymilvus.DataType, o["type"].split(".")[1])
-        return o
+        if "type" in obj and "DataType." in obj["type"]:
+            obj["type"] = getattr(pymilvus.DataType, obj["type"].split(".")[1])
+        return obj
 
     @staticmethod
     def dump(field: pymilvus.FieldSchema, f: typing.IO) -> str:
@@ -112,13 +112,13 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return json.dumps(field, cls=FieldSchemaEncoder)
 
     @staticmethod
-    def load(f: typing.IO) -> pymilvus.FieldSchema:
+    def load(f_obj: typing.IO) -> pymilvus.FieldSchema:
         """
         Deserialize a JSON file to a FieldSchema object.
 
         Parameters
         ----------
-        f : typing.IO
+        f_obj : typing.IO
             File-like object from which the data is deserialized.
 
         Returns
@@ -126,7 +126,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         pymilvus.FieldSchema
             Deserialized FieldSchema object.
         """
-        return pymilvus.FieldSchema.construct_from_dict(json.load(f, object_hook=FieldSchemaEncoder.object_hook))
+        return pymilvus.FieldSchema.construct_from_dict(json.load(f_obj, object_hook=FieldSchemaEncoder.object_hook))
 
     @staticmethod
     def loads(field: str) -> pymilvus.FieldSchema:

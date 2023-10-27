@@ -15,6 +15,8 @@
 import importlib
 import typing
 
+import morpheus.service  # pylint: disable=unused-import
+
 
 def handle_service_exceptions(func):
     """

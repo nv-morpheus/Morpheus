@@ -70,9 +70,6 @@ include(cmake/libmorpheus.cmake)
 # Set the default link targets to avoid repeating this
 morpheus_utils_python_package_set_default_link_targets(morpheus)
 
-#----------morpheus._lib.pycoro---------
-add_subdirectory(pycoro)
-
 # #----------morpheus._lib.common---------
 morpheus_add_pybind11_module(common SOURCE_FILES common/module.cpp)
 

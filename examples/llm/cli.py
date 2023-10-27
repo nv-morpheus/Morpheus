@@ -53,7 +53,7 @@ def cli(ctx: click.Context, log_level: int, use_cpp: bool):
 
     morpheus_logger = logging.getLogger("morpheus")
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('.'.join(__name__.split('.')[:-1]))
 
     # Set the parent logger for all of the llm examples to use morpheus so we can take advantage of configure_logging
     logger.parent = morpheus_logger
