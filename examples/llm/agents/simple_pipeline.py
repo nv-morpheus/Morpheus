@@ -28,7 +28,6 @@ import cudf
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
@@ -40,6 +39,7 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory

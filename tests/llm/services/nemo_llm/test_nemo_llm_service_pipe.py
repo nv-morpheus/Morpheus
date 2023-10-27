@@ -19,7 +19,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -27,6 +26,7 @@ from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes

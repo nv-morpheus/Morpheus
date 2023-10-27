@@ -22,7 +22,6 @@ from mrc.core.node import Broadcast
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.rag_node import RAGNode
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -36,6 +35,7 @@ from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vector_db_service import VectorDBResourceService
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
