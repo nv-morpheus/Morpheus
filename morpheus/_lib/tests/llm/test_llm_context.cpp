@@ -41,7 +41,7 @@ using namespace mrc;
 
 TEST_CLASS(LLMContext);
 
-TEST_F(TestLLMContext, InitializationTest)
+TEST_F(TestLLMContext, Initialization)
 {
     llm::LLMContext ctx_1;
 
@@ -82,7 +82,7 @@ TEST_F(TestLLMContext, InitializationTest)
     ASSERT_EQ(ctx_5.full_name(), "/child");
 }
 
-TEST_F(TestLLMContext, OutputTest)
+TEST_F(TestLLMContext, SetOutput)
 {
     llm::LLMContext ctx_1{llm::LLMTask{}, nullptr};
     nlohmann::json outputs;
@@ -98,7 +98,30 @@ TEST_F(TestLLMContext, OutputTest)
     ASSERT_EQ(ctx_2.view_outputs()["input1"]["key2"], "val2");
 }
 
-TEST_F(TestLLMContext, PushPopTest)
+TEST_F(TestLLMContext, PushPopNoParent)
+{
+    auto parent_context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
+    auto inputs         = llm::input_mappings_t{{"/ext1", "input1"}};
+    // llm::LLMContext child_context{parent_context, "child", inputs};
+
+    auto child_context = parent_context->push("child", inputs);
+
+    ASSERT_EQ(child_context->name(), "child");
+    ASSERT_EQ(child_context->input_map()[0].external_name, "/ext1");
+    ASSERT_EQ(child_context->input_map()[0].internal_name, "input1");
+
+    nlohmann::json outputs;
+    outputs["input1"] = {{"key1", "val1"}, {"key2", "val2"}};
+    child_context->set_output(outputs);
+    ASSERT_EQ(child_context->view_outputs()["input1"]["key1"], "val1");
+    ASSERT_EQ(child_context->view_outputs()["input1"]["key2"], "val2");
+    std::cerr << child_context->view_outputs();
+
+    child_context->pop();
+    ASSERT_EQ(child_context->view_outputs(), nullptr);
+}
+
+TEST_F(TestLLMContext, PushPopWithParent)
 {
     auto parent_context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
     auto inputs         = llm::input_mappings_t{{"/ext1", "input1"}};
