@@ -35,7 +35,7 @@ if typing.TYPE_CHECKING:
     from langchain.schema import Document
 
 IMPORT_ERROR_MESSAGE = (
-    "ArxivSource requires additional dependencies to be installed. Install them by runnign the following command: "
+    "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
     "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 

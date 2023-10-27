@@ -22,29 +22,79 @@ from morpheus.llm.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
+IMPORT_ERROR_MESSAGE = (
+    "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+
 try:
     from nemollm.api import NemoLLM
 except ImportError:
-    logger.error("NemoLLM not found. Please install NemoLLM to use this service.")
+    logger.error(IMPORT_ERROR_MESSAGE)
+
+
+def _verify_nemo_llm():
+    """
+    When NemoLLM is not installed, raise an ImportError with a helpful message, rather than an attribute error.
+    """
+    if 'NemoLLM' not in globals():
+        raise ImportError(IMPORT_ERROR_MESSAGE)
 
 
 class NeMoLLMClient(LLMClient):
+    """
+    Client for interacting with a specific model in Nemo. This class should be constructed with the
+    `NeMoLLMService.get_client` method.
 
-    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs) -> None:
+    Parameters
+    ----------
+    parent : NeMoLLMService
+        The parent service for this client.
+    model_name : str
+        The name of the model to interact with.
+
+    model_kwargs : dict[str, typing.Any]
+        Additional keyword arguments to pass to the model when generating text.
+    """
+
+    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
+        _verify_nemo_llm()
 
         self._parent = parent
         self._model_name = model_name
         self._model_kwargs = model_kwargs
 
     def generate(self, prompt: str) -> str:
+        """
+        Issue a request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         return self.generate_batch([prompt])[0]
 
     async def generate_async(self, prompt: str) -> str:
+        """
+        Issue an asynchronous request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         return (await self.generate_batch_async([prompt]))[0]
 
     def generate_batch(self, prompts: list[str]) -> list[str]:
+        """
+        Issue a request to generate a list of responses based on a list of prompts.
 
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         return typing.cast(
             list[str],
             self._parent._conn.generate_multiple(model=self._model_name,
@@ -53,7 +103,14 @@ class NeMoLLMClient(LLMClient):
                                                  **self._model_kwargs))
 
     async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        """
+        Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         futures = [
             asyncio.wrap_future(
                 self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
@@ -62,38 +119,64 @@ class NeMoLLMClient(LLMClient):
 
         results = await asyncio.gather(*futures)
 
-        return [
-            typing.cast(str, NemoLLM.post_process_generate_response(r, return_text_completion_only=True))
-            for r in results
-        ]
+        responses = []
+
+        for result in results:
+            result = NemoLLM.post_process_generate_response(result, return_text_completion_only=False)
+            if result.get('status', None) == 'fail':
+                raise RuntimeError(result.get('msg', 'Unknown error'))
+
+            responses.append(result['text'])
+
+        return responses
 
 
 class NeMoLLMService(LLMService):
+    """
+    A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
+
+    Parameters
+    ----------
+    api_key : str, optional
+        The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
+        environment variable. If neither are present an error will be raised.
+
+    org_id : str, optional
+        The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
+        `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
+        a member of multiple NGC organizations.
+    """
 
     def __init__(self, *, api_key: str = None, org_id: str = None) -> None:
         super().__init__()
+        _verify_nemo_llm()
 
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
-        self._api_key = api_key
-        self._org_id = org_id
-
-        # Do checking on api key
-
-        # Class variables
         self._conn: NemoLLM = NemoLLM(
             # The client must configure the authentication and authorization parameters
             # in accordance with the API server security policy.
             # Configure Bearer authorization
-            api_key=self._api_key,
+            api_key=api_key,
 
             # If you are in more than one LLM-enabled organization, you must
             # specify your org ID in the form of a header. This is optional
             # if you are only in one LLM-enabled org.
-            org_id=self._org_id,
+            org_id=org_id,
         )
 
-    def get_client(self, model_name: str, **model_kwargs) -> NeMoLLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> NeMoLLMClient:
+        """
+        Returns a client for interacting with a specific model. This method is the preferred way to create a client.
+
+        Parameters
+        ----------
+        model_name : str
+            The name of the model to create a client for.
+
+        model_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the model when generating text.
+        """
 
         return NeMoLLMClient(self, model_name, **model_kwargs)
