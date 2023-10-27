@@ -113,6 +113,13 @@ The selection of specific components and models was influenced by several factor
 
 Before running the pipeline, we need to ensure that the following services are running:
 
+#### Ensure LFS files are downloaded
+
+To retrieve models from LFS run the following:
+```bash
+./scripts/fetch_data.py fetch models
+```
+
 #### Milvus Service
 
 - Follow the instructions [here](https://milvus.io/docs/install_standalone-docker.md) to install and run a Milvus

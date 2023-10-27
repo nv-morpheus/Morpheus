@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,13 +33,13 @@ additional background contextual and factual information which the LLM can pull 
 
 - In order for this pipeline to function correctly, a Vector Database must already have been populated with information
   that can be retrieved.
-- An example of populating a database is illustrated in [FEA]: Create Sherlock example for VDB Upload #1298.
+- An example of populating a database is illustrated in [VDB upload](../vdb_upload/README.md)
 - This example assumes that pipeline has already been run to completion.
 
 ### Embedding Model
 
 - This pipeline can support any type of embedding model that can convert text into a vector of floats.
-- For the example, we will use all-MiniLM-L6-v2. It is small, accurate, and included in the Morpheus repo via LFS;
+- For the example, we will use `all-MiniLM-L6-v2`. It is small, accurate, and included in the Morpheus repo via LFS;
   it is also the default model used in the [VDB upload](../vdb_upload/README.md) pipeline.
 
 ### Vector Database Service
@@ -71,8 +71,8 @@ were incorporated:
   for real-time operations and ensures that the embeddings are of high quality.
 - **Using Milvus as VDB:** Milvus offers scalable and efficient vector search capabilities, making it a natural choice
   for embedding retrieval in real-time.
-- **Integration with LLM:** By directly appending the context to the LLM query, the implementation remains streamlined
-  and avoids excessive modifications to the LLM engine itself.`
+- **Flexible LLM integration:** The LLM is integrated into the pipeline as a standalone component, which allows for
+  easy swapping of models and ensures that the pipeline can be easily extended to support multiple LLMs.
 
 ### Standalone Morpheus Pipeline
 
@@ -150,18 +150,26 @@ The pipeline is supported by a set of backend components:
 
 Before running the pipeline, we need obtain service API keys for the following services:
 
+### Ensure that LFS files are downloaded
+
+To retrieve models from LFS run the following:
+
+```bash
+./scripts/fetch_data.py fetch models
+```
+
 ### Obtain an OpenAI API or NGC API Key
 
 #### NGC
 
 - Follow the instructions [here](TODO)
-- We'll refer to your NGC API key as ${NGC_API_KEY} for the rest of this document.
+- We'll refer to your NGC API key as `${NGC_API_KEY}` for the rest of this document.
 
 #### OpenAI
 
 - Follow the instructions [here](https://platform.openai.com/docs/quickstart?context=python) to obtain an OpenAI
   API key.
-- We'll refer to your OpenAI API key as ${OPENAI_API_KEY} for the rest of this document.
+- We'll refer to your OpenAI API key as `${OPENAI_API_KEY}` for the rest of this document.
 
 Before running the pipeline, we need to ensure that the following services are running:
 
@@ -209,15 +217,14 @@ pipeline option of `rag`:
 
 ```bash
 export NGC_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag pipeline
+NGC_API_KEY=${NGC_API_KEY} python examples/llm/main.py rag pipeline
 ```
 
 **Using OpenAI LLM models**
 
 ```bash
 export OPENAI_API_KEY=[YOUR_KEY_HERE]
-python examples/llm/main.py rag pipeline
-
+OPENAI_API_KEY=${OPENAI_API_KEY} python examples/llm/main.py rag pipeline
 ```
 
 ### Run example (Persistent Pipeline):
