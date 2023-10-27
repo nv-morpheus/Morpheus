@@ -156,7 +156,7 @@ class WriteToVectorDBStage(SinglePortStage):
             #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
 
             # Insert entries in the dataframe to vector database.
-            result = self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
+            self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
 
             return msg
 
