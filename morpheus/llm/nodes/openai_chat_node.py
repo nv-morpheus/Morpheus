@@ -15,21 +15,35 @@
 import asyncio
 import logging
 
-from langchain.llms.openai import OpenAIChat
-from langchain.schema import AIMessage
-from langchain.schema import HumanMessage
-from langchain.schema import SystemMessage
-
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
 logger = logging.getLogger(__name__)
+
+IMPORT_ERROR_MESSAGE = (
+    "OpenAIChatNode requires additional dependencies to be installed. Install them by running the following command:\n"
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+
+try:
+    from langchain.llms.openai import OpenAIChat
+    from langchain.schema import AIMessage
+    from langchain.schema import HumanMessage
+    from langchain.schema import SystemMessage
+except ImportError:
+    logger.error(IMPORT_ERROR_MESSAGE)
+
+
+def _verify_deps():
+    for dep in ('OpenAIChat', 'AIMessage', 'HumanMessage', 'SystemMessage'):
+        if dep not in globals():
+            raise ImportError(IMPORT_ERROR_MESSAGE)
 
 
 class OpenAIChatNode(LLMNodeBase):
 
     def __init__(self, model_name: str, set_assistant=False) -> None:
         super().__init__()
+        _verify_deps()
 
         self._model_name = model_name
         self._set_assistant = set_assistant
