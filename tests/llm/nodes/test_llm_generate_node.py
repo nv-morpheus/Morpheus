@@ -18,25 +18,22 @@ from unittest import mock
 from _utils.llm import execute_node
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
-from morpheus.llm.services.llm_service import LLMClient
 
 
-def test_constructor():
-    node = LLMGenerateNode(llm_client=mock.MagicMock(LLMClient))
+def test_constructor(mock_llm_client: mock.MagicMock):
+    node = LLMGenerateNode(llm_client=mock_llm_client)
     assert isinstance(node, LLMNodeBase)
 
 
-def test_get_input_names():
-    node = LLMGenerateNode(llm_client=mock.MagicMock(LLMClient))
+def test_get_input_names(mock_llm_client: mock.MagicMock):
+    node = LLMGenerateNode(llm_client=mock_llm_client)
     assert node.get_input_names() == ["prompt"]
 
 
-def test_execute():
+def test_execute(mock_llm_client: mock.MagicMock):
     expected_output = ["response1", "response2"]
-    mock_client = mock.MagicMock(LLMClient)
-    mock_client.return_value = mock_client
-    mock_client.generate_batch_async = mock.AsyncMock(return_value=expected_output.copy())
+    mock_llm_client.generate_batch_async.return_value = expected_output.copy()
 
-    node = LLMGenerateNode(llm_client=mock_client)
+    node = LLMGenerateNode(llm_client=mock_llm_client)
     assert execute_node(node, prompt=["prompt1", "prompt2"]) == expected_output
-    mock_client.generate_batch_async.assert_called_once_with(["prompt1", "prompt2"])
+    mock_llm_client.generate_batch_async.assert_called_once_with(["prompt1", "prompt2"])
