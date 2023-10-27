@@ -17,13 +17,12 @@
 
 #include "py_llm_task_handler.hpp"
 
-#include "pycoro/pycoro.hpp"
-
 #include "morpheus/llm/llm_context.hpp"
 
 #include <mrc/coroutines/task.hpp>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pymrc/coro.hpp>  // IWYU pragma: keep
 
 #include <coroutine>
 
