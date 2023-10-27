@@ -21,7 +21,6 @@
 #include "./include/py_llm_task_handler.hpp"
 #include "py_llm_engine_stage.hpp"
 #include "py_llm_lambda_node.hpp"
-#include "pycoro/pycoro.hpp"  // IWYU pragma: keep
 
 #include "morpheus/llm/input_map.hpp"
 #include "morpheus/llm/llm_context.hpp"
@@ -47,6 +46,7 @@
 #include <pybind11/pybind11.h>    // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>     // for dict, sequence
 #include <pybind11/stl.h>         // IWYU pragma: keep
+#include <pymrc/coro.hpp>         // IWYU pragma: keep
 #include <pymrc/utils.hpp>        // for pymrc::import
 
 #include <memory>
@@ -73,8 +73,8 @@ PYBIND11_MODULE(llm, _module)
     // Load the cudf helpers
     CudfHelper::load();
 
-    // Import the pycoro module
-    mrc::pymrc::import(_module, "morpheus._lib.pycoro");
+    // Import the mrc coro module
+    mrc::pymrc::import(_module, "mrc.core.coro");
 
     // Import the messages module
     mrc::pymrc::import(_module, "morpheus._lib.messages");
@@ -212,8 +212,33 @@ PYBIND11_MODULE(llm, _module)
 
     py::class_<LLMNodeBase, PyLLMNodeBase<>, std::shared_ptr<LLMNodeBase>>(_module, "LLMNodeBase")
         .def(py::init_alias<>())
-        .def("get_input_names", &LLMNodeBase::get_input_names)
-        .def("execute", &LLMNodeBase::execute, py::arg("context"));
+        .def("get_input_names",
+             &LLMNodeBase::get_input_names,
+             R"pbdoc(
+                Get the input names for the node.
+
+                Returns
+                -------
+                list[str]
+                    The input names for the node
+             )pbdoc")
+        .def("execute",
+             &LLMNodeBase::execute,
+             py::arg("context"),
+             R"pbdoc(
+                Execute the current node with the given `context` instance.
+
+                All inputs for the given node should be fetched from the context, typically by calling either
+                `context.get_inputs` to fetch all inputs as a `dict`, or `context.get_input` to fetch a specific input.
+
+                Similarly the output of the node is written to the context using `context.set_output`.
+
+                Parameters
+                ----------
+                context : `morpheus._lib.llm.LLMContext`
+                    Context instance to use for the execution
+
+            )pbdoc");
 
     py::class_<LLMNodeRunner, std::shared_ptr<LLMNodeRunner>>(_module, "LLMNodeRunner")
         .def_property_readonly("inputs", &LLMNodeRunner::inputs)
