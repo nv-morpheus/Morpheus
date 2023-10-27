@@ -89,11 +89,10 @@ class MultiFileSource(SingleOutputSource):
                 updated_list.append(file_name)
                 continue
 
-            with fsspec.open(file_name) as f:
-                if f.fs.isdir(file_name):
-                    updated_list.append(f"{file_name}/*")
-                else:
-                    updated_list.append(file_name)
+            if fs.isdir(file_name):
+                updated_list.append(f"{file_name}/*")
+            else:
+                updated_list.append(file_name)
 
         return updated_list
 
