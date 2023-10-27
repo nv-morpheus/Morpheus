@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import typing
 from abc import ABC
 from abc import abstractmethod
 
@@ -20,26 +21,76 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(ABC):
+    """
+    Abstract interface for clients which are able to interact with LLM models. Concrete implementations of this class
+    will have an associated implementation of `LLMService` which is able to construct instances of this class.
+    """
 
     @abstractmethod
     def generate(self, prompt: str) -> str:
+        """
+        Issue a request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         pass
 
     @abstractmethod
     async def generate_async(self, prompt: str) -> str:
+        """
+        Issue an asynchronous request to generate a response based on a given prompt.
+
+        Parameters
+        ----------
+        prompt : str
+            The prompt to generate a response for.
+        """
         pass
 
     @abstractmethod
     def generate_batch(self, prompts: list[str]) -> list[str]:
+        """
+        Issue a request to generate a list of responses based on a list of prompts.
+
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         pass
 
     @abstractmethod
     async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        """
+        Issue an asynchronous request to generate a list of responses based on a list of prompts.
+
+        Parameters
+        ----------
+        prompts : list[str]
+            The prompts to generate responses for.
+        """
         pass
 
 
 class LLMService(ABC):
+    """
+    Abstract interface for services which are able to construct clients for interacting with LLM models.
+    """
 
     @abstractmethod
-    def get_client(self, model_name: str, **model_kwargs) -> LLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> LLMClient:
+        """
+        Returns a client for interacting with a specific model.
+
+        Parameters
+        ----------
+        model_name : str
+            The name of the model to create a client for.
+
+        model_kwargs : dict[str, typing.Any]
+            Additional keyword arguments to pass to the model.
+        """
         pass

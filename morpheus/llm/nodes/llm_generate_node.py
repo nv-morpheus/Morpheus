@@ -23,6 +23,15 @@ logger = logging.getLogger(__name__)
 
 
 class LLMGenerateNode(LLMNodeBase):
+    """
+    Generates responses from an LLM using the provided `llm_client` instance based on prompts provided as input from
+    upstream nodes.
+
+    Parameters
+    ----------
+    llm_client : LLMClient
+        The client instance to use to generate responses.
+    """
 
     def __init__(self, llm_client: LLMClient) -> None:
         super().__init__()

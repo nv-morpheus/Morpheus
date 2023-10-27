@@ -13,17 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 import pytest
 
 import cudf
 
 from _utils import assert_results
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
+from morpheus.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
+from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -31,53 +32,33 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-MULTI_LINE_JINJA_TEMPLATE = """Testing a loop:
-{% for lv in ctx.list_values -%}Title: {{ lv.title }}, Summary: {{ lv.summary }}
-{% endfor %}
-{{ ctx.query }}"""
 
-
-def _build_engine(template: str, template_format: str) -> LLMEngine:
+def _build_engine(mock_llm_client: mock.MagicMock) -> LLMEngine:
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
-    engine.add_node("prompts",
-                    inputs=["/extracter"],
-                    node=PromptTemplateNode(template=template, template_format=template_format))
-
-    engine.add_task_handler(inputs=["/prompts"], handler=SimpleTaskHandler())
+    engine.add_node("generate", inputs=["/extracter"], node=LLMGenerateNode(llm_client=mock_llm_client))
+    engine.add_task_handler(inputs=["/generate"], handler=SimpleTaskHandler())
 
     return engine
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("template,template_format,values,expected_output",
-                         [("Hello {name}!",
-                           "f-string", {
-                               'name': ['World', 'Universe', 'Galaxy', 'Moon']
-                           }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"]),
-                          ("Hello {{ name }}!",
-                           "jinja", {
-                               'name': ['World', 'Universe', 'Galaxy', 'Moon']
-                           }, ["Hello World!", "Hello Universe!", "Hello Galaxy!", "Hello Moon!"])],
-                         ids=["f-string-hello-world", "jinja-hello-world"])
-def test_prompt_template_node_pipe(config: Config,
-                                   template: str,
-                                   template_format: str,
-                                   values: dict,
-                                   expected_output: list[str]):
-    config.mode = PipelineModes.OTHER
+def test_pipeline(config: Config, mock_llm_client: mock.MagicMock):
+    expected_output = ["response1", "response2"]
+    mock_llm_client.generate_batch_async.return_value = expected_output.copy()
+
+    values = {'prompt': ["prompt1", "prompt2"]}
     input_df = cudf.DataFrame(values)
     expected_df = input_df.copy(deep=True)
     expected_df["response"] = expected_output
 
-    input_names = sorted(values.keys())
-    task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": input_names}}
+    task_payload = {"task_type": "llm_engine", "task_dict": {"input_keys": sorted(values.keys())}}
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, dataframes=[input_df]))
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=task_payload))
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(template=template, template_format=template_format)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(mock_llm_client=mock_llm_client)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()

@@ -32,6 +32,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.concat_df import concat_dataframes
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def _build_engine():
 
     engine.add_node("completion", inputs=["/prompts"], node=LLMGenerateNode(llm_client=llm_clinet))
 
-    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
+    engine.add_task_handler(inputs=["/completion"], handler=SimpleTaskHandler())
 
     return engine
 
@@ -60,7 +61,6 @@ def _build_engine():
 def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_count: int):
 
     config = Config()
-    config.mode = PipelineModes.OTHER
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
@@ -107,6 +107,8 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_coun
 
     pipe.run()
 
-    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
+    messages = sink.get_messages()
+    responses = concat_dataframes(messages)
+    logger.info("Pipeline complete. Received %s responses\n%s", len(messages), responses['response'])
 
     return start_time
