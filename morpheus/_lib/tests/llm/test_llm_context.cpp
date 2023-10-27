@@ -98,12 +98,10 @@ TEST_F(TestLLMContext, SetOutput)
     ASSERT_EQ(ctx_2.view_outputs()["input1"]["key2"], "val2");
 }
 
-TEST_F(TestLLMContext, PushPopNoParent)
+TEST_F(TestLLMContext, PushNoParentPop)
 {
     auto parent_context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
     auto inputs         = llm::input_mappings_t{{"/ext1", "input1"}};
-    // llm::LLMContext child_context{parent_context, "child", inputs};
-
     auto child_context = parent_context->push("child", inputs);
 
     ASSERT_EQ(child_context->name(), "child");
@@ -121,7 +119,7 @@ TEST_F(TestLLMContext, PushPopNoParent)
     ASSERT_EQ(child_context->view_outputs(), nullptr);
 }
 
-TEST_F(TestLLMContext, PushPopWithParent)
+TEST_F(TestLLMContext, PopWithParent)
 {
     auto parent_context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
     auto inputs         = llm::input_mappings_t{{"/ext1", "input1"}};
@@ -140,6 +138,4 @@ TEST_F(TestLLMContext, PushPopWithParent)
     child_context.pop();
     ASSERT_EQ(parent_context->view_outputs()["child"]["input1"]["key1"], "val1");
     ASSERT_EQ(parent_context->view_outputs()["child"]["input1"]["key2"], "val2");
-
-    std::cerr << parent_context->view_outputs();
 }
