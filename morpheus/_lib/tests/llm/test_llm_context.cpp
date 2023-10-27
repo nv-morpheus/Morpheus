@@ -87,13 +87,13 @@ TEST_F(TestLLMContext, SetOutput)
     outputs = {{"key1", "val1"}, {"key2", "val2"}};
     ctx_1.set_output(outputs);
 
-    ASSERT_EQ(ctx_1.view_outputs()["key1"], "val1");
-    ASSERT_EQ(ctx_1.view_outputs()["key2"], "val2");
+    ASSERT_EQ(ctx_1.all_outputs()["key1"], "val1");
+    ASSERT_EQ(ctx_1.all_outputs()["key2"], "val2");
 
     llm::LLMContext ctx_2{llm::LLMTask{}, nullptr};
     ctx_2.set_output("output", outputs);
-    ASSERT_EQ(ctx_2.view_outputs()["output"]["key1"], "val1");
-    ASSERT_EQ(ctx_2.view_outputs()["output"]["key2"], "val2");
+    ASSERT_EQ(ctx_2.all_outputs()["output"]["key1"], "val1");
+    ASSERT_EQ(ctx_2.all_outputs()["output"]["key2"], "val2");
 }
 
 TEST_F(TestLLMContext, PushPop)
@@ -109,13 +109,13 @@ TEST_F(TestLLMContext, PushPop)
     nlohmann::json outputs;
     outputs = {{"key1", "val1"}, {"key2", "val2"}};
     child_ctx->set_output(outputs);
-    ASSERT_EQ(child_ctx->view_outputs()["key1"], "val1");
-    ASSERT_EQ(child_ctx->view_outputs()["key2"], "val2");
+    ASSERT_EQ(child_ctx->all_outputs()["key1"], "val1");
+    ASSERT_EQ(child_ctx->all_outputs()["key2"], "val2");
 
     child_ctx->pop();
-    ASSERT_EQ(child_ctx->view_outputs(), nullptr);
-    ASSERT_EQ(child_ctx->parent()->view_outputs()["child"]["key1"], "val1");
-    ASSERT_EQ(child_ctx->parent()->view_outputs()["child"]["key2"], "val2");
+    ASSERT_EQ(child_ctx->all_outputs(), nullptr);
+    ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key1"], "val1");
+    ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key2"], "val2");
 }
 
 TEST_F(TestLLMContext, PopWithoutPush)
@@ -131,13 +131,33 @@ TEST_F(TestLLMContext, PopWithoutPush)
     nlohmann::json outputs;
     outputs = {{"key1", "val1"}, {"key2", "val2"}};
     child_ctx.set_output(outputs);
-    ASSERT_EQ(child_ctx.view_outputs()["key1"], "val1");
-    ASSERT_EQ(child_ctx.view_outputs()["key2"], "val2");
+    ASSERT_EQ(child_ctx.all_outputs()["key1"], "val1");
+    ASSERT_EQ(child_ctx.all_outputs()["key2"], "val2");
 
     child_ctx.pop();
-    ASSERT_EQ(child_ctx.view_outputs(), nullptr);
-    ASSERT_EQ(parent_ctx->view_outputs()["child"]["key1"], "val1");
-    ASSERT_EQ(parent_ctx->view_outputs()["child"]["key2"], "val2");
+    ASSERT_EQ(child_ctx.all_outputs(), nullptr);
+    ASSERT_EQ(parent_ctx->all_outputs()["child"]["key1"], "val1");
+    ASSERT_EQ(parent_ctx->all_outputs()["child"]["key2"], "val2");
+}
+
+TEST_F(TestLLMContext, PopSelectOutputs)
+{
+    auto parent_ctx = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
+    auto inputs     = llm::input_mappings_t{{"/ext1", "input1"}};
+    auto child_ctx  = parent_ctx->push("child", inputs);
+
+    nlohmann::json outputs;
+    outputs = {{"key1", "val1"}, {"key2", "val2"}, {"key3", "val3"}};
+    child_ctx->set_output(outputs);
+    ASSERT_EQ(child_ctx->all_outputs()["key1"], "val1");
+    ASSERT_EQ(child_ctx->all_outputs()["key2"], "val2");
+    ASSERT_EQ(child_ctx->all_outputs()["key3"], "val3");
+
+    child_ctx->set_output_names({"key2", "key3"});
+    child_ctx->pop();
+    ASSERT_EQ(child_ctx->parent()->all_outputs()["child"].size(), 2);
+    ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key2"], "val2");
+    ASSERT_EQ(child_ctx->parent()->all_outputs()["child"]["key3"], "val3");
 }
 
 TEST_F(TestLLMContext, SingleInputMapping)
