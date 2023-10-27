@@ -160,7 +160,8 @@ class WriteToVectorDBStage(SinglePortStage):
 
             return None
 
-        to_vector_db = builder.make_node(self.unique_name, ops.map(on_data),
+        to_vector_db = builder.make_node(self.unique_name,
+                                         ops.map(on_data),
                                          ops.filter(lambda x: x is not None),
                                          ops.on_completed(self.on_completed))
 

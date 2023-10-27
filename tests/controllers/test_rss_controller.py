@@ -44,16 +44,15 @@ test_invalid_file_paths = [
 
 @pytest.fixture(scope="module", name="mock_feed")
 def mock_feed_fixture() -> feedparser.FeedParserDict:
-    feed_items = [{"link": "https://nvidia.com", "id": "12345"},
-                  {"link": "https://fake.nvidia.com", "id": "22345"}
-                 ]
+    feed_items = [{"link": "https://nvidia.com", "id": "12345"}, {"link": "https://fake.nvidia.com", "id": "22345"}]
     feed = feedparser.FeedParserDict()
     feed.update({"entries": feed_items, "bozo": 0})
 
     return feed
 
+
 @pytest.fixture(scope="module", name="mock_get_response")
-def mock_get_response() -> Mock:
+def mock_get_response_fixture() -> Mock:
     # Open and read the content of the file
     with open(test_file_paths[0], 'rb') as file:
         file_content = file.read()
@@ -64,6 +63,7 @@ def mock_get_response() -> Mock:
     mock_response.text = file_content
 
     return mock_response
+
 
 @pytest.mark.parametrize("feed_input, expected_output", [(url, True) for url in test_urls])
 def test_run_indefinitely_true(feed_input: str, expected_output: bool):
@@ -123,6 +123,7 @@ def test_fetch_dataframes_url(feed_input: str | list[str], mock_feed: feedparser
         assert "link" in dataframe.columns
         assert len(dataframe) > 0
 
+
 @pytest.mark.parametrize("feed_input", [test_file_paths, test_file_paths[0]])
 def test_fetch_dataframes_filepath(feed_input: str | list[str]):
     controller = RSSController(feed_input=feed_input)
@@ -132,6 +133,7 @@ def test_fetch_dataframes_filepath(feed_input: str | list[str]):
     assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
+
 @pytest.mark.parametrize("feed_input, batch_size", [(test_file_paths, 5)])
 def test_batch_size(feed_input: list[str], batch_size: int):
     controller = RSSController(feed_input=feed_input, batch_size=batch_size)
@@ -140,10 +142,8 @@ def test_batch_size(feed_input: list[str], batch_size: int):
         assert len(df) <= batch_size
 
 
-@pytest.mark.parametrize("feed_input, is_url, enable_cache",
-                         [(test_file_paths[0], False, False),
-                          (test_urls[0], True, True),
-                          (test_urls[0], True, False)])
+@pytest.mark.parametrize("feed_input, is_url, enable_cache", [(test_file_paths[0], False, False),
+                                                              (test_urls[0], True, True), (test_urls[0], True, False)])
 def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 

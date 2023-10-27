@@ -99,11 +99,11 @@ class RSSController:
             self._session = requests_cache.CachedSession(os.path.join(cache_dir, "RSSController.sqlite"),
                                                          backend="sqlite")
 
-        self._feed_stats_dict = {input: FeedStats(failure_count=0,
-                                                  success_count=0,
-                                                  last_failure=-1,
-                                                  last_success=-1,
-                                                  last_try_result="Unknown") for input in self._feed_input}
+        self._feed_stats_dict = {
+            input:
+                FeedStats(failure_count=0, success_count=0, last_failure=-1, last_success=-1, last_try_result="Unknown")
+            for input in self._feed_input
+        }
 
     @property
     def run_indefinitely(self):
@@ -113,7 +113,7 @@ class RSSController:
     @property
     def session_exist(self) -> bool:
         """Property that indicates the existence of a session."""
-        return True if self._session is not None else False
+        return bool(self._session)
 
     def get_feed_stats(self, feed_url: str) -> FeedStats:
         """
@@ -217,9 +217,7 @@ class RSSController:
 
             if feed["bozo"]:
                 try:
-                    logger.info("Failed to parse feed: %s, %s. Try parsing feed manually",
-                                url,
-                                feed['bozo_exception'])
+                    logger.info("Failed to parse feed: %s, %s. Try parsing feed manually", url, feed['bozo_exception'])
                     feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
                 except Exception:
                     logger.error("Failed to parse the feed manually: %s", url)
@@ -270,7 +268,7 @@ class RSSController:
 
         Raises
         ------
-        RuntimeError
+        Exception
             If there is error fetching or processing feed entries.
         """
         entry_accumulator = []
@@ -299,7 +297,7 @@ class RSSController:
                 logger.debug("No new entries found.")
 
         except Exception as exc:
-            logger.error(f"Error fetching or processing feed entries: {exc}")
+            logger.error("Error fetching or processing feed entries: %s", exc)
             raise
 
     @classmethod

@@ -18,10 +18,12 @@ import click
 
 logger = logging.getLogger(__name__)
 
+
 def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
     from morpheus.service.vdb.utils import validate_service
     value = value.lower()
     return validate_service(service_name=value)
+
 
 @click.group(name=__name__)
 def run():

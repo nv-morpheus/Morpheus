@@ -35,6 +35,7 @@ def handle_service_exceptions(func):
     ValueError
         If the specified service name is not found or does not correspond to a valid service class.
     """
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -43,6 +44,7 @@ def handle_service_exceptions(func):
             module_name = f"morpheus.service.vdb.{service_name}_vector_db_service"
             raise ValueError(f"Service {service_name} not found. Ensure that the corresponding service class, " +
                              f"such as {module_name}, has been implemented.") from exc
+
     return wrapper
 
 

@@ -181,7 +181,8 @@ def standalone(
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+    pipe.add_stage(
+        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 

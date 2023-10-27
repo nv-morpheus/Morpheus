@@ -115,8 +115,10 @@ class WebScraperStage(SinglePortStage):
 
                 if (not response.ok):
                     logger.warning(
-                        f"Error downloading document from URL '{url}'. Returned code: {response.status_code}. With reason: '{response.reason}'"
-                    )
+                        "Error downloading document from URL '%s'. " + "Returned code: %s. With reason: '%s'",
+                        url,
+                        response.status_code,
+                        response.reason)
                     continue
 
                 raw_html = response.text
@@ -134,14 +136,14 @@ class WebScraperStage(SinglePortStage):
                 split_text = self._text_splitter.split_text(text)
 
                 for text in split_text:
-                    r = row.copy()
-                    r.update({"page_content": text})
-                    final_rows.append(r)
+                    row_cp = row.copy()
+                    row_cp.update({"page_content": text})
+                    final_rows.append(row_cp)
 
-                logger.debug(f"Processed page: '{url}'. Cache hit: {response.from_cache}")
+                logger.debug("Processed page: '%s'. Cache hit: %s", url, response.from_cache)
 
-            except ValueError as e:
-                logger.error(f"Error parsing document: {e}")
+            except ValueError as exc:
+                logger.error("Error parsing document: %s", exc)
                 continue
 
         # Not using cudf to avoid error: pyarrow.lib.ArrowInvalid: cannot mix list and non-list, non-null values
