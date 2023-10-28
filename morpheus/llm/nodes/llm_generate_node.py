@@ -31,17 +31,24 @@ class LLMGenerateNode(LLMNodeBase):
     ----------
     llm_client : LLMClient
         The client instance to use to generate responses.
+    
+    input_names : list[str], optional
+        The names of the inputs to this node. Defaults to `["prompt"]`.
     """
 
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: LLMClient, input_names: list[str] | None = None) -> None:
         super().__init__()
 
         self._llm_client = llm_client
+        if input_names is None:
+            input_names = ["prompt"]
 
-    def get_input_names(self):
-        return ["prompt"]
+        self._input_names = input_names
 
-    async def execute(self, context: LLMContext):
+    def get_input_names(self) -> list[str]:
+        return self._input_names
+
+    async def execute(self, context: LLMContext) -> LLMContext:
 
         # Get the list of inputs
         prompts: list[str] = typing.cast(list[str], context.get_input())
