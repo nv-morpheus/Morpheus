@@ -18,6 +18,8 @@ import typing
 from collections import defaultdict
 
 T_co = typing.TypeVar("T_co", covariant=True)
+
+# pylint: disable=invalid-name
 T = typing.TypeVar('T')
 T1 = typing.TypeVar('T1')
 T2 = typing.TypeVar('T2')
@@ -75,18 +77,18 @@ def unpack_union(*cls_list: typing.Type) -> typing.Union:
 
     assert len(cls_list) > 0, "Union class list must have at least 1 element."
 
+    out_union = None
+
     if (len(cls_list) == 1):
-        return typing.Union[cls_list[0]]
-    # elif (len(cls_list) == 2):
-    #     return typing.Union[cls_list[0], cls_list[1]]
+        out_union = typing.Union[cls_list[0]]
     else:
         out_union = unpack_union(cls_list[0:2])
 
         # Since typing.Union[typing.Union[A, B], C] == typing.Union[A, B, C], we build the union up manually
-        for t in cls_list[2:]:
-            out_union = typing.Union[out_union, t]
+        for typ in cls_list[2:]:
+            out_union = typing.Union[out_union, typ]
 
-        return out_union
+    return out_union
 
 
 @typing.overload
@@ -109,10 +111,10 @@ def unpack_tuple(*cls_list: typing.Type) -> typing.Tuple:
 
     assert len(cls_list) > 0, "Union class list must have at least 1 element."
 
+    out_tuple = None
+
     if (len(cls_list) == 1):
-        return typing.Tuple[cls_list[0]]
-    # elif (len(cls_list) == 2):
-    #     return typing.Union[cls_list[0], cls_list[1]]
+        out_tuple = typing.Tuple[cls_list[0]]
     else:
         out_tuple = unpack_tuple(cls_list[0:2])
 
@@ -120,7 +122,7 @@ def unpack_tuple(*cls_list: typing.Type) -> typing.Tuple:
         for t in cls_list[2:]:
             out_tuple = typing.Tuple[out_tuple, t]
 
-        return out_tuple
+    return out_tuple
 
 
 def pretty_print_type_name(t: typing.Type) -> str:
