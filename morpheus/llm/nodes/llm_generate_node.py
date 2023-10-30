@@ -41,7 +41,7 @@ class LLMGenerateNode(LLMNodeBase):
 
         self._llm_client = llm_client
         if input_names is None:
-            input_names = ["prompt"]
+            input_names = llm_client.get_input_names()
 
         self._input_names = input_names
 

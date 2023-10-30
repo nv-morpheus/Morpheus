@@ -51,7 +51,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate_batch(self, prompts: list[str]) -> list[str]:
+    def generate_batch(self, inputs: dict) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -63,7 +63,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
