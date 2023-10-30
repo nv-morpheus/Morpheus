@@ -41,7 +41,7 @@ def _verify_deps():
 
 class OpenAIChatNode(LLMNodeBase):
 
-    def __init__(self, model_name: str = 'gpt-3.5-turbo', set_assistant: bool = False, cache: bool = False) -> None:
+    def __init__(self, model_name: str, set_assistant: bool = False, cache: bool = False) -> None:
         super().__init__()
         _verify_deps()
 
