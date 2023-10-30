@@ -47,30 +47,30 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 {
   public:
     /**
-     * @brief Construct a new LLMContext object
+     * @brief Construct a new LLMContext object.
      *
      */
     LLMContext();
 
     /**
-     * @brief Construct a new LLMContext object
+     * @brief Construct a new LLMContext object.
      *
-     * @param task
-     * @param message
+     * @param task task for new context
+     * @param message control message for new context
      */
     LLMContext(LLMTask task, std::shared_ptr<ControlMessage> message);
 
     /**
-     * @brief Construct a new LLMContext object
+     * @brief Construct a new LLMContext object.
      *
-     * @param parent
-     * @param name
-     * @param inputs
+     * @param parent parent context
+     * @param name new context name
+     * @param inputs input mappings for new context
      */
     LLMContext(std::shared_ptr<LLMContext> parent, std::string name, input_mappings_t inputs);
 
     /**
-     * @brief Destroy the LLMContext object
+     * @brief Destroy the LLMContext object.
      *
      */
     ~LLMContext();
@@ -127,8 +127,8 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     /**
      * @brief Create new context from this context with provided name and input mappings.
      *
-     * @param name
-     * @param inputs
+     * @param name name of new context
+     * @param inputs input mappings for new context
      * @return std::shared_ptr<LLMContext>
      */
     std::shared_ptr<LLMContext> push(std::string name, input_mappings_t inputs);
@@ -150,7 +150,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     /**
      * @brief Get the parent output value corresponding to given internal input name.
      *
-     * @param node_name
+     * @param node_name internal input name
      * @return nlohmann::json::const_reference
      */
     nlohmann::json::const_reference get_input(const std::string& node_name) const;
@@ -163,24 +163,24 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     nlohmann::json get_inputs() const;
 
     /**
-     * @brief Set output map for this context.
+     * @brief Set output mappings for this context.
      *
-     * @param outputs
+     * @param outputs output mappings
      */
     void set_output(nlohmann::json outputs);
 
     /**
      * @brief Set an output value for this context.
      *
-     * @param output_name
-     * @param output
+     * @param output_name output name
+     * @param output output value
      */
     void set_output(const std::string& output_name, nlohmann::json output);
 
     /**
      * @brief Set the output names to propagate from this context when using pop.
      *
-     * @param output_names
+     * @param output_names output names to propagate
      */
     void set_output_names(std::vector<std::string> output_names);
 
