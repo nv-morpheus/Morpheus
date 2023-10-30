@@ -41,14 +41,14 @@ def _verify_deps():
 
 class OpenAIChatNode(LLMNodeBase):
 
-    def __init__(self, model_name: str, set_assistant=False) -> None:
+    def __init__(self, model_name: str = 'gpt-3.5-turbo', set_assistant: bool = False, cache: bool = False) -> None:
         super().__init__()
         _verify_deps()
 
         self._model_name = model_name
         self._set_assistant = set_assistant
 
-        self._model = OpenAIChat(model_name=self._model_name, temperature=0, cache=True)
+        self._model = OpenAIChat(model_name=self._model_name, temperature=0, cache=cache)
 
     def get_input_names(self):
         if (self._set_assistant):
