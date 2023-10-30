@@ -952,9 +952,9 @@ def filter_probs_df(dataset, use_cpp: bool):
 
 def _get_random_port():
     import socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        return s.getsockname()[1]
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sckt:
+        sckt.bind(('', 0))
+        return sckt.getsockname()[1]
 
 
 @pytest.fixture(scope="session")

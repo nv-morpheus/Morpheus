@@ -281,33 +281,30 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
             Returns response content as a dictionary.
         """
 
-        # From the schema, this is the list of columns we need, excluding any auto_id columns
-        column_names = [field.name for field in self._fields if not field.auto_id]
-
-        final_column_names = df.columns.intersection(column_names)
-
-        final_df = df[final_column_names]
-
-        if isinstance(final_df, cudf.DataFrame):
-            final_df = final_df.to_pandas()
+        if isinstance(df, cudf.DataFrame):
+            df = df.to_pandas()
 
         # Ensure that there are no None values in the DataFrame entries.
         for field_name, dtype in self._fillna_fields_dict.items():
             if dtype in (pymilvus.DataType.VARCHAR, pymilvus.DataType.STRING):
-                final_df[field_name] = final_df[field_name].fillna("")
+                df[field_name] = df[field_name].fillna("")
             elif dtype in (pymilvus.DataType.INT8,
                            pymilvus.DataType.INT16,
                            pymilvus.DataType.INT32,
                            pymilvus.DataType.INT64):
-                final_df[field_name] = final_df[field_name].fillna(0)
+                df[field_name] = df[field_name].fillna(0)
             elif dtype in (pymilvus.DataType.FLOAT, pymilvus.DataType.DOUBLE):
-                final_df[field_name] = final_df[field_name].fillna(0.0)
+                df[field_name] = df[field_name].fillna(0.0)
             elif dtype == pymilvus.DataType.BOOL:
-                final_df[field_name] = final_df[field_name].fillna(False)
+                df[field_name] = df[field_name].fillna(False)
             else:
                 logger.info("Skipped checking 'None' in the field: %s, with datatype: %s", field_name, dtype)
 
-        result = self._collection.insert(data=final_df, **kwargs)
+        # From the schema, this is the list of columns we need, excluding any auto_id columns
+        column_names = [field.name for field in self._fields if not field.auto_id]
+
+        # Note: dataframe columns has to be in the order of collection schema fields.s
+        result = self._collection.insert(data=df[column_names], **kwargs)
         self._collection.flush()
 
         return self._insert_result_to_dict(result=result)
@@ -666,12 +663,9 @@ class MilvusVectorDBService(VectorDBService):
 
             schema = pymilvus.CollectionSchema(fields=schema_fields, **schema_conf)
 
-            # if index_conf:
-            #     index_param = self._client.prepare_index_params(**index_conf)
-
             self._client.create_collection_with_schema(collection_name=name,
                                                        schema=schema,
-                                                       index_param=index_conf,
+                                                       index_params=index_conf,
                                                        auto_id=auto_id,
                                                        shards_num=collection_conf.get("shards", 2),
                                                        consistency_level=collection_conf.get(
