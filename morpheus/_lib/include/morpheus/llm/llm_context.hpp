@@ -135,7 +135,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     /**
      * @brief Moves output map from this context to parent context. Outputs to move can be selected using
-     * set_output_names. All outputs are noved by default.
+     * set_output_names, otherwise all outputs are noved by default.
      *
      */
     void pop();
