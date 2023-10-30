@@ -46,13 +46,11 @@ def _verify_deps():
 
 class OpenAIChatClient(LLMClient):
     """
-    Client for interacting with a specific model in Nemo. This class should be constructed with the
+    Client for interacting with a specific OpenAI chat model. This class should be constructed with the
     `OpenAIChatService.get_client` method.
 
     Parameters
     ----------
-    parent : OpenAIChatService
-        The parent service for this client.
     model_name : str
         The name of the model to interact with.
 
@@ -60,11 +58,9 @@ class OpenAIChatClient(LLMClient):
         Additional keyword arguments to pass to the model when generating text.
     """
 
-    def __init__(self, model_name: str, assistant: str = None, **model_kwargs: dict[str, typing.Any]) -> None:
+    def __init__(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
         _verify_deps()
-
-        self._assistant = assistant
 
         # Preserve original configuration.
         model_kwargs = copy.deepcopy(model_kwargs)
@@ -73,18 +69,18 @@ class OpenAIChatClient(LLMClient):
 
         self._model = OpenAIChat(model_name=model_name, **model_kwargs)
 
-    def _create_messages(self, prompt: str) -> list["BaseMessage"]:
+    def _create_messages(self, prompt: str, assistant: str = None) -> list["BaseMessage"]:
         messages = [
             SystemMessage(content="You are a helpful assistant."),
             HumanMessage(content=prompt),
         ]
 
-        if (self._assistant is not None):
-            messages.append(AIMessage(content=self._assistant))
+        if (assistant is not None):
+            messages.append(AIMessage(content=assistant))
 
         return messages
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, assistant: str = None) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
@@ -92,14 +88,17 @@ class OpenAIChatClient(LLMClient):
         ----------
         prompt : str
             The prompt to generate a response for.
+        
+        assistant : str, optional
+            Additional context for the prompt
         """
-        messages = self._create_messages(prompt)
+        messages = self._create_messages(prompt, assistant=assistant)
 
         output = self._model.predict_messages(messages=messages)
 
         return output.content
 
-    async def generate_async(self, prompt: str) -> str:
+    async def generate_async(self, prompt: str, assistant: str = None) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
@@ -107,14 +106,17 @@ class OpenAIChatClient(LLMClient):
         ----------
         prompt : str
             The prompt to generate a response for.
+
+        assistant : str, optional
+            Additional context for the prompt
         """
-        messages = self._create_messages(prompt)
+        messages = self._create_messages(prompt, assistant=assistant)
 
         output = await self._model.apredict_messages(messages=messages)
 
         return output.content
 
-    def generate_batch(self, prompts: list[str]) -> list[str]:
+    def generate_batch(self, prompts: list[str], assistants: list[str] = None) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
@@ -122,10 +124,22 @@ class OpenAIChatClient(LLMClient):
         ----------
         prompts : list[str]
             The prompts to generate responses for.
-        """
-        return [self.generate(prompt) for prompt in prompts]
 
-    async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+        assistants : list[str], optional
+            Additional contexts for the prompts. If not None, must be the same length as `prompts`.
+        """
+        if assistants is not None:
+            if len(prompts) != len(assistants):
+                raise ValueError("The number of prompts and assistants must be equal.")
+
+        results = []
+        for (i, prompt) in enumerate(prompts):
+            assistant = assistants[i] if assistants is not None else None
+            results.append(self.generate(prompt, assistant))
+
+        return results
+
+    async def generate_batch_async(self, prompts: list[str], assistants: list[str] = None) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -133,32 +147,31 @@ class OpenAIChatClient(LLMClient):
         ----------
         prompts : list[str]
             The prompts to generate responses for.
+
+        assistants : list[str], optional
+            Additional contexts for the prompts. If not None, must be the same length as `prompts`.
         """
-        coros = [self.generate_async(prompt) for prompt in prompts]
+
+        if assistants is not None:
+            if len(prompts) != len(assistants):
+                raise ValueError("The number of prompts and assistants must be equal.")
+
+        coros = []
+        for (i, prompt) in enumerate(prompts):
+            assistant = assistants[i] if assistants is not None else None
+            coros.append(self.generate(prompt, assistant))
 
         return await asyncio.gather(*coros)
 
 
 class OpenAIChatService(LLMService):
     """
-    A service for interacting with NeMo LLM models, this class should be used to create a client for a specific model.
-
-    Parameters
-    ----------
-    api_key : str, optional
-        The API key for the LLM service, by default None. If `None` the API key will be read from the `NGC_API_KEY`
-        environment variable. If neither are present an error will be raised.
-
-    org_id : str, optional
-        The organization ID for the LLM service, by default None. If `None` the organization ID will be read from the
-        `NGC_ORG_ID` environment variable. This value is only required if the account associated with the `api_key` is
-        a member of multiple NGC organizations.
+    A service for interacting with OpenAI Chat models, this class should be used to create clients.
     """
 
-    def __init__(self, *, assistant: str = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         _verify_deps()
-        self._assistant = assistant
 
     def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> OpenAIChatClient:
         """
@@ -173,4 +186,4 @@ class OpenAIChatService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return OpenAIChatClient(model_name, assistant=self._assistant, **model_kwargs)
+        return OpenAIChatClient(model_name, **model_kwargs)
