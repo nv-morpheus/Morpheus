@@ -23,13 +23,13 @@ from langchain.llms.openai import OpenAIChat
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
-from morpheus.llm.llm_engine_stage import LLMEngineStage
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
+from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
@@ -96,6 +96,6 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_name)
 
     pipe.run()
 
-    logger.info("Pipeline complete.")
+    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
 
     return start_time
