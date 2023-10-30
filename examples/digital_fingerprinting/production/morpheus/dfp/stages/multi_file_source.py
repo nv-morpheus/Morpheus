@@ -84,12 +84,12 @@ class MultiFileSource(SingleOutputSource):
                 continue
 
             # Check if the file or directory actually exists
-            fs = fsspec.filesystem(protocol='file')
-            if not fs.exists(file_name):
+            fs_spec = fsspec.filesystem(protocol='file')
+            if not fs_spec.exists(file_name):
                 updated_list.append(file_name)
                 continue
 
-            if fs.isdir(file_name):
+            if fs_spec.isdir(file_name):
                 updated_list.append(f"{file_name}/*")
             else:
                 updated_list.append(file_name)

@@ -143,8 +143,8 @@ def _file_type_name_to_enum(file_type: str) -> FileTypes:
               default="JSON",
               help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
               callback=lambda _,
-                              __,
-                              value: None if value is None else _file_type_name_to_enum(value))
+              __,
+              value: None if value is None else _file_type_name_to_enum(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
