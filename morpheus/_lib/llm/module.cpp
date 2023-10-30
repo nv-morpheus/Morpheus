@@ -298,10 +298,36 @@ PYBIND11_MODULE(llm, _module)
 
     options.enable_function_signatures();
 
-    py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(_module, "LLMTaskHandler")
+    py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(
+        _module, "LLMTaskHandler", "Acts as a sink for an `LLMEngine`, emitting results as a `ControlMessage`")
         .def(py::init<>())
-        .def("get_input_names", &LLMTaskHandler::get_input_names)
-        .def("try_handle", &LLMTaskHandler::try_handle, py::arg("context"));
+        .def("get_input_names",
+             &LLMTaskHandler::get_input_names,
+             R"pbdoc(
+                Get the input names for the task handler. 
+                
+                Returns
+                -------
+                list[str]
+                    The input names for the task handler.
+
+             )pbdoc")
+        .def("try_handle",
+             &LLMTaskHandler::try_handle,
+             py::arg("context"),
+             R"pbdoc(
+                Convert the given `context` into a list of `ControlMessage` instances.
+
+                Parameters
+                ----------
+                context : `morpheus._lib.llm.LLMContext`
+                    Context instance to use for the execution
+
+                Returns
+                -------
+                Task[Optional[list[ControlMessage]]]
+
+              )pbdoc");
 
     py::class_<LLMEngine, LLMNode, PyLLMEngine, std::shared_ptr<LLMEngine>>(_module, "LLMEngine")
         .def(py::init_alias<>())
