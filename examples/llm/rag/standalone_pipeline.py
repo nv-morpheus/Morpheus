@@ -29,12 +29,12 @@ from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
+from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +181,8 @@ def standalone(
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+    pipe.add_stage(
+        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 

@@ -21,7 +21,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.rss_source_stage import RSSSourceStage
-from morpheus.stages.output.write_to_vector_db import WriteToVectorDBStage
+from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
@@ -32,14 +32,21 @@ from .common import build_rss_urls
 logger = logging.getLogger(__name__)
 
 
-def pipeline(num_threads,
-             pipeline_batch_size,
-             model_max_batch_size,
-             model_fea_length,
-             embedding_size,
-             model_name,
-             isolate_embeddings,
-             stop_after: int):
+def pipeline(num_threads: int,
+             pipeline_batch_size: int,
+             model_max_batch_size: int,
+             model_fea_length: int,
+             embedding_size: int,
+             model_name: str,
+             isolate_embeddings: bool,
+             stop_after: int,
+             enable_cache: bool,
+             interval_secs: int,
+             run_indefinitely: bool,
+             vector_db_uri: str,
+             vector_db_service: str,
+             vector_db_resource_name: str,
+             triton_server_url: str):
 
     config = Config()
     config.mode = PipelineModes.NLP
@@ -56,13 +63,15 @@ def pipeline(num_threads,
 
     pipe = LinearPipeline(config)
 
-    # add doca source stage
+    # add rss source stage
     pipe.set_source(
         RSSSourceStage(config,
                        feed_input=build_rss_urls(),
                        batch_size=128,
                        stop_after=stop_after,
-                       run_indefinitely=False))
+                       run_indefinitely=run_indefinitely,
+                       enable_cache=enable_cache,
+                       interval_secs=interval_secs))
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='pages'))
 
@@ -90,18 +99,18 @@ def pipeline(num_threads,
     pipe.add_stage(
         TritonInferenceStage(config,
                              model_name=model_name,
-                             server_url="localhost:8001",
+                             server_url=triton_server_url,
                              force_convert_inputs=True,
                              use_shared_memory=True))
     pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
-                             resource_name="RSS",
+                             resource_name=vector_db_resource_name,
                              resource_kwargs=build_milvus_config(embedding_size=embedding_size),
                              recreate=True,
-                             service="milvus",
-                             uri="http://localhost:19530"))
+                             service=vector_db_service,
+                             uri=vector_db_uri))
 
     pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 

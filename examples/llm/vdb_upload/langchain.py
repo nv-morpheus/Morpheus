@@ -14,12 +14,12 @@
 import logging
 import pickle
 
-from examples.llm.vdb_upload.common import build_rss_urls
 from langchain.document_loaders.rss import RSSFeedLoader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.milvus import Milvus
 
+from llm.vdb_upload.common import build_rss_urls
 from morpheus.utils.logging_timer import log_time
 
 logger = logging.getLogger(__name__)

@@ -37,8 +37,10 @@ class LangChainAgentNode(LLMNodeBase):
 
     async def _run_single(self, **kwargs):
 
+        all_lists = all(isinstance(v, list) for v in kwargs.values())
+
         # Check if all values are a list
-        if (all([isinstance(v, list) for v in kwargs.values()])):
+        if all_lists:
 
             # Transform from dict[str, list[Any]] to list[dict[str, Any]]
             input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
