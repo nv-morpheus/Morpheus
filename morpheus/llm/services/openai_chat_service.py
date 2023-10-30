@@ -69,7 +69,7 @@ class OpenAIChatClient(LLMClient):
         # Preserve original configuration.
         model_kwargs = copy.deepcopy(model_kwargs)
         model_kwargs['temperature'] = model_kwargs.get('temperature', 0)
-        model_kwargs['cache'] = model_kwargs.get('cache', True)
+        model_kwargs['cache'] = model_kwargs.get('cache', False)
 
         self._model = OpenAIChat(model_name=model_name, **model_kwargs)
 
