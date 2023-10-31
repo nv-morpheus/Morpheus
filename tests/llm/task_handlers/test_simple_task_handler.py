@@ -17,7 +17,7 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_task_handler
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp
+from morpheus._lib.messages import MessageMeta as MessageMetaCpp  # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.llm import LLMTaskHandler
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
