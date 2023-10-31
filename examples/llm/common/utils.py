@@ -17,8 +17,8 @@ import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
-from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+from morpheus.service.vdb.utils import VectorDBServiceFactory
 
 logger = logging.getLogger(__name__)
 

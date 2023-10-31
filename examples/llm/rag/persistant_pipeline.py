@@ -30,10 +30,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
-from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
-from morpheus.service.vector_db_service import VectorDBResourceService
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage

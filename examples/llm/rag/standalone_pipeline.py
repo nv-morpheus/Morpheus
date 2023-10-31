@@ -24,8 +24,6 @@ from morpheus.llm.nodes.rag_node import RAGNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
-from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
