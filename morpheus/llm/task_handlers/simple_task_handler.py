@@ -28,7 +28,7 @@ class SimpleTaskHandler(LLMTaskHandler):
     Parameters
     ----------
     output_columns : list[str], optional
-        The list of columns to copy from the `LLMContext` instance to the DataFrame. If `None`, defaults to 
+        The list of columns to copy from the `LLMContext` instance to the DataFrame. If `None`, defaults to
         `["response"]`.
     """
 

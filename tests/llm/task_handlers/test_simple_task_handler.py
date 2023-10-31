@@ -15,8 +15,6 @@
 
 import pytest
 
-import cudf
-
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_task_handler
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
