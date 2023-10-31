@@ -62,6 +62,8 @@ class LLMContext():
     @typing.overload
     def __init__(self, prent: LLMContext, name: str, inputs: typing.List[InputMap]) -> None: ...
     @typing.overload
+    def __init__(self, task: LLMTask, message: morpheus._lib.messages.ControlMessage) -> None: ...
+    @typing.overload
     def get_input(self) -> object: ...
     @typing.overload
     def get_input(self, node_name: str) -> object: ...
@@ -182,8 +184,31 @@ class LLMTask():
         """
     pass
 class LLMTaskHandler():
+    """
+    Acts as a sink for an `LLMEngine`, emitting results as a `ControlMessage`
+    """
     def __init__(self) -> None: ...
-    def get_input_names(self) -> typing.List[str]: ...
-    def try_handle(self, context: LLMContext) -> typing.Awaitable[typing.Optional[typing.List[morpheus._lib.messages.ControlMessage]]]: ...
+    def get_input_names(self) -> typing.List[str]: 
+        """
+        Get the input names for the task handler. 
+
+        Returns
+        -------
+        list[str]
+            The input names for the task handler.
+        """
+    def try_handle(self, context: LLMContext) -> typing.Awaitable[typing.Optional[typing.List[morpheus._lib.messages.ControlMessage]]]: 
+        """
+        Convert the given `context` into a list of `ControlMessage` instances.
+
+        Parameters
+        ----------
+        context : `morpheus._lib.llm.LLMContext`
+            Context instance to use for the execution
+
+        Returns
+        -------
+        Task[Optional[list[ControlMessage]]]
+        """
     pass
 __version__ = '23.11.0'
