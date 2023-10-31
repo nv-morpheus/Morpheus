@@ -39,7 +39,7 @@ def test_get_input_names(output_columns: list[str] | None, expected_input_names:
 
 def test_try_handle(dataset_cudf: DatasetManager):
     reptiles = ['lizards', 'snakes', 'turtles', 'frogs', 'toads']
-    df = dataset_cudf["filter_probs.csv"][0:5]
+    df = dataset_cudf["filter_probs.csv"][0:5]  # Take the first 5 rows since there are only have 5 reptiles
     expected_df = df.copy(deep=True)
     expected_df['reptiles'] = reptiles.copy()
 
