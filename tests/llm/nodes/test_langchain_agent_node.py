@@ -22,15 +22,6 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 
 
-@pytest.fixture(name="mock_agent_executor")
-def mock_agent_executor_fixture():
-    mock_agent_ex = mock.MagicMock()
-    mock_agent_ex.return_value = mock_agent_ex
-    mock_agent_ex.input_keys = ["prompt"]
-    mock_agent_ex.arun = mock.AsyncMock()
-    return mock_agent_ex
-
-
 def test_constructor(mock_agent_executor: mock.MagicMock):
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
     assert isinstance(node, LLMNodeBase)
