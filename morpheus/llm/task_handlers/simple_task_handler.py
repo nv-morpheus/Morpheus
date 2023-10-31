@@ -37,6 +37,8 @@ class SimpleTaskHandler(LLMTaskHandler):
 
         if (output_columns is None):
             self._output_columns = ["response"]
+        else:
+            self._output_columns = output_columns
 
     def get_input_names(self) -> list[str]:
         return self._output_columns
