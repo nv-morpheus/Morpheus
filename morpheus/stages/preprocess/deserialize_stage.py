@@ -29,6 +29,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,9 @@ class DeserializeStage(MultiMessageStage):
     def supports_cpp_node(self):
         # Enable support by default
         return True
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._message_type)
 
     @staticmethod
     def check_slicable_index(x: MessageMeta, ensure_sliceable_index: bool = True):
