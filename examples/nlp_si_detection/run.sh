@@ -13,4 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-morpheus --log_level=DEBUG run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 pipeline-nlp --model_seq_length=256 from-file --filename=/workspace/examples/data/pcap_dump.jsonlines deserialize preprocess --vocab_hash_file=/workspace/models/training-tuning-scripts/sid-models/resources/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True monitor --description "Inference Rate" --smoothing=0.001 --unit inf add-class serialize --exclude '^_ts_' to-file --filename=detections.jsonlines --overwrite
+SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"}
+
+# The root to the Morpheus repo
+export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
+
+morpheus --log_level=DEBUG \
+    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+    pipeline-nlp --model_seq_length=256 \
+    from-file --filename=${MORPHEUS_ROOT}/examples/data/pcap_dump.jsonlines \
+    deserialize \
+    preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
+    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
+    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
+    add-class \
+    filter --filter_source=TENSOR \
+    serialize --exclude '^_ts_' \
+    to-file --filename=detections.jsonlines --overwrite

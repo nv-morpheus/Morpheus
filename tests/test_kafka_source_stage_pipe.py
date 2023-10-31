@@ -22,6 +22,7 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils import assert_results
+from _utils.kafka import KafkaTopics
 from _utils.kafka import seek_to_beginning
 from _utils.kafka import write_data_to_kafka
 from _utils.kafka import write_file_to_kafka
@@ -39,7 +40,7 @@ if (typing.TYPE_CHECKING):
 
 
 @pytest.mark.kafka
-def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_topics: typing.Tuple[str, str]) -> None:
+def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, kafka_topics: KafkaTopics) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
 
     # Fill our topic with the input data
@@ -63,7 +64,7 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
 
 
 @pytest.mark.kafka
-def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str) -> None:
+def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
 
     topic_1 = "morpheus_input_topic_1"
@@ -101,7 +102,7 @@ def test_kafka_source_commit(num_records: int,
                              async_commits: bool,
                              config: Config,
                              kafka_bootstrap_servers: str,
-                             kafka_topics: typing.Tuple[str, str],
+                             kafka_topics: KafkaTopics,
                              kafka_consumer: "KafkaConsumer") -> None:
     group_id = 'morpheus'
 
@@ -129,7 +130,6 @@ def test_kafka_source_commit(num_records: int,
                          stop_after=num_records,
                          async_commits=async_commits))
     pipe.add_stage(TriggerStage(config))
-
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(
@@ -152,9 +152,9 @@ def test_kafka_source_commit(num_records: int,
 
 @pytest.mark.kafka
 @pytest.mark.parametrize('num_records', [1000])
-def test_kafka_source_batch_pipe(config,
+def test_kafka_source_batch_pipe(config: Config,
                                  kafka_bootstrap_servers: str,
-                                 kafka_topics: typing.Tuple[str, str],
+                                 kafka_topics: KafkaTopics,
                                  num_records: int) -> None:
     data = [{'v': i} for i in range(num_records)]
     num_written = write_data_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, data)

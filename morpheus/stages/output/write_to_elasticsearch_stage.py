@@ -26,14 +26,14 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.controllers.elasticsearch_controller import ElasticsearchController
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("to-elasticsearch", ignore_args=["connection_kwargs_update_func"])
-class WriteToElasticsearchStage(SinglePortStage):
+class WriteToElasticsearchStage(PassThruTypeMixin, SinglePortStage):
     """
 
     This class writes the messages as documents to Elasticsearch.
@@ -103,9 +103,7 @@ class WriteToElasticsearchStage(SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def on_data(meta: MessageMeta) -> MessageMeta:
 
@@ -124,8 +122,6 @@ class WriteToElasticsearchStage(SinglePortStage):
                                              ops.map(on_data),
                                              ops.on_completed(self._controller.close_client))
 
-        builder.make_edge(stream, to_elasticsearch)
-        stream = to_elasticsearch
+        builder.make_edge(input_node, to_elasticsearch)
 
-        # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return to_elasticsearch

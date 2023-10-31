@@ -20,7 +20,6 @@ import mrc
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,10 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
         super().__init__(c)
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
+    def compute_schema(self, schema: _pipeline.StageSchema):
+        schema.output_schema.set_type(MultiMessage)
+
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Check if we are debug and should log timestamps. Disable for C++ nodes
         if (self._config.debug and self._should_log_timestamps and not self._build_cpp_node()):
@@ -66,9 +68,7 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
             # Only have one port
             post_ts = builder.make_node(self.unique_name + "-ts", post_timestamps)
-            builder.make_edge(out_pair[0], post_ts)
+            builder.make_edge(out_node, post_ts)
+            out_node = post_ts
 
-            # Keep the type unchanged
-            out_pair = (post_ts, out_pair[1])
-
-        return super()._post_build_single(builder, out_pair)
+        return super()._post_build_single(builder, out_node)

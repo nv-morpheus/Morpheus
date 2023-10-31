@@ -24,7 +24,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from .graph_sage_stage import GraphSAGEMultiMessage
 
@@ -56,6 +56,9 @@ class ClassificationStage(SinglePortStage):
     def accepted_types(self) -> (GraphSAGEMultiMessage, ):
         return (GraphSAGEMultiMessage, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiMessage)
+
     def supports_cpp_node(self) -> bool:
         return False
 
@@ -72,7 +75,7 @@ class ClassificationStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._process_message))
-        builder.make_edge(input_stream[0], node)
-        return node, MultiMessage
+        builder.make_edge(input_node, node)
+        return node

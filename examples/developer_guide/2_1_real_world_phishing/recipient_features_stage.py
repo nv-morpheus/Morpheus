@@ -23,12 +23,12 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 
@@ -87,8 +87,8 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

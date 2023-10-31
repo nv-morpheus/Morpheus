@@ -36,6 +36,7 @@ dependencies:
     - cuda-nvml-dev=11.8
     - cuda-python>=11.8,<11.8.3 # workaround for https://github.com/nv-morpheus/Morpheus/issues/1317
     - cuda-toolkit=11.8
+    - cuda-python=11.8.2 # 11.8.3 breaks cuda helpers, pin to 11.8.2 for now.
     - cudf=23.06
     - cupy>=12.0.0
     - cxx-compiler
