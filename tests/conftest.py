@@ -952,9 +952,9 @@ def filter_probs_df(dataset, use_cpp: bool):
 
 def _get_random_port():
     import socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        return s.getsockname()[1]
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sckt:
+        sckt.bind(('', 0))
+        return sckt.getsockname()[1]
 
 
 @pytest.fixture(scope="session")
@@ -993,7 +993,7 @@ def milvus_server_uri(tmp_path_factory):
 
 @pytest.fixture(scope="session", name="milvus_data")
 def milvus_data_fixture():
-    inital_data = [{"id": i, "embedding": [i / 10.0] * 10, "age": 25 + i} for i in range(10)]
+    inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
     yield inital_data
 
 

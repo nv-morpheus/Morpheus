@@ -20,7 +20,7 @@ from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
 from morpheus.llm.nodes.retriever_node import RetrieverNode
 from morpheus.llm.services.llm_service import LLMClient
-from morpheus.service.vector_db_service import VectorDBResourceService
+from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 
 logger = logging.getLogger(__name__)
 

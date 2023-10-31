@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -204,7 +204,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
 2. **Run the Pipeline Call with the Chosen Model**:
     - Execute the following command with the model name you've identified:
       ```bash
-      python examples/llm/main.py vdb_upload export-triton-model  --model_name 
+      python examples/llm/main.py vdb_upload export-triton-model  --model_name \
        sentence-transformers/paraphrase-multilingual-mpnet-base-v2 --triton_repo ./models/triton-model-repo
       ```
 
@@ -222,16 +222,16 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
       the correct format, ready for deployment.
     ```bash
     $ ls ${MORPHEUS_ROOT}/models/triton-model-repo | grep paraphrase-multilingual-mpnet-base-v2
-    
-    sentence-transformers/paraphrase-multilingual-mpnet-base-v2 
+
+    sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
 5. **Deploy the Model**:
     - Reload the docker container, specifying that we also need to load paraphrase-multilingual-mpnet-base-v2
     ```bash
-    docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 
-     -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver 
-     --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model 
+    docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+     -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver \
+     --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit  --load-model \
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
@@ -261,7 +261,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
 6. **Update the Pipeline Call**:
     - Now that the model has been exported and deployed, we can update the pipeline call to use the new model:
     ```bash
-    python examples/llm/main.py vdb_upload pipeline --model_name 
+    python examples/llm/main.py vdb_upload pipeline --model_name \
      sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 

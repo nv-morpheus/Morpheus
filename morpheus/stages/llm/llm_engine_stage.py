@@ -28,6 +28,16 @@ logger = logging.getLogger(__name__)
 
 
 class LLMEngineStage(SinglePortStage):
+    """
+    Stage for executing an LLM engine within a Morpheus pipeline.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    engine : `morpheus.llm.LLMEngine`
+        LLM engine instance to execute.
+   """
 
     def __init__(self, c: Config, *, engine: LLMEngine):
         super().__init__(c)

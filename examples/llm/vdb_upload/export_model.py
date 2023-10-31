@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import functools
 import inspect
 import logging
@@ -39,12 +40,11 @@ logger = logging.getLogger(__name__)
 
 
 class CustomTokenizer(torch.nn.Module):
-
+    # pylint: disable=abstract-method
     def __init__(self, model_name: str):
         super().__init__()
 
         self.inner_model = AutoModel.from_pretrained(model_name)
-        # self.inner_model = SentenceTransformer(model_name)
 
         if (isinstance(self.inner_model, SentenceTransformer)):
             self._output_dim = self.inner_model.get_sentence_embedding_dimension()
@@ -199,6 +199,7 @@ def build_triton_model(model_name, model_seq_length, max_batch_size, triton_repo
     config.platform = "onnxruntime_onnx"
     config.max_batch_size = max_batch_size
 
+    # pylint: disable=no-member
     for input_name, input_data in sample_input.data.items():
 
         config.input.append(
