@@ -187,6 +187,7 @@ PYBIND11_MODULE(llm, _module)
              py::arg("prent"),
              py::arg("name"),
              py::arg("inputs"))
+        .def(py::init<LLMTask, std::shared_ptr<ControlMessage>>(), py::arg("task"), py::arg("message"))
         .def_property_readonly("name", &LLMContext::name)
         .def_property_readonly("full_name", &LLMContext::full_name)
         .def_property_readonly("view_outputs", &LLMContext::view_outputs)
