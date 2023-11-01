@@ -19,11 +19,13 @@ limitations under the License.
 
 1. [Background Information](#background-information)
     - [Purpose](#purpose)
+        - [LLM Service](#llm-service)
+        - [Downstream Tasks](#downstream-tasks)
     - [Pipeline Implementation](#pipeline-implementation)
 2. [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
         - [Install Dependencies](#install-dependencies)
-        - [NGC API Key Setup](#ngc-api-key-setup)
+        - [Setting up NGC API Key](#setting-up-ngc-api-key)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
 
 ## Background Information
