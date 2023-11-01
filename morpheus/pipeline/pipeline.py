@@ -17,7 +17,6 @@ import logging
 import os
 import signal
 import sys
-import time
 import typing
 from collections import OrderedDict
 from collections import defaultdict
@@ -35,12 +34,12 @@ from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.source_stage import SourceStage
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_wrapper import StreamWrapper
+from morpheus.pipeline.stage_base import StageBase
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
-StageT = typing.TypeVar("StageT", bound=StreamWrapper)
+StageT = typing.TypeVar("StageT", bound=StageBase)
 
 
 class Pipeline():
@@ -72,15 +71,12 @@ class Pipeline():
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
-        # Set the default channel size
-        mrc.Config.default_channel_size = config.edge_buffer_size
-
         self.batch_size = config.pipeline_batch_size
+        self.edge_buffer_size = config.edge_buffer_size
 
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
         self._is_built = False
-        self._is_build_complete = False
         self._is_started = False
 
         self._mrc_executor: mrc.Executor = None
@@ -88,6 +84,9 @@ class Pipeline():
     @property
     def is_built(self) -> bool:
         return self._is_built
+
+    def _assert_not_built(self):
+        assert not self.is_built, "Pipeline has already been built. Cannot modify pipeline."
 
     def _add_id_col(self, x: cudf.DataFrame):
 
@@ -109,7 +108,7 @@ class Pipeline():
         segment_id : str
             ID indicating what segment the stage should be added to.
         """
-
+        self._assert_not_built()
         assert stage._pipeline is None or stage._pipeline is self, "A stage can only be added to one pipeline at a time"
 
         segment_nodes = self._segments[segment_id]["nodes"]
@@ -132,15 +131,16 @@ class Pipeline():
         return stage
 
     def add_edge(self,
-                 start: typing.Union[StreamWrapper, Sender],
+                 start: typing.Union[StageBase, Sender],
                  end: typing.Union[Stage, Receiver],
                  segment_id: str = "main"):
         """
         Create an edge between two stages and add it to a segment in the pipeline.
+        When `start` and `end` are stages, they must have exactly one output and input port respectively.
 
         Parameters
         ----------
-        start : typing.Union[StreamWrapper, Sender]
+        start : typing.Union[StageBase, Sender]
             The start of the edge or parent stage.
 
         end : typing.Union[Stage, Receiver]
@@ -149,14 +149,27 @@ class Pipeline():
         segment_id : str
             ID indicating what segment the edge should be added to.
         """
+        self._assert_not_built()
 
-        if (isinstance(start, StreamWrapper)):
+        if (isinstance(start, StageBase)):
+            assert len(start.output_ports) > 0, \
+                "Cannot call `add_edge` with a stage with no output ports as the `start` parameter"
+            assert len(start.output_ports) == 1, \
+                ("Cannot call `add_edge` with a stage with with multiple output ports as the `start` parameter, "
+                 "instead `add_edge` must be called for each output port individually.")
             start_port = start.output_ports[0]
+
         elif (isinstance(start, Sender)):
             start_port = start
 
         if (isinstance(end, Stage)):
+            assert len(end.input_ports) > 0, \
+                "Cannot call `add_edge` with a stage with no input ports as the `end` parameter"
+            assert len(end.input_ports) == 1, \
+                ("Cannot call `add_edge` with a stage with with multiple input ports as the `end` parameter, "
+                 "instead `add_edge` must be called for each input port individually.")
             end_port = end.input_ports[0]
+
         elif (isinstance(end, Receiver)):
             end_port = end
 
@@ -199,6 +212,7 @@ class Pipeline():
                 * class: type being sent (typically `object`)
                 * bool: If the type is a shared pointer (typically should be `False`)
         """
+        self._assert_not_built()
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
@@ -215,10 +229,56 @@ class Pipeline():
             "output_receiver": ingress_stage.unique_name
         })
 
+    def _pre_build(self):
+        assert len(self._sources) > 0, "Pipeline must have a source stage"
+
+        logger.info("====Pipeline Pre-build====")
+
+        for segment_id in self._segments.keys():
+            logger.info("====Pre-Building Segment: %s====", segment_id)
+            segment_graph = self._segment_graphs[segment_id]
+
+            # Check if preallocated columns are requested, this needs to happen before the source stages are built
+            needed_columns = OrderedDict()
+            preallocator_stages = []
+
+            # This should be a BFS search from each source nodes; but, since we don't have source stage loops
+            # topo_sort provides a reasonable approximation.
+            for stage in networkx.topological_sort(segment_graph):
+                needed_columns.update(stage.get_needed_columns())
+                if (isinstance(stage, PreallocatorMixin)):
+                    preallocator_stages.append(stage)
+
+                if (stage.can_pre_build()):
+                    stage._pre_build()
+
+            if (len(needed_columns) > 0):
+                for stage in preallocator_stages:
+                    stage.set_needed_columns(needed_columns)
+
+            if (not all(x.is_pre_built for x in segment_graph.nodes())):
+                logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
+
+                for stage in segment_graph.nodes():
+                    if (stage.can_pre_build(check_ports=True)):
+                        stage._pre_build()
+                    else:
+                        raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
+
+            # Finally, execute the link phase (only necessary for circular pipelines)
+            # for s in source_and_stages:
+            for stage in segment_graph.nodes():
+                for port in typing.cast(StageBase, stage).input_ports:
+                    port.link_schema()
+
+            logger.info("====Pre-Building Segment Complete!====")
+
+        logger.info("====Pipeline Pre-build Complete!====")
+
     def build(self):
         """
         This function sequentially activates all the Morpheus pipeline stages passed by the users to execute a
-        pipeline. For the `Source` and all added `Stage` objects, `StreamWrapper.build` will be called sequentially to
+        pipeline. For the `Source` and all added `Stage` objects, `StageBase.build` will be called sequentially to
         construct the pipeline.
 
         Once the pipeline has been constructed, this will start the pipeline by calling `Source.start` on the source
@@ -227,7 +287,12 @@ class Pipeline():
         assert not self._is_built, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
+        self._pre_build()
+
         logger.info("====Registering Pipeline====")
+
+        # Set the default channel size
+        mrc.Config.default_channel_size = self.edge_buffer_size
 
         exec_options = mrc.Options()
         exec_options.topology.user_cpuset = f"0-{self._num_threads - 1}"
@@ -241,16 +306,6 @@ class Pipeline():
             logger.info("====Building Segment: %s====", segment_id)
             segment_graph = self._segment_graphs[segment_id]
 
-            # Check if preallocated columns are requested, this needs to happen before the source stages are built
-            needed_columns = OrderedDict()
-            for stage in networkx.topological_sort(segment_graph):
-                needed_columns.update(stage.get_needed_columns())
-
-            if (len(needed_columns) > 0):
-                for stage in segment_graph.nodes():
-                    if (isinstance(stage, PreallocatorMixin)):
-                        stage.set_needed_columns(needed_columns)
-
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.
             for stage in networkx.topological_sort(segment_graph):
@@ -262,16 +317,17 @@ class Pipeline():
 
                 for stage in segment_graph.nodes():
                     if (stage.can_build(check_ports=True)):
-                        stage.build()
+                        stage.build(builder)
 
             if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
-            # for s in source_and_stages:
             for stage in segment_graph.nodes():
-                for port in typing.cast(StreamWrapper, stage).input_ports:
-                    port.link(builder=builder)
+                for port in typing.cast(StageBase, stage).input_ports:
+                    port.link_node(builder=builder)
+
+            asyncio.run(self._async_start(segment_graph.nodes()))
 
             logger.info("====Building Segment Complete!====")
 
@@ -286,10 +342,6 @@ class Pipeline():
                                       segment_inner_build)
 
         logger.info("====Building Pipeline Complete!====")
-        self._is_build_complete = True
-
-        # Finally call _on_start
-        self._on_start()
 
         self._mrc_executor.register_pipeline(mrc_pipeline)
 
@@ -326,6 +378,10 @@ class Pipeline():
         Typically called after `stop`.
         """
         try:
+            # If the pipeline failed any pre-flight checks self._mrc_executor will be None
+            if self._mrc_executor is None:
+                raise RuntimeError("Pipeline failed pre-flight checks.")
+
             await self._mrc_executor.join_async()
         except Exception:
             logger.exception("Exception occurred in pipeline. Rethrowing")
@@ -362,30 +418,15 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        await self._async_start()
-
         self._start()
 
-    async def _async_start(self):
+    async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
+        # This method is called once for each segment in the pipeline executed on this host
+        for stage in stages:
+            if (isinstance(stage, Stage)):
+                await stage.start_async()
 
-        # Loop over all stages and call on_start if it exists
-        for stage in self._stages:
-            await stage.start_async()
-
-    def _on_start(self):
-
-        # Only execute this once
-        if (self._is_started):
-            return
-
-        # Stop from running this twice
         self._is_started = True
-
-        logger.debug("Starting! Time: %s", time.time())
-
-        # Loop over all stages and call on_start if it exists
-        for stage in self._stages:
-            stage.on_start()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
@@ -393,6 +434,11 @@ class Pipeline():
         `filename`. If the directory path leading to `filename` does not exist it will be created, if `filename` already
         exists it will be overwritten.  Requires the graphviz library.
         """
+
+        if not self._is_built:
+            raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
+                               "the visualization. Please call Pipeline.build() or  Pipeline.run() before calling "
+                               "Pipeline.visualize().")
 
         # Mimic the streamz visualization
         # 1. Create graph (already done since we use networkx under the hood)
@@ -421,24 +467,18 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def has_ports(node: StreamWrapper, is_input):
+        def has_ports(node: StageBase, is_input):
             if (is_input):
                 return len(node.input_ports) > 0
 
             return len(node.output_ports) > 0
-
-        if not self._is_build_complete:
-            raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
-                               "the visualization. Please call Pipeline.start(), Pipeline.build_and_start() or "
-                               "Pipeline.run() before calling Pipeline.visualize(). This is a known issue and will "
-                               "be fixed in a future release.")
 
         # Now build up the nodes
         for segment_id in self._segments:
             gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
             gv_subgraph = gv_subgraphs[segment_id]
             gv_subgraph.attr(label=segment_id)
-            for name, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
+            for name, attrs in typing.cast(typing.Mapping[StageBase, dict],
                                            self._segment_graphs[segment_id].nodes).items():
                 node_attrs = attrs.copy()
 
@@ -477,7 +517,7 @@ class Pipeline():
         # Build up edges
         for segment_id in self._segments:
             gv_subgraph = gv_subgraphs[segment_id]
-            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StreamWrapper, StreamWrapper], dict],
+            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StageBase, StageBase], dict],
                                         self._segment_graphs[segment_id].edges()).items():  # noqa: E501
 
                 edge_attrs = {}
@@ -508,19 +548,19 @@ class Pipeline():
 
                 # Check for situation #1
                 if (len(in_port._input_senders) == 1 and len(out_port._output_receivers) == 1
-                        and (in_port.in_type == out_port.out_type)):
+                        and (in_port.input_schema == out_port.output_schema)):
 
-                    edge_attrs["label"] = pretty_print_type_name(in_port.in_type)
+                    edge_attrs["label"] = pretty_print_type_name(in_port.input_type)
                 else:
                     rec_idx = out_port._output_receivers.index(in_port)
                     sen_idx = in_port._input_senders.index(out_port)
 
                     # Add type labels if available
-                    if (rec_idx == 0 and out_port.out_type is not None):
-                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.out_type)
+                    if (rec_idx == 0 and out_port.output_schema is not None):
+                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.output_type)
 
-                    if (sen_idx == 0 and in_port.in_type is not None):
-                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.in_type)
+                    if (sen_idx == 0 and in_port.input_schema is not None):
+                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.input_type)
 
                 gv_subgraph.edge(start_name, end_name, **edge_attrs)
 

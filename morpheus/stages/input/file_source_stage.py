@@ -27,7 +27,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -101,21 +101,22 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            out_stream = _stages.FileSourceStage(builder,
-                                                 self.unique_name,
-                                                 self._filename,
-                                                 self._repeat_count,
-                                                 self._parser_kwargs)
+            node = _stages.FileSourceStage(builder,
+                                           self.unique_name,
+                                           self._filename,
+                                           self._repeat_count,
+                                           self._parser_kwargs)
         else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return node
 
     def _generate_frames(self) -> typing.Iterable[MessageMeta]:
 

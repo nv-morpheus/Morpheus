@@ -13,18 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
-import mrc.core.operators as ops
-import typing_utils
 
 import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import SingleOutputSource
-from morpheus.pipeline import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 class StaticMessageSource(SingleOutputSource):
@@ -46,23 +42,11 @@ class StaticMessageSource(SingleOutputSource):
     def input_count(self) -> int:
         return len(self._df)
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        out_stream = builder.make_source(self.unique_name, self._generate_frames())
-        return out_stream, MessageMeta
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-        out_type = out_pair[1]
-
-        # Convert our list of dataframes into the desired type. Flatten if necessary
-        if (typing_utils.issubtype(out_type, typing.List)):
-            flattened = builder.make_node(self.unique_name + "-post", ops.flatten())
-            builder.make_edge(out_stream, flattened)
-            out_stream = flattened
-            out_type = typing.get_args(out_type)[0]
-
-        return super()._post_build_single(builder, (out_stream, out_type))
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._generate_frames())
 
     def _generate_frames(self):
         yield MessageMeta(self._df)

@@ -28,7 +28,7 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("unittest-conv-msg", ignore_args=["expected_data"])
@@ -69,6 +69,9 @@ class ConvMsg(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiResponseMessage)
+
     def supports_cpp_node(self) -> bool:
         return False
 
@@ -93,8 +96,8 @@ class ConvMsg(SinglePortStage):
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
         return MultiResponseMessage.from_message(message, memory=memory)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self._conv_message))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._conv_message))
+        builder.make_edge(input_node, node)
 
-        return stream, MultiResponseMessage
+        return node

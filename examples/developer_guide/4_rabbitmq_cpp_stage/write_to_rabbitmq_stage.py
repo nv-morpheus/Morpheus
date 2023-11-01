@@ -23,14 +23,14 @@ import pika
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("to-rabbitmq")
-class WriteToRabbitMQStage(SinglePortStage):
+class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -68,10 +68,10 @@ class WriteToRabbitMQStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
-        builder.make_edge(input_stream[0], node)
-        return (node, input_stream[1])
+        builder.make_edge(input_node, node)
+        return node
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         df = message.df
@@ -85,7 +85,7 @@ class WriteToRabbitMQStage(SinglePortStage):
         return message
 
     def on_error(self, ex: Exception):
-        logger.exception("Error occurred : {}".format(ex))
+        logger.exception("Error occurred : %s", ex)
         self._connection.close()
 
     def on_complete(self):

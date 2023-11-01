@@ -22,8 +22,8 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.controllers.mlflow_model_writer_controller import MLFlowModelWriterController
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 # Setup conda environment
 conda_env = {
@@ -36,7 +36,7 @@ conda_env = {
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPMLFlowModelWriterStage(SinglePortStage):
+class DFPMLFlowModelWriterStage(PassThruTypeMixin, SinglePortStage):
     """
     This stage publishes trained models into MLflow.
 
@@ -85,8 +85,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
         """Types accepted by this stage"""
         return (MultiAEMessage, )
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self._controller.on_data))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self._controller.on_data))
+        builder.make_edge(input_node, node)
 
-        return stream, MultiAEMessage
+        return node
