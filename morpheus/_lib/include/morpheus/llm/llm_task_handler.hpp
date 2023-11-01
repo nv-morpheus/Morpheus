@@ -28,6 +28,10 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief Base class for implementing for implementing task handlers used to process
+ * node outputs in LLMEngine.
+ */
 class MORPHEUS_EXPORT LLMTaskHandler
 {
   public:
@@ -35,7 +39,20 @@ class MORPHEUS_EXPORT LLMTaskHandler
 
     virtual ~LLMTaskHandler() = default;
 
-    virtual std::vector<std::string> get_input_names() const               = 0;
+    /**
+     * @brief Virtual method for implementing how task handler gets its input names.
+     *
+     * @return std::vector<std::string>
+     */
+    virtual std::vector<std::string> get_input_names() const = 0;
+
+    /**
+     * @brief Virtual method for implementing execution of task. Called after execution of LLM engine nodes and outputs
+     * saved to given context.
+     *
+     * @param context context holding outputs after execution of engine nodes
+     * @return Task<return_t>
+     */
     virtual Task<return_t> try_handle(std::shared_ptr<LLMContext> context) = 0;
 };
 

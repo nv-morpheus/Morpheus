@@ -27,12 +27,32 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief Base class for LLMNode.
+ *
+ */
 class MORPHEUS_EXPORT LLMNodeBase
 {
   public:
+    /**
+     * @brief Destroy the LLMNodeBase object.
+     *
+     */
     virtual ~LLMNodeBase() = default;
 
-    virtual std::vector<std::string> get_input_names() const                               = 0;
+    /**
+     * @brief Virtual method for implementing how task handler gets its input names.
+     *
+     * @return std::vector<std::string>
+     */
+    virtual std::vector<std::string> get_input_names() const = 0;
+
+    /**
+     * @brief Virtual method for implementing the execution of a node.
+     *
+     * @param context context for node's execution
+     * @return Task<std::shared_ptr<LLMContext>>
+     */
     virtual Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) = 0;
 };
 

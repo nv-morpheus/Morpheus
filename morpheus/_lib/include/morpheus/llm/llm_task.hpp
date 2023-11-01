@@ -26,21 +26,66 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief Holds information about LLM task. Extracted by LLMEngine from input control message
+ * and saved to context for use by task handler(s).
+ *
+ */
 struct MORPHEUS_EXPORT LLMTask
 {
+    /**
+     * @brief Construct a new LLMTask object.
+     *
+     */
     LLMTask();
+
+    /**
+     * @brief Construct a new LLMTask object.
+     *
+     * @param task_type
+     * @param task_dict
+     */
     LLMTask(std::string task_type, nlohmann::json task_dict);
 
+    /**
+     * @brief Destroy the LLMTask object
+     *
+     */
     ~LLMTask();
 
+    /**
+     * @brief task type
+     *
+     */
     std::string task_type;
 
+    /**
+     * @brief Get size of 'task_dict'.
+     *
+     * @return size_t
+     */
     size_t size() const;
 
+    /**
+     * @brief Get value in 'task_dict` corresponding to given key.
+     *
+     * @param key key of value to get from 'task_dict'
+     * @return const nlohmann::json&
+     */
     const nlohmann::json& get(const std::string& key) const;
 
+    /**
+     * @brief Set or update item in 'task_dict'.
+     *
+     * @param key key of value in 'task_dict' to set
+     * @param value new value
+     */
     void set(const std::string& key, nlohmann::json&& value);
 
+    /**
+     * @brief dictionary of task-related items used by task handler(s)
+     *
+     */
     nlohmann::json task_dict;
 };
 

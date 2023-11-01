@@ -27,15 +27,41 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief This class wraps LLMTaskHandler and maintains how its inputs map to node outputs in the LLMEngine.
+ *
+ */
 class MORPHEUS_EXPORT LLMTaskHandlerRunner
 {
   public:
+    /**
+     * @brief Construct a new LLMTaskHandlerRunner object.
+     *
+     * @param inputs input mappings
+     * @param handler task handler object
+     */
     LLMTaskHandlerRunner(input_mappings_t inputs, std::shared_ptr<LLMTaskHandler> handler);
 
+    /**
+     * @brief Destroy the LLMTaskHandlerRunner object.
+     *
+     */
     ~LLMTaskHandlerRunner();
 
+    /**
+     * @brief Virtual method for implementing task. Called after execution of LLM engine nodes and outputs
+     * saved to given context.
+     *
+     * @param context context holding outputs after execution of engine nodes
+     * @return Task<return_t>
+     */
     virtual Task<LLMTaskHandler::return_t> try_handle(std::shared_ptr<LLMContext> context);
 
+    /**
+     * @brief Get input names for task handler.
+     *
+     * @return std::vector<std::string>
+     */
     const input_mappings_t& input_names() const
     {
         return m_inputs;
