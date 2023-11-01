@@ -25,3 +25,12 @@ def mock_llm_client_fixture():
     mock_client.return_value = mock_client
     mock_client.generate_batch_async = mock.AsyncMock()
     return mock_client
+
+
+@pytest.fixture(name="mock_agent_executor")
+def mock_agent_executor_fixture():
+    mock_agent_ex = mock.MagicMock()
+    mock_agent_ex.return_value = mock_agent_ex
+    mock_agent_ex.input_keys = ["prompt"]
+    mock_agent_ex.arun = mock.AsyncMock()
+    return mock_agent_ex

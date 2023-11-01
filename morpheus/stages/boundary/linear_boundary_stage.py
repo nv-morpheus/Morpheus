@@ -19,15 +19,16 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
 
-class LinearBoundaryEgressStage(SinglePortStage):
+class LinearBoundaryEgressStage(PassThruTypeMixin, SinglePortStage):
     """
     The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
     pipeline that we want to connect to another segment, a linear boundary egress stage would be added, in conjunction
@@ -52,7 +53,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         super().__init__(c)
 
         self._port_id = boundary_port_id
-        self.output_type = data_type if data_type else typing.Any
+        self._output_type = data_type if data_type else typing.Any
 
     @property
     def name(self) -> str:
@@ -68,16 +69,16 @@ class LinearBoundaryEgressStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self.output_type, )
+        return (self._output_type, )
 
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         boundary_egress = builder.get_egress(self._port_id)
-        builder.make_edge(input_stream[0], boundary_egress)
+        builder.make_edge(input_node, boundary_egress)
 
-        return input_stream[0], self.output_type
+        return input_node
 
 
 class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
@@ -105,30 +106,21 @@ class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
         super().__init__(c)
 
         self._port_id = boundary_port_id
-        self.output_type = data_type if data_type else typing.Any
+        self._output_type = data_type if data_type else typing.Any
 
     @property
     def name(self) -> str:
         return "segment_boundary_ingress"
 
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
-
-        Returns
-        -------
-        typing.Tuple
-            Accepted input types.
-
-        """
-        return (self.output_type, )
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._output_type)
 
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         boundary_ingress = builder.get_ingress(self._port_id)
         source = builder.make_node(self.unique_name, ops.map(lambda data: data))
         builder.make_edge(boundary_ingress, source)
 
-        return source, self.output_type
+        return source

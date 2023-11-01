@@ -24,7 +24,6 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 logger = logging.getLogger(__name__)
@@ -123,8 +122,8 @@ class ValidationStage(CompareDataFrameStage):
             with open(self._results_file_name, "w", encoding='UTF-8') as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._append_message), ops.on_completed(self._do_comparison))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

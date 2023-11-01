@@ -91,12 +91,6 @@ def simple(**kwargs):
     default='gpt-3.5-turbo-instruct',
     help="The name of the model to use in OpenAI",
 )
-@click.option(
-    "--repeat_count",
-    default=1,
-    type=click.IntRange(min=1),
-    help="Number of times to repeat the input query. Useful for testing performance.",
-)
 def kafka(**kwargs):
 
     from .kafka_pipeline import pipeline as _pipeline

@@ -14,12 +14,12 @@
 
 import logging
 import typing
+from abc import abstractmethod
 
 import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
@@ -40,14 +40,37 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         self._create_ports(0, 1)
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-        return out_pair
+    # pylint: disable=unused-argument
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        return out_node
+
+    # pylint: enable=unused-argument
+
+    @abstractmethod
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        """
+        Abstract method all derived Source classes should implement. Returns the same value as `build`.
+
+        :meta public:
+
+        Returns
+        -------
+
+        `mrc.SegmentObject`:
+            The MRC node for this stage.
+        """
+        pass
+
+    def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
+        assert len(self.output_ports) == 1, \
+            f"SingleOutputSource should have only one output port, {self} has {len(self.output_ports)}"
+
+        return [self._build_source(builder)]
 
     @typing.final
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
+        ret_val = self._post_build_single(builder, out_ports_nodes[0])
 
-        ret_val = self._post_build_single(builder, out_ports_pair[0])
-
-        logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_print_type_name(ret_val[1])))
+        logger.info("Added source: %s\n  └─> %s", self, pretty_print_type_name(self.output_ports[0].output_type))
 
         return [ret_val]

@@ -18,6 +18,9 @@ import typing
 from morpheus.llm import InputMap
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
+from morpheus.llm import LLMTask
+from morpheus.llm import LLMTaskHandler
+from morpheus.messages import ControlMessage
 
 
 def execute_node(node: LLMNodeBase, **input_values: dict) -> typing.Any:
@@ -33,6 +36,33 @@ def execute_node(node: LLMNodeBase, **input_values: dict) -> typing.Any:
 
     context = parent_context.push("test", inputs)
 
-    context = asyncio.run(node.execute(context))
+    async def execute():
+        # `asyncio.run(obj)`` will raise a `ValueError`` if `asyncio.iscoutine(obj)` is `False` for composite nodes
+        # that don't directly implement `execute()` this causes a failure because while
+        # `mrc.core.coro.CppToPyAwaitable` is awaitable it is not a coroutine.
+
+        return await node.execute(context)
+
+    context = asyncio.run(execute())
 
     return context.view_outputs
+
+
+def execute_task_handler(task_handler: LLMTaskHandler, task_dict: dict, input_message,
+                         **input_values: dict) -> ControlMessage:
+    """
+    Executes an LLM task handler with the necessary LLM context.
+    """
+    task = LLMTask("unittests", task_dict)
+    inputs: list[InputMap] = []
+    parent_context = LLMContext(task, input_message)
+
+    for input_name, input_value in input_values.items():
+        inputs.append(InputMap(f"/{input_name}", input_name))
+        parent_context.set_output(input_name, input_value)
+
+    context = parent_context.push("test", inputs)
+
+    message = asyncio.run(task_handler.try_handle(context))
+
+    return message

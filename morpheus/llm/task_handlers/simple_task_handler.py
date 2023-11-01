@@ -16,22 +16,34 @@ import logging
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMTaskHandler
+from morpheus.messages import ControlMessage
 
 logger = logging.getLogger(__name__)
 
 
 class SimpleTaskHandler(LLMTaskHandler):
+    """
+    Copies fields from an `LLMContext` to columns in the DataFrame contained in the `ControlMessage` payload.
+
+    Parameters
+    ----------
+    output_columns : list[str], optional
+        The list of columns to copy from the `LLMContext` instance to the DataFrame. If `None`, defaults to
+        `["response"]`.
+    """
 
     def __init__(self, output_columns: list[str] = None) -> None:
         super().__init__()
 
         if (output_columns is None):
             self._output_columns = ["response"]
+        else:
+            self._output_columns = output_columns
 
-    def get_input_names(self):
+    def get_input_names(self) -> list[str]:
         return self._output_columns
 
-    async def try_handle(self, context: LLMContext):
+    async def try_handle(self, context: LLMContext) -> list[ControlMessage]:
 
         input_dict = context.get_inputs()
 

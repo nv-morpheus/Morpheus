@@ -24,14 +24,14 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("to-kafka")
-class WriteToKafkaStage(SinglePortStage):
+class WriteToKafkaStage(PassThruTypeMixin, SinglePortStage):
     """
     Write all messages to a Kafka cluster.
 
@@ -76,11 +76,9 @@ class WriteToKafkaStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
-        stream = input_stream[0]
-
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             producer = ck.Producer(self._kafka_conf)
@@ -138,8 +136,7 @@ class WriteToKafkaStage(SinglePortStage):
 
         # Write to kafka
         node = builder.make_node(self.unique_name, ops.build(node_fn))
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
         # node.launch_options.pe_count = self._max_concurrent
 
-        # Return input unchanged
-        return node, input_stream[1]
+        return node

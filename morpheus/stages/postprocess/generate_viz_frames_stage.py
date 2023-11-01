@@ -33,8 +33,8 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
-class GenerateVizFramesStage(SinglePortStage):
+class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
     """
     Write out visualization DataFrames.
 
@@ -57,11 +57,18 @@ class GenerateVizFramesStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, server_url: str = "0.0.0.0", server_port: int = 8765):
+    def __init__(self,
+                 c: Config,
+                 server_url: str = "0.0.0.0",
+                 server_port: int = 8765,
+                 out_dir: str = None,
+                 overwrite: bool = False):
         super().__init__(c)
 
         self._server_url = server_url
         self._server_port = server_port
+        self._out_dir = out_dir
+        self._overwrite = overwrite
 
         self._first_timestamp = -1
         self._buffers = []
@@ -166,7 +173,7 @@ class GenerateVizFramesStage(SinglePortStage):
 
         out_file = os.path.join(self._out_dir, f"{offset}.csv")
 
-        assert not os.path.exists(out_file)
+        assert self._overwrite or not os.path.exists(out_file)
 
         in_df.to_csv(out_file, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
@@ -239,9 +246,7 @@ class GenerateVizFramesStage(SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def node_fn(input_obs, output_obs):
 
@@ -284,9 +289,7 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = builder.make_node(self.unique_name, ops.build(node_fn))
-        builder.make_edge(stream, to_file)
-        stream = to_file
+        to_filenode = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(input_node, to_filenode)
 
-        # Return input unchanged to allow passthrough
-        return input_stream
+        return to_filenode

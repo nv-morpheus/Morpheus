@@ -47,3 +47,14 @@ def test_multi_segment_bad_data_type(config, filter_probs_df):
         pipe.run()
 
     assert len(mem_sink.get_messages()) == 0
+
+
+def test_add_segment_boundary_as_shared_pointer_error(config, filter_probs_df):
+    """
+    Test for the assertion error raised when `as_shared_pointer=True` is passed to `add_segment_boundary`.
+    Remove this test when the `as_shared_pointer` functionality is implemented.
+    """
+    with pytest.raises(AssertionError):
+        pipe = LinearPipeline(config)
+        pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+        pipe.add_segment_boundary(MessageMeta, as_shared_pointer=True)

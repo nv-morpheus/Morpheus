@@ -21,30 +21,35 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages.multi_message import MultiMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.service.vector_db_service import VectorDBService
-from morpheus.utils.vector_db_service_utils import VectorDBServiceFactory
+from morpheus.service.vdb.utils import VectorDBServiceFactory
+from morpheus.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
 
-class WriteToVectorDBStage(SinglePortStage):
+class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     """
     Writes messages to a Vector Database.
 
     Parameters
     ----------
-    config : `morpheus.config.Config`
+    config : Config
         Pipeline configuration instance.
-    resource_name : str
-        The name of the resource managed by this instance.
-    resource_conf : dict
-        Additional resource configuration when performing vector database writes.
     service : typing.Union[str, VectorDBService]
         Either the name of the vector database service to use or an instance of VectorDBService
         for managing the resource.
-    **service_kwargs : dict[str, typing.Any]
+    resource_name : str
+        The identifier of the resource on which operations are to be performed in the vector database.
+    embedding_column_name : str, optional
+        Name of the embedding column, by default "embedding".
+    recreate : bool, optional
+        Specifies whether to recreate the resource if it already exists, by default False.
+    resource_kwargs : dict, optional
+        Additional keyword arguments to pass when performing vector database writes on a given resource.
+    **service_kwargs : dict
         Additional keyword arguments to pass when creating a VectorDBService instance.
 
     Raises
@@ -55,12 +60,11 @@ class WriteToVectorDBStage(SinglePortStage):
 
     def __init__(self,
                  config: Config,
-                 *,
+                 service: typing.Union[str, VectorDBService],
                  resource_name: str,
                  embedding_column_name: str = "embedding",
                  recreate: bool = False,
                  resource_kwargs: dict = None,
-                 service: typing.Union[str, VectorDBService],
                  **service_kwargs):
 
         super().__init__(config)
@@ -89,7 +93,7 @@ class WriteToVectorDBStage(SinglePortStage):
 
         # Ensure that the resource exists
         if (not has_object):
-            self._service.create(name=self._resource_name, collection_conf=self._resource_kwargs)
+            self._service.create(name=self._resource_name, **self._resource_kwargs)
 
         # Get the service for just the resource we are interested in
         self._resource_service = self._service.load_resource(name=self._resource_name)
@@ -104,11 +108,11 @@ class WriteToVectorDBStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
+        typing.Tuple(ControlMessage, MultiResponseMessage, MultiMessage)
             Accepted input types.
 
         """
-        return (ControlMessage, MultiResponseMessage)
+        return (ControlMessage, MultiResponseMessage, MultiMessage)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
@@ -118,59 +122,48 @@ class WriteToVectorDBStage(SinglePortStage):
         # Close vector database service connection
         self._service.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        stream = input_stream[0]
+        def extract_df(msg):
+            df = None
 
-        def on_data_control_message(ctrl_msg: ControlMessage) -> ControlMessage:
-            # Insert entries in the dataframe to vector database.
-            result = self._service.insert_dataframe(name=self._resource_name,
-                                                    df=ctrl_msg.payload().df,
-                                                    **self._resource_kwargs)
+            if isinstance(msg, ControlMessage):
+                df = msg.payload().df
+            elif isinstance(msg, MultiResponseMessage):
+                df = msg.get_meta()
+                if df is not None and not df.empty:
+                    embeddings = msg.get_probs_tensor()
+                    df[self._embedding_column_name] = embeddings.tolist()
+            elif isinstance(msg, MultiMessage):
+                df = msg.get_meta()
+            else:
+                raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
 
-            ctrl_msg.set_metadata("insert_response", result)
+            return df
 
-            return ctrl_msg
+        def on_data(msg):
+            try:
+                df = extract_df(msg)
 
-        def on_data_multi_message(msg: MultiResponseMessage) -> MultiResponseMessage:
-            # Probs tensor contains all of the embeddings
-            embeddings = msg.get_probs_tensor()
-            embeddings_list = embeddings.tolist()
+                if df is not None and not df.empty:
+                    result = self._service.insert_dataframe(name=self._resource_name, df=df, **self._resource_kwargs)
 
-            # # Figure out which columns we need
-            # available_columns = set(msg.get_meta_column_names())
+                    if isinstance(msg, ControlMessage):
+                        msg.set_metadata("insert_response", result)
 
-            # if (self._include_columns is not None):
-            #     available_columns = available_columns.intersection(self._include_columns)
-            # if (self._exclude_columns is not None):
-            #     available_columns = available_columns.difference(self._exclude_columns)
+                    return msg
 
-            # Build up the metadata from the message
-            metadata = msg.get_meta().to_pandas()
+            except Exception as exc:
+                logger.error("Unable to insert into collection: %s due to %s", self._resource_name, exc)
 
-            # Add in the embedding results to the dataframe
-            metadata[self._embedding_column_name] = embeddings_list
+            return None
 
-            # if (not self._service.has_store_object(name=self._resource_name)):
-            #     # Create the vector database resource
-            #     self._service.create_from_dataframe(name=self._resource_name, df=metadata, index_field="embedding")
+        to_vector_db = builder.make_node(self.unique_name,
+                                         ops.map(on_data),
+                                         ops.filter(lambda x: x is not None),
+                                         ops.on_completed(self.on_completed))
 
-            # Insert entries in the dataframe to vector database.
-            result = self._resource_service.insert_dataframe(df=metadata, **self._resource_kwargs)
-
-            return msg
-
-        if (issubclass(input_stream[1], ControlMessage)):
-            on_data = ops.map(on_data_control_message)
-        elif (issubclass(input_stream[1], MultiResponseMessage)):
-            on_data = ops.map(on_data_multi_message)
-        else:
-            raise RuntimeError(f"Unexpected input type {input_stream[1]}")
-
-        to_vector_db = builder.make_node(self.unique_name, on_data, ops.on_completed(self.on_completed))
-
-        builder.make_edge(stream, to_vector_db)
-        stream = to_vector_db
+        builder.make_edge(input_node, to_vector_db)
 
         # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return to_vector_db

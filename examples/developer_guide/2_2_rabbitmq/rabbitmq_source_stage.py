@@ -28,7 +28,7 @@ from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -86,27 +86,29 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self) -> bool:
         return False
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def stop(self):
         # Indicate we need to stop
         self._stop_requested = True
 
         return super().stop()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self.source_generator)
-        return node, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self.source_generator)
 
     def source_generator(self):
         try:
             while not self._stop_requested:
-                (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+                (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
                         df = cudf.io.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
-                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                     finally:
                         self._channel.basic_ack(method_frame.delivery_tag)
                 else:

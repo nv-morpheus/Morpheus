@@ -17,7 +17,7 @@ import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
-from morpheus.service.vector_db_service import VectorDBResourceService
+from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 
 logger = logging.getLogger(__name__)
 
