@@ -56,6 +56,8 @@ def test_execute(mock_llm_client: mock.MagicMock):
     mock_vdb_service = mock.MagicMock()
     mock_vdb_service.similarity_search = mock.AsyncMock(return_value=[[1, 2, 3], [4, 5, 6]])
 
+    mock_llm_client.generate_batch_async.return_value = ["response1", "response2"]
+
     node = RAGNode(prompt="contexts={contexts} query={query}",
                    template_format="f-string",
                    vdb_service=mock_vdb_service,
@@ -63,7 +65,7 @@ def test_execute(mock_llm_client: mock.MagicMock):
                    llm_client=mock_llm_client)
 
     expected_output = {
-        'generate': None,
+        'generate': ["response1", "response2"],
         'prompt': ['contexts=[1, 2, 3] query=query1', 'contexts=[4, 5, 6] query=query2'],
         'retriever': [[1, 2, 3], [4, 5, 6]]
     }
