@@ -19,15 +19,15 @@ import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.logger import deprecated_stage_warning
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("buffer", command_args={"deprecated": True})
-class BufferStage(SinglePortStage):
+class BufferStage(PassThruTypeMixin, SinglePortStage):
     """
     Buffer results.
 
@@ -65,9 +65,8 @@ class BufferStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)
 
-        return input_stream
+        return input_node

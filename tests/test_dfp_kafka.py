@@ -26,6 +26,7 @@ import pytest
 
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -62,7 +63,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
                    dataset_pandas: DatasetManager,
                    config: Config,
                    kafka_bootstrap_servers: str,
-                   kafka_topics: typing.Tuple[str, str],
+                   kafka_topics: KafkaTopics,
                    kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
@@ -164,7 +165,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
                      dataset_pandas: DatasetManager,
                      config: Config,
                      kafka_bootstrap_servers: str,
-                     kafka_topics: typing.Tuple[str, str],
+                     kafka_topics: KafkaTopics,
                      kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')

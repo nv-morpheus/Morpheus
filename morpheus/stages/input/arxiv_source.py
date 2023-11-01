@@ -27,7 +27,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,10 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         download_pages = builder.make_source(self.unique_name + "-download", self._generate_frames())
         process_pages = builder.make_node(self.unique_name + "-process", ops.map(self._process_pages))
@@ -119,9 +122,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
 
         builder.make_edge(process_pages, splitting_pages)
 
-        out_type = MessageMeta
-
-        return splitting_pages, out_type
+        return splitting_pages
 
     def _generate_frames(self):
         os.makedirs(self._cache_dir, exist_ok=True)

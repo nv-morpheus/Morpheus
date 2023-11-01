@@ -24,14 +24,13 @@ from mrc.core import operators as ops
 from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
-from messages import MultiResponseLogParsingMessage  # pylint: disable=no-name-in-module
 from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
 from messages import ResponseMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
@@ -176,10 +175,10 @@ class LogParsingInferenceStage(InferenceStage):
         # Get the value from the worker class
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiPostprocLogParsingMessage)
 
-        stream = input_stream[0]
-        out_type = MultiResponseLogParsingMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -233,11 +232,9 @@ class LogParsingInferenceStage(InferenceStage):
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
+        return node
 
     @staticmethod
     def _convert_one_response(output: PostprocMemoryLogParsing,

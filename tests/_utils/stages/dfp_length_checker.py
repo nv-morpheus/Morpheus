@@ -21,13 +21,13 @@ from mrc.core import operators as ops
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
 @register_stage("unittest-dfp-length-check")
-class DFPLengthChecker(SinglePortStage):
+class DFPLengthChecker(PassThruTypeMixin, SinglePortStage):
     """
     Verifies that the incoming MessageMeta classes are of a specific length
 
@@ -73,8 +73,8 @@ class DFPLengthChecker(SinglePortStage):
 
         return x
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._length_checker))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

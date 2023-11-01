@@ -23,7 +23,7 @@ from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def _fetch_feeds(self) -> MessageMeta:
         """
         Fetch RSS feed entries and yield as MessageMeta object.
@@ -140,6 +143,5 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
         logger.debug("Source stopped.")
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        source = builder.make_source(self.unique_name, self._fetch_feeds)
-        return source, MessageMeta
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._fetch_feeds)

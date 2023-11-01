@@ -25,7 +25,7 @@ from morpheus.controllers.serialize_controller import SerializeController
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("serialize")
@@ -79,28 +79,31 @@ class SerializeStage(SinglePortStage):
         """
         return (MultiMessage, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (self._build_cpp_node()):
-            stream = _stages.SerializeStage(builder,
-                                            self.unique_name,
-                                            self._controller.include_columns or [],
-                                            self._controller.exclude_columns,
-                                            self._controller.fixed_columns)
+            node = _stages.SerializeStage(builder,
+                                          self.unique_name,
+                                          self._controller.include_columns or [],
+                                          self._controller.exclude_columns,
+                                          self._controller.fixed_columns)
         else:
             include_columns = self._controller.get_include_col_pattern()
             exclude_columns = self._controller.get_exclude_col_pattern()
 
-            stream = builder.make_node(
+            node = builder.make_node(
                 self.unique_name,
                 ops.map(
                     partial(self._controller.convert_to_df,
                             include_columns=include_columns,
                             exclude_columns=exclude_columns)))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, MessageMeta
+        return node
