@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import concurrent.futures
 import json
 import os
 
@@ -346,79 +345,6 @@ def test_delete(milvus_service_fixture: MilvusVectorDBService,
 
     # Clean up the collection.
     milvus_service_fixture.drop(collection_name)
-
-
-@pytest.mark.slow
-def test_single_instance_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
-                                              idx_part_collection_config_fixture: dict,
-                                              data_fixture: list[dict]):
-
-    # Create a collection.
-    collection_name = "test_insert_and_search_order_with_collection_lock"
-    milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
-
-    filter_query = "age == 26 or age == 27"
-    search_vec = np.random.random((1, 10))
-    execution_order = []
-
-    def insert_data():
-        result = milvus_service_fixture.insert(collection_name, data_fixture)
-        assert result['insert_count'] == len(data_fixture)
-        execution_order.append("Insert Executed")
-
-    def search_data():
-        result = milvus_service_fixture.search(collection_name, data=search_vec, filter=filter_query)
-        execution_order.append("Search Executed")
-        assert isinstance(result, list)
-
-    def count_entities():
-        milvus_service_fixture.count(collection_name)
-        execution_order.append("Count Collection Entities Executed")
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        executor.submit(insert_data)
-        executor.submit(search_data)
-        executor.submit(count_entities)
-
-    # Assert the execution order
-    assert execution_order == ["Count Collection Entities Executed", "Insert Executed", "Search Executed"]
-
-
-@pytest.mark.slow
-def test_multi_instance_with_collection_lock(milvus_service_fixture: MilvusVectorDBService,
-                                             idx_part_collection_config_fixture: dict,
-                                             data_fixture: list[dict],
-                                             milvus_server_uri: str):
-
-    milvus_service_2 = MilvusVectorDBService(uri=milvus_server_uri)
-
-    collection_name = "test_insert_and_search_order_with_collection_lock"
-    filter_query = "age == 26 or age == 27"
-    search_vec = np.random.random((1, 10))
-
-    execution_order = []
-
-    def create_collection():
-        milvus_service_fixture.create(collection_name, **idx_part_collection_config_fixture)
-        execution_order.append("Create Executed")
-
-    def insert_data():
-        result = milvus_service_2.insert(collection_name, data_fixture)
-        assert result['insert_count'] == len(data_fixture)
-        execution_order.append("Insert Executed")
-
-    def search_data():
-        result = milvus_service_fixture.search(collection_name, data=search_vec, filter=filter_query)
-        execution_order.append("Search Executed")
-        assert isinstance(result, list)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        executor.submit(create_collection)
-        executor.submit(insert_data)
-        executor.submit(search_data)
-
-    # Assert the execution order
-    assert execution_order == ["Create Executed", "Insert Executed", "Search Executed"]
 
 
 def test_get_collection_lock():

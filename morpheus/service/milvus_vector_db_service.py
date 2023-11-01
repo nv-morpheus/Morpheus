@@ -148,6 +148,11 @@ class MilvusVectorDBService(VectorDBService):
         ------
         ValueError
             If the provided schema fields configuration is empty.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
         logger.debug("Creating collection: %s, overwrite=%s, kwargs=%s", name, overwrite, kwargs)
         # Preserve original configuration.
@@ -219,6 +224,11 @@ class MilvusVectorDBService(VectorDBService):
         ------
         RuntimeError
             If the collection not exists exists.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
 
         return self._collection_insert(name, data, **kwargs)
@@ -280,6 +290,11 @@ class MilvusVectorDBService(VectorDBService):
         ------
         RuntimeError
             If the collection not exists exists.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
         if not self.has_store_object(name):
             raise RuntimeError(f"Collection {name} doesn't exist.")
@@ -362,6 +377,11 @@ class MilvusVectorDBService(VectorDBService):
         -------
         dict[str, typing.Any]
             Returns result of the updated operation stats.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
 
         if not isinstance(data, list):
@@ -389,6 +409,11 @@ class MilvusVectorDBService(VectorDBService):
         -------
         typing.Any
             Returns result of the given keys that are delete from the collection.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
 
         result = self._client.delete(collection_name=name, pks=keys, **kwargs)
@@ -413,6 +438,11 @@ class MilvusVectorDBService(VectorDBService):
         -------
         dict[str, typing.Any]
             Returns result of the given keys that are delete from the collection.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
 
         result = self._client.delete_by_expr(collection_name=name, expression=expr, **kwargs)
@@ -438,6 +468,11 @@ class MilvusVectorDBService(VectorDBService):
         -------
         list[typing.Any]
             Returns result rows of the given keys from the collection.
+
+        Notes
+        -----
+        This function is decorated with `with_collection_lock` to ensure that the operation is synchronized by acquiring
+        and releasing a collection-specific lock, preventing concurrent access issues in the Milvus vector database.
         """
 
         result = None
