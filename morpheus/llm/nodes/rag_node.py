@@ -58,15 +58,10 @@ class RAGNode(LLMNode):
                  llm_client: LLMClient) -> None:
         super().__init__()
 
-        self._prompt = prompt
-        self._vdb_service = vdb_service
-        self._embedding = embedding
-        self._llm_service = llm_client
-
         self.add_node("retriever", node=RetrieverNode(service=vdb_service, embedding=embedding))
 
         self.add_node("prompt",
                       inputs=[("/retriever", "contexts"), ("query", "query")],
-                      node=PromptTemplateNode(self._prompt, template_format=template_format))
+                      node=PromptTemplateNode(prompt, template_format=template_format))
 
         self.add_node("generate", inputs=["/prompt"], node=LLMGenerateNode(llm_client=llm_client), is_output=True)
