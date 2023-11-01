@@ -51,6 +51,12 @@ def run():
     type=click.IntRange(min=1),
     help="Number of times to repeat the input query. Useful for testing performance.",
 )
+@click.option(
+    "--model_name",
+    default="gpt-43b-002",
+    type=str,
+    help="Name of the NeMo model.",
+)
 def pipeline(**kwargs):
     from .pipeline import pipeline as _pipeline
 

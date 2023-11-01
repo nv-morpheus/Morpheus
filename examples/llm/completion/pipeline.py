@@ -37,11 +37,11 @@ from morpheus.utils.concat_df import concat_dataframes
 logger = logging.getLogger(__name__)
 
 
-def _build_engine():
+def _build_engine(model_name):
 
     llm_service = NeMoLLMService()
 
-    llm_clinet = llm_service.get_client(model_name="gpt-43b-002")
+    llm_clinet = llm_service.get_client(model_name=model_name)
 
     engine = LLMEngine()
 
@@ -58,7 +58,7 @@ def _build_engine():
     return engine
 
 
-def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_count: int):
+def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, repeat_count: int, model_name: str):
 
     config = Config()
 
@@ -97,7 +97,7 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_coun
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine()))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
