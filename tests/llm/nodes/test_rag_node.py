@@ -51,13 +51,10 @@ def test_get_input_names(embedding: typing.Callable | None, expected_inputs: lis
 
 
 def test_execute(mock_llm_client: mock.MagicMock):
-    mock_embedding = mock.AsyncMock()
-    mock_embedding.return_value = [[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]]
+    mock_embedding = mock.AsyncMock(return_value=[[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]])
 
     mock_vdb_service = mock.MagicMock()
-    mock_similarity_search = mock.AsyncMock()
-    mock_similarity_search.return_value = [[1, 2, 3], [4, 5, 6]]
-    mock_vdb_service.similarity_search = mock_similarity_search
+    mock_vdb_service.similarity_search = mock.AsyncMock(return_value=[[1, 2, 3], [4, 5, 6]])
 
     node = RAGNode(prompt="contexts={contexts} query={query}",
                    template_format="f-string",
