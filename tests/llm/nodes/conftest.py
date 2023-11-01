@@ -23,6 +23,7 @@ def mock_llm_client_fixture():
     from morpheus.llm.services.llm_service import LLMClient
     mock_client = mock.MagicMock(LLMClient)
     mock_client.return_value = mock_client
+    mock_client.get_input_names.return_value = ["prompt"]
     mock_client.generate_batch_async = mock.AsyncMock()
     return mock_client
 
