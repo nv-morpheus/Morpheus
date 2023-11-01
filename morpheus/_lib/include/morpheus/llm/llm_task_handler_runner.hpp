@@ -29,7 +29,6 @@ namespace morpheus::llm {
 
 /**
  * @brief This class wraps LLMTaskHandler and maintains how its inputs map to node outputs in the LLMEngine.
- *
  */
 class MORPHEUS_EXPORT LLMTaskHandlerRunner
 {
@@ -44,7 +43,6 @@ class MORPHEUS_EXPORT LLMTaskHandlerRunner
 
     /**
      * @brief Destroy the LLMTaskHandlerRunner object.
-     *
      */
     ~LLMTaskHandlerRunner();
 

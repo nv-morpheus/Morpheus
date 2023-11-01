@@ -31,7 +31,7 @@ namespace morpheus::llm {
 
 /**
  * @brief This class wraps LLMNode and is responsible for node's execution. It also manages mapping of node's
- * inputs to parent of sibling nodes.
+ * inputs to parent and sibling nodes.
  */
 class MORPHEUS_EXPORT LLMNodeRunner
 {

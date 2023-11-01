@@ -29,14 +29,12 @@ namespace morpheus::llm {
 
 /**
  * @brief Base class for LLMNode.
- *
  */
 class MORPHEUS_EXPORT LLMNodeBase
 {
   public:
     /**
      * @brief Destroy the LLMNodeBase object.
-     *
      */
     virtual ~LLMNodeBase() = default;
 
