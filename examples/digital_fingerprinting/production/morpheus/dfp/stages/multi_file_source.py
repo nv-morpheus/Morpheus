@@ -60,12 +60,41 @@ class MultiFileSource(SingleOutputSource):
 
         self._batch_size = c.pipeline_batch_size
 
-        self._filenames = filenames
+        self._filenames = self._expand_directories(filenames)
+        # Support directory expansion
 
         self._input_count = None
         self._max_concurrent = c.num_threads
         self._watch = watch
         self._watch_interval = watch_interval
+
+    @staticmethod
+    def _expand_directories(filenames: typing.List[str]) -> typing.List[str]:
+        """
+        Expand to glob all files in any directories in the input filenames,
+        provided they actually exist.
+
+        ex. /path/to/dir -> /path/to/dir/*
+        """
+        updated_list = []
+        for file_name in filenames:
+            # Skip any filenames that already contain wildcards
+            if '*' in file_name or '?' in file_name:
+                updated_list.append(file_name)
+                continue
+
+            # Check if the file or directory actually exists
+            fs_spec = fsspec.filesystem(protocol='file')
+            if not fs_spec.exists(file_name):
+                updated_list.append(file_name)
+                continue
+
+            if fs_spec.isdir(file_name):
+                updated_list.append(f"{file_name}/*")
+            else:
+                updated_list.append(file_name)
+
+        return updated_list
 
     @property
     def name(self) -> str:
