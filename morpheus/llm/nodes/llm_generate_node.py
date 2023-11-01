@@ -40,13 +40,9 @@ class LLMGenerateNode(LLMNodeBase):
         super().__init__()
 
         self._llm_client = llm_client
-        if input_names is None:
-            input_names = llm_client.get_input_names()
-
-        self._input_names = input_names
 
     def get_input_names(self) -> list[str]:
-        return self._input_names
+        return self._llm_client.get_input_names()
 
     async def execute(self, context: LLMContext) -> LLMContext:
 
