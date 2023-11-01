@@ -27,7 +27,6 @@ channels:
     - dglteam/label/cu118
 dependencies:
     - arxiv=1.4
-    - beautifulsoup4=4.12
     - boto3
     - cuml=23.06
     - dask>=2023.1.1
