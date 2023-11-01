@@ -29,7 +29,7 @@
 namespace morpheus::llm {
 
 /**
- * @brief Base class for implementing for implementing task handlers used to process
+ * @brief Base class for implementing task handlers used to process
  * node outputs in LLMEngine.
  */
 class MORPHEUS_EXPORT LLMTaskHandler
