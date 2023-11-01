@@ -26,7 +26,7 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 
@@ -182,6 +182,9 @@ class InferenceStage(MultiMessageStage):
         """
         return (MultiInferenceMessage, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiResponseMessage)
+
     def supports_cpp_node(self):
         # Default to False unless derived classes override this value
         return False
@@ -209,10 +212,7 @@ class InferenceStage(MultiMessageStage):
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-        out_type = MultiResponseMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -264,11 +264,9 @@ class InferenceStage(MultiMessageStage):
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
+        return node
 
     def stop(self):
         """

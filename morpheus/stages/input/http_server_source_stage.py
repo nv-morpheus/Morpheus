@@ -29,7 +29,7 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.http_utils import HTTPMethod
 from morpheus.utils.http_utils import HttpParseResponse
 from morpheus.utils.http_utils import MimeTypes
@@ -129,6 +129,9 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports C++ nodes."""
         return True
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def _parse_payload(self, payload: str) -> HttpParseResponse:
         try:
             # engine='cudf' is needed when lines=False to avoid using pandas
@@ -202,7 +205,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
                     if self._stop_after > 0 and self._records_emitted >= self._stop_after:
                         self._processing = False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
             node = _stages.HttpServerSourceStage(builder,
@@ -223,4 +226,4 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         else:
             node = builder.make_source(self.unique_name, self._generate_frames())
 
-        return node, MessageMeta
+        return node

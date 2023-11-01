@@ -30,7 +30,7 @@ from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
@@ -209,6 +209,9 @@ class TrainAEStage(MultiMessageStage):
         """
         return (UserMessageMeta, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
+
     def supports_cpp_node(self):
         return False
 
@@ -243,9 +246,7 @@ class TrainAEStage(MultiMessageStage):
 
         return self._user_models[x.user_id].train(x.df)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         get_model_fn = None
 
         # If a pretrained model was specified, load that now
@@ -330,7 +331,6 @@ class TrainAEStage(MultiMessageStage):
             return to_send
 
         node = builder.make_node(self.unique_name, ops.map(on_next), ops.flatten())
-        builder.make_edge(stream, node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        return stream, MultiAEMessage
+        return node

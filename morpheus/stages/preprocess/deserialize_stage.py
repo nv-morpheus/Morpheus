@@ -29,7 +29,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +94,9 @@ class DeserializeStage(MultiMessageStage):
     def supports_cpp_node(self):
         # Enable support by default
         return True
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(self._message_type)
 
     @staticmethod
     def check_slicable_index(x: MessageMeta, ensure_sliceable_index: bool = True):
@@ -203,12 +206,10 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
 
             if (self._message_type == MultiMessage):
@@ -227,8 +228,8 @@ class DeserializeStage(MultiMessageStage):
                                    ensure_sliceable_index=self._ensure_sliceable_index,
                                    task_tuple=task_tuple)
 
-            stream = builder.make_node(self.unique_name, ops.map(map_func), ops.flatten())
+            node = builder.make_node(self.unique_name, ops.map(map_func), ops.flatten())
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, self._message_type
+        return node

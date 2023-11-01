@@ -14,15 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mrc
 import numpy as np
 import pandas as pd
 import pytest
-from mrc.core import operators as ops
-
-import cudf
 
 from _utils import assert_results
+from _utils.stages.check_pre_alloc import CheckPreAlloc
 from _utils.stages.conv_msg import ConvMsg
 from morpheus.common import TypeId
 from morpheus.common import typeid_to_numpy_str
@@ -30,50 +27,12 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-
-
-class CheckPreAlloc(SinglePortStage):
-    """
-    Acts like add-class/add-scores in that it requests a preallocation, the node will assert that the preallocation
-    occurred with the correct type.
-    """
-
-    def __init__(self, c, probs_type):
-        super().__init__(c)
-        self._expected_type = cudf.dtype(typeid_to_numpy_str(probs_type))
-        self._class_labels = c.class_labels
-        self._needed_columns.update({label: probs_type for label in c.class_labels})
-
-    @property
-    def name(self):
-        return "check-prealloc"
-
-    def accepted_types(self):
-        return (MultiMessage, )
-
-    def supports_cpp_node(self):
-        return False
-
-    def _check_prealloc(self, msg: MultiMessage):
-        df = msg.get_meta()
-        for label in self._class_labels:
-            assert label in df.columns
-            assert df[label].dtype == self._expected_type
-
-        return msg
-
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        stream = builder.make_node(self.unique_name, ops.map(self._check_prealloc))
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, input_stream[1]
 
 
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])

@@ -44,7 +44,7 @@ class LinearPipeline(_pipeline.Pipeline):
         self._next_segment_index = 0
         self._increment_segment_id()
 
-        self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
+        self._linear_stages: typing.List[_pipeline.StageBase] = []
 
     def _increment_segment_id(self):
         self._linear_stages = []
@@ -83,7 +83,7 @@ class LinearPipeline(_pipeline.Pipeline):
 
         return source
 
-    def add_stage(self, stage: SinglePortStageT) -> SinglePortStageT:
+    def add_stage(self, stage: SinglePortStageT) -> SinglePortStageT:  # pylint:disable=arguments-differ
         """
         Add a stage to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
@@ -118,7 +118,7 @@ class LinearPipeline(_pipeline.Pipeline):
             if 'data_type' has no registered edge adapters.
 
         as_shared_pointer : `boolean`
-            Whether the data type will be wrapped in a shared pointer.
+            Whether the data type will be wrapped in a shared pointer. Currently this is not implemented.
 
         Examples
         --------
@@ -138,6 +138,8 @@ class LinearPipeline(_pipeline.Pipeline):
         >>>
         >>> pipe.run()
         """
+        assert as_shared_pointer is False, "Shared pointers are not currently supported"
+
         if (len(self._linear_stages) == 0):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
 
@@ -149,8 +151,8 @@ class LinearPipeline(_pipeline.Pipeline):
                                                       boundary_port_id=self._current_segment_id,
                                                       data_type=data_type)
 
-        # TODO: update to use data_type once typeid is attached to registered objects out of band:
-        #  https://github.com/nv-morpheus/MRC/issues/176
+        # TODO: update to use data_type once typeid is attached to registered objects out of band # pylint:disable=fixme
+        # https://github.com/nv-morpheus/MRC/issues/176
         port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
 
         self.add_stage(boundary_egress)

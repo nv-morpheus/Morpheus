@@ -29,8 +29,8 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
-from morpheus.pipeline import StreamPair
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,9 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def supports_cpp_node(self):
         return False
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(AppShieldMessageMeta)
 
     @staticmethod
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
@@ -357,20 +360,11 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return metas
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         # The first source just produces filenames
-        filename_source = self._watcher.build_node(self.unique_name, builder)
+        return self._watcher.build_node(self.unique_name, builder)
 
-        out_type = typing.List[str]
-
-        # Supposed to just return a source here
-        return filename_source, out_type
-
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-
-        out_stream = out_pair[0]
-
+    def _post_build_single(self, builder: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
         # At this point, we have batches of filenames to process. Make a node for processing batches of
         # filenames into batches of dataframes
         post_node = builder.make_node(
@@ -384,9 +378,6 @@ class AppShieldSourceStage(PreallocatorMixin, SingleOutputSource):
             ops.map(self._build_metadata),
             # Finally flatten to single meta
             ops.flatten())
-        builder.make_edge(out_stream, post_node)
+        builder.make_edge(out_node, post_node)
 
-        out_stream = post_node
-        out_type = AppShieldMessageMeta
-
-        return super()._post_build_single(builder, (out_stream, out_type))
+        return super()._post_build_single(builder, post_node)

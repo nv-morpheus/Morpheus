@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
-import mrc
-
-StreamPair = typing.Tuple[mrc.SegmentObject, typing.Type]
-"""
-Tuple used during Pipeline construction representing a pipeline node (first element), and the node's output type
-(second element)
-"""
+channels:
+  - rapidsai
+  - nvidia
+  - pytorch
+  - conda-forge
+dependencies:
+  - cudf=23.06
+  - jupyterlab
+  - onnx
+  - python=3.10
+  - pytorch-cuda=11.8
+  - pytorch=2.0.1
+  - seqeval=1.2.2
+  - tqdm=4
+  - transformers
