@@ -21,13 +21,13 @@ import morpheus._lib.llm as _llm
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.messages import ControlMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class LLMEngineStage(SinglePortStage):
+class LLMEngineStage(PassThruTypeMixin, SinglePortStage):
     """
     Stage for executing an LLM engine within a Morpheus pipeline.
 
@@ -65,11 +65,11 @@ class LLMEngineStage(SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return True
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         node = _llm.LLMEngineStage(builder, self.unique_name, self._engine)
         node.launch_options.pe_count = 1
 
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node

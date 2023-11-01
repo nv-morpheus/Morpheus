@@ -15,50 +15,59 @@
 import logging
 import typing
 
+import mrc
+
 import morpheus.pipeline as _pipeline
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 class Sender():
     """
-    The `Sender` object represents a port on a `StreamWrapper` object that sends messages to a `Receiver`.
+    The `Sender` object represents a port on a `StageBase` object that sends messages to a `Receiver`.
 
     Parameters
         ----------
-        parent : `morpheus.pipeline.pipeline.StreamWrapper`
-            Parent `StreamWrapper` object.
+        parent : `morpheus.pipeline.pipeline.StageBase`
+            Parent `StageBase` object.
         port_number : int
             Sender port number.
     """
 
-    def __init__(self, parent: "_pipeline.StreamWrapper", port_number: int):
+    def __init__(self, parent: "_pipeline.StageBase", port_number: int):
 
         self._parent = parent
         self.port_number = port_number
 
         self._output_receivers: typing.List[_pipeline.Receiver] = []
 
-        self._out_stream_pair: StreamPair = (None, None)
+        self._output_schema: _pipeline.PortSchema = None
+        self._output_node: mrc.SegmentObject = None
 
     @property
-    def parent(self):
+    def parent(self) -> "_pipeline.StageBase":
         return self._parent
 
     @property
-    def is_complete(self):
-        # Sender is complete when the type or stream has been set
-        return self._out_stream_pair != (None, None)
+    def is_complete(self) -> bool:
+        # Sender is complete when the type has been set
+        return self._output_schema is not None
 
     @property
-    def out_pair(self):
-        return self._out_stream_pair
+    def output_schema(self) -> _pipeline.PortSchema:
+        return self._output_schema
+
+    @output_schema.setter
+    def output_schema(self, value: _pipeline.PortSchema):
+        self._output_schema = value
 
     @property
-    def out_stream(self):
-        return self._out_stream_pair[0]
+    def output_type(self) -> type:
+        if self.is_complete:
+            return self._output_schema.get_type()
+
+        return None
 
     @property
-    def out_type(self):
-        return self._out_stream_pair[1]
+    def output_node(self) -> mrc.SegmentObject:
+        return self._output_node

@@ -14,18 +14,28 @@
 
 import asyncio
 import logging
-
-from langchain.agents import AgentExecutor
+import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
 logger = logging.getLogger(__name__)
 
+if typing.TYPE_CHECKING:
+    from langchain.agents import AgentExecutor
+
 
 class LangChainAgentNode(LLMNodeBase):
+    """
+    Executes a LangChain agent in an LLMEngine
 
-    def __init__(self, agent_executor: AgentExecutor):
+    Parameters
+    ----------
+    agent_executor : AgentExecutor
+        The agent executor to use to execute.
+    """
+
+    def __init__(self, agent_executor: "AgentExecutor"):
         super().__init__()
 
         self._agent_executor = agent_executor
@@ -35,7 +45,7 @@ class LangChainAgentNode(LLMNodeBase):
     def get_input_names(self):
         return self._input_names
 
-    async def _run_single(self, **kwargs):
+    async def _run_single(self, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
 
         all_lists = all(isinstance(v, list) for v in kwargs.values())
 
@@ -58,7 +68,7 @@ class LangChainAgentNode(LLMNodeBase):
         # We are not dealing with a list, so run single
         return await self._agent_executor.arun(**kwargs)
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext) -> LLMContext:
 
         input_dict = context.get_inputs()
 

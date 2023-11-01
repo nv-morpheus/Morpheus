@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Vector DataBase Upload (VDB Upload) Pipeline
+
 ## Table of Contents
 
 1. [Background Information](#Background-Information)
@@ -110,6 +112,13 @@ The selection of specific components and models was influenced by several factor
 ### Prerequisites
 
 Before running the pipeline, we need to ensure that the following services are running:
+
+#### Ensure LFS files are downloaded
+
+To retrieve models from LFS run the following:
+```bash
+./scripts/fetch_data.py fetch models
+```
 
 #### Milvus Service
 

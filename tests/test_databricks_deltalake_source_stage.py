@@ -14,10 +14,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
-import cudf
-
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -26,14 +22,14 @@ from morpheus.stages.input.databricks_deltalake_source_stage import DataBricksDe
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 
-@pytest.mark.use_pandas
-def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: DatasetManager):
+def test_databricks_deltalake_source_stage_pipe(config: Config, dataset_cudf: DatasetManager):
     """
     Test the DataBricksDeltaLakeSourceStage against a mock spark session which
     will return spark_df converted into a DataFrame with specific rows per page.
     """
 
-    expected_df = dataset['filter_probs.csv']
+    expected_df = dataset_cudf['filter_probs.csv']
+    df = expected_df.to_pandas()
     # pylint: disable=unused-variable
     with patch('morpheus.stages.input.databricks_deltalake_source_stage.DatabricksSession') as mock_db_session:  # NOQA
         databricks_deltalake_source_stage = DataBricksDeltaLakeSourceStage(config,
@@ -43,11 +39,11 @@ def test_databricks_deltalake_source_stage_pipe(config: Config, dataset: Dataset
                                                                            databricks_token="",
                                                                            databricks_cluster_id="")
         databricks_deltalake_source_stage.spark.sql.return_value.withColumn.return_value.select.return_value.\
-            withColumn.return_value.where.return_value.toPandas.return_value.drop.return_value = expected_df
+            withColumn.return_value.where.return_value.toPandas.return_value.drop.return_value = df
         databricks_deltalake_source_stage.spark.sql.return_value.withColumn.return_value.select.return_value. \
-            withColumn.return_value.count.return_value = expected_df.shape[0]
+            withColumn.return_value.count.return_value = df.shape[0]
         pipe = LinearPipeline(config)
         pipe.set_source(databricks_deltalake_source_stage)
-        comp_stage = pipe.add_stage(CompareDataFrameStage(config, cudf.from_pandas(expected_df)))
+        comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
         pipe.run()
         assert_results(comp_stage.get_results())

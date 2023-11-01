@@ -28,7 +28,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
@@ -85,19 +85,18 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
-        else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return builder.make_source(self.unique_name, self._generate_frames())
 
     def _generate_frames(self):
 

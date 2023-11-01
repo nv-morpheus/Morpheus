@@ -23,7 +23,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -77,6 +77,9 @@ class MultiFileSource(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(fsspec.core.OpenFiles)
+
     def supports_cpp_node(self):
         """Indicates whether this stage supports C++ nodes."""
         return False
@@ -111,8 +114,8 @@ class MultiFileSource(SingleOutputSource):
                 if file.full_name not in files_seen:
                     filtered_files.append(file)
 
-            # Replace files_seen with the new set of files. This prevents a memory leak that could occurr if files are
-            # deleted from the input directory. In addition if a file with a given name was created, seen/processed by
+            # Replace files_seen with the new set of files. This prevents a memory leak that could occur if files are
+            # deleted from the input directory. In addition, if a file with a given name was created, seen/processed by
             # the stage, and then deleted, and a new file with the same name appeared sometime later, the stage will
             # need to re-ingest that new file.
             files_seen = file_set
@@ -129,14 +132,14 @@ class MultiFileSource(SingleOutputSource):
                 time.sleep(sleep_duration)
                 curr_time = time.monotonic()
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")
 
         if self._watch:
-            out_stream = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
+            node = builder.make_source(self.unique_name, self._polling_generate_frames_fsspec())
         else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames_fsspec())
+            node = builder.make_source(self.unique_name, self._generate_frames_fsspec())
 
-        return out_stream, fsspec.core.OpenFiles
+        return node

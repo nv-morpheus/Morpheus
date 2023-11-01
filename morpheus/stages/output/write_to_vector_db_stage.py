@@ -22,15 +22,15 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
 
 
-class WriteToVectorDBStage(SinglePortStage):
+class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     """
     Writes messages to a Vector Database.
 
@@ -122,9 +122,7 @@ class WriteToVectorDBStage(SinglePortStage):
         # Close vector database service connection
         self._service.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def extract_df(msg):
             df = None
@@ -165,8 +163,7 @@ class WriteToVectorDBStage(SinglePortStage):
                                          ops.filter(lambda x: x is not None),
                                          ops.on_completed(self.on_completed))
 
-        builder.make_edge(stream, to_vector_db)
-        stream = to_vector_db
+        builder.make_edge(input_node, to_vector_db)
 
         # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
+        return to_vector_db

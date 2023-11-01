@@ -49,7 +49,7 @@ def run():
     required=True,
     type=str,
     default='gpt-43b-002',
-    help="The name of the model that is deployed on Triton server",
+    help="The name of the large language model that is deployed on Triton server",
 )
 @click.option(
     "--vdb_resource_name",
