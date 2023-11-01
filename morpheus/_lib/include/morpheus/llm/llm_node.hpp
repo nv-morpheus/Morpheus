@@ -34,20 +34,18 @@ namespace morpheus::llm {
  * @brief This class is used to implement functionality required in the processing of an LLM
  * service request such as a prompt generator or LLM service client. Nodes are added to an LLMEngine
  * which manages their execution including mapping of each node's input/output to parent and sibling
- * node.
+ * nodes.
  */
 class MORPHEUS_EXPORT LLMNode : public LLMNodeBase
 {
   public:
     /**
      * @brief Construct a new LLMNode object.
-     *
      */
     LLMNode();
 
     /**
      * @brief Destroy the LLMNode object.
-     *
      */
     ~LLMNode() override;
 
