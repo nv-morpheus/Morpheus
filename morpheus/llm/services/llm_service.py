@@ -27,50 +27,57 @@ class LLMClient(ABC):
     """
 
     @abstractmethod
-    def generate(self, prompt: str) -> str:
+    def get_input_names(self) -> list[str]:
+        """
+        Returns the names of the inputs to the model.
+        """
+        pass
+
+    @abstractmethod
+    def generate(self, input_dict: dict[str, str]) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
         Parameters
         ----------
-        prompt : str
-            The prompt to generate a response for.
+        input_dict : dict
+            Input containing prompt data.
         """
         pass
 
     @abstractmethod
-    async def generate_async(self, prompt: str) -> str:
+    async def generate_async(self, input_dict: dict[str, str]) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
         Parameters
         ----------
-        prompt : str
-            The prompt to generate a response for.
+        input_dict : dict
+            Input containing prompt data.
         """
         pass
 
     @abstractmethod
-    def generate_batch(self, inputs: dict) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
         Parameters
         ----------
-        prompts : list[str]
-            The prompts to generate responses for.
+        inputs : dict
+            Inputs containing prompt data.
         """
         pass
 
     @abstractmethod
-    async def generate_batch_async(self, inputs: dict) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
         Parameters
         ----------
-        prompts : list[str]
-            The prompts to generate responses for.
+        inputs : dict
+            Inputs containing prompt data.
         """
         pass
 

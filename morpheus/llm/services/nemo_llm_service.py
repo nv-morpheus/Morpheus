@@ -63,54 +63,59 @@ class NeMoLLMClient(LLMClient):
         self._parent = parent
         self._model_name = model_name
         self._model_kwargs = model_kwargs
+        self._prompt_key = "prompt"
 
-    def generate(self, prompt: str) -> str:
+    def get_input_names(self) -> list[str]:
+        return [self._prompt_key]
+
+    def generate(self, input_dict: dict[str, str]) -> str:
         """
         Issue a request to generate a response based on a given prompt.
 
         Parameters
         ----------
-        prompt : str
-            The prompt to generate a response for.
+        input_dict : dict
+            Input containing prompt data.
         """
-        return self.generate_batch([prompt])[0]
+        return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
 
-    async def generate_async(self, prompt: str) -> str:
+    async def generate_async(self, input_dict: dict[str, str]) -> str:
         """
         Issue an asynchronous request to generate a response based on a given prompt.
 
         Parameters
         ----------
-        prompt : str
-            The prompt to generate a response for.
+        input_dict : dict
+            Input containing prompt data.
         """
-        return (await self.generate_batch_async([prompt]))[0]
+        return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
 
-    def generate_batch(self, prompts: list[str]) -> list[str]:
+    def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue a request to generate a list of responses based on a list of prompts.
 
         Parameters
         ----------
-        prompts : list[str]
-            The prompts to generate responses for.
+        inputs : dict
+            Inputs containing prompt data.
         """
         return typing.cast(
             list[str],
             self._parent._conn.generate_multiple(model=self._model_name,
-                                                 prompts=prompts,
+                                                 prompts=inputs[self._prompt_key],
                                                  return_type="text",
                                                  **self._model_kwargs))
 
-    async def generate_batch_async(self, prompts: list[str]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
         Parameters
         ----------
-        prompts : list[str]
-            The prompts to generate responses for.
+        inputs : dict
+            Inputs containing prompt data.
         """
+        prompts = inputs[self._prompt_key]
         futures = [
             asyncio.wrap_future(
                 self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))

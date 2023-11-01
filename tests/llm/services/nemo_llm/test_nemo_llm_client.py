@@ -37,7 +37,7 @@ def test_generate():
     (mock_nemo_service, mock_nemo_llm) = _make_mock_nemo_service()
 
     client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    assert client.generate("test_prompt") == "test_output"
+    assert client.generate({'prompt': "test_prompt"}) == "test_output"
     mock_nemo_llm.generate_multiple.assert_called_once_with(model="test_model",
                                                             prompts=["test_prompt"],
                                                             return_type="text",
@@ -49,7 +49,7 @@ def test_generate_batch():
     mock_nemo_llm.generate_multiple.return_value = ["output1", "output2"]
 
     client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
-    assert client.generate_batch(["prompt1", "prompt2"]) == ["output1", "output2"]
+    assert client.generate_batch({'prompt': ["prompt1", "prompt2"]}) == ["output1", "output2"]
     mock_nemo_llm.generate_multiple.assert_called_once_with(model="test_model",
                                                             prompts=["prompt1", "prompt2"],
                                                             return_type="text",

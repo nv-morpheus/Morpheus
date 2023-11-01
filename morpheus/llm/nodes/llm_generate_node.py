@@ -51,9 +51,9 @@ class LLMGenerateNode(LLMNodeBase):
     async def execute(self, context: LLMContext) -> LLMContext:
 
         # Get the inputs
-        prompts: dict[str, str] = context.get_inputs()
+        inputs: dict[str, list[str]] = context.get_inputs()
 
-        results = await self._llm_client.generate_batch_async(**prompts)
+        results = await self._llm_client.generate_batch_async(inputs)
 
         context.set_output(results)
 
