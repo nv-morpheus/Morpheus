@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 import pytest
 
 from _utils import import_or_skip
@@ -26,3 +28,15 @@ def openai_fixture(fail_missing: bool):
     skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
                    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
     yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
+
+
+# Using autouse to ensure we never attempt to actually call the openai service
+@pytest.fixture(name="mock_chat_completion", autouse=True)
+def mock_chat_completion_fixture():
+    with mock.patch("openai.ChatCompletion") as mock_chat_completion:
+        mock_chat_completion.return_value = mock_chat_completion
+
+        response = {'choices': [{'message': {'content': 'test_output'}}]}
+        mock_chat_completion.create.return_value = response.copy()
+        mock_chat_completion.acreate = mock.AsyncMock(return_value=response.copy())
+        yield mock_chat_completion
