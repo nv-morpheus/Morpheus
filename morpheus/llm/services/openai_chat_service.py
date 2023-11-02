@@ -23,16 +23,14 @@ from morpheus.llm.services.llm_service import LLMService
 logger = logging.getLogger(__name__)
 
 IMPORT_ERROR_MESSAGE = (
-    "OpenAIChatService requires additional dependencies to be installed. Install them by running the following command:\n"
+    "OpenAIChatService & OpenAIChatClient require additional dependencies to be installed. "
+    "Install them by running the following command:\n"
     "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 try:
     import openai
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
-
-if typing.TYPE_CHECKING:
-    from langchain.schema import BaseMessage
 
 
 def _verify_openai():
@@ -92,7 +90,7 @@ class OpenAIChatClient(LLMClient):
         choices = completion.get('choices', [])
         if len(choices) == 0:
             raise ValueError("No choices were returned from the model.")
-        
+
         content = choices[0].get('message', {}).get('content', None)
         if content is None:
             raise ValueError("No content was returned from the model.")
@@ -210,6 +208,9 @@ class OpenAIChatService(LLMService):
         ----------
         model_name : str
             The name of the model to create a client for.
+
+        set_assistant: bool, optional default=False
+            When `True`, a second input field named `assistant` will be used to proide additional context to the model.
 
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model when generating text.

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
@@ -31,12 +30,12 @@ class LLMGenerateNode(LLMNodeBase):
     ----------
     llm_client : LLMClient
         The client instance to use to generate responses.
-    
+
     input_names : list[str], optional
         The names of the inputs to this node. Defaults to `["prompt"]`.
     """
 
-    def __init__(self, llm_client: LLMClient, input_names: list[str] | None = None) -> None:
+    def __init__(self, llm_client: LLMClient) -> None:
         super().__init__()
 
         self._llm_client = llm_client
