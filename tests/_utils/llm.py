@@ -53,16 +53,11 @@ def execute_node(node: LLMNodeBase,
                  **input_values: dict) -> typing.Any:
     """
     Executes an LLM Node with the necessary LLM context, and extracts the output values.
-
-    If `task_dict` and `input_message` are provided, then the context will be created from the task and message.
     """
-    if task_dict is not None:
-        assert input_message is not None, "If `task_dict` is provided, then `input_message` must also be provided."
-        task = LLMTask("unittests", task_dict)
-        parent_context = LLMContext(task, input_message)
-    else:
-        assert input_message is None, "If `input_message` is provided, then `task_dict` must also be provided."
-        parent_context = LLMContext()
+    task_dict = task_dict or {}
+    input_message = input_message or ControlMessage()
+    task = LLMTask("unittests", task_dict)
+    parent_context = LLMContext(task, input_message)
 
     context = _mk_context(parent_context, input_values)
 
