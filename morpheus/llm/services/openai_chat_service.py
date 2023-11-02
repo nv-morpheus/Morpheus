@@ -77,8 +77,12 @@ class OpenAIChatClient(LLMClient):
 
     def _create_messages(self, prompt: str, assistant: str = None) -> list[dict[str, str]]:
         messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system", "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user", "content": prompt
+            },
         ]
 
         if (self._set_assistant):
@@ -100,11 +104,7 @@ class OpenAIChatClient(LLMClient):
     def _generate(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = openai.ChatCompletion.create(
-            model=self._model_name,
-            messages=messages,
-            **self._model_kwargs
-        )
+        output = openai.ChatCompletion.create(model=self._model_name, messages=messages, **self._model_kwargs)
 
         return self._extract_completion(output)
 
@@ -122,11 +122,7 @@ class OpenAIChatClient(LLMClient):
     async def _generate_async(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = await openai.ChatCompletion.acreate(
-            model=self._model_name,
-            messages=messages,
-            **self._model_kwargs
-        )
+        output = await openai.ChatCompletion.acreate(model=self._model_name, messages=messages, **self._model_kwargs)
 
         return self._extract_completion(output)
 
