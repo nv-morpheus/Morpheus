@@ -62,3 +62,11 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
+
+
+@pytest.fixture(name="mock_nemo_service")
+def mock_nemo_service_fixture(mock_nemollm: mock.MagicMock):
+    mock_nemo_service = mock.MagicMock()
+    mock_nemo_service.return_value = mock_nemo_service
+    mock_nemo_service._conn = mock_nemollm
+    return mock_nemo_service
