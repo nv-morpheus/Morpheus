@@ -33,20 +33,6 @@ def _mk_context(parent_context: LLMContext, input_values: dict) -> LLMContext:
     return parent_context.push("test", inputs)
 
 
-def _execute_node(node: LLMNodeBase, context: LLMContext) -> typing.Any:
-
-    async def execute():
-        # `asyncio.run(obj)`` will raise a `ValueError`` if `asyncio.iscoutine(obj)` is `False` for composite nodes
-        # that don't directly implement `execute()` this causes a failure because while
-        # `mrc.core.coro.CppToPyAwaitable` is awaitable it is not a coroutine.
-
-        return await node.execute(context)
-
-    context = asyncio.run(execute())
-
-    return context.view_outputs
-
-
 def execute_node(node: LLMNodeBase,
                  task_dict: dict = None,
                  input_message: ControlMessage = None,
