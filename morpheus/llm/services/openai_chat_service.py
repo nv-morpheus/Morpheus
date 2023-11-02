@@ -27,10 +27,7 @@ IMPORT_ERROR_MESSAGE = (
     "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 try:
-    from langchain.llms.openai import OpenAIChat
-    from langchain.schema import AIMessage
-    from langchain.schema import HumanMessage
-    from langchain.schema import SystemMessage
+    import openai
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
 
@@ -38,10 +35,9 @@ if typing.TYPE_CHECKING:
     from langchain.schema import BaseMessage
 
 
-def _verify_deps():
-    for dep in ('OpenAIChat', 'AIMessage', 'HumanMessage', 'SystemMessage'):
-        if dep not in globals():
-            raise ImportError(IMPORT_ERROR_MESSAGE)
+def _verify_openai():
+    if 'openai' not in globals():
+        raise ImportError(IMPORT_ERROR_MESSAGE)
 
 
 class OpenAIChatClient(LLMClient):
@@ -63,18 +59,16 @@ class OpenAIChatClient(LLMClient):
 
     def __init__(self, model_name: str, set_assistant: bool = False, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
-        _verify_deps()
+        _verify_openai()
 
+        self._model_name = model_name
         self._set_assistant = set_assistant
         self._prompt_key = "prompt"
         self._assistant_key = "assistant"
 
         # Preserve original configuration.
-        model_kwargs = copy.deepcopy(model_kwargs)
-        model_kwargs['temperature'] = model_kwargs.get('temperature', 0)
-        model_kwargs['cache'] = model_kwargs.get('cache', False)
-
-        self._model = OpenAIChat(model_name=model_name, **model_kwargs)
+        self._model_kwargs = copy.deepcopy(model_kwargs)
+        self._model_kwargs['temperature'] = model_kwargs.get('temperature', 0)
 
     def get_input_names(self) -> list[str]:
         input_names = [self._prompt_key]
@@ -83,23 +77,38 @@ class OpenAIChatClient(LLMClient):
 
         return input_names
 
-    def _create_messages(self, prompt: str, assistant: str = None) -> list["BaseMessage"]:
+    def _create_messages(self, prompt: str, assistant: str = None) -> list[dict[str, str]]:
         messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content=prompt),
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
         ]
 
         if (self._set_assistant):
-            messages.append(AIMessage(content=assistant))
+            messages.append({"role": "assistant", "content": assistant})
 
         return messages
+
+    def _extract_completion(self, completion: "openai.openai_object.OpenAIObject") -> str:
+        choices = completion.get('choices', [])
+        if len(choices) == 0:
+            raise ValueError("No choices were returned from the model.")
+        
+        content = choices[0].get('message', {}).get('content', None)
+        if content is None:
+            raise ValueError("No content was returned from the model.")
+
+        return content
 
     def _generate(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = self._model.predict_messages(messages=messages)
+        output = openai.ChatCompletion.create(
+            model=self._model_name,
+            messages=messages,
+            **self._model_kwargs
+        )
 
-        return output.content
+        return self._extract_completion(output)
 
     def generate(self, input_dict: dict[str, str]) -> str:
         """
@@ -115,9 +124,13 @@ class OpenAIChatClient(LLMClient):
     async def _generate_async(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = await self._model.apredict_messages(messages=messages)
+        output = await openai.ChatCompletion.acreate(
+            model=self._model_name,
+            messages=messages,
+            **self._model_kwargs
+        )
 
-        return output.content
+        return self._extract_completion(output)
 
     async def generate_async(self, input_dict: dict[str, str]) -> str:
         """
@@ -184,7 +197,7 @@ class OpenAIChatService(LLMService):
 
     def __init__(self) -> None:
         super().__init__()
-        _verify_deps()
+        _verify_openai()
 
     def get_client(self,
                    model_name: str,
