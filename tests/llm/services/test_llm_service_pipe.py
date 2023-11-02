@@ -131,10 +131,10 @@ def test_completion_pipe_nemo(
 
 
 @pytest.mark.use_python
-def test_completion_pipe(config: Config,
-                         mock_chat_completion: mock.MagicMock,
-                         country_prompts: list[str],
-                         capital_responses: list[str]):
+def test_completion_pipe_openai(config: Config,
+                                mock_chat_completion: mock.MagicMock,
+                                country_prompts: list[str],
+                                capital_responses: list[str]):
     mock_chat_completion.acreate.side_effect = [{
         "choices": [{
             'message': {

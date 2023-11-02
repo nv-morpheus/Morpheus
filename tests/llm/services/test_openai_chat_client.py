@@ -129,3 +129,22 @@ def test_generate_batch(mock_chat_completion: mock.MagicMock,
         mock_chat_completion.create.assert_has_calls(expected_calls, any_order=False)
 
     assert results == expected_results
+
+
+@pytest.mark.parametrize("completion", [{
+    "choices": []
+}, {
+    "choices": [{}]
+}, {
+    "choices": [{
+        "message": {}
+    }]
+}],
+                         ids=["no_choices", "no_message", "no_content"])
+def test_generate_invalid_completions(mock_chat_completion: mock.MagicMock, completion: dict):
+    mock_chat_completion.create.return_value = completion
+
+    client = OpenAIChatClient(model_name="test_model")
+
+    with pytest.raises(ValueError):
+        client.generate({"prompt": "test_prompt"})
