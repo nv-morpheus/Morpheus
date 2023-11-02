@@ -15,6 +15,7 @@
 
 from unittest import mock
 
+from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.nemo_llm_service import NeMoLLMClient
 
 
@@ -31,6 +32,20 @@ def _make_mock_nemo_service():
     mock_nemo_service.return_value = mock_nemo_service
     mock_nemo_service._conn = mock_nemo_llm
     return (mock_nemo_service, mock_nemo_llm)
+
+
+def test_constructor():
+    (mock_nemo_service, mock_nemo_llm) = _make_mock_nemo_service()
+    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    assert isinstance(client, LLMClient)
+    mock_nemo_llm.assert_not_called()
+
+
+def test_get_input_names():
+    (mock_nemo_service, mock_nemo_llm) = _make_mock_nemo_service()
+    client = NeMoLLMClient(mock_nemo_service, "test_model", additional_arg="test_arg")
+    assert client.get_input_names() == ["prompt"]
+    mock_nemo_llm.assert_not_called()
 
 
 def test_generate():
