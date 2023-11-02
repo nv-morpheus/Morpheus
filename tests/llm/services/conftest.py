@@ -41,8 +41,9 @@ def openai_fixture(fail_missing: bool):
 
 
 # Using autouse to ensure we never attempt to actually call either of these services
+@pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion", autouse=True)
-def mock_chat_completion_fixture(openai):
+def mock_chat_completion_fixture():
     with mock.patch("openai.ChatCompletion") as mock_chat_completion:
         mock_chat_completion.return_value = mock_chat_completion
 
@@ -52,8 +53,9 @@ def mock_chat_completion_fixture(openai):
         yield mock_chat_completion
 
 
+@pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm", autouse=True)
-def mock_nemollm_fixture(nemollm):
+def mock_nemollm_fixture():
     with mock.patch("nemollm.NemoLLM") as mock_nemollm:
         mock_nemollm.return_value = mock_nemollm
         mock_nemollm.generate_multiple.return_value = ["test_output"]

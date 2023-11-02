@@ -25,8 +25,7 @@ logger = logging.getLogger(__name__)
 IMPORT_ERROR_MESSAGE = (
     "OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
     "Install it by running the following command:\n"
-    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`"
-)
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 try:
     import openai
@@ -56,10 +55,7 @@ class OpenAIChatClient(LLMClient):
         Additional keyword arguments to pass to the model when generating text.
     """
 
-    def __init__(self,
-                 model_name: str,
-                 set_assistant: bool = False,
-                 **model_kwargs: dict[str, typing.Any]) -> None:
+    def __init__(self, model_name: str, set_assistant: bool = False, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
         _verify_openai()
 
@@ -79,17 +75,13 @@ class OpenAIChatClient(LLMClient):
 
         return input_names
 
-    def _create_messages(self,
-                         prompt: str,
-                         assistant: str = None) -> list[dict[str, str]]:
+    def _create_messages(self, prompt: str, assistant: str = None) -> list[dict[str, str]]:
         messages = [
             {
-                "role": "system",
-                "content": "You are a helpful assistant."
+                "role": "system", "content": "You are a helpful assistant."
             },
             {
-                "role": "user",
-                "content": prompt
+                "role": "user", "content": prompt
             },
         ]
 
@@ -98,8 +90,7 @@ class OpenAIChatClient(LLMClient):
 
         return messages
 
-    def _extract_completion(
-            self, completion: "openai.openai_object.OpenAIObject") -> str:
+    def _extract_completion(self, completion: "openai.openai_object.OpenAIObject") -> str:
         choices = completion.get('choices', [])
         if len(choices) == 0:
             raise ValueError("No choices were returned from the model.")
@@ -113,9 +104,7 @@ class OpenAIChatClient(LLMClient):
     def _generate(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = openai.ChatCompletion.create(model=self._model_name,
-                                              messages=messages,
-                                              **self._model_kwargs)
+        output = openai.ChatCompletion.create(model=self._model_name, messages=messages, **self._model_kwargs)
 
         return self._extract_completion(output)
 
@@ -128,15 +117,12 @@ class OpenAIChatClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return self._generate(input_dict[self._prompt_key],
-                              input_dict.get(self._assistant_key))
+        return self._generate(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
 
     async def _generate_async(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = await openai.ChatCompletion.acreate(model=self._model_name,
-                                                     messages=messages,
-                                                     **self._model_kwargs)
+        output = await openai.ChatCompletion.acreate(model=self._model_name, messages=messages, **self._model_kwargs)
 
         return self._extract_completion(output)
 
@@ -149,8 +135,7 @@ class OpenAIChatClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return await self._generate_async(input_dict[self._prompt_key],
-                                          input_dict.get(self._assistant_key))
+        return await self._generate_async(input_dict[self._prompt_key], input_dict.get(self._assistant_key))
 
     def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
         """
@@ -166,8 +151,7 @@ class OpenAIChatClient(LLMClient):
         if (self._set_assistant):
             assistants = inputs[self._assistant_key]
             if len(prompts) != len(assistants):
-                raise ValueError(
-                    "The number of prompts and assistants must be equal.")
+                raise ValueError("The number of prompts and assistants must be equal.")
 
         results = []
         for (i, prompt) in enumerate(prompts):
@@ -176,8 +160,7 @@ class OpenAIChatClient(LLMClient):
 
         return results
 
-    async def generate_batch_async(self, inputs: dict[str,
-                                                      list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -191,8 +174,7 @@ class OpenAIChatClient(LLMClient):
         if (self._set_assistant):
             assistants = inputs[self._assistant_key]
             if len(prompts) != len(assistants):
-                raise ValueError(
-                    "The number of prompts and assistants must be equal.")
+                raise ValueError("The number of prompts and assistants must be equal.")
 
         coros = []
         for (i, prompt) in enumerate(prompts):
@@ -230,6 +212,4 @@ class OpenAIChatService(LLMService):
             Additional keyword arguments to pass to the model when generating text.
         """
 
-        return OpenAIChatClient(model_name=model_name,
-                                set_assistant=set_assistant,
-                                **model_kwargs)
+        return OpenAIChatClient(model_name=model_name, set_assistant=set_assistant, **model_kwargs)

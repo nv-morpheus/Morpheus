@@ -24,8 +24,7 @@ logger = logging.getLogger(__name__)
 
 IMPORT_ERROR_MESSAGE = (
     "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
-    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`"
-)
+    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
 
 try:
     import nemollm
@@ -57,8 +56,7 @@ class NeMoLLMClient(LLMClient):
         Additional keyword arguments to pass to the model when generating text.
     """
 
-    def __init__(self, parent: "NeMoLLMService", model_name: str,
-                 **model_kwargs: dict[str, typing.Any]) -> None:
+    def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
         _verify_nemo_llm()
 
@@ -79,8 +77,7 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return self.generate_batch(
-            {self._prompt_key: [input_dict[self._prompt_key]]})[0]
+        return self.generate_batch({self._prompt_key: [input_dict[self._prompt_key]]})[0]
 
     async def generate_async(self, input_dict: dict[str, str]) -> str:
         """
@@ -91,8 +88,7 @@ class NeMoLLMClient(LLMClient):
         input_dict : dict
             Input containing prompt data.
         """
-        return (await self.generate_batch_async(
-            {self._prompt_key: [input_dict[self._prompt_key]]}))[0]
+        return (await self.generate_batch_async({self._prompt_key: [input_dict[self._prompt_key]]}))[0]
 
     def generate_batch(self, inputs: dict[str, list[str]]) -> list[str]:
         """
@@ -105,14 +101,12 @@ class NeMoLLMClient(LLMClient):
         """
         return typing.cast(
             list[str],
-            self._parent._conn.generate_multiple(
-                model=self._model_name,
-                prompts=inputs[self._prompt_key],
-                return_type="text",
-                **self._model_kwargs))
+            self._parent._conn.generate_multiple(model=self._model_name,
+                                                 prompts=inputs[self._prompt_key],
+                                                 return_type="text",
+                                                 **self._model_kwargs))
 
-    async def generate_batch_async(self, inputs: dict[str,
-                                                      list[str]]) -> list[str]:
+    async def generate_batch_async(self, inputs: dict[str, list[str]]) -> list[str]:
         """
         Issue an asynchronous request to generate a list of responses based on a list of prompts.
 
@@ -124,10 +118,7 @@ class NeMoLLMClient(LLMClient):
         prompts = inputs[self._prompt_key]
         futures = [
             asyncio.wrap_future(
-                self._parent._conn.generate(self._model_name,
-                                            p,
-                                            return_type="async",
-                                            **self._model_kwargs))
+                self._parent._conn.generate(self._model_name, p, return_type="async", **self._model_kwargs))
             for p in prompts
         ]
 
@@ -136,8 +127,7 @@ class NeMoLLMClient(LLMClient):
         responses = []
 
         for result in results:
-            result = nemollm.NemoLLM.post_process_generate_response(
-                result, return_text_completion_only=False)
+            result = nemollm.NemoLLM.post_process_generate_response(result, return_text_completion_only=False)
             if result.get('status', None) == 'fail':
                 raise RuntimeError(result.get('msg', 'Unknown error'))
 
@@ -166,10 +156,8 @@ class NeMoLLMService(LLMService):
         super().__init__()
         _verify_nemo_llm()
 
-        api_key = api_key if api_key is not None else os.environ.get(
-            "NGC_API_KEY", None)
-        org_id = org_id if org_id is not None else os.environ.get(
-            "NGC_ORG_ID", None)
+        api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
+        org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 
         self._conn = nemollm.NemoLLM(
             # The client must configure the authentication and authorization parameters
@@ -183,8 +171,7 @@ class NeMoLLMService(LLMService):
             org_id=org_id,
         )
 
-    def get_client(self, model_name: str,
-                   **model_kwargs: dict[str, typing.Any]) -> NeMoLLMClient:
+    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> NeMoLLMClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
 

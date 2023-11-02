@@ -24,9 +24,9 @@ from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
-from morpheus.llm.services.nemo_llm_service import LLMService
-from morpheus.llm.services.openai_chat_service import OpenAIChatService
+from morpheus.llm.services.llm_service import LLMService
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -115,7 +115,6 @@ def _run_pipeline(config: Config, llm_service_cls: LLMService, country_prompts: 
     assert_results(sink.get_results())
 
 
-@pytest.mark.slow
 @pytest.mark.use_python
 @mock.patch("asyncio.wrap_future")
 @mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
@@ -131,7 +130,6 @@ def test_completion_pipe_nemo(
     _run_pipeline(config, NeMoLLMService, country_prompts, capital_responses)
 
 
-@pytest.mark.slow
 @pytest.mark.use_python
 def test_completion_pipe(config: Config,
                          mock_chat_completion: mock.MagicMock,
