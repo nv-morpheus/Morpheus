@@ -88,14 +88,6 @@ class Pipeline():
     def _assert_not_built(self):
         assert not self.is_built, "Pipeline has already been built. Cannot modify pipeline."
 
-    def _add_id_col(self, x: cudf.DataFrame):
-
-        # Data in stream is cudf Dataframes at this point. We need an ID column before continuing
-        x.insert(0, 'ID', range(self._id_counter, self._id_counter + len(x)))
-        self._id_counter += len(x)
-
-        return x
-
     def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
         """
         Add a stage to a segment in the pipeline.
