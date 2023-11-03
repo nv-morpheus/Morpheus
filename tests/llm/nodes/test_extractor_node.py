@@ -15,7 +15,6 @@
 
 import cudf
 
-from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_node
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
