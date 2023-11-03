@@ -83,14 +83,14 @@ class Receiver():
         if (self._input_node is None):
             # First check if we only have 1 input sender
             if (len(self._input_senders) == 1):
-                # In this case, our input stream/type is determined from the sole Sender
+                # In this case, our input type is determined from the sole Sender
                 sender = self._input_senders[0]
 
                 if sender.output_node is not None:
                     self._input_node = sender.output_node
                     self._is_node_linked = True
             else:
-                # We have multiple senders. Create a dummy stream to connect all senders
+                # We have multiple senders. Create a dummy node to connect all senders
                 self._input_node = builder.make_node_component(
                     f"{self.parent.unique_name}-reciever[{self.port_number}]", mrc.core.operators.map(lambda x: x))
 
@@ -121,7 +121,7 @@ class Receiver():
         if (self._input_schema is None):
             # First check if we only have 1 input sender
             if (len(self._input_senders) == 1):
-                # In this case, our input stream/type is determined from the sole Sender
+                # In this case, our input type is determined from the sole Sender
                 sender = self._input_senders[0]
                 self._input_schema = sender.output_schema
                 self._is_schema_linked = True

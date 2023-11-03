@@ -70,8 +70,8 @@ class SinglePortStage(_pipeline.Stage):
         pass
 
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
-        # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
-        # True source object separate from the output stream. If any other operators need to be added after the source,
+        # Derived source stages should override `_build_single` instead of this method. This allows for tracking the
+        # True source object separate from the output node. If any other operators need to be added after the node,
         # use `_post_build`
         assert len(self.input_ports) == 1 and len(self.output_ports) == 1, \
             "SinglePortStage must have 1 input port and 1 output port"

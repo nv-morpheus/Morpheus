@@ -52,5 +52,5 @@ class Stage(_pipeline.StageBase):
                 DeprecationWarning)
             self.on_start()
 
-    def _on_complete(self, stream):  # pylint: disable=unused-argument
+    def _on_complete(self, node):  # pylint: disable=unused-argument
         logger.info("Stage Complete: %s", self.name)
