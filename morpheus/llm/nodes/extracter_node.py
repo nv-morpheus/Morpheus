@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class ExtracterNode(LLMNodeBase):
     """
-    Extracts fields from the DataFrame contained by the message attached to the `LLMContext` and copies then directly
+    Extracts fields from the DataFrame contained by the message attached to the `LLMContext` and copies them directly
     to the context.
 
     The list of fields to be extracted is provided by the task's `input_keys` attached to the `LLMContext`.
