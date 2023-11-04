@@ -40,12 +40,12 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("pass-thru")
-class PassThruStage(SinglePortStage):
+class PassThruStage(PassThruTypeMixin, SinglePortStage):
 ```
 
 There are four methods that need to be defined in our new subclass to implement the stage interface: `name`, `accepted_types`, `supports_cpp_node`, and `_build_single`. In practice, it is often necessary to define at least one more method which will perform the actual work of the stage; by convention, this method is typically named `on_data`, which we will define in our examples.
@@ -59,7 +59,7 @@ There are four methods that need to be defined in our new subclass to implement 
 
 The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
 ```python
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (typing.Any,)
 ```
 
@@ -78,11 +78,12 @@ Our `on_data` method accepts an incoming message and returns a message. The retu
 
 Finally, the `_build_single` method will be used at stage build time to construct our node and wire it into the pipeline. `_build_single` receives an instance of an MRC segment builder (`mrc.Builder`) along with a `StreamPair` instance, which is a tuple consisting of our parent node and its output type. We will be using the builder instance to construct a node from our stage and connecting it to the Morpheus pipeline. The return type of `_build_single` is also a `StreamPair` which will be comprised of our node along with its data type.
 ```python
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder,
+                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
 ```
 
 For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution pipeline. To build the node, we will call the `make_node` method of the builder instance, passing it our `unique_name` property method and applying MRC's map operator to the `on_data` method. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
@@ -92,12 +93,12 @@ node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
 Next, we will define an edge connecting our new node to our parent node:
 ```python
-builder.make_edge(input_stream[0], node)
+builder.make_edge(input_node, node)
 ```
 
 Finally, we will return a new tuple of our node and output type. Since this is a pass through node that can accept any input type, we will return our parent's type.
 ```python
-return node, input_stream[1]
+return node
 ```
 
 ## Putting the Stage Together
@@ -108,12 +109,12 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("pass-thru")
-class PassThruStage(SinglePortStage):
+class PassThruStage(PassThruTypeMixin, SinglePortStage):
     """
     A Simple Pass Through Stage
     """
@@ -122,7 +123,7 @@ class PassThruStage(SinglePortStage):
     def name(self) -> str:
         return "pass-thru"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (typing.Any, )
 
     def supports_cpp_node(self) -> bool:
@@ -132,11 +133,12 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder,
+                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
 ```
 
 ## Testing our new Stage
