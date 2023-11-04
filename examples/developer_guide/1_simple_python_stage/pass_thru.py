@@ -33,7 +33,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
     def name(self) -> str:
         return "pass-thru"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (typing.Any, )
 
     def supports_cpp_node(self) -> bool:
@@ -43,7 +43,8 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder,
+                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_node, node)
 

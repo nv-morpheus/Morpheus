@@ -42,7 +42,7 @@ class SinglePortStage(_pipeline.Stage):
         self._create_ports(1, 1)
 
     @abstractmethod
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types for this stage are returned. Derived classes should override this method. An
         error will be generated if the input types to the stage do not match one of the available types
@@ -50,7 +50,7 @@ class SinglePortStage(_pipeline.Stage):
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Accepted input types.
 
         """
