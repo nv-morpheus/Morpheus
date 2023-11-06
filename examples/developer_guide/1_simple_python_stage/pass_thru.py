@@ -43,8 +43,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder,
-                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
         builder.make_edge(input_node, node)
 

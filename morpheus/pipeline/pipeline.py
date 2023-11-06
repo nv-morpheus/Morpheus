@@ -26,8 +26,6 @@ import mrc
 import networkx
 from tqdm import tqdm
 
-import cudf
-
 from morpheus.config import Config
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
