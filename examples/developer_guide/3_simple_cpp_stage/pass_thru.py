@@ -26,7 +26,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 
-@register_stage("pass-thru-cpp")
+@register_stage("pass-thru")
 class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     def __init__(self, config: Config):
@@ -35,7 +35,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "pass-thru-cpp"
+        return "pass-thru"
 
     def accepted_types(self) -> tuple:
         return (typing.Any, )
