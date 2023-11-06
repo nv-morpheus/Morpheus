@@ -364,3 +364,74 @@ def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> 
     return node
 ```
 > **Note**: We lazily imported the C++ module to avoid importing it when it is not needed.
+
+
+## Putting the Stage Together
+```python
+import typing
+
+import mrc
+from mrc.core import operators as ops
+
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.messages import MultiMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
+
+
+@register_stage("pass-thru")
+class PassThruStage(PassThruTypeMixin, SinglePortStage):
+
+    def __init__(self, config: Config):
+        super().__init__(config)
+        self._input_type = None
+
+    @property
+    def name(self) -> str:
+        return "pass-thru"
+
+    def accepted_types(self) -> tuple:
+        return (typing.Any, )
+
+    def supports_cpp_node(self) -> bool:
+        return True
+
+    def compute_schema(self, schema: StageSchema):
+        super().compute_schema(schema)  # Call PassThruTypeMixin's compute_schema method
+        self._input_type = schema.input_type
+
+    def on_data(self, message: typing.Any):
+        # Return the message for the next stage
+        return message
+
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
+            from _lib import morpheus_example as morpheus_example_cpp
+
+            # pylint: disable=c-extension-no-member
+            node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
+        else:
+            node = builder.make_node(self.unique_name, ops.map(self.on_data))
+
+        builder.make_edge(input_node, node)
+        return node
+```
+
+## Testing the Stage
+To test the updated stage we will build a simple pipeline using the  Morpheus command line tool. In order to illustrate the stage building a C++ node only when the input type is a `MultiMessage` we will insert the `pass-thru` stage in twice in the pipeline. In the first instance the input type will be `MessageMeta` and the stage will fallback to using a Python node, and in the second instance the input type will be a `MultiMessage` and the stage will build a C++ node.
+    
+```bash
+PYTHONPATH="examples/developer_guide/3_simple_cpp_stage" \
+morpheus --log_level=debug --plugin "pass_thru" \
+    run pipeline-other \
+    from-file --filename=examples/data/email_with_addresses.jsonlines \
+    pass-thru \
+    monitor \
+    deserialize \
+    pass-thru \
+    monitor
+```
+
+> **Note**: In the above example we set the `PYTHONPATH` environment variable this is to facilitate the relative import the stage performs of the `_lib` module.
