@@ -71,7 +71,8 @@ def _build_engine(llm_service: str):
     return engine
 
 
-def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, repeat_count: int, llm_service: str):
+def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, repeat_count: int,
+             llm_service: str) -> float:
 
     config = Config()
 
