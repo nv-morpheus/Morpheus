@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -65,7 +63,7 @@ class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     def name(self) -> str:
         return "recipient-features"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
