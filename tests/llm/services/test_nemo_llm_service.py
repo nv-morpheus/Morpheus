@@ -25,8 +25,7 @@ from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 @pytest.mark.usefixtures("restore_environ")
 @pytest.mark.parametrize("api_key", [None, "test_api_key"])
 @pytest.mark.parametrize("org_id", [None, "test_org_id"])
-@mock.patch("morpheus.llm.services.nemo_llm_service.NemoLLM")
-def test_constructor(mock_nemo: mock.MagicMock, api_key: str, org_id: str):
+def test_constructor(mock_nemollm: mock.MagicMock, api_key: str, org_id: str):
     """
     Test that the constructor prefers explicit arguments over environment variables.
     """
@@ -39,7 +38,7 @@ def test_constructor(mock_nemo: mock.MagicMock, api_key: str, org_id: str):
     expected_org_id = org_id or env_org_id
 
     NeMoLLMService(api_key=api_key, org_id=org_id)
-    mock_nemo.assert_called_once_with(api_key=expected_api_key, org_id=expected_org_id)
+    mock_nemollm.assert_called_once_with(api_key=expected_api_key, org_id=expected_org_id)
 
 
 def test_get_client():
