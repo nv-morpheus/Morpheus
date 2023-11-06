@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import logging
-import typing
 from io import StringIO
 
 import mrc
@@ -62,7 +61,7 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
     def name(self) -> str:
         return "to-rabbitmq"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
