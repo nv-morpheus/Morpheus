@@ -410,7 +410,6 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
         if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
             from _lib import morpheus_example as morpheus_example_cpp
 
-            # pylint: disable=c-extension-no-member
             node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
         else:
             node = builder.make_node(self.unique_name, ops.map(self.on_data))
