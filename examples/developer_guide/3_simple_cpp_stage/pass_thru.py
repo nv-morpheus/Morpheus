@@ -44,7 +44,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
         return True
 
     def compute_schema(self, schema: StageSchema):
-        super().compute_schema(schema)
+        super().compute_schema(schema)  # Call PassThruTypeMixin's compute_schema method
         self._input_type = schema.input_type
 
     def on_data(self, message: typing.Any):

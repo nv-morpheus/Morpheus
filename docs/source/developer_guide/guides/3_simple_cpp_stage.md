@@ -119,7 +119,7 @@ This means that an MRC subscribe function accepts an `rxcpp::observable` of type
 
 All Morpheus C++ stages receive an instance of an MRC Segment Builder and a name (Typically this is the Python class' `unique_name` property) when constructed from Python. Note that C++ stages don't receive an instance of the Morpheus config. Therefore, if there are any attributes in the config needed by the C++ class, it is the responsibility of the Python class to extract them and pass them in as parameters to the C++ class.
 
-We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The MRC `Builder` is a C++ object with Python bindings. The proxy interface object is used to help insulate Python bindings from internal implementation details.
+We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The MRC `Builder` is a C++ object with Python bindings. However there are other instances such as checking for values of `None` where the casting from Python to C++ types is not automatic. The proxy interface object fulfills this need and is used to help insulate Python bindings from internal implementation details.
 
 ```cpp
 struct PassThruStageInterfaceProxy
@@ -222,8 +222,7 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 
 Note the use of `std::move` in the `on_next` function. In Morpheus, our messages often contain both large payloads as well as Python objects where performing a copy necessitates acquiring the Python [Global Interpreter Lock (GIL)](https://docs.python.org/3.10/glossary.html#term-global-interpreter-lock). In either case, unnecessary copies can become a performance bottleneck, and much care is taken to limit the number of copies required for data to move through the pipeline.
 
-There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement.
-This is typically accomplished using pybind11's [gil_scoped_acquire](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [gil_scoped_release](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
+There are situations in which a C++ stage does need to interact with Python, and therefore acquiring the GIL is a requirement. This is typically accomplished using pybind11's [gil_scoped_acquire](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) RAII class inside of a code block. Conversely there are situations in which we want to ensure that we are not holding the GIL and in these situations pybind11's [gil_scoped_release](https://pybind11.readthedocs.io/en/stable/advanced/misc.html#global-interpreter-lock-gil) class can be used.
 
 For stages it is important to ensure that the GIL is released before calling the output's `on_next` method. Consider the following `on_next` lambda function:
 
@@ -335,25 +334,33 @@ PYBIND11_MODULE(morpheus_example, m)
 
 ### Python Changes
 
-We need to make a few minor adjustments to our Python implementation of the `PassThruStage`. First, we import the new `morpheus_example` Python module we created in the previous section.
-
-```python
-from _lib import morpheus_example as morpheus_example_cpp
-```
-
-As mentioned in the previous section, we will need to change the return value of the `supports_cpp_node` method to indicate that our stage now supports a C++ implementation.  Our `_build_single` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is `True` using the `self._build_cpp_node()` method. The `_build_cpp_node()` method compares both `morpheus.config.CppConfig.get_should_use_cpp()` and `supports_cpp_node()` and returns `True` only when both methods return `True`.
-
+We need to make a few minor adjustments to our Python implementation of the `PassThruStage`. First, we will need to change the return value of the `supports_cpp_node` method to indicate that our stage now supports a C++ implementation.
 ```python
 def supports_cpp_node(self):
    return True
 ```
+
+Next, as mentioned previously, our Python implementation can support messages of any type, however the C++ implementation can only support instances of `MultiMessage` and its subclasses. To do this we will override the `compute_schema` method to store the input type.
 ```python
-def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-    if self._build_cpp_node():
+def compute_schema(self, schema: StageSchema):
+    super().compute_schema(schema)  # Call PassThruTypeMixin's compute_schema method
+    self._input_type = schema.input_type
+```
+> **Note**: We are still using the `PassThruTypeMixin` to handle the requirements of setting the output type.
+
+As mentioned in the previous section, our `_build_single` method needs to be updated to build a C++ node when the input type is `MultiMessage` and when `morpheus.config.CppConfig.get_should_use_cpp()` is `True` using the `self._build_cpp_node()` method. The `_build_cpp_node()` method compares both `morpheus.config.CppConfig.get_should_use_cpp()` and `supports_cpp_node()` and returns `True` only when both methods return `True`.
+
+```python
+def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
+        from _lib import morpheus_example as morpheus_example_cpp
+
+        # pylint: disable=c-extension-no-member
         node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
     else:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
-    builder.make_edge(input_stream[0], node)
-    return node, input_stream[1]
+    builder.make_edge(input_node, node)
+    return node
 ```
+> **Note**: We lazily imported the C++ module to avoid importing it when it is not needed.
