@@ -116,7 +116,7 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
     - **Description**: Number of times to repeat the input query. Useful for testing performance.
     - **Default**: `64`
 
-- `----llm_service [NemoLLM|OpenAI]`
+- `--llm_service [NemoLLM|OpenAI]`
     - **Description**: LLM service to issue requests to.
     - **Default**: `NemoLLM`
 
@@ -124,11 +124,9 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
     - **Description**: Show the help message with options and commands details.
 
 
-### Running Morpheus Pipeline with Model Name
-
-Run an example workflow with user specific NeMo model.
+### Running Morpheus Pipeline with OpenAI LLM service
 
 ```bash
 
-python examples/llm/main.py completion pipeline --model_name gpt-43b-001
+python examples/llm/main.py completion pipeline --llm_service OpenAI
 ```
