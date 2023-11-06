@@ -101,7 +101,7 @@ Since the purpose of this stage is specifically tied to pre-processing text data
 class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
 ```
 
-Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same.
+Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same and we continue to make use of the `PassThruTypeMixin`.
 
 ### The Completed Preprocessing Stage
 
@@ -369,7 +369,7 @@ config.mode = PipelineModes.NLP
 config.num_threads = os.cpu_count()
 config.feature_length = 128
 
-with open(labels_file) as fh:
+with open(labels_file, encoding='UTF-8') as fh:
     config.class_labels = [x.strip() for x in fh]
 ```
 
