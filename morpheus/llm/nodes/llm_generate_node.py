@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
@@ -31,6 +30,9 @@ class LLMGenerateNode(LLMNodeBase):
     ----------
     llm_client : LLMClient
         The client instance to use to generate responses.
+
+    input_names : list[str], optional
+        The names of the inputs to this node. Defaults to `["prompt"]`.
     """
 
     def __init__(self, llm_client: LLMClient) -> None:
@@ -38,15 +40,15 @@ class LLMGenerateNode(LLMNodeBase):
 
         self._llm_client = llm_client
 
-    def get_input_names(self):
-        return ["prompt"]
+    def get_input_names(self) -> list[str]:
+        return self._llm_client.get_input_names()
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext) -> LLMContext:
 
-        # Get the list of inputs
-        prompts: list[str] = typing.cast(list[str], context.get_input())
+        # Get the inputs
+        inputs: dict[str, list[str]] = context.get_inputs()
 
-        results = await self._llm_client.generate_batch_async(prompts)
+        results = await self._llm_client.generate_batch_async(inputs)
 
         context.set_output(results)
 
