@@ -31,8 +31,7 @@ def test_constructor(embedding: typing.Callable | None):
 
 
 @pytest.mark.parametrize("embedding, expected", [(None, ["embedding"]), (mock.AsyncMock(), ["query"])])
-def test_get_input_names(embedding: typing.Callable | None,
-                         expected: list[str]):
+def test_get_input_names(embedding: typing.Callable | None, expected: list[str]):
     mock_vdb_service = mock.MagicMock()
     node = RetrieverNode(embedding=embedding, service=mock_vdb_service)
     assert node.get_input_names() == expected

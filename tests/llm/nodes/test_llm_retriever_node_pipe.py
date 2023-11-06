@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 
 import cudf
+
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
@@ -45,11 +46,11 @@ def _build_engine(vdb_service, **similarity_search_kwargs) -> LLMEngine:
     engine.add_node("extracter", node=ExtracterNode())
     engine.add_node("retriever",
                     inputs=["/extracter"],
-                    node=RetrieverNode(service=vdb_service,
-                                       embedding=mock_embedding, **similarity_search_kwargs))
+                    node=RetrieverNode(service=vdb_service, embedding=mock_embedding, **similarity_search_kwargs))
     engine.add_task_handler(inputs=["/retriever"], handler=SimpleTaskHandler())
 
     return engine
+
 
 @pytest.mark.use_python
 def test_pipeline(config: Config):
