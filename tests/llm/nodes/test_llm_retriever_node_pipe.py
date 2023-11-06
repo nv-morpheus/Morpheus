@@ -84,12 +84,13 @@ def test_pipeline(config: Config):
 
 
 @pytest.mark.use_python
+@pytest.mark.milvus
 def test_pipeline_with_milvus(config: Config,
                               milvus_service: MilvusVectorDBService,
                               idx_part_collection_config: dict,
                               milvus_data: list[dict]):
 
-    collection_name = "test_search_with_data_collection"
+    collection_name = "test_retriever_node_collection"
     # Make sure to drop any existing collection from previous runs.
     milvus_service.drop(collection_name)
     # Create a collection.
