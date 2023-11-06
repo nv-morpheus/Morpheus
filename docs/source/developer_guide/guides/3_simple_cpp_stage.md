@@ -66,15 +66,13 @@ Both the `PythonSource` and `PythonNode` classes are defined in the `pymrc/node.
 
 > **Note**: `InputT` and `OutputT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
 
-> **Note**: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
-
 > **Note**: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes read and write objects registered with Python, not the implementation language.
 
 ## A Simple Pass Through Stage
 
 As in our Python guide, we will start with a simple pass through stage which can be used as a starting point for future development of other stages. Note that by convention, C++ classes in Morpheus have the same name as their corresponding Python classes and are located under a directory named `_lib`. We will be following that convention. To start, we will create a `_lib` directory and a new empty `__init__.py` file.
 
-While our Python implementation accepts messages of any type (in the form of Python objects), on the C++ side we don't have that flexibility since our node is subject to C++ static typing rules. In practice, this isn't a limitation as we usually know which specific message types we need to work with.
+While our Python implementation accepts messages of any type (in the form of Python objects), on the C++ side we don't have that flexibility since our node is subject to C++ static typing rules. In practice, this isn't a limitation as we usually know which specific message types we need to work with. For this example we will be working with the `MultiMessage` as our input and output type, it is also a common base type for many other Morpheus message classes. This means that at build time our Python stage implementation is able to build a C++ node when the incoming type is a subclass of `MultiMessage`, while falling back to the existing Python implementation otherwise.
 
 To start with, we have our Morpheus and MRC-specific includes:
 
