@@ -28,19 +28,28 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class WebScraperStage(SinglePortStage):
+    """
+    Stage for scraping web based content using the HTTP GET protocol.
 
-    def __init__(self, c: Config, *, chunk_size, link_column: str = "link"):
+    Parameters
+    ----------
+    c : morpheus.config.Config
+        Pipeline configuration instance.
+    chunk_size : int
+        Size in which to split the scraped content
+    link_column : str, default="link"
+        Column which contains the links to scrape
+    """
+    def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link"):
         super().__init__(c)
 
         self._link_column = link_column
         self._chunk_size = chunk_size
-
         self._cache_dir = "./.cache/llm/rss/"
 
         # Ensure the directory exists
@@ -79,19 +88,23 @@ class WebScraperStage(SinglePortStage):
         """Indicates whether this stage supports a C++ node."""
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: mrc.SegmentObject) -> mrc.SegmentObject:
 
         node = builder.make_node(self.unique_name,
                                  ops.map(self._download_and_split),
                                  ops.filter(lambda x: x is not None))
+
         node.launch_options.pe_count = self._config.num_threads
 
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_stream, node)
 
-        return node, input_stream[1]
+        return node
 
     def _download_and_split(self, msg: MessageMeta) -> MessageMeta:
-
+        """
+        Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
+        it in the output, excluding any links which produce an error.
+        """
         if self._link_column not in msg.get_column_names():
             return None
 
@@ -126,12 +139,6 @@ class WebScraperStage(SinglePortStage):
                 soup = BeautifulSoup(raw_html, "html.parser")
 
                 text = soup.get_text(strip=True)
-
-                # article = Article(url)
-                # article.download()
-                # article.parse()
-                # print(article.text)
-                # text = article.text
 
                 split_text = self._text_splitter.split_text(text)
 
