@@ -25,7 +25,6 @@ from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
 def milvus_service_fixture(milvus_server_uri: str):
     # This fixture is scoped to the function level since the WriteToVectorDBStage will close the connection on'
     # pipeline completion
-    from morpheus.service.milvus_vector_db_service import MilvusVectorDBService
     service = MilvusVectorDBService(uri=milvus_server_uri)
     yield service
 
