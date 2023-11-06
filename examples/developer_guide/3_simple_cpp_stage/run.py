@@ -42,9 +42,12 @@ def run_pipeline():
     # Set source stage
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
+    # Add a PassThruStage where the input type is MessageMeta
+    pipeline.add_stage(PassThruStage(config))
+
     pipeline.add_stage(DeserializeStage(config))
 
-    # Add our own stage
+    # Add a PassThruStage where the input type is MultiMessage
     pipeline.add_stage(PassThruStage(config))
 
     # Add monitor to record the performance of our new stage
