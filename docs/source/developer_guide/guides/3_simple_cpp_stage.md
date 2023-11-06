@@ -64,11 +64,11 @@ class PythonNode : ...
 
 Both the `PythonSource` and `PythonNode` classes are defined in the `pymrc/node.hpp` header.
 
-Note: `InputT` and `OutputT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
+> **Note**: `InputT` and `OutputT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
 
-Note: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
+> **Note**: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
 
-Note: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes read and write objects registered with Python, not the implementation language.
+> **Note**: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes read and write objects registered with Python, not the implementation language.
 
 ## A Simple Pass Through Stage
 
@@ -238,6 +238,7 @@ pybind11::gil_scoped_release no_gil;
 
     std::shared_ptr<MessageMeta> new_meta;
     {
+        // Acquire the GIL
         pybind11::gil_scoped_acquire gil;
         auto df = mutable_info.checkout_obj();
 
