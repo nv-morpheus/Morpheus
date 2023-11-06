@@ -51,12 +51,10 @@ def run():
     type=click.IntRange(min=1),
     help="Number of times to repeat the input query. Useful for testing performance.",
 )
-@click.option(
-    "--model_name",
-    default="gpt-43b-002",
-    type=str,
-    help="Name of the NeMo model.",
-)
+@click.option("--llm_service",
+              default="NemoLLM",
+              type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+              help="LLM service to issue requests to.")
 def pipeline(**kwargs):
     from .pipeline import pipeline as _pipeline
 

@@ -24,6 +24,7 @@ channels:
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
     - automake=1.16.5
+    - beautifulsoup4=4.12
     - benchmark=1.6.1
     - boost-cpp=1.82
     - cachetools=5.0.0

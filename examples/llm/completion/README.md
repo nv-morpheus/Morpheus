@@ -113,12 +113,12 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
     - **Default**: `64`
 
 - `--repeat_count INTEGER RANGE`
-    - **Description**:Number of times to repeat the input query. Useful for testing performance.
+    - **Description**: Number of times to repeat the input query. Useful for testing performance.
     - **Default**: `64`
 
-- `--model_name TEXT`
-    - **Description**:Number of times to repeat the input query. Useful for testing performance.
-    - **Default**: `gpt-43b-002`
+- `----llm_service [NemoLLM|OpenAI]`
+    - **Description**: LLM service to issue requests to.
+    - **Default**: `NemoLLM`
 
 - `--help`
     - **Description**: Show the help message with options and commands details.

@@ -35,6 +35,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.concat_df import concat_dataframes
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ def _build_engine(model_name: str):
                     inputs=[("/extracter")],
                     node=LangChainAgentNode(agent_executor=_build_agent_executor(model_name=model_name)))
 
-    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
+    engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
 
     return engine
 
@@ -108,6 +109,8 @@ def pipeline(
 
     pipe.run()
 
-    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
+    messages = sink.get_messages()
+    responses = concat_dataframes(messages)
+    logger.info("Pipeline complete. Received %s responses:\n%s", len(messages), responses['response'])
 
     return start_time

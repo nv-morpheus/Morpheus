@@ -23,7 +23,9 @@ from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
 from morpheus.llm.nodes.prompt_template_node import PromptTemplateNode
+from morpheus.llm.services.llm_service import LLMService
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -37,10 +39,21 @@ from morpheus.utils.concat_df import concat_dataframes
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(model_name):
+def _build_engine(llm_service: str):
 
-    llm_service = NeMoLLMService()
+    llm_service_cls: type[LLMService] = None
+    model_name: str = None
 
+    if llm_service == "NemoLLM":
+        llm_service_cls = NeMoLLMService
+        model_name = "gpt-43b-002"
+    elif llm_service == "OpenAI":
+        llm_service_cls = OpenAIChatService
+        model_name = 'gpt-3.5-turbo'
+    else:
+        raise ValueError(f"Invalid LLM service: {llm_service}")
+
+    llm_service = llm_service_cls()
     llm_clinet = llm_service.get_client(model_name=model_name)
 
     engine = LLMEngine()
@@ -58,7 +71,7 @@ def _build_engine(model_name):
     return engine
 
 
-def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, repeat_count: int, model_name: str):
+def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, repeat_count: int, llm_service: str) -> float:
 
     config = Config()
 
@@ -97,7 +110,7 @@ def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: i
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service=llm_service)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 

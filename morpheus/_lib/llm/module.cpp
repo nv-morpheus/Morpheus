@@ -248,36 +248,34 @@ PYBIND11_MODULE(llm, _module)
         .def_property_readonly("sibling_input_names", &LLMNodeRunner::sibling_input_names)
         .def("execute", &LLMNodeRunner::execute, py::arg("context"));
 
-    // The auto-generated docstrings for the overloaded function in this class cause sphinx errors
-    py::options options;
-    options.disable_function_signatures();
     py::class_<LLMNode, LLMNodeBase, PyLLMNode<>, std::shared_ptr<LLMNode>>(_module, "LLMNode")
         .def(py::init_alias<>())
         .def(
             "add_node",
-            [](LLMNode& self, std::string name, std::shared_ptr<LLMNodeBase> node, bool is_output) {
+            [](LLMNode& self, std::string name, py::object inputs, std::shared_ptr<LLMNodeBase> node, bool is_output) {
                 user_input_mappings_t converted_inputs;
 
-                // Populate the inputs from the node input_names
-                for (const auto& single_input : node->get_input_names())
+                if (inputs.is_none())
                 {
-                    converted_inputs.emplace_back(single_input);
+                    // Populate the inputs from the node input_names
+                    for (const auto& single_input : node->get_input_names())
+                    {
+                        converted_inputs.emplace_back(single_input);
+                    }
+                }
+                else
+                {
+                    converted_inputs = inputs.cast<user_input_mappings_t>();
                 }
 
                 return self.add_node(std::move(name), std::move(converted_inputs), std::move(node), is_output);
             },
             py::arg("name"),
             py::kw_only(),
+            py::arg("inputs") = py::none(),
             py::arg("node"),
-            py::arg("is_output") = false)
-        .def("add_node",
-             &LLMNode::add_node,
-             py::arg("name"),
-             py::kw_only(),
-             py::arg("inputs"),
-             py::arg("node"),
-             py::arg("is_output") = false,
-             R"pbdoc(
+            py::arg("is_output") = false,
+            R"pbdoc(
                 Add an LLMNode to the current node.
 
                 Parameters
@@ -296,8 +294,6 @@ PYBIND11_MODULE(llm, _module)
                     Indicates if the node is an output node, by default False
 
             )pbdoc");
-
-    options.enable_function_signatures();
 
     py::class_<LLMTaskHandler, PyLLMTaskHandler, std::shared_ptr<LLMTaskHandler>>(
         _module, "LLMTaskHandler", "Acts as a sink for an `LLMEngine`, emitting results as a `ControlMessage`")
