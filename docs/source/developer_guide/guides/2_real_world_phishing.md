@@ -32,8 +32,8 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
 ```python
-def accepted_types(self) -> typing.Tuple:
-    return (MessageMeta,)
+def accepted_types(self) -> tuple:
+    return (MessageMeta, )
 ```
 
 Next, we will update our `on_data` method to perform the actual work. We grab a reference to the incoming message's `df` attribute. It is important to note that `message` is a reference, and any changes made to it or its members (such as `df`) will be performed in place on the existing message instance.
@@ -49,8 +49,8 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
 
         # Attach features to string data
         df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                            df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
-                            '[SEP]' + df['Message'])
+                        df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
+                        df['Message'])
 
     # Return the message for the next stage
     return message
@@ -98,7 +98,7 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
 ```python
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
 ```
 
 Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same.
@@ -106,8 +106,6 @@ Our `_build_single` method remains unchanged from the previous example; even tho
 ### The Completed Preprocessing Stage
 
 ```python
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -116,12 +114,12 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 
@@ -133,6 +131,7 @@ class RecipientFeaturesStage(SinglePortStage):
 
     def __init__(self, config: Config):
         super().__init__(config)
+
         # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
         # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
         # stage defining this attribute.
@@ -148,7 +147,7 @@ class RecipientFeaturesStage(SinglePortStage):
     def name(self) -> str:
         return "recipient-features"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
@@ -164,17 +163,17 @@ class RecipientFeaturesStage(SinglePortStage):
 
             # Attach features to string data
             df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                              df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
-                              '[SEP]' + df['Message'])
+                          df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
+                          df['Message'])
 
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
 ```
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
@@ -452,7 +451,10 @@ To explicitly set the output format we could specify the `file_type` argument to
 import logging
 import os
 
+from recipient_features_stage import RecipientFeaturesStage
+
 import morpheus
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -460,16 +462,15 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
 
-from recipient_features_stage import RecipientFeaturesStage
-
 
 def run_pipeline():
+    """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
 
@@ -491,7 +492,7 @@ def run_pipeline():
     config.num_threads = os.cpu_count()
     config.feature_length = 128
 
-    with open(labels_file) as fh:
+    with open(labels_file, encoding='UTF-8') as fh:
         config.class_labels = [x.strip() for x in fh]
 
     # Create a linear pipeline object
@@ -526,8 +527,8 @@ def run_pipeline():
     # Monitor the inference rate
     pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
 
-    # Add probability score for is_phishing
-    pipeline.add_stage(AddScoresStage(config, labels=["is_phishing"]))
+    # Filter values lower than 0.9
+    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9, filter_source=FilterSource.TENSOR))
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))
@@ -561,7 +562,7 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
 
 ## Stage Constructors
 
-In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the details. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
+In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the implementation. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
@@ -571,7 +572,7 @@ Our refactored class definition is now:
 
 ```python
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 
@@ -586,9 +587,11 @@ class RecipientFeaturesStage(SinglePortStage):
     def __init__(self, config: Config, sep_token: str = '[SEP]'):
         super().__init__(config)
         if config.mode != PipelineModes.NLP:
-            raise RuntimeError("RecipientFeaturesStage must be used in a pipeline configured for NLP")
+            raise RuntimeError(
+                "RecipientFeaturesStage must be used in a pipeline configured for NLP"
+            )
 
-        if len(sep_token):
+        if len(sep_token) > 0:
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
@@ -608,7 +611,7 @@ class RecipientFeaturesStage(SinglePortStage):
     def name(self) -> str:
         return "recipient-features"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
@@ -620,21 +623,25 @@ class RecipientFeaturesStage(SinglePortStage):
             df['to_count'] = df['To'].str.count('@')
             df['bcc_count'] = df['BCC'].str.count('@')
             df['cc_count'] = df['CC'].str.count('@')
-            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df[
+                'cc_count']
 
             # Attach features to string data
-            df['data'] = (df['to_count'].astype(str) + self._sep_token + df['bcc_count'].astype(str) +
-                              self._sep_token + df['cc_count'].astype(str) + self._sep_token +
-                              df['total_recipients'].astype(str) + self._sep_token + df['Message'])
+            df['data'] = (df['to_count'].astype(str) + self._sep_token +
+                          df['bcc_count'].astype(str) + self._sep_token +
+                          df['cc_count'].astype(str) + self._sep_token +
+                          df['total_recipients'].astype(str) +
+                          self._sep_token + df['Message'])
 
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder,
+                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
 ```
 
 If we were to make the above changes, we can view the resulting help string with:
