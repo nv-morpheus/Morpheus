@@ -41,9 +41,9 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    routing_key : str
+    routing_key : str, optional
         RabbitMQ routing key if needed.
     """
 
