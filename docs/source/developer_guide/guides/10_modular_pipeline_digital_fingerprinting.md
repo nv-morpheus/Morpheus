@@ -65,7 +65,7 @@ The front-end loader outputs one or more control messages that are passed to the
 
 Moreover, the updated pipeline supports human-in-the-loop workflows, such as the ability to manually trigger training or inference tasks against a specific set of data, and the capacity for real-time labeling of production inference events that can be injected back into the training pipeline.
 
-The following content will track the pipeline declared in `examples/digital_fingerprinting/production/morpheus/dfp_modules_streaming_pipeline.py`
+The following content will track the pipeline declared in `examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
 
 ```python
 # Setup and command line argument parsing
@@ -135,7 +135,7 @@ def dfp_deployment(builder: mrc.Builder):
     builder.make_edge(broadcast, dfp_training_pipe_module.input_port("input"))
     builder.make_edge(broadcast, dfp_inference_pipe_module.input_port("input"))
 
-    out_streams = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
+    out_nodes = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
 
     # Register input port for a module.
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
