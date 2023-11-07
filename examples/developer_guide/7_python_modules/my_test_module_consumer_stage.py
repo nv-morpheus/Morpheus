@@ -12,13 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
+
 import mrc
 
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-class MyPassthroughModuleWrapper(SinglePortStage):
-    # ... stage implementation
+class MyPassthroughModuleWrapper(PassThruTypeMixin, SinglePortStage):
+
+    @property
+    def name(self) -> str:
+        return "my-pass-thru-module-wrapper"
+
+    def accepted_types(self) -> tuple:
+        return (typing.Any, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         module_config = {"some_configuration_parameter": "some_value"}
 

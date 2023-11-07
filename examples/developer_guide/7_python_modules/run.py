@@ -21,13 +21,13 @@ from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import configure_logging
-from .my_compound_module_consumer_stage import MyCompoundOpModuleWrapper
-from .my_test_module_consumer_stage import MyPassthroughModuleWrapper
+from my_compound_module_consumer_stage import MyCompoundOpModuleWrapper
+from my_test_module_consumer_stage import MyPassthroughModuleWrapper
 
 # pylint: disable=unused-import
-from . import my_test_module  # noqa: F401
-from . import my_test_module_consumer  # noqa: F401
-from . import my_test_compound_module  # noqa: F401
+import my_test_module  # noqa: F401
+import my_test_module_consumer  # noqa: F401
+import my_test_compound_module  # noqa: F401
 # pylint: enable=unused-import
 
 
