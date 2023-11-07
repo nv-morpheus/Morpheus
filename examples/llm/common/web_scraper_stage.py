@@ -28,6 +28,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -87,6 +88,9 @@ class WebScraperStage(SinglePortStage):
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
         return False
+    
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _build_single(self, builder: mrc.Builder, input_stream: mrc.SegmentObject) -> mrc.SegmentObject:
 
@@ -103,7 +107,7 @@ class WebScraperStage(SinglePortStage):
     def _download_and_split(self, msg: MessageMeta) -> MessageMeta:
         """
         Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
-        it in the output, excluding any links which produce an error.
+        it in the output, excludes output for any links which produce an error.
         """
         if self._link_column not in msg.get_column_names():
             return None
@@ -138,7 +142,7 @@ class WebScraperStage(SinglePortStage):
 
                 soup = BeautifulSoup(raw_html, "html.parser")
 
-                text = soup.get_text(strip=True)
+                text = soup.get_text(strip=True, separator=' ')
 
                 split_text = self._text_splitter.split_text(text)
 
