@@ -19,17 +19,11 @@ limitations under the License.
 
 ## Background
 
-Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by
-ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus
-stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define
-basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be
-written in Python or C++.
+Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges called segments (think sub-graphs), which can in turn be connected by ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. While Morpheus stages are the primary building blocks of Morpheus pipelines, Morpheus modules can be thought of as a way to define basic units of work, which can in turn be composed and (re)used to build more complex stages. Modules can be written in Python or C++.
 
 ## The Passthrough Module
 
-The `passthrough` module is a simple module that takes a single input port and a single output port. It simply
-passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as
-its own Morpheus stage, or within the context of another stage in order to be used.
+The `passthrough` module is a simple module that takes a single input port and a single output port. It simply passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as its own Morpheus stage, or within the context of another stage in order to be used.
 
 ### Module Definition and Registration
 
@@ -58,25 +52,15 @@ def my_test_module_initialization(builder: mrc.Builder):
     builder.register_module_output("output_0", node)
 ```
 
-Here, we define a module, or rather a blueprint for creating a module, named `my_test_module` in the
-`my_module_namespace` namespace. The `register_module` decorator is used to register the module with the system and
-make it available to be loaded by other modules, stages, or pipelines. The `register_module` decorator takes two
-parameters: the name of the module, and the namespace in which the module is defined. The namespace is used to avoid
-naming collisions between core Morpheus, custom, and third-party modules.
+Here, we define a module, or rather a blueprint for creating a module, named `my_test_module` in the `my_module_namespace` namespace. The `register_module` decorator is used to register the module with the system and make it available to be loaded by other modules, stages, or pipelines. The `register_module` decorator takes two parameters: the name of the module, and the namespace in which the module is defined. The namespace is used to avoid naming collisions between core Morpheus, custom, and third-party modules.
 
-The `my_test_module_initialization` function is called by the Morpheus module loader when the module is loaded. It
-then creates a new instance of the module, which creates the appropriate MRC nodes and edges, and registers inputs
-and outputs that other modules or MRC nodes can connect to.
+The `my_test_module_initialization` function is called by the Morpheus module loader when the module is loaded. It then creates a new instance of the module, which creates the appropriate MRC nodes and edges, and registers inputs and outputs that other modules or MRC nodes can connect to.
 
-Note that we also obtain a 'module_config' object from the builder. This object is a dictionary that contains all
-configuration parameters that were passed to the module when it was loaded. This is useful for allowing modules to
-customize their behavior based on runtime parameters. We will see an example of this in the next section.
+Note that we also obtain a 'module_config' object from the builder. This object is a dictionary that contains all configuration parameters that were passed to the module when it was loaded. This is useful for allowing modules to customize their behavior based on runtime parameters. We will see an example of this in the next section.
 
 ### Loading the Module
 
-After a module has been defined and registered, it can be loaded by other modules or stages. Below, we
-illustrate this process in both cases. First, usage within another module, and second, we'll load the module we just
-created as simple stage, a process that specializes the general behavior of the existing `LinearModuleStage`.
+After a module has been defined and registered, it can be loaded by other modules or stages. Below, we illustrate this process in both cases. First, usage within another module, and second, we'll load the module we just created as simple stage, a process that specializes the general behavior of the existing `LinearModuleStage`.
 
 `my_test_module_consumer.py`
 
@@ -94,9 +78,7 @@ def my_test_module_consumer_initialization(builder: mrc.Builder):
     builder.register_module_output("output_0", my_test_module.output_port("output_0"))
 ```
 
-Here, we've defined a new module that loads the `my_test_module` module that we defined above, and then connects
-directly to its input and output ports. Obviously, this is a trivial example, but it illustrates the basic process and
-ease of use when loading and incorporating modules into existing workflows.
+Here, we've defined a new module that loads the `my_test_module` module that we defined above, and then connects directly to its input and output ports. Obviously, this is a trivial example, but it illustrates the basic process and ease of use when loading and incorporating modules into existing workflows.
 
 `my_test_module_consumer_stage.py`
 
@@ -123,16 +105,11 @@ class MyPassthroughModuleWrapper(SinglePortStage):
         return module_out_stream, self._output_type
 ```
 
-Here, we've defined a new stage that loads the `my_test_module` module that we defined above, and then wraps its
-input and output connections.
+Here, we've defined a new stage that loads the `my_test_module` module that we defined above, and then wraps its input and output connections.
 
 ### Module Chaining and Nesting
 
-Modules can be arbitrarily nested, and can be chained together to create more complex modules. For example, lets
-define a slightly more interesting module that takes an integer input, `i`, and outputs `(i^2 + 3*i)`.
-For this, we'll define three new modules, `my_square_module` and `my_times_three_module`, that perform the
-appropriate operations, and `my_compound_op_module` which wraps them both. We'll then construct a single new module as a
-composition of these three modules.
+Modules can be arbitrarily nested, and can be chained together to create more complex modules. For example, lets define a slightly more interesting module that takes an integer input, `i`, and outputs `(i^2 + 3*i)`. For this, we'll define three new modules, `my_square_module` and `my_times_three_module`, that perform the appropriate operations, and `my_compound_op_module` which wraps them both. We'll then construct a single new module as a composition of these three modules.
 
 ```python
 import mrc
@@ -218,8 +195,7 @@ class MyCompoundOpModuleWrapper(SinglePortStage):
 
 ### Wrapping Modules in Practice
 
-While we have created new stages for our example modules here, in general we would not define an entirely new stage
-just to wrap a module. Instead, we would use the `LinearModuleStage` to wrap the module:
+While we have created new stages for our example modules here, in general we would not define an entirely new stage just to wrap a module. Instead, we would use the `LinearModuleStage` to wrap the module:
 
 ```python
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
