@@ -15,8 +15,9 @@
 import os
 import types
 
-import cudf
 import pytest
+
+import cudf
 
 from _utils import TEST_DIRS
 from _utils import assert_results
@@ -24,6 +25,7 @@ from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+
 
 @pytest.mark.slow
 @pytest.mark.use_python
