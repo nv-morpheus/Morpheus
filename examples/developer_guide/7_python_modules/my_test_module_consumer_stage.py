@@ -32,12 +32,12 @@ class MyPassthroughModuleWrapper(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: mrc.Builder,
-                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         module_config = {"some_configuration_parameter": "some_value"}
 
         module_name = "my_test_module"
-        my_module = builder.load_module(module_name, "my_module_namespace",
+        my_module = builder.load_module(module_name,
+                                        "my_module_namespace",
                                         f"{self.unique_name}-{module_name}",
                                         module_config)
 
