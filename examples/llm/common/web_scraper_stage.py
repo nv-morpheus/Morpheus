@@ -46,6 +46,7 @@ class WebScraperStage(SinglePortStage):
     link_column : str, default="link"
         Column which contains the links to scrape
     """
+
     def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link"):
         super().__init__(c)
 
@@ -88,7 +89,7 @@ class WebScraperStage(SinglePortStage):
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
         return False
-    
+
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 

@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import cudf
 import pandas as pd
+import pytest
+
+import cudf
 
 from _utils import assert_results
+from examples.llm.common.web_scraper_stage import WebScraperStage
 from morpheus.config import Config
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from examples.llm.common.web_scraper_stage import WebScraperStage
-from morpheus.messages.message_meta import MessageMeta
 
 
 @pytest.mark.slow
@@ -32,14 +33,9 @@ def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str):
 
     url = f"{mock_rest_server}/www/index"
 
-    df = cudf.DataFrame({
-        "link": [url]
-    })
+    df = cudf.DataFrame({"link": [url]})
 
-    df_expected = cudf.DataFrame({
-        "link": [url],
-        "page_content": "website title some paragraph"
-    })
+    df_expected = cudf.DataFrame({"link": [url], "page_content": "website title some paragraph"})
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [df]))
