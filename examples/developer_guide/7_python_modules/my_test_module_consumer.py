@@ -19,7 +19,7 @@ from morpheus.utils.module_utils import register_module
 
 @register_module("my_test_module_consumer", "my_module_namespace")
 def my_test_module_consumer_initialization(builder: mrc.Builder):
-    consumer_module_config = builder.get_current_module_config()  # Get the module configuration
+    consumer_module_config = builder.get_current_module_config()  # noqa: F841 pylint:disable=unused-variable
     module_config = {"some_configuration_parameter": "some_value"}
 
     my_test_module = builder.load_module("my_test_module", "my_module_namespace", "module_instance_name", module_config)

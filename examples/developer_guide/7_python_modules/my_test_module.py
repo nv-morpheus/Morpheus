@@ -20,7 +20,7 @@ from morpheus.utils.module_utils import register_module
 
 @register_module("my_test_module", "my_module_namespace")
 def my_test_module_initialization(builder: mrc.Builder):
-    module_config = builder.get_current_module_config()  # Get the module configuration
+    module_config = builder.get_current_module_config()  # noqa: F841 pylint:disable=unused-variable
 
     def on_data(data):
         return data
