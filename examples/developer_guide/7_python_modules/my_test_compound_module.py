@@ -15,6 +15,7 @@
 import mrc
 from mrc.core import operators as ops
 
+from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import register_module
 
 
@@ -22,9 +23,14 @@ from morpheus.utils.module_utils import register_module
 # ==========================================
 @register_module("my_square_module", "my_module_namespace")
 def my_square_module_initialization(builder: mrc.Builder):
+    module_config = builder.get_current_module_config()
+    field_name = module_config.get("field_name", "data")
 
-    def on_data(data: int):
-        return data**2
+    def on_data(msg: MessageMeta) -> MessageMeta:
+        with msg.mutable_dataframe() as df:
+            df[field_name] = df[field_name]**2
+
+        return msg
 
     def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
         observable.pipe(ops.map(on_data)).subscribe(subscriber)
@@ -37,9 +43,14 @@ def my_square_module_initialization(builder: mrc.Builder):
 
 @register_module("my_times_three_module", "my_module_namespace")
 def my_times_three_module_initialization(builder: mrc.Builder):
+    module_config = builder.get_current_module_config()
+    field_name = module_config.get("field_name", "data")
 
-    def on_data(data: int):
-        return 3 * data
+    def on_data(msg: MessageMeta) -> MessageMeta:
+        with msg.mutable_dataframe() as df:
+            df[field_name] = df[field_name] * 3
+
+        return msg
 
     def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
         observable.pipe(ops.map(on_data)).subscribe(subscriber)
@@ -53,8 +64,8 @@ def my_times_three_module_initialization(builder: mrc.Builder):
 # Create and register our new compound operator -- illustrates module chaining
 @register_module("my_compound_op_module", "my_module_namespace")
 def my_compound_op(builder: mrc.Builder):
-    square_module = builder.load_module("my_square_module", "my_module_namespace", "square_module")
-    times_three_module = builder.load_module("my_times_three_module", "my_module_namespace", "times_three_module")
+    square_module = builder.load_module("my_square_module", "my_module_namespace", "square_module", {})
+    times_three_module = builder.load_module("my_times_three_module", "my_module_namespace", "times_three_module", {})
 
     builder.make_edge(square_module.output_port("output_0"), times_three_module.input_port("input_0"))
 
@@ -65,7 +76,7 @@ def my_compound_op(builder: mrc.Builder):
 # Create and register our new compound module -- illustrates module nesting
 @register_module("my_compound_module", "my_module_namespace")
 def my_compound_module(builder: mrc.Builder):
-    op_module = builder.load_module("my_compound_op_module", "my_module_namespace", "op_module")
+    op_module = builder.load_module("my_compound_op_module", "my_module_namespace", "op_module", {})
 
     builder.register_module_input("input_0", op_module.input_port("input_0"))
     builder.register_module_output("output_0", op_module.output_port("output_0"))
