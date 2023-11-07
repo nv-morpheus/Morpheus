@@ -431,6 +431,23 @@ class VectorDBService(ABC):
         pass
 
     @abstractmethod
+    def release_resource(self, name: str) -> bool:
+        """
+        Release a loaded resource from memory.
+
+        Parameters
+        ----------
+        name : str
+            Name of the resource to release.
+
+        Returns
+        -------
+        bool
+            Returns True if resource successfully released.
+        """
+        pass
+
+    @abstractmethod
     def close(self) -> None:
         """
         Close connection to the vector database.
