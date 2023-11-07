@@ -25,7 +25,7 @@ This approach unlocks various new applications for Morpheus pipelines. For insta
 
 ## Anatomy of a Control Message
 
-Control Messages are straightforward objects that contain `tasks`, `metadata`, and possibly `payload` data. Tasks can be one of the following: `TRAINING`, `INFERENCE`, or `OTHER`. Metadata is a dictionary of key-value pairs that provide additional information about the message and must be JSON serializable. Payload is a Morpheus `MessageMeta` object that can be used to move raw data. Each of these elements can be accessed via the API as the message flows through the pipeline.
+Control Messages are straightforward objects that contain `tasks`, `metadata`, and possibly `payload` data. Tasks can be one of the following: `training`, `inference`, or `other`. Metadata is a dictionary of key-value pairs that provide additional information about the message and must be JSON serializable. Payload is a Morpheus `MessageMeta` object that can be used to move raw data. Each of these elements can be accessed via the API as the message flows through the pipeline.
 
 ### Working with Tasks
 
