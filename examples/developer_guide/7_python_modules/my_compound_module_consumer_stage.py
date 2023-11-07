@@ -35,9 +35,10 @@ class MyCompoundOpModuleWrapper(PassThruTypeMixin, SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         module_config = {}
 
-        my_module = builder.load_module("my_compound_module",
+        module_name = "my_compound_module"
+        my_module = builder.load_module(module_name,
                                         "my_module_namespace",
-                                        "module_instance_name",
+                                        f"{self.unique_name}-{module_name}",
                                         module_config)
 
         module_in_node = my_module.input_port("input_0")
