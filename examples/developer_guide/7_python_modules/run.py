@@ -77,7 +77,7 @@ def run_pipeline():
     pipeline.run()
 
     results = concat_df.concat_dataframes(sink.get_messages())
-    logger.info(f"Results: %s", results)
+    logger.info(f"Results:\n%s", results)
 
 
 if __name__ == "__main__":
