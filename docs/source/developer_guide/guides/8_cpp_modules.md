@@ -25,7 +25,7 @@ See [Simple Python Module](./7_python_modules.md) for an introduction to Morpheu
 
 The following example will create a simple C++ module that passes through the input data without modification. This module will be written in C++ and would be compiled into the Morpheus core library.
 
-**Note**: One thing that is different with respect to c++ modules, is that they are assumed to be stateless by default, meaning that the module itself can be released after the initialize function as been called. If you need a module whose state is persisted across the lifetime of the pipeline, you will also need to inherit from the `PersistentModule`` class, which will cause the pipeline to hold a reference to the module until the pipeline is destroyed.
+**Note**: One thing that is different with respect to C++ modules, is that they are assumed to be stateless by default, meaning that the module itself can be released after the initialize function as been called. If you need a module whose state is persisted across the lifetime of the pipeline, you will also need to inherit from the `PersistentModule` class, which will cause the pipeline to hold a reference to the module until the pipeline is destroyed.
 
 `my_test_module.hpp`
 
