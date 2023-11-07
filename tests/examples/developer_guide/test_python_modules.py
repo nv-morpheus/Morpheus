@@ -19,8 +19,8 @@ import pytest
 
 import cudf
 
-from _utils import assert_results
 from _utils import TEST_DIRS
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
