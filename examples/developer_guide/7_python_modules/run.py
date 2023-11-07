@@ -14,6 +14,14 @@
 
 import logging
 
+# pylint: disable=unused-import
+import my_test_compound_module  # noqa: F401
+import my_test_module  # noqa: F401
+import my_test_module_consumer  # noqa: F401
+# pylint: enable=unused-import
+from my_compound_module_consumer_stage import MyCompoundOpModuleWrapper
+from my_test_module_consumer_stage import MyPassthroughModuleWrapper
+
 import cudf
 
 from morpheus.config import Config
@@ -24,14 +32,6 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import concat_df
 from morpheus.utils.logger import configure_logging
-from my_compound_module_consumer_stage import MyCompoundOpModuleWrapper
-from my_test_module_consumer_stage import MyPassthroughModuleWrapper
-
-# pylint: disable=unused-import
-import my_test_module  # noqa: F401
-import my_test_module_consumer  # noqa: F401
-import my_test_compound_module  # noqa: F401
-# pylint: enable=unused-import
 
 # Configure a logger under the morpheus namespace
 logger = logging.getLogger(f"morpheus.{__file__}")
