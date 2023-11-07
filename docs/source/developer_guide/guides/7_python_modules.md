@@ -23,7 +23,7 @@ Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are 
 
 ## The Passthrough Module
 
-The `passthrough` module is a simple module that takes a single input port and a single output port. It simply passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines actual unit of work, and must then be loaded either as its own Morpheus stage, or within the context of another stage in order to be used.
+The `passthrough` module is a simple module that takes a single input port and a single output port. It simply passes it forward, in much the same way that the example stage defined in the [Simple Python Stage](./1_simple_python_stage.md) does; however, it only defines the actual unit of work, and must then be loaded either as its own Morpheus stage, or within the context of another stage in order to be used.
 
 ### Module Definition and Registration
 
@@ -56,7 +56,7 @@ Here, we define a module, or rather a blueprint for creating a module, named `my
 
 The `my_test_module_initialization` function is called by the Morpheus module loader when the module is loaded. It then creates a new instance of the module, which creates the appropriate MRC nodes and edges, and registers inputs and outputs that other modules or MRC nodes can connect to.
 
-Note that we also obtain a 'module_config' object from the builder. This object is a dictionary that contains all configuration parameters that were passed to the module when it was loaded. This is useful for allowing modules to customize their behavior based on runtime parameters. We will see an example of this in the next section.
+Note that we also obtain a `module_config` object from the builder. This object is a dictionary that contains all configuration parameters that were passed to the module when it was loaded. This is useful for allowing modules to customize their behavior based on runtime parameters. We will see an example of this in the next section.
 
 ### Loading the Module
 
@@ -86,23 +86,21 @@ Here, we've defined a new module that loads the `my_test_module` module that we 
 import mrc
 
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+
 
 class MyPassthroughModuleWrapper(SinglePortStage):
     # ... stage implementation
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        module_config = {
-            "some_configuration_parameter": "some_value"
-        }
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        module_config = {"some_configuration_parameter": "some_value"}
 
         my_module = builder.load_module("my_test_module", "my_module_namespace", "module_instance_name", module_config)
 
-        module_in_stream = my_module.input_port("input_0")
-        module_out_stream = my_module.output_port("output_0")
+        module_in_node = my_module.input_port("input_0")
+        module_out_node = my_module.output_port("output_0")
 
-        builder.make_edge(input_stream[0], module_in_stream)
+        builder.make_edge(input_node, module_in_node)
 
-        return module_out_stream, self._output_type
+        return module_out_node
 ```
 
 Here, we've defined a new stage that loads the `my_test_module` module that we defined above, and then wraps its input and output connections.
@@ -118,12 +116,13 @@ from mrc.core import operators as ops
 from morpheus.utils.module_utils import register_module
 
 
-## Create and register our two new component modules
+# Create and register our two new component modules
 # ==========================================
 @register_module("my_square_module", "my_module_namespace")
-def my_test_module_initialization(builder: mrc.Builder):
+def my_square_module_initialization(builder: mrc.Builder):
+
     def on_data(data: int):
-        return data ** 2
+        return data**2
 
     def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
         observable.pipe(ops.map(on_data)).subscribe(subscriber)
@@ -135,7 +134,8 @@ def my_test_module_initialization(builder: mrc.Builder):
 
 
 @register_module("my_times_three_module", "my_module_namespace")
-def my_test_module_initialization(builder: mrc.Builder):
+def my_times_three_module_initialization(builder: mrc.Builder):
+
     def on_data(data: int):
         return 3 * data
 
@@ -148,7 +148,7 @@ def my_test_module_initialization(builder: mrc.Builder):
     builder.register_module_output("output_0", node)
 
 
-## Create and register our new compound operator -- illustrates module chaining
+# Create and register our new compound operator -- illustrates module chaining
 @register_module("my_compound_op_module", "my_module_namespace")
 def my_compound_op(builder: mrc.Builder):
     square_module = builder.load_module("my_square_module", "my_module_namespace", "square_module")
@@ -160,7 +160,7 @@ def my_compound_op(builder: mrc.Builder):
     builder.register_module_output("output_0", times_three_module.output_port("output_0"))
 
 
-## Create and register our new compound module -- illustrates module nesting
+# Create and register our new compound module -- illustrates module nesting
 @register_module("my_compound_module", "my_module_namespace")
 def my_compound_module(builder: mrc.Builder):
     op_module = builder.load_module("my_compound_op_module", "my_module_namespace", "op_module")
