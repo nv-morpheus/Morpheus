@@ -12,25 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pandas as pd
-import pytest
+import os
+import types
 
 import cudf
+import pytest
 
+from _utils import TEST_DIRS
 from _utils import assert_results
-from examples.llm.common.web_scraper_stage import WebScraperStage
 from morpheus.config import Config
-from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
-
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.use_cudf
-def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str):
-
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py'))
+def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str, import_mod: types.ModuleType):
     url = f"{mock_rest_server}/www/index"
 
     df = cudf.DataFrame({"link": [url]})
@@ -39,7 +38,7 @@ def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str):
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [df]))
-    pipe.add_stage(WebScraperStage(config, chunk_size=config.feature_length))
+    pipe.add_stage(import_mod.WebScraperStage(config, chunk_size=config.feature_length))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=df_expected))
     pipe.run()
 

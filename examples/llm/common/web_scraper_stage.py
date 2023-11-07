@@ -93,7 +93,7 @@ class WebScraperStage(SinglePortStage):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         node = builder.make_node(self.unique_name,
                                  ops.map(self._download_and_split),
@@ -101,7 +101,7 @@ class WebScraperStage(SinglePortStage):
 
         node.launch_options.pe_count = self._config.num_threads
 
-        builder.make_edge(input_stream, node)
+        builder.make_edge(input_node, node)
 
         return node
 
