@@ -111,7 +111,8 @@ auto make_lambda_node(std::function<ReturnT(ArgsT...)>&& fn)
 
     using return_t = typename utilities::extract_value_type<typename function_t::result_type>::type;
 
-    auto make_args = []<std::size_t... Is>(std::index_sequence<Is...>) {
+    auto make_args = []<std::size_t... Is>(std::index_sequence<Is...>)
+    {
         return std::vector<std::string>{std::string{"arg"} + std::to_string(Is)...};
     };
 
