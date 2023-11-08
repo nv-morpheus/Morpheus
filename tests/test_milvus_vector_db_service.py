@@ -364,6 +364,24 @@ def test_delete(milvus_service: MilvusVectorDBService, idx_part_collection_confi
     milvus_service.drop(collection_name)
 
 
+def test_release_collection(milvus_service: MilvusVectorDBService,
+                            idx_part_collection_config: dict,
+                            milvus_data: list[dict]):
+    collection_name = "test_release_collection"
+
+    # Make sure to drop any existing collection from previous runs.
+    milvus_service.drop(collection_name)
+
+    # Create a collection.
+    milvus_service.create(collection_name, **idx_part_collection_config)
+
+    # Insert data into the collection.
+    milvus_service.insert(collection_name, milvus_data)
+
+    # Release resource from the memory.
+    milvus_service.release_resource(name=collection_name)
+
+
 def test_get_collection_lock():
     """
     This test doesn't require milvus server to be running.
