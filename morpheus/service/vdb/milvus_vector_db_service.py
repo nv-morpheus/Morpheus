@@ -1064,6 +1064,18 @@ class MilvusVectorDBService(VectorDBService):
 
         return resource.describe(**kwargs)
 
+    def release_resource(self, name: str) -> None:
+        """
+        Release a loaded collection from the memory.
+
+        Parameters
+        ----------
+        name : str
+            Name of the collection to release.
+        """
+
+        self._client.release_collection(collection_name=name)
+
     def close(self) -> None:
         """
         Close the connection to the Milvus vector database.
