@@ -16,6 +16,8 @@
 import pytest
 
 from _utils import import_or_skip
+
+
 @pytest.fixture(name="nemollm", autouse=True, scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
