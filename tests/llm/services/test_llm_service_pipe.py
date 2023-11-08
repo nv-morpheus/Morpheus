@@ -35,48 +35,6 @@ from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-COUNTRIES = [
-    "Eldoria",
-    "Drakoria",
-    "Avaloria",
-    "Mystralia",
-    "Faerundor",
-    "Glimmerholme",
-    "Emberfell",
-    "Stormhaven",
-    "Frosthold",
-    "Celestria"
-]
-
-CAPITALS = [
-    "Thundertop",
-    "Dragonspire",
-    "Starhaven",
-    "Enigma Citadel",
-    "Moonshroud",
-    "Silverglade",
-    "Infernix",
-    "Skyreach",
-    "Icicle Keep",
-    "Seraphia"
-]
-
-
-@pytest.fixture(name="country_prompts")
-def country_prompts_fixture():
-    yield [f"What is the capital of {country}?" for country in COUNTRIES]
-
-
-@pytest.fixture(name="capital_responses")
-def capital_responses_fixture():
-    assert len(COUNTRIES) == len(CAPITALS)
-
-    responses = []
-    for (i, country) in enumerate(COUNTRIES):
-        responses.append(f"The capital of {country} is {CAPITALS[i]}.")
-
-    yield responses
-
 
 def _build_engine(llm_service_cls: LLMService):
     llm_service = llm_service_cls()

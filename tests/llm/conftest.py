@@ -61,3 +61,51 @@ def mock_nemollm_fixture():
         mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
 
         yield mock_nemollm
+
+
+@pytest.fixture(name="countries")
+def countries_fixture():
+    yield [
+        "Eldoria",
+        "Drakoria",
+        "Avaloria",
+        "Mystralia",
+        "Faerundor",
+        "Glimmerholme",
+        "Emberfell",
+        "Stormhaven",
+        "Frosthold",
+        "Celestria"
+    ]
+
+
+@pytest.fixture(name="capitals")
+def capitals_fixture():
+    yield [
+        "Thundertop",
+        "Dragonspire",
+        "Starhaven",
+        "Enigma Citadel",
+        "Moonshroud",
+        "Silverglade",
+        "Infernix",
+        "Skyreach",
+        "Icicle Keep",
+        "Seraphia"
+    ]
+
+
+@pytest.fixture(name="country_prompts")
+def country_prompts_fixture(countries: list[str]):
+    yield [f"What is the capital of {country}?" for country in countries]
+
+
+@pytest.fixture(name="capital_responses")
+def capital_responses_fixture(countries: list[str], capitals: list[str]):
+    assert len(countries) == len(capitals)
+
+    responses = []
+    for (i, country) in enumerate(countries):
+        responses.append(f"The capital of {country} is {capitals[i]}.")
+
+    yield responses
