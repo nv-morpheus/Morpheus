@@ -64,6 +64,10 @@ def run():
     type=click.IntRange(min=1),
     help="Number of times to repeat the input query. Useful for testing performance.",
 )
+@click.option("--llm_service",
+              default="NemoLLM",
+              type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+              help="LLM service to issue requests to, should be used in conjunction with --model_name.")
 def pipeline(**kwargs):
 
     from .standalone_pipeline import standalone
@@ -104,6 +108,10 @@ def pipeline(**kwargs):
     default='gpt-43b-002',
     help="The name of the model that is deployed on Triton server",
 )
+@click.option("--llm_service",
+              default="NemoLLM",
+              type=click.Choice(['NemoLLM', 'OpenAI'], case_sensitive=False),
+              help="LLM service to issue requests to, should be used in conjunction with --model_name.")
 def persistant(**kwargs):
 
     from .persistant_pipeline import pipeline as _pipeline

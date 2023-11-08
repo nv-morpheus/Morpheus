@@ -17,24 +17,35 @@ import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 
 logger = logging.getLogger(__name__)
 
 
-def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, encode_kwargs: dict = None):
-    embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
+def build_huggingface_embeddings(model_name: str,
+                                 model_kwargs: dict = None,
+                                 encode_kwargs: dict = None):
+    embeddings = HuggingFaceEmbeddings(model_name=model_name,
+                                       model_kwargs=model_kwargs,
+                                       encode_kwargs=encode_kwargs)
 
     return embeddings
 
 
-def build_llm_service(model_name: str, model_type, **model_kwargs):
-    if (model_type.lower() in ('nemo', )):
+def build_llm_service(model_name: str, llm_service: str,
+                      tokens_to_generate: int, **model_kwargs):
+    lowered_llm_service = llm_service.lower()
+    if (lowered_llm_service == 'nemollm'):
+        model_kwargs['tokens_to_generate'] = tokens_to_generate
         llm_service = NeMoLLMService()
+    elif (lowered_llm_service == 'openai'):
+        model_kwargs['max_tokens'] = tokens_to_generate
+        llm_service = OpenAIChatService()
     else:
         # TODO(Devin) : Add additional options
-        raise RuntimeError(f"Unsupported LLM model type: {model_type}")
+        raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
     return llm_service.get_client(model_name, **model_kwargs)
 
@@ -51,13 +62,15 @@ def build_milvus_config(embedding_size: int):
             },
         },
         "schema_conf": {
-            "enable_dynamic_field": True,
+            "enable_dynamic_field":
+            True,
             "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
+                pymilvus.FieldSchema(
+                    name="id",
+                    dtype=pymilvus.DataType.INT64,
+                    description="Primary key for the collection",
+                    is_primary=True,
+                    auto_id=True).to_dict(),
                 pymilvus.FieldSchema(name="title",
                                      dtype=pymilvus.DataType.VARCHAR,
                                      description="The title of the RSS Page",
@@ -70,28 +83,30 @@ def build_milvus_config(embedding_size: int):
                                      dtype=pymilvus.DataType.VARCHAR,
                                      description="The summary of the RSS Page",
                                      max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="page_content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="A chunk of text from the RSS Page",
-                                     max_length=65_535).to_dict(),
+                pymilvus.FieldSchema(
+                    name="page_content",
+                    dtype=pymilvus.DataType.VARCHAR,
+                    description="A chunk of text from the RSS Page",
+                    max_length=65_535).to_dict(),
                 pymilvus.FieldSchema(name="embedding",
                                      dtype=pymilvus.DataType.FLOAT_VECTOR,
                                      description="Embedding vectors",
                                      dim=embedding_size).to_dict(),
             ],
-            "description": "Test collection schema"
+            "description":
+            "Test collection schema"
         }
     }
 
     return milvus_resource_kwargs
 
 
-def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530"):
+def build_milvus_service(embedding_size: int,
+                         uri: str = "http://localhost:19530"):
     milvus_resource_kwargs = build_milvus_config(embedding_size)
 
-    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
-                                                                                uri=uri,
-                                                                                **milvus_resource_kwargs)
+    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance(
+        "milvus", uri=uri, **milvus_resource_kwargs)
 
     return vdb_service
 

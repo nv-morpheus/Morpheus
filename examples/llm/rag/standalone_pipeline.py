@@ -39,7 +39,7 @@ from ..common.utils import build_milvus_service
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(model_name: str, vdb_resource_name: str):
+def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str):
 
     engine = LLMEngine()
 
@@ -58,7 +58,8 @@ Please answer the following question: \n{{ query }}"""
     embeddings = build_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2",
                                               model_kwargs={'device': 'cuda'},
                                               encode_kwargs={'batch_size': 100})
-    llm_service = build_llm_service(model_name, 'nemo', temperature=0.5, tokens_to_generate=200)
+
+    llm_service = build_llm_service(model_name, llm_service=llm_service, temperature=0.5, tokens_to_generate=200)
 
     # Async wrapper around embeddings
     async def calc_embeddings(texts: list[str]) -> list[list[float]]:
@@ -76,14 +77,13 @@ Please answer the following question: \n{{ query }}"""
     return engine
 
 
-def standalone(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_name,
-    vdb_resource_name,
-    repeat_count,
-):
+def standalone(num_threads,
+               pipeline_batch_size,
+               model_max_batch_size,
+               model_name,
+               vdb_resource_name,
+               repeat_count,
+               llm_service: str):
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -110,7 +110,10 @@ def standalone(
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
     pipe.add_stage(
-        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+        LLMEngineStage(config,
+                       engine=_build_engine(model_name=model_name,
+                                            vdb_resource_name=vdb_resource_name,
+                                            llm_service=llm_service)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
