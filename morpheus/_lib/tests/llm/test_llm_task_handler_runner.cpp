@@ -48,21 +48,21 @@ class TestTaskHandler : public llm::LLMTaskHandler
 
     TestTaskHandler(std::vector<std::string> input_names)
     {
-        _input_names = input_names;
+        m_input_names = input_names;
     }
 
-    ~TestTaskHandler() = default;
+    ~TestTaskHandler() override = default;
 
-    std::vector<std::string> get_input_names() const
+    std::vector<std::string> get_input_names() const override
     {
-        return _input_names;
+        return m_input_names;
     }
 
-    Task<return_t> try_handle(std::shared_ptr<llm::LLMContext> context)
+    Task<return_t> try_handle(std::shared_ptr<llm::LLMContext> context) override
     {
         std::vector<std::shared_ptr<ControlMessage>> results;
 
-        for (auto& name : _input_names)
+        for (auto& name : m_input_names)
         {
             auto msg_config = nlohmann::json();
             nlohmann::json task_properties;
@@ -79,7 +79,7 @@ class TestTaskHandler : public llm::LLMTaskHandler
     }
 
   private:
-    std::vector<std::string> _input_names;
+    std::vector<std::string> m_input_names;
 };
 
 TEST_CLASS(LLMTaskHandlerRunner);
