@@ -136,6 +136,26 @@ class LLMLambdaNode(LLMNodeBase):
     def get_input_names(self) -> typing.List[str]: ...
     pass
 class LLMNode(LLMNodeBase):
+    def __init__(self) -> None: ...
+    def add_node(self, name: str, *, inputs: object = None, node: LLMNodeBase, is_output: bool = False) -> LLMNodeRunner: 
+        """
+        Add an LLMNode to the current node.
+
+        Parameters
+        ----------
+        name : str
+            The name of the node to add
+
+        inputs : list[tuple[str, str]], optional
+            List of input mappings to use for the node, in the form of `[(external_name, internal_name), ...]`
+            If unspecified the node's input_names will be used.
+
+        node : LLMNodeBase
+            The node to add
+
+        is_output : bool, optional
+            Indicates if the node is an output node, by default False
+        """
     pass
 class LLMEngine(LLMNode, LLMNodeBase):
     def __init__(self) -> None: ...

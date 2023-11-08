@@ -23,6 +23,18 @@ logger = logging.getLogger(__name__)
 
 
 class RetrieverNode(LLMNodeBase):
+    """
+    Node for retrieving data from a vector database based on embeddings.
+
+    Parameters
+    ----------
+    embedding : typing.Callable[[list[str]], typing.Coroutine[typing.Any, typing.Any, list[list[float]]]] | None
+        Callable function for generating vector embeddings. Default is None.
+    service : VectorDBResourceService
+        Vector database resource service for executing similarity searches.
+    similarity_search_kwargs : dict
+        Additional keyword arguments for the similarity search.
+    """
 
     def __init__(
         self,
@@ -38,12 +50,33 @@ class RetrieverNode(LLMNodeBase):
         self._similarity_search_kwargs = similarity_search_kwargs
 
     def get_input_names(self) -> list[str]:
+        """
+        Get the input names for the RetrieverNode.
+
+        Returns
+        -------
+        list[str]
+            List of input names for the RetrieverNode.
+        """
         if (self._embedding is None):
             return ["embedding"]
 
         return ["query"]
 
     async def execute(self, context: LLMContext):
+        """
+        Execute the retrieval process based on the provided context.
+
+        Parameters
+        ----------
+        context : LLMContext
+            Context object containing necessary information for execution.
+
+        Returns
+        -------
+        LLMContext
+            Updated context object after the execution.
+        """
 
         if (self._embedding is not None):
             # Get the keys from the task
