@@ -1064,24 +1064,17 @@ class MilvusVectorDBService(VectorDBService):
 
         return resource.describe(**kwargs)
 
-    def release_resource(self, name: str) -> bool:
+    def release_resource(self, name: str) -> None:
         """
-        Release a loaded collection from memory.
+        Release a loaded collection from the memory.
 
         Parameters
         ----------
         name : str
             Name of the collection to release.
-
-        Returns
-        -------
-        bool
-            Returns True if release process is successful, otherwise raises MilvusException.
         """
 
         self._client.release_collection(collection_name=name)
-
-        return True
 
     def close(self) -> None:
         """
