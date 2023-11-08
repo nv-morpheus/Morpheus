@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 #include <mrc/channel/forward.hpp>
 #include <mrc/coroutines/sync_wait.hpp>
+#include <mrc/coroutines/when_all.hpp>
 
 #include <coroutine>
 #include <memory>
@@ -63,19 +64,35 @@ TEST_F(TestLLMNodeRunner, ParentInput)
     ASSERT_EQ(runner.sibling_input_names(), std::vector<std::string>{});
 }
 
-TEST_F(TestLLMNodeRunner, SiblingInput)
+TEST_F(TestLLMNodeRunner, SiblingInputExternalNode)
 {
-    auto node_1   = make_nr_single_input_node();
-    auto inputs_1 = llm::input_mappings_t{{"/ext", "arg0"}};
-    llm::LLMNodeRunner runner_1{"runner", inputs_1, node_1};
-    ASSERT_EQ(runner_1.parent_input_names(), std::vector<std::string>{});
-    ASSERT_EQ(runner_1.sibling_input_names(), std::vector<std::string>{"/ext"});
+    auto node   = make_nr_single_input_node();
+    auto inputs = llm::input_mappings_t{{"/sibling", "arg0"}};
+    llm::LLMNodeRunner runner{"runner", inputs, node};
+    ASSERT_EQ(runner.parent_input_names(), std::vector<std::string>{});
+    ASSERT_EQ(runner.sibling_input_names(), std::vector<std::string>{"/sibling"});
+}
 
-    auto node_2   = make_nr_single_input_node();
-    auto inputs_2 = llm::input_mappings_t{{"/ext/input0", "arg0"}};
-    llm::LLMNodeRunner runner_2{"runner", inputs_2, node_2};
-    ASSERT_EQ(runner_2.parent_input_names(), std::vector<std::string>{});
-    ASSERT_EQ(runner_2.sibling_input_names(), std::vector<std::string>{"/ext/input0"});
+TEST_F(TestLLMNodeRunner, SiblingInputExternalNodeInputName)
+{
+    auto node   = make_nr_single_input_node();
+    auto inputs = llm::input_mappings_t{{"/sibling/input0", "arg0"}};
+    llm::LLMNodeRunner runner{"runner", inputs, node};
+    ASSERT_EQ(runner.parent_input_names(), std::vector<std::string>{});
+    ASSERT_EQ(runner.sibling_input_names(), std::vector<std::string>{"/sibling/input0"});
+}
+
+TEST_F(TestLLMNodeRunner, ParentSiblingInput)
+{
+    auto node = std::make_shared<llm::LLMNode>();
+
+    node->add_node("Root1", {{"input0", "arg0"}}, make_nr_single_input_node());
+    node->add_node("Root2", {{"input1", "arg0"}}, make_nr_single_input_node());
+
+    auto inputs = llm::input_mappings_t{{"input0", "input0"}, {"/sibling", "input1"}};
+    llm::LLMNodeRunner runner{"runner", inputs, node};
+    ASSERT_EQ(runner.parent_input_names(), std::vector<std::string>{"input0"});
+    ASSERT_EQ(runner.sibling_input_names(), std::vector<std::string>{"/sibling"});
 }
 
 TEST_F(TestLLMNodeRunner, DuplicateInput)
@@ -92,14 +109,18 @@ TEST_F(TestLLMNodeRunner, InvalidExternalNode)
     ASSERT_THROW(llm::LLMNodeRunner("runner", inputs, node), std::invalid_argument);
 }
 
-TEST_F(TestLLMNodeRunner, InvalidInputForNode)
+TEST_F(TestLLMNodeRunner, InvalidSingleInputForNode)
 {
-    auto node     = make_nr_single_input_node();
-    auto inputs_1 = llm::input_mappings_t{{"input0", "arg1"}};
-    ASSERT_THROW(llm::LLMNodeRunner("runner", inputs_1, node), std::runtime_error);
+    auto node   = make_nr_single_input_node();
+    auto inputs = llm::input_mappings_t{{"input0", "arg1"}};
+    ASSERT_THROW(llm::LLMNodeRunner("runner", inputs, node), std::runtime_error);
+}
 
-    auto inputs_2 = llm::input_mappings_t{{"input0", "arg0"}, {"input1", "arg1"}};
-    ASSERT_THROW(llm::LLMNodeRunner("runner", inputs_2, node), std::runtime_error);
+TEST_F(TestLLMNodeRunner, InvalidMultipleInputsForNode)
+{
+    auto node   = make_nr_single_input_node();
+    auto inputs = llm::input_mappings_t{{"input0", "arg0"}, {"input1", "arg1"}};
+    ASSERT_THROW(llm::LLMNodeRunner("runner", inputs, node), std::runtime_error);
 }
 
 TEST_F(TestLLMNodeRunner, Execute)
@@ -111,8 +132,7 @@ TEST_F(TestLLMNodeRunner, Execute)
 
     auto context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
 
-    coroutines::sync_wait(runner_1->execute(context));
-    coroutines::sync_wait(runner_2->execute(context));
+    coroutines::sync_wait(coroutines::when_all(runner_1->execute(context), runner_2->execute(context)));
 
     ASSERT_EQ(context->view_outputs()["Root1"], 0);
     ASSERT_EQ(context->view_outputs()["Root2"], 1);

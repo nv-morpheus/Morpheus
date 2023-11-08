@@ -84,25 +84,40 @@ class TestTaskHandler : public llm::LLMTaskHandler
 
 TEST_CLASS(LLMTaskHandlerRunner);
 
+TEST_F(TestLLMTaskHandlerRunner, Initialization)
+{
+    auto names   = std::vector<std::string>{"input0", "input1"};
+    auto handler = std::make_shared<TestTaskHandler>(names);
+    auto inputs  = llm::input_mappings_t{{"/ext0", "input0"}, {"/ext1", "input1"}};
+
+    llm::LLMTaskHandlerRunner runner{inputs, handler};
+
+    auto returned_mappings = runner.input_names();
+    ASSERT_EQ(returned_mappings.size(), 2);
+    ASSERT_EQ(returned_mappings[0].external_name, "/ext0");
+    ASSERT_EQ(returned_mappings[0].internal_name, "input0");
+    ASSERT_EQ(returned_mappings[1].external_name, "/ext1");
+    ASSERT_EQ(returned_mappings[1].internal_name, "input1");
+}
+
 TEST_F(TestLLMTaskHandlerRunner, TryHandle)
 {
-    auto names = std::vector<std::string>{"input1", "input2"};
-    TestTaskHandler handler{names};
+    auto names   = std::vector<std::string>{"input0", "input1"};
+    auto handler = std::make_shared<TestTaskHandler>(names);
+    auto inputs  = llm::input_mappings_t{{"/ext0", "input0"}, {"/ext1", "input1"}};
 
-    ASSERT_EQ(handler.get_input_names(), names);
+    llm::LLMTaskHandlerRunner runner{inputs, handler};
 
-    auto context = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
+    auto context  = std::make_shared<llm::LLMContext>(llm::LLMTask{}, nullptr);
+    auto out_msgs = coroutines::sync_wait(runner.try_handle(context));
 
-    auto out_msgs = coroutines::sync_wait(handler.try_handle(context));
-
-    ASSERT_EQ(0, 0);
     ASSERT_EQ(out_msgs->size(), 2);
     ASSERT_EQ(out_msgs->at(0)->get_tasks().size(), 1);
     ASSERT_EQ(out_msgs->at(0)->get_tasks()["template"][0]["task_type"], "dictionary");
     ASSERT_EQ(out_msgs->at(0)->get_tasks()["template"][0]["model_name"], "test");
-    ASSERT_EQ(out_msgs->at(0)->get_tasks()["template"][0]["input"], "input1");
+    ASSERT_EQ(out_msgs->at(0)->get_tasks()["template"][0]["input"], "input0");
     ASSERT_EQ(out_msgs->at(1)->get_tasks().size(), 1);
     ASSERT_EQ(out_msgs->at(1)->get_tasks()["template"][0]["task_type"], "dictionary");
     ASSERT_EQ(out_msgs->at(1)->get_tasks()["template"][0]["model_name"], "test");
-    ASSERT_EQ(out_msgs->at(1)->get_tasks()["template"][0]["input"], "input2");
+    ASSERT_EQ(out_msgs->at(1)->get_tasks()["template"][0]["input"], "input1");
 }
