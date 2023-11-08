@@ -14,6 +14,7 @@
 import logging
 import time
 
+import pandas as pd
 import cudf
 
 from morpheus.config import Config
@@ -29,6 +30,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.concat_df import concat_dataframes
 
 from ..common.utils import build_huggingface_embeddings
 from ..common.utils import build_llm_service
@@ -118,6 +120,14 @@ def standalone(
 
     pipe.run()
 
-    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
+    messages = sink.get_messages()
+    responses = concat_dataframes(messages)
+    logger.info("Pipeline complete. Received %s responses", len(responses))
+
+    if logger.isEnabledFor(logging.DEBUG):
+        # The responses are quite long, when debug is enabled disable the truncation that pandas and cudf normally
+        # perform on the output
+        pd.set_option('display.max_colwidth', None)
+        logger.debug("Responses:\n%s", responses['response'])
 
     return start_time
