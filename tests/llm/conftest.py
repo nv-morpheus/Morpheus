@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 
 from _utils import import_or_skip
+from _utils import require_env_variable
 
 
 @pytest.fixture(name="nemollm", scope='session')
@@ -109,3 +110,23 @@ def capital_responses_fixture(countries: list[str], capitals: list[str]):
         responses.append(f"The capital of {country} is {capitals[i]}.")
 
     yield responses
+
+
+@pytest.fixture(name="ngc_api_key", scope='session')
+def ngc_api_key_fixture():
+    """
+    Integration tests require an NGC API key.
+    """
+    yield require_env_variable(
+        varname="NGC_API_KEY",
+        reason="nemo integration tests require the `NGC_API_KEY` environment variavble to be defined.")
+
+
+@pytest.fixture(name="openai_api_key", scope='session')
+def openai_api_key_fixture():
+    """
+    Integration tests require an NGC API key.
+    """
+    yield require_env_variable(
+        varname="OPENAI_API_KEY",
+        reason="openai integration tests require the `OPENAI_API_KEY` environment variavble to be defined.")

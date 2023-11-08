@@ -37,9 +37,9 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-def _build_engine(llm_service_cls: LLMService):
+def _build_engine(llm_service_cls: LLMService, model_name: str = "test_model"):
     llm_service = llm_service_cls()
-    llm_clinet = llm_service.get_client(model_name="test_model")
+    llm_clinet = llm_service.get_client(model_name=model_name)
 
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
@@ -52,7 +52,11 @@ def _build_engine(llm_service_cls: LLMService):
     return engine
 
 
-def _run_pipeline(config: Config, llm_service_cls: LLMService, countries: list[str], capital_responses: list[str]):
+def _run_pipeline(config: Config,
+                  llm_service_cls: LLMService,
+                  countries: list[str],
+                  capital_responses: list[str],
+                  model_name: str = "test_model") -> dict:
     """
     Loosely patterned after `examples/llm/completion`
     """
@@ -68,12 +72,12 @@ def _run_pipeline(config: Config, llm_service_cls: LLMService, countries: list[s
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service_cls)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service_cls, model_name=model_name)))
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()
 
-    assert_results(sink.get_results())
+    return sink.get_results()
 
 
 @pytest.mark.use_python
@@ -84,17 +88,18 @@ def test_completion_pipe_nemo(
         mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
         config: Config,
         mock_nemollm: mock.MagicMock,
-        country_prompts: list[str],
+        countries: list[str],
         capital_responses: list[str]):
-    mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(len(country_prompts))]
+    mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(len(countries))]
     mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
-    _run_pipeline(config, NeMoLLMService, country_prompts, capital_responses)
+    results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
+    assert_results(results)
 
 
 @pytest.mark.use_python
 def test_completion_pipe_openai(config: Config,
                                 mock_chat_completion: mock.MagicMock,
-                                country_prompts: list[str],
+                                countries: list[str],
                                 capital_responses: list[str]):
     mock_chat_completion.acreate.side_effect = [{
         "choices": [{
@@ -104,4 +109,31 @@ def test_completion_pipe_openai(config: Config,
         }]
     } for response in capital_responses]
 
-    _run_pipeline(config, OpenAIChatService, country_prompts, capital_responses)
+    results = _run_pipeline(config, OpenAIChatService, countries=countries, capital_responses=capital_responses)
+    assert_results(results)
+
+
+@pytest.mark.usefixtures("ngc_api_key")
+@pytest.mark.use_python
+def test_completion_pipe_integration_ngc(config: Config, countries: list[str], capital_responses: list[str]):
+    results = _run_pipeline(config,
+                            NeMoLLMService,
+                            countries=countries,
+                            capital_responses=capital_responses,
+                            model_name="gpt-43b-002")
+    assert results['diff_cols'] == 0
+    assert results['total_rows'] == len(countries)
+    assert results['matching_rows'] + results['diff_rows'] == len(countries)
+
+
+@pytest.mark.usefixtures("openai_api_key")
+@pytest.mark.use_python
+def test_completion_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):
+    results = _run_pipeline(config,
+                            OpenAIChatService,
+                            countries=countries,
+                            capital_responses=capital_responses,
+                            model_name="gpt-3.5-turbo")
+    assert results['diff_cols'] == 0
+    assert results['total_rows'] == len(countries)
+    assert results['matching_rows'] + results['diff_rows'] == len(countries)
