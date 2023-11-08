@@ -82,7 +82,7 @@ TEST_F(TestLLMNodeRunner, SiblingInputExternalNodeInputName)
     ASSERT_EQ(runner.sibling_input_names(), std::vector<std::string>{"/sibling/input0"});
 }
 
-TEST_F(TestLLMNodeRunner, ParentSiblingInput)
+TEST_F(TestLLMNodeRunner, ParentSiblingInputs)
 {
     auto node = std::make_shared<llm::LLMNode>();
 
