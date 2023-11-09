@@ -16,7 +16,6 @@
 import pytest
 
 from _utils import import_or_skip
-from _utils import require_env_variable
 
 
 @pytest.fixture(name="nemollm", autouse=True, scope='session')
@@ -24,17 +23,6 @@ def nemollm_fixture(fail_missing: bool):
     """
     All of the tests in this subdir require nemollm
     """
-    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
+    skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
                    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
-    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.fixture(name="ngc_api_key", scope='session')
-def ngc_api_key_fixture(fail_missing: bool):
-    """
-    Integration tests require an NGC API key.
-    """
-    yield require_env_variable(
-        varname="NGC_API_KEY",
-        reason="nemo integration tests require the `NGC_API_KEY` environment variavble to be defined.",
-        fail_missing=fail_missing)
+    yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)

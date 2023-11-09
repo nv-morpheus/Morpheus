@@ -22,11 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class ExtracterNode(LLMNodeBase):
+    """
+    Extracts fields from the DataFrame contained by the message attached to the `LLMContext` and copies them directly
+    to the context.
+
+    The list of fields to be extracted is provided by the task's `input_keys` attached to the `LLMContext`.
+    """
 
     def get_input_names(self) -> list[str]:
+        # This node does not receive it's inputs from upstream nodes, but rather from the task itself
         return []
 
-    async def execute(self, context: LLMContext):
+    async def execute(self, context: LLMContext) -> LLMContext:
 
         # Get the keys from the task
         input_keys: list[str] = typing.cast(list[str], context.task()["input_keys"])
