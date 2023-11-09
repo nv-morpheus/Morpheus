@@ -39,7 +39,6 @@ struct MORPHEUS_EXPORT InputMap
 
 /**
  * @brief Represents the options that a user can specify for an input mapping. Will get converted into an InputMap.
- *
  */
 struct MORPHEUS_EXPORT UserInputMapping
 {

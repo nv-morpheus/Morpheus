@@ -146,6 +146,7 @@ add_morpheus_test(
 add_morpheus_test(
   NAME llm
   FILES
+    llm/test_llm_context.cpp
     llm/test_llm_engine.cpp
     llm/test_llm_node.cpp
     llm/test_utils.cpp
