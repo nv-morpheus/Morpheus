@@ -45,6 +45,12 @@ def run():
     help="Max batch size to use for the model",
 )
 @click.option(
+    "--embedding_size",
+    default=384,
+    type=click.IntRange(min=1),
+    help="The output size of the embedding calculation. Depends on the model supplied by --model_name",
+)
+@click.option(
     "--model_name",
     required=True,
     type=str,

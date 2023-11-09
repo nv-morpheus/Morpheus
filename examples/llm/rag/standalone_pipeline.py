@@ -39,7 +39,7 @@ from ..common.utils import build_milvus_service
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str):
+def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str, embedding_size: int):
 
     engine = LLMEngine()
 
@@ -54,7 +54,7 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 
-    vector_service = build_milvus_service(384)
+    vector_service = build_milvus_service(embedding_size)
     embeddings = build_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2",
                                               model_kwargs={'device': 'cuda'},
                                               encode_kwargs={'batch_size': 100})
@@ -83,19 +83,19 @@ def standalone(num_threads,
                model_name,
                vdb_resource_name,
                repeat_count,
-               llm_service: str):
+               llm_service: str,
+               embedding_size: int):
     config = Config()
-    config.mode = PipelineModes.OTHER
+    config.mode = PipelineModes.NLP
+    config.edge_buffer_size = 128
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
-    config.mode = PipelineModes.NLP
-    config.edge_buffer_size = 128
 
     source_dfs = [
-        cudf.DataFrame({"questions": ["What are some new attacks discovered in the cyber security industry?."] * 5})
+        cudf.DataFrame({"questions": ["What are some new attacks discovered in the cyber security industry?"] * 5})
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
@@ -113,7 +113,8 @@ def standalone(num_threads,
         LLMEngineStage(config,
                        engine=_build_engine(model_name=model_name,
                                             vdb_resource_name=vdb_resource_name,
-                                            llm_service=llm_service)))
+                                            llm_service=llm_service,
+                                            embedding_size=embedding_size)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
