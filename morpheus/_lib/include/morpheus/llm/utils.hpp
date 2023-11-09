@@ -35,6 +35,14 @@ namespace morpheus::llm {
  */
 bool MORPHEUS_EXPORT is_valid_node_name(std::string_view name);
 
+/**
+ * @brief Resolves user input mappings to final mappings. Handles replacement of placeholders in inputs with
+ * with actual internal input names provided in input_names.
+ *
+ * @param user_inputs user input mappings
+ * @param input_names internal input names for context
+ * @return input_mappings_t
+ */
 input_mappings_t MORPHEUS_EXPORT process_input_names(user_input_mappings_t user_inputs,
                                                      const std::vector<std::string>& input_names);
 
