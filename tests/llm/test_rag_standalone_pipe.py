@@ -208,26 +208,62 @@ def test_rag_standalone_pipe_openai(config: Config,
     assert_results(results)
 
 
-# @pytest.mark.usefixtures("ngc_api_key")
-# @pytest.mark.use_python
-# def test_rag_standalone_pipe_integration_ngc(config: Config, countries: list[str], capital_responses: list[str]):
-#     results = _run_pipeline(config,
-#                             NeMoLLMService,
-#                             countries=countries,
-#                             capital_responses=capital_responses,
-#                             model_name="gpt-43b-002")
-#     assert results['diff_cols'] == 0
-#     assert results['total_rows'] == len(countries)
-#     assert results['matching_rows'] + results['diff_rows'] == len(countries)
+@pytest.mark.usefixtures("ngc_api_key")
+@pytest.mark.use_python
+@pytest.mark.use_cudf
+@pytest.mark.parametrize("repeat_count", [5])
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
+def test_rag_standalone_pipe_integration_nemo(config: Config,
+                                              dataset: DatasetManager,
+                                              milvus_server_uri: str,
+                                              repeat_count: int,
+                                              import_mod: types.ModuleType):
+    collection_name = "test_rag_standalone_pipe__integration_nemo"
+    _populate_milvus(milvus_server_uri=milvus_server_uri,
+                     collection_name=collection_name,
+                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                     df=dataset["service/milvus_rss_data.json"])
+    results = _run_pipeline(
+        config=config,
+        llm_service_name="nemollm",
+        model_name="gpt-43b-002",
+        milvus_server_uri=milvus_server_uri,
+        collection_name=collection_name,
+        repeat_count=repeat_count,
+        utils_mod=import_mod,
+    )
 
-# @pytest.mark.usefixtures("openai_api_key")
-# @pytest.mark.use_python
-# def test_rag_standalone_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):
-#     results = _run_pipeline(config,
-#                             OpenAIChatService,
-#                             countries=countries,
-#                             capital_responses=capital_responses,
-#                             model_name="gpt-3.5-turbo")
-#     assert results['diff_cols'] == 0
-#     assert results['total_rows'] == len(countries)
-#     assert results['matching_rows'] + results['diff_rows'] == len(countries)
+    assert results['diff_cols'] == 0
+    assert results['total_rows'] == repeat_count
+    assert results['matching_rows'] + results['diff_rows'] == repeat_count
+
+
+@pytest.mark.usefixtures("openai_api_key")
+@pytest.mark.use_python
+@pytest.mark.use_cudf
+@pytest.mark.parametrize("repeat_count", [5])
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
+def test_rag_standalone_pipe_integration_openai(config: Config,
+                                                dataset: DatasetManager,
+                                                milvus_server_uri: str,
+                                                repeat_count: int,
+                                                import_mod: types.ModuleType):
+    collection_name = "test_rag_standalone_pipe_integration_openai"
+    _populate_milvus(milvus_server_uri=milvus_server_uri,
+                     collection_name=collection_name,
+                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                     df=dataset["service/milvus_rss_data.json"])
+
+    results = _run_pipeline(
+        config=config,
+        llm_service_name="openai",
+        model_name="gpt-3.5-turbo",
+        milvus_server_uri=milvus_server_uri,
+        collection_name=collection_name,
+        repeat_count=repeat_count,
+        utils_mod=import_mod,
+    )
+
+    assert results['diff_cols'] == 0
+    assert results['total_rows'] == repeat_count
+    assert results['matching_rows'] + results['diff_rows'] == repeat_count
