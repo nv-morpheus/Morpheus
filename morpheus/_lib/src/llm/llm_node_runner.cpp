@@ -60,9 +60,9 @@ LLMNodeRunner::LLMNodeRunner(std::string name, input_mappings_t inputs, std::sha
     {
         const auto& external_name = inp.external_name;
 
-        if (specified_input_names_set.contains(inp.external_name))
+        if (specified_input_names_set.contains(inp.internal_name))
         {
-            throw std::runtime_error("Input '" + inp.external_name + "' is specified more than once");
+            throw std::runtime_error("Input '" + inp.internal_name + "' is specified more than once");
         }
 
         // Determine if the inputs are coming from a parent node or a sibling node
