@@ -30,23 +30,66 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief This class is used to implement functionality required in the processing of an LLM
+ * service request such as a prompt generator or LLM service client. Nodes are added to an LLMEngine
+ * which manages their execution including mapping of each node's input/output to parent and sibling
+ * nodes.
+ */
 class MORPHEUS_EXPORT LLMNode : public LLMNodeBase
 {
   public:
+    /**
+     * @brief Construct a new LLMNode object.
+     */
     LLMNode();
+
+    /**
+     * @brief Destroy the LLMNode object.
+     */
     ~LLMNode() override;
 
+    /**
+     * @brief Add child node to this node and validate user input mappings.
+     *
+     * @param name child node name
+     * @param inputs child node input mappings
+     * @param node child node object
+     * @param is_output true if output node
+     * @return std::shared_ptr<LLMNodeRunner>
+     */
     virtual std::shared_ptr<LLMNodeRunner> add_node(std::string name,
                                                     user_input_mappings_t inputs,
                                                     std::shared_ptr<LLMNodeBase> node,
                                                     bool is_output = false);
 
+    /**
+     * @brief Get the input names for this node.
+     *
+     * @return std::vector<std::string>
+     */
     std::vector<std::string> get_input_names() const override;
 
+    /**
+     * @brief Get the names of output child nodes.
+     *
+     * @return const std::vector<std::string>&
+     */
     const std::vector<std::string>& get_output_node_names() const;
 
+    /**
+     * @brief Get number of child nodes.
+     *
+     * @return size_t
+     */
     size_t node_count() const;
 
+    /**
+     * @brief Execute all child nodes and save output from output node(s) to context.
+     *
+     * @param context context for node's execution
+     * @return Task<std::shared_ptr<LLMContext>>
+     */
     Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context) override;
 
   private:

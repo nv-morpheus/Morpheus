@@ -41,7 +41,7 @@ struct LLMContextState
 
 /**
  * @brief Holds and manages information related to LLM tasks and input mappings required for LLMNode execution.
- *
+ * Outputs of node executions are also saved here for use by nodes and task handlers in LLMEngine.
  */
 class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContext>
 {
@@ -71,7 +71,6 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
 
     /**
      * @brief Destroy the LLMContext object.
-     *
      */
     ~LLMContext();
 
