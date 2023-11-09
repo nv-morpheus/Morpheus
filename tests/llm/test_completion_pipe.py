@@ -80,6 +80,7 @@ def _run_pipeline(config: Config,
     return sink.get_results()
 
 
+@pytest.mark.usefixtures("nemollm")
 @pytest.mark.use_python
 @mock.patch("asyncio.wrap_future")
 @mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
@@ -96,6 +97,7 @@ def test_completion_pipe_nemo(
     assert_results(results)
 
 
+@pytest.mark.usefixtures("openai")
 @pytest.mark.use_python
 def test_completion_pipe_openai(config: Config,
                                 mock_chat_completion: mock.MagicMock,
@@ -113,9 +115,10 @@ def test_completion_pipe_openai(config: Config,
     assert_results(results)
 
 
+@pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
 @pytest.mark.use_python
-def test_completion_pipe_integration_ngc(config: Config, countries: list[str], capital_responses: list[str]):
+def test_completion_pipe_integration_nemo(config: Config, countries: list[str], capital_responses: list[str]):
     results = _run_pipeline(config,
                             NeMoLLMService,
                             countries=countries,
@@ -126,6 +129,7 @@ def test_completion_pipe_integration_ngc(config: Config, countries: list[str], c
     assert results['matching_rows'] + results['diff_rows'] == len(countries)
 
 
+@pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
 @pytest.mark.use_python
 def test_completion_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):

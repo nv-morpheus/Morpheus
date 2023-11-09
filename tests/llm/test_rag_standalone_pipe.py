@@ -136,6 +136,7 @@ def _run_pipeline(config: Config,
     return sink.get_results()
 
 
+@pytest.mark.usefixtures("nemollm")
 @pytest.mark.milvus
 @pytest.mark.use_python
 @pytest.mark.use_cudf
@@ -171,6 +172,7 @@ def test_rag_standalone_pipe_nemo(
     assert_results(results)
 
 
+@pytest.mark.usefixtures("openai")
 @pytest.mark.milvus
 @pytest.mark.use_python
 @pytest.mark.use_cudf
@@ -208,6 +210,7 @@ def test_rag_standalone_pipe_openai(config: Config,
     assert_results(results)
 
 
+@pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
 @pytest.mark.use_python
 @pytest.mark.use_cudf
@@ -238,6 +241,7 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
     assert results['matching_rows'] + results['diff_rows'] == repeat_count
 
 
+@pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
 @pytest.mark.use_python
 @pytest.mark.use_cudf
