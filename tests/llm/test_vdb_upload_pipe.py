@@ -14,19 +14,18 @@
 # limitations under the License.
 """Mimic the examples/llm/vdb_upload/pipeline.py example"""
 
+import json
 import os
 import types
 from unittest import mock
 
 import pytest
 
-import cudf
-
 from _utils import TEST_DIRS
+from _utils import mk_async_infer
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -36,13 +35,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 EMBEDDING_SIZE = 384
-
-
-def _populate_milvus(milvus_server_uri: str, collection_name: str, resource_kwargs: dict, df: cudf.DataFrame):
-    milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
-    milvus_service.create(collection_name, **resource_kwargs)
-    resource_service = milvus_service.load_resource(name=collection_name)
-    resource_service.insert_dataframe(name=collection_name, df=df, **resource_kwargs)
+MODEL_MAX_BATCH_SIZE = 256
 
 
 def _run_pipeline(config: Config,
@@ -75,11 +68,7 @@ def _run_pipeline(config: Config,
                            column='page_content'))
 
     pipe.add_stage(
-        TritonInferenceStage(config,
-                             model_name='all-MiniLM-L6-v2',
-                             server_url='test:0000',
-                             force_convert_inputs=True,
-                             use_shared_memory=True))
+        TritonInferenceStage(config, model_name='all-MiniLM-L6-v2', server_url='test:0000', force_convert_inputs=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
@@ -93,18 +82,80 @@ def _run_pipeline(config: Config,
 
 @pytest.mark.milvus
 @pytest.mark.use_python
-@pytest.mark.use_cudf
+@pytest.mark.use_pandas
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'),
     os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py')
 ])
-def test_vdb_upload_pipe(config: Config, milvus_server_uri: str, import_mod: list[types.ModuleType]):
+@mock.patch('requests_cache.CachedSession')
+@mock.patch('tritonclient.grpc.InferenceServerClient')
+def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
+                         mock_cache_session: mock.MagicMock,
+                         config: Config,
+                         dataset: DatasetManager,
+                         milvus_server_uri: str,
+                         import_mod: list[types.ModuleType]):
+    # We're going to use this DF to both provide values to the mocked Tritonclient,
+    # but also to verify the values in the Milvus collection.
+    expected_values_df = dataset["service/milvus_rss_data.json"]
+
+    with open(os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_web_responses.json'), encoding='utf-8') as fh:
+        web_responses = json.load(fh)
+
+    # Mock Triton results
+    mock_metadata = {
+        "inputs": [{
+            "name": "input_ids", "datatype": "INT32", "shape": [-1, 512]
+        }, {
+            "name": "attention_mask", "datatype": "INT32", "shape": [-1, 512]
+        }],
+        "outputs": [{
+            "name": "output", "datatype": "FP32", "shape": [-1, EMBEDDING_SIZE]
+        }]
+    }
+    mock_model_config = {"config": {"max_batch_size": MODEL_MAX_BATCH_SIZE}}
+
+    mock_triton_client.return_value = mock_triton_client
+    mock_triton_client.is_server_live.return_value = True
+    mock_triton_client.is_server_ready.return_value = True
+    mock_triton_client.is_model_ready.return_value = True
+    mock_triton_client.get_model_metadata.return_value = mock_metadata
+    mock_triton_client.get_model_config.return_value = mock_model_config
+
+    mock_embedding_values = expected_values_df['embedding']
+
+    async_infer = mk_async_infer([mock_embedding_values.to_numpy()])
+    mock_triton_client.async_infer.side_effect = async_infer
+
+    # Mock requests_cache, since we are feeding the RSSSourceStage with a local file it won't be using the
+    # requests_cache lib, only web_scraper_stage.py will use it.
+    def mock_get_fn(url: str):
+        mock_response = mock.MagicMock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.text = web_responses[url]
+        return mock_response
+
+    mock_cache_session.return_value = mock_cache_session
+    mock_cache_session.get.side_effect = mock_get_fn
+
     (utils_mod, web_scraper_stage_mod) = import_mod
     collection_name = "test_vdb_upload_pipe"
     rss_source_file = os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')
+
     _run_pipeline(config=config,
                   milvus_server_uri=milvus_server_uri,
                   collection_name=collection_name,
                   rss_files=[rss_source_file],
                   utils_mod=utils_mod,
                   web_scraper_stage_mod=web_scraper_stage_mod)
+
+    milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
+    resource_service = milvus_service.load_resource(name=collection_name)
+    collection_desc = resource_service.describe()
+
+    assert collection_desc['collection_name'] == collection_name
+    field_names = sorted(field['name'] for field in collection_desc['fields'])
+    assert field_names == sorted(expected_values_df.columns)
+
+    assert resource_service.count() == len(expected_values_df)
