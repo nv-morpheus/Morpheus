@@ -29,8 +29,6 @@ limitations under the License.
 3. [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
         - [Set Environment Variables](#set-environment-variables)
-            - [OpenAI API Key](#openai-api-key)
-            - [SerpApi API Key](#serpapi-api-key)
         - [Install Dependencies](#install-dependencies)
     - [Running the Morpheus Pipeline](#running-the-morpheus-pipeline)
         - [Run example (Simple Pipeline)](#run-example-simple-pipeline)
@@ -74,7 +72,8 @@ The pipeline utilizes the Langchain library to run LLM agents, enabling their ex
 
 Before running the project, ensure that you set the required environment variables. Follow the steps below to obtain and set the API keys for OpenAI and SerpApi.
 
-##### OpenAI API Key
+**OpenAI API Key**
+
 Visit [OpenAI](https://openai.com/) and create an account. Navigate to your account settings to obtain your OpenAI API
 key. Copy the key and set it as an environment variable using the following command:
 
@@ -82,7 +81,8 @@ key. Copy the key and set it as an environment variable using the following comm
 export OPENAI_API_KEY="<YOUR_OPENAI_API_KEY>"
 ```
 
-##### SerpApi API Key
+**SerpApi API Key**
+
 Go to [SerpApi](https://serpapi.com/users/sign_up) to register and create an account. Once registered, obtain your
 SerpApi API key. Set the API key as an environment variable using the following command:
 
