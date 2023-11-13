@@ -86,7 +86,7 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, model_name)
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 
-    pipe.add_stage(InMemorySinkStage(config))
+    sink = pipe.add_stage(InMemorySinkStage(config))
 
     # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 

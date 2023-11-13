@@ -14,6 +14,8 @@
 import logging
 import time
 
+import pandas as pd
+
 import cudf
 
 from morpheus.config import Config
@@ -29,6 +31,7 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.concat_df import concat_dataframes
 
 from ..common.utils import build_huggingface_embeddings
 from ..common.utils import build_llm_service
@@ -37,7 +40,7 @@ from ..common.utils import build_milvus_service
 logger = logging.getLogger(__name__)
 
 
-def _build_engine(model_name: str, vdb_resource_name: str):
+def _build_engine(model_name: str, vdb_resource_name: str, llm_service: str, embedding_size: int):
 
     engine = LLMEngine()
 
@@ -52,11 +55,12 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 
-    vector_service = build_milvus_service(384)
+    vector_service = build_milvus_service(embedding_size)
     embeddings = build_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2",
                                               model_kwargs={'device': 'cuda'},
                                               encode_kwargs={'batch_size': 100})
-    llm_service = build_llm_service(model_name, 'nemo', temperature=0.5, tokens_to_generate=200)
+
+    llm_service = build_llm_service(model_name, llm_service=llm_service, temperature=0.5, tokens_to_generate=200)
 
     # Async wrapper around embeddings
     async def calc_embeddings(texts: list[str]) -> list[list[float]]:
@@ -74,26 +78,25 @@ Please answer the following question: \n{{ query }}"""
     return engine
 
 
-def standalone(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_name,
-    vdb_resource_name,
-    repeat_count,
-):
+def standalone(num_threads,
+               pipeline_batch_size,
+               model_max_batch_size,
+               model_name,
+               vdb_resource_name,
+               repeat_count,
+               llm_service: str,
+               embedding_size: int):
     config = Config()
-    config.mode = PipelineModes.OTHER
+    config.mode = PipelineModes.NLP
+    config.edge_buffer_size = 128
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
-    config.mode = PipelineModes.NLP
-    config.edge_buffer_size = 128
 
     source_dfs = [
-        cudf.DataFrame({"questions": ["What are some new attacks discovered in the cyber security industry?."] * 5})
+        cudf.DataFrame({"questions": ["What are some new attacks discovered in the cyber security industry?"] * 5})
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
@@ -108,7 +111,11 @@ def standalone(
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
     pipe.add_stage(
-        LLMEngineStage(config, engine=_build_engine(model_name=model_name, vdb_resource_name=vdb_resource_name)))
+        LLMEngineStage(config,
+                       engine=_build_engine(model_name=model_name,
+                                            vdb_resource_name=vdb_resource_name,
+                                            llm_service=llm_service,
+                                            embedding_size=embedding_size)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
@@ -118,6 +125,14 @@ def standalone(
 
     pipe.run()
 
-    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
+    messages = sink.get_messages()
+    responses = concat_dataframes(messages)
+    logger.info("Pipeline complete. Received %s responses", len(responses))
+
+    if logger.isEnabledFor(logging.DEBUG):
+        # The responses are quite long, when debug is enabled disable the truncation that pandas and cudf normally
+        # perform on the output
+        pd.set_option('display.max_colwidth', None)
+        logger.debug("Responses:\n%s", responses['response'])
 
     return start_time
