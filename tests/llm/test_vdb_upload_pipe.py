@@ -19,6 +19,8 @@ import os
 import types
 from unittest import mock
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from _utils import TEST_DIRS
@@ -35,7 +37,8 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 EMBEDDING_SIZE = 384
-MODEL_MAX_BATCH_SIZE = 256
+MODEL_MAX_BATCH_SIZE = 64
+MODEL_FEA_LENGTH = 512
 
 
 def _run_pipeline(config: Config,
@@ -44,19 +47,18 @@ def _run_pipeline(config: Config,
                   rss_files: list[str],
                   utils_mod: types.ModuleType,
                   web_scraper_stage_mod: types.ModuleType):
-    model_fea_length = 512
 
     config.mode = PipelineModes.NLP
     config.pipeline_batch_size = 1024
-    config.model_max_batch_size = 64
-    config.feature_length = model_fea_length
+    config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
+    config.feature_length = MODEL_FEA_LENGTH
     config.edge_buffer_size = 128
     config.class_labels = [str(i) for i in range(EMBEDDING_SIZE)]
 
     pipe = LinearPipeline(config)
 
     pipe.set_source(RSSSourceStage(config, feed_input=rss_files, batch_size=128, run_indefinitely=False))
-    pipe.add_stage(web_scraper_stage_mod.WebScraperStage(config, chunk_size=model_fea_length))
+    pipe.add_stage(web_scraper_stage_mod.WebScraperStage(config, chunk_size=MODEL_FEA_LENGTH))
     pipe.add_stage(DeserializeStage(config))
 
     pipe.add_stage(
@@ -105,15 +107,15 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
     # Mock Triton results
     mock_metadata = {
         "inputs": [{
-            "name": "input_ids", "datatype": "INT32", "shape": [-1, 512]
+            "name": "input_ids", "datatype": "INT32", "shape": [-1, MODEL_FEA_LENGTH]
         }, {
-            "name": "attention_mask", "datatype": "INT32", "shape": [-1, 512]
+            "name": "attention_mask", "datatype": "INT32", "shape": [-1, MODEL_FEA_LENGTH]
         }],
         "outputs": [{
             "name": "output", "datatype": "FP32", "shape": [-1, EMBEDDING_SIZE]
         }]
     }
-    mock_model_config = {"config": {"max_batch_size": MODEL_MAX_BATCH_SIZE}}
+    mock_model_config = {"config": {"max_batch_size": 256}}
 
     mock_triton_client.return_value = mock_triton_client
     mock_triton_client.is_server_live.return_value = True
@@ -122,9 +124,11 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
     mock_triton_client.get_model_metadata.return_value = mock_metadata
     mock_triton_client.get_model_config.return_value = mock_model_config
 
-    mock_embedding_values = expected_values_df['embedding']
+    mock_result_values = expected_values_df['embedding'].to_list()
+    inf_results = np.split(mock_result_values,
+                           range(MODEL_MAX_BATCH_SIZE, len(mock_result_values), MODEL_MAX_BATCH_SIZE))
 
-    async_infer = mk_async_infer([mock_embedding_values.to_numpy()])
+    async_infer = mk_async_infer(inf_results)
     mock_triton_client.async_infer.side_effect = async_infer
 
     # Mock requests_cache, since we are feeding the RSSSourceStage with a local file it won't be using the
@@ -152,10 +156,16 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
 
     milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
     resource_service = milvus_service.load_resource(name=collection_name)
-    collection_desc = resource_service.describe()
-
-    assert collection_desc['collection_name'] == collection_name
-    field_names = sorted(field['name'] for field in collection_desc['fields'])
-    assert field_names == sorted(expected_values_df.columns)
 
     assert resource_service.count() == len(expected_values_df)
+
+    db_results = resource_service.query("", offset=0, limit=resource_service.count())
+    db_df = pd.DataFrame(db_results)
+
+    # The comparison function performs rounding on the values, but is unable to do so for array columns
+    dataset.assert_compare_df(db_df, expected_values_df[db_df.columns], exclude_columns=['id', 'embedding'])
+
+    for i in range(len(resource_service.count())):
+        db_emb_row = pd.DataFrame(db_df['embedding'][i])
+        expected_emb_row = pd.DataFrame(expected_values_df['embedding'][i])
+        dataset.assert_compare_df(db_emb_row, expected_emb_row)
