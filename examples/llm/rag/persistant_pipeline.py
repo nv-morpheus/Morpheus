@@ -83,7 +83,7 @@ class SplitStage(Stage):
         return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
 
 
-def _build_engine(model_name: str, vdb_service: VectorDBResourceService):
+def _build_engine(model_name: str, vdb_service: VectorDBResourceService, llm_service: str):
 
     engine = LLMEngine()
 
@@ -98,7 +98,7 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 
-    llm_service = build_llm_service(model_name, model_type="nemo", temperature=0.5, tokens_to_generate=200)
+    llm_service = build_llm_service(model_name, llm_service=llm_service, temperature=0.5, tokens_to_generate=200)
 
     engine.add_node("rag",
                     inputs=[("/extracter/*", "*")],
@@ -109,13 +109,7 @@ Please answer the following question: \n{{ query }}"""
     return engine
 
 
-def pipeline(
-    num_threads,
-    pipeline_batch_size,
-    model_max_batch_size,
-    embedding_size,
-    model_name,
-):
+def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, embedding_size, model_name, llm_service: str):
 
     config = Config()
     config.mode = PipelineModes.OTHER
@@ -177,7 +171,9 @@ def pipeline(
     # If it's a retrieve task, branch to the LLM engine for RAG
     retrieve_llm_engine = pipe.add_stage(
         LLMEngineStage(config,
-                       engine=_build_engine(model_name=model_name, vdb_service=vdb_service.load_resource("RSS"))))
+                       engine=_build_engine(model_name=model_name,
+                                            vdb_service=vdb_service.load_resource("RSS"),
+                                            llm_service=llm_service)))
     pipe.add_edge(split.output_ports[0], retrieve_llm_engine)
 
     retrieve_results = pipe.add_stage(
