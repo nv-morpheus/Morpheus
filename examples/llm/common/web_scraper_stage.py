@@ -19,6 +19,7 @@ import typing
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -47,7 +48,7 @@ class WebScraperStage(SinglePortStage):
         Column which contains the links to scrape
     """
 
-    def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link"):
+    def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link", cache_path: str = None):
         super().__init__(c)
 
         self._link_column = link_column
@@ -61,8 +62,10 @@ class WebScraperStage(SinglePortStage):
                                                              chunk_overlap=self._chunk_size // 10,
                                                              length_function=len)
 
-        self._session = requests_cache.CachedSession(os.path.join("./.cache/http", "RSSDownloadStage.sqlite"),
-                                                     backend="sqlite")
+        if cache_path is None:
+            self._session = requests.Session()
+        else:
+            self._session = requests_cache.CachedSession(cache_path, backend="sqlite")
 
         self._session.headers.update({
             "User-Agent":
@@ -152,7 +155,10 @@ class WebScraperStage(SinglePortStage):
                     row_cp.update({"page_content": text})
                     final_rows.append(row_cp)
 
-                logger.debug("Processed page: '%s'. Cache hit: %s", url, response.from_cache)
+                if isinstance(response, requests_cache.models.response.CachedResponse):
+                    logger.debug("Processed page: '%s'. Cache hit: %s", url, response.from_cache)
+                else:
+                    logger.debug("Processed page: '%s'", url)
 
             except ValueError as exc:
                 logger.error("Error parsing document: %s", exc)

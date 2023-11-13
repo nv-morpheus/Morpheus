@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 import time
 
 from morpheus.config import Config
@@ -75,7 +76,8 @@ def pipeline(num_threads: int,
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='pages'))
 
-    pipe.add_stage(WebScraperStage(config, chunk_size=model_fea_length))
+    pipe.add_stage(
+        WebScraperStage(config, chunk_size=model_fea_length, cache_path="./.cache/http/RSSDownloadStage.sqlite"))
 
     pipe.add_stage(MonitorStage(config, description="Download rate", unit='pages'))
 
