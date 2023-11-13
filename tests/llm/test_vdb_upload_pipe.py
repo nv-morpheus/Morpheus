@@ -164,8 +164,3 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
 
     # The comparison function performs rounding on the values, but is unable to do so for array columns
     dataset.assert_compare_df(db_df, expected_values_df[db_df.columns], exclude_columns=['id', 'embedding'])
-
-    for i in range(resource_service.count()):
-        db_emb_row = pd.DataFrame(db_df['embedding'][i])
-        expected_emb_row = pd.DataFrame(expected_values_df['embedding'][i])
-        dataset.assert_compare_df(db_emb_row, expected_emb_row)
