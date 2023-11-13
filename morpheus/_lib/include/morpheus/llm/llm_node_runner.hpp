@@ -29,21 +29,62 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief This class wraps LLMNode and is responsible for node's execution. It also manages mapping of node's
+ * inputs to parent and sibling nodes.
+ */
 class MORPHEUS_EXPORT LLMNodeRunner
 {
   public:
+    /**
+     * @brief Construct a new LLMNodeRunner object
+     *
+     * @param name
+     * @param inputs
+     * @param node
+     */
     LLMNodeRunner(std::string name, input_mappings_t inputs, std::shared_ptr<LLMNodeBase> node);
 
+    /**
+     * @brief Destroy the LLMNodeRunner object
+     *
+     */
     ~LLMNodeRunner();
 
+    /**
+     * @brief Execute node and save outputs to context.
+     *
+     * @param context context for node's execution
+     * @return Task<std::shared_ptr<LLMContext>>
+     */
     virtual Task<std::shared_ptr<LLMContext>> execute(std::shared_ptr<LLMContext> context);
 
+    /**
+     * @brief Get name of node runner typically same as node name.
+     *
+     * @return const std::string&
+     */
     const std::string& name() const;
 
+    /**
+     * @brief Get input mappings for this node.
+     *
+     * @return const input_mappings_t&
+     */
     const input_mappings_t& inputs() const;
 
+    /**
+     * @brief Get input names from node's siblings.
+     *
+     * @return const std::vector<std::string>&
+     */
     const std::vector<std::string>& sibling_input_names() const;
 
+    /**
+     * @brief Get input names from node's parent.
+     *
+     * @return const std::vector<std::string>&
+     */
     const std::vector<std::string>& parent_input_names() const;
 
   private:

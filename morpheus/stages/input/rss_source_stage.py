@@ -124,15 +124,15 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
                     self._records_emitted += df_size
 
+                    if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
+                        self._stop_requested = True
+                        logger.debug("Stop limit reached... preparing to halt the source.")
+                        break
+
             except Exception as exc:
                 if not self._controller.run_indefinitely:
                     logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
                     raise
-
-            if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
-                self._stop_requested = True
-                logger.debug("Stop limit reached... preparing to halt the source.")
-                break
 
             if not self._controller.run_indefinitely:
                 self._stop_requested = True

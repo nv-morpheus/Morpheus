@@ -37,6 +37,12 @@
 
 namespace morpheus::llm {
 
+/**
+ * @brief Class template for a LLMNode created from a function that returns a Task.
+ *
+ * @tparam ReturnT return type
+ * @tparam ArgsT arguments type
+ */
 template <typename ReturnT, typename... ArgsT>
 class LLMLambdaNode : public LLMNodeBase
 {
@@ -101,6 +107,14 @@ class LLMLambdaNode : public LLMNodeBase
     function_t m_function;
 };
 
+/**
+ * @brief Template function that creates a LLMLambdaNode from a function.
+ *
+ * @tparam ReturnT return type
+ * @tparam ArgsT function args
+ * @param fn function that returns a Task
+ * @return auto
+ */
 template <typename ReturnT, typename... ArgsT>
 auto make_lambda_node(std::function<ReturnT(ArgsT...)>&& fn)
 {
@@ -119,6 +133,13 @@ auto make_lambda_node(std::function<ReturnT(ArgsT...)>&& fn)
                                                                std::move(fn));
 }
 
+/**
+ * @brief Template function that creates a LLMLambdaNode from a lambda or function pointer.
+ *
+ * @tparam FuncT function type
+ * @param fn function that returns a Task
+ * @return auto
+ */
 template <typename FuncT>
 auto make_lambda_node(FuncT&& fn)
 {
