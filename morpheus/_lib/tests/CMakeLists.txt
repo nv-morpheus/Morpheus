@@ -149,6 +149,9 @@ add_morpheus_test(
     llm/test_llm_context.cpp
     llm/test_llm_engine.cpp
     llm/test_llm_node.cpp
+    llm/test_llm_node_runner.cpp
+    llm/test_llm_task.cpp
+    llm/test_llm_task_handler_runner.cpp
     llm/test_utils.cpp
 )
 
