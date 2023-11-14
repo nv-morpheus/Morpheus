@@ -15,12 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Examples
-* [Anomalous Behavior Profiling with Forest Inference Library (FIL) Example](./abp_nvsmi_detection/README.md)
-* [ABP Detection Example Using Morpheus](./abp_pcap_detection/README.md)
-* [GNN Fraud Detection Pipeline](./gnn_fraud_detection_pipeline/README.md)
-* [Example cyBERT Morpheus Pipeline for Apache Log Parsing](./log_parsing/README.md)
-* [Sensitive Information Detection with Natural Language Processing (NLP) Example](./nlp_si_detection/README.md)
-* [Example Ransomware Detection Morpheus Pipeline for AppShield Data](./ransomware_detection/README.md)
-* [Root Cause Analysis Acceleration & Predictive Maintenance Example](./root_cause_analysis/README.md)
-* [SID Visualization Example](./sid_visualization/README.md)
+## Morpheus CLI Examples
+
+Examples run with the Morpheus CLI (`morpheus ...`) should be run from the repository root; otherwise, some filepath arguments may need to be changed.
+
+## Morpheus run.py Examples
+
+Examples run with python (`python run.py`) should be run from the example's directory; otherwise, relative Python imports may be broken.
