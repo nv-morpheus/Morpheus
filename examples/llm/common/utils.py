@@ -17,6 +17,7 @@ import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 
@@ -29,12 +30,17 @@ def build_huggingface_embeddings(model_name: str, model_kwargs: dict = None, enc
     return embeddings
 
 
-def build_llm_service(model_name: str, model_type, **model_kwargs):
-    if (model_type.lower() in ('nemo', )):
+def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int, **model_kwargs):
+    lowered_llm_service = llm_service.lower()
+    if (lowered_llm_service == 'nemollm'):
+        model_kwargs['tokens_to_generate'] = tokens_to_generate
         llm_service = NeMoLLMService()
+    elif (lowered_llm_service == 'openai'):
+        model_kwargs['max_tokens'] = tokens_to_generate
+        llm_service = OpenAIChatService()
     else:
         # TODO(Devin) : Add additional options
-        raise RuntimeError(f"Unsupported LLM model type: {model_type}")
+        raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
     return llm_service.get_client(model_name, **model_kwargs)
 
