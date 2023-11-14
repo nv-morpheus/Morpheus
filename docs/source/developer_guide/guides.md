@@ -20,9 +20,9 @@ limitations under the License.
 ## Morpheus Stages
 
 Morpheus includes a number of pre-defined stage implementations to choose from when building a custom
-pipeline, each of which can be included and configured to suit your application.
+pipeline, each of which can be included and configured to suit your application. The stages included in Morpheus can be found in the stages API reference:
 
-- [List of available Morpheus stages](../stages/morpheus_stages.md)
+- [Morpheus stages API](../_modules/morpheus.stages) 
 
 There are likely going to be situations that require writing a custom stage. Morpheus stages are written in
 Python and optionally may include a C++ implementation. The following guides outline how to create your own stages
