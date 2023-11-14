@@ -56,7 +56,6 @@ def pipeline(num_threads: int,
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
-    config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
     config.class_labels = [str(i) for i in range(embedding_size)]
