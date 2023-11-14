@@ -46,6 +46,8 @@ class WebScraperStage(SinglePortStage):
         Size in which to split the scraped content
     link_column : str, default="link"
         Column which contains the links to scrape
+    cache_path : str, default=None
+        the path for the response caching system's sqllite database, if None, caching is bypassed
     """
 
     def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link", cache_path: str = None):
