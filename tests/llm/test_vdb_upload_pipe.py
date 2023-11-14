@@ -128,6 +128,9 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
     inf_results = np.split(mock_result_values,
                            range(MODEL_MAX_BATCH_SIZE, len(mock_result_values), MODEL_MAX_BATCH_SIZE))
 
+    # The triton client is going to perform a logits function, calculate the inverse of it here
+    inf_results = [np.log((1.0 / x) - 1.0) * -1 for x in inf_results]
+
     async_infer = mk_async_infer(inf_results)
     mock_triton_client.async_infer.side_effect = async_infer
 
@@ -160,7 +163,14 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
     assert resource_service.count() == len(expected_values_df)
 
     db_results = resource_service.query("", offset=0, limit=resource_service.count())
-    db_df = pd.DataFrame(db_results)
+    db_df = pd.DataFrame(sorted(db_results, key=lambda k: k['id']))
 
     # The comparison function performs rounding on the values, but is unable to do so for array columns
     dataset.assert_compare_df(db_df, expected_values_df[db_df.columns], exclude_columns=['id', 'embedding'])
+    db_emb = db_df['embedding']
+    expected_emb = expected_values_df['embedding']
+
+    for i in range(resource_service.count()):
+        db_emb_row = pd.DataFrame(db_emb[i], dtype=np.float32)
+        expected_emb_row = pd.DataFrame(expected_emb[i], dtype=np.float32)
+        dataset.assert_compare_df(db_emb_row, expected_emb_row)
