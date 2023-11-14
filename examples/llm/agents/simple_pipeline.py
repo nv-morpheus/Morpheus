@@ -19,6 +19,7 @@ from langchain import OpenAI
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
+from langchain.agents.agent import AgentExecutor
 
 import cudf
 
@@ -40,7 +41,7 @@ from morpheus.utils.concat_df import concat_dataframes
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_executor(model_name: str):
+def _build_agent_executor(model_name: str) -> AgentExecutor:
 
     llm = OpenAI(model=model_name, temperature=0)
 
@@ -51,7 +52,7 @@ def _build_agent_executor(model_name: str):
     return agent_executor
 
 
-def _build_engine(model_name: str):
+def _build_engine(model_name: str) -> LLMEngine:
 
     engine = LLMEngine()
 
@@ -67,12 +68,12 @@ def _build_engine(model_name: str):
 
 
 def pipeline(
-    num_threads,
+    num_threads: int,
     pipeline_batch_size,
     model_max_batch_size,
     model_name,
     repeat_count,
-):
+) -> float:
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -111,6 +112,7 @@ def pipeline(
 
     messages = sink.get_messages()
     responses = concat_dataframes(messages)
+
     logger.info("Pipeline complete. Received %s responses:\n%s", len(messages), responses['response'])
 
     return start_time

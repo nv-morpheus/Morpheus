@@ -1,10 +1,11 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,34 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import time
-
+import pytest
+from langchain import OpenAI
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
-from langchain.agents.agent import AgentExecutor
-from langchain.llms.openai import OpenAIChat
+
+import cudf
 
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
-logger = logging.getLogger(__name__)
 
+def _build_agent_executor(model_name: str):
 
-def _build_agent_executor(model_name: str) -> AgentExecutor:
-
-    llm = OpenAIChat(model=model_name, temperature=0)
+    llm = OpenAI(model=model_name, temperature=0)
 
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
@@ -48,7 +45,7 @@ def _build_agent_executor(model_name: str) -> AgentExecutor:
     return agent_executor
 
 
-def _build_engine(model_name: str) -> LLMEngine:
+def _build_engine(model_name: str):
 
     engine = LLMEngine()
 
@@ -58,45 +55,44 @@ def _build_engine(model_name: str) -> LLMEngine:
                     inputs=[("/extracter")],
                     node=LangChainAgentNode(agent_executor=_build_agent_executor(model_name=model_name)))
 
-    engine.add_task_handler(inputs=["/extracter"], handler=SimpleTaskHandler())
+    engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
 
     return engine
 
 
-def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, model_name: str) -> float:
-    config = Config()
-    config.mode = PipelineModes.OTHER
+def _run_pipeline(config: Config, questions: list[str], responses: list[int], model_name: str = "test_model") -> dict:
+    """
+    Loosely patterned after `examples/llm/completion`
+    """
+    source_df = cudf.DataFrame({"questions": questions})
+    expected_df = cudf.DataFrame({"questions": questions, "response": responses})
 
-    # Below properties are specified by the command line
-    config.num_threads = num_threads
-    config.pipeline_batch_size = pipeline_batch_size
-    config.model_max_batch_size = model_max_batch_size
-    config.mode = PipelineModes.NLP
-    config.edge_buffer_size = 128
-
-    completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["question"], }}
+    completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"]}}
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(KafkaSourceStage(config, bootstrap_servers="auto", input_topic=["input"]))
+    pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
-
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
-
-    sink = pipe.add_stage(InMemorySinkStage(config))
-
-    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
-
-    start_time = time.time()
-
-    logger.info("Pipeline running. Waiting for input from Kafka...")
+    sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()
 
-    logger.info("Pipeline complete. Received %s responses", len(sink.get_messages()))
+    return sink.get_results()
 
-    return start_time
+
+@pytest.mark.usefixtures("openai")
+@pytest.mark.usefixtures("openai_api_key")
+@pytest.mark.usefixtures("serpapi_api_key")
+@pytest.mark.use_python
+def test_agents_simple_pipe_integration_openai(config: Config):
+    questions = ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
+    responses = [3.991298452658078]
+    results = _run_pipeline(config, questions=questions, responses=responses, model_name="gpt-3.5-turbo-instruct")
+
+    assert results['diff_cols'] == 0
+    assert results['total_rows'] == len(questions)
+    assert results['matching_rows'] + results['diff_rows'] == len(questions)

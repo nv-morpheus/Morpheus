@@ -39,14 +39,14 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 def _build_engine(llm_service_cls: LLMService, model_name: str = "test_model"):
     llm_service = llm_service_cls()
-    llm_clinet = llm_service.get_client(model_name=model_name)
+    llm_client = llm_service.get_client(model_name=model_name)
 
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
     engine.add_node("prompts",
                     inputs=["/extracter"],
                     node=PromptTemplateNode(template="What is the capital of {{country}}?", template_format="jinja"))
-    engine.add_node("completion", inputs=["/prompts"], node=LLMGenerateNode(llm_client=llm_clinet))
+    engine.add_node("completion", inputs=["/prompts"], node=LLMGenerateNode(llm_client=llm_client))
     engine.add_task_handler(inputs=["/completion"], handler=SimpleTaskHandler())
 
     return engine
