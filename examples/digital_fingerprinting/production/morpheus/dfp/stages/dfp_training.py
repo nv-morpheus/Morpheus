@@ -66,7 +66,8 @@ class DFPTraining(SinglePortStage):
             "scaler": 'standard',  # feature scaling method
             "min_cats": 1,  # cut off for minority categories
             "progress_bar": False,
-            "device": "cuda"
+            "device": "cuda",
+            "patience": -1,
         }
 
         # Update the defaults

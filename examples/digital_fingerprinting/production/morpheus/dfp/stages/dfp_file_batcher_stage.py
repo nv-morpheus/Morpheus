@@ -18,6 +18,7 @@ import typing
 import warnings
 from collections import namedtuple
 from datetime import datetime
+from datetime import timezone
 
 import fsspec
 import mrc
@@ -124,6 +125,9 @@ class DFPFileBatcherStage(SinglePortStage):
             ts = self._date_conversion_func(file_object)
 
             # Exclude any files outside the time window
+            if (ts.tzinfo is None):
+                ts = ts.replace(tzinfo=timezone.utc)
+
             if ((self._start_time is not None and ts < self._start_time)
                     or (self._end_time is not None and ts > self._end_time)):
                 continue
@@ -171,7 +175,12 @@ class DFPFileBatcherStage(SinglePortStage):
 
         for _, period_df in resampled:
 
-            obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs)
+            file_list = period_df["objects"].to_list()
+
+            if (len(file_list) == 0):
+                continue
+
+            obj_list = fsspec.core.OpenFiles(file_list, mode=file_objects.mode, fs=file_objects.fs)
 
             output_batches.append((obj_list, n_groups))
 
