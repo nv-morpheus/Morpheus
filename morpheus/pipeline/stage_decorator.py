@@ -42,7 +42,7 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
         return str(fn)
 
 
-class _DecoratedSource(SingleOutputSource):
+class WrappedFunctionSourceStage(SingleOutputSource):
 
     def __init__(self, *gen_args, config: Config, gen_fn: typing.Callable, return_type: type, **gen_fn_kwargs):
         super().__init__(config)
@@ -64,7 +64,7 @@ class _DecoratedSource(SingleOutputSource):
         return builder.make_source(self.unique_name, self._gen_fn)
 
 
-class _DecoratedSourceWithPreallocation(PreallocatorMixin, _DecoratedSource):
+class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceStage):
     pass
 
 
@@ -97,25 +97,25 @@ def source(gen_fn: typing.Callable):
 
         # If the return type supports pre-allocation we use the pre-allocating source
         if return_type in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage):
-            return _DecoratedSourceWithPreallocation(*args,
-                                                     config=config,
-                                                     gen_fn=gen_fn,
-                                                     return_type=return_type,
-                                                     **kwargs)
+            return PreAllocatedWrappedFunctionStage(*args,
+                                                    config=config,
+                                                    gen_fn=gen_fn,
+                                                    return_type=return_type,
+                                                    **kwargs)
 
-        return _DecoratedSource(*args, config=config, gen_fn=gen_fn, return_type=return_type, **kwargs)
+        return WrappedFunctionSourceStage(*args, config=config, gen_fn=gen_fn, return_type=return_type, **kwargs)
 
     return wrapper
 
 
-class _DecoratedStage(SinglePortStage):
+class WrappedFunctionStage(SinglePortStage):
 
     def __init__(self, *on_data_args, config: Config, on_data_fn: typing.Callable, **on_data_kwargs):
         super().__init__(config)
         self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
         self._on_data_fn_name = _get_name_from_fn(on_data_fn)
 
-        signature = inspect.signature(on_data_fn)
+        signature = inspect.signature(self._on_data_fn)
 
         try:
             first_param = next(iter(signature.parameters.values()))
@@ -162,9 +162,34 @@ class _DecoratedStage(SinglePortStage):
 
 
 def stage(on_data_fn: typing.Callable):
+    """
+    Decorator for wrapping a function as a stage. The function must receive at least one argument, and the first
+    argument must be the incoming message, and must return a value.
+    
+    It is highly recommended to use type annotations for the function parameters and return type, as this will be used
+    by the stage as the send and receive types. If the incoming message parameter has no type annotation, the stage
+    will be set to accept `typing.Any` as the input type. If the return type has no type annotation, the stage will
+    be set to return the same type as the input type.
+
+    When invoked the wrapped function will return a stage, any additional arguments passed in aside freom the config,
+    will be bound to the wrapped function via `functools.partial`.
+
+    Typical usage is as follows:
+
+    >>> @stage
+    ... def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
+    ...     with message.mutable_dataframe() as df:
+    ...         df[column] = df[column] * value
+    ...
+    ...     return message
+    ...
+    >>>
+
+    >>> pipe.add_stage(multiplier(config, column='v2', value=5))
+    """
 
     @functools.wraps(on_data_fn)
     def wrapper(config: Config, *args, **kwargs):
-        return _DecoratedStage(*args, config=config, on_data_fn=on_data_fn, **kwargs)
+        return WrappedFunctionStage(*args, config=config, on_data_fn=on_data_fn, **kwargs)
 
     return wrapper

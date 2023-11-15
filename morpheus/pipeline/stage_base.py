@@ -480,10 +480,10 @@ class StageBase(ABC, collections.abc.Hashable):
         Derived classes need to override this method, can set the output type(s) on `schema` by calling `set_type` for
         all output ports. For example a simple pass-thru stage might perform the following:
 
-        ```
         >>> for (port_idx, port_schema) in enumerate(schema.input_schemas):
-        >>>     schema.output_schemas[port_idx].set_type(port_schema.get_type())
-        ```
+        ...     schema.output_schemas[port_idx].set_type(port_schema.get_type())
+        >>> 
+
 
         If the port types in `upstream_schema` are incompatible the stage should raise a `RuntimeError`.
         """
