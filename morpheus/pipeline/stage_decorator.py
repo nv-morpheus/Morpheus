@@ -165,7 +165,7 @@ def stage(on_data_fn: typing.Callable):
     """
     Decorator for wrapping a function as a stage. The function must receive at least one argument, and the first
     argument must be the incoming message, and must return a value.
-    
+
     It is highly recommended to use type annotations for the function parameters and return type, as this will be used
     by the stage as the send and receive types. If the incoming message parameter has no type annotation, the stage
     will be set to accept `typing.Any` as the input type. If the return type has no type annotation, the stage will
@@ -174,7 +174,8 @@ def stage(on_data_fn: typing.Callable):
     When invoked the wrapped function will return a stage, any additional arguments passed in aside freom the config,
     will be bound to the wrapped function via `functools.partial`.
 
-    Typical usage is as follows:
+    Examples
+    --------
 
     >>> @stage
     ... def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
