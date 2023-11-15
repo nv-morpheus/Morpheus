@@ -119,14 +119,24 @@ def ngc_api_key_fixture():
     """
     yield require_env_variable(
         varname="NGC_API_KEY",
-        reason="nemo integration tests require the `NGC_API_KEY` environment variavble to be defined.")
+        reason="nemo integration tests require the `NGC_API_KEY` environment variable to be defined.")
 
 
 @pytest.fixture(name="openai_api_key", scope='session')
 def openai_api_key_fixture():
     """
-    Integration tests require an NGC API key.
+    Integration tests require an Openai API key.
     """
     yield require_env_variable(
         varname="OPENAI_API_KEY",
-        reason="openai integration tests require the `OPENAI_API_KEY` environment variavble to be defined.")
+        reason="openai integration tests require the `OPENAI_API_KEY` environment variable to be defined.")
+
+
+@pytest.fixture(name="serpapi_api_key", scope='session')
+def serpapi_api_key_fixture():
+    """
+    Integration tests require a Serpapi API key.
+    """
+    yield require_env_variable(
+        varname="SERPAPI_API_KEY",
+        reason="serpapi integration tests require the `SERPAPI_API_KEY` environment variable to be defined.")
