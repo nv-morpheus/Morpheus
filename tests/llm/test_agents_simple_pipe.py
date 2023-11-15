@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
 from langchain import OpenAI
 from langchain.agents import AgentType
@@ -30,8 +31,9 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.utils.concat_df import concat_dataframes
 
 
 def _build_agent_executor(model_name: str):
@@ -60,12 +62,11 @@ def _build_engine(model_name: str):
     return engine
 
 
-def _run_pipeline(config: Config, questions: list[str], responses: list[int], model_name: str = "test_model") -> dict:
+def _run_pipeline(config: Config, questions: list[str], model_name: str = "test_model") -> pd.DataFrame:
     """
     Loosely patterned after `examples/llm/completion`
     """
     source_df = cudf.DataFrame({"questions": questions})
-    expected_df = cudf.DataFrame({"questions": questions, "response": responses})
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"]}}
 
@@ -77,11 +78,13 @@ def _run_pipeline(config: Config, questions: list[str], responses: list[int], mo
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
-    sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
+    sink = pipe.add_stage(InMemorySinkStage(config))
 
     pipe.run()
 
-    return sink.get_results()
+    result_df = concat_dataframes(sink.get_messages())
+
+    return result_df
 
 
 @pytest.mark.usefixtures("openai")
@@ -90,9 +93,8 @@ def _run_pipeline(config: Config, questions: list[str], responses: list[int], mo
 @pytest.mark.use_python
 def test_agents_simple_pipe_integration_openai(config: Config):
     questions = ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
-    responses = [3.991298452658078]
-    results = _run_pipeline(config, questions=questions, responses=responses, model_name="gpt-3.5-turbo-instruct")
+    result_df = _run_pipeline(config, questions=questions, model_name="gpt-3.5-turbo-instruct")
 
-    assert results['diff_cols'] == 0
-    assert results['total_rows'] == len(questions)
-    assert results['matching_rows'] + results['diff_rows'] == len(questions)
+    assert len(result_df.columns) == 2
+    assert any(result_df.columns == ["questions", "response"])
+    assert float(result_df.response.iloc[0]) >= 3.7
