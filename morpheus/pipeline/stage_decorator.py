@@ -42,13 +42,36 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
         return str(fn)
 
 
+def _determine_return_type(gen_fn: typing.Callable) -> type:
+    """
+    Unpacks return types like:
+    def soource() -> typing.Generator[MessageMeta, None, None]:
+        ....
+    """
+    signature = inspect.signature(gen_fn)
+    return_type = signature.return_annotation
+    if return_type is signature.empty:
+        return_type = typing.Any
+
+    # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
+    # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
+    # instance of typing._GenericAlias. We need to check for both.
+    if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
+        return_type = return_type.__args__[0]
+
+    return return_type
+
+
 class WrappedFunctionSourceStage(SingleOutputSource):
 
-    def __init__(self, *gen_args, config: Config, gen_fn: typing.Callable, return_type: type, **gen_fn_kwargs):
+    def __init__(self, *gen_args, config: Config, gen_fn: typing.Callable, return_type: type = None, **gen_fn_kwargs):
         super().__init__(config)
+        if not inspect.isgeneratorfunction(gen_fn):
+            raise ValueError("Wrapped source functions must be generator functions")
+
         self._gen_fn = functools.partial(gen_fn, *gen_args, **gen_fn_kwargs)
         self._gen_fn_name = _get_name_from_fn(gen_fn)
-        self._return_type = return_type
+        self._return_type = return_type or _determine_return_type(gen_fn)
 
     @property
     def name(self) -> str:
@@ -68,28 +91,28 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceS
     pass
 
 
-def _determine_return_type(gen_fn: typing.Callable) -> type:
-    """
-    Unpacks return types like:
-    def soource() -> typing.Generator[MessageMeta, None, None]:
-        ....
-    """
-    signature = inspect.signature(gen_fn)
-    return_type = signature.return_annotation
-    if return_type is signature.empty:
-        raise ValueError(f"Return type of {gen_fn.__name__} has no type annotation, "
-                         "required for functions using the @source decorator")
-
-    # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
-    # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
-    # instance of typing._GenericAlias. We need to check for both.
-    if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
-        return_type = return_type.__args__[0]
-
-    return return_type
-
-
 def source(gen_fn: typing.Callable):
+    """
+    Decorator for wrapping a function as a source stage. The function must be a generator method.
+
+    It is highly recommended to use a type annotation for the return type, as this will be used by the stage as the
+    output type. If no return type annotation is provided, the stage will use `typing.Any` as the output type.
+
+    When invoked the wrapped function will return a source stage, any additional arguments passed in aside from the
+    config, will be bound to the wrapped function via `functools.partial`.
+
+    Examples
+    --------
+
+    >>> @source
+    ... def source_gen(dataframes: list[cudf.DataFrame]) -> collections.abc.Iterator[MessageMeta]:
+    ...     for df in dataframes:
+    ...         yield MessageMeta(df)
+    ...
+    >>>
+
+    >>> pipe.set_source(source_gen(config, dataframes=[df]))
+    """
 
     @functools.wraps(gen_fn)
     def wrapper(config: Config, *args, **kwargs):
@@ -171,7 +194,7 @@ def stage(on_data_fn: typing.Callable):
     will be set to accept `typing.Any` as the input type. If the return type has no type annotation, the stage will
     be set to return the same type as the input type.
 
-    When invoked the wrapped function will return a stage, any additional arguments passed in aside freom the config,
+    When invoked the wrapped function will return a stage, any additional arguments passed in aside from the config,
     will be bound to the wrapped function via `functools.partial`.
 
     Examples
