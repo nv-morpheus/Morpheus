@@ -177,8 +177,10 @@ def source(gen_fn: GeneratorType):
     >>> pipe.set_source(source_gen(config, dataframes=[df]))
     """
 
-    @functools.wraps(gen_fn)
-    def wrapper(config: Config, *args, **kwargs):
+    # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
+    # annotations to reflect that the returned function requires a config and returns a stage
+    @functools.wraps(gen_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
+    def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionSourceStage:
         return_type = _determine_return_type(gen_fn)
 
         # If the return type supports pre-allocation we use the pre-allocating source
@@ -311,8 +313,10 @@ def stage(on_data_fn: typing.Callable):
     >>> pipe.add_stage(multiplier(config, column='v2', value=5))
     """
 
-    @functools.wraps(on_data_fn)
-    def wrapper(config: Config, *args, **kwargs):
+    # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
+    # annotations to reflect that the returned function requires a config and returns a stage
+    @functools.wraps(on_data_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
+    def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionStage:
         return WrappedFunctionStage(*args, config=config, on_data_fn=on_data_fn, **kwargs)
 
     return wrapper
