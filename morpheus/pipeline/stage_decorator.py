@@ -46,7 +46,7 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
 
 def _determine_return_type(gen_fn: GeneratorType) -> type:
     """
-    Unpacks return types like:
+    Unpacks return type annoatations like:
     def soource() -> typing.Generator[MessageMeta, None, None]:
         ....
     """
@@ -195,32 +195,68 @@ def source(gen_fn: GeneratorType):
 
 
 class WrappedFunctionStage(SinglePortStage):
+    """
+    Stage that wraps a function to be used for processing messages.
 
-    def __init__(self, *on_data_args, config: Config, on_data_fn: typing.Callable, **on_data_kwargs):
+    The function must receive at least one argument, the first argument must be the incoming message, and must
+    return a value. If `accept_type` is not provided, the type annotation of the first argument will be used, and if
+    that parameter has no type annotation, the stage will be set to use `typing.Any` as the accept type.
+    
+    If `return_type` is not provided, the stage will use the return type annotation of `on_data_fn` as the output type.
+    If the return type annotation is not provided, the stage will use the same type as the input.
+
+    Any additional arguments passed in aside from `config`, `accept_type` and `return_type`, will be bound to the
+    wrapped function via `functools.partial`.
+
+    Parameters
+    ----------
+    config : `morpheus.config.Config`
+        Pipeline configuration instance.
+    on_data_fn : `typing.Callable`
+        Function to be used for processing messages.
+    accept_type : `type`, optional
+        Type of message to accept, if not provided the stage will use the type annotation of the first parameter of
+        `on_data_fn` as the accept type.
+    return_type : `type`, optional
+        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output.
+    *on_data_args : `typing.Any`
+        Additional arguments to bind to `on_data_fn` via `functools.partial`.
+    **on_data_kwargs : `typing.Any`
+        Additional keyword arguments to bind to `on_data_fn` via `functools.partial`.
+    """
+
+    def __init__(self,
+                 *on_data_args,
+                 config: Config,
+                 on_data_fn: typing.Callable,
+                 accept_type: type = None,
+                 return_type: type = None,
+                 **on_data_kwargs):
         super().__init__(config)
         self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
         self._on_data_fn_name = _get_name_from_fn(on_data_fn)
 
+        # Even if both accept_type and return_type are provided, we should still need to inspect the function signature
+        # to verify it is callable with at least one argument
         signature = inspect.signature(self._on_data_fn)
 
         try:
             first_param = next(iter(signature.parameters.values()))
-            self._accept_type = first_param.annotation
+            self._accept_type = accept_type or first_param.annotation
             if self._accept_type is signature.empty:
                 logger.warning(
                     "%s argument of %s has no type annotation, defaulting to typing.Any for the stage accept type",
                     first_param.name,
                     self._on_data_fn_name)
                 self._accept_type = typing.Any
-
-            self._return_type = signature.return_annotation
-            if self._return_type is signature.empty:
-                logger.warning("Return type of %s has no type annotation, defaulting to the stage's accept type",
-                               self._on_data_fn_name)
-                self._return_type = self._accept_type
-
         except StopIteration as e:
             raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
+
+        self._return_type = return_type or signature.return_annotation
+        if self._return_type is signature.empty:
+            logger.warning("Return type of %s has no type annotation, defaulting to the stage's accept type",
+                           self._on_data_fn_name)
+            self._return_type = self._accept_type
 
     @property
     def name(self) -> str:
@@ -249,13 +285,13 @@ class WrappedFunctionStage(SinglePortStage):
 
 def stage(on_data_fn: typing.Callable):
     """
-    Decorator for wrapping a function as a stage. The function must receive at least one argument, and the first
-    argument must be the incoming message, and must return a value.
+    Decorator for wrapping a function as a stage. The function must receive at least one argument, the first argument
+    must be the incoming message, and must return a value.
 
     It is highly recommended to use type annotations for the function parameters and return type, as this will be used
-    by the stage as the send and receive types. If the incoming message parameter has no type annotation, the stage
-    will be set to accept `typing.Any` as the input type. If the return type has no type annotation, the stage will
-    be set to return the same type as the input type.
+    by the stage as the accept and output types. If the incoming message parameter has no type annotation, the stage
+    will be use `typing.Any` as the input type. If the return type has no type annotation, the stage will be set to
+    return the same type as the input type.
 
     When invoked the wrapped function will return a stage, any additional arguments passed in aside from the config,
     will be bound to the wrapped function via `functools.partial`.
