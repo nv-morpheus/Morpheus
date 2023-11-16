@@ -201,7 +201,7 @@ class WrappedFunctionStage(SinglePortStage):
     The function must receive at least one argument, the first argument must be the incoming message, and must
     return a value. If `accept_type` is not provided, the type annotation of the first argument will be used, and if
     that parameter has no type annotation, the stage will be set to use `typing.Any` as the accept type.
-    
+
     If `return_type` is not provided, the stage will use the return type annotation of `on_data_fn` as the output type.
     If the return type annotation is not provided, the stage will use the same type as the input.
 
