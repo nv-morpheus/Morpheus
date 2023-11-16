@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import functools
 import inspect
 import logging
@@ -32,6 +33,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
+GeneratorType = typing.Callable[..., collections.abc.Iterator[typing.Any]]
 
 
 def _get_name_from_fn(fn: typing.Callable) -> str:
@@ -42,7 +44,7 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
         return str(fn)
 
 
-def _determine_return_type(gen_fn: typing.Callable) -> type:
+def _determine_return_type(gen_fn: GeneratorType) -> type:
     """
     Unpacks return types like:
     def soource() -> typing.Generator[MessageMeta, None, None]:
@@ -62,9 +64,43 @@ def _determine_return_type(gen_fn: typing.Callable) -> type:
     return return_type
 
 
-class WrappedFunctionSourceStage(SingleOutputSource):
+def _is_dataframe_containing_type(type_: type) -> bool:
+    return type_ in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage)
 
-    def __init__(self, *gen_args, config: Config, gen_fn: typing.Callable, return_type: type = None, **gen_fn_kwargs):
+
+class WrappedFunctionSourceStage(SingleOutputSource):
+    """
+    Source stage that wraps a generator function as the method for generating messages.
+
+    The wrapped function must be a generator function. If `return_type` is not provided, the stage will use the
+    return type annotation of `gen_fn` as the output type. If the return type annotation is not provided, the stage
+    will use `typing.Any` as the output type.
+
+    It is highly recommended to use specify either `return_type` or provide a return type annotation for `gen_fn`.
+
+    If the output type is an instance of `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage` the
+    `PreAllocatedWrappedFunctionStage` class should be used instead, as this will also perform any DataFrame column
+    allocations needed by other stages in the pipeline.
+
+    Any additional arguments passed in aside from `config` and `return_type`, will be bound to the wrapped function via
+    `functools.partial`.
+
+    Parameters
+    ----------
+    config : `morpheus.config.Config`
+        Pipeline configuration instance.
+    gen_fn : `GeneratorType`
+        Generator function to use as the source of messages.
+    return_type : `type`, optional
+        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output
+        if not provided the stage will use `typing.Any` as the output type.
+    *gen_args : `typing.Any`
+        Additional arguments to bind to `gen_fn` via `functools.partial`.
+    **gen_fn_kwargs : `typing.Any`
+        Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
+    """
+
+    def __init__(self, *gen_args, config: Config, gen_fn: GeneratorType, return_type: type = None, **gen_fn_kwargs):
         super().__init__(config)
         if not inspect.isgeneratorfunction(gen_fn):
             raise ValueError("Wrapped source functions must be generator functions")
@@ -88,15 +124,42 @@ class WrappedFunctionSourceStage(SingleOutputSource):
 
 
 class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceStage):
-    pass
+    """
+    Source stage that wraps a generator function as the method for generating messages.
+
+    This stage provides the same functionality as `WrappedFunctionSourceStage`, but also performs any DataFrame column
+    allocations needed by other stages in the pipeline. As such the return type for `gen_fn` must be one of:
+    `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage`.
+
+    Any additional arguments passed in aside from `config` and `return_type`, will be bound to the wrapped function via
+    `functools.partial`.
+
+    Parameters
+    ----------
+    config : `morpheus.config.Config`
+        Pipeline configuration instance.
+    gen_fn : `GeneratorType`
+        Generator function to use as the source of messages.
+    return_type : `type`, optional
+        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output.
+    *gen_args : `typing.Any`
+        Additional arguments to bind to `gen_fn` via `functools.partial`.
+    **gen_fn_kwargs : `typing.Any`
+        Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
+    """
+
+    def __init__(self, *gen_args, config: Config, gen_fn: GeneratorType, return_type: type = None, **gen_fn_kwargs):
+        super().__init__(*gen_args, config=config, gen_fn=gen_fn, return_type=return_type, **gen_fn_kwargs)
+        if not _is_dataframe_containing_type(self._return_type):
+            raise ValueError("PreAllocatedWrappedFunctionStage can only be used with DataFrame containing types")
 
 
-def source(gen_fn: typing.Callable):
+def source(gen_fn: GeneratorType):
     """
     Decorator for wrapping a function as a source stage. The function must be a generator method.
 
-    It is highly recommended to use a type annotation for the return type, as this will be used by the stage as the
-    output type. If no return type annotation is provided, the stage will use `typing.Any` as the output type.
+    It is highly recommended to use a return type annotation, as this will be used by the stage as the output type. If
+    no return type annotation is provided, the stage will use `typing.Any` as the output type.
 
     When invoked the wrapped function will return a source stage, any additional arguments passed in aside from the
     config, will be bound to the wrapped function via `functools.partial`.
@@ -119,7 +182,7 @@ def source(gen_fn: typing.Callable):
         return_type = _determine_return_type(gen_fn)
 
         # If the return type supports pre-allocation we use the pre-allocating source
-        if return_type in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage):
+        if _is_dataframe_containing_type(return_type):
             return PreAllocatedWrappedFunctionStage(*args,
                                                     config=config,
                                                     gen_fn=gen_fn,
