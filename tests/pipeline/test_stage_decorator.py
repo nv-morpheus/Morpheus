@@ -55,14 +55,14 @@ def test_source_decorator(config: Config, generator_type: type, return_type: typ
     def test_source_gen() -> return_annotation:
         yield None
 
-    stage = test_source_gen(config)
+    source_stage = test_source_gen(config)  # pylint: disable=too-many-function-args
 
-    assert isinstance(stage, WrappedFunctionSourceStage)
-    assert is_prealloc == isinstance(stage, PreAllocatedWrappedFunctionStage)
+    assert isinstance(source_stage, WrappedFunctionSourceStage)
+    assert is_prealloc == isinstance(source_stage, PreAllocatedWrappedFunctionStage)
 
     # check the output type
-    schema = StageSchema(stage)
-    stage.compute_schema(schema)
+    schema = StageSchema(source_stage)
+    source_stage.compute_schema(schema)  # pylint: disable=no-member
     assert schema.output_schema.get_type() is return_type
 
 
@@ -73,8 +73,8 @@ def test_source_decorator_name(config: Config):
     def test_source_gen(value: int) -> int:
         yield value
 
-    stage = test_source_gen(config, value=5)
-    assert stage.name == 'test_source_gen'
+    source_stage = test_source_gen(config, value=5)  # pylint: disable=redundant-keyword-arg
+    assert source_stage.name == 'test_source_gen'  # pylint: disable=no-member
 
 
 @pytest.mark.use_python
@@ -84,14 +84,14 @@ def test_source_decorator_no_annoation(config: Config):
     def test_source_gen():
         yield None
 
-    stage = test_source_gen(config)
+    source_stage = test_source_gen(config)  # pylint: disable=too-many-function-args
 
-    assert isinstance(stage, WrappedFunctionSourceStage)
-    assert not isinstance(stage, PreAllocatedWrappedFunctionStage)
+    assert isinstance(source_stage, WrappedFunctionSourceStage)
+    assert not isinstance(source_stage, PreAllocatedWrappedFunctionStage)
 
     # check the output type
-    schema = StageSchema(stage)
-    stage.compute_schema(schema)
+    schema = StageSchema(source_stage)
+    source_stage.compute_schema(schema)  # pylint: disable=no-member
     assert schema.output_schema.get_type() is typing.Any
 
 
@@ -103,7 +103,7 @@ def test_not_generator_error(config: Config):
         return 5
 
     with pytest.raises(ValueError):
-        test_fn(config)
+        test_fn(config)  # pylint: disable=too-many-function-args
 
 
 def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
@@ -125,7 +125,7 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
     expected_df['v2'] = expected_df['v2'] * multipy_by
 
     pipe = LinearPipeline(config)
-    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))
+    pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))  # pylint: disable=redundant-keyword-arg
     pipe.add_stage(multiplier(config, column='v2', value=multipy_by))
     sink = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
