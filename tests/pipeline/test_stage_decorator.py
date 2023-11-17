@@ -220,10 +220,45 @@ def test_wrapped_function_stage_constructor(config: Config, use_annotations: boo
 
     wrapped_stage = WrappedFunctionStage(config, on_data_fn=test_fn, **kwargs)
 
-    # For non-source types we can't check the compute_schema method outside of a pipeline
     assert isinstance(wrapped_stage, WrappedFunctionStage)
     assert wrapped_stage.accepted_types() == (expected_accept_type, )
     assert wrapped_stage._return_type is expected_return_type
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("accept_type, return_type",
+                         [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
+                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
+                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+def test_wrapped_function_stage_output_types(config: Config, accept_type: type, return_type: type):
+    # For non-source types we need an upstream before we can check the compute_schema method outside of a pipeline
+    if accept_type is None:
+        expected_accept_type = typing.Any
+    else:
+        expected_accept_type = accept_type
+
+    if return_type is None:
+        expected_return_type = expected_accept_type
+    else:
+        expected_return_type = return_type
+
+    wrapped_stage = WrappedFunctionStage(config,
+                                         on_data_fn=lambda x: x,
+                                         accept_type=accept_type,
+                                         return_type=return_type)
+
+    def source_fn():
+        yield None
+
+    upstream = WrappedFunctionSourceStage(config, source_fn, return_type=expected_accept_type)
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(upstream)
+    pipe.add_stage(wrapped_stage)
+    pipe.build()
+    schema = StageSchema(wrapped_stage)
+    wrapped_stage.compute_schema(schema)
+    schema.output_schema.get_type() is expected_return_type
 
 
 @pytest.mark.use_python
@@ -257,6 +292,38 @@ def test_wrapped_function_stage_no_name(config: Config):
     # non-empty string
     assert isinstance(wrapped_stage.name, str)
     assert len(wrapped_stage.name) > 0
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("accept_type, return_type",
+                         [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
+                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
+                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+def test_stage_decorator(config: Config, accept_type: type, return_type: type):
+
+    if accept_type is None:
+        accept_annotation = inspect.Signature.empty
+        expected_accept_type = typing.Any
+    else:
+        accept_annotation = accept_type
+        expected_accept_type = accept_type
+
+    if return_type is None:
+        return_annotation = inspect.Signature.empty
+        expected_return_type = expected_accept_type
+    else:
+        return_annotation = return_type
+        expected_return_type = return_type
+
+    @stage
+    def test_fn(message: accept_annotation) -> return_annotation:
+        return message
+
+    wrapped_stage = test_fn(config)
+
+    assert isinstance(wrapped_stage, WrappedFunctionStage)
+    assert wrapped_stage.accepted_types() == (expected_accept_type, )
+    assert wrapped_stage._return_type is expected_return_type
 
 
 def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
