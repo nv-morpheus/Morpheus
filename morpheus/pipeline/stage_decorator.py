@@ -41,6 +41,9 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
         return fn.__name__
     except AttributeError:
         # If the function is a partial, it won't have a name
+        if isinstance(fn, functools.partial):
+            return _get_name_from_fn(fn.func)
+
         return str(fn)
 
 
@@ -100,16 +103,11 @@ class WrappedFunctionSourceStage(SingleOutputSource):
         Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
     """
 
-    def __init__(self,
-                 config: Config,
-                 gen_fn: GeneratorType,
-                 *gen_args,
-                 return_type: type = None,
-                 **gen_fn_kwargs):
+    def __init__(self, config: Config, gen_fn: GeneratorType, *gen_args, return_type: type = None, **gen_fn_kwargs):
         super().__init__(config)
-        if not inspect.isgeneratorfunction(gen_fn):
-            raise ValueError(
-                "Wrapped source functions must be generator functions")
+        # collections.abc.Generator is a subclass of collections.abc.Iterator
+        if not inspect.isgeneratorfunction(gen_fn) and not isinstance(gen_fn, collections.abc.Iterator):
+            raise ValueError("Wrapped source functions must be generator functions")
 
         self._gen_fn = functools.partial(gen_fn, *gen_args, **gen_fn_kwargs)
         self._gen_fn_name = _get_name_from_fn(gen_fn)
@@ -129,8 +127,7 @@ class WrappedFunctionSourceStage(SingleOutputSource):
         return builder.make_source(self.unique_name, self._gen_fn)
 
 
-class PreAllocatedWrappedFunctionStage(PreallocatorMixin,
-                                       WrappedFunctionSourceStage):
+class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceStage):
     """
     Source stage that wraps a generator function as the method for generating messages.
 
@@ -155,21 +152,10 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin,
         Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
     """
 
-    def __init__(self,
-                 config: Config,
-                 gen_fn: GeneratorType,
-                 *gen_args,
-                 return_type: type = None,
-                 **gen_fn_kwargs):
-        super().__init__(*gen_args,
-                         config=config,
-                         gen_fn=gen_fn,
-                         return_type=return_type,
-                         **gen_fn_kwargs)
+    def __init__(self, config: Config, gen_fn: GeneratorType, *gen_args, return_type: type = None, **gen_fn_kwargs):
+        super().__init__(*gen_args, config=config, gen_fn=gen_fn, return_type=return_type, **gen_fn_kwargs)
         if not _is_dataframe_containing_type(self._return_type):
-            raise ValueError(
-                "PreAllocatedWrappedFunctionStage can only be used with DataFrame containing types"
-            )
+            raise ValueError("PreAllocatedWrappedFunctionStage can only be used with DataFrame containing types")
 
 
 def source(gen_fn: GeneratorType):
@@ -197,9 +183,7 @@ def source(gen_fn: GeneratorType):
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
-    @functools.wraps(gen_fn,
-                     assigned=('__module__', '__name__', '__qualname__',
-                               '__doc__'))
+    @functools.wraps(gen_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
     def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionSourceStage:
         return_type = _determine_return_type(gen_fn)
 
@@ -211,11 +195,7 @@ def source(gen_fn: GeneratorType):
                                                     return_type=return_type,
                                                     **kwargs)
 
-        return WrappedFunctionSourceStage(*args,
-                                          config=config,
-                                          gen_fn=gen_fn,
-                                          return_type=return_type,
-                                          **kwargs)
+        return WrappedFunctionSourceStage(*args, config=config, gen_fn=gen_fn, return_type=return_type, **kwargs)
 
     return wrapper
 
@@ -259,8 +239,7 @@ class WrappedFunctionStage(SinglePortStage):
                  return_type: type = None,
                  **on_data_kwargs):
         super().__init__(config)
-        self._on_data_fn = functools.partial(on_data_fn, *on_data_args,
-                                             **on_data_kwargs)
+        self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
         self._on_data_fn_name = _get_name_from_fn(on_data_fn)
 
         # Even if both accept_type and return_type are provided, we should still need to inspect the function signature
@@ -273,18 +252,16 @@ class WrappedFunctionStage(SinglePortStage):
             if self._accept_type is signature.empty:
                 logger.warning(
                     "%s argument of %s has no type annotation, defaulting to typing.Any for the stage accept type",
-                    first_param.name, self._on_data_fn_name)
+                    first_param.name,
+                    self._on_data_fn_name)
                 self._accept_type = typing.Any
         except StopIteration as e:
-            raise ValueError(
-                f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter"
-            ) from e
+            raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
 
         self._return_type = return_type or signature.return_annotation
         if self._return_type is signature.empty:
-            logger.warning(
-                "Return type of %s has no type annotation, defaulting to the stage's accept type",
-                self._on_data_fn_name)
+            logger.warning("Return type of %s has no type annotation, defaulting to the stage's accept type",
+                           self._on_data_fn_name)
             self._return_type = self._accept_type
 
     @property
@@ -305,8 +282,7 @@ class WrappedFunctionStage(SinglePortStage):
 
         schema.output_schema.set_type(return_type)
 
-    def _build_single(self, builder: mrc.Builder,
-                      input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._on_data_fn))
         builder.make_edge(input_node, node)
 
@@ -343,13 +319,8 @@ def stage(on_data_fn: typing.Callable):
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
-    @functools.wraps(on_data_fn,
-                     assigned=('__module__', '__name__', '__qualname__',
-                               '__doc__'))
+    @functools.wraps(on_data_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
     def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionStage:
-        return WrappedFunctionStage(*args,
-                                    config=config,
-                                    on_data_fn=on_data_fn,
-                                    **kwargs)
+        return WrappedFunctionStage(*args, config=config, on_data_fn=on_data_fn, **kwargs)
 
     return wrapper

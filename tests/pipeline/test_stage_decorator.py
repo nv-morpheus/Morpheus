@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import collections
+import functools
+import re
 import typing
 
 import pandas as pd
@@ -74,6 +76,37 @@ def test_wrapped_function_source_stage(config: Config, generator_type: type, ret
     schema = StageSchema(source_stage)
     source_stage.compute_schema(schema)  # pylint: disable=no-member
     assert schema.output_schema.get_type() is return_type
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
+@pytest.mark.parametrize("use_partial", [True, False])
+def test_wrapped_function_source_stage_name(config: Config, src_cls: type, use_partial: bool):
+
+    def test_source_gen(value: int) -> int:
+        yield value
+
+    if use_partial:
+        source_stage = src_cls(config, functools.partial(test_source_gen, value=5))
+    else:
+        source_stage = src_cls(config, test_source_gen, value=5)
+    assert source_stage.name == 'test_source_gen'
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
+def test_wrapped_function_source_stage_name_gen_class(config: Config, src_cls: type):
+    # Class instances don't have __name__ attribute, instead the code should fallback to calling str()
+    class TestSourceGen(collections.abc.Iterator):
+
+        def __next__(self) -> cudf.DataFrame:
+            raise StopIteration
+
+        def __str__(self) -> str:
+            return 'TestSourceGen'
+
+    source_stage = src_cls(config, TestSourceGen())
+    assert source_stage.name == 'TestSourceGen'
 
 
 @pytest.mark.use_python
