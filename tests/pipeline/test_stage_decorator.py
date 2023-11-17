@@ -239,6 +239,8 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
 
     if return_type is None:
         expected_return_type = expected_accept_type
+    elif return_type is typing.Any:
+        expected_return_type = expected_accept_type
     else:
         expected_return_type = return_type
 
@@ -258,7 +260,7 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
     pipe.build()
     schema = StageSchema(wrapped_stage)
     wrapped_stage.compute_schema(schema)
-    schema.output_schema.get_type() is expected_return_type
+    assert schema.output_schema.get_type() is expected_return_type
 
 
 @pytest.mark.use_python
