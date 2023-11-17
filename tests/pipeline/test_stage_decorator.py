@@ -83,7 +83,7 @@ def test_wrapped_function_source_stage(config: Config, generator_type: type, ret
 @pytest.mark.parametrize("use_partial", [True, False])
 def test_wrapped_function_source_stage_name(config: Config, src_cls: type, use_partial: bool):
 
-    def test_source_gen(value: int) -> int:
+    def test_source_gen(value: int) -> cudf.DataFrame:
         yield value
 
     if use_partial:
@@ -91,22 +91,6 @@ def test_wrapped_function_source_stage_name(config: Config, src_cls: type, use_p
     else:
         source_stage = src_cls(config, test_source_gen, value=5)
     assert source_stage.name == 'test_source_gen'
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
-def test_wrapped_function_source_stage_name_gen_class(config: Config, src_cls: type):
-    # Class instances don't have __name__ attribute, instead the code should fallback to calling str()
-    class TestSourceGen(collections.abc.Iterator):
-
-        def __next__(self) -> cudf.DataFrame:
-            raise StopIteration
-
-        def __str__(self) -> str:
-            return 'TestSourceGen'
-
-    source_stage = src_cls(config, TestSourceGen())
-    assert source_stage.name == 'TestSourceGen'
 
 
 @pytest.mark.use_python

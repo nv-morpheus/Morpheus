@@ -106,7 +106,7 @@ class WrappedFunctionSourceStage(SingleOutputSource):
     def __init__(self, config: Config, gen_fn: GeneratorType, *gen_args, return_type: type = None, **gen_fn_kwargs):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
-        if not inspect.isgeneratorfunction(gen_fn) and not isinstance(gen_fn, collections.abc.Iterator):
+        if not inspect.isgeneratorfunction(gen_fn):
             raise ValueError("Wrapped source functions must be generator functions")
 
         self._gen_fn = functools.partial(gen_fn, *gen_args, **gen_fn_kwargs)
