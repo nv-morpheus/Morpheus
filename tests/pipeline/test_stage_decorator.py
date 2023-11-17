@@ -328,6 +328,28 @@ def test_stage_decorator(config: Config, accept_type: type, return_type: type):
     assert wrapped_stage._return_type is expected_return_type
 
 
+def test_stage_decorator_name(config: Config):
+
+    @stage
+    def test_fn(message: float, value: float) -> float:
+        return message * value
+
+    wrapped_stage = test_fn(config, value=2.2)
+    assert wrapped_stage.name == 'test_fn'
+
+
+def test_stage_decorator_no_annotation(config: Config):
+
+    @stage
+    def test_fn(message):
+        return message
+
+    wrapped_stage = test_fn(config)
+
+    assert wrapped_stage.accepted_types() == (typing.Any, )
+    assert wrapped_stage._return_type is typing.Any
+
+
 def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
 
     @source
