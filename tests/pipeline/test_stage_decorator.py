@@ -16,7 +16,7 @@
 
 import collections
 import functools
-import re
+import inspect
 import typing
 
 import pandas as pd
@@ -56,7 +56,10 @@ def _get_annotation(type_: type, generator_type: type) -> type:
 @pytest.mark.parametrize("return_type, is_prealloc",
                          [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
                           (float, False)])
-def test_wrapped_function_source_stage(config: Config, generator_type: type, return_type: type, is_prealloc: bool):
+def test_wrapped_function_source_stage_constructor(config: Config,
+                                                   generator_type: type,
+                                                   return_type: type,
+                                                   is_prealloc: bool):
     return_annotation = _get_annotation(return_type, generator_type)
 
     def test_source_gen() -> return_annotation:
@@ -177,6 +180,83 @@ def test_not_generator_error(config: Config):
 
     with pytest.raises(ValueError):
         test_fn(config)  # pylint: disable=too-many-function-args
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("use_annotations", [True, False])
+@pytest.mark.parametrize("accept_type, return_type",
+                         [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
+                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
+                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+def test_wrapped_function_stage_constructor(config: Config, use_annotations: bool, accept_type: type,
+                                            return_type: type):
+
+    if accept_type is None:
+        accept_annotation = inspect.Signature.empty
+        expected_accept_type = typing.Any
+    else:
+        accept_annotation = accept_type
+        expected_accept_type = accept_type
+
+    if return_type is None:
+        return_annotation = inspect.Signature.empty
+        expected_return_type = expected_accept_type
+    else:
+        return_annotation = return_type
+        expected_return_type = return_type
+
+    if use_annotations:
+
+        def test_fn(message: accept_annotation) -> return_annotation:
+            return message
+
+        kwargs = {'accept_type': None, 'return_type': None}
+    else:
+
+        def test_fn(message):
+            return message
+
+        kwargs = {'accept_type': accept_type, 'return_type': return_type}
+
+    wrapped_stage = WrappedFunctionStage(config, on_data_fn=test_fn, **kwargs)
+
+    # For non-source types we can't check the compute_schema method outside of a pipeline
+    assert isinstance(wrapped_stage, WrappedFunctionStage)
+    assert wrapped_stage.accepted_types() == (expected_accept_type, )
+    assert wrapped_stage._return_type is expected_return_type
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("use_partial", [True, False])
+def test_wrapped_function_stage_name(config: Config, use_partial: bool):
+
+    def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
+        with message.mutable_dataframe() as df:
+            df[column] = df[column] * value
+
+        return message
+
+    if use_partial:
+        wrapped_stage = WrappedFunctionStage(config, functools.partial(multiplier, column='v2', value=5))
+    else:
+        wrapped_stage = WrappedFunctionStage(config, multiplier, column='v2', value=5)
+    assert wrapped_stage.name == 'multiplier'
+
+
+@pytest.mark.use_python
+def test_wrapped_function_stage_no_name(config: Config):
+    # Class instances don't have a __name__ attribute like functions do
+    class CallableCls:
+
+        def __call__(self, message: MessageMeta) -> MessageMeta:
+            return message
+
+    wrapped_stage = WrappedFunctionStage(config, CallableCls())
+
+    # The impl will fall back to calling str() on the object, but for our purposes we just want to make sure we got a
+    # non-empty string
+    assert isinstance(wrapped_stage.name, str)
+    assert len(wrapped_stage.name) > 0
 
 
 def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
