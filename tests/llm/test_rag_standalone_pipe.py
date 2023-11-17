@@ -208,6 +208,7 @@ def test_rag_standalone_pipe_openai(config: Config,
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
+@pytest.mark.milvus
 @pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
@@ -239,6 +240,7 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
 
 @pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
+@pytest.mark.milvus
 @pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
