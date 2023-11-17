@@ -36,6 +36,68 @@ from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 
+def _get_annotation(type_: type, generator_type: type) -> type:
+    if generator_type is not None:
+        if generator_type in (typing.Generator, collections.abc.Generator):
+            annotation = generator_type[type_, None, None]
+        else:
+            annotation = generator_type[type_]
+    else:
+        annotation = type_
+
+    return annotation
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("generator_type",
+                         [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
+@pytest.mark.parametrize("return_type, is_prealloc",
+                         [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
+                          (float, False)])
+def test_wrapped_function_source_stage(config: Config, generator_type: type, return_type: type, is_prealloc: bool):
+    return_annotation = _get_annotation(return_type, generator_type)
+
+    def test_source_gen() -> return_annotation:
+        yield None
+
+    if is_prealloc:
+        source_cls = PreAllocatedWrappedFunctionStage
+    else:
+        source_cls = WrappedFunctionSourceStage
+
+    source_stage = source_cls(config, gen_fn=test_source_gen)
+
+    assert isinstance(source_stage, WrappedFunctionSourceStage)
+    assert is_prealloc == isinstance(source_stage, PreAllocatedWrappedFunctionStage)
+
+    # check the output type
+    schema = StageSchema(source_stage)
+    source_stage.compute_schema(schema)  # pylint: disable=no-member
+    assert schema.output_schema.get_type() is return_type
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
+def test_wrapped_function_stage_not_generator_error(config: Config, src_cls: type):
+
+    def test_source_gen() -> MessageMeta:
+        return MessageMeta(cudf.DataFrame())
+
+    with pytest.raises(ValueError):
+        src_cls(config, test_source_gen)
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("return_type", [float, int, str, bool])
+def test_pre_allocated_wrapped_function_stage_not_df_error(config: Config, return_type: type):
+
+    def test_source_gen() -> return_type:
+        yield None
+
+    with pytest.raises(ValueError):
+        PreAllocatedWrappedFunctionStage(config, test_source_gen)
+
+
 @pytest.mark.use_python
 @pytest.mark.parametrize("generator_type",
                          [None, typing.Iterator, typing.Generator, collections.abc.Iterator, collections.abc.Generator])
@@ -43,13 +105,7 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
                          [(pd.DataFrame, True), (cudf.DataFrame, True), (MessageMeta, True), (MultiMessage, True),
                           (float, False)])
 def test_source_decorator(config: Config, generator_type: type, return_type: type, is_prealloc: bool):
-    if generator_type is not None:
-        if generator_type in (typing.Generator, collections.abc.Generator):
-            return_annotation = generator_type[return_type, None, None]
-        else:
-            return_annotation = generator_type[return_type]
-    else:
-        return_annotation = return_type
+    return_annotation = _get_annotation(return_type, generator_type)
 
     @source
     def test_source_gen() -> return_annotation:
