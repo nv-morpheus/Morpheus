@@ -149,7 +149,7 @@ class DFPRollingWindowStage(SinglePortStage):
             match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]
 
             if (len(match) == 0):
-                raise RuntimeError("Invalid rolling window")
+                raise RuntimeError(f"Invalid rolling window for user {user_id}")
 
             first_row_idx = match.index[0].item()
             last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()

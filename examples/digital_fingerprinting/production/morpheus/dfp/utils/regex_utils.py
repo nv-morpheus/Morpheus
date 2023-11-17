@@ -17,7 +17,25 @@ import re
 
 # pylint: disable=invalid-name
 iso_date_regex_pattern = (
+    # YYYY-MM-DD
     r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-    r"T(?P<hour>\d{1,2})(:|_|\.)(?P<minute>\d{1,2})(:|_|\.)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
+    # Start of time group (must match everything to add fractional days)
+    r"(?:T"
+    # HH
+    r"(?P<hour>\d{1,2})"
+    # : or _ or .
+    r"(?::|_|\.)"
+    # MM
+    r"(?P<minute>\d{1,2})"
+    # : or _ or .
+    r"(?::|_|\.)"
+    # SS
+    r"(?P<second>\d{1,2})"
+    # Optional microseconds (don't capture the period)
+    r"(?:\.(?P<microsecond>\d{0,6}))?"
+    # End of time group (optional)
+    r")?"
+    # Optional Zulu time
+    r"(?P<zulu>Z)?")
 
 iso_date_regex = re.compile(iso_date_regex_pattern)

@@ -55,7 +55,6 @@ def get_data_file_path(data_filename: str) -> str:
 
         # If the file relative to our package exists, use that instead
         if (os.path.exists(value_abs_to_root)):
-
             return value_abs_to_root
 
     return data_filename
@@ -93,33 +92,36 @@ def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern
 
     Returns
     -------
-    int
-        Timestamp
+    datetime
+        Extracted timestamp
     """
-    assert isinstance(file_object, fsspec.core.OpenFile)
+    if not isinstance(file_object, fsspec.core.OpenFile):
+        raise ValueError("file_object must be an instance of fsspec.core.OpenFile")
 
     file_path = file_object.path
 
-    # Match regex with the pathname since that can be more accurate
+    # Match regex with the pathname
     match = filename_regex.search(file_path)
 
-    if (match):
-        # Convert the regex match
+    if match:
         groups = match.groupdict()
 
-        if ("microsecond" in groups and groups["microsecond"] is not None):
-            groups["microsecond"] = int(float(groups["microsecond"]) * 1000000)
+        # Convert the microsecond value if present
+        if groups.get("microsecond"):
+            groups["microsecond"] = min(int(float(groups["microsecond"]) * 1000000), 999999)
 
-        groups = {key: int(value) for key, value in groups.items() if value is not None}
+        # Filter out any None values and convert the rest to integers
+        groups = {key: int(value) for key, value in groups.items() if value and key != "zulu"}
 
+        # Assign timezone
         groups["tzinfo"] = timezone.utc
 
         ts_object = datetime(**groups)
     else:
-        # Otherwise, fallback to the file modified (created?) time
+        # Fallback to the file modified time
         ts_object = file_object.fs.modified(file_object.path)
 
-        # Assume that its using the same timez
-        ts_object.replace(tzinfo=datetime.now().astimezone().tzinfo)
+        # Set the timezone to the current system's timezone
+        ts_object = ts_object.replace(tzinfo=datetime.now().astimezone().tzinfo)
 
     return ts_object
