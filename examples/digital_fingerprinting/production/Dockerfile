@@ -63,7 +63,7 @@ RUN source activate morpheus &&\
         # notebook v7 is incompatible with jupyter_contrib_nbextensions
         notebook=6 &&\
     jupyter contrib nbextension install --user &&\
-    pip install jupyterlab_nvdashboard==0.7.0
+    pip install jupyterlab_nvdashboard==0.9
 
 # Launch jupyter
 CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
