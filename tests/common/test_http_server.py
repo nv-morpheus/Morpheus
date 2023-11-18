@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import time
 import typing
 from http import HTTPStatus
 from unittest import mock
@@ -83,6 +84,18 @@ def test_simple_request(port: int,
 
         parse_fn.assert_called_once_with(payload)
 
+        if use_callback:
+            # Since the callback is executed asynchronously, we don't know when it will be called.
+            expected_call = mock.call(False, "")
+
+            max_retries = 300
+            attempt = 0
+            while expected_call not in callback_fn.mock_calls and attempt < max_retries:
+                attempt += 1
+                time.sleep(0.1)
+
+            callback_fn.assert_called_once_with(False, "")
+
     if use_context_mgr:
         with HttpServer(parse_fn=parse_fn, port=port, endpoint=endpoint, method=method,
                         num_threads=num_threads) as server:
@@ -99,11 +112,6 @@ def test_simple_request(port: int,
         server.stop()
 
     assert not server.is_running()
-
-    # Since the callback is executed asynchronously, we don't know when it will be called.
-    # However server.stop() will wait for the callback to be executed.
-    if use_callback:
-        callback_fn.assert_called_once_with(False, "")
 
 
 def test_constructor_errors():
