@@ -17,7 +17,7 @@ limitations under the License.
 
 # Stages Documentation
 
-Stages are the building blocks of Morpheus pipelines. Below is a list of the most commonly used stages. For a full list of stages, refer to the stages API {py:mod}`morpheus.stages`.
+Stages are the building blocks of Morpheus pipelines. Below is a list of the most commonly used stages. For a full list of stages, refer to the stages API {py:mod}`morpheus.stages`. In addition to this there are several custom stages contained in the [Examples](../examples.md) and [Developer Guides](../developer_guide/guides.md).
 
 ## Doca
 
