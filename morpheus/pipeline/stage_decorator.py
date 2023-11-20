@@ -24,6 +24,7 @@ from mrc.core import operators as ops
 
 import cudf
 
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -237,10 +238,14 @@ class WrappedFunctionStage(SinglePortStage):
                  *on_data_args,
                  accept_type: type = None,
                  return_type: type = None,
+                 needed_columns: dict[str, TypeId] = None,
                  **on_data_kwargs):
         super().__init__(config)
         self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
         self._on_data_fn_name = _get_name_from_fn(on_data_fn)
+
+        if needed_columns is not None:
+            self._needed_columns.update(needed_columns)
 
         # Even if both accept_type and return_type are provided, we should still need to inspect the function signature
         # to verify it is callable with at least one argument
@@ -289,7 +294,7 @@ class WrappedFunctionStage(SinglePortStage):
         return node
 
 
-def stage(on_data_fn: typing.Callable):
+def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeId] = None):
     """
     Decorator for wrapping a function as a stage. The function must receive at least one argument, the first argument
     must be the incoming message, and must return a value.
@@ -317,10 +322,17 @@ def stage(on_data_fn: typing.Callable):
     >>> pipe.add_stage(multiplier(config, column='v2', value=5))
     """
 
+    if on_data_fn is None:
+        return functools.partial(stage, needed_columns=needed_columns)
+
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
     @functools.wraps(on_data_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
     def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionStage:
-        return WrappedFunctionStage(*args, config=config, on_data_fn=on_data_fn, **kwargs)
+        return WrappedFunctionStage(*args,
+                                    config=config,
+                                    on_data_fn=on_data_fn,
+                                    needed_columns=needed_columns,
+                                    **kwargs)
 
     return wrapper
