@@ -73,14 +73,15 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 - Filter Detections Stage {py:class}`~morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage` Filter message by a classification threshold.
 - Generate Viz Frames Stage {py:class}`~morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage` Write out visualization DataFrames.
 - MLflow Drift Stage {py:class}`~morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage` Report model drift statistics to MLflow.
-- Serialize Stage {py:class}`~morpheus.stages.postprocess.serialize_stage.SerializeStage`
-- Timeseries Stage {py:class}`~morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage`
+- Serialize Stage {py:class}`~morpheus.stages.postprocess.serialize_stage.SerializeStage` Include & exclude columns from messages.
+- Timeseries Stage {py:class}`~morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage` Perform time series anomaly detection and add prediction.
 
 ## Pre-process
 
-- Deserialize Stage {py:class}`~morpheus.stages.preprocess.deserialize_stage.DeserializeStage`
-- Drop Null Stage {py:class}`~morpheus.stages.preprocess.drop_null_stage.DropNullStage`
-- Preprocess AE Stage {py:class}`~morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage`
-- Preprocess FIL Stage {py:class}`~morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage`
-- Preprocess NLP Stage {py:class}`~morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage`
-- Train AE Stage {py:class}`~morpheus.stages.preprocess.train_ae_stage.TrainAEStage`
+- Deserialize Stage {py:class}`~morpheus.stages.preprocess.deserialize_stage.DeserializeStage` Partition messages based on the pipeline config's `pipeline_batch_size` parameter.
+- Drop Null Stage {py:class}`~morpheus.stages.preprocess.drop_null_stage.DropNullStage` Drop null data entries from a DataFrame.
+- Preprocess AE Stage {py:class}`~morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage` Prepare Autoencoder input DataFrames for inference.
+- Preprocess FIL Stage {py:class}`~morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage` Prepare FIL input DataFrames for inference.
+- Preprocess NLP Stage {py:class}`~morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage` Prepare NLP input DataFrames for inference.
+- Train AE Stage {py:class}`~morpheus.stages.preprocess.train_ae_stage.TrainAEStage` Train an Autoencoder model on incoming data.
+
