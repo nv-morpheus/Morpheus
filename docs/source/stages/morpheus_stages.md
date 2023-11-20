@@ -25,7 +25,7 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## General
 
-- Linear Modules Stage {py:class}`~morpheus.stages.general.linear_modules_stage.LinearModulesStage`
+- Linear Modules Stage {py:class}`~morpheus.stages.general.linear_modules_stage.LinearModulesStage` Loads an existing, registered, module and wraps it as a Morpheus stage. Refer to [Morpheus Modules](../developer_guide/guides.md#morpheus-modules) for details on modules.
 - Monitor Stage {py:class}`~morpheus.stages.general.monitor_stage.MonitorStage`
 - Multi Port Module Stage {py:class}`~morpheus.stages.general.multi_port_modules_stage.MultiPortModulesStage`
 - Trigger Stage {py:class}`~morpheus.stages.general.trigger_stage.TriggerStage`
