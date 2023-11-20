@@ -38,19 +38,19 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## Input
 
-- AppShield Source Stage {py:class}`~morpheus.stages.input.appshield_source_stage.AppShieldSourceStage`
-- Azure Source Stage {py:class}`~morpheus.stages.input.azure_source_stage.AzureSourceStage`
-- Cloud Trail Source Stage {py:class}`~morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage`
-- Control Message File Source Stage {py:class}`~morpheus.stages.input.control_message_file_source_stage.ControlMessageFileSourceStage`
-- Control Message Kafka Source Stage {py:class}`~morpheus.stages.input.control_message_kafka_source_stage.ControlMessageKafkaSourceStage`
-- Databricks Delta Lake Source Stage {py:class}`~morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage`
-- Duo Source Stage {py:class}`~morpheus.stages.input.duo_source_stage.DuoSourceStage`
-- File Source Stage {py:class}`~morpheus.stages.input.file_source_stage.FileSourceStage`
-- HTTP Client Source Stage {py:class}`~morpheus.stages.input.http_client_source_stage.HttpClientSourceStage`
-- HTTP Server Source Stage {py:class}`~morpheus.stages.input.http_server_source_stage.HttpServerSourceStage`
-- In Memory Source Stage {py:class}`~morpheus.stages.input.in_memory_source_stage.InMemorySourceStage`
-- Kafka Source Stage {py:class}`~morpheus.stages.input.kafka_source_stage.KafkaSourceStage`
-- RSS Source Stage {py:class}`~morpheus.stages.input.rss_source_stage.RSSSourceStage`
+- AppShield Source Stage {py:class}`~morpheus.stages.input.appshield_source_stage.AppShieldSourceStage` Load Appshield messages from one or more plugins into a dataframe.
+- Azure Source Stage {py:class}`~morpheus.stages.input.azure_source_stage.AzureSourceStage` Load Azure Active Directory messages.
+- Cloud Trail Source Stage {py:class}`~morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage` Load messages from a Cloudtrail directory.
+- Control Message File Source Stage {py:class}`~morpheus.stages.input.control_message_file_source_stage.ControlMessageFileSourceStage` Recieves control messages from different sources specified by a list of (fsspec)[https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files] strings.
+- Control Message Kafka Source Stage {py:class}`~morpheus.stages.input.control_message_kafka_source_stage.ControlMessageKafkaSourceStage` Load control messages from a Kafka cluster.
+- Databricks Delta Lake Source Stage {py:class}`~morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage` Source stage used to load messages from a DeltaLake table.
+- Duo Source Stage {py:class}`~morpheus.stages.input.duo_source_stage.DuoSourceStage` Load Duo Authentication messages.
+- File Source Stage {py:class}`~morpheus.stages.input.file_source_stage.FileSourceStage` Load messages from a file.
+- HTTP Client Source Stage {py:class}`~morpheus.stages.input.http_client_source_stage.HttpClientSourceStage` Poll a remote HTTP server for incoming data.
+- HTTP Server Source Stage {py:class}`~morpheus.stages.input.http_server_source_stage.HttpServerSourceStage` Start an HTTP server and listens for incoming requests on a specified endpoint.
+- In Memory Source Stage {py:class}`~morpheus.stages.input.in_memory_source_stage.InMemorySourceStage` Input source that emits a pre-defined list of dataframes.
+- Kafka Source Stage {py:class}`~morpheus.stages.input.kafka_source_stage.KafkaSourceStage` Load messages from a Kafka cluster.
+- RSS Source Stage {py:class}`~morpheus.stages.input.rss_source_stage.RSSSourceStage` Load RSS feed items into a pandas DataFrame.
 
 ## Output
 - HTTP Client Sink Stage {py:class}`~morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage`
