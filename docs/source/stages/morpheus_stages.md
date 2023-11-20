@@ -68,11 +68,11 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 
 ## Post-process
 
-- Add Classifications Stage {py:class}`~morpheus.stages.postprocess.add_classifications_stage.AddClassificationsStage`
-- Add Scores Stage {py:class}`~morpheus.stages.postprocess.add_scores_stage.AddScoresStage`
-- Filter Detections Stage {py:class}`~morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage`
-- Generate Viz Frames Stage {py:class}`~morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage`
-- ML Flow Drift Stage {py:class}`~morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage`
+- Add Classifications Stage {py:class}`~morpheus.stages.postprocess.add_classifications_stage.AddClassificationsStage` Add detected classifications to each message.
+- Add Scores Stage {py:class}`~morpheus.stages.postprocess.add_scores_stage.AddScoresStage` Add probability scores to each message.
+- Filter Detections Stage {py:class}`~morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage` Filter message by a classification threshold.
+- Generate Viz Frames Stage {py:class}`~morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage` Write out visualization DataFrames.
+- MLflow Drift Stage {py:class}`~morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage` Report model drift statistics to MLflow.
 - Serialize Stage {py:class}`~morpheus.stages.postprocess.serialize_stage.SerializeStage`
 - Timeseries Stage {py:class}`~morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage`
 
