@@ -25,6 +25,7 @@ import pytest
 import cudf
 
 from _utils import assert_results
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -297,6 +298,23 @@ def test_wrapped_function_stage_no_name(config: Config):
 
 
 @pytest.mark.use_python
+@pytest.mark.parametrize("needed_columns",
+                         [None, {
+                             'result': TypeId.INT64
+                         }, {
+                             'a': TypeId.INT64, 'b': TypeId.FLOAT32, 'c': TypeId.STRING
+                         }])
+def test_wrapped_function_stage_needed_columns(config: Config, needed_columns: dict[str, TypeId]):
+
+    def test_fn(message: MessageMeta) -> MessageMeta:
+        return message
+
+    wrapped_stage = WrappedFunctionStage(config, test_fn, needed_columns=needed_columns)
+    expected_needed_columns = needed_columns or collections.OrderedDict()
+    assert wrapped_stage._needed_columns == expected_needed_columns
+
+
+@pytest.mark.use_python
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
                           (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
@@ -328,6 +346,7 @@ def test_stage_decorator(config: Config, accept_type: type, return_type: type):
     assert wrapped_stage._return_type is expected_return_type
 
 
+@pytest.mark.use_python
 def test_stage_decorator_name(config: Config):
 
     @stage
@@ -338,6 +357,7 @@ def test_stage_decorator_name(config: Config):
     assert wrapped_stage.name == 'test_fn'
 
 
+@pytest.mark.use_python
 def test_stage_decorator_no_annotation(config: Config):
 
     @stage
@@ -348,6 +368,24 @@ def test_stage_decorator_no_annotation(config: Config):
 
     assert wrapped_stage.accepted_types() == (typing.Any, )
     assert wrapped_stage._return_type is typing.Any
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("needed_columns",
+                         [None, {
+                             'result': TypeId.INT64
+                         }, {
+                             'a': TypeId.INT64, 'b': TypeId.FLOAT32, 'c': TypeId.STRING
+                         }])
+def test_stage_decorator_needed_columns(config: Config, needed_columns: dict[str, TypeId]):
+
+    @stage(needed_columns=needed_columns)
+    def test_fn(message: MessageMeta) -> MessageMeta:
+        return message
+
+    wrapped_stage = test_fn(config)
+    expected_needed_columns = needed_columns or collections.OrderedDict()
+    assert wrapped_stage._needed_columns == expected_needed_columns
 
 
 def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
