@@ -18,6 +18,7 @@ import logging
 import os
 
 from pass_thru import PassThruStage
+from pass_thru_deco import pass_thru_stage
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
@@ -45,6 +46,12 @@ def run_pipeline():
     pipeline.add_stage(PassThruStage(config))
 
     # Add monitor to record the performance of our new stage
+    pipeline.add_stage(MonitorStage(config))
+
+    # Add our decorated stage
+    pipeline.add_stage(pass_thru_stage(config))
+
+    # Add monitor to record the performance of our decorated stage
     pipeline.add_stage(MonitorStage(config))
 
     # Run the pipeline
