@@ -110,7 +110,7 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-   _modules/morpheus.stages
+   stages/morpheus_stages
 
 .. toctree::
    :caption: Morpheus Modules
