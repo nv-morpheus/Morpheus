@@ -19,6 +19,17 @@ limitations under the License.
 
 Stages are the building blocks of Morpheus pipelines. Below is a list of the most commonly used stages. For a full list of stages, refer to the stages API {py:mod}`morpheus.stages`. In addition to this there are several custom stages contained in the [Examples](../examples.md) and [Developer Guides](../developer_guide/guides.md).
 
+## Table of Contents
+- [Doca](#doca)
+- [General](#general)
+- [Inference](#inference)
+- [Input](#input)
+- [LLM](#llm)
+- [Output](#output)
+- [Post-process](#post-process)
+- [Pre-process](#pre-process)
+
+
 ## Doca
 
 - Doca Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaSourceStage` A source stage used to receive raw packet data from a ConnectX-6 Dx NIC. This stage is not compiled by default refer to the [Doca Example](../../../examples/doca/README.md) for details on building this stage.
