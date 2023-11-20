@@ -17,14 +17,11 @@ limitations under the License.
 
 # Stages Documentation
 
-## Boundary
-
-- Linear Boundary Egress Stage {py:class}`~morpheus.stages.boundary.linear_boundary_stage.LinearBoundaryEgressStage`
-- Linear Boundary Ingress Stage {py:class}`~morpheus.stages.boundary.linear_boundary_stage.LinearBoundaryIngressStage`
+Stages are the building blocks of Morpheus pipelines. Below is a list of the most commonly used stages. For a full list of stages, refer to the stages API {py:mod}`morpheus.stages`.
 
 ## Doca
 
-- Doca Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaSourceStage`
+- Doca Stage {py:class}`~morpheus.stages.doca.doca_source_stage.DocaSourceStage` A source stage used to receive raw packet data from a ConnectX-6 Dx NIC. This stage is not compiled by default refer to the [Doca Example](../../../examples/doca/README.md) for details on building this stage.
 
 ## General
 
