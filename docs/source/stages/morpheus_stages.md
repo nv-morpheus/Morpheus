@@ -49,11 +49,11 @@ limitations under the License.
 - Databricks Delta Lake Source Stage {py:class}`~morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage`
 - Duo Source Stage {py:class}`~morpheus.stages.input.duo_source_stage.DuoSourceStage`
 - File Source Stage {py:class}`~morpheus.stages.input.file_source_stage.FileSourceStage`
-- HTTP Client Source Stage {py:class}`morpheus.stages.input.http_client_source_stage.HttpClientSourceStage`
-- HTTP Server Source Stage {py:class}`morpheus.stages.input.http_server_source_stage.HttpServerSourceStage`
-- In Memory Source Stage {py:class}`morpheus.stages.input.in_memory_source_stage.InMemorySourceStage`
+- HTTP Client Source Stage {py:class}`~morpheus.stages.input.http_client_source_stage.HttpClientSourceStage`
+- HTTP Server Source Stage {py:class}`~morpheus.stages.input.http_server_source_stage.HttpServerSourceStage`
+- In Memory Source Stage {py:class}`~morpheus.stages.input.in_memory_source_stage.InMemorySourceStage`
 - Kafka Source Stage {py:class}`~morpheus.stages.input.kafka_source_stage.KafkaSourceStage`
-- RSS Source Stage {py:class}`morpheus.stages.input.rss_source_stage.RSSSourceStage`
+- RSS Source Stage {py:class}`~morpheus.stages.input.rss_source_stage.RSSSourceStage`
 
 ## Output
 - HTTP Client Sink Stage {py:class}`~morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage`
