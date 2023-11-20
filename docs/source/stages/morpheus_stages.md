@@ -26,15 +26,15 @@ Stages are the building blocks of Morpheus pipelines. Below is a list of the mos
 ## General
 
 - Linear Modules Stage {py:class}`~morpheus.stages.general.linear_modules_stage.LinearModulesStage` Loads an existing, registered, module and wraps it as a Morpheus stage. Refer to [Morpheus Modules](../developer_guide/guides.md#morpheus-modules) for details on modules.
-- Monitor Stage {py:class}`~morpheus.stages.general.monitor_stage.MonitorStage`
-- Multi Port Module Stage {py:class}`~morpheus.stages.general.multi_port_modules_stage.MultiPortModulesStage`
-- Trigger Stage {py:class}`~morpheus.stages.general.trigger_stage.TriggerStage`
+- Monitor Stage {py:class}`~morpheus.stages.general.monitor_stage.MonitorStage` Display throughput numbers at a specific point in the pipeline.
+- Multi Port Module Stage {py:class}`~morpheus.stages.general.multi_port_modules_stage.MultiPortModulesStage` Loads an existing, registered, multi-port module and wraps it as a multi-port Morpheus stage. Refer to [Morpheus Modules](../developer_guide/guides.md#morpheus-modules) for details on modules.
+- Trigger Stage {py:class}`~morpheus.stages.general.trigger_stage.TriggerStage` Buffer data until the previous stage has completed, useful for testing performance of one stage at a time.
 
 ## Inference
 
-- Auto Encoder Inference Stage {py:class}`~morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage`
-- PyTorch Inference Stage {py:class}`~morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage`
-- Triton Inference Stage {py:class}`~morpheus.stages.inference.triton_inference_stage.TritonInferenceStage`
+- Auto Encoder Inference Stage {py:class}`~morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage` PyTorch inference stage used for Auto Encoder pipeline mode.
+- PyTorch Inference Stage {py:class}`~morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage` PyTorch inference stage used for most pipeline modes with the exception of Auto Encoder.
+- Triton Inference Stage {py:class}`~morpheus.stages.inference.triton_inference_stage.TritonInferenceStage`  Inference stage which utilizes a [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server).
 
 ## Input
 
