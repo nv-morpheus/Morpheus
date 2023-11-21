@@ -396,7 +396,7 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
             yield MessageMeta(df)
 
     @stage
-    def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
+    def multiplier(message: MessageMeta, column: str, value: int | float = 2.0) -> MessageMeta:
         with message.mutable_dataframe() as df:
             df[column] = df[column] * value
 
@@ -404,11 +404,12 @@ def test_end_to_end_pipe(config: Config, filter_probs_df: cudf.DataFrame):
 
     multipy_by = 5
     expected_df = filter_probs_df.copy(deep=True)
-    expected_df['v2'] = expected_df['v2'] * multipy_by
+    expected_df['v2'] = expected_df['v2'] * multipy_by * 2.0
 
     pipe = LinearPipeline(config)
     pipe.set_source(source_gen(config, dataframes=[filter_probs_df]))  # pylint: disable=redundant-keyword-arg
     pipe.add_stage(multiplier(config, column='v2', value=multipy_by))
+    pipe.add_stage(multiplier(config, column='v2'))
     sink = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
