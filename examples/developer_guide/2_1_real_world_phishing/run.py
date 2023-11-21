@@ -77,7 +77,7 @@ def run_pipeline(use_decorator: bool):
 
     # Add our custom stage
     if use_decorator:
-        pipeline.add_stage(recipient_features_stage(config, sep_token='[SEP]'))
+        pipeline.add_stage(recipient_features_stage(config))
     else:
         pipeline.add_stage(RecipientFeaturesStage(config))
 
