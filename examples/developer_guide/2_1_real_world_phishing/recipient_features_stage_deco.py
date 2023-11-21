@@ -26,7 +26,7 @@ from morpheus.pipeline.stage_decorator import stage
         'total_recipients': TypeId.INT32,
         'data': TypeId.STRING
     })
-def recipient_features_stage(message: MessageMeta, sep_token: str = '[SEP]') -> MessageMeta:
+def recipient_features_stage(message: MessageMeta, *, sep_token: str = '[SEP]') -> MessageMeta:
     # Open the DataFrame from the incoming message for in-place modification
     with message.mutable_dataframe() as df:
         df['to_count'] = df['To'].str.count('@')
