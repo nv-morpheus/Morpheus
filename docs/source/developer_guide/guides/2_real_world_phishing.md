@@ -177,6 +177,48 @@ class RecipientFeaturesStage(SinglePortStage):
         return node, input_stream[1]
 ```
 
+### Stand-alone Function
+
+For this example we started with the class based aproach. However we could have just as easily written this as a stand-alone function. The following example is equivalent to the class based example above:
+
+```python
+from morpheus.common import TypeId
+from morpheus.messages import MessageMeta
+from morpheus.pipeline.stage_decorator import stage
+
+
+@stage(
+    needed_columns={
+        'to_count': TypeId.INT32,
+        'bcc_count': TypeId.INT32,
+        'cc_count': TypeId.INT32,
+        'total_recipients': TypeId.INT32,
+        'data': TypeId.STRING
+    })
+def recipient_features_stage(message: MessageMeta, *, sep_token: str = '[SEP]') -> MessageMeta:
+    # Open the DataFrame from the incoming message for in-place modification
+    with message.mutable_dataframe() as df:
+        df['to_count'] = df['To'].str.count('@')
+        df['bcc_count'] = df['BCC'].str.count('@')
+        df['cc_count'] = df['CC'].str.count('@')
+        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+
+        # Attach features to string data
+        df['data'] = (df['to_count'].astype(str) + sep_token + df['bcc_count'].astype(str) + sep_token +
+                      df['cc_count'].astype(str) + sep_token + df['total_recipients'].astype(str) + sep_token +
+                      df['Message'])
+
+    # Return the message for the next stage
+    return message
+```
+
+In the above the `needed_columns` were provided to as an argument to the `stage` decorator, and the optional `sep_token` argument is exposed as a keyword argument. If we wanted to provide an explicit value for `sep_token` we could do so by passing it as follows:
+```python
+pipeline.add_stage(recipient_features_stage(config, sep_token='[SEP]'))
+```
+
+> **Note**: One draw-back to the `stage` decorator approach is that we lose the ability to determine the `needed_columns` at runtime.
+
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
 Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
