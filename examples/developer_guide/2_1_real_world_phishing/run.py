@@ -42,10 +42,10 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
 
 
 @click.command()
-@click.option("--use_decorator",
+@click.option("--use_stage_function",
               is_flag=True,
               default=False,
-              help="Use the decorator version of the recipient features stage instead of the class")
+              help="Use the function based version of the recipient features stage instead of the class")
 @click.option(
     "--labels_file",
     type=click.Path(exists=True, readable=True),
@@ -81,7 +81,7 @@ MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
     default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
     help="The path to the file where the inference output will be saved.",
 )
-def run_pipeline(use_decorator: bool,
+def run_pipeline(use_stage_function: bool,
                  labels_file: str,
                  vocab_file: str,
                  input_file: str,
@@ -111,7 +111,7 @@ def run_pipeline(use_decorator: bool,
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
     # Add our custom stage
-    if use_decorator:
+    if use_stage_function:
         pipeline.add_stage(recipient_features_stage(config))
     else:
         pipeline.add_stage(RecipientFeaturesStage(config))
