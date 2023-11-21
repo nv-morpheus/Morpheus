@@ -241,7 +241,6 @@ class WrappedFunctionStage(SinglePortStage):
                  needed_columns: dict[str, TypeId] = None,
                  **on_data_kwargs):
         super().__init__(config)
-        self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
         self._on_data_fn_name = _get_name_from_fn(on_data_fn)
 
         if needed_columns is not None:
@@ -249,10 +248,11 @@ class WrappedFunctionStage(SinglePortStage):
 
         # Even if both accept_type and return_type are provided, we should still need to inspect the function signature
         # to verify it is callable with at least one argument
-        signature = inspect.signature(self._on_data_fn)
+        signature = inspect.signature(on_data_fn)
+        param_iter = iter(signature.parameters.values())
 
         try:
-            first_param = next(iter(signature.parameters.values()))
+            first_param = next(param_iter)
             self._accept_type = accept_type or first_param.annotation
             if self._accept_type is signature.empty:
                 logger.warning(
@@ -263,11 +263,20 @@ class WrappedFunctionStage(SinglePortStage):
         except StopIteration as e:
             raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
 
+        # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
+        # to bind it, otherwise it will trigger an error when MRC.
+        for param in param_iter:
+            if param.default is not signature.empty and param.name not in on_data_kwargs:
+                on_data_kwargs[param.name] = param.default
+
         self._return_type = return_type or signature.return_annotation
         if self._return_type is signature.empty:
             logger.warning("Return type of %s has no type annotation, defaulting to the stage's accept type",
                            self._on_data_fn_name)
             self._return_type = self._accept_type
+
+        # Finally bind any additional arguments to the function
+        self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
 
     @property
     def name(self) -> str:
