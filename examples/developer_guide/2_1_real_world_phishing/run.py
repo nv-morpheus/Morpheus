@@ -17,6 +17,7 @@
 
 import logging
 import os
+import tempfile
 
 import click
 from recipient_features_stage import RecipientFeaturesStage
@@ -37,26 +38,60 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
 
+MORPHEUS_ROOT = os.environ['MORPHEUS_ROOT']
+
 
 @click.command()
 @click.option("--use_decorator",
               is_flag=True,
               default=False,
               help="Use the decorator version of the recipient features stage instead of the class")
-def run_pipeline(use_decorator: bool):
+@click.option(
+    "--labels_file",
+    type=click.Path(exists=True, readable=True),
+    default=os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt'),
+    help="Specifies a file to read labels from in order to convert class IDs into labels.",
+)
+@click.option(
+    "--vocab_file",
+    type=click.Path(exists=True, readable=True),
+    default=os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt'),
+    help="Path to hash file containing vocabulary of words with token-ids.",
+)
+@click.option(
+    "--input_file",
+    type=click.Path(exists=True, readable=True),
+    default=os.path.join(MORPHEUS_ROOT, 'examples/data/email_with_addresses.jsonlines'),
+    help="Input filepath.",
+)
+@click.option(
+    "--model_fea_length",
+    default=128,
+    type=click.IntRange(min=1),
+    help="Features length to use for the model.",
+)
+@click.option(
+    "--model_name",
+    default="phishing-bert-onnx",
+    help="The name of the model that is deployed on Tritonserver.",
+)
+@click.option("--server_url", default='localhost:8001', help="Tritonserver url.")
+@click.option(
+    "--output_file",
+    default=os.path.join(tempfile.gettempdir(), "detections.jsonlines"),
+    help="The path to the file where the inference output will be saved.",
+)
+def run_pipeline(use_decorator: bool,
+                 labels_file: str,
+                 vocab_file: str,
+                 input_file: str,
+                 model_fea_length: int,
+                 model_name: str,
+                 server_url: str,
+                 output_file: str):
     """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
-
-    triton_url = os.environ.get('TRITON_URL', 'localhost:8001')
-    root_dir = os.environ['MORPHEUS_ROOT']
-    out_dir = os.environ.get('OUT_DIR', '/tmp')
-
-    labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
-    vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
-
-    input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
-    results_file = os.path.join(out_dir, 'detections.jsonlines')
 
     # It's necessary to configure the pipeline for NLP mode
     config = Config()
@@ -64,7 +99,7 @@ def run_pipeline(use_decorator: bool):
 
     # Set the thread count to match our cpu count
     config.num_threads = os.cpu_count()
-    config.feature_length = 128
+    config.feature_length = model_fea_length
 
     with open(labels_file, encoding='UTF-8') as fh:
         config.class_labels = [x.strip() for x in fh]
@@ -96,8 +131,8 @@ def run_pipeline(use_decorator: bool):
     pipeline.add_stage(
         TritonInferenceStage(
             config,
-            model_name='phishing-bert-onnx',
-            server_url=triton_url,
+            model_name=model_name,
+            server_url=server_url,
             force_convert_inputs=True,
         ))
 
@@ -109,7 +144,7 @@ def run_pipeline(use_decorator: bool):
 
     # Write the to the output file
     pipeline.add_stage(SerializeStage(config))
-    pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=True))
+    pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
     # Run the pipeline
     pipeline.run()
