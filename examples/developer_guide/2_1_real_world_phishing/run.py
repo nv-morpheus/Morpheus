@@ -18,7 +18,9 @@
 import logging
 import os
 
+import click
 from recipient_features_stage import RecipientFeaturesStage
+from recipient_features_stage_deco import recipient_features_stage
 
 import morpheus
 from morpheus.common import FilterSource
@@ -36,7 +38,12 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
 
 
-def run_pipeline():
+@click.command()
+@click.option("--use_decorator",
+              is_flag=True,
+              default=False,
+              help="Use the decorator version of the recipient features stage instead of the class")
+def run_pipeline(use_decorator: bool):
     """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
@@ -69,7 +76,10 @@ def run_pipeline():
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
     # Add our custom stage
-    pipeline.add_stage(RecipientFeaturesStage(config))
+    if use_decorator:
+        pipeline.add_stage(recipient_features_stage(config, sep_token='[SEP]'))
+    else:
+        pipeline.add_stage(RecipientFeaturesStage(config))
 
     # Add a deserialize stage
     pipeline.add_stage(DeserializeStage(config))
