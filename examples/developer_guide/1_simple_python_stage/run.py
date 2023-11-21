@@ -42,16 +42,16 @@ def run_pipeline():
     # Set source stage
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
-    # Add our own stage
-    pipeline.add_stage(PassThruStage(config))
-
-    # Add monitor to record the performance of our new stage
-    pipeline.add_stage(MonitorStage(config))
-
-    # Add our decorated stage
+    # Add the decorated function stage
     pipeline.add_stage(pass_thru_stage(config))
 
-    # Add monitor to record the performance of our decorated stage
+    # Add monitor to record the performance of the function based stage
+    pipeline.add_stage(MonitorStage(config))
+
+    # Add the class based stage
+    pipeline.add_stage(PassThruStage(config))
+
+    # Add monitor to record the performance of the class based stage
     pipeline.add_stage(MonitorStage(config))
 
     # Run the pipeline
