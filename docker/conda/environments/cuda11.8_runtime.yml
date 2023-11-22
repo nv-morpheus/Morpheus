@@ -22,3 +22,8 @@ channels:
 dependencies:
     - nb_conda_kernels
     - pip
+    - pip:
+        # Add additional pip only dependencies here
+        - databricks-connect
+        - pymilvus==2.3.2
+        - milvus==2.3.2
