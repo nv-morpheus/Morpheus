@@ -68,6 +68,7 @@ outputs:
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - {{ pin_compatible('cuda-cudart', min_pin='x.x', max_pin='x') }}
+        - beautifulsoup4=4.12
         - click >=8
         - configargparse 1.5.*
         - cudf
@@ -77,6 +78,8 @@ outputs:
         - dill
         - distributed
         - docker-py 5.0.*
+        - elasticsearch==8.9.0
+        - feedparser=6.0.10
         - grpcio # Version determined from cudf
         - libmrc
         - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
@@ -92,12 +95,21 @@ outputs:
         - python-confluent-kafka 1.9.2
         - pytorch 2.0.1
         - pytorch-cuda
+        - requests=2.31
+        - requests-cache=1.1
         - scikit-learn 1.2.2.*
         - sqlalchemy <=2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm 4.*
         - tritonclient 2.26.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
+        - websockets
+
+        - pip:
+            # Add additional dev dependencies here
+            - databricks-connect
+            - pymilvus==2.3.2
+            - milvus==2.3.2
       run_constrained:
         # Since we dont explicitly require this but other packages might, constrain the versions.
         - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
