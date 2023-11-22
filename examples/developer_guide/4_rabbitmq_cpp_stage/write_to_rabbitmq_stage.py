@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import logging
-import typing
 from io import StringIO
 
 import mrc
@@ -42,9 +41,9 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    routing_key : str
+    routing_key : str, optional
         RabbitMQ routing key if needed.
     """
 
@@ -62,7 +61,7 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
     def name(self) -> str:
         return "to-rabbitmq"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:

@@ -24,6 +24,7 @@ Examples
 
    abp_nvsmi_detection/README.md
    abp_pcap_detection/README.md
+   doca/README.md
    gnn_fraud_detection_pipeline/README.md
    llm/index
    log_parsing/README.md
