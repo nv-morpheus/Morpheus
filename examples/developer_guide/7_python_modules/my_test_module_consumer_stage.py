@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,22 +15,16 @@
 import typing
 
 import mrc
-from mrc.core import operators as ops
 
-from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 
 
-@register_stage("pass-thru")
-class PassThruStage(PassThruTypeMixin, SinglePortStage):
-    """
-    A Simple Pass Through Stage
-    """
+class MyPassthroughModuleWrapper(PassThruTypeMixin, SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "pass-thru"
+        return "my-pass-thru-module-wrapper"
 
     def accepted_types(self) -> tuple:
         return (typing.Any, )
@@ -39,12 +32,18 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: typing.Any):
-        # Return the message for the next stage
-        return message
-
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_node, node)
+        module_config = {"some_configuration_parameter": "some_value"}
 
-        return node
+        module_name = "my_test_module"
+        my_module = builder.load_module(module_name,
+                                        "my_module_namespace",
+                                        f"{self.unique_name}-{module_name}",
+                                        module_config)
+
+        module_in_node = my_module.input_port("input_0")
+        module_out_node = my_module.output_port("output_0")
+
+        builder.make_edge(input_node, module_in_node)
+
+        return module_out_node

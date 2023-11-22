@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 @register_stage("mlflow-drift", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
     """
-    Report model drift statistics to ML Flow.
+    Report model drift statistics to MLflow.
 
     Caculates model drift over time and reports the information to MLflow.
 

@@ -272,7 +272,9 @@ This indicates that the `to-file` stage cannot accept the input type of `morpheu
 
 #### Pipeline Stages
 
-A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
+The CLI allows for an easy way to query the available stages for each pipeline type. Refer to [Morpheus Stages](./stages/morpheus_stages.md) for more extensive documentation of the stages included in Morpheus.
+
+> **Note**: While most stages are available from the CLI, a small subset of stages, and configuration options for stages are unavailable from the CLI and can only be used via the Python API.
 
 ```
 $ morpheus run pipeline-nlp --help
