@@ -256,6 +256,8 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     TensorIndex mess_offset{0};
     TensorIndex mess_count{0};
 
+    std::vector<std::string> get_meta_column_names() const;
+
     /**
      * @brief Get the meta object
      *
@@ -350,6 +352,8 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static TensorIndex mess_count(const MultiMessage& self);
+
+    static std::vector<std::string> get_meta_column_names(const MultiMessage& self);
 
     /**
      * TODO(Documentation)

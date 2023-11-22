@@ -22,6 +22,7 @@ import cudf
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
+from morpheus.cli.utils import get_package_relative_file
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
@@ -79,7 +80,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         self._column = column
         self._seq_length = c.feature_length
-        self._vocab_hash_file = vocab_hash_file
+        self._vocab_hash_file = get_package_relative_file(vocab_hash_file)
 
         if (stride <= 0):
             # Set the stride to 75%. Works well with powers of 2

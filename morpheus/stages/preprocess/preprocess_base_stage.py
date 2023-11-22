@@ -69,13 +69,14 @@ class PreprocessBaseStage(MultiMessageStage):
         pass
 
     @abstractmethod
-    def _get_preprocess_node(self, builder: mrc.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         pass
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         assert self._preprocess_fn is not None, "Preprocess function not set"
         if self._build_cpp_node():
             node = self._get_preprocess_node(builder)
+            node.launch_options.pe_count = self._config.num_threads
         else:
             node = builder.make_node(self.unique_name, ops.map(self._preprocess_fn))
 

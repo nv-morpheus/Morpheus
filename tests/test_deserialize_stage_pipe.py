@@ -40,14 +40,14 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
 
-        DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=False)
+        DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
 
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
     dataset.assert_df_equal(meta.df, df)
 
-    DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=True)
+    DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
 
     assert meta.has_sliceable_index()
     assert "_index_" in meta.df.columns
