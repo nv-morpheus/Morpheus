@@ -52,6 +52,9 @@ setup(
     packages=find_packages(include=["morpheus*"], exclude=['tests']),
     install_requires=[
         # Only list the packages which cannot be installed via conda here.
+        "databricks-connect",
+        "pymilvus==2.3.2",
+        "milvus==2.3.2"
     ],
     license="Apache",
     python_requires='>=3.10, <4',
