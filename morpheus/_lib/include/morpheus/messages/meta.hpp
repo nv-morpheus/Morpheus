@@ -69,6 +69,8 @@ class MessageMeta
      */
     virtual MutableTableInfo get_mutable_info() const;
 
+    std::vector<std::string> get_column_names() const;
+
     /**
      * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
      * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
@@ -176,6 +178,8 @@ struct MessageMetaInterfaceProxy
      * @return TensorIndex
      */
     static TensorIndex count(MessageMeta& self);
+
+    static std::vector<std::string> get_column_names(MessageMeta& self);
 
     /**
      * @brief Get a copy of the data frame object as a python object

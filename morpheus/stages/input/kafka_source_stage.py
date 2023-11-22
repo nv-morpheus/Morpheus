@@ -28,6 +28,7 @@ import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.config import auto_determine_bootstrap
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -98,6 +99,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         if isinstance(auto_offset_reset, AutoOffsetReset):
             auto_offset_reset = auto_offset_reset.value
+
+        if (bootstrap_servers == "auto"):
+            bootstrap_servers = auto_determine_bootstrap()
 
         self._consumer_params = {
             'bootstrap.servers': bootstrap_servers,

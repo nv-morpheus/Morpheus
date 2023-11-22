@@ -47,7 +47,8 @@
 { "include": [ "<google/protobuf/repeated_ptr_field.h>", private, "<google/protobuf/repeated_field.h>", "public" ] },
 
 # pybind11
-{ "include": [ "<pybind11/detail/common.h>", private, "<pybind11/pytypes.h>", "public" ] },
+{ "include": [ "<pybind11/detail/common.h>", "private", "<pybind11/pytypes.h>", "public" ] },
+{ "include": [ "<pybind11/cast.h>", "private", "<pybind11/pybind11.h>", "public" ] },
 
 # rxcpp
 # Hide includes that are exported by <rxcpp/rx.hpp>

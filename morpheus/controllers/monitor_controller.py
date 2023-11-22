@@ -222,6 +222,9 @@ class MonitorController:
         stage completes.
         """
 
+        # Ensure that the progress bar exists even if we dont have any values
+        self.ensure_progress_bar()
+
         # Set the name to complete. This refreshes the display
         self.progress.set_description_str(self.progress.desc + "[Complete]")
 

@@ -31,10 +31,11 @@ from morpheus.io.data_record import DataRecord
 @pytest.fixture(scope='session')
 def test_data():
     # setup part
+    temp_dir = tempfile.mkdtemp()
     test_cudf_dataframe = cudf.DataFrame({'a': [9, 10], 'b': [11, 12]})
     test_pd_dataframe = pd.DataFrame({'a': [13, 14], 'b': [15, 16]})
-    test_parquet_filepath = 'test_file.parquet'
-    test_csv_filepath = 'test_file.csv'
+    test_parquet_filepath = os.path.join(temp_dir, 'test_file.parquet')
+    test_csv_filepath = os.path.join(temp_dir, 'test_file.csv')
 
     test_cudf_dataframe.to_parquet(test_parquet_filepath)
     test_cudf_dataframe.to_csv(test_csv_filepath, index=False, header=True)
@@ -47,10 +48,7 @@ def test_data():
     }
 
     # teardown part
-    if os.path.exists(test_parquet_filepath):
-        os.remove(test_parquet_filepath)
-    if os.path.exists(test_csv_filepath):
-        os.remove(test_csv_filepath)
+    shutil.rmtree(temp_dir)
 
 
 @pytest.mark.parametrize("storage_type", ['in_memory', 'filesystem'])
