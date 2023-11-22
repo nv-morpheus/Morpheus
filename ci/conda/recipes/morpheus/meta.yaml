@@ -104,12 +104,6 @@ outputs:
         - typing_utils 0.1.*
         - watchdog 2.1.*
         - websockets
-
-        - pip:
-            # Add additional dev dependencies here
-            - databricks-connect
-            - pymilvus==2.3.2
-            - milvus==2.3.2
       run_constrained:
         # Since we dont explicitly require this but other packages might, constrain the versions.
         - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
