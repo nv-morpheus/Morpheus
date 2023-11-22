@@ -486,8 +486,6 @@ import tempfile
 
 import click
 
-from recipient_features_stage import RecipientFeaturesStage
-
 import morpheus
 from morpheus.common import FilterSource
 from morpheus.config import Config
@@ -502,7 +500,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logger import configure_logging
-<<<<<<< HEAD
 from recipient_features_stage import RecipientFeaturesStage
 from recipient_features_stage_deco import recipient_features_stage
 
@@ -557,11 +554,6 @@ def run_pipeline(use_stage_function: bool,
                  model_name: str,
                  server_url: str,
                  output_file: str):
-=======
-
-
-def run_pipeline():
->>>>>>> david-23.11-docs-1252
     """Run the phishing detection pipeline."""
     # Enable the default logger
     configure_logging(log_level=logging.INFO)

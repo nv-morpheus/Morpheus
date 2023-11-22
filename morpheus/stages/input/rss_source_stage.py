@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-rss")
 class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     """
-    Load RSS feed items into a pandas DataFrame.
+    Load RSS feed items into a DataFrame.
 
     Parameters
     ----------
