@@ -43,8 +43,6 @@ class SplitStage(Stage):
         for port_schema in schema.output_schemas:
             port_schema.set_type(MessageMeta)
 
-        return [MessageMeta, MessageMeta]
-
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
         assert len(input_nodes) == 1, "Only 1 input supported"

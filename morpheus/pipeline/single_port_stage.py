@@ -42,7 +42,7 @@ class SinglePortStage(_pipeline.Stage):
         self._create_ports(1, 1)
 
     @abstractmethod
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types for this stage are returned. Derived classes should override this method. An
         error will be generated if the input types to the stage do not match one of the available types
@@ -50,7 +50,7 @@ class SinglePortStage(_pipeline.Stage):
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Accepted input types.
 
         """
@@ -70,8 +70,8 @@ class SinglePortStage(_pipeline.Stage):
         pass
 
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
-        # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
-        # True source object separate from the output stream. If any other operators need to be added after the source,
+        # Derived source stages should override `_build_single` instead of this method. This allows for tracking the
+        # True source object separate from the output node. If any other operators need to be added after the node,
         # use `_post_build`
         assert len(self.input_ports) == 1 and len(self.output_ports) == 1, \
             "SinglePortStage must have 1 input port and 1 output port"
