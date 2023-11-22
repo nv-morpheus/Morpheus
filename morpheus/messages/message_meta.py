@@ -158,6 +158,9 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         return None
 
+    def get_column_names(self) -> list[str]:
+        return self._df.columns.to_list()
+
     def get_meta_range(self,
                        mess_offset: int,
                        message_count: int,

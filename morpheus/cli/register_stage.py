@@ -37,6 +37,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import get_full_qualname
+from morpheus.utils.type_utils import is_union_type
 
 
 def class_name_to_command_name(class_name: str) -> str:
@@ -176,6 +177,9 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
 
     if (annotation == inspect.Parameter.empty):
         raise RuntimeError("All types must be specified to auto register stage.")
+
+    if (is_union_type(annotation)):
+        raise RuntimeError("Union types are not supported for auto registering stages.")
 
     if (issubtype(annotation, typing.List)):
         # For variable length array, use multiple=True

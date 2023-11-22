@@ -562,37 +562,36 @@
                 "type": "cppdbg"
             },
             {
-				"name": "Python: GNN DGL inference",
-				"type": "python",
-				"request": "launch",
-				"program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
-				"console": "integratedTerminal",
-				"cwd": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline",
-				"justMyCode": false,
-				"args": [
-					"--input_file=validation.csv",
-					"--training_file=training.csv",
-					"--output_file=result.csv",
-					"--model_dir=model"
-				]
-			},
-				{
-					"name": "Python: GNN model training",
-					"type": "python",
-					"request": "launch",
-					"program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
-					"console": "integratedTerminal",
-					"cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
-					"justMyCode": false,
-					"args": [
-						"--training-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/training.csv",
-						"--validation-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/validation.csv",
-						"--output-file=result.csv",
-						"--model-dir=models",
-						"--epochs=5"
-					]
-				}
-    
+                "name": "Python: GNN DGL inference",
+                "type": "python",
+                "request": "launch",
+                "program": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline/run.py",
+                "console": "integratedTerminal",
+                "cwd": "${workspaceFolder}/examples/gnn_fraud_detection_pipeline",
+                "justMyCode": false,
+                "args": [
+                    "--input_file=validation.csv",
+                    "--training_file=training.csv",
+                    "--output_file=result.csv",
+                    "--model_dir=model"
+                ]
+            },
+            {
+                "name": "Python: GNN model training",
+                "type": "python",
+                "request": "launch",
+                "program": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models/training.py",
+                "console": "integratedTerminal",
+                "cwd": "${workspaceFolder}/models/training-tuning-scripts/fraud-detection-models",
+                "justMyCode": false,
+                "args": [
+                    "--training-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/training.csv",
+                    "--validation-data=${workspaceFolder}/examples/gnn_fraud_detection_pipeline/validation.csv",
+                    "--output-file=result.csv",
+                    "--model-dir=models",
+                    "--epochs=5"
+                ]
+            }
         ]
     },
     "settings": {
