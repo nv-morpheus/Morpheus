@@ -201,11 +201,11 @@ class DatasetManager:
         return val
 
     @classmethod
-    def assert_df_equal(cls,
-                        df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame],
-                        val_to_check: typing.Any,
-                        assert_msg="Dataframes are not equal."):
-        """Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array."""
+    def df_equal(cls, df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame], val_to_check: typing.Any):
+        """
+        Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array. Returns
+        True if they are equal.
+        """
         # Comparisons work better in cudf so convert everything to that
         df_to_check = cls._value_as_pandas(df_to_check)
 
@@ -216,7 +216,18 @@ class DatasetManager:
 
         bool_df = df_to_check == val_to_check
 
-        assert bool(bool_df.all(axis=None)), assert_msg
+        return bool(bool_df.all(axis=None))
+
+    @classmethod
+    def assert_df_equal(cls,
+                        df_to_check: typing.Union[pd.DataFrame, cdf.DataFrame],
+                        val_to_check: typing.Any,
+                        assert_msg="Dataframes are not equal."):
+        """
+        Compare a DataFrame against a validation dataset which can either be a DataFrame, Series or CuPy array.
+        Assert the result is true with an optional message.
+        """
+        assert cls.df_equal(df_to_check=df_to_check, val_to_check=val_to_check), assert_msg
 
     @classmethod
     def compare_df(cls,

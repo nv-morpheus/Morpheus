@@ -64,6 +64,13 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
     parser.addoption(
+        "--run_milvus",
+        action="store_true",
+        dest="run_milvus",
+        help="Run milvus tests that would otherwise be skipped",
+    )
+
+    parser.addoption(
         "--run_benchmark",
         action="store_true",
         dest="run_benchmark",
@@ -145,6 +152,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_kafka")):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
+
+    if (not item.config.getoption("--run_milvus")):
+        if (item.get_closest_marker("milvus") is not None):
+            pytest.skip("Skipping milvus tests by default. Use --run_milvus to enable")
 
     if (not item.config.getoption("--run_benchmark")):
         if (item.get_closest_marker("benchmark") is not None):
@@ -939,29 +950,60 @@ def filter_probs_df(dataset, use_cpp: bool):
     yield dataset["filter_probs.csv"]
 
 
+def _get_random_port():
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sckt:
+        sckt.bind(('', 0))
+        return sckt.getsockname()[1]
+
+
 @pytest.fixture(scope="session")
-def milvus_server_uri():
+def milvus_server_uri(tmp_path_factory):
     """
     Pytest fixture to start and stop a Milvus server and provide its URI for testing.
+    Due to the high startup time for Milvus users can optionally start a Milvus server before running tests and
+    define a `MORPHEUS_MILVUS_URI` environment variable to use that server instead of starting a new one.
 
     This fixture starts a Milvus server, retrieves its URI (Uniform Resource Identifier), and provides
     the URI as a yield value to the tests using this fixture. After all tests in the module are
     completed, the Milvus server is stopped.
     """
-    from milvus import default_server
-
     logger = logging.getLogger(f"morpheus.{__name__}")
-    try:
-        default_server.start()
-        host = "127.0.0.1"
-        port = default_server.listen_port
-        uri = f"http://{host}:{port}"
 
+    uri = os.environ.get('MORPHEUS_MILVUS_URI')
+    if uri is not None:
         yield uri
-    except Exception as exec_inf:
-        logger.error("Error in starting Milvus server: %s", exec_inf)
-    finally:
-        try:
-            default_server.stop()
-        except Exception as exec_inf:
-            logger.error("Error in stopping Milvus server: %s", exec_inf)
+
+    else:
+        from milvus import default_server
+
+        # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
+        default_server.webservice_port = _get_random_port()
+        with default_server:
+            default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+
+            host = default_server.server_address
+            port = default_server.listen_port
+            uri = f"http://{host}:{port}"
+
+            logger.info("Started Milvus at: %s", uri)
+
+            yield uri
+
+
+@pytest.fixture(scope="session", name="milvus_data")
+def milvus_data_fixture():
+    inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
+    yield inital_data
+
+
+@pytest.fixture(scope="session", name="idx_part_collection_config")
+def idx_part_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_idx_part_collection_conf.json")
+
+
+@pytest.fixture(scope="session", name="simple_collection_config")
+def simple_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_simple_collection_conf.json")

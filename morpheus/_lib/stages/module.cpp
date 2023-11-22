@@ -15,11 +15,6 @@
  * limitations under the License.
  */
 
-#include "mrc/channel/status.hpp"
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/types.hpp"
-
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
@@ -40,7 +35,6 @@
 #include "morpheus/utilities/http_server.hpp"  // for DefaultMaxPayloadSize
 #include "morpheus/version.hpp"
 
-#include <boost/fiber/future/future.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/utils/string_utils.hpp>
 #include <pybind11/attr.h>      // for multiple_inheritance
@@ -49,10 +43,8 @@
 #include <pymrc/utils.hpp>      // for pymrc::import
 #include <rxcpp/rx.hpp>
 
-#include <map>
 #include <memory>
 #include <sstream>
-#include <vector>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -69,6 +61,9 @@ PYBIND11_MODULE(stages, _module)
 
     // Load the cudf helpers
     CudfHelper::load();
+
+    // Make sure to load mrc.core.segment to get ObjectProperties
+    mrc::pymrc::import(_module, "mrc.core.segment");
 
     mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
