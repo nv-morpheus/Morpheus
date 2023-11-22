@@ -64,6 +64,7 @@ outputs:
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
+        - rdma-core >=48 # Needed for DOCA. Compatible with UCX 1.14.1
         - scikit-build 0.17.1
         - versioneer-518
       run:
