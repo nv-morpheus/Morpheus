@@ -143,8 +143,8 @@ class MultiFileSource(SingleOutputSource):
                 if file.full_name not in files_seen:
                     filtered_files.append(file)
 
-            # Replace files_seen with the new set of files. This prevents a memory leak that could occurr if files are
-            # deleted from the input directory. In addition if a file with a given name was created, seen/processed by
+            # Replace files_seen with the new set of files. This prevents a memory leak that could occur if files are
+            # deleted from the input directory. In addition, if a file with a given name was created, seen/processed by
             # the stage, and then deleted, and a new file with the same name appeared sometime later, the stage will
             # need to re-ingest that new file.
             files_seen = file_set

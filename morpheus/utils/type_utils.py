@@ -19,6 +19,8 @@ from collections import defaultdict
 
 # pylint: disable=invalid-name
 T_co = typing.TypeVar("T_co", covariant=True)
+
+# pylint: disable=invalid-name
 T = typing.TypeVar('T')
 T1 = typing.TypeVar('T1')
 T2 = typing.TypeVar('T2')
@@ -93,6 +95,8 @@ def unpack_union(*cls_list: typing.Type) -> typing.Union:
 
     assert len(cls_list) > 0, "Union class list must have at least 1 element."
 
+    out_union = None
+
     if (len(cls_list) == 1):
         return typing.Union[cls_list[0]]
 
@@ -124,6 +128,8 @@ def unpack_tuple(cls_1: typing.Type[T1], cls_2: typing.Type[T2],
 def unpack_tuple(*cls_list: typing.Type) -> typing.Tuple:
 
     assert len(cls_list) > 0, "Union class list must have at least 1 element."
+
+    out_tuple = None
 
     if (len(cls_list) == 1):
         return typing.Tuple[cls_list[0]]
