@@ -14,6 +14,7 @@ markers = [
   "benchmark: Benchmarks",
   "slow: Slow tests",
   "kafka: Tests that require a running instance of kafka",
+  "milvus: Tests that require a running instance of milvus",
   "use_cpp: Test support C++ nodes and objects",
   "use_python: Test only supports Python nodes and objects",
   "use_cudf: Test supports cuDF datasets",
@@ -35,6 +36,8 @@ testpaths = ["tests"]
 
 addopts = "--benchmark-disable"
 
+asyncio_mode = "auto"
+
 [tool.yapfignore]
 ignore_patterns = [
   "**/*.pyx",
@@ -46,6 +49,14 @@ ignore_patterns = [
 implicit_optional = true
 
 [tool.pyright]
+# Only warn about using an Optional[T] as if it were T
+reportOptionalCall = "warning"
+reportOptionalContextManager = "warning"
+reportOptionalIterable = "warning"
+reportOptionalMemberAccess = "warning"
+reportOptionalOperand = "warning"
+reportOptionalSubscript = "warning"
+
 # Allow None for argument default values
 strictParameterNoneValue = false
 

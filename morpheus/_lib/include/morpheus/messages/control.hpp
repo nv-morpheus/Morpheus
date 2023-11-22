@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/meta.hpp"
+
 #include <nlohmann/json.hpp>
 #include <pybind11/pytypes.h>
 
@@ -35,6 +38,128 @@ enum class ControlMessageType
     INFERENCE,
     TRAINING
 };
+
+// class PayloadManager
+// {
+//   public:
+//     /**
+//      * @brief Get the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @return TensorObject&
+//      * @throws std::runtime_error If no tensor matching `name` exists
+//      */
+//     TensorObject& get_tensor(const std::string& name)
+//     {
+//         return m_tensors->get_tensor(name);
+//     }
+
+//     /**
+//      * @brief Get the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @return const TensorObject&
+//      * @throws std::runtime_error If no tensor matching `name` exists
+//      */
+//     const TensorObject& get_tensor(const std::string& name) const
+//     {
+//         return m_tensors->get_tensor(name);
+//     }
+
+//     /**
+//      * @brief Set the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @param tensor
+//      * @throws std::length_error If the number of rows in `tensor` does not match `count`.
+//      */
+//     void set_tensor(const std::string& name, TensorObject&& tensor)
+//     {
+//         m_tensors->set_tensor(name, std::move(tensor));
+//     }
+
+//     /**
+//      * @brief Get a reference to the internal tensors map
+//      *
+//      * @return const TensorMap&
+//      */
+//     const TensorMap& get_tensors() const
+//     {
+//         return m_tensors->get_tensors();
+//     }
+
+//     /**
+//      * @brief Set the tensors object
+//      *
+//      * @param tensors
+//      * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+//      */
+//     void set_tensors(TensorMap&& tensors)
+//     {
+//         m_tensors->set_tensors(std::move(tensors));
+//     }
+
+//         /**
+//      * @brief Get the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @return TensorObject&
+//      * @throws std::runtime_error If no tensor matching `name` exists
+//      */
+//     TensorObject& get_column(const std::string& name)
+//     {
+//         return m_tensors->get_tensor(name);
+//     }
+
+//     /**
+//      * @brief Get the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @return const TensorObject&
+//      * @throws std::runtime_error If no tensor matching `name` exists
+//      */
+//     const TensorObject& get_column(const std::string& name) const
+//     {
+//         return m_tensors->get_tensor(name);
+//     }
+
+//     /**
+//      * @brief Set the tensor object identified by `name`
+//      *
+//      * @param name
+//      * @param tensor
+//      * @throws std::length_error If the number of rows in `tensor` does not match `count`.
+//      */
+//     void set_column(const std::string& name, TensorObject&& tensor)
+//     {
+//         m_tensors->set_tensor(name, std::move(tensor));
+//     }
+
+//     /**
+//      * @brief Get a reference to the internal tensors map
+//      *
+//      * @return const TensorMap&
+//      */
+//     TableInfo get_columns() const
+//     {
+//         return m_df->get_info();
+//     }
+
+//     /**
+//      * @brief Set the tensors object
+//      *
+//      * @param tensors
+//      * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+//      */
+//     void set_columns(TableInfo&& tensors)
+//     {
+//         m_tensors->set_tensors(std::move(tensors));
+//     }
+
+//   private:
+//     std::shared_ptr<MessageMeta> m_df;
+//     std::shared_ptr<TensorMemory> m_tensors;
+// };
 
 /**
  * @brief Class representing a control message for coordinating data processing tasks.

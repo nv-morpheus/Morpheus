@@ -153,6 +153,19 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return offset, count
 
+    def get_meta_column_names(self) -> list[str]:
+        """
+        Return column names available in the underlying DataFrame.
+
+        Returns
+        -------
+        list[str]
+            Column names from the dataframe.
+
+        """
+
+        return self.meta.get_column_names()
+
     @typing.overload
     def get_meta(self) -> cudf.DataFrame:
         ...

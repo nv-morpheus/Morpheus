@@ -123,6 +123,24 @@ def import_or_skip(modname: str,
         raise
 
 
+# pylint: disable=inconsistent-return-statements
+def require_env_variable(varname: str, reason: str, fail_missing: bool = False) -> str:
+    """
+    Checks if the given environment variable is set, and returns its value if it is. If the variable is not set, and
+    `fail_missing` is False the test will ve skipped, otherwise a `RuntimeError` will be raised.
+    """
+    try:
+        return os.environ[varname]
+    except KeyError as e:
+        if fail_missing:
+            raise RuntimeError(reason) from e
+
+        pytest.skip(reason=reason)
+
+
+# pylint: enable=inconsistent-return-statements
+
+
 def make_url(port: int, endpoint: str) -> str:
     if not endpoint.startswith("/"):
         endpoint = "/" + endpoint
@@ -167,3 +185,10 @@ def remove_module(mod_to_remove: str):
     for mod_name in list(sys.modules.keys()):
         if mod_name == mod_to_remove or mod_name.startswith(mod_prefix):
             del sys.modules[mod_name]
+
+
+def load_json_file(filename):
+    filepath = os.path.join(TEST_DIRS.tests_data_dir, filename)
+
+    with open(filepath, 'r', encoding="utf-8") as json_file:
+        return json.load(json_file)

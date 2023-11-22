@@ -63,6 +63,11 @@ MutableTableInfo MessageMeta::get_mutable_info() const
     return this->m_data->get_mutable_info();
 }
 
+std::vector<std::string> MessageMeta::get_column_names() const
+{
+    return m_data->get_info().get_column_names();
+}
+
 std::shared_ptr<MessageMeta> MessageMeta::create_from_python(py::object&& data_table)
 {
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
@@ -149,6 +154,11 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
 TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
+}
+
+std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta& self)
+{
+    return self.get_column_names();
 }
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)

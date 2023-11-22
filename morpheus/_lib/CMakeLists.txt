@@ -76,6 +76,9 @@ morpheus_add_pybind11_module(common SOURCE_FILES common/module.cpp)
 #----------morpheus._lib.stages---------
 morpheus_add_pybind11_module(stages SOURCE_FILES stages/module.cpp)
 
+#----------morpheus._lib.llm---------
+add_subdirectory(llm)
+
 #----------morpheus._lib.messages---------
 morpheus_add_pybind11_module(messages SOURCE_FILES messages/module.cpp)
 

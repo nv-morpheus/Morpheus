@@ -24,3 +24,8 @@ limitations under the License.
 * [Example Ransomware Detection Morpheus Pipeline for AppShield Data](../../examples/ransomware_detection/README.md)
 * [Root Cause Analysis Acceleration & Predictive Maintenance Example](../../examples/root_cause_analysis/README.md)
 * [SID Visualization Example](../../examples/sid_visualization/README.md)
+* [Large Language Models (LLMs)](../../examples/llm/README.md)
+  * [Agents](../../examples/llm/agents/README.md)
+  * [Completion](../../examples/llm/completion/README.md)
+  * [VDB Upload](../../examples/llm/vdb_upload/README.md)
+  * [Retreival Augmented Generation (RAG)](../../examples/llm/rag/README.md)
