@@ -15,7 +15,6 @@
 
 import os
 import types
-import typing
 
 import pytest
 
