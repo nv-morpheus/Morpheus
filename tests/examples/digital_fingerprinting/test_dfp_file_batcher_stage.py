@@ -92,7 +92,7 @@ def test_on_data(config: Config, date_conversion_func: typing.Callable, file_spe
     from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
     stage = DFPFileBatcherStage(config, date_conversion_func)
 
-    assert stage.on_data([]) == []
+    assert not stage.on_data([])
 
     # With a one-day batch all files will fit in the batch
     batches = stage.on_data(file_specs)
@@ -118,7 +118,7 @@ def test_on_data_two_batches(config: Config,
     expected_10_26_files = sorted(f.path
                                   for f in fsspec.open_files(os.path.join(test_data_dir, '*_2022-01-30_10-26*.json')))
 
-    (batch1, batch2) = batches
+    (batch1, batch2) = batches[0], batches[1]  # Make pylint happy. It doesn't like ambiguous unpacking
     assert sorted(f.path for f in batch1[0]) == expected_10_25_files
     assert batch1[1] == 2
 

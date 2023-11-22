@@ -43,14 +43,22 @@ class WebScraperStage(SinglePortStage):
     c : morpheus.config.Config
         Pipeline configuration instance.
     chunk_size : int
-        Size in which to split the scraped content
+        Size in which to split the scraped content.
     link_column : str, default="link"
-        Column which contains the links to scrape
-    cache_path : str, default=None
-        the path for the response caching system's sqllite database, if None, caching is bypassed
+        Column which contains the links to scrape.
+    enable_cache : bool, default = False
+        Enables caching for requests data.
+    cache_path : str, default="./.cache/http/RSSDownloadStage.sqlite"
+        The path for the response caching system's sqlite database.
     """
 
-    def __init__(self, c: Config, *, chunk_size: int, link_column: str = "link", cache_path: str = None):
+    def __init__(self,
+                 c: Config,
+                 *,
+                 chunk_size: int,
+                 link_column: str = "link",
+                 enable_cache: bool = False,
+                 cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"):
         super().__init__(c)
 
         self._link_column = link_column
@@ -64,10 +72,10 @@ class WebScraperStage(SinglePortStage):
                                                              chunk_overlap=self._chunk_size // 10,
                                                              length_function=len)
 
-        if cache_path is None:
-            self._session = requests.Session()
-        else:
+        if enable_cache:
             self._session = requests_cache.CachedSession(cache_path, backend="sqlite")
+        else:
+            self._session = requests.Session()
 
         self._session.headers.update({
             "User-Agent":
@@ -164,6 +172,9 @@ class WebScraperStage(SinglePortStage):
 
             except ValueError as exc:
                 logger.error("Error parsing document: %s", exc)
+                continue
+            except Exception as exc:
+                logger.error("Error downloading document from URL '%s'. Error: %s", url, exc)
                 continue
 
         # Not using cudf to avoid error: pyarrow.lib.ArrowInvalid: cannot mix list and non-list, non-null values

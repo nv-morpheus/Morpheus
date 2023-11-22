@@ -62,6 +62,18 @@ from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
 
+def _file_type_name_to_enum(file_type: str) -> FileTypes:
+    """Converts a file type name to a FileTypes enum."""
+    if (file_type == "JSON"):
+        return FileTypes.JSON
+    if (file_type == "CSV"):
+        return FileTypes.CSV
+    if (file_type == "PARQUET"):
+        return FileTypes.PARQUET
+
+    return FileTypes.Auto
+
+
 @click.command()
 @click.option(
     "--train_users",
@@ -126,6 +138,14 @@ from morpheus.utils.logger import configure_logging
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option("--file_type_override",
+              "-t",
+              type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
+              default="JSON",
+              help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
+              callback=lambda _,
+              __,
+              value: None if value is None else _file_type_name_to_enum(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
@@ -160,6 +180,7 @@ def run_pipeline(train_users,
                  filter_threshold,
                  mlflow_experiment_name_template,
                  mlflow_model_name_template,
+                 file_type_override,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -283,14 +304,16 @@ def run_pipeline(train_users,
                             start_time=start_time,
                             end_time=end_time))
 
+    parser_kwargs = None
+    if (file_type_override == FileTypes.JSON):
+        parser_kwargs = {"lines": False, "orient": "records"}
+
     # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
-                                file_type=FileTypes.JSON,
-                                parser_kwargs={
-                                    "lines": False, "orient": "records"
-                                },
+                                file_type=file_type_override,
+                                parser_kwargs=parser_kwargs,
                                 cache_dir=cache_dir))
 
     pipeline.add_stage(MonitorStage(config, description="Input data rate"))
