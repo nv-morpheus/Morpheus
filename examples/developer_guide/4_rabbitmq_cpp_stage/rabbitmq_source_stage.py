@@ -46,11 +46,11 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    queue_name : str
+    queue_name : str, optional
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : str
+    poll_interval : str, optional
         Amount of time  between polling RabbitMQ for new messages
     """
 
