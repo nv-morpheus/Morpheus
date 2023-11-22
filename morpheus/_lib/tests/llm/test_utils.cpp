@@ -131,7 +131,8 @@ TEST_F(TestLLMUtils, ProcessInputNamesCountMismatch)
 {
     auto user_inputs = llm::user_input_mappings_t{{"/ext1", "input1"}, {"/ext2", "input1"}};
 
-    EXPECT_THROW(llm::process_input_names(user_inputs, std::vector<std::string>{"input1", "input2"}), std::invalid_argument);
+    EXPECT_THROW(llm::process_input_names(user_inputs, std::vector<std::string>{"input1", "input2"}),
+                 std::invalid_argument);
     EXPECT_THROW(llm::process_input_names(user_inputs, std::vector<std::string>{"input1"}), std::invalid_argument);
 }
 
@@ -161,10 +162,12 @@ TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMultipleInputs)
 
 TEST_F(TestLLMUtils, ProcessInputNamesPlaceholderMismatch)
 {
-    auto input_names= std::vector<std::string>{"input1"};
+    auto input_names = std::vector<std::string>{"input1"};
 
-    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1", "*"}}, input_names), std::invalid_argument);
-    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1/*", "input1"}}, input_names), std::invalid_argument);
+    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1", "*"}}, input_names),
+                 std::invalid_argument);
+    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1/*", "input1"}}, input_names),
+                 std::invalid_argument);
 }
 
 TEST_F(TestLLMUtils, ProcessInputNamesIndexMatching)
@@ -219,6 +222,8 @@ TEST_F(TestLLMUtils, ProcessInputNamesMatchingIndexExceeded)
 {
     auto input_names = std::vector<std::string>{"input1"};
 
-    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1"}, {"/ext2"}}, input_names), std::invalid_argument);
-    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"input1"}, {"input2"}}, input_names), std::invalid_argument);
+    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"/ext1"}, {"/ext2"}}, input_names),
+                 std::invalid_argument);
+    EXPECT_THROW(llm::process_input_names(llm::user_input_mappings_t{{"input1"}, {"input2"}}, input_names),
+                 std::invalid_argument);
 }
