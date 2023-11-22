@@ -16,8 +16,11 @@
 morpheus_configure_libmd()
 morpheus_configure_libbsd()
 
+
 set(doca_ROOT "/opt/mellanox/doca")
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(doca REQUIRED)
+set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 add_library(morpheus_doca
   # Keep these sorted!

@@ -17,9 +17,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
-if (VERBOSE)
-  morpheus_utils_print_config()
-endif()
+
+morpheus_utils_print_config()
 
 # First, load the package_config functions
 include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)

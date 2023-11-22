@@ -33,8 +33,9 @@ outputs:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
         - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_PYTHON_BUILD_STUBS
         - MORPHEUS_CACHE_DIR
+        - MORPHEUS_PYTHON_BUILD_STUBS
+        - MORPHEUS_SUPPORT_DOCA
         - PARALLEL_LEVEL
       run_exports:
         - {{ pin_subpackage("morpheus", max_pin="x.x") }}
@@ -48,7 +49,7 @@ outputs:
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
         - ccache
-        - cmake 3.24
+        - cmake 3.25
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
         - ninja
       host:
