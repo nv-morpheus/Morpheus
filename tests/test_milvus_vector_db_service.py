@@ -364,6 +364,7 @@ def test_delete(milvus_service: MilvusVectorDBService, idx_part_collection_confi
     milvus_service.drop(collection_name)
 
 
+@pytest.mark.milvus
 def test_release_collection(milvus_service: MilvusVectorDBService,
                             idx_part_collection_config: dict,
                             milvus_data: list[dict]):
