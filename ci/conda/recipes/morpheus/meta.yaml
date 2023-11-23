@@ -48,6 +48,7 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
+        - automake 1.16.5
         - ccache
         - cmake 3.25
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
