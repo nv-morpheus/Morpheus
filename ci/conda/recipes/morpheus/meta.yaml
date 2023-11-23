@@ -48,10 +48,11 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
-        - automake 1.16.5
+        - automake 1.16.5 # Needed for DOCA build
         - ccache
         - cmake 3.25
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
+        - libtool # Needed for DOCA build
         - ninja
       host:
         - cuda-toolkit {{ cuda_compiler_version }}
