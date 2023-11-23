@@ -28,7 +28,7 @@ namespace morpheus::llm {
 
 /**
  * @brief Holds information about LLM task. This information is extracted by LLMEngine from
- * input control message and saved to context for use by task handler(s).
+ * input control message and saved to the context for use by task handler(s).
  */
 struct MORPHEUS_EXPORT LLMTask
 {
