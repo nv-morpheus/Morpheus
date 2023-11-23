@@ -68,7 +68,6 @@ outputs:
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - {{ pin_compatible('cuda-cudart', min_pin='x.x', max_pin='x') }}
-        - beautifulsoup4=4.12
         - click >=8
         - configargparse 1.5.*
         - cudf
@@ -78,8 +77,6 @@ outputs:
         - dill
         - distributed
         - docker-py 5.0.*
-        - elasticsearch==8.9.0
-        - feedparser=6.0.10
         - grpcio # Version determined from cudf
         - libmrc
         - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863

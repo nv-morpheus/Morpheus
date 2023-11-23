@@ -22,14 +22,3 @@ channels:
 dependencies:
     - nb_conda_kernels
     - pip
-
-    ####### Pip Transitive Dependencies (keep sorted!) #######
-    # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
-    # better to install them with conda than pip to allow for better dependency resolution.
-    - py4j=0.10
-
-    - pip:
-        # Add additional pip only dependencies here
-        - databricks-connect
-        - pymilvus==2.3.2
-        - milvus==2.3.2
