@@ -27,8 +27,8 @@ from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('bs4', 'feedparser')
-IMPORT_ERROR_MESSAGE = f"RSSController requires the following packages to be installed: {', '.join(REQUIRED_DEPS)}"
+REQUIRED_DEPS = ('BeautifulSoup', 'feedparser')
+IMPORT_ERROR_MESSAGE = "RSSController requires the bs4 and feedparser packages to be installed"
 
 try:
     import feedparser
