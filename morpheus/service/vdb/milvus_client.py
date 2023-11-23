@@ -12,28 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import typing
 
-from pymilvus import Collection
-from pymilvus import DataType
-from pymilvus import MilvusClient as PyMilvusClient
-from pymilvus.orm.mutation import MutationResult
+from morpheus.utils.verify_dependencies import _verify_deps
 
-# Milvus data type mapping dictionary
-MILVUS_DATA_TYPE_MAP = {
-    "int8": DataType.INT8,
-    "int16": DataType.INT16,
-    "int32": DataType.INT32,
-    "int64": DataType.INT64,
-    "bool": DataType.BOOL,
-    "float": DataType.FLOAT,
-    "double": DataType.DOUBLE,
-    "binary_vector": DataType.BINARY_VECTOR,
-    "float_vector": DataType.FLOAT_VECTOR,
-    "string": DataType.STRING,
-    "varchar": DataType.VARCHAR,
-    "json": DataType.JSON,
-}
+logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('Collection', 'DataType', 'PyMilvusClient', 'MutationResult', 'MILVUS_DATA_TYPE_MAP')
+IMPORT_ERROR_MESSAGE = "MilvusClient requires the milvus and pymilvus packages to be installed."
+
+try:
+    from pymilvus import Collection
+    from pymilvus import DataType
+    from pymilvus import MilvusClient as PyMilvusClient
+    from pymilvus.orm.mutation import MutationResult
+
+    # Milvus data type mapping dictionary
+    MILVUS_DATA_TYPE_MAP = {
+        "int8": DataType.INT8,
+        "int16": DataType.INT16,
+        "int32": DataType.INT32,
+        "int64": DataType.INT64,
+        "bool": DataType.BOOL,
+        "float": DataType.FLOAT,
+        "double": DataType.DOUBLE,
+        "binary_vector": DataType.BINARY_VECTOR,
+        "float_vector": DataType.FLOAT_VECTOR,
+        "string": DataType.STRING,
+        "varchar": DataType.VARCHAR,
+        "json": DataType.JSON,
+    }
+except ImportError:
+    logger.error(IMPORT_ERROR_MESSAGE)
 
 
 def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
@@ -87,6 +98,7 @@ class MilvusClient(PyMilvusClient):
     """
 
     def __init__(self, uri: str, user: str, password: str, db_name: str, token: str, **kwargs: dict[str, typing.Any]):
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         super().__init__(uri=uri, user=user, password=password, db_name=db_name, token=token, **kwargs)
 
     @handle_exceptions("has_collection", "Error checking collection existence")

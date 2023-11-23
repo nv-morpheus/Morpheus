@@ -21,16 +21,24 @@ import typing
 from functools import wraps
 
 import pandas as pd
-import pymilvus
-from pymilvus.orm.mutation import MutationResult
 
 import cudf
 
 from morpheus.service.vdb.milvus_client import MilvusClient
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('pymilvus', 'MutationResult')
+IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
+
+try:
+    import pymilvus
+    from pymilvus.orm.mutation import MutationResult
+except ImportError:
+    logger.error(IMPORT_ERROR_MESSAGE)
 
 
 class FieldSchemaEncoder(json.JSONEncoder):
@@ -217,6 +225,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
     """
 
     def __init__(self, name: str, client: MilvusClient) -> None:
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         super().__init__()
 
         self._name = name

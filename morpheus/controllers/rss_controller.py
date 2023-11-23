@@ -19,13 +19,22 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import feedparser
 import pandas as pd
 import requests
 import requests_cache
-from bs4 import BeautifulSoup
+
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('bs4', 'feedparser')
+IMPORT_ERROR_MESSAGE = f"RSSController requires the following packages to be installed: {', '.join(REQUIRED_DEPS)}"
+
+try:
+    import feedparser
+    from bs4 import BeautifulSoup
+except ImportError:
+    logger.error(IMPORT_ERROR_MESSAGE)
 
 
 @dataclass
@@ -72,7 +81,7 @@ class RSSController:
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
                  request_timeout: float = 2.0):
-
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         if (isinstance(feed_input, str)):
             feed_input = [feed_input]
 
