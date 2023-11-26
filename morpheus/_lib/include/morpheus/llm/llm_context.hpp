@@ -124,7 +124,7 @@ class MORPHEUS_EXPORT LLMContext : public std::enable_shared_from_this<LLMContex
     std::string full_name() const;
 
     /**
-     * @brief Create new context from this context with provided name and input mappings.
+     * @brief Create new context from this context using provided name and input mappings.
      *
      * @param name name of new context
      * @param inputs input mappings for new context
