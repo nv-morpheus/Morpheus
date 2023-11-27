@@ -36,7 +36,7 @@ try:
     from pyspark.sql import functions as sf
     from pyspark.sql.window import Window
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 @register_stage("from-databricks-deltalake")

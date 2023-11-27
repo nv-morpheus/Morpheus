@@ -37,7 +37,7 @@ try:
     from databricks.connect import DatabricksSession
     from pyspark.sql import types as sql_types
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 @register_stage("to-databricks-deltalake")

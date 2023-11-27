@@ -39,7 +39,7 @@ try:
 
     from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 class FieldSchemaEncoder(json.JSONEncoder):

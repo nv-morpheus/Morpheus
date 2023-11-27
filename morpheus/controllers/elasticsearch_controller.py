@@ -29,7 +29,7 @@ try:
     from elasticsearch import Elasticsearch
     from elasticsearch.helpers import parallel_bulk
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 class ElasticsearchController:

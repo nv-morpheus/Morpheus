@@ -31,7 +31,7 @@ IMPORT_ERROR_MESSAGE = (
 try:
     import openai
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 class OpenAIChatClient(LLMClient):

@@ -30,7 +30,7 @@ IMPORT_ERROR_MESSAGE = (
 try:
     import nemollm
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 class NeMoLLMClient(LLMClient):

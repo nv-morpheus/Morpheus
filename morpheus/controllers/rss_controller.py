@@ -34,7 +34,7 @@ try:
     import feedparser
     from bs4 import BeautifulSoup
 except ImportError:
-    logger.error(IMPORT_ERROR_MESSAGE)
+    pass
 
 
 @dataclass
