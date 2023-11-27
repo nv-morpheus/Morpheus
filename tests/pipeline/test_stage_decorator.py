@@ -16,7 +16,6 @@
 
 import collections
 import functools
-import inspect
 import typing
 
 import pandas as pd
@@ -35,6 +34,7 @@ from morpheus.pipeline.stage_decorator import WrappedFunctionSourceStage
 from morpheus.pipeline.stage_decorator import WrappedFunctionStage
 from morpheus.pipeline.stage_decorator import source
 from morpheus.pipeline.stage_decorator import stage
+from morpheus.pipeline.stage_decorator import ComputeSchemaType
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
@@ -49,6 +49,10 @@ def _get_annotation(type_: type, generator_type: type) -> type:
         annotation = type_
 
     return annotation
+
+
+def _mk_compute_schema_fn(return_type: type) -> ComputeSchemaType:
+    return lambda schema: schema.output_schema.set_type(return_type)
 
 
 @pytest.mark.use_python
@@ -71,7 +75,10 @@ def test_wrapped_function_source_stage_constructor(config: Config,
     else:
         source_cls = WrappedFunctionSourceStage
 
-    source_stage = source_cls(config, gen_fn=test_source_gen)
+    source_stage = source_cls(config,
+                              name="unittest-source",
+                              gen_fn=test_source_gen,
+                              compute_schema_fn=_mk_compute_schema_fn(return_type))
 
     assert isinstance(source_stage, WrappedFunctionSourceStage)
     assert is_prealloc == isinstance(source_stage, PreAllocatedWrappedFunctionStage)
@@ -84,17 +91,16 @@ def test_wrapped_function_source_stage_constructor(config: Config,
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
-@pytest.mark.parametrize("use_partial", [True, False])
-def test_wrapped_function_source_stage_name(config: Config, src_cls: type, use_partial: bool):
+def test_wrapped_function_source_stage_name(config: Config, src_cls: type):
 
     def test_source_gen(value: int) -> cudf.DataFrame:
         yield value
 
-    if use_partial:
-        source_stage = src_cls(config, functools.partial(test_source_gen, value=5))
-    else:
-        source_stage = src_cls(config, test_source_gen, value=5)
-    assert source_stage.name == 'test_source_gen'
+    source_stage = src_cls(config,
+                           name="unittest-source",
+                           gen_fn=functools.partial(test_source_gen, value=5),
+                           compute_schema_fn=_mk_compute_schema_fn(cudf.DataFrame))
+    assert source_stage.name == "unittest-source"
 
 
 @pytest.mark.use_python
@@ -105,18 +111,10 @@ def test_wrapped_function_stage_not_generator_error(config: Config, src_cls: typ
         return MessageMeta(cudf.DataFrame())
 
     with pytest.raises(ValueError):
-        src_cls(config, test_source_gen)
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("return_type", [float, int, str, bool])
-def test_pre_allocated_wrapped_function_stage_not_df_error(config: Config, return_type: type):
-
-    def test_source_gen() -> return_type:
-        yield None
-
-    with pytest.raises(ValueError):
-        PreAllocatedWrappedFunctionStage(config, test_source_gen)
+        src_cls(config,
+                name="unittest-source",
+                gen_fn=test_source_gen,
+                compute_schema_fn=_mk_compute_schema_fn(MessageMeta))
 
 
 @pytest.mark.use_python
@@ -184,48 +182,37 @@ def test_not_generator_error(config: Config):
                           (typing.Any, typing.Any)])
 def test_wrapped_function_stage_constructor(config: Config, use_annotations: bool, accept_type: type,
                                             return_type: type):
-    if use_annotations:
-
-        def test_fn(message: accept_type) -> return_type:
-            return message
-
-        kwargs = {'accept_type': None, 'return_type': None}
-    else:
-
-        def test_fn(message):
-            return message
-
-        kwargs = {'accept_type': accept_type, 'return_type': return_type}
-
-    wrapped_stage = WrappedFunctionStage(config, on_data_fn=test_fn, **kwargs)
+    wrapped_stage = WrappedFunctionStage(config,
+                                         name="unittest-stage",
+                                         on_data_fn=lambda x: x,
+                                         accept_type=accept_type,
+                                         compute_schema_fn=_mk_compute_schema_fn(return_type))
 
     assert isinstance(wrapped_stage, WrappedFunctionStage)
     assert wrapped_stage.accepted_types() == (accept_type, )
-    assert wrapped_stage._return_type is return_type
 
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
-                          (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
+                          (typing.Union[float, int], float), (float, float), (typing.Any, float),
                           (typing.Any, typing.Any)])
 def test_wrapped_function_stage_output_types(config: Config, accept_type: type, return_type: type):
     # For non-source types we need an upstream before we can check the compute_schema method outside of a pipeline
 
-    if return_type is typing.Any:
-        expected_return_type = accept_type
-    else:
-        expected_return_type = return_type
-
     wrapped_stage = WrappedFunctionStage(config,
+                                         name="unittest-stage",
                                          on_data_fn=lambda x: x,
                                          accept_type=accept_type,
-                                         return_type=return_type)
+                                         compute_schema_fn=_mk_compute_schema_fn(return_type))
 
     def source_fn():
         yield None
 
-    upstream = WrappedFunctionSourceStage(config, source_fn, return_type=accept_type)
+    upstream = WrappedFunctionSourceStage(config,
+                                          name="source_fn",
+                                          gen_fn=source_fn,
+                                          compute_schema_fn=_mk_compute_schema_fn(accept_type))
 
     pipe = LinearPipeline(config)
     pipe.set_source(upstream)
@@ -233,12 +220,11 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
     pipe.build()
     schema = StageSchema(wrapped_stage)
     wrapped_stage.compute_schema(schema)
-    assert schema.output_schema.get_type() is expected_return_type
+    assert schema.output_schema.get_type() is return_type
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("use_partial", [True, False])
-def test_wrapped_function_stage_name(config: Config, use_partial: bool):
+def test_wrapped_function_stage_name(config: Config):
 
     def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
         with message.mutable_dataframe() as df:
@@ -246,27 +232,12 @@ def test_wrapped_function_stage_name(config: Config, use_partial: bool):
 
         return message
 
-    if use_partial:
-        wrapped_stage = WrappedFunctionStage(config, functools.partial(multiplier, column='v2', value=5))
-    else:
-        wrapped_stage = WrappedFunctionStage(config, multiplier, column='v2', value=5)
+    wrapped_stage = WrappedFunctionStage(config,
+                                         name="multiplier",
+                                         on_data_fn=functools.partial(multiplier, column='v2', value=5),
+                                         accept_type=MessageMeta,
+                                         compute_schema_fn=_mk_compute_schema_fn(MessageMeta))
     assert wrapped_stage.name == 'multiplier'
-
-
-@pytest.mark.use_python
-def test_wrapped_function_stage_no_name(config: Config):
-    # Class instances don't have a __name__ attribute like functions do
-    class CallableCls:
-
-        def __call__(self, message: MessageMeta) -> MessageMeta:
-            return message
-
-    wrapped_stage = WrappedFunctionStage(config, CallableCls())
-
-    # The impl will fall back to calling str() on the object, but for our purposes we just want to make sure we got a
-    # non-empty string
-    assert isinstance(wrapped_stage.name, str)
-    assert len(wrapped_stage.name) > 0
 
 
 @pytest.mark.use_python
@@ -281,7 +252,12 @@ def test_wrapped_function_stage_needed_columns(config: Config, needed_columns: d
     def test_fn(message: MessageMeta) -> MessageMeta:
         return message
 
-    wrapped_stage = WrappedFunctionStage(config, test_fn, needed_columns=needed_columns)
+    wrapped_stage = WrappedFunctionStage(config,
+                                         name="unittest-stage",
+                                         on_data_fn=test_fn,
+                                         accept_type=MessageMeta,
+                                         compute_schema_fn=_mk_compute_schema_fn(MessageMeta),
+                                         needed_columns=needed_columns)
     expected_needed_columns = needed_columns or collections.OrderedDict()
     assert wrapped_stage._needed_columns == expected_needed_columns
 
@@ -301,18 +277,22 @@ def test_stage_decorator(config: Config, accept_type: type, return_type: type):
 
     assert isinstance(wrapped_stage, WrappedFunctionStage)
     assert wrapped_stage.accepted_types() == (accept_type, )
-    assert wrapped_stage._return_type is return_type
 
 
 @pytest.mark.use_python
-def test_stage_decorator_name(config: Config):
+@pytest.mark.parametrize("name", [None, "unittest-stage"])
+def test_stage_decorator_name(config: Config, name: str):
+    if name is None:
+        expected_name = 'test_fn'
+    else:
+        expected_name = name
 
-    @stage
+    @stage(name=name)
     def test_fn(message: float, value: float) -> float:
         return message * value
 
     wrapped_stage = test_fn(config, value=2.2)
-    assert wrapped_stage.name == 'test_fn'
+    assert wrapped_stage.name == expected_name
 
 
 @pytest.mark.use_python
