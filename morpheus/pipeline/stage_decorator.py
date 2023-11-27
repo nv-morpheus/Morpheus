@@ -35,6 +35,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 GeneratorType = typing.Callable[..., collections.abc.Iterator[typing.Any]]
+ComputeSchemaType = typing.Callable[[StageSchema], None]
 
 
 def _get_name_from_fn(fn: typing.Callable) -> str:
@@ -46,26 +47,6 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
             return _get_name_from_fn(fn.func)
 
         return str(fn)
-
-
-def _determine_return_type(gen_fn: GeneratorType) -> type:
-    """
-    Unpacks return type annoatations like:
-    def soource() -> typing.Generator[MessageMeta, None, None]:
-        ....
-    """
-    signature = inspect.signature(gen_fn)
-    return_type = signature.return_annotation
-    if return_type is signature.empty:
-        raise ValueError("Wrapped source functions must have a return type annotation")
-
-    # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
-    # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
-    # instance of typing._GenericAlias. We need to check for both.
-    if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
-        return_type = return_type.__args__[0]
-
-    return return_type
 
 
 def _is_dataframe_containing_type(type_: type) -> bool:
@@ -119,36 +100,33 @@ class WrappedFunctionSourceStage(SingleOutputSource):
     ----------
     config : `morpheus.config.Config`
         Pipeline configuration instance.
+    name: `str`
+        Name of the stage.
     gen_fn : `GeneratorType`
         Generator function to use as the source of messages.
-    return_type : `type`, optional
-        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output
-        if not provided the stage will use `typing.Any` as the output type.
-    **gen_fn_kwargs : `typing.Any`
-        Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
+    compute_schema_fn : `ComputeSchemaType`
+        Function to use for computing the schema of the stage.
     """
 
-    def __init__(self, *, config: Config, gen_fn: GeneratorType, return_type: type = None, **gen_fn_kwargs):
+    def __init__(self, *, config: Config, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
             raise ValueError("Wrapped source functions must be generator functions")
 
-        self._gen_fn_name = _get_name_from_fn(gen_fn)
-        _validate_keyword_arguments(self._gen_fn_name, inspect.signature(gen_fn), gen_fn_kwargs)
-        self._gen_fn = functools.partial(gen_fn, **gen_fn_kwargs)
-
-        self._return_type = return_type or _determine_return_type(gen_fn)
+        self._name = name
+        self._gen_fn = gen_fn
+        self._compute_schema_fn = compute_schema_fn
 
     @property
     def name(self) -> str:
-        return self._gen_fn_name
+        return self._name
 
     def supports_cpp_node(self) -> bool:
         return False
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(self._return_type)
+        self._compute_schema_fn(schema)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self._gen_fn)
@@ -169,31 +147,26 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceS
     ----------
     config : `morpheus.config.Config`
         Pipeline configuration instance.
+    name: `str`
+        Name of the stage.
     gen_fn : `GeneratorType`
         Generator function to use as the source of messages.
-    return_type : `type`, optional
-        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output.
-    *gen_args : `typing.Any`
-        Additional arguments to bind to `gen_fn` via `functools.partial`.
-    **gen_fn_kwargs : `typing.Any`
-        Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
+    compute_schema_fn : `ComputeSchemaType`
+        Function to use for computing the schema of the stage.
     """
 
-    def __init__(self, config: Config, gen_fn: GeneratorType, *gen_args, return_type: type = None, **gen_fn_kwargs):
-        super().__init__(*gen_args, config=config, gen_fn=gen_fn, return_type=return_type, **gen_fn_kwargs)
-        if not _is_dataframe_containing_type(self._return_type):
-            raise ValueError("PreAllocatedWrappedFunctionStage can only be used with DataFrame containing types")
+    def __init__(self, *, config: Config, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
+        super().__init__(config=config, name=name, gen_fn=gen_fn, compute_schema_fn=compute_schema_fn)
 
 
-def source(gen_fn: GeneratorType):
+def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn: ComputeSchemaType = None):
     """
     Decorator for wrapping a function as a source stage. The function must be a generator method.
 
-    It is required to use a return type annotation, as this will be used by the stage as the output type. If
-    no return type annotation is provided, the stage will use `typing.Any` as the output type.
+    When `compute_schema_fn` is `None`, the return type annotation will be used by the stage as the output type.
 
-    When invoked the wrapped function will return a source stage, any additional arguments passed in aside from the
-    config, will be bound to the wrapped function via `functools.partial`.
+    When invoked the wrapped function will return a source stage, any additional keyword arguments passed in aside from
+    the config, will be bound to the wrapped function via `functools.partial`.
 
     Examples
     --------
@@ -207,22 +180,52 @@ def source(gen_fn: GeneratorType):
 
     >>> pipe.set_source(source_gen(config, dataframes=[df]))
     """
+    if gen_fn is None:
+        return functools.partial(source, name=name, compute_schema_fn=compute_schema_fn)
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
     @functools.wraps(gen_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
-    def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionSourceStage:
-        return_type = _determine_return_type(gen_fn)
+    def wrapper(*, config: Config, **kwargs) -> WrappedFunctionSourceStage:
+        nonlocal name
+        nonlocal compute_schema_fn
+
+        if name is None:
+            name = _get_name_from_fn(gen_fn)
+
+        signature = inspect.signature(gen_fn)
+
+        if compute_schema_fn is None:
+            return_type = signature.return_annotation
+            if return_type is signature.empty:
+                raise ValueError(
+                    "Source functions must have either a return type annotation or specify a compute_schema_fn")
+
+            # We need to unpack generator and iterator return types to get the actual type of the yielded type.
+            # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
+            # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
+            # instance of typing._GenericAlias. We need to check for both.
+            if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
+                return_type = return_type.__args__[0]
+
+            def compute_schema_fn(schema: StageSchema):
+                schema.output_schema.set_type(return_type)
+
+        _validate_keyword_arguments(name, signature, kwargs)
+
+        bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
         # If the return type supports pre-allocation we use the pre-allocating source
         if _is_dataframe_containing_type(return_type):
-            return PreAllocatedWrappedFunctionStage(*args,
-                                                    config=config,
-                                                    gen_fn=gen_fn,
-                                                    return_type=return_type,
-                                                    **kwargs)
+            return PreAllocatedWrappedFunctionStage(config=config,
+                                                    name=name,
+                                                    gen_fn=bound_gen_fn,
+                                                    compute_schema_fn=compute_schema_fn)
 
-        return WrappedFunctionSourceStage(*args, config=config, gen_fn=gen_fn, return_type=return_type, **kwargs)
+        return WrappedFunctionSourceStage(config=config,
+                                          name=name,
+                                          gen_fn=bound_gen_fn,
+                                          compute_schema_fn=compute_schema_fn)
 
     return wrapper
 
@@ -245,56 +248,39 @@ class WrappedFunctionStage(SinglePortStage):
     ----------
     config : `morpheus.config.Config`
         Pipeline configuration instance.
+    name: `str`
+        Name of the stage.
     on_data_fn : `typing.Callable`
         Function to be used for processing messages.
-    accept_type : `type`, optional
-        Type of message to accept, if not provided the stage will use the type annotation of the first parameter of
-        `on_data_fn` as the accept type.
-    return_type : `type`, optional
-        Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output.
-    **on_data_kwargs : `typing.Any`
-        Additional keyword arguments to bind to `on_data_fn` via `functools.partial`.
+    compute_schema_fn : `ComputeSchemaType`
+        Function to use for computing the schema of the stage.
+    needed_columns : `dict[str, TypeId]`, optional
+        Dictionary of column names and types that the function requires to be present in the DataFrame. This is used
+        by the `PreAllocatedWrappedFunctionStage` to ensure the DataFrame has the needed columns allocated.
     """
 
-    def __init__(self,
-                 *,
-                 config: Config,
-                 on_data_fn: typing.Callable,
-                 accept_type: type = None,
-                 return_type: type = None,
-                 needed_columns: dict[str, TypeId] = None,
-                 **on_data_kwargs):
+    def __init__(
+        self,
+        *,
+        config: Config,
+        name: str = None,
+        on_data_fn: typing.Callable,
+        accept_type: type,
+        compute_schema_fn: ComputeSchemaType,
+        needed_columns: dict[str, TypeId] = None,
+    ):
         super().__init__(config)
-        self._on_data_fn_name = _get_name_from_fn(on_data_fn)
+        self._name = name
+        self._on_data_fn = on_data_fn
+        self._accept_type = accept_type
+        self._compute_schema_fn = compute_schema_fn
 
         if needed_columns is not None:
             self._needed_columns.update(needed_columns)
 
-        # Even if both accept_type and return_type are provided, we should still need to inspect the function signature
-        # to verify it is callable with at least one argument
-        signature = inspect.signature(on_data_fn)
-        param_iter = iter(signature.parameters.values())
-
-        try:
-            first_param = next(param_iter)
-            self._accept_type = accept_type or first_param.annotation
-            if self._accept_type is signature.empty:
-                raise ValueError(f"{first_param.name} argument of {self._on_data_fn_name} has no type annotation")
-        except StopIteration as e:
-            raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
-
-        _validate_keyword_arguments(self._on_data_fn_name, signature, on_data_kwargs, param_iter)
-
-        self._return_type = return_type or signature.return_annotation
-        if self._return_type is signature.empty:
-            raise ValueError("Wrapped stage functions must have a return type annotation")
-
-        # Finally bind any additional arguments to the function
-        self._on_data_fn = functools.partial(on_data_fn, **on_data_kwargs)
-
     @property
     def name(self) -> str:
-        return self._on_data_fn_name
+        return self._name
 
     def accepted_types(self) -> typing.Tuple:
         return (self._accept_type, )
@@ -303,12 +289,7 @@ class WrappedFunctionStage(SinglePortStage):
         return False
 
     def compute_schema(self, schema: StageSchema):
-        if self._return_type is not typing.Any:
-            return_type = self._return_type
-        else:
-            return_type = schema.input_schema.get_type()
-
-        schema.output_schema.set_type(return_type)
+        self._compute_schema_fn(schema)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._on_data_fn))
@@ -317,7 +298,12 @@ class WrappedFunctionStage(SinglePortStage):
         return node
 
 
-def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeId] = None):
+def stage(on_data_fn: typing.Callable = None,
+          *,
+          name: str = None,
+          accept_type: type = None,
+          compute_schema_fn: ComputeSchemaType = None,
+          needed_columns: dict[str, TypeId] = None):
     """
     Decorator for wrapping a function as a stage. The function must receive at least one argument, the first argument
     must be the incoming message, and must return a value.
@@ -349,16 +335,54 @@ def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeI
     """
 
     if on_data_fn is None:
-        return functools.partial(stage, needed_columns=needed_columns)
+        return functools.partial(stage,
+                                 name=name,
+                                 accept_type=accept_type,
+                                 compute_schema_fn=compute_schema_fn,
+                                 needed_columns=needed_columns)
 
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
     @functools.wraps(on_data_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
-    def wrapper(config: Config, *args, **kwargs) -> WrappedFunctionStage:
-        return WrappedFunctionStage(*args,
-                                    config=config,
-                                    on_data_fn=on_data_fn,
-                                    needed_columns=needed_columns,
-                                    **kwargs)
+    def wrapper(*, config: Config, **kwargs) -> WrappedFunctionStage:
+        nonlocal name
+        nonlocal accept_type
+        nonlocal compute_schema_fn
+
+        if name is None:
+            name = _get_name_from_fn(on_data_fn)
+
+        # Even if both accept_type and compute_schema_fn are provided, we should still need to inspect the function
+        # signature to verify it is callable with at least one argument
+        signature = inspect.signature(on_data_fn)
+        param_iter = iter(signature.parameters.values())
+
+        try:
+            first_param = next(param_iter)
+            accept_type = accept_type or first_param.annotation
+            if accept_type is signature.empty:
+                raise ValueError(f"{first_param.name} argument of {name} has no type annotation")
+        except StopIteration as e:
+            raise ValueError(f"Stage function {name} must have at least one parameter") from e
+
+        if compute_schema_fn is None:
+            return_type = signature.return_annotation
+            if return_type is signature.empty:
+                raise ValueError(
+                    "Stage functions must have either a return type annotation or specify a compute_schema_fn")
+
+            def compute_schema_fn(schema: StageSchema):
+                schema.output_schema.set_type(return_type)
+
+        _validate_keyword_arguments(name, signature, kwargs, param_iter=param_iter)
+
+        bound_on_data_fn = functools.partial(on_data_fn, **kwargs)
+
+        return WrappedFunctionStage(config=config,
+                                    name=name,
+                                    on_data_fn=bound_on_data_fn,
+                                    accept_type=accept_type,
+                                    compute_schema_fn=compute_schema_fn,
+                                    needed_columns=needed_columns)
 
     return wrapper
