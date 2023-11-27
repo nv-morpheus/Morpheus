@@ -83,9 +83,6 @@ The training dataset consists of AWS CloudTrail logs. It contains logs from two 
 * [hammah-user123-training-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part3.json): 1000 records <br>
 * [hammah-user123-training-part4.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part4.json): 387 records <br>
 
-**Dataset License:**
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
-
 ## Evaluation Dataset:
 **Link:**
 * https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/validation-data/cloudtrail <br>
@@ -97,9 +94,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * [hammah-user123-validation-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part1.json): 300 records
 * [hammah-user123-validation-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part2.json): 300 records
 * [hammah-user123-validation-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part3.json): 247 records
-
-**Dataset License:**
-*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 **Engine:**

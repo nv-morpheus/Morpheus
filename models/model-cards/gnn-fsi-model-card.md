@@ -81,18 +81,12 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * A training data consists of raw 753 synthetic labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
 
-**Dataset License:**  
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
-
 ## Evaluation Dataset:
 **Link:**  
 * [fraud-detection-validation-data.csv](models/dataset/fraud-detection-validation-data.csv)  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * Data consists of raw 265 labeled credit card transaction synthetically created<br>
-
-**Dataset License:**
-*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 **Engine:** 

@@ -94,10 +94,6 @@ limitations under the License.
 
 * Sample dataset consists of over 1000 nvidia-smi outputs <br>
 
-**Dataset License:** 
-
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
-
 ## Evaluation Dataset:
 
 **Link:** 
@@ -107,10 +103,6 @@ limitations under the License.
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
 * Sample dataset consists of over 1000 nvidia-smi outputs <br>
-
-**Dataset License:** 
-
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 

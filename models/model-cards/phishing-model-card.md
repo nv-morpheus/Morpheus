@@ -96,10 +96,6 @@ limitations under the License.
 
 * Dataset consists of SMSs <br>
 
-**Dataset License:** 
-
-* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
-
 ## Evaluation Dataset:
 
 **Link:** 
@@ -109,10 +105,6 @@ limitations under the License.
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
 * Dataset consists of SMSs <br>
-
-**Dataset License:** 
-
-* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
 
 ## Inference:
 
