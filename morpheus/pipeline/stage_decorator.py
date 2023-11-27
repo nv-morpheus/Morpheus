@@ -72,6 +72,32 @@ def _is_dataframe_containing_type(type_: type) -> bool:
     return type_ in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage)
 
 
+def _validate_keyword_arguments(fn_name: str,
+                                signature: inspect.Signature,
+                                kwargs: dict[str, typing.Any],
+                                param_iter: typing.Iterator = None):
+    if param_iter is None:
+        param_iter = iter(signature.parameters.values())
+
+    # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
+    # to bind it, otherwise it will trigger an error when MRC.
+    for param in param_iter:
+        if param.default is not signature.empty and param.name not in kwargs:
+            kwargs[param.name] = param.default
+
+        # if a parameter is keyword only, containing neither a a default value or an entry in on_data_kwargs, we
+        # need to raise an error
+        if param.kind is param.KEYWORD_ONLY and param.name not in kwargs:
+            raise ValueError(f"Wrapped function {fn_name} has keyword only parameter '{param.name}' that was not "
+                             "provided a value")
+        elif param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
+            if param.kind is param.POSITIONAL_OR_KEYWORD and param.name in kwargs:
+                continue
+
+            raise ValueError("Positional arguments are not supported for wrapped functions. "
+                             f"{fn_name} contains '{param.name}' that was not provided with a value")
+
+
 class WrappedFunctionSourceStage(SingleOutputSource):
     """
     Source stage that wraps a generator function as the method for generating messages.
@@ -98,20 +124,20 @@ class WrappedFunctionSourceStage(SingleOutputSource):
     return_type : `type`, optional
         Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output
         if not provided the stage will use `typing.Any` as the output type.
-    *gen_args : `typing.Any`
-        Additional arguments to bind to `gen_fn` via `functools.partial`.
     **gen_fn_kwargs : `typing.Any`
         Additional keyword arguments to bind to `gen_fn` via `functools.partial`.
     """
 
-    def __init__(self, config: Config, gen_fn: GeneratorType, *gen_args, return_type: type = None, **gen_fn_kwargs):
+    def __init__(self, *, config: Config, gen_fn: GeneratorType, return_type: type = None, **gen_fn_kwargs):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
             raise ValueError("Wrapped source functions must be generator functions")
 
-        self._gen_fn = functools.partial(gen_fn, *gen_args, **gen_fn_kwargs)
         self._gen_fn_name = _get_name_from_fn(gen_fn)
+        _validate_keyword_arguments(self._gen_fn_name, inspect.signature(gen_fn), gen_fn_kwargs)
+        self._gen_fn = functools.partial(gen_fn, **gen_fn_kwargs)
+
         self._return_type = return_type or _determine_return_type(gen_fn)
 
     @property
@@ -173,7 +199,7 @@ def source(gen_fn: GeneratorType):
     --------
 
     >>> @source
-    ... def source_gen(dataframes: list[cudf.DataFrame]) -> collections.abc.Iterator[MessageMeta]:
+    ... def source_gen(*, dataframes: list[cudf.DataFrame]) -> collections.abc.Iterator[MessageMeta]:
     ...     for df in dataframes:
     ...         yield MessageMeta(df)
     ...
@@ -226,16 +252,14 @@ class WrappedFunctionStage(SinglePortStage):
         `on_data_fn` as the accept type.
     return_type : `type`, optional
         Return type of `gen_fn` if not provided the stage will use the return type annotation of `gen_fn` as the output.
-    *on_data_args : `typing.Any`
-        Additional arguments to bind to `on_data_fn` via `functools.partial`.
     **on_data_kwargs : `typing.Any`
         Additional keyword arguments to bind to `on_data_fn` via `functools.partial`.
     """
 
     def __init__(self,
+                 *,
                  config: Config,
                  on_data_fn: typing.Callable,
-                 *on_data_args,
                  accept_type: type = None,
                  return_type: type = None,
                  needed_columns: dict[str, TypeId] = None,
@@ -259,18 +283,14 @@ class WrappedFunctionStage(SinglePortStage):
         except StopIteration as e:
             raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
 
-        # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
-        # to bind it, otherwise it will trigger an error when MRC.
-        for param in param_iter:
-            if param.default is not signature.empty and param.name not in on_data_kwargs:
-                on_data_kwargs[param.name] = param.default
+        _validate_keyword_arguments(self._on_data_fn_name, signature, on_data_kwargs, param_iter)
 
         self._return_type = return_type or signature.return_annotation
         if self._return_type is signature.empty:
             raise ValueError("Wrapped stage functions must have a return type annotation")
 
         # Finally bind any additional arguments to the function
-        self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
+        self._on_data_fn = functools.partial(on_data_fn, **on_data_kwargs)
 
     @property
     def name(self) -> str:
@@ -302,7 +322,7 @@ def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeI
     Decorator for wrapping a function as a stage. The function must receive at least one argument, the first argument
     must be the incoming message, and must return a value.
 
-    It is highly recommended to use type annotations for the function parameters and return type, as this will be used
+    It is required to use type annotations for the function parameters and return type, as this will be used
     by the stage as the accept and output types. If the incoming message parameter has no type annotation, the stage
     will be use `typing.Any` as the input type. If the return type has no type annotation, the stage will be set to
     return the same type as the input type.
@@ -314,7 +334,7 @@ def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeI
     --------
 
     >>> @stage
-    ... def multiplier(message: MessageMeta, column: str, value: int | float) -> MessageMeta:
+    ... def multiplier(message: MessageMeta, *, column: str, value: int | float) -> MessageMeta:
     ...     with message.mutable_dataframe() as df:
     ...         df[column] = df[column] * value
     ...
@@ -323,6 +343,9 @@ def stage(on_data_fn: typing.Callable = None, *, needed_columns: dict[str, TypeI
     >>>
 
     >>> pipe.add_stage(multiplier(config, column='v2', value=5))
+
+    >>> # This will fail since `column` is required but no default value is provided:
+    >>> pipe.add_stage(multiplier(config, value=5))
     """
 
     if on_data_fn is None:
