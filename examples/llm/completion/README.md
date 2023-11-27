@@ -32,24 +32,15 @@ limitations under the License.
 
 ### Purpose
 
-The primary goal of this example is to showcase the creation of a pipeline that integrates an LLM service with Morpheus.
-Although this example features a single implementation, the pipeline and its components are versatile and can be adapted
-to various scenarios with unique requirements. The following highlights different customization points within the
-pipeline and the specific choices made for this example:
+The primary goal of this example is to showcase the creation of a pipeline that integrates an LLM service with Morpheus. Although this example features a single implementation, the pipeline and its components are versatile and can be adapted to various scenarios with unique requirements. The following highlights different customization points within the pipeline and the specific choices made for this example:
 
 #### LLM Service
 
-- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services
-  include OpenAI, NeMo, or even local execution using llama-cpp-python. In this demonstration, we focus on utilizing
-  NeMo as the LLM service, highlighting the advantages it offers over other LLM services and the seamless integration
-  with the NeMo ecosystem. Furthermore, the pipeline can accommodate more complex configurations using NeMo + Inform
-  without necessitating changes to the core pipeline.
+- The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, NeMo, or even local execution using llama-cpp-python. In this demonstration, we focus on utilizing NeMo as the LLM service, highlighting the advantages it offers over other LLM services and the seamless integration with the NeMo ecosystem. Furthermore, the pipeline can accommodate more complex configurations using NeMo + Inform without necessitating changes to the core pipeline.
 
 #### Downstream Tasks
 
-- Post LLM execution, the model's output can be leveraged for various tasks, including model training, analysis, or
-  simulating an attack. In this particular example, we have simplified the implementation and focused solely on the
-  LLMEngine.
+- Post LLM execution, the model's output can be leveraged for various tasks, including model training, analysis, or simulating an attack. In this particular example, we have simplified the implementation and focused solely on the LLMEngine.
 
 ### Pipeline Implementation
 
