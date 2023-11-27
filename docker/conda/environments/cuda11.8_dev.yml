@@ -21,6 +21,7 @@ channels:
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
     - pytorch
     - conda-forge
+    - default
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
     - automake=1.16.5
