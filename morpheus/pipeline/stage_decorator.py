@@ -97,7 +97,7 @@ class WrappedFunctionSourceStage(SingleOutputSource):
         Function to use for computing the schema of the stage.
     """
 
-    def __init__(self, *, config: Config, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
+    def __init__(self, config: Config, *, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
         super().__init__(config)
         # collections.abc.Generator is a subclass of collections.abc.Iterator
         if not inspect.isgeneratorfunction(gen_fn):
@@ -245,8 +245,8 @@ class WrappedFunctionStage(SinglePortStage):
 
     def __init__(
         self,
-        *,
         config: Config,
+        *,
         name: str = None,
         on_data_fn: typing.Callable,
         accept_type: type,
