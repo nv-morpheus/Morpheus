@@ -169,7 +169,7 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
     @functools.wraps(gen_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
-    def wrapper(*, config: Config, **kwargs) -> WrappedFunctionSourceStage:
+    def wrapper(config: Config, **kwargs) -> WrappedFunctionSourceStage:
         nonlocal name
         nonlocal compute_schema_fn
 
@@ -328,7 +328,7 @@ def stage(on_data_fn: typing.Callable = None,
     # Use wraps to ensure user's don't lose their function name and docstrinsgs, however we do want to override the
     # annotations to reflect that the returned function requires a config and returns a stage
     @functools.wraps(on_data_fn, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
-    def wrapper(*, config: Config, **kwargs) -> WrappedFunctionStage:
+    def wrapper(config: Config, **kwargs) -> WrappedFunctionStage:
         nonlocal name
         nonlocal accept_type
         nonlocal compute_schema_fn
