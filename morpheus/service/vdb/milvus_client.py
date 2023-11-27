@@ -19,7 +19,7 @@ from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('Collection', 'DataType', 'PyMilvusClient', 'MutationResult')
+REQUIRED_DEPS = ('Collection', 'PyMilvusClient', 'MutationResult')
 IMPORT_ERROR_MESSAGE = "MilvusClient requires the milvus and pymilvus packages to be installed."
 
 try:
