@@ -75,7 +75,7 @@ class SourceStage(_pipeline.StageBase):
     @typing.final
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
-        # True source object separate from the output stream. If any other operators need to be added after the source,
+        # True source object separate from the output node. If any other operators need to be added after the source,
         # use `_post_build`
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
         assert len(input_nodes) == 0, "Sources shouldnt have input nodes"

@@ -213,7 +213,7 @@ def dfp_deployment(builder: mrc.Builder):
     builder.make_edge(broadcast, dfp_training_pipe_module.input_port("input"))
     builder.make_edge(broadcast, dfp_inference_pipe_module.input_port("input"))
 
-    out_streams = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
+    out_nodes = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
 
     # Register input port for a module.
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
@@ -221,4 +221,4 @@ def dfp_deployment(builder: mrc.Builder):
     # Register output ports for a module.
     for i in range(num_output_ports):
         # Output ports are registered in increment order.
-        builder.register_module_output(f"output_{i}", out_streams[i])
+        builder.register_module_output(f"output_{i}", out_nodes[i])
