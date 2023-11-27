@@ -161,15 +161,8 @@ def test_source_decorator_no_annoation(config: Config):
     def test_source_gen():
         yield None
 
-    source_stage = test_source_gen(config)  # pylint: disable=too-many-function-args
-
-    assert isinstance(source_stage, WrappedFunctionSourceStage)
-    assert not isinstance(source_stage, PreAllocatedWrappedFunctionStage)
-
-    # check the output type
-    schema = StageSchema(source_stage)
-    source_stage.compute_schema(schema)  # pylint: disable=no-member
-    assert schema.output_schema.get_type() is typing.Any
+    with pytest.raises(ValueError):
+        test_source_gen(config)  # pylint: disable=too-many-function-args
 
 
 @pytest.mark.use_python
@@ -187,28 +180,13 @@ def test_not_generator_error(config: Config):
 @pytest.mark.parametrize("use_annotations", [True, False])
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
-                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
-                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+                          (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
+                          (typing.Any, typing.Any)])
 def test_wrapped_function_stage_constructor(config: Config, use_annotations: bool, accept_type: type,
                                             return_type: type):
-
-    if accept_type is None:
-        accept_annotation = inspect.Signature.empty
-        expected_accept_type = typing.Any
-    else:
-        accept_annotation = accept_type
-        expected_accept_type = accept_type
-
-    if return_type is None:
-        return_annotation = inspect.Signature.empty
-        expected_return_type = expected_accept_type
-    else:
-        return_annotation = return_type
-        expected_return_type = return_type
-
     if use_annotations:
 
-        def test_fn(message: accept_annotation) -> return_annotation:
+        def test_fn(message: accept_type) -> return_type:
             return message
 
         kwargs = {'accept_type': None, 'return_type': None}
@@ -222,26 +200,20 @@ def test_wrapped_function_stage_constructor(config: Config, use_annotations: boo
     wrapped_stage = WrappedFunctionStage(config, on_data_fn=test_fn, **kwargs)
 
     assert isinstance(wrapped_stage, WrappedFunctionStage)
-    assert wrapped_stage.accepted_types() == (expected_accept_type, )
-    assert wrapped_stage._return_type is expected_return_type
+    assert wrapped_stage.accepted_types() == (accept_type, )
+    assert wrapped_stage._return_type is return_type
 
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
-                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
-                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+                          (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
+                          (typing.Any, typing.Any)])
 def test_wrapped_function_stage_output_types(config: Config, accept_type: type, return_type: type):
     # For non-source types we need an upstream before we can check the compute_schema method outside of a pipeline
-    if accept_type is None:
-        expected_accept_type = typing.Any
-    else:
-        expected_accept_type = accept_type
 
-    if return_type is None:
-        expected_return_type = expected_accept_type
-    elif return_type is typing.Any:
-        expected_return_type = expected_accept_type
+    if return_type is typing.Any:
+        expected_return_type = accept_type
     else:
         expected_return_type = return_type
 
@@ -253,7 +225,7 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
     def source_fn():
         yield None
 
-    upstream = WrappedFunctionSourceStage(config, source_fn, return_type=expected_accept_type)
+    upstream = WrappedFunctionSourceStage(config, source_fn, return_type=accept_type)
 
     pipe = LinearPipeline(config)
     pipe.set_source(upstream)
@@ -317,33 +289,19 @@ def test_wrapped_function_stage_needed_columns(config: Config, needed_columns: d
 @pytest.mark.use_python
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
-                          (typing.Union[float, int], float), (float, None), (float, typing.Any), (None, None),
-                          (None, float), (typing.Any, float), (typing.Any, typing.Any)])
+                          (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
+                          (typing.Any, typing.Any)])
 def test_stage_decorator(config: Config, accept_type: type, return_type: type):
 
-    if accept_type is None:
-        accept_annotation = inspect.Signature.empty
-        expected_accept_type = typing.Any
-    else:
-        accept_annotation = accept_type
-        expected_accept_type = accept_type
-
-    if return_type is None:
-        return_annotation = inspect.Signature.empty
-        expected_return_type = expected_accept_type
-    else:
-        return_annotation = return_type
-        expected_return_type = return_type
-
     @stage
-    def test_fn(message: accept_annotation) -> return_annotation:
+    def test_fn(message: accept_type) -> return_type:
         return message
 
     wrapped_stage = test_fn(config)
 
     assert isinstance(wrapped_stage, WrappedFunctionStage)
-    assert wrapped_stage.accepted_types() == (expected_accept_type, )
-    assert wrapped_stage._return_type is expected_return_type
+    assert wrapped_stage.accepted_types() == (accept_type, )
+    assert wrapped_stage._return_type is return_type
 
 
 @pytest.mark.use_python
@@ -364,10 +322,8 @@ def test_stage_decorator_no_annotation(config: Config):
     def test_fn(message):
         return message
 
-    wrapped_stage = test_fn(config)
-
-    assert wrapped_stage.accepted_types() == (typing.Any, )
-    assert wrapped_stage._return_type is typing.Any
+    with pytest.raises(ValueError):
+        test_fn(config)
 
 
 @pytest.mark.use_python

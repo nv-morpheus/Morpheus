@@ -269,8 +269,6 @@ class WrappedFunctionStage(SinglePortStage):
         if self._return_type is signature.empty:
             raise ValueError("Wrapped stage functions must have a return type annotation")
 
-        self._return_type = self._accept_type
-
         # Finally bind any additional arguments to the function
         self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
 
