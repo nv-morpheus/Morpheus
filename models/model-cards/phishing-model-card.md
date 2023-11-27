@@ -207,9 +207,6 @@ limitations under the License.
 ### What are the potential known risks to users and stakeholders?
 * N/A
 
-### What training is recommended for developers working with this model?
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
-
 ### Link the relevant end user license agreement 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -239,9 +236,6 @@ limitations under the License.
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * N/A
-
-### Technical robustness and model security validated?
-* No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * No
@@ -280,9 +274,6 @@ limitations under the License.
 
 ### Is data in dataset traceable?
 * N/A
-
-### Scanned for malware?
-* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A
