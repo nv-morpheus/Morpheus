@@ -49,10 +49,6 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
         return str(fn)
 
 
-def _is_dataframe_containing_type(type_: type) -> bool:
-    return type_ in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage)
-
-
 def _validate_keyword_arguments(fn_name: str,
                                 signature: inspect.Signature,
                                 kwargs: dict[str, typing.Any],
@@ -71,7 +67,8 @@ def _validate_keyword_arguments(fn_name: str,
         if param.kind is param.KEYWORD_ONLY and param.name not in kwargs:
             raise ValueError(f"Wrapped function {fn_name} has keyword only parameter '{param.name}' that was not "
                              "provided a value")
-        elif param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
+
+        if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
             if param.kind is param.POSITIONAL_OR_KEYWORD and param.name in kwargs:
                 continue
 
@@ -83,18 +80,10 @@ class WrappedFunctionSourceStage(SingleOutputSource):
     """
     Source stage that wraps a generator function as the method for generating messages.
 
-    The wrapped function must be a generator function. If `return_type` is not provided, the stage will use the
-    return type annotation of `gen_fn` as the output type. If the return type annotation is not provided, the stage
-    will use `typing.Any` as the output type.
-
-    It is highly recommended to use specify either `return_type` or provide a return type annotation for `gen_fn`.
-
-    If the output type is an instance of `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage` the
-    `PreAllocatedWrappedFunctionStage` class should be used instead, as this will also perform any DataFrame column
-    allocations needed by other stages in the pipeline.
-
-    Any additional arguments passed in aside from `config` and `return_type`, will be bound to the wrapped function via
-    `functools.partial`.
+    The wrapped function must be a generator function.  If the output type of the generator is an instance of
+    `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage` the `PreAllocatedWrappedFunctionStage` class
+    should be used instead, as this will also perform any DataFrame column allocations needed by other stages in the
+    pipeline.
 
     Parameters
     ----------
@@ -140,9 +129,6 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceS
     allocations needed by other stages in the pipeline. As such the return type for `gen_fn` must be one of:
     `pandas.DataFrame`, `cudf.DataFrame`, `MessageMeta`, or `MultiMessage`.
 
-    Any additional arguments passed in aside from `config` and `return_type`, will be bound to the wrapped function via
-    `functools.partial`.
-
     Parameters
     ----------
     config : `morpheus.config.Config`
@@ -154,9 +140,6 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceS
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
     """
-
-    def __init__(self, *, config: Config, name: str, gen_fn: GeneratorType, compute_schema_fn: ComputeSchemaType):
-        super().__init__(config=config, name=name, gen_fn=gen_fn, compute_schema_fn=compute_schema_fn)
 
 
 def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn: ComputeSchemaType = None):
@@ -216,7 +199,8 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
         # If the return type supports pre-allocation we use the pre-allocating source
-        if _is_dataframe_containing_type(return_type):
+        if return_type in (pd.DataFrame, cudf.DataFrame, MessageMeta, MultiMessage):
+
             return PreAllocatedWrappedFunctionStage(config=config,
                                                     name=name,
                                                     gen_fn=bound_gen_fn,
