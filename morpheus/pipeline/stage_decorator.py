@@ -57,7 +57,7 @@ def _determine_return_type(gen_fn: GeneratorType) -> type:
     signature = inspect.signature(gen_fn)
     return_type = signature.return_annotation
     if return_type is signature.empty:
-        return_type = typing.Any
+        raise ValueError("Wrapped source functions must have a return type annotation")
 
     # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
     # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
@@ -163,7 +163,7 @@ def source(gen_fn: GeneratorType):
     """
     Decorator for wrapping a function as a source stage. The function must be a generator method.
 
-    It is highly recommended to use a return type annotation, as this will be used by the stage as the output type. If
+    It is required to use a return type annotation, as this will be used by the stage as the output type. If
     no return type annotation is provided, the stage will use `typing.Any` as the output type.
 
     When invoked the wrapped function will return a source stage, any additional arguments passed in aside from the
@@ -255,11 +255,7 @@ class WrappedFunctionStage(SinglePortStage):
             first_param = next(param_iter)
             self._accept_type = accept_type or first_param.annotation
             if self._accept_type is signature.empty:
-                logger.warning(
-                    "%s argument of %s has no type annotation, defaulting to typing.Any for the stage accept type",
-                    first_param.name,
-                    self._on_data_fn_name)
-                self._accept_type = typing.Any
+                raise ValueError(f"{first_param.name} argument of {self._on_data_fn_name} has no type annotation")
         except StopIteration as e:
             raise ValueError(f"Wrapped stage functions {self._on_data_fn_name} must have at least one parameter") from e
 
@@ -271,9 +267,9 @@ class WrappedFunctionStage(SinglePortStage):
 
         self._return_type = return_type or signature.return_annotation
         if self._return_type is signature.empty:
-            logger.warning("Return type of %s has no type annotation, defaulting to the stage's accept type",
-                           self._on_data_fn_name)
-            self._return_type = self._accept_type
+            raise ValueError("Wrapped stage functions must have a return type annotation")
+
+        self._return_type = self._accept_type
 
         # Finally bind any additional arguments to the function
         self._on_data_fn = functools.partial(on_data_fn, *on_data_args, **on_data_kwargs)
