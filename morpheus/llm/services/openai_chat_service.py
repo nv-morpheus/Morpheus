@@ -19,6 +19,7 @@ import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +32,6 @@ try:
     import openai
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
-
-
-def _verify_openai():
-    if 'openai' not in globals():
-        raise ImportError(IMPORT_ERROR_MESSAGE)
 
 
 class OpenAIChatClient(LLMClient):
@@ -57,7 +53,7 @@ class OpenAIChatClient(LLMClient):
 
     def __init__(self, model_name: str, set_assistant: bool = False, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
-        _verify_openai()
+        _verify_deps(('openai', ), IMPORT_ERROR_MESSAGE, globals())
 
         self._model_name = model_name
         self._set_assistant = set_assistant

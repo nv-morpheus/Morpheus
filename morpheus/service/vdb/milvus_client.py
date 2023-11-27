@@ -19,30 +19,14 @@ from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('Collection', 'DataType', 'PyMilvusClient', 'MutationResult', 'MILVUS_DATA_TYPE_MAP')
+REQUIRED_DEPS = ('Collection', 'DataType', 'PyMilvusClient', 'MutationResult')
 IMPORT_ERROR_MESSAGE = "MilvusClient requires the milvus and pymilvus packages to be installed."
 
 try:
     from pymilvus import Collection
-    from pymilvus import DataType
     from pymilvus import MilvusClient as PyMilvusClient
     from pymilvus.orm.mutation import MutationResult
 
-    # Milvus data type mapping dictionary
-    MILVUS_DATA_TYPE_MAP = {
-        "int8": DataType.INT8,
-        "int16": DataType.INT16,
-        "int32": DataType.INT32,
-        "int64": DataType.INT64,
-        "bool": DataType.BOOL,
-        "float": DataType.FLOAT,
-        "double": DataType.DOUBLE,
-        "binary_vector": DataType.BINARY_VECTOR,
-        "float_vector": DataType.FLOAT_VECTOR,
-        "string": DataType.STRING,
-        "varchar": DataType.VARCHAR,
-        "json": DataType.JSON,
-    }
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
 
@@ -77,7 +61,7 @@ def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
     return decorator
 
 
-class MilvusClient(PyMilvusClient):
+class MilvusClient("PyMilvusClient"):
     """
     Extension of the `MilvusClient` class with custom functions.
 
@@ -163,7 +147,7 @@ class MilvusClient(PyMilvusClient):
         conn.release_collection(collection_name=collection_name)
 
     @handle_exceptions("upsert", "Error upserting collection entities")
-    def upsert(self, collection_name: str, entities: list, **kwargs: dict[str, typing.Any]) -> MutationResult:
+    def upsert(self, collection_name: str, entities: list, **kwargs: dict[str, typing.Any]) -> "MutationResult":
         """
         Upsert entities into a collection.
 
@@ -185,7 +169,8 @@ class MilvusClient(PyMilvusClient):
         return conn.upsert(collection_name=collection_name, entities=entities, **kwargs)
 
     @handle_exceptions("delete_by_expr", "Error deleting collection entities")
-    def delete_by_expr(self, collection_name: str, expression: str, **kwargs: dict[str, typing.Any]) -> MutationResult:
+    def delete_by_expr(self, collection_name: str, expression: str, **kwargs: dict[str,
+                                                                                   typing.Any]) -> "MutationResult":
         """
         Delete entities from a collection using an expression.
 
@@ -259,7 +244,7 @@ class MilvusClient(PyMilvusClient):
         conn.drop_index(collection_name=collection_name, field_name=field_name, index_name=index_name)
 
     @handle_exceptions("get_collection", "Error getting collection object")
-    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> Collection:
+    def get_collection(self, collection_name: str, **kwargs: dict[str, typing.Any]) -> "Collection":
         """
         Returns `Collection` object associated with the given collection name.
 

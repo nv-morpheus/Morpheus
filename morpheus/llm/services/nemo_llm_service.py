@@ -19,6 +19,7 @@ import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +31,6 @@ try:
     import nemollm
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
-
-
-def _verify_nemo_llm():
-    """
-    When NemoLLM is not installed, raise an ImportError with a helpful message, rather than an attribute error.
-    """
-    if 'nemollm' not in globals():
-        raise ImportError(IMPORT_ERROR_MESSAGE)
 
 
 class NeMoLLMClient(LLMClient):
@@ -58,7 +51,7 @@ class NeMoLLMClient(LLMClient):
 
     def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
         super().__init__()
-        _verify_nemo_llm()
+        _verify_deps(('nemollm', ), IMPORT_ERROR_MESSAGE, globals())
 
         self._parent = parent
         self._model_name = model_name

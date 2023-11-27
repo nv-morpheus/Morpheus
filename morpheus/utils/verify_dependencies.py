@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-def _verify_deps(deps: list[str], error_message: str, namespace: dict):
+def _verify_deps(deps: tuple[str], error_message: str, namespace: dict):
     """
     There are some dependencies that are only used by a specific stage, and are not installed by default.
     These packages are imported in a guarded try-except block. It is only when the stage is used that these

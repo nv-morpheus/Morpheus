@@ -160,7 +160,7 @@ class RSSController:
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
 
-    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> feedparser.FeedParserDict:
+    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
 
         feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
 
@@ -200,7 +200,7 @@ class RSSController:
 
         return feed
 
-    def _try_parse_feed(self, url: str) -> feedparser.FeedParserDict:
+    def _try_parse_feed(self, url: str) -> "feedparser.FeedParserDict":
         is_url = RSSController.is_url(url)
 
         fallback = False

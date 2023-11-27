@@ -113,7 +113,7 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
         return node
 
     @staticmethod
-    def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> sql_types.StructType:
+    def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> "sql_types.StructType":
         """
         Extract approximate schemas from pandas dataframe
         """
