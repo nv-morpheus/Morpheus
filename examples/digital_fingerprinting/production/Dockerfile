@@ -31,7 +31,10 @@ COPY ./conda_env.yml ./
 
 # Install DFP dependencies
 RUN source activate morpheus \
-    && mamba env update -n morpheus -f ./conda_env.yml
+    && mamba install -n base -c conda-forge conda-merge \
+    && conda run -n base --live-stream conda-merge /workspace/docker/conda/environments/cuda11.8_dev.yml \
+      ./conda_env.yml > ./merged.yml \
+    && mamba env update -n morpheus --file ./merged.yml
 
 # Set the tracking URI for mlflow
 ENV MLFLOW_TRACKING_URI="http://mlflow:5000"

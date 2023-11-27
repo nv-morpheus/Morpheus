@@ -18,7 +18,10 @@
 # env with this file. ex:
 #   mamba env create -n  morpheus --file docker/conda/environments/cuda11.8_dev.yml
 #   conda activate morpheus
-#   mamba env update -n morpheus --file docker/conda/environments/cuda11.8_examples.yml
+#   mamba install -n base -c conda-forge conda-merge
+#   conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+#     docker/conda/environments/cuda${CUDA_VER}_examples.yml  > .tmp/merged.yml \
+#     && mamba env update -n morpheus --file ./merged.yml
 channels:
     - rapidsai
     - nvidia

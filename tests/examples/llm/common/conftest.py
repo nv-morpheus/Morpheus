@@ -21,8 +21,11 @@ from _utils import import_or_skip
 @pytest.fixture(name="nemollm", autouse=True, scope='session')
 def nemollm_fixture(fail_missing: bool):
     """
-    All of the tests in this subdir require nemollm
+    All the tests in this subdir require nemollm
     """
     skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
-                   "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+                   "`mamba install -n base -c conda-forge conda-merge`\n"
+                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
+                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
+                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
     yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)

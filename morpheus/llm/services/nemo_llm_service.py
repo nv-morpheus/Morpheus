@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 IMPORT_ERROR_MESSAGE = (
     "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
-    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+    nvcr.io/nvidia/morpheus/morpheus:v23.11.00a-runtime
 
 try:
     import nemollm

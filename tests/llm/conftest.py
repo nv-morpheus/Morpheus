@@ -27,7 +27,10 @@ def nemollm_fixture(fail_missing: bool):
     Fixture to ensure nemollm is installed
     """
     skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+                   "`mamba install -n base -c conda-forge conda-merge`\n"
+                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
+                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
+                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
 
 
@@ -37,7 +40,10 @@ def openai_fixture(fail_missing: bool):
     Fixture to ensure openai is installed
     """
     skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+                   "`mamba install -n base -c conda-forge conda-merge`\n"
+                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
+                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
+                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
     yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
 
 

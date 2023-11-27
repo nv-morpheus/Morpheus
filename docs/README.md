@@ -22,7 +22,11 @@ Additional packages required for building the documentation are defined in `./co
 ## Install Additional Dependencies
 From the root of the Morpheus repo:
 ```bash
-mamba env update -f docs/conda_docs.yml
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  docs/conda_docs.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
 ```
 
 ## Build Morpheus and Documentation
