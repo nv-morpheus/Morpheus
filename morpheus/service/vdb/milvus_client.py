@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import typing
 
 from pymilvus import Collection
 from pymilvus import MilvusClient as PyMilvusClient
 from pymilvus.orm.mutation import MutationResult
-
-logger = logging.getLogger(__name__)
 
 
 def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
