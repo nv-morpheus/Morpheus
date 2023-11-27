@@ -20,12 +20,28 @@ import random
 import numpy as np
 import pymilvus
 import pytest
+from pymilvus import DataType
 
 import cudf
 
-from morpheus.service.vdb.milvus_client import MILVUS_DATA_TYPE_MAP
 from morpheus.service.vdb.milvus_vector_db_service import FieldSchemaEncoder
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
+
+# Milvus data type mapping dictionary
+MILVUS_DATA_TYPE_MAP = {
+    "int8": DataType.INT8,
+    "int16": DataType.INT16,
+    "int32": DataType.INT32,
+    "int64": DataType.INT64,
+    "bool": DataType.BOOL,
+    "float": DataType.FLOAT,
+    "double": DataType.DOUBLE,
+    "binary_vector": DataType.BINARY_VECTOR,
+    "float_vector": DataType.FLOAT_VECTOR,
+    "string": DataType.STRING,
+    "varchar": DataType.VARCHAR,
+    "json": DataType.JSON,
+}
 
 
 @pytest.fixture(scope="module", name="milvus_service")

@@ -83,9 +83,6 @@ The training dataset consists of AWS CloudTrail logs. It contains logs from two 
 * [hammah-user123-training-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part3.json): 1000 records <br>
 * [hammah-user123-training-part4.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part4.json): 387 records <br>
 
-**Dataset License:**
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
-
 ## Evaluation Dataset:
 **Link:**
 * https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/validation-data/cloudtrail <br>
@@ -97,9 +94,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * [hammah-user123-validation-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part1.json): 300 records
 * [hammah-user123-validation-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part2.json): 300 records
 * [hammah-user123-validation-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part3.json): 247 records
-
-**Dataset License:**
-*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 ## Inference:
 **Engine:**
@@ -179,9 +173,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### What are the potential known risks to users and stakeholders?
 * None
 
-### What training is recommended for developers working with this model?  If none, please state "none."
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
-
 ### Link the relevant end user license agreement
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -210,9 +201,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.
 * None
-
-### Technical robustness and model security validated?
-* No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * No
@@ -249,9 +237,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 * Not Applicable (no PII collected)
 
 ### Is data in dataset traceable?
-* No
-
-### Scanned for malware?
 * No
 
 ### Are we able to identify and trace source of dataset?

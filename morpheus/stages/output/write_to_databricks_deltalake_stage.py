@@ -17,17 +17,7 @@ import typing
 
 import mrc
 import pandas as pd
-from databricks.connect import DatabricksSession
 from mrc.core import operators as ops
-from pyspark.sql.types import BooleanType
-from pyspark.sql.types import DoubleType
-from pyspark.sql.types import FloatType
-from pyspark.sql.types import IntegerType
-from pyspark.sql.types import LongType
-from pyspark.sql.types import StringType
-from pyspark.sql.types import StructField
-from pyspark.sql.types import StructType
-from pyspark.sql.types import TimestampType
 
 import cudf
 
@@ -36,8 +26,18 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('DatabricksSession', 'sql_types')
+IMPORT_ERROR_MESSAGE = "DataBricksDeltaLakeSinkStage requires the databricks-connect package to be installed."
+
+try:
+    from databricks.connect import DatabricksSession
+    from pyspark.sql import types as sql_types
+except ImportError:
+    pass
 
 
 @register_stage("to-databricks-deltalake")
@@ -68,7 +68,7 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
                  databricks_token: str = None,
                  databricks_cluster_id: str = None,
                  delta_table_write_mode: str = "append"):
-
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         super().__init__(config)
         self.delta_path = delta_path
         self.delta_table_write_mode = delta_table_write_mode
@@ -113,7 +113,7 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
         return node
 
     @staticmethod
-    def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> StructType:
+    def _extract_schema_from_pandas_dataframe(df: pd.DataFrame) -> "sql_types.StructType":
         """
         Extract approximate schemas from pandas dataframe
         """
@@ -121,21 +121,21 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
         for col, dtype in df.dtypes.items():
             try:
                 if dtype == "bool":
-                    spark_dtype = StructField(col, BooleanType())
+                    spark_dtype = sql_types.StructField(col, sql_types.BooleanType())
                 elif dtype == "int64":
-                    spark_dtype = StructField(col, LongType())
+                    spark_dtype = sql_types.StructField(col, sql_types.LongType())
                 elif dtype == "int32":
-                    spark_dtype = StructField(col, IntegerType())
+                    spark_dtype = sql_types.StructField(col, sql_types.IntegerType())
                 elif dtype == "float64":
-                    spark_dtype = StructField(col, DoubleType())
+                    spark_dtype = sql_types.StructField(col, sql_types.DoubleType())
                 elif dtype == "float32":
-                    spark_dtype = StructField(col, FloatType())
+                    spark_dtype = sql_types.StructField(col, sql_types.FloatType())
                 elif dtype == "datetime64[ns]":
-                    spark_dtype = StructField(col, TimestampType())
+                    spark_dtype = sql_types.StructField(col, sql_types.TimestampType())
                 else:
-                    spark_dtype = StructField(col, StringType())
+                    spark_dtype = sql_types.StructField(col, sql_types.StringType())
             except Exception as e:
                 logger.error("Encountered error %s while converting columns %s with data type %s", e, col, dtype)
-                spark_dtype = StructField(col, StringType())
+                spark_dtype = sql_types.StructField(col, sql_types.StringType())
             spark_schema.append(spark_dtype)
-        return StructType(spark_schema)
+        return sql_types.StructType(spark_schema)

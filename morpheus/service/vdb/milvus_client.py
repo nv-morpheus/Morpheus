@@ -15,25 +15,8 @@
 import typing
 
 from pymilvus import Collection
-from pymilvus import DataType
 from pymilvus import MilvusClient as PyMilvusClient
 from pymilvus.orm.mutation import MutationResult
-
-# Milvus data type mapping dictionary
-MILVUS_DATA_TYPE_MAP = {
-    "int8": DataType.INT8,
-    "int16": DataType.INT16,
-    "int32": DataType.INT32,
-    "int64": DataType.INT64,
-    "bool": DataType.BOOL,
-    "float": DataType.FLOAT,
-    "double": DataType.DOUBLE,
-    "binary_vector": DataType.BINARY_VECTOR,
-    "float_vector": DataType.FLOAT_VECTOR,
-    "string": DataType.STRING,
-    "varchar": DataType.VARCHAR,
-    "json": DataType.JSON,
-}
 
 
 def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
