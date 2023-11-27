@@ -372,7 +372,12 @@ def stage(on_data_fn: typing.Callable = None,
                     "Stage functions must have either a return type annotation or specify a compute_schema_fn")
 
             def compute_schema_fn(schema: StageSchema):
-                schema.output_schema.set_type(return_type)
+                if return_type is typing.Any:
+                    out_type = return_type
+                else:
+                    out_type = schema.input_schema.get_type()
+
+                schema.output_schema.set_type(out_type)
 
         _validate_keyword_arguments(name, signature, kwargs, param_iter=param_iter)
 
