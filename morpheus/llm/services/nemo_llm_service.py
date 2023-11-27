@@ -147,7 +147,7 @@ class NeMoLLMService(LLMService):
 
     def __init__(self, *, api_key: str = None, org_id: str = None) -> None:
         super().__init__()
-        _verify_nemo_llm()
+        _verify_deps(('nemollm', ), IMPORT_ERROR_MESSAGE, globals())
 
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)

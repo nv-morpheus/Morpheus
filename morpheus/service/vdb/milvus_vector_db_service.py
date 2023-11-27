@@ -37,7 +37,7 @@ try:
     import pymilvus
     from pymilvus.orm.mutation import MutationResult
 
-    from morpheus.service.vdb.milvus_client import MilvusClient
+    from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
 except ImportError:
     logger.error(IMPORT_ERROR_MESSAGE)
 

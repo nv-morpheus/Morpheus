@@ -187,7 +187,7 @@ class OpenAIChatService(LLMService):
 
     def __init__(self) -> None:
         super().__init__()
-        _verify_openai()
+        _verify_deps(('openai', ), IMPORT_ERROR_MESSAGE, globals())
 
     def get_client(self,
                    model_name: str,
