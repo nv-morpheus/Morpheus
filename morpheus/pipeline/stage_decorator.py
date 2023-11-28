@@ -139,7 +139,8 @@ class PreAllocatedWrappedFunctionStage(PreallocatorMixin, WrappedFunctionSourceS
 
 def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn: ComputeSchemaType = None):
     """
-    Decorator for wrapping a function as a source stage. The function must be a generator method.
+    Decorator for wrapping a function as a source stage. The function must be a generator method, and provide a
+    provide a return type annotation.
 
     When `compute_schema_fn` is `None`, the return type annotation will be used by the stage as the output type.
 
@@ -213,14 +214,7 @@ class WrappedFunctionStage(SinglePortStage):
     Stage that wraps a function to be used for processing messages.
 
     The function must receive at least one argument, the first argument must be the incoming message, and must
-    return a value. If `accept_type` is not provided, the type annotation of the first argument will be used, and if
-    that parameter has no type annotation, the stage will be set to use `typing.Any` as the accept type.
-
-    If `return_type` is not provided, the stage will use the return type annotation of `on_data_fn` as the output type.
-    If the return type annotation is not provided, the stage will use the same type as the input.
-
-    Any additional arguments passed in aside from `config`, `accept_type` and `return_type`, will be bound to the
-    wrapped function via `functools.partial`.
+    return a value. 
 
     Parameters
     ----------
@@ -230,6 +224,8 @@ class WrappedFunctionStage(SinglePortStage):
         Name of the stage.
     on_data_fn : `typing.Callable`
         Function to be used for processing messages.
+    accept_type: type
+        Type of the input message.
     compute_schema_fn : `ComputeSchemaType`
         Function to use for computing the schema of the stage.
     needed_columns : `dict[str, TypeId]`, optional
@@ -351,9 +347,9 @@ def stage(on_data_fn: typing.Callable = None,
 
             def compute_schema_fn(schema: StageSchema):
                 if return_type is typing.Any:
-                    out_type = return_type
-                else:
                     out_type = schema.input_schema.get_type()
+                else:
+                    out_type = return_type
 
                 schema.output_schema.set_type(out_type)
 

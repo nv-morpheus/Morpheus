@@ -204,13 +204,11 @@ def test_source_stage_arg_no_value_error(config: Config):
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("use_annotations", [True, False])
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
                           (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
                           (typing.Any, typing.Any)])
-def test_wrapped_function_stage_constructor(config: Config, use_annotations: bool, accept_type: type,
-                                            return_type: type):
+def test_wrapped_function_stage_constructor(config: Config, accept_type: type, return_type: type):
     wrapped_stage = WrappedFunctionStage(config,
                                          name="unittest-stage",
                                          on_data_fn=lambda x: x,
@@ -297,15 +295,23 @@ def test_wrapped_function_stage_needed_columns(config: Config, needed_columns: d
 
 
 @pytest.mark.use_python
+@pytest.mark.parametrize("use_accept_type_annotation", [True, False])
 @pytest.mark.parametrize("accept_type, return_type",
                          [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
                           (typing.Union[float, int], float), (float, typing.Any), (typing.Any, float),
                           (typing.Any, typing.Any)])
-def test_stage_decorator(config: Config, accept_type: type, return_type: type):
+def test_stage_decorator(config: Config, accept_type: type, return_type: type, use_accept_type_annotation: bool):
 
-    @stage
-    def test_fn(message: accept_type) -> return_type:
-        return message
+    if use_accept_type_annotation:
+
+        @stage
+        def test_fn(message: accept_type) -> return_type:
+            return message
+    else:
+
+        @stage(accept_type=accept_type)
+        def test_fn(message) -> return_type:
+            return message
 
     wrapped_stage = test_fn(config)
 
@@ -330,7 +336,48 @@ def test_stage_decorator_name(config: Config, name: str):
 
 
 @pytest.mark.use_python
-def test_stage_decorator_no_annotation(config: Config):
+@pytest.mark.parametrize("explicit_compute_schema_fn", [True, False])
+@pytest.mark.parametrize("accept_type, return_type",
+                         [(pd.DataFrame, MessageMeta), (int, int), (MessageMeta, MessageMeta), (typing.Any, bool),
+                          (typing.Union[float, int], float), (float, float), (typing.Any, float),
+                          (typing.Any, typing.Any)])
+def test_stage_decorator_output_types(config: Config,
+                                      accept_type: type,
+                                      return_type: type,
+                                      explicit_compute_schema_fn: bool):
+    # For non-source types we need an upstream before we can check the compute_schema method outside of a pipeline
+    @source
+    def source_fn() -> accept_type:
+        yield None
+
+    if explicit_compute_schema_fn:
+        mock_compute_schema_fn = mock.MagicMock()
+        mock_compute_schema_fn.side_effect = _mk_compute_schema_fn(return_type)
+
+        @stage(compute_schema_fn=mock_compute_schema_fn)
+        def test_stage(message: accept_type) -> return_type:
+            return message
+    else:
+
+        @stage
+        def test_stage(message: accept_type) -> return_type:
+            return message
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(source_fn(config))
+    wrapped_stage = pipe.add_stage(test_stage(config))
+    pipe.build()
+
+    if explicit_compute_schema_fn:
+        mock_compute_schema_fn.assert_called_once()  # pipe.build() will call wrapped_stage.compute_schema()
+
+    schema = StageSchema(wrapped_stage)
+    wrapped_stage.compute_schema(schema)
+    assert schema.output_schema.get_type() is return_type
+
+
+@pytest.mark.use_python
+def test_stage_decorator_no_annotation_error(config: Config):
 
     @stage
     def test_fn(message):
