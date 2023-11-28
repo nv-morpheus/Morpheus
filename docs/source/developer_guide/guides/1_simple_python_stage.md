@@ -43,7 +43,7 @@ def pass_thru_stage(message: typing.Any) -> typing.Any:
     return message
 ```
 
-When using the `stage` decorator it is highly recommended to use type annotations for the function parameters and return type, as this will be used by the stage as the accept and output types. If the incoming message parameter has no type annotation, the stage will be use `typing.Any` as the input type. If the return type has no type annotation, the stage will be set to return the same type as the input type.
+When using the `stage` decorator it is required to use type annotations for the function parameters and return type, as this will be used by the stage as the accept and output types.
 
 We can then add our stage to a pipeline as follows:
 ```python
@@ -53,10 +53,10 @@ pipeline = LinearPipeline(config)
 pipeline.add_stage(pass_thru_stage(config))
 ```
 
-It is possible to provide additional arguments to the function, which will be bound to the function. Consider the following example:
+It is possible to provide additional keyword arguments to the function. Consider the following example:
 ```python
 @stage
-def multiplier(message: MessageMeta, column: str, value: int | float = 2.0) -> MessageMeta:
+def multiplier(message: MessageMeta, *, column: str, value: int | float = 2.0) -> MessageMeta:
     with message.mutable_dataframe() as df:
         df[column] = df[column] * value
 
@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
 
 ### Alternate Morpheus CLI example
-The above example makes use of the Morpheus Python API. Alternately, we could have constructed the same pipeline using the Morpheus command line tool.  We will need to pass in the path to our stage via the `--plugin` argument so that it will be visible to the command line tool.
+The above example makes use of the Morpheus Python API. Alternately, we could test the class-based stage in a pipeline constructed using the Morpheus command line tool.  We will need to pass in the path to our stage via the `--plugin` argument so that it will be visible to the command line tool.
 
 > **Note**: For now, registering a stage with the CLI tool is currently only available to class based stages.
 
