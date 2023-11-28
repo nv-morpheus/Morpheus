@@ -19,6 +19,7 @@ channels:
   - dglteam/label/cu118
   - pytorch
   - conda-forge
+  - defaults
 dependencies:
   - click>=8
   - cuml=23.06

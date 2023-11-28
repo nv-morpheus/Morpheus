@@ -15,6 +15,7 @@
 
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - arxiv=1.4
   - onnx # required for triton model export
