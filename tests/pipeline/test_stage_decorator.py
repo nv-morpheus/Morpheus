@@ -17,6 +17,7 @@
 import collections
 import functools
 import typing
+from unittest import mock
 
 import pandas as pd
 import pytest
@@ -75,37 +76,27 @@ def test_wrapped_function_source_stage_constructor(config: Config,
     else:
         source_cls = WrappedFunctionSourceStage
 
+    mock_compute_schema_fn = mock.MagicMock()
+    mock_compute_schema_fn.side_effect = _mk_compute_schema_fn(return_type)
+
     source_stage = source_cls(config,
                               name="unittest-source",
                               gen_fn=test_source_gen,
-                              compute_schema_fn=_mk_compute_schema_fn(return_type))
+                              compute_schema_fn=mock_compute_schema_fn)
 
     assert isinstance(source_stage, WrappedFunctionSourceStage)
     assert is_prealloc == isinstance(source_stage, PreAllocatedWrappedFunctionStage)
 
     # check the output type
     schema = StageSchema(source_stage)
-    source_stage.compute_schema(schema)  # pylint: disable=no-member
+    source_stage.compute_schema(schema)
     assert schema.output_schema.get_type() is return_type
+    mock_compute_schema_fn.assert_called_once_with(schema)
 
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
-def test_wrapped_function_source_stage_name(config: Config, src_cls: type):
-
-    def test_source_gen(value: int) -> cudf.DataFrame:
-        yield value
-
-    source_stage = src_cls(config,
-                           name="unittest-source",
-                           gen_fn=functools.partial(test_source_gen, value=5),
-                           compute_schema_fn=_mk_compute_schema_fn(cudf.DataFrame))
-    assert source_stage.name == "unittest-source"
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("src_cls", [WrappedFunctionSourceStage, PreAllocatedWrappedFunctionStage])
-def test_wrapped_function_stage_not_generator_error(config: Config, src_cls: type):
+def test_wrapped_function_source_stage_not_generator_error(config: Config, src_cls: type):
 
     def test_source_gen() -> MessageMeta:
         return MessageMeta(cudf.DataFrame())
@@ -153,7 +144,34 @@ def test_source_decorator_name(config: Config):
 
 
 @pytest.mark.use_python
-def test_source_decorator_no_annoation(config: Config):
+def test_source_decorator_explicit_name(config: Config):
+
+    @source(name="source_gen")
+    def test_source_gen(value: int) -> int:
+        yield value
+
+    source_stage = test_source_gen(config, value=5)  # pylint: disable=redundant-keyword-arg
+    assert source_stage.name == 'source_gen'  # pylint: disable=no-member
+
+
+@pytest.mark.use_python
+def test_source_decorator_explicit_compute_schema(config: Config):
+    mock_compute_schema_fn = mock.MagicMock()
+    mock_compute_schema_fn.side_effect = _mk_compute_schema_fn(int)
+
+    @source(compute_schema_fn=mock_compute_schema_fn)
+    def test_source_gen(value: int) -> int:
+        yield value
+
+    source_stage = test_source_gen(config, value=5)  # pylint: disable=redundant-keyword-arg
+    schema = StageSchema(source_stage)
+    source_stage.compute_schema(schema)  # pylint: disable=no-member
+    assert schema.output_schema.get_type() is int
+    mock_compute_schema_fn.assert_called_once_with(schema)
+
+
+@pytest.mark.use_python
+def test_source_decorator_no_annoation_error(config: Config):
 
     @source
     def test_source_gen():
@@ -172,6 +190,17 @@ def test_not_generator_error(config: Config):
 
     with pytest.raises(ValueError):
         test_fn(config)  # pylint: disable=too-many-function-args
+
+
+@pytest.mark.use_python
+def test_source_stage_arg_no_value_error(config: Config):
+
+    @source
+    def test_source_gen(a: int) -> int:
+        yield a
+
+    with pytest.raises(ValueError):
+        test_source_gen(config)
 
 
 @pytest.mark.use_python
@@ -200,11 +229,14 @@ def test_wrapped_function_stage_constructor(config: Config, use_annotations: boo
 def test_wrapped_function_stage_output_types(config: Config, accept_type: type, return_type: type):
     # For non-source types we need an upstream before we can check the compute_schema method outside of a pipeline
 
+    mock_compute_schema_fn = mock.MagicMock()
+    mock_compute_schema_fn.side_effect = _mk_compute_schema_fn(return_type)
+
     wrapped_stage = WrappedFunctionStage(config,
                                          name="unittest-stage",
                                          on_data_fn=lambda x: x,
                                          accept_type=accept_type,
-                                         compute_schema_fn=_mk_compute_schema_fn(return_type))
+                                         compute_schema_fn=mock_compute_schema_fn)
 
     def source_fn():
         yield None
@@ -218,6 +250,8 @@ def test_wrapped_function_stage_output_types(config: Config, accept_type: type, 
     pipe.set_source(upstream)
     pipe.add_stage(wrapped_stage)
     pipe.build()
+    mock_compute_schema_fn.assert_called_once()  # pipe.build() will call wrapped_stage.compute_schema()
+
     schema = StageSchema(wrapped_stage)
     wrapped_stage.compute_schema(schema)
     assert schema.output_schema.get_type() is return_type
@@ -301,6 +335,17 @@ def test_stage_decorator_no_annotation(config: Config):
     @stage
     def test_fn(message):
         return message
+
+    with pytest.raises(ValueError):
+        test_fn(config)
+
+
+@pytest.mark.use_python
+def test_stage_arg_no_value_error(config: Config):
+
+    @stage
+    def test_fn(message: float, value: float) -> float:
+        return message * value
 
     with pytest.raises(ValueError):
         test_fn(config)

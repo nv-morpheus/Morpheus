@@ -52,10 +52,7 @@ def _get_name_from_fn(fn: typing.Callable) -> str:
 def _validate_keyword_arguments(fn_name: str,
                                 signature: inspect.Signature,
                                 kwargs: dict[str, typing.Any],
-                                param_iter: typing.Iterator = None):
-    if param_iter is None:
-        param_iter = iter(signature.parameters.values())
-
+                                param_iter: typing.Iterator):
     # If we have any keyword arguments with a default value that we did not receive an explicit value for, we need
     # to bind it, otherwise it will trigger an error when MRC.
     for param in param_iter:
@@ -64,13 +61,11 @@ def _validate_keyword_arguments(fn_name: str,
 
         # if a parameter is keyword only, containing neither a a default value or an entry in on_data_kwargs, we
         # need to raise an error
-        if param.kind is param.KEYWORD_ONLY and param.name not in kwargs:
+        if param.kind in (param.POSITIONAL_OR_KEYWORD, param.KEYWORD_ONLY) and param.name not in kwargs:
             raise ValueError(f"Wrapped function {fn_name} has keyword only parameter '{param.name}' that was not "
                              "provided a value")
 
-        if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
-            if param.kind is param.POSITIONAL_OR_KEYWORD and param.name in kwargs:
-                continue
+        if param.kind is param.POSITIONAL_ONLY:
 
             raise ValueError("Positional arguments are not supported for wrapped functions. "
                              f"{fn_name} contains '{param.name}' that was not provided with a value")
@@ -177,24 +172,23 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
             name = _get_name_from_fn(gen_fn)
 
         signature = inspect.signature(gen_fn)
+        return_type = signature.return_annotation
+        if return_type is signature.empty:
+            raise ValueError("Source functions must specify a return type annotation")
+
+        # We need to unpack generator and iterator return types to get the actual type of the yielded type.
+        # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
+        # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
+        # instance of typing._GenericAlias. We need to check for both.
+        if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
+            return_type = return_type.__args__[0]
 
         if compute_schema_fn is None:
-            return_type = signature.return_annotation
-            if return_type is signature.empty:
-                raise ValueError(
-                    "Source functions must have either a return type annotation or specify a compute_schema_fn")
-
-            # We need to unpack generator and iterator return types to get the actual type of the yielded type.
-            # When someone uses collections.abc.Generator or collections.abc.Iterator the return type is an instance of
-            # typing.GenericAlias, however when someone uses typing.Generator or typing.Iterator the return type is an
-            # instance of typing._GenericAlias. We need to check for both.
-            if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
-                return_type = return_type.__args__[0]
 
             def compute_schema_fn(schema: StageSchema):
                 schema.output_schema.set_type(return_type)
 
-        _validate_keyword_arguments(name, signature, kwargs)
+        _validate_keyword_arguments(name, signature, kwargs, param_iter=iter(signature.parameters.values()))
 
         bound_gen_fn = functools.partial(gen_fn, **kwargs)
 
