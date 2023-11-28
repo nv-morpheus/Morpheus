@@ -19,7 +19,7 @@ channels:
     - nvidia
     - rapidsai-nightly
     - conda-forge
-    - default
+    - defaults
 dependencies:
     - nb_conda_kernels
     - pip

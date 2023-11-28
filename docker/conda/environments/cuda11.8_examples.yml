@@ -26,7 +26,7 @@ channels:
     - huggingface
     - conda-forge
     - dglteam/label/cu118
-    - default
+    - defaults
 dependencies:
     - arxiv=1.4
     - boto3
