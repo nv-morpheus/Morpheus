@@ -184,7 +184,7 @@ def source(gen_fn: GeneratorType = None, *, name: str = None, compute_schema_fn:
         if isinstance(return_type, (typing.GenericAlias, typing._GenericAlias)):
             return_type = return_type.__args__[0]
 
-        if compute_schema_fn is None:
+        if compute_schema_fn is None:  # pylint: disable=used-before-assignment
 
             def compute_schema_fn(schema: StageSchema):
                 schema.output_schema.set_type(return_type)
@@ -339,7 +339,7 @@ def stage(on_data_fn: typing.Callable = None,
         except StopIteration as e:
             raise ValueError(f"Stage function {name} must have at least one parameter") from e
 
-        if compute_schema_fn is None:
+        if compute_schema_fn is None:  # pylint: disable=used-before-assignment
             return_type = signature.return_annotation
             if return_type is signature.empty:
                 raise ValueError(

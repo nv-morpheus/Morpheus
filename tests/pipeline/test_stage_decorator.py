@@ -196,8 +196,8 @@ def test_not_generator_error(config: Config):
 def test_source_stage_arg_no_value_error(config: Config):
 
     @source
-    def test_source_gen(a: int) -> int:
-        yield a
+    def test_source_gen(value: int) -> int:
+        yield value
 
     with pytest.raises(ValueError):
         test_source_gen(config)
@@ -364,7 +364,7 @@ def test_stage_decorator_output_types(config: Config,
             return message
 
     pipe = LinearPipeline(config)
-    pipe.set_source(source_fn(config))
+    pipe.set_source(source_fn(config))  # pylint: disable=too-many-function-args
     wrapped_stage = pipe.add_stage(test_stage(config))
     pipe.build()
 
@@ -395,7 +395,7 @@ def test_stage_arg_no_value_error(config: Config):
         return message * value
 
     with pytest.raises(ValueError):
-        test_fn(config)
+        test_fn(config)  # pylint: disable=no-value-for-parameter
 
 
 @pytest.mark.use_python
