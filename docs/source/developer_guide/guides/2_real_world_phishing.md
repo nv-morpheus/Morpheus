@@ -741,6 +741,8 @@ Options:
 
 > **Note**: The code for this guide can be found in the `examples/developer_guide/2_2_rabbitmq` directory of the Morpheus repository.
 
+### Class Based Approach
+
 Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source`, `compute_schema` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
@@ -763,7 +765,7 @@ def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it.
 
 ```python
-def source_generator(self):
+def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
     try:
         while not self._stop_requested:
             (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
@@ -786,9 +788,10 @@ def source_generator(self):
 
 Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
-### The Completed Source Stage
+#### The Completed Source Stage
 
 ```python
+import collections.abc
 import logging
 import time
 from io import StringIO
@@ -874,7 +877,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self):
+    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         try:
             while not self._stop_requested:
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)
@@ -893,6 +896,84 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
         finally:
             self._connection.close()
+```
+
+### Function Based Approach
+Similar to the `stage` decorator used in previous examples Morpheus provides a `source` decorator which wraps a generator function to be used as a source stage. In the class based approach we explicitly added the `PreallocatorMixin`, when using the `source` decorator the return type annotation will be inspected and a stage will be created with the `PreallocatorMixin` if the return type is a `DataFrame` type or a message which contains a `DataFrame` (`MessageMeta` and `MultiMessage`).
+
+The code for the function will first perform the same setup as was used in the class constructor, then entering a nearly identical loop as that in the `source_generator` method.
+
+```python
+import collections.abc
+import logging
+import time
+from io import StringIO
+
+import pandas as pd
+import pika
+
+import cudf
+
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.stage_decorator import source
+
+logger = logging.getLogger(__name__)
+
+
+@source(name="from-rabbitmq")
+def rabbitmq_source(host: str,
+                    exchange: str,
+                    exchange_type: str = 'fanout',
+                    queue_name: str = '',
+                    poll_interval: str = '100millis') -> collections.abc.Iterator[MessageMeta]:
+    """
+    Source stage used to load messages from a RabbitMQ queue.
+
+    Parameters
+    ----------
+    host : str
+        Hostname or IP of the RabbitMQ server.
+    exchange : str
+        Name of the RabbitMQ exchange to connect to.
+    exchange_type : str, optional
+        RabbitMQ exchange type; defaults to `fanout`.
+    queue_name : str, optional
+        Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
+    poll_interval : str, optional
+        Amount of time  between polling RabbitMQ for new messages
+    """
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+
+    channel = connection.channel()
+    channel.exchange_declare(exchange=exchange, exchange_type=exchange_type)
+
+    result = channel.queue_declare(queue=queue_name, exclusive=True)
+
+    # When queue_name='' we will receive a randomly generated queue name
+    queue_name = result.method.queue
+
+    channel.queue_bind(exchange=exchange, queue=queue_name)
+
+    poll_interval = pd.Timedelta(poll_interval)
+
+    try:
+        while True:
+            (method_frame, _, body) = channel.basic_get(queue_name)
+            if method_frame is not None:
+                try:
+                    buffer = StringIO(body.decode("utf-8"))
+                    df = cudf.io.read_json(buffer, orient='records', lines=True)
+                    yield MessageMeta(df=df)
+                except Exception as ex:
+                    logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
+                finally:
+                    channel.basic_ack(method_frame.delivery_tag)
+            else:
+                # queue is empty, sleep before polling again
+                time.sleep(poll_interval.total_seconds())
+
+    finally:
+        connection.close()
 ```
 
 ## Defining a New Sink Stage
@@ -1026,4 +1107,4 @@ class WriteToRabbitMQStage(PassThruTypeMixin, SinglePortStage):
         self._connection.close()
 ```
 
-> **Note**: For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the the Morpheus repo.
+> **Note**: For information about testing the `RabbitMQSourceStage`, `rabbitmq_source`, and `WriteToRabbitMQStage` stages refer to `examples/developer_guide/2_2_rabbitmq/README.md` in the the Morpheus repo.
