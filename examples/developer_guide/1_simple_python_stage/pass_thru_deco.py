@@ -18,7 +18,7 @@ import typing
 from morpheus.pipeline.stage_decorator import stage
 
 
-@stage
+@stage(name="pass-thru")
 def pass_thru_stage(message: typing.Any) -> typing.Any:
     # Return the message for the next stage
     return message

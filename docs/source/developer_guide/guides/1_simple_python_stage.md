@@ -43,7 +43,14 @@ def pass_thru_stage(message: typing.Any) -> typing.Any:
     return message
 ```
 
-When using the `stage` decorator it is required to use type annotations for the function parameters and return type, as this will be used by the stage as the accept and output types.
+When using the `stage` decorator it is required to use type annotations for the function parameters and return type, as this will be used by the stage as the accept and output types. In the above example the stage decorator will use the name of the function as the name of the stage. If we wanted to specify a different name for the stage we could do so by passing the name to the decorator as follows:
+
+```python
+@stage(name="pass-thru")
+def pass_thru_stage(message: typing.Any) -> typing.Any:
+    # Return the message for the next stage
+    return message
+```
 
 We can then add our stage to a pipeline as follows:
 ```python
