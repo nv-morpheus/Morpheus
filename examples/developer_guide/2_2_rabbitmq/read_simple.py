@@ -17,7 +17,6 @@ import logging
 import os
 
 import click
-
 from rabbitmq_source_stage import RabbitMQSourceStage
 from rabbitmq_source_stage_deco import rabbitmq_source
 
