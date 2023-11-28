@@ -19,13 +19,22 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import feedparser
 import pandas as pd
 import requests
 import requests_cache
-from bs4 import BeautifulSoup
+
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('BeautifulSoup', 'feedparser')
+IMPORT_ERROR_MESSAGE = "RSSController requires the bs4 and feedparser packages to be installed"
+
+try:
+    import feedparser
+    from bs4 import BeautifulSoup
+except ImportError:
+    pass
 
 
 @dataclass
@@ -72,7 +81,7 @@ class RSSController:
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
                  request_timeout: float = 2.0):
-
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         if (isinstance(feed_input, str)):
             feed_input = [feed_input]
 
@@ -151,7 +160,7 @@ class RSSController:
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
 
-    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> feedparser.FeedParserDict:
+    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
 
         feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
 
@@ -191,7 +200,7 @@ class RSSController:
 
         return feed
 
-    def _try_parse_feed(self, url: str) -> feedparser.FeedParserDict:
+    def _try_parse_feed(self, url: str) -> "feedparser.FeedParserDict":
         is_url = RSSController.is_url(url)
 
         fallback = False

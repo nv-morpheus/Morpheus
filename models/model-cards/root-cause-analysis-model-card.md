@@ -95,10 +95,6 @@ limitations under the License.
 
 * kern.log files from DGX machines <br>
 
-**Dataset License:** 
-
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
-
 ## Evaluation Dataset:
 
 **Link:** 
@@ -108,10 +104,6 @@ limitations under the License.
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
 * kern.log files from DGX machines <br>
-
-**Dataset License:** 
-
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Inference:
 
@@ -128,51 +120,39 @@ limitations under the License.
 ## Model Card ++ Bias Subcard
 
 ### What is the gender balance of the model validation data?  
-
 * Not Applicable
 
 ### What is the racial/ethnicity balance of the model validation data?
-
 * Not Applicable
 
 ### What is the age balance of the model validation data?
-
 * Not Applicable
 
 ### What is the language balance of the model validation data?
-
 * Not Applicable
 
 ### What is the geographic origin language balance of the model validation data?
-
 * Not Applicable
 
 ### What is the educational background balance of the model validation data?
-
 * Not Applicable
 
 ### What is the accent balance of the model validation data?
-
 * Not Applicable
 
 ### What is the face/key point balance of the model validation data? 
-
 * Not Applicable
 
 ### What is the skin/tone balance of the model validation data?
-
 * Not Applicable
 
 ### What is the religion balance of the model validation data?
-
 * Not Applicable
 
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
-
 * Not Applicable
 
 ### Describe measures taken to mitigate against unwanted bias.
-
 * Not Applicable
 
 ## Model Card ++ Explainability Subcard
@@ -206,9 +186,6 @@ limitations under the License.
 ### What are the potential known risks to users and stakeholders?
 * N/A
 
-### What training is recommended for developers working with this model?
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
-
 ### Link the relevant end user license agreement 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
@@ -228,60 +205,45 @@ limitations under the License.
 * No
 
 ### Name applications for the model.
-
 * The primary application for this model is testing the Morpheus pipeline.
 
 ### Name use case restrictions for the model.
-
 * Different models need to be trained depending on the log types.
 
 ### Has this been verified to have met prescribed quality standards?
-
 * No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
-
 * N/A
 
-### Technical robustness and model security validated?
-
-* No
-
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
-
 * No
 
 ### Are there explicit model and dataset restrictions?
-
 * It is for pipeline testing purposes.
 
 ### Are there access restrictions to systems, model, and data?
-
 * No
 
 ### Is there a digital signature?
-
 * No
 
 ## Model Card ++ Privacy Subcard
 
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
-
 * Neither
 
 ### Was consent obtained for any PII used?
 * N/A
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
-
 * N/A
 
 ### How often is dataset reviewed?
 * The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
-
 * N/A
 
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
@@ -289,9 +251,6 @@ limitations under the License.
 
 ### Is data in dataset traceable?
 * Original raw logs are not saved. The small sample in the repo is saved for testing the pipeline. 
-
-### Scanned for malware?
-* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A

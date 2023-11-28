@@ -92,12 +92,15 @@ outputs:
         - python-confluent-kafka 1.9.2
         - pytorch 2.0.1
         - pytorch-cuda
+        - requests=2.31
+        - requests-cache=1.1
         - scikit-learn 1.2.2.*
         - sqlalchemy <=2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm 4.*
         - tritonclient 2.26.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
+        - websockets
       run_constrained:
         # Since we dont explicitly require this but other packages might, constrain the versions.
         - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}

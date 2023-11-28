@@ -34,9 +34,9 @@ namespace morpheus::llm {
 /**
  * @brief A subclass of LLMNode that acts as container for components required in processing LLM service
  * requests. For example, a prompt generator and LLM service can each be implemented as an LLMNode and added to
- * the engine. Input mappings are used to match node's input to outputs of parent of sibling nodes. Task handlers
- * can also be added to the engine to process the outputs of an LLM service to feed back to prompt generator, for
- * example, or exit the engine.
+ * the engine. Input mappings are used to match node's input to outputs of parent or sibling nodes. Task handlers
+ * can also be added to the engine to perform additional processing on the outputs stored in the LLMContext of the
+ * engine.
  */
 class MORPHEUS_EXPORT LLMEngine : public LLMNode
 {

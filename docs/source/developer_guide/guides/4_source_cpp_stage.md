@@ -509,17 +509,20 @@ def connect(self):
 Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True` by using the `self._build_cpp_node()` method.
 
 ```python
-def _build_source(self, builder: mrc.Builder) -> StreamPair:
+def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     if self._build_cpp_node():
+        from _lib import morpheus_rabbit as morpheus_rabbit_cpp
+
         node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
-                                                       self.unique_name,
-                                                       self._host,
-                                                       self._exchange,
-                                                       self._exchange_type,
-                                                       self._queue_name,
-                                                       self._poll_interval.to_pytimedelta())
+                                                        self.unique_name,
+                                                        self._host,
+                                                        self._exchange,
+                                                        self._exchange_type,
+                                                        self._queue_name,
+                                                        self._poll_interval.to_pytimedelta())
     else:
         self.connect()
         node = builder.make_source(self.unique_name, self.source_generator)
-    return node, MessageMeta
+
+    return node
 ```
