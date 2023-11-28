@@ -56,25 +56,6 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
     return message
 ```
 
-In the above example we added five new fields to the DataFrame. Since these fields and their types are known to us ahead of time, as an optimization we can ask Morpheus to pre-allocate these new fields when the DataFrame is first constructed. To do this we populate the `_needed_columns` attribute in our constructor:
-```python
-def __init__(self, config: Config):
-    super().__init__(config)
-
-    # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
-    # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
-    # stage defining this attribute.
-    self._needed_columns.update({
-        'to_count': TypeId.INT32,
-        'bcc_count': TypeId.INT32,
-        'cc_count': TypeId.INT32,
-        'total_recipients': TypeId.INT32,
-        'data': TypeId.STRING
-    })
-```
-
-Refer to the [Stage Constructors](#stage-constructors) section for more details.
-
 If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note, however, that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
@@ -94,6 +75,29 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
     # Return a new message with our updated DataFrame for the next stage
     return MessageMeta(df)
 ```
+
+In the above example we added five new fields to the DataFrame. Since these fields and their types are known to us ahead of time, as an optimization we can ask Morpheus to pre-allocate these new fields when the DataFrame is first constructed. To do this we populate the `_needed_columns` attribute in our constructor:
+```python
+from morpheus.common import TypeId
+
+# ...
+
+def __init__(self, config: Config):
+    super().__init__(config)
+
+    # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+    # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+    # stage defining this attribute.
+    self._needed_columns.update({
+        'to_count': TypeId.INT32,
+        'bcc_count': TypeId.INT32,
+        'cc_count': TypeId.INT32,
+        'total_recipients': TypeId.INT32,
+        'data': TypeId.STRING
+    })
+```
+
+Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
 ```python
@@ -211,12 +215,9 @@ def recipient_features_stage(message: MessageMeta, *, sep_token: str = '[SEP]') 
     return message
 ```
 
-In the above the `needed_columns` were provided to as an argument to the `stage` decorator, and the optional `sep_token` argument is exposed as a keyword argument. If we wanted to provide an explicit value for `sep_token` we could do so by passing it as follows:
-```python
-pipeline.add_stage(recipient_features_stage(config, sep_token='[SEP]'))
-```
+In the above the `needed_columns` were provided to as an argument to the `stage` decorator, and the optional `sep_token` argument is exposed as a keyword argument.
 
-> **Note**: One draw-back to the `stage` decorator approach is that we lose the ability to determine the `needed_columns` at runtime.
+> **Note**: One draw-back to the `stage` decorator approach is that we lose the ability to determine the `needed_columns` at runtime based upon constructor arguments.
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
@@ -395,7 +396,7 @@ with open(labels_file, encoding='UTF-8') as fh:
     config.class_labels = [x.strip() for x in fh]
 ```
 
-First we set our pipeline mode to NLP. Next, we set the `num_threads` property to match the number of cores in our system.
+First we set our pipeline mode to `NLP`. Next, we set the `num_threads` property to match the number of cores in our system.
 
 The `feature_length` property needs to match the dimensions of the model inputs, which we got from Triton in the previous section using the model's `/config` endpoint.
 
