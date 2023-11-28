@@ -50,8 +50,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     This stage requires several additional dependencies to be installed. Install them by running the following command:
     mamba install -n base -c conda-forge conda-merge
     conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml
-      docker/conda/environments/cuda${CUDA_VER}_examples.yml
-      > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml
+    docker/conda/environments/cuda${CUDA_VER}_examples.yml
+    > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml
 
     Parameters
     ----------

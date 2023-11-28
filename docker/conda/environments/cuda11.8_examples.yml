@@ -16,8 +16,6 @@
 # Additional dependencies needed by a some of the Morpheus examples.
 # The intended usage is to first create the conda environment from the `cuda11.8_dev.yml` file, and then update the
 # env with this file. ex:
-#   mamba env create -n  morpheus --file docker/conda/environments/cuda11.8_dev.yml
-#   conda activate morpheus
 #   mamba install -n base -c conda-forge conda-merge
 #   conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
 #     docker/conda/environments/cuda${CUDA_VER}_examples.yml  > .tmp/merged.yml \
