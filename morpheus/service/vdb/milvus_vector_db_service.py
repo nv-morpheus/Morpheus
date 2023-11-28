@@ -21,16 +21,25 @@ import typing
 from functools import wraps
 
 import pandas as pd
-import pymilvus
-from pymilvus.orm.mutation import MutationResult
 
 import cudf
 
-from morpheus.service.vdb.milvus_client import MilvusClient
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DEPS = ('pymilvus', 'MilvusClient', 'MutationResult')
+IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
+
+try:
+    import pymilvus
+    from pymilvus.orm.mutation import MutationResult
+
+    from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
+except ImportError:
+    pass
 
 
 class FieldSchemaEncoder(json.JSONEncoder):
@@ -75,7 +84,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return obj
 
     @staticmethod
-    def dump(field: pymilvus.FieldSchema, f: typing.IO) -> str:
+    def dump(field: "pymilvus.FieldSchema", f: typing.IO) -> str:
         """
         Serialize a FieldSchema object to a JSON file.
 
@@ -94,7 +103,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return json.dump(field, f, cls=FieldSchemaEncoder)
 
     @staticmethod
-    def dumps(field: pymilvus.FieldSchema) -> str:
+    def dumps(field: "pymilvus.FieldSchema") -> str:
         """
         Serialize a FieldSchema object to a JSON-compatible string format.
 
@@ -112,7 +121,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return json.dumps(field, cls=FieldSchemaEncoder)
 
     @staticmethod
-    def load(f_obj: typing.IO) -> pymilvus.FieldSchema:
+    def load(f_obj: typing.IO) -> "pymilvus.FieldSchema":
         """
         Deserialize a JSON file to a FieldSchema object.
 
@@ -129,7 +138,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return pymilvus.FieldSchema.construct_from_dict(json.load(f_obj, object_hook=FieldSchemaEncoder.object_hook))
 
     @staticmethod
-    def loads(field: str) -> pymilvus.FieldSchema:
+    def loads(field: str) -> "pymilvus.FieldSchema":
         """
         Deserialize a JSON-compatible string to a FieldSchema object.
 
@@ -147,7 +156,7 @@ class FieldSchemaEncoder(json.JSONEncoder):
         return pymilvus.FieldSchema.construct_from_dict(json.loads(field, object_hook=FieldSchemaEncoder.object_hook))
 
     @staticmethod
-    def from_dict(field: dict) -> pymilvus.FieldSchema:
+    def from_dict(field: dict) -> "pymilvus.FieldSchema":
         """
         Convert a dictionary to a FieldSchema object.
 
@@ -216,7 +225,8 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         An instance of the MilvusClient for interaction with the Milvus Vector Database.
     """
 
-    def __init__(self, name: str, client: MilvusClient) -> None:
+    def __init__(self, name: str, client: "MilvusClient") -> None:
+        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
         super().__init__()
 
         self._name = name
@@ -525,7 +535,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
 
         self._collection.drop(**kwargs)
 
-    def _insert_result_to_dict(self, result: MutationResult) -> dict[str, typing.Any]:
+    def _insert_result_to_dict(self, result: "MutationResult") -> dict[str, typing.Any]:
         result_dict = {
             "primary_keys": result.primary_keys,
             "insert_count": result.insert_count,
@@ -539,7 +549,7 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
         }
         return result_dict
 
-    def _update_delete_result_to_dict(self, result: MutationResult) -> dict[str, typing.Any]:
+    def _update_delete_result_to_dict(self, result: "MutationResult") -> dict[str, typing.Any]:
         result_dict = {
             "insert_count": result.insert_count,
             "delete_count": result.delete_count,
@@ -613,7 +623,7 @@ class MilvusVectorDBService(VectorDBService):
         """
         return self._client.list_collections(**kwargs)
 
-    def _create_schema_field(self, field_conf: dict) -> pymilvus.FieldSchema:
+    def _create_schema_field(self, field_conf: dict) -> "pymilvus.FieldSchema":
 
         field_schema = pymilvus.FieldSchema.construct_from_dict(field_conf)
 
