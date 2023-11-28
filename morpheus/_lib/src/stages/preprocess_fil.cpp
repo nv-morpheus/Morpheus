@@ -121,8 +121,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                                        input__0.get_memory(),
                                                                        x->mess_offset),
                                               seq_id_dtype,
-                                                   {x->mess_count, 3},
-                                                   {},
+                                              {x->mess_count, 3},
+                                              {},
                                               0);
 
                 // Build the results
