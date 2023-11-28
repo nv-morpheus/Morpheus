@@ -214,7 +214,7 @@ class WrappedFunctionStage(SinglePortStage):
     Stage that wraps a function to be used for processing messages.
 
     The function must receive at least one argument, the first argument must be the incoming message, and must
-    return a value. 
+    return a value.
 
     Parameters
     ----------

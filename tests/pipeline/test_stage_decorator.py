@@ -30,12 +30,12 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.stage_decorator import ComputeSchemaType
 from morpheus.pipeline.stage_decorator import PreAllocatedWrappedFunctionStage
 from morpheus.pipeline.stage_decorator import WrappedFunctionSourceStage
 from morpheus.pipeline.stage_decorator import WrappedFunctionStage
 from morpheus.pipeline.stage_decorator import source
 from morpheus.pipeline.stage_decorator import stage
-from morpheus.pipeline.stage_decorator import ComputeSchemaType
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
