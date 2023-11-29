@@ -16,7 +16,6 @@
 morpheus_configure_libmd()
 morpheus_configure_libbsd()
 
-
 set(doca_ROOT "/opt/mellanox/doca")
 find_package(doca REQUIRED)
 
