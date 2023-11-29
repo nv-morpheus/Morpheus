@@ -16,7 +16,7 @@
 # file
 
 # Find BSD
-find_package(bsd QUIET)
+find_package(bsd)
 
 # Create a scope to allow variables to be set locally without altering the parent scope
 block(SCOPE_FOR VARIABLES

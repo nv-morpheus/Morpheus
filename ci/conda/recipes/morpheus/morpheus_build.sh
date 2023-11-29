@@ -16,6 +16,9 @@
 # It is assumed that this script is executed from the root of the repo directory by conda-build
 # (https://conda-forge.org/docs/maintainer/knowledge_base.html#using-cmake)
 
+# Need to ensure this value is set before checking it in the if block
+MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
 CMAKE_ARGS=${CMAKE_ARGS:-""}

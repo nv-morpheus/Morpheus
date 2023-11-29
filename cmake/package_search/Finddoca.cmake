@@ -26,7 +26,7 @@ if(DEFINED doca_ROOT)
 endif()
 
 # Now find DPDK
-find_package(libdpdk QUIET)
+find_package(libdpdk)
 
 # Create a scope to allow variables to be set locally without altering the parent scope
 block(SCOPE_FOR VARIABLES
