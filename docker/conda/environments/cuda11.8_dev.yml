@@ -32,7 +32,7 @@ dependencies:
     - ccache>=3.7
     - clangdev=16
     - click >=8
-    - cmake=3.24
+    - cmake=3.25
     - configargparse=1.5
     - cuda-compiler=11.8
     - cuda-nvml-dev=11.8
@@ -96,8 +96,9 @@ dependencies:
     - pytorch-cuda
     - pytorch=2.0.1
     - rapidjson=1.1.0
-    - requests=2.31
+    - rdma-core >=48 # Needed for DOCA. Compatible with UCX 1.14.1
     - requests-cache=1.1
+    - requests=2.31
     - scikit-build=0.17.1
     - scikit-learn=1.2.2
     - sphinx

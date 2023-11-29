@@ -33,8 +33,9 @@ outputs:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
         - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_PYTHON_BUILD_STUBS
         - MORPHEUS_CACHE_DIR
+        - MORPHEUS_PYTHON_BUILD_STUBS
+        - MORPHEUS_SUPPORT_DOCA
         - PARALLEL_LEVEL
       run_exports:
         - {{ pin_subpackage("morpheus", max_pin="x.x") }}
@@ -47,9 +48,11 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
+        - automake 1.16.5 # Needed for DOCA build
         - ccache
-        - cmake 3.24
+        - cmake 3.25
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
+        - libtool # Needed for DOCA build
         - ninja
       host:
         - cuda-toolkit {{ cuda_compiler_version }}
@@ -63,6 +66,7 @@ outputs:
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
+        - rdma-core >=48 # Needed for DOCA. Compatible with UCX 1.14.1
         - scikit-build 0.17.1
         - versioneer-518
       run:
