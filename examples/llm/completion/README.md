@@ -35,9 +35,11 @@ limitations under the License.
 The primary goal of this example is to showcase the creation of a pipeline that integrates an LLM service with Morpheus. Although this example features a single implementation, the pipeline and its components are versatile and can be adapted to various scenarios with unique requirements. The following highlights different customization points within the pipeline and the specific choices made for this example:
 
 #### LLM Service
+
 - The pipeline is designed to support any LLM service that adheres to our LLMService interface. Compatible services include OpenAI, NeMo, or even local execution using llama-cpp-python. In this demonstration, we focus on utilizing NeMo as the LLM service, highlighting the advantages it offers over other LLM services and the seamless integration with the NeMo ecosystem. Furthermore, the pipeline can accommodate more complex configurations using NeMo + Inform without necessitating changes to the core pipeline.
 
 #### Downstream Tasks
+
 - Post LLM execution, the model's output can be leveraged for various tasks, including model training, analysis, or simulating an attack. In this particular example, we have simplified the implementation and focused solely on the LLMEngine.
 
 ### Pipeline Implementation
@@ -64,8 +66,13 @@ Before running the pipeline, ensure that the `NGC_API_KEY` environment variable 
 Install the required dependencies.
 
 ```bash
-mamba env update -n morpheus --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.8_examples.yml
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  docker/conda/environments/cuda${CUDA_VER}_examples.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
 ```
+
 
 #### Setting up NGC API Key
 
@@ -74,7 +81,6 @@ instructions outlined [here](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guid
 generate your NGC API key.
 
 Configure the following environment variables, with NGC_ORG_ID being optional:
-
 
 ```bash
 export NGC_API_KEY=<YOUR_API_KEY>
@@ -105,7 +111,7 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
 
 - `--pipeline_batch_size INTEGER RANGE`
     - **Description**: Internal batch size for the pipeline. Can be much larger than the model batch size.
-    Also used for Kafka consumers.
+      Also used for Kafka consumers.
     - **Default**: `1024`
 
 - `--model_max_batch_size INTEGER RANGE`
@@ -122,7 +128,6 @@ python examples/llm/main.py completion [OPTIONS] COMMAND [ARGS]...
 
 - `--help`
     - **Description**: Show the help message with options and commands details.
-
 
 ### Running Morpheus Pipeline with OpenAI LLM service
 

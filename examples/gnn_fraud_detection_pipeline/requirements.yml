@@ -18,6 +18,7 @@ channels:
     - nvidia
     - conda-forge
     - dglteam/label/cu118
+    - defaults
 dependencies:
     - cuml=23.06
     - dgl=1.0.2

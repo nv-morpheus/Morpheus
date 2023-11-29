@@ -17,6 +17,7 @@ channels:
   - rapidsai
   - nvidia
   - conda-forge
+  - defaults
 dependencies:
   - cuml=23.06
   - jupyterlab

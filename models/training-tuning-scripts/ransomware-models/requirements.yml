@@ -15,6 +15,7 @@
 
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - jupyterlab
   - matplotlib

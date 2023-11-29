@@ -18,6 +18,7 @@ channels:
   - nvidia
   - pytorch
   - conda-forge
+  - defaults
 dependencies:
   - cudf=23.06
   - jupyterlab

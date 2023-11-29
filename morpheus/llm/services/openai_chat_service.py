@@ -26,7 +26,10 @@ logger = logging.getLogger(__name__)
 IMPORT_ERROR_MESSAGE = (
     "OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
     "Install it by running the following command:\n"
-    "`mamba env update -n ${CONDA_DEFAULT_ENV} --file docker/conda/environments/cuda11.8_examples.yml`")
+    "`mamba install -n base -c conda-forge conda-merge`\n"
+    "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
+    "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
+    "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
 
 try:
     import openai

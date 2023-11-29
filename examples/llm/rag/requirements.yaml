@@ -16,6 +16,7 @@
 channels:
   - huggingface
   - conda-forge
+  - defaults
 dependencies:
   - pip
   - openai=0.28

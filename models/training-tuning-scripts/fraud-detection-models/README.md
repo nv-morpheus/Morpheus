@@ -23,13 +23,17 @@ limitations under the License.
 
 Install packages for training GNN model.
 
-```
-mamba env update -n ${CONDA_DEFAULT_ENV} -f requirements.yml
+```bash
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  models/training-tuning-scripts/fraud-detection-models/requirements.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
 ```
 
 ### Options for training and tuning models.
 
-```
+```bash
 python training.py --help
 Usage: training.py [OPTIONS]
 

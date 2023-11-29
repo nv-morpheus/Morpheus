@@ -16,6 +16,7 @@
 channels:
   - huggingface
   - conda-forge
+  - defaults
 dependencies:
   - langchain=0.0.190
   - pip

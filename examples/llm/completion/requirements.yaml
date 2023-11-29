@@ -15,6 +15,7 @@
 
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - arxiv=1.4
   - langchain=0.0.190
