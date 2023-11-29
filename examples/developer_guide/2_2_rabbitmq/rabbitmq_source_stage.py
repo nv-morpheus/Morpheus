@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections.abc
 import logging
 import time
 from io import StringIO
@@ -98,7 +99,7 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self.source_generator)
 
-    def source_generator(self):
+    def source_generator(self) -> collections.abc.Iterator[MessageMeta]:
         try:
             while not self._stop_requested:
                 (method_frame, _, body) = self._channel.basic_get(self._queue_name)

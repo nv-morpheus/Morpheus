@@ -39,7 +39,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def on_data(self, message: typing.Any):
+    def on_data(self, message: typing.Any) -> typing.Any:
         # Return the message for the next stage
         return message
 
