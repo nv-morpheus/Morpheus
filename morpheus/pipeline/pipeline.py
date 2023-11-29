@@ -317,7 +317,8 @@ class Pipeline():
                 for port in typing.cast(StageBase, stage).input_ports:
                     port.link_node(builder=builder)
 
-            asyncio.run(self._async_start(segment_graph.nodes()))
+            # Call the start method for the stages in this segment. Must run on the loop and wait for the result
+            asyncio.run_coroutine_threadsafe(self._async_start(segment_graph.nodes()), self._loop).result()
 
             logger.info("====Building Segment Complete!====")
 
@@ -339,8 +340,46 @@ class Pipeline():
 
         logger.info("====Registering Pipeline Complete!====")
 
-    def _start(self):
+    async def _start(self):
         assert self._is_built, "Pipeline must be built before starting"
+
+        # Only execute this once
+        if (self._is_started):
+            return
+
+        # Stop from running this twice
+        self._is_started = True
+
+        # Save off the current loop so we can use it in async_start
+        self._loop = asyncio.get_running_loop()
+
+        # Setup error handling and cancellation of the pipeline
+        def error_handler(_, context: dict):
+
+            msg = f"Unhandled exception in async loop! Exception: \n{context['message']}"
+            exception = context.get("exception", Exception())
+
+            logger.critical(msg, exc_info=exception)
+
+        self._loop.set_exception_handler(error_handler)
+
+        exit_count = 0
+
+        # Handles Ctrl+C for graceful shutdown
+        def term_signal():
+
+            nonlocal exit_count
+            exit_count = exit_count + 1
+
+            if (exit_count == 1):
+                tqdm.write("Stopping pipeline. Please wait... Press Ctrl+C again to kill.")
+                self.stop()
+            else:
+                tqdm.write("Killing")
+                sys.exit(1)
+
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            self._loop.add_signal_handler(sig, term_signal)
 
         logger.info("====Starting Pipeline====")
 
@@ -372,7 +411,10 @@ class Pipeline():
             if self._mrc_executor is None:
                 raise RuntimeError("Pipeline failed pre-flight checks.")
 
-            await self._mrc_executor.join_async()
+            # Make a local reference so the object doesnt go out of scope from a call to stop()
+            executor = self._mrc_executor
+
+            await executor.join_async()
         except Exception:
             logger.exception("Exception occurred in pipeline. Rethrowing")
             raise
@@ -408,15 +450,13 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        self._start()
+        await self._start()
 
     async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
         # This method is called once for each segment in the pipeline executed on this host
         for stage in stages:
             if (isinstance(stage, Stage)):
                 await stage.start_async()
-
-        self._is_started = True
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """
@@ -578,35 +618,6 @@ class Pipeline():
         """
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
-        loop = asyncio.get_running_loop()
-
-        def error_handler(_, context: dict):
-
-            msg = f"Unhandled exception in async loop! Exception: \n{context['message']}"
-            exception = context.get("exception", Exception())
-
-            logger.critical(msg, exc_info=exception)
-
-        loop.set_exception_handler(error_handler)
-
-        exit_count = 0
-
-        # Handles Ctrl+C for graceful shutdown
-        def term_signal():
-
-            nonlocal exit_count
-            exit_count = exit_count + 1
-
-            if (exit_count == 1):
-                tqdm.write("Stopping pipeline. Please wait... Press Ctrl+C again to kill.")
-                self.stop()
-            else:
-                tqdm.write("Killing")
-                sys.exit(1)
-
-        for sig in [signal.SIGINT, signal.SIGTERM]:
-            loop.add_signal_handler(sig, term_signal)
-
         try:
             await self._build_and_start()
 
