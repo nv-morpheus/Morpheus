@@ -25,7 +25,6 @@ dependencies:
   - cuml=23.06
   - dgl
   - jupyterlab
-  - matplotlib
   - pytorch-cuda=11.8
   - pytorch=2.0.1
   - scikit-learn=1.2.2
