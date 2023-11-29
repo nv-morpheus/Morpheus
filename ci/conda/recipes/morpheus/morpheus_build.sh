@@ -32,7 +32,7 @@ if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    mkdir -p ${MORPHEUS_CACHE_DIR}
 fi
 
-if [[ "${MORPHEUS_SUPPORT_DOCA}" == "ON" ]]; then
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
    CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=ON ${CMAKE_ARGS}"
 
    # Set the CMAKE_CUDA_ARCHITECTURES to just 80;86 since that is what DOCA supports for now
