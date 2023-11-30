@@ -79,6 +79,8 @@ class Pipeline():
 
         self._mrc_executor: mrc.Executor = None
 
+        self._loop: asyncio.AbstractEventLoop = None
+
     @property
     def is_built(self) -> bool:
         return self._is_built
