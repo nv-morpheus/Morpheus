@@ -235,7 +235,20 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         return await super().start_async()
 
+    def stop(self):
+        """
+        Stages can implement this to perform cleanup steps when pipeline is stopped.
+        """
+
+        if (self._loop is not None):
+            asyncio.run_coroutine_threadsafe(self._stop_server(), loop=self._loop)
+            pass
+
     async def _stop_server(self):
+
+        # Only run this once
+        if (self._buffer_queue.is_closed()):
+            return
 
         logger.info("Shutting down queue")
 
@@ -243,7 +256,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         self._server_close_event.set()
 
-        # Wait for it to
+        # Wait for it to fully shut down
         await self._server_task
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
@@ -274,8 +287,12 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
                 out_buf = sink.getvalue()
 
-                # Enqueue the buffer and block until that completes
-                asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                try:
+                    # Enqueue the buffer and block until that completes
+                    asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                except Closed:
+                    # Ignore closed errors. Likely the pipeline is shutting down
+                    pass
 
             input_obs.pipe(ops.map(write_batch)).subscribe(output_obs)
 
