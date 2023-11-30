@@ -107,7 +107,7 @@ function run_pipeline_phishing_email(){
       preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
       ${INFERENCE_STAGE} \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-      add-class --label=pred --threshold=0.7 \
+      add-class --label=is_phishing --threshold=0.7 \
       validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --overwrite \
       serialize \
       to-file --filename=${OUTPUT_FILE} --overwrite
