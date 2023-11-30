@@ -107,7 +107,7 @@ function run_pipeline_phishing_email(){
       preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
       ${INFERENCE_STAGE} \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-      add-class --label=pred --threshold=0.7 \
+      add-class --label=is_phishing --threshold=0.7 \
       validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --overwrite \
       serialize \
       to-file --filename=${OUTPUT_FILE} --overwrite
@@ -122,7 +122,7 @@ function run_pipeline_hammah_user123(){
    VAL_OUTPUT=$5
 
    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
-      pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="user123" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
+      pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="user123" --userid_column_name="userIdentitysessionContextsessionIssueruserName" --timestamp_column_name="event_dt" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage --seed 42 \
       preprocess \
@@ -144,7 +144,7 @@ function run_pipeline_hammah_role-g(){
    VAL_OUTPUT=$5
 
    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=${USE_CPP} \
-      pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="role-g" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
+      pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="role-g" --userid_column_name="userIdentitysessionContextsessionIssueruserName" --timestamp_column_name="event_dt" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage  --seed 42 \
       preprocess \

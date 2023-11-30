@@ -482,6 +482,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
               help=("Set the direction for the Graphviz pipeline diagram, "
                     "ignored unless --viz_file is also specified."))
+@click.option('--timestamp_column_name',
+              type=str,
+              default="timestamp",
+              required=True,
+              help=("Which column to use as the timestamp."))
 @prepare_command()
 def pipeline_ae(ctx: click.Context, **kwargs):
     """
@@ -511,6 +516,7 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
+    config.ae.timestamp_column_name = kwargs["timestamp_column_name"]
     config.ae.feature_scaler = kwargs["feature_scaler"]
     config.ae.use_generic_model = kwargs["use_generic_model"]
     config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
