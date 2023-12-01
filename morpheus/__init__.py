@@ -12,11 +12,11 @@
 # limitations under the License.
 """Root module for the Morpheus library."""
 
-############################ CVE-2023-47248 Mitigation ############################
+# ########################### CVE-2023-47248 Mitigation ############################
 # Import pyarrow_hotfix as early as possible to ensure that the pyarrow hotfix is applied before any code can use it
 # Can be removed after upgrading to pyarrow 14.0.1 or later (which is dictated by cudf)
 import pyarrow_hotfix
-###################################################################################
+# ##################################################################################
 
 import logging
 import os
