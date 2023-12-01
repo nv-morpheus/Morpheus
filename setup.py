@@ -52,6 +52,7 @@ setup(
     packages=find_packages(include=["morpheus*"], exclude=['tests']),
     install_requires=[
         # Only list the packages which cannot be installed via conda here.
+        "pyarrow_hotfix",  # CVE-2023-47248. See morpheus/__init__.py for more details
     ],
     license="Apache",
     python_requires='>=3.10, <4',
