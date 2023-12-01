@@ -430,6 +430,8 @@ class _TritonInferenceWorker(InferenceWorker):
     use_shared_memory: bool, default = False
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
+    needs_logits : bool, default = False
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
@@ -439,7 +441,8 @@ class _TritonInferenceWorker(InferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool,
                  inout_mapping: typing.Dict[str, str] = None,
-                 use_shared_memory: bool = False):
+                 use_shared_memory: bool = False,
+                 needs_logits: bool = False):
         super().__init__(inf_queue)
 
         # Combine the class defaults with any user supplied ones
@@ -459,7 +462,7 @@ class _TritonInferenceWorker(InferenceWorker):
         self._force_convert_inputs = force_convert_inputs
 
         # Whether or not the returned value needs a logits calc for the response
-        self._needs_logits = type(self).needs_logits()
+        self._needs_logits = needs_logits
 
         self._inputs: typing.Dict[str, TritonInOut] = {}
         self._outputs: typing.Dict[str, TritonInOut] = {}
@@ -472,9 +475,9 @@ class _TritonInferenceWorker(InferenceWorker):
         # Enable support by default
         return True
 
-    @classmethod
-    def needs_logits(cls):
-        return False
+    @property
+    def needs_logits(self) -> bool:
+        return self._needs_logits
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
@@ -668,21 +671,16 @@ class TritonInferenceNLP(_TritonInferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None):
+                 inout_mapping: typing.Dict[str, str] = None,
+                 needs_logits: bool = True):
         super().__init__(inf_queue,
                          c,
                          model_name=model_name,
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping)
-
-    @classmethod
-    def needs_logits(cls):
-        """
-        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
-        """
-        return True
+                         inout_mapping=inout_mapping,
+                         needs_logits=needs_logits)
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
@@ -752,14 +750,16 @@ class TritonInferenceFIL(_TritonInferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None):
+                 inout_mapping: typing.Dict[str, str] = None,
+                 needs_logits: bool = False):
         super().__init__(inf_queue,
                          c,
                          model_name=model_name,
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping)
+                         inout_mapping=inout_mapping,
+                         needs_logits=needs_logits)
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
@@ -827,14 +827,16 @@ class TritonInferenceAE(_TritonInferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None):
+                 inout_mapping: typing.Dict[str, str] = None,
+                 needs_logits: bool = False):
         super().__init__(inf_queue,
                          c,
                          model_name=model_name,
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping)
+                         inout_mapping=inout_mapping,
+                         needs_logits=needs_logits)
 
         import torch
 
@@ -906,6 +908,10 @@ class TritonInferenceStage(InferenceStage):
     use_shared_memory : bool, default = False, is_flag = True
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
+    needs_logits : bool, optional
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response. If
+        undefined, the value will be inferred based on the pipeline mode, defaulting to `True` for NLP and `False` for
+        other modes.
     """
 
     def __init__(self,
@@ -913,16 +919,21 @@ class TritonInferenceStage(InferenceStage):
                  model_name: str,
                  server_url: str,
                  force_convert_inputs: bool = False,
-                 use_shared_memory: bool = False):
+                 use_shared_memory: bool = False,
+                 needs_logits: bool = None):
         super().__init__(c)
 
         self._config = c
+
+        if needs_logits is None:
+            needs_logits = c.mode == PipelineModes.NLP
 
         self._kwargs = {
             "model_name": model_name,
             "server_url": server_url,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
+            "needs_logits": needs_logits
         }
 
         self._requires_seg_ids = False
@@ -951,6 +962,5 @@ class TritonInferenceStage(InferenceStage):
 
         return _stages.InferenceClientStage(builder,
                                             name=self.unique_name,
-                                            needs_logits=self._get_worker_class().needs_logits(),
                                             inout_mapping=self._get_worker_class().default_inout_mapping(),
                                             **self._kwargs)
