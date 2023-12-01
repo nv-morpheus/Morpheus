@@ -661,7 +661,8 @@ class TritonInferenceNLP(_TritonInferenceWorker):
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
-
+    needs_logits : bool, default = True
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
@@ -740,7 +741,8 @@ class TritonInferenceFIL(_TritonInferenceWorker):
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
-
+    needs_logits : bool, default = False
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
@@ -817,7 +819,8 @@ class TritonInferenceAE(_TritonInferenceWorker):
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
-
+    needs_logits : bool, default = False
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
