@@ -59,7 +59,8 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
     use_shared_memory: bool, default = True
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine
-
+    needs_logits : bool, default = True
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
@@ -69,7 +70,8 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool,
                  use_shared_memory: bool,
-                 inout_mapping: typing.Dict[str, str] = None):
+                 inout_mapping: typing.Dict[str, str] = None,
+                 needs_logits: bool = True):
         # Some models use different names for the same thing. Set that here but allow user customization
         default_mapping = {
             "attention_mask": "input_mask",
@@ -83,11 +85,8 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         inout_mapping=default_mapping)
-
-    @classmethod
-    def needs_logits(cls):
-        return True
+                         inout_mapping=default_mapping,
+                         needs_logits=needs_logits)
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
@@ -149,7 +148,8 @@ class LogParsingInferenceStage(InferenceStage):
     use_shared_memory: bool, default = False, is_flag = True
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine
-
+    needs_logits : bool, default = True, is_flag = True
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
     def __init__(self,
@@ -157,7 +157,8 @@ class LogParsingInferenceStage(InferenceStage):
                  model_name: str,
                  server_url: str,
                  force_convert_inputs: bool = False,
-                 use_shared_memory: bool = False):
+                 use_shared_memory: bool = False,
+                 needs_logits: bool = True):
         super().__init__(c)
 
         self._config = c
@@ -167,6 +168,7 @@ class LogParsingInferenceStage(InferenceStage):
             "server_url": server_url,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
+            "needs_logits": needs_logits
         }
 
         self._requires_seg_ids = False
