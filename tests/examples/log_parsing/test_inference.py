@@ -84,6 +84,7 @@ def _check_worker(inference_mod: types.ModuleType, worker: _TritonInferenceWorke
     assert worker._server_url == 'test_server'
     assert not worker._force_convert_inputs
     assert not worker._use_shared_memory
+    assert worker.needs_logits
 
     expected_mapping = inference_mod.TritonInferenceLogParsing.default_inout_mapping()
     expected_mapping.update({'test': 'this'})
@@ -166,7 +167,8 @@ def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typ
         "model_name": 'test_model',
         "server_url": 'test_server',
         "force_convert_inputs": False,
-        "use_shared_memory": False
+        "use_shared_memory": False,
+        "needs_logits": True,
     }
 
     # Intentionally not checking the `_requires_seg_ids` value at it appears to not be used
