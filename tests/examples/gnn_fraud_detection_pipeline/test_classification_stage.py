@@ -17,33 +17,25 @@ import types
 
 import pytest
 
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from utils.dataset_manager import DatasetManager
+
+# pylint: disable=no-name-in-module
 
 
 @pytest.mark.use_python
 class TestClassificationStage:
 
-    def test_constructor(
-            self,
-            config: Config,
-            xgb_model: str,
-            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
-            cuml: types.ModuleType):
-        from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
+    def test_constructor(self, config: Config, xgb_model: str, cuml: types.ModuleType):
+        from stages.classification_stage import ClassificationStage
 
         stage = ClassificationStage(config, xgb_model)
         assert isinstance(stage._xgb_model, cuml.ForestInference)
 
-    def test_process_message(
-            self,
-            config: Config,
-            xgb_model: str,
-            gnn_fraud_detection_pipeline: types.ModuleType,  # pylint: disable=unused-argument
-            dataset_cudf: DatasetManager):
-        from gnn_fraud_detection_pipeline.stages.classification_stage import ClassificationStage
-        from gnn_fraud_detection_pipeline.stages.graph_sage_stage import GraphSAGEMultiMessage
+    def test_process_message(self, config: Config, xgb_model: str, dataset_cudf: DatasetManager):
+        from stages.classification_stage import ClassificationStage
+        from stages.graph_sage_stage import GraphSAGEMultiMessage
 
         df = dataset_cudf['examples/gnn_fraud_detection_pipeline/inductive_emb.csv']
         df.rename(lambda x: f"ind_emb_{x}", axis=1, inplace=True)

@@ -14,6 +14,7 @@ markers = [
   "benchmark: Benchmarks",
   "slow: Slow tests",
   "kafka: Tests that require a running instance of kafka",
+  "milvus: Tests that require a running instance of milvus",
   "use_cpp: Test support C++ nodes and objects",
   "use_python: Test only supports Python nodes and objects",
   "use_cudf: Test supports cuDF datasets",
@@ -35,11 +36,29 @@ testpaths = ["tests"]
 
 addopts = "--benchmark-disable"
 
+asyncio_mode = "auto"
+
 [tool.yapfignore]
 ignore_patterns = [
   "**/*.pyx",
   "**/*.pxd",
 ]
+
+[tool.mypy]
+# Allow None for argument default values
+implicit_optional = true
+
+[tool.pyright]
+# Only warn about using an Optional[T] as if it were T
+reportOptionalCall = "warning"
+reportOptionalContextManager = "warning"
+reportOptionalIterable = "warning"
+reportOptionalMemberAccess = "warning"
+reportOptionalOperand = "warning"
+reportOptionalSubscript = "warning"
+
+# Allow None for argument default values
+strictParameterNoneValue = false
 
 [tool.interrogate]
 exclude = ["morpheus/cli"]
@@ -80,7 +99,7 @@ verbose = 2
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list = ["mrc", "morpheus._lib", "morpheus._lib.stages"]
+extension-pkg-allow-list = ["mrc", "morpheus._lib", "morpheus._lib.messages", "morpheus._lib.stages"]
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
@@ -122,7 +141,13 @@ ignore-patterns = ["^\\.#"]
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-# init-hook =
+init-hook = """
+import sys
+from pylint.config import find_default_config_files
+
+config_file = next(find_default_config_files())
+sys.path.append(str((config_file / "../ci/pylint").resolve()))
+"""
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -136,7 +161,7 @@ limit-inference-results = 100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins = ["pylint.extensions.docparams"]
+load-plugins = ["pylint.extensions.docparams", "morpheus_lib_import_checker"]
 
 # Pickle collected data for later comparisons.
 persistent = true
@@ -227,7 +252,26 @@ function-naming-style = "snake_case"
 # function-rgx =
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["ae", "df", "e", "f", "fh", "i", "ip", "j", "k", "ex", "Run", "_", "x", "y", "X", "Y"]
+good-names = [
+  "_",
+  "ae",
+  "df",
+  "e",
+  "ex",
+  "f",
+  "fh",
+  "fn",
+  "i",
+  "ip",
+  "j",
+  "k",
+  "Run",
+  "ts",
+  "x",
+  "X",
+  "y",
+  "Y",
+]
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
@@ -441,7 +485,6 @@ disable = [
   "missing-class-docstring",
   "missing-function-docstring",
   "missing-module-docstring",
-  "no-member", # pylint isn't aware of some of our attrs issue #956
   "protected-access",
   "raw-checker-failed",
   "superfluous-parens",
@@ -588,7 +631,9 @@ contextmanager-decorators = ["contextlib.contextmanager"]
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
-# generated-members =
+
+# Add pytorch & dgl members to the list of dynamically set members. Only until pylint 3.0 supports pyi files
+generated-members = "torch.*,dgl.*"
 
 # Tells whether missing members accessed in mixin class should be ignored. A
 # class is considered mixin if its name matches the mixin-class-rgx option.

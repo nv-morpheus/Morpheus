@@ -15,42 +15,44 @@
 
 import os
 import types
-import typing
 
-import pandas as pd
 import pytest
 
-import cudf
-
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
+from morpheus.utils.type_aliases import DataFrameType
 
 
 def _check_pass_thru(config: Config,
-                     filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                     PassThruStageCls: SinglePortStage):
-    stage = PassThruStageCls(config)
+                     filter_probs_df: DataFrameType,
+                     pass_thru_stage_cls: SinglePortStage,
+                     on_data_fn_name: str = 'on_data'):
+    stage = pass_thru_stage_cls(config)
+    assert isinstance(stage, SinglePortStage)
 
     meta = MessageMeta(filter_probs_df)
-    mm = MultiMessage(meta=meta)
+    multi = MultiMessage(meta=meta)
 
-    assert stage.on_data(mm) is mm
+    on_data_fn = getattr(stage, on_data_fn_name)
+    assert on_data_fn(multi) is multi
 
 
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py')])
-def test_pass_thru_ex1(config: Config,
-                       filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[types.ModuleType]):
-    pass_thru = import_mod[0]
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru.py'))
+def test_pass_thru_ex1(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
+    pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
 
 
-@pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py')])
-def test_pass_thru_ex3(config: Config,
-                       filter_probs_df: typing.Union[pd.DataFrame, cudf.DataFrame],
-                       import_mod: typing.List[types.ModuleType]):
-    pass_thru = import_mod[0]
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/1_simple_python_stage/pass_thru_deco.py'))
+def test_pass_thru_ex1_deco(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
+    pass_thru = import_mod
+    _check_pass_thru(config, filter_probs_df, pass_thru.pass_thru_stage, on_data_fn_name='_on_data_fn')
+
+
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/pass_thru.py'))
+def test_pass_thru_ex3(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
+    pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)

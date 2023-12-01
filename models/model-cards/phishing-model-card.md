@@ -96,23 +96,15 @@ limitations under the License.
 
 * Dataset consists of SMSs <br>
 
-**Dataset License:** 
-
-* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
-
 ## Evaluation Dataset:
 
 **Link:** 
 
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
+* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/phishing-email-validation-data.jsonlines  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 
 * Dataset consists of SMSs <br>
-
-**Dataset License:** 
-
-* https://creativecommons.org/licenses/by/4.0/legalcode taken from https://archive.ics.uci.edu/dataset/228/sms+spam+collection <br>
 
 ## Inference:
 
@@ -207,9 +199,6 @@ limitations under the License.
 ### What are the potential known risks to users and stakeholders?
 * N/A
 
-### What training is recommended for developers working with this model?
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
-
 ### Link the relevant end user license agreement 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -239,9 +228,6 @@ limitations under the License.
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * N/A
-
-### Technical robustness and model security validated?
-* No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * No
@@ -280,9 +266,6 @@ limitations under the License.
 
 ### Is data in dataset traceable?
 * N/A
-
-### Scanned for malware?
-* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A

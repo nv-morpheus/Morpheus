@@ -18,14 +18,16 @@ from collections import OrderedDict
 from collections import namedtuple
 from unittest import mock
 
+# This import is needed to ensure our mocks work correctly, otherwise mlflow.pytorch is a stub.
+import mlflow.pytorch  # noqa: F401 pylint: disable=unused-import
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 MockedRequests = namedtuple("MockedRequests", ["get", "patch", "response"])
 MockedMLFlow = namedtuple("MockedMLFlow",
@@ -45,15 +47,15 @@ MockedMLFlow = namedtuple("MockedMLFlow",
                           ])
 
 
-@pytest.fixture
-def databricks_env(restore_environ):
+@pytest.fixture(name="databricks_env")
+def databricks_env_fixture(restore_environ):  # pylint: disable=unused-argument
     env = {'DATABRICKS_HOST': 'https://test_host', 'DATABRICKS_TOKEN': 'test_token'}
     os.environ.update(env)
     yield env
 
 
-@pytest.fixture
-def mock_requests():
+@pytest.fixture(name="mock_requests")
+def mock_requests_fixture():
     with mock.patch("requests.get") as mock_requests_get, mock.patch("requests.patch") as mock_requests_patch:
         mock_response = mock.MagicMock(status_code=200)
         mock_response.json.return_value = {'registered_model_databricks': {'id': 'test_id'}}
@@ -63,9 +65,10 @@ def mock_requests():
 
 @pytest.fixture
 def mock_mlflow():
-    with (mock.patch("dfp.stages.dfp_mlflow_model_writer.MlflowClient") as mock_mlflow_client,
-          mock.patch("dfp.stages.dfp_mlflow_model_writer.ModelSignature") as mock_model_signature,
-          mock.patch("dfp.stages.dfp_mlflow_model_writer.RunsArtifactRepository") as mock_runs_artifact_repository,
+    with (mock.patch("morpheus.controllers.mlflow_model_writer_controller.MlflowClient") as mock_mlflow_client,
+          mock.patch("morpheus.controllers.mlflow_model_writer_controller.ModelSignature") as mock_model_signature,
+          mock.patch("morpheus.controllers.mlflow_model_writer_controller.RunsArtifactRepository") as
+          mock_runs_artifact_repository,
           mock.patch("mlflow.end_run") as mock_mlflow_end_run,
           mock.patch("mlflow.get_tracking_uri") as mock_mlflow_get_tracking_uri,
           mock.patch("mlflow.log_metrics") as mock_mlflow_log_metrics,
@@ -114,9 +117,9 @@ def test_constructor(config: Config):
                                       experiment_name_formatter="/test/{user_id}-{user_md5}-{reg_model_name}",
                                       databricks_permissions={'test': 'this'})
     assert isinstance(stage, SinglePortStage)
-    assert stage._model_name_formatter == "test_model_name-{user_id}-{user_md5}"
-    assert stage._experiment_name_formatter == "/test/{user_id}-{user_md5}-{reg_model_name}"
-    assert stage._databricks_permissions == {'test': 'this'}
+    assert stage._controller.model_name_formatter == "test_model_name-{user_id}-{user_md5}"
+    assert stage._controller.experiment_name_formatter == "/test/{user_id}-{user_md5}-{reg_model_name}"
+    assert stage._controller.databricks_permissions == {'test': 'this'}
 
 
 @pytest.mark.parametrize(
@@ -131,7 +134,7 @@ def test_user_id_to_model(config: Config, model_name_formatter: str, user_id: st
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 
     stage = DFPMLFlowModelWriterStage(config, model_name_formatter=model_name_formatter)
-    assert stage.user_id_to_model(user_id) == expected_val
+    assert stage._controller.user_id_to_model(user_id) == expected_val
 
 
 @pytest.mark.parametrize("experiment_name_formatter,user_id,expected_val",
@@ -151,32 +154,34 @@ def test_user_id_to_experiment(config: Config, experiment_name_formatter: str, u
     stage = DFPMLFlowModelWriterStage(config,
                                       model_name_formatter="dfp-{user_id}",
                                       experiment_name_formatter=experiment_name_formatter)
-    assert stage.user_id_to_experiment(user_id) == expected_val
+    assert stage._controller.user_id_to_experiment(user_id) == expected_val
 
 
 def verify_apply_model_permissions(mock_requests: MockedRequests,
                                    databricks_env: dict,
                                    databricks_permissions: OrderedDict,
                                    experiment_name: str):
-    expected_headers = {"Authorization": "Bearer {DATABRICKS_TOKEN}".format(**databricks_env)}
+    expected_headers = {"Authorization": f"Bearer {databricks_env['DATABRICKS_TOKEN']}"}
     mock_requests.get.assert_called_once_with(
-        url="{DATABRICKS_HOST}/api/2.0/mlflow/databricks/registered-models/get".format(**databricks_env),
+        url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/mlflow/databricks/registered-models/get",
         headers=expected_headers,
-        params={"name": experiment_name})
+        params={"name": experiment_name},
+        timeout=10)
 
     expected_acl = [{'group_name': group, 'permission_level': pl} for (group, pl) in databricks_permissions.items()]
 
     mock_requests.patch.assert_called_once_with(
-        url="{DATABRICKS_HOST}/api/2.0/preview/permissions/registered-models/test_id".format(**databricks_env),
+        url=f"{databricks_env['DATABRICKS_HOST']}/api/2.0/preview/permissions/registered-models/test_id",
         headers=expected_headers,
-        json={'access_control_list': expected_acl})
+        json={'access_control_list': expected_acl},
+        timeout=10)
 
 
 def test_apply_model_permissions(config: Config, databricks_env: dict, mock_requests: MockedRequests):
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     databricks_permissions = OrderedDict([('group1', 'CAN_READ'), ('group2', 'CAN_WRITE')])
-    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
-    stage._apply_model_permissions("test_experiment")
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
+    stage._controller._apply_model_permissions("test_experiment")
 
     verify_apply_model_permissions(mock_requests, databricks_env, databricks_permissions, 'test_experiment')
 
@@ -204,7 +209,7 @@ def test_apply_model_permissions_no_perms_error(config: Config,
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     stage = DFPMLFlowModelWriterStage(config)
     with pytest.raises(RuntimeError):
-        stage._apply_model_permissions("test_experiment")
+        stage._controller._apply_model_permissions("test_experiment")
 
     mock_requests.get.assert_not_called()
     mock_requests.patch.assert_not_called()
@@ -215,8 +220,8 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     mock_requests.get.side_effect = RuntimeError("test error")
 
-    stage = DFPMLFlowModelWriterStage(config)
-    stage._apply_model_permissions("test_experiment")
+    stage = DFPMLFlowModelWriterStage(config, timeout=10)
+    stage._controller._apply_model_permissions("test_experiment")
 
     # This method just catches and logs any errors
     mock_requests.get.assert_called_once()
@@ -225,13 +230,14 @@ def test_apply_model_permissions_requests_error(config: Config, mock_requests: M
 
 @pytest.mark.parametrize("databricks_permissions", [None, {}])
 @pytest.mark.parametrize("tracking_uri", ['file:///home/user/morpheus/mlruns', "databricks"])
-def test_on_data(config: Config,
-                 mock_mlflow: MockedMLFlow,
-                 mock_requests: MockedRequests,
-                 dataset_pandas: DatasetManager,
-                 databricks_env: dict,
-                 databricks_permissions: dict,
-                 tracking_uri: str):
+def test_on_data(
+        config: Config,
+        mock_mlflow: MockedMLFlow,  # pylint: disable=redefined-outer-name
+        mock_requests: MockedRequests,
+        dataset_pandas: DatasetManager,
+        databricks_env: dict,
+        databricks_permissions: dict,
+        tracking_uri: str):
     from dfp.messages.multi_dfp_message import DFPMessageMeta
     from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
     from dfp.stages.dfp_mlflow_model_writer import conda_env
@@ -254,8 +260,8 @@ def test_on_data(config: Config,
     max_time = time_col.max()
 
     mock_model = mock.MagicMock()
-    mock_model.lr_decay.state_dict.return_value = {'last_epoch': 42}
-    mock_model.lr = 0.1
+    mock_model.learning_rate_decay.state_dict.return_value = {'last_epoch': 42}
+    mock_model.learning_rate = 0.1
     mock_model.batch_size = 100
 
     mock_embedding = mock.MagicMock()
@@ -269,8 +275,8 @@ def test_on_data(config: Config,
     meta = DFPMessageMeta(df, 'Account-123456789')
     msg = MultiAEMessage(meta=meta, model=mock_model)
 
-    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions)
-    assert stage.on_data(msg) is msg  # Should be a pass-thru
+    stage = DFPMLFlowModelWriterStage(config, databricks_permissions=databricks_permissions, timeout=10)
+    assert stage._controller.on_data(msg) is msg  # Should be a pass-thru
 
     # Test mocks in order that they're called
     mock_mlflow.end_run.assert_called_once()
@@ -285,10 +291,12 @@ def test_on_data(config: Config,
         "Batch size": 100,
         "Start Epoch": min_time,
         "End Epoch": max_time,
-        "Log Count": len(df)})
+        "Log Count": len(df)
+    })
 
-    mock_mlflow.log_metrics.assert_called_once_with({"embedding-test-num_embeddings": 101,
-                                                     "embedding-test-embedding_dim": 102})
+    mock_mlflow.log_metrics.assert_called_once_with({
+        "embedding-test-num_embeddings": 101, "embedding-test-embedding_dim": 102
+    })
 
     mock_model.prepare_df.assert_called_once()
     mock_model.get_anomaly_score.assert_called_once()

@@ -15,11 +15,10 @@
 
 import dataclasses
 import pathlib
-import typing
 
+import dgl
 import mrc
-import networkx as nx
-import pandas as pd
+import torch
 from mrc.core import operators as ops
 
 import cudf
@@ -30,28 +29,34 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
+
+from .model import build_fsi_graph
+from .model import prepare_data
 
 
 @dataclasses.dataclass
 class FraudGraphMultiMessage(MultiMessage):
-    graph: "stellargraph.StellarGraph"
 
     def __init__(self,
                  *,
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 graph: "stellargraph.StellarGraph"):
+                 graph: dgl.DGLHeteroGraph,
+                 node_features=torch.tensor,
+                 test_index: torch.tensor):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
         self.graph = graph
+        self.node_features = node_features
+        self.test_index = test_index
 
 
 @register_stage("fraud-graph-construction", modes=[PipelineModes.OTHER])
 class FraudGraphConstructionStage(SinglePortStage):
 
-    def __init__(self, c: Config, training_file: pathlib.Path):
+    def __init__(self, config: Config, training_file: pathlib.Path):
         """
         Create a fraud-graph-construction stage
 
@@ -62,7 +67,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         training_file : pathlib.Path, exists = True, dir_okay = False
             A CSV training file to load to seed the graph
         """
-        super().__init__(c)
+        super().__init__(config)
         self._training_data = cudf.read_csv(training_file)
         self._column_names = self._training_data.columns.values.tolist()
 
@@ -70,62 +75,33 @@ class FraudGraphConstructionStage(SinglePortStage):
     def name(self) -> str:
         return "fraud-graph-construction"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> (MultiMessage, ):
         return (MultiMessage, )
 
-    def supports_cpp_node(self):
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(FraudGraphMultiMessage)
+
+    def supports_cpp_node(self) -> bool:
         return False
 
-    @staticmethod
-    def _graph_construction(nodes, edges, node_features) -> "stellargraph.StellarGraph":
+    def _process_message(self, message: MultiMessage) -> FraudGraphMultiMessage:
 
-        from stellargraph import StellarGraph
+        _, _, _, test_index, _, graph_data = prepare_data(self._training_data, message.get_meta(self._column_names))
 
-        g_nx = nx.Graph()
+        # meta columns to remove as node features
+        meta_cols = ['client_node', 'merchant_node', 'index']
+        graph, node_features = build_fsi_graph(graph_data, meta_cols)
 
-        # add nodes
-        for key, values in nodes.items():
-            g_nx.add_nodes_from(values, ntype=key)
-        # add edges
-        for edge in edges:
-            g_nx.add_edges_from(edge)
+        # Convert to torch.tensor from cupy
+        test_index = torch.from_dlpack(test_index.values.toDlpack()).long()
+        node_features = node_features.float()
 
-        return StellarGraph.from_networkx(g_nx, node_type_attr='ntype', node_features=node_features)
+        return FraudGraphMultiMessage.from_message(message,
+                                                   graph=graph,
+                                                   node_features=node_features.float(),
+                                                   test_index=test_index)
 
-    @staticmethod
-    def _build_graph_features(dataset: pd.DataFrame) -> "stellargraph.StellarGraph":
-
-        nodes = {
-            "client": dataset.client_node,
-            "merchant": dataset.merchant_node,
-            "transaction": dataset.index,
-        }
-
-        edges = [
-            zip(dataset.client_node, dataset.index),
-            zip(dataset.merchant_node, dataset.index),
-        ]
-
-        transaction_node_data = dataset.drop(["client_node", "merchant_node", "fraud_label", "index"], axis=1)
-        client_node_data = pd.DataFrame([1] * len(dataset.client_node.unique())).set_index(dataset.client_node.unique())
-        merchant_node_data = pd.DataFrame([1] * len(dataset.merchant_node.unique())).set_index(
-            dataset.merchant_node.unique())
-
-        node_features = {
-            "transaction": transaction_node_data,
-            "client": client_node_data,
-            "merchant": merchant_node_data,
-        }
-
-        return FraudGraphConstructionStage._graph_construction(nodes, edges, node_features)
-
-    def _process_message(self, message: MultiMessage):
-        graph_data = cudf.concat([self._training_data, message.get_meta(self._column_names)])
-        graph_data = graph_data.set_index(graph_data['index'])
-        graph = FraudGraphConstructionStage._build_graph_features(graph_data.to_pandas())
-        return FraudGraphMultiMessage.from_message(message, graph=graph)
-
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self._process_message))
-        builder.make_edge(input_stream[0], node)
-        return node, FraudGraphMultiMessage
+        builder.make_edge(input_node, node)
+        return node

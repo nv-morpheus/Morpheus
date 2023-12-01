@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include "../test_morpheus.hpp"  // IWYU pragma: associated
+#include "../test_utils/common.hpp"  // IWYU pragma: associated
 
 namespace morpheus::test {
 
-TEST_CLASS(DataLoaderRegistry);
-TEST_CLASS(Loader);
+using TestLoader             = TestWithPythonInterpreter;  // NOLINT
+using TestDataLoader         = TestWithPythonInterpreter;  // NOLINT
+using TestDataLoaderRegistry = TestWithPythonInterpreter;  // NOLINT
 
-using TestDataLoader = TestWithPythonInterpreter;  // NOLINT
 }  // namespace morpheus::test

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "./test_morpheus.hpp"  // IWYU pragma: associated
+#include "./test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/io/serializers.hpp"
@@ -90,7 +90,7 @@ TEST_F(TestFileInOut, RoundTripCSV)
     }
 }
 
-TEST_F(TestFileInOut, RoundTripJSON)
+TEST_F(TestFileInOut, RoundTripJSONLines)
 {
     using nlohmann::json;
     auto input_file      = test::get_morpheus_root() / "tests/tests_data/filter_probs.jsonlines";

@@ -23,13 +23,12 @@ import pika
 
 import cudf
 
-from _lib import morpheus_rabbit as morpheus_rabbit_cpp
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +46,11 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         Hostname or IP of the RabbitMQ server.
     exchange : str
         Name of the RabbitMQ exchange to connect to.
-    exchange_type : str
+    exchange_type : str, optional
         RabbitMQ exchange type; defaults to `fanout`.
-    queue_name : str
+    queue_name : str, optional
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : str
+    poll_interval : str, optional
         Amount of time  between polling RabbitMQ for new messages
     """
 
@@ -80,12 +79,17 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def name(self) -> str:
         return "from-rabbitmq"
 
-    @classmethod
-    def supports_cpp_node(cls) -> bool:
+    def supports_cpp_node(self) -> bool:
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
+            # pylint: disable=c-extension-no-member,no-name-in-module
+            from _lib import morpheus_rabbit as morpheus_rabbit_cpp
+
             node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
                                                            self.unique_name,
                                                            self._host,
@@ -96,7 +100,8 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
         else:
             self.connect()
             node = builder.make_source(self.unique_name, self.source_generator)
-        return node, MessageMeta
+
+        return node
 
     def connect(self):
         self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=self._host))
@@ -114,14 +119,14 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     def source_generator(self):
         try:
             while not self._stop_requested:
-                (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
+                (method_frame, _, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
                     try:
                         buffer = StringIO(body.decode("utf-8"))
                         df = cudf.io.read_json(buffer, orient='records', lines=True)
                         yield MessageMeta(df=df)
                     except Exception as ex:
-                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
+                        logger.exception("Error occurred converting RabbitMQ message to Dataframe: %s", ex)
                     finally:
                         self._channel.basic_ack(method_frame.delivery_tag)
                 else:

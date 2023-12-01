@@ -231,6 +231,7 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("get_column_names", &MessageMetaInterfaceProxy::get_column_names)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def("has_sliceable_index", &MessageMetaInterfaceProxy::has_sliceable_index)
@@ -246,19 +247,23 @@ PYBIND11_MODULE(messages, _module)
         .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
+        .def("get_meta_column_names", &MultiMessageInterfaceProxy::get_meta_column_names)
         .def("get_meta",
              static_cast<pybind11::object (*)(MultiMessage&)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
              static_cast<pybind11::object (*)(MultiMessage&, std::string)>(&MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move)
+             py::return_value_policy::move,
+             py::arg("columns"))
         .def("get_meta",
              static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
                  &MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move)
+             py::return_value_policy::move,
+             py::arg("columns"))
         .def("get_meta",
              static_cast<pybind11::object (*)(MultiMessage&, pybind11::none)>(&MultiMessageInterfaceProxy::get_meta),
-             py::return_value_policy::move)
+             py::return_value_policy::move,
+             py::arg("columns"))
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
         .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal)
         .def("copy_ranges",
@@ -368,22 +373,24 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
         .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
-        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
+        .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
+        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
-        .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
-        .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
-        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
-        .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
-        .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
-        .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
-        .def("list_metadata", &ControlMessageProxy::list_metadata)
+        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key") = py::none())
+        .def("get_tasks", &ControlMessageProxy::get_tasks)
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
-        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))
+        .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
+        .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
-        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload));
+        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
+        .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
+        .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
+        .def(
+            "task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

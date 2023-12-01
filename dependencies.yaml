@@ -1,0 +1,112 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Dependency list for https://github.com/rapidsai/dependency-file-generator
+files:
+  all:
+    output: conda
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - development_cpp
+      - run_morpheus
+      - test_python_morpheus
+      - cudatoolkit
+
+channels:
+  - rapidsai
+  - nvidia/label/cuda-11.8.0
+  - nvidia
+  - rapidsai-nightly
+  - nvidia/label/dev
+  - pytorch
+  - conda-forge
+
+dependencies:
+
+  build_cpp: # should be split in to `build_python` if/when converting to use scikit-build
+    common:
+      - output_types: [conda]
+        packages:
+          - boost-cpp=1.82
+          - cuda-nvcc
+          - cudf=23.06
+          - cxx-compiler
+          - cython=0.29.24
+          - libhwloc=2.9.2
+          - librdkafka=1.9.2
+          - ninja=1.10
+          - nlohmann_json=3.9
+          - protobuf=4.21.*
+          - pybind11-stubgen=0.10
+          - rapidjson=1.1.0
+          - scikit-build=0.17.1
+          - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
+          - ucx=1.14
+  development_cpp:
+    common:
+      - output_types: [conda]
+        packages:
+          - clangdev=14
+          - include-what-you-use=0.18
+          - isort
+          - yapf=0.40.1
+  run_morpheus:
+    common:
+      - output_types: [conda]
+        packages:
+          - appdirs
+          - click>=8
+          - datacompy=0.8
+          - dill
+          - gputil
+          - grpcio
+          - mlflow>=2.2.1,<3
+          - numpydoc=1.4
+          - nvtabular=23.06
+          - python-confluent-kafka=1.9.2
+          - python-graphviz
+          - pytorch-cuda
+          - pytorch=2.0.1
+          - scikit-learn=1.2.2
+          - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
+          - tqdm=4
+          - typing_utils=0.1
+          - watchdog=2.1
+  test_python_morpheus:
+    common:
+      - output_types: [conda]
+        packages:
+          - pip
+          - pytest
+          - pytest-benchmark>=4.0
+          - pytest-cov
+          - pip:
+              - pytest-kafka==0.6.0
+
+  cudatoolkit:
+    specific:
+      - output_types: [conda]
+        matrices:
+          - matrix:
+              cuda: "11.8"
+            packages:
+              - cuda-cudart-dev=11.8
+              - cuda-nvml-dev=11.8
+              - cuda-nvrtc-dev=11.8
+              - cuda-tools=11.8
+              - cuda-version=11.8

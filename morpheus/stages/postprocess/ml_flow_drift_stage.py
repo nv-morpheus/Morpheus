@@ -25,16 +25,16 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("mlflow-drift", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-class MLFlowDriftStage(SinglePortStage):
+class MLFlowDriftStage(PassThruTypeMixin, SinglePortStage):
     """
-    Report model drift statistics to ML Flow.
+    Report model drift statistics to MLflow.
 
     Caculates model drift over time and reports the information to MLflow.
 
@@ -134,8 +134,8 @@ class MLFlowDriftStage(SinglePortStage):
         shifted = cp.abs(x.get_probs_tensor() - 0.5) + 0.5
 
         # Make sure the labels list is long enough
-        for x in range(len(self._labels), shifted.shape[1]):
-            self._labels.append(str(x))
+        for label in range(len(self._labels), shifted.shape[1]):
+            self._labels.append(str(label))
 
         for i in list(range(0, x.count, self._batch_size)):
             start = i
@@ -151,14 +151,10 @@ class MLFlowDriftStage(SinglePortStage):
 
         return x
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
         node = builder.make_node(self.unique_name, ops.map(self._calc_drift))
-        builder.make_edge(input_stream[0], node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        # Return input unchanged
-        return stream, MultiResponseMessage
+        return node

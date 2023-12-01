@@ -53,6 +53,9 @@ DEFAULT_CONFIG = Config()
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
+# Graphviz rankdir options ad documented in https://graphviz.org/docs/attr-types/rankdir/
+RANKDIR_CHOICES = ['BT', 'LR', 'RL', 'TB']
+
 ALIASES = {
     "pipeline": "pipeline-nlp",
 }
@@ -317,6 +320,11 @@ def run(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_nlp(ctx: click.Context, **kwargs):
     """
@@ -361,7 +369,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
              cls=PluginGroup,
              pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
-              default=29,
+              default=18,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
 @click.option('--label',
@@ -382,6 +390,11 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_fil(ctx: click.Context, **kwargs):
     """
@@ -464,6 +477,16 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
+@click.option('--timestamp_column_name',
+              type=str,
+              default="timestamp",
+              required=True,
+              help=("Which column to use as the timestamp."))
 @prepare_command()
 def pipeline_ae(ctx: click.Context, **kwargs):
     """
@@ -493,6 +516,7 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
+    config.ae.timestamp_column_name = kwargs["timestamp_column_name"]
     config.ae.feature_scaler = kwargs["feature_scaler"]
     config.ae.use_generic_model = kwargs["use_generic_model"]
     config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
@@ -540,6 +564,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
               default=None,
               type=click.Path(dir_okay=False, writable=True),
               help="Save a visualization of the pipeline at the specified location")
+@click.option('--viz_direction',
+              default="LR",
+              type=click.Choice(RANKDIR_CHOICES, case_sensitive=False),
+              help=("Set the direction for the Graphviz pipeline diagram, "
+                    "ignored unless --viz_file is also specified."))
 @prepare_command()
 def pipeline_other(ctx: click.Context, **kwargs):
     """
@@ -590,6 +619,12 @@ def pipeline_other(ctx: click.Context, **kwargs):
 def post_pipeline(ctx: click.Context, *args, **kwargs):
     """Executes the pipeline"""
 
+    pipeline = get_pipeline_from_ctx(ctx)
+    pipeline.build()
+    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
+        pipeline.visualize(kwargs["viz_file"], rankdir=kwargs["viz_direction"].upper())
+        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
+
     config = get_config_from_ctx(ctx)
 
     logger.info("Config: \n%s", config.to_string())
@@ -597,15 +632,7 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
 
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
-    pipeline = get_pipeline_from_ctx(ctx)
-
-    # Run the pipeline before generating visualization to ensure the pipeline has been started
     pipeline.run()
-
-    # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
-    if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
-        pipeline.visualize(kwargs["viz_file"], rankdir="LR")
-        click.secho(f"Pipeline visualization saved to {kwargs['viz_file']}", fg="yellow")
 
 
 # Manually create the subcommands for each command (necessary since commands can be used on multiple groups)
@@ -628,13 +655,20 @@ add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL
 add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
 add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
 add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
+add_command("from-arxiv", "morpheus.stages.input.arxiv_source.ArxivSource", modes=ALL)
 add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
 add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
+add_command("from-databricks-deltalake",
+            "morpheus.stages.input.databricks_deltalake_source_stage.DataBricksDeltaLakeSourceStage",
+            modes=ALL)
 add_command("from-duo", "morpheus.stages.input.duo_source_stage.DuoSourceStage", modes=AE_ONLY)
 add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
 add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
+add_command("from-http", "morpheus.stages.input.http_server_source_stage.HttpServerSourceStage", modes=ALL)
+add_command("from-http-client", "morpheus.stages.input.http_client_source_stage.HttpClientSourceStage", modes=ALL)
+add_command("from-rss", "morpheus.stages.input.rss_source_stage.RSSSourceStage", modes=ALL)
 add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
 add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
 add_command("inf-pytorch",
@@ -649,8 +683,13 @@ add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.Prepr
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
 add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
 add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
+add_command("to-elasticsearch",
+            "morpheus.stages.output.write_to_elasticsearch_stage.WriteToElasticsearchStage",
+            modes=ALL)
 add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileStage", modes=ALL)
 add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
+add_command("to-http", "morpheus.stages.output.http_client_sink_stage.HttpClientSinkStage", modes=ALL)
+add_command("to-http-server", "morpheus.stages.output.http_server_sink_stage.HttpServerSinkStage", modes=ALL)
 add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage", modes=AE_ONLY)
 add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
 add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)

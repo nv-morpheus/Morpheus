@@ -23,15 +23,14 @@ import tritonclient.grpc as tritonclient
 from mrc.core import operators as ops
 from scipy.special import softmax
 
-from messages import MultiPostprocLogParsingMessage
-from messages import MultiResponseLogParsingMessage
-from messages import PostprocMemoryLogParsing
-from messages import ResponseMemoryLogParsing
+from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
+from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
+from messages import ResponseMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
@@ -176,10 +175,10 @@ class LogParsingInferenceStage(InferenceStage):
         # Get the value from the worker class
         return False
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiPostprocLogParsingMessage)
 
-        stream = input_stream[0]
-        out_type = MultiResponseLogParsingMessage
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -205,17 +204,17 @@ class LogParsingInferenceStage(InferenceStage):
 
                     fut = mrc.Future()
 
-                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: mrc.Future):
+                    def set_output_fut(resp: ResponseMemoryLogParsing, inner_b, inner_f: mrc.Future):
                         nonlocal outstanding_requests
-                        m = self._convert_one_response(memory, b, resp)
+                        inner_memory = self._convert_one_response(memory, inner_b, resp)
 
-                        f.set_result(m)
+                        inner_f.set_result(inner_memory)
 
                         outstanding_requests -= 1
 
                     fut_list.append(fut)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, f=fut))
+                    worker.process(batch, partial(set_output_fut, inner_b=batch, inner_f=fut))
 
                 for f in fut_list:
                     f.result()
@@ -233,24 +232,22 @@ class LogParsingInferenceStage(InferenceStage):
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        builder.make_edge(stream, node)
+        builder.make_edge(input_node, node)
 
-        stream = node
-
-        return stream, out_type
+        return node
 
     @staticmethod
-    def _convert_one_response(memory: PostprocMemoryLogParsing,
+    def _convert_one_response(output: PostprocMemoryLogParsing,
                               inf: MultiInferenceMessage,
                               res: ResponseMemoryLogParsing):
 
-        memory.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
-        memory.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
+        output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
+        output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            memory.confidences[inf.offset:inf.count + inf.offset, :] = res.confidences
-            memory.labels[inf.offset:inf.count + inf.offset, :] = res.labels
+            output.confidences[inf.offset:inf.count + inf.offset, :] = res.confidences
+            output.labels[inf.offset:inf.count + inf.offset, :] = res.labels
         else:
             assert inf.count == res.count
 
@@ -258,10 +255,10 @@ class LogParsingInferenceStage(InferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                memory.confidences[idx, :] = cp.maximum(memory.confidences[idx, :], res.confidences[i, :])
-                memory.labels[idx, :] = cp.maximum(memory.labels[idx, :], res.labels[i, :])
+                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.confidences[i, :])
+                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.labels[i, :])
 
-        return MultiPostprocLogParsingMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
+        return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 

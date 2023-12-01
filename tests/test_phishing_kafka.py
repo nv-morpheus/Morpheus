@@ -23,6 +23,11 @@ import numpy as np
 import pandas
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import mk_async_infer
+from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
+from _utils.kafka import write_file_to_kafka
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.io.utils import filter_null_data
@@ -36,9 +41,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.compare_df import compare_df
-from utils import TEST_DIRS
-from utils import write_file_to_kafka
-from utils.dataset_manager import DatasetManager
+from morpheus.utils.file_utils import load_labels_file
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -56,7 +59,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
                       dataset_pandas: DatasetManager,
                       config: Config,
                       kafka_bootstrap_servers: str,
-                      kafka_topics: typing.Tuple[str, str],
+                      kafka_topics: KafkaTopics,
                       kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
@@ -80,16 +83,12 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_phishing_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -122,7 +121,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
@@ -133,7 +132,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
@@ -153,10 +152,10 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
 def test_email_cpp(dataset_pandas: DatasetManager,
                    config: Config,
                    kafka_bootstrap_servers: str,
-                   kafka_topics: typing.Tuple[str, str],
+                   kafka_topics: KafkaTopics,
                    kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -189,7 +188,7 @@ def test_email_cpp(dataset_pandas: DatasetManager,
                              server_url='localhost:8001',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
@@ -200,7 +199,7 @@ def test_email_cpp(dataset_pandas: DatasetManager,
 
     output_buf = StringIO()
     for rec in kafka_consumer:
-        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+        output_buf.write(f"{rec.value.decode('utf-8')}\n")
 
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)

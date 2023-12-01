@@ -17,37 +17,36 @@ limitations under the License.
 
 
 
-## Instruction how to train new GNN models. 
+## Instruction how to train new GNN models.
 
 ### Setup training environment
 
-Install packages for training GNN model. 
+Install packages for training GNN model.
 
-```
-pip install -r requirements.txt
+```bash
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  models/training-tuning-scripts/fraud-detection-models/requirements.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
 ```
 
 ### Options for training and tuning models.
 
-```
+```bash
 python training.py --help
-optional arguments:
-  -h, --help            show this help message and exit
-  --training-data TRAINING_DATA
-                     CSV with fraud_label
-  --validation-data VALIDATION_DATA
-                        CSV with fraud_label
-  --epochs EPOCHS     Number of epochs
-  --node_type NODE_TYPE
-                        Target node type
-  --output-xgb OUTPUT_XGB
-                        output file to save xgboost model
-  --output-hinsage OUTPUT_HINSAGE
-                        output file to save GraphHinSage model
-  --save_model SAVE_MODEL
-                        Save models to given  filenames
-  --embedding_size EMBEDDING_SIZE
-                        output file to save new model
+Usage: training.py [OPTIONS]
+
+Options:
+  --training-data TEXT    Path to training data
+  --validation-data TEXT  Path to validation data
+  --model-dir TEXT        path to model directory
+  --target-node TEXT      Target node
+  --epochs INTEGER        Number of epochs
+  --batch_size INTEGER    Batch size
+  --output-file TEXT      Path to csv inference result
+  --model-type TEXT       Model type either RGCN/HinSAGE
+  --help                  Show this message and exit
 
 ```
 
@@ -59,10 +58,10 @@ export DATASET=../../dataset
 
 python training.py --training-data $DATASET/training-data/fraud-detection-training-data.csv \
 --validation-data $DATASET\validation-datafraud-detection-validation-data.csv \
-         --epoch 10 \
-         --output-xgb model/xgb.pt \ 
-         --output-hinsage model/hinsage.pt \
-         --save_model True
+         --epochs 20 \
+         --model_dir models\
+         --model-type HinSAGE
 ```
+This results is a trained models of HeteroRGCN/HinSAGE (model.pt) and Gradient boosting tree (xgb.pt), hyperparmeters at the `model` directory.
 
-This results in a trained models of GraphSAGE (hinsage.pt) and Gradient boosting tree (xgb.pt) at the `model` directory.
+Note the `model.py` used for both training & inference script is a symbolink for the `../../../examples/gnn_fraud_detection_pipeline/stages/model.py`.

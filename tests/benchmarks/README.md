@@ -23,12 +23,12 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 
 Example:
 
-```
+```bash
 docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 ##### Start Triton Inference Server container
-```
+```bash
 cd ${MORPHEUS_ROOT}/models
 
 docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx
@@ -50,32 +50,32 @@ Once Triton server finishes starting up, it will display the status of all loade
 ### Set up Morpheus Dev Container
 
 If you don't already have the Morpheus Dev container, run the following to build it:
-```
+```bash
 ./docker/build_container_dev.sh
 ```
 
 Now run the container:
-```
+```bash
 ./docker/run_container_dev.sh
 ```
 
 Note that Morpheus containers are tagged by date. By default, `run_container_dev.sh` will try to use current date as tag. Therefore, if you are trying to run a container that was not built on the current date, you must set the `DOCKER_IMAGE_TAG` environment variable. For example,
-```
+```bash
 DOCKER_IMAGE_TAG=dev-221003 ./docker/run_container_dev.sh
 ```
 
 In the `/workspace` directory of the container, run the following to compile Morpheus:
-```
+```bash
 ./scripts/compile.sh
 ```
 
 Now install Morpheus:
-```
+```bash
 pip install -e /workspace
 ```
 
 Fetch input data for benchmarks:
-```
+```bash
 ./scripts/fetch_data.py fetch validation
 ```
 
@@ -102,7 +102,7 @@ Morpheus configurations for each workflow are managed using `e2e_test_configs.js
 
 Benchmarks for an individual workflow can be run using the following:
 
-```
+```bash
 cd tests/benchmarks
 
 pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::<test-workflow>
@@ -118,12 +118,12 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 - `test_cloudtrail_ae_e2e`
 
 For example, to run E2E benchmarks on the SID NLP workflow:
-```
+```bash
 pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::test_sid_nlp_e2e
 ```
 
 To run E2E benchmarks on all workflows:
-```
+```bash
 pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py
 ```
 
@@ -180,3 +180,19 @@ Additional benchmark stats for each workflow:
 - max_throughput_bytes
 - mean_throughput_bytes
 - median_throughput_bytes
+
+
+### Production DFP E2E Benchmarks
+
+Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipeline built using [Starter DFP](../../examples/digital_fingerprinting/starter/README.md) stages. Separate benchmark tests are also provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
+
+You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
+
+```bash
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  docker/conda/environments/cuda${CUDA_VER}_examples.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
+
+```

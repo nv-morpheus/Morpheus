@@ -14,65 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
-import mrc
-import mrc.core.operators as ops
 import pytest
-from mrc.core.node import Broadcast
 
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
+from _utils.stages.split_stage import SplitStage
 from morpheus.config import Config
-from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils import assert_results
-from utils.dataset_manager import DatasetManager
 
 
-class SplitStage(Stage):
-
-    def __init__(self, c: Config):
-        super().__init__(c)
-
-        self._create_ports(1, 2)
-
-    @property
-    def name(self) -> str:
-        return "split"
-
-    def supports_cpp_node(self):
-        return False
-
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
-
-        assert len(in_ports_streams) == 1, "Only 1 input supported"
-
-        # Create a broadcast node
-        broadcast = Broadcast(builder, "broadcast")
-        builder.make_edge(in_ports_streams[0][0], broadcast)
-
-        def filter_higher_fn(data: MessageMeta):
-            return MessageMeta(data.df[data.df["v2"] >= 0.5])
-
-        def filter_lower_fn(data: MessageMeta):
-            return MessageMeta(data.df[data.df["v2"] < 0.5])
-
-        # Create a node that only passes on rows >= 0.5
-        filter_higher = builder.make_node("filter_higher", ops.map(filter_higher_fn))
-        builder.make_edge(broadcast, filter_higher)
-
-        # Create a node that only passes on rows < 0.5
-        filter_lower = builder.make_node("filter_lower", ops.map(filter_lower_fn))
-        builder.make_edge(broadcast, filter_lower)
-
-        return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
-
-
-def test_forking_pipeline(config, dataset_cudf: DatasetManager):
+def test_forking_pipeline(config: Config, dataset_cudf: DatasetManager):
     filter_probs_df = dataset_cudf["filter_probs.csv"]
     compare_higher_df = filter_probs_df[filter_probs_df["v2"] >= 0.5]
     compare_lower_df = filter_probs_df[filter_probs_df["v2"] < 0.5]
@@ -100,7 +54,7 @@ def test_forking_pipeline(config, dataset_cudf: DatasetManager):
 
 
 @pytest.mark.parametrize("source_count, expected_count", [(1, 1), (2, 2), (3, 3)])
-def test_port_multi_sender(config, dataset_cudf: DatasetManager, source_count, expected_count):
+def test_port_multi_sender(config: Config, dataset_cudf: DatasetManager, source_count: int, expected_count: int):
 
     filter_probs_df = dataset_cudf["filter_probs.csv"]
 

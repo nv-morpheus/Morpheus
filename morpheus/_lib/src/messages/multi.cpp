@@ -83,6 +83,11 @@ MultiMessage::MultiMessage(std::shared_ptr<MessageMeta> meta, TensorIndex offset
     }
 }
 
+std::vector<std::string> MultiMessage::get_meta_column_names() const
+{
+    return this->meta->get_column_names();
+}
+
 TableInfo MultiMessage::get_meta()
 {
     auto table_info = this->get_meta(std::vector<std::string>{});
@@ -254,6 +259,11 @@ TensorIndex MultiMessageInterfaceProxy::mess_offset(const MultiMessage& self)
 TensorIndex MultiMessageInterfaceProxy::mess_count(const MultiMessage& self)
 {
     return self.mess_count;
+}
+
+std::vector<std::string> MultiMessageInterfaceProxy::get_meta_column_names(const MultiMessage& self)
+{
+    return self.get_meta_column_names();
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self)
@@ -463,4 +473,5 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(MultiMessa
 
     return self.copy_ranges(ranges, num_rows);
 }
+
 }  // namespace morpheus

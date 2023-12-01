@@ -25,13 +25,13 @@ from mrc.core import operators as ops
 from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPPostprocessingStage(SinglePortStage):
+class DFPPostprocessingStage(PassThruTypeMixin, SinglePortStage):
     """
     This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the
     anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.
@@ -87,8 +87,8 @@ class DFPPostprocessingStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+        builder.make_edge(input_node, node)
 
-        return stream, input_stream[1]
+        return node

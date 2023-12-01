@@ -26,7 +26,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import importlib
 import os
 import sys
@@ -129,7 +129,7 @@ exhale_args = {
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
         EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/* */doca/*
-        EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
+        EXCLUDE_SYMBOLS = "@*" "cudf*" "py::literals" "RdKafka" "mrc*" "std*" "PYBIND11_NAMESPACE*"
         EXTENSION_MAPPING = cu=C++ cuh=C++
         EXTRACT_ALL = YES
         FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
@@ -138,6 +138,11 @@ exhale_args = {
         INPUT = ../../morpheus/_lib
         INTERACTIVE_SVG = YES
         SOURCE_BROWSER = YES
+        ENABLE_PREPROCESSING = YES
+        MACRO_EXPANSION = YES
+        EXPAND_ONLY_PREDEF = NO
+        PREDEFINED = "MORPHEUS_EXPORT=" \
+                     "DOXYGEN_SHOULD_SKIP_THIS=1"
     ''')
 }
 
@@ -164,11 +169,13 @@ myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
+    "databricks.connect",
+    "langchain",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
-    "morpheus.utils.nvt.mutate.annotate",
     "nvtabular",
-    "pandas",  # Avoid documenting pandas for the purposes of the dfencoder.dataframe
+    "pandas",
+    "pymilvus",
     "tensorrt",
     "torch",
     "tqdm",

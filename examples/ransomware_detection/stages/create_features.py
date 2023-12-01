@@ -19,14 +19,13 @@ from mrc.core import operators as ops
 
 from dask.distributed import Client
 
-from common.data_models import FeatureConfig
-from common.feature_extractor import FeatureExtractor
+from common.data_models import FeatureConfig  # pylint: disable=no-name-in-module
+from common.feature_extractor import FeatureExtractor  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 
 
@@ -154,16 +153,12 @@ class CreateFeaturesRWStage(MultiMessageStage):
         # Close dask client when pipeline initiates shutdown
         self._client.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name,
                                  ops.map(self.on_next),
                                  ops.map(self.create_multi_messages),
                                  ops.on_completed(self.on_completed),
                                  ops.flatten())
-        builder.make_edge(stream, node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        return stream, MultiMessage
+        return node

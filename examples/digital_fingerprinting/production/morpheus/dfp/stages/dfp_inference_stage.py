@@ -24,13 +24,13 @@ from mrc.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
 from ..utils.model_cache import ModelManager
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPInferenceStage(SinglePortStage):
@@ -72,6 +72,9 @@ class DFPInferenceStage(SinglePortStage):
         """Accepted input types."""
         return (MultiDFPMessage, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
+
     def get_model(self, user: str) -> ModelCache:
         """
         Return the model for the given user. If a model doesn't exist for the given user, the model for the generic
@@ -93,12 +96,12 @@ class DFPInferenceStage(SinglePortStage):
             model_cache = self.get_model(user_id)
 
             if (model_cache is None):
-                raise RuntimeError("Could not find model for user {}".format(user_id))
+                raise RuntimeError(f"Could not find model for user {user_id}")
 
             loaded_model = model_cache.load_model(self._client)
 
-        except Exception:  # TODO
-            logger.exception("Error trying to get model")
+        except Exception:
+            logger.exception("Error trying to get model", exc_info=True)
             return None
 
         post_model_time = time.time()
@@ -127,10 +130,10 @@ class DFPInferenceStage(SinglePortStage):
 
         return output_message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+        builder.make_edge(input_node, node)
 
         # node.launch_options.pe_count = self._config.num_threads
 
-        return node, MultiAEMessage
+        return node

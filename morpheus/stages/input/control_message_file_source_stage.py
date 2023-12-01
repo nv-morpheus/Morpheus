@@ -23,9 +23,9 @@ import mrc
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class ControlMessageFileSourceStage(SingleOutputSource):
@@ -50,6 +50,9 @@ class ControlMessageFileSourceStage(SingleOutputSource):
     def name(self) -> str:
         return "from-message-control"
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(fsspec.core.OpenFiles)
+
     def supports_cpp_node(self):
         return True
 
@@ -69,8 +72,5 @@ class ControlMessageFileSourceStage(SingleOutputSource):
                     message_control = ControlMessage(message_config)
                     yield message_control
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-
-        out_stream = builder.make_source(self.unique_name, self._create_control_message())
-
-        return out_stream, fsspec.core.OpenFiles
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return builder.make_source(self.unique_name, self._create_control_message())

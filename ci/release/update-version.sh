@@ -53,14 +53,26 @@ NEXT_SHORT_TAG_PEP440=$(python -c "from setuptools.extern import packaging; prin
 
 echo "Preparing release $CURRENT_FULL_VERSION (PEP ${CURRENT_SHORT_TAG_PEP440}) => $NEXT_FULL_VERSION (PEP ${NEXT_SHORT_TAG_PEP440})"
 
-# Inplace sed replace; workaround for Linux and Mac
+# Inplace sed replace; workaround for Linux and Mac. Accepts multiple files
 function sed_runner() {
-    sed -i.bak ''"$1"'' $2 && rm -f ${2}.bak
+
+   pattern=$1
+   shift
+
+   for f in $@ ; do
+      sed -i.bak ''"$pattern"'' "$f" && rm -f "$f.bak"
+   done
 }
 
 # .gitmodules
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} external/morpheus-visualizations
 git submodule set-branch -b branch-${NEXT_SHORT_TAG} morpheus_utils
+
+if [[ "$(git diff --name-only | grep .gitmodules)" != "" ]]; then
+   # Only update the submodules if setting the branch changed .gitmodules. Otherwise this will undo the current commit
+   # for any submodules resulting in differences always appearing in CI
+   git submodule update --remote --recursive
+fi
 
 # Root CMakeLists.txt
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' CMakeLists.txt
@@ -69,7 +81,9 @@ sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSIO
 sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" docker/conda/environments/cuda11.8_dev.yml
 
 # examples/digital_fingerprinting
-sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" examples/digital_fingerprinting/production/docker-compose.yml
+sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \
+   examples/digital_fingerprinting/production/docker-compose.yml \
+   examples/digital_fingerprinting/production/Dockerfile
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" examples/digital_fingerprinting/production/Dockerfile
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" examples/digital_fingerprinting/starter/README.md
 
@@ -81,3 +95,7 @@ sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" 
 # docs/source/getting_started.md
 # Only do the minor version here since the full version can mess up the examples
 sed_runner "s/${CURRENT_SHORT_TAG}/${NEXT_SHORT_TAG}/g" docs/source/getting_started.md
+
+# models/model-cards
+sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md
+sed_runner "s|tree/branch-${CURRENT_SHORT_TAG}|tree/branch-${NEXT_SHORT_TAG}|g" models/model-cards/*.md

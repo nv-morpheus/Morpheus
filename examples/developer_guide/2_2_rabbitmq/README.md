@@ -40,7 +40,7 @@ python examples/developer_guide/2_2_rabbitmq/read_simple.py
 
 This will read from a RabbitMQ exchange named 'logs', and write the results to `/tmp/results.json`.
 
-If no exchange named 'logs' exists in RabbitMQ it will be created.
+If no exchange named 'logs' exists in RabbitMQ it will be created. By default the `read_simple.py` script will utilize the class-based `RabbitMQSourceStage`, alternately using the `--use_source_function` flag will utilize the function-based `rabbitmq_source` stage.
 
 ## Launch the writer
 In a third terminal from the root of the Morpheus repo execute:
@@ -60,7 +60,7 @@ In the above examples we defined the pipeline using the Python API in the `read_
 From the  Morpheus repo root directory run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
-morpheus --plugin examples/developer_guide/2_2_rabbitmq/rabbitmq_source_stage.py \
+morpheus --log_level=INFO --plugin examples/developer_guide/2_2_rabbitmq/rabbitmq_source_stage.py \
   run pipeline-other \
   from-rabbitmq --host=localhost --exchange=logs \
   monitor \
@@ -71,7 +71,7 @@ morpheus --plugin examples/developer_guide/2_2_rabbitmq/rabbitmq_source_stage.py
 From the  Morpheus repo root directory run:
 ```bash
 export MORPHEUS_ROOT=$(pwd)
-morpheus --plugin examples/developer_guide/2_2_rabbitmq/write_to_rabbitmq_stage.py \
+morpheus --log_level=INFO --plugin examples/developer_guide/2_2_rabbitmq/write_to_rabbitmq_stage.py \
   run pipeline-other \
   from-file --filename=examples/data/email.jsonlines \
   to-rabbitmq --host=localhost --exchange=logs

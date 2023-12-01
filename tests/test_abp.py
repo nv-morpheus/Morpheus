@@ -20,6 +20,10 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import compare_class_to_scores
+from _utils import mk_async_infer
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
@@ -39,12 +43,9 @@ from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.utils.file_utils import load_labels_file
-from utils import TEST_DIRS
-from utils import calc_error_val
-from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the ABP validation test
-FEATURE_LENGTH = 29
+FEATURE_LENGTH = 18
 MODEL_MAX_BATCH_SIZE = 1024
 
 
@@ -72,11 +73,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **_):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 
@@ -182,11 +179,7 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **_):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 

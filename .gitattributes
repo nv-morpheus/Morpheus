@@ -1,9 +1,11 @@
 docs/source/developer_guide/guides/img/** filter=lfs diff=lfs merge=lfs -text
+docs/source/img/* filter=lfs diff=lfs merge=lfs -text
+examples/basic_usage/img/** filter=lfs diff=lfs merge=lfs -text
 examples/data/** filter=lfs diff=lfs merge=lfs -text
 examples/digital_fingerprinting/production/grafana/img/** filter=lfs diff=lfs merge=lfs -text
 examples/digital_fingerprinting/visualization/img/** filter=lfs diff=lfs merge=lfs -text
+git filter=lfs diff=lfs merge=lfs -text
 morpheus/_version.py export-subst
+status filter=lfs diff=lfs merge=lfs -text
 tests/mock_triton_server/payloads/** filter=lfs diff=lfs merge=lfs -text
 tests/tests_data/** filter=lfs diff=lfs merge=lfs -text
-examples/basic_usage/img/** filter=lfs diff=lfs merge=lfs -text
-docs/source/img/* filter=lfs diff=lfs merge=lfs -text

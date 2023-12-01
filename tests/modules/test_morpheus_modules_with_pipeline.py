@@ -18,8 +18,7 @@ import tempfile
 
 import cudf
 
-# pylint: disable=unused-import
-import morpheus.modules  # noqa: F401
+import morpheus.modules  # noqa: F401 # pylint: disable=unused-import
 from morpheus import messages
 from morpheus.utils.module_ids import FILTER_CM_FAILED
 

@@ -113,6 +113,15 @@ struct FiberQueueInterfaceProxy
      * TODO(Documentation)
      */
     static void close(morpheus::FiberQueue& self);
+
+    static bool is_closed(morpheus::FiberQueue& self);
+
+    // Context manager methods
+    static morpheus::FiberQueue& enter(morpheus::FiberQueue& self);
+    static void exit(morpheus::FiberQueue& self,
+                     const pybind11::object& type,
+                     const pybind11::object& value,
+                     const pybind11::object& traceback);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

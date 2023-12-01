@@ -30,12 +30,16 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
+#include <cstddef>  // for size_t
 #include <cstdint>  // for uuint32_t
+#include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -52,6 +56,17 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+
+class KafkaOAuthCallback : public RdKafka::OAuthBearerTokenRefreshCb
+{
+  public:
+    KafkaOAuthCallback(const std::function<std::map<std::string, std::string>()>& oauth_callback);
+
+    void oauthbearer_token_refresh_cb(RdKafka::Handle* handle, const std::string& oauthbearer_config) override;
+
+  private:
+    const std::function<std::map<std::string, std::string>()>& m_oauth_callback;
+};
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
@@ -81,10 +96,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::string topic,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit        = false,
-                     bool disable_pre_filtering = false,
-                     TensorIndex stop_after     = 0,
-                     bool async_commits         = true);
+                     bool disable_commit                                = false,
+                     bool disable_pre_filtering                         = false,
+                     std::size_t stop_after                             = 0,
+                     bool async_commits                                 = true,
+                     std::unique_ptr<KafkaOAuthCallback> oauth_callback = nullptr);
 
     /**
      * @brief Construct a new Kafka Source Stage object
@@ -105,10 +121,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
                      std::vector<std::string> topics,
                      uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
-                     bool disable_commit        = false,
-                     bool disable_pre_filtering = false,
-                     TensorIndex stop_after     = 0,
-                     bool async_commits         = true);
+                     bool disable_commit                                = false,
+                     bool disable_pre_filtering                         = false,
+                     std::size_t stop_after                             = 0,
+                     bool async_commits                                 = true,
+                     std::unique_ptr<KafkaOAuthCallback> oauth_callback = nullptr);
 
     ~KafkaSourceStage() override = default;
 
@@ -172,9 +189,11 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
     bool m_async_commits{true};
-    TensorIndex m_stop_after{0};
+    std::size_t m_stop_after{0};
 
     void* m_rebalancer;
+
+    std::unique_ptr<KafkaOAuthCallback> m_oauth_callback;
 };
 
 /****** KafkaSourceStageInferenceProxy**********************/
@@ -199,6 +218,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     * @param oauth_callback : Callback used when an OAuth token needs to be generated.
      */
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_single_topic(
         mrc::segment::Builder& builder,
@@ -209,8 +229,9 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        TensorIndex stop_after = 0,
-        bool async_commits     = true);
+        std::size_t stop_after                           = 0,
+        bool async_commits                               = true,
+        std::optional<pybind11::function> oauth_callback = std::nullopt);
 
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
@@ -228,6 +249,7 @@ struct KafkaSourceStageInterfaceProxy
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     * @param oauth_callback : Callback used when an OAuth token needs to be generated.
      */
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init_with_multiple_topics(
         mrc::segment::Builder& builder,
@@ -238,8 +260,19 @@ struct KafkaSourceStageInterfaceProxy
         std::map<std::string, std::string> config,
         bool disable_commit,
         bool disable_pre_filtering,
-        TensorIndex stop_after = 0,
-        bool async_commits     = true);
+        std::size_t stop_after                           = 0,
+        bool async_commits                               = true,
+        std::optional<pybind11::function> oauth_callback = std::nullopt);
+
+  private:
+    /**
+     * @brief Create a KafkaOAuthCallback or return nullptr. If oauth_callback is std::nullopt,
+     * returns nullptr, otherwise wraps the callback in a KafkaOAuthCallback such that the values
+     * returned from the python callback are converted for use in c++.
+     * @param oauth_callback : The callback to wrap, if any.
+     */
+    static std::unique_ptr<KafkaOAuthCallback> make_kafka_oauth_callback(
+        std::optional<pybind11::function>&& oauth_callback);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

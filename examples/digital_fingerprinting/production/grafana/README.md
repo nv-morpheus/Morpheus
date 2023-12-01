@@ -96,8 +96,6 @@ docker compose up grafana
 
 Our Grafana DFP dashboard can now be accessed via web browser at http://localhost:3000/dashboards.
 
-Log in with admin/admin.
-
 Click on `DFP_Dashboard` in the `General` folder. You may need to expand the `General` folder to see the link.
 
 <img src="./img/screenshot.png">

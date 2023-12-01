@@ -37,6 +37,7 @@ def cm_skip_processing_if_failed(func: Callable[CM_SKIP_P, T]) -> Callable[CM_SK
         The decorated function.
     """
 
+    @wraps(func)
     def wrapper(control_message: ControlMessage, *args: CM_SKIP_P.args, **kwargs: CM_SKIP_P.kwargs) -> T:
         if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed")):
             return control_message

@@ -15,12 +15,18 @@
 # limitations under the License.
 
 import os
-import time
 import typing
 
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import assert_results
+from _utils.kafka import KafkaTopics
+from _utils.kafka import seek_to_beginning
+from _utils.kafka import write_data_to_kafka
+from _utils.kafka import write_file_to_kafka
+from _utils.stages.dfp_length_checker import DFPLengthChecker
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.trigger_stage import TriggerStage
@@ -28,18 +34,13 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import assert_results
-from utils import write_data_to_kafka
-from utils import write_file_to_kafka
-from utils.stages.dfp_length_checker import DFPLengthChecker
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
 
 
 @pytest.mark.kafka
-def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_topics: typing.Tuple[str, str]) -> None:
+def test_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str, kafka_topics: KafkaTopics) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
 
     # Fill our topic with the input data
@@ -63,7 +64,7 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
 
 
 @pytest.mark.kafka
-def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str) -> None:
+def test_multi_topic_kafka_source_stage_pipe(config: Config, kafka_bootstrap_servers: str) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
 
     topic_1 = "morpheus_input_topic_1"
@@ -94,24 +95,6 @@ def test_multi_topic_kafka_source_stage_pipe(config, kafka_bootstrap_servers: st
     assert_results(comp_stage.get_results())
 
 
-def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = 15):
-    """
-    Seeks to the beginning of the Kafka topic
-    """
-    start = time.time()
-    end = start + timeout
-    partitions_assigned = False
-    while not partitions_assigned and time.time() <= end:
-        kafka_consumer.poll(timeout_ms=20)
-        partitions_assigned = len(kafka_consumer.assignment()) > 0
-        if not partitions_assigned:
-            time.sleep(0.1)
-
-    assert partitions_assigned
-
-    kafka_consumer.seek_to_beginning()
-
-
 @pytest.mark.kafka
 @pytest.mark.parametrize('async_commits', [True, False])
 @pytest.mark.parametrize('num_records', [10, 100, 1000])
@@ -119,7 +102,7 @@ def test_kafka_source_commit(num_records: int,
                              async_commits: bool,
                              config: Config,
                              kafka_bootstrap_servers: str,
-                             kafka_topics: typing.Tuple[str, str],
+                             kafka_topics: KafkaTopics,
                              kafka_consumer: "KafkaConsumer") -> None:
     group_id = 'morpheus'
 
@@ -147,7 +130,6 @@ def test_kafka_source_commit(num_records: int,
                          stop_after=num_records,
                          async_commits=async_commits))
     pipe.add_stage(TriggerStage(config))
-
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
     comp_stage = pipe.add_stage(
@@ -170,9 +152,9 @@ def test_kafka_source_commit(num_records: int,
 
 @pytest.mark.kafka
 @pytest.mark.parametrize('num_records', [1000])
-def test_kafka_source_batch_pipe(config,
+def test_kafka_source_batch_pipe(config: Config,
                                  kafka_bootstrap_servers: str,
-                                 kafka_topics: typing.Tuple[str, str],
+                                 kafka_topics: KafkaTopics,
                                  num_records: int) -> None:
     data = [{'v': i} for i in range(num_records)]
     num_written = write_data_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, data)

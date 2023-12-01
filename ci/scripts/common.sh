@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# set -x
-
 export SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"}
-export REPO_DIR=$(realpath ${REPO_DIR:-"${SCRIPT_DIR}/../.."})
-export PY_ROOT="${REPO_DIR}"
+
+# The root to the Morpheus repo
+export MORPHEUS_ROOT=${MORPHEUS_ROOT:-"$(realpath ${SCRIPT_DIR}/../..)"}
+
+export PY_ROOT="${MORPHEUS_ROOT}"
 export PY_CFG="${PY_ROOT}/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
@@ -40,10 +41,10 @@ export SKIP_ISORT=${SKIP_ISORT:-""}
 export SKIP_YAPF=${SKIP_YAPF:-""}
 
 # Set BUILD_DIR to use a different build folder
-export BUILD_DIR=${BUILD_DIR:-"${REPO_DIR}/build"}
+export BUILD_DIR=${BUILD_DIR:-"${MORPHEUS_ROOT}/build"}
 
-# Speficy the clang-tools version to use. Default 14
-export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-14}
+# Speficy the clang-tools version to use. Default 16
+export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-16}
 
 # Returns the `branch-YY.MM` that is used as the base for merging
 function get_base_branch() {
@@ -194,4 +195,4 @@ function cleanup {
 trap cleanup EXIT
 
 # Change directory to the repo root
-pushd "${REPO_DIR}" &> /dev/null
+pushd "${MORPHEUS_ROOT}" &> /dev/null

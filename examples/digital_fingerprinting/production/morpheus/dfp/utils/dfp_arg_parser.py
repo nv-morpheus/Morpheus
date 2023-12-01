@@ -24,7 +24,7 @@ import pandas as pd
 
 from morpheus.utils.logger import configure_logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @dataclass
@@ -46,6 +46,8 @@ class DFPArgParser:
                  source: str,
                  tracking_uri: str,
                  silence_monitors: bool,
+                 mlflow_experiment_name_formatter: str,
+                 mlflow_model_name_formatter: str,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -65,10 +67,14 @@ class DFPArgParser:
         self._time_fields: TimeFields = None
         self._silence_monitors = silence_monitors
 
-        self._model_name_formatter = f"DFP-{source}-" + "{user_id}"
-        self._experiment_name_formatter = f"dfp/{source}/training/" + "{reg_model_name}"
+        self._model_name_formatter = mlflow_model_name_formatter
+        self._experiment_name_formatter = mlflow_experiment_name_formatter
 
+    @staticmethod
     def verify_init(func):
+        """
+        Decorator function that verifies DFPArgParser instance has been initialized.
+        """
 
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
@@ -134,7 +140,7 @@ class DFPArgParser:
         return self._experiment_name_formatter
 
     def _set_include_generic(self):
-        self._include_generic = self._train_users == "all" or self._train_users == "generic"
+        self._include_generic = self._train_users in ('all', 'generic')
 
     def _set_include_individual(self):
         self._include_individual = self._train_users != "generic"
@@ -150,9 +156,9 @@ class DFPArgParser:
 
             end_time = self._start_time + duration
 
-        tf = TimeFields(self._start_time, end_time)
+        time_fields = TimeFields(self._start_time, end_time)
 
-        return tf
+        return time_fields
 
     def _set_mlflow_tracking_uri(self):
         if self._tracking_uri is None:

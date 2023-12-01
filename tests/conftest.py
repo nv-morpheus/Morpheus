@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import ctypes
+import gc
 import importlib
 import logging
 import os
@@ -21,67 +22,27 @@ import signal
 import subprocess
 import sys
 import time
+import types
 import typing
 import warnings
-from collections import namedtuple
-from functools import partial
 
 import pytest
 import requests
 
-# actual topic names not important, but we will need two of them.
-KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
-                                                                           'morpheus_output_topic')
-
-# pylint: disable=invalid-name
-zookeeper_proc = None
-kafka_server = None
-kafka_consumer = None
-pytest_kafka_setup_error = None
-# pylint: enable=invalid-name
+from _utils.kafka import _init_pytest_kafka
+from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
+from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
-
-def init_pytest_kafka():
-    """
-    Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
-    """
-    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error  # pylint: disable=global-statement
-    try:
-        import pytest_kafka
-        os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
-        # Initialize pytest_kafka fixtures following the recomendations in:
-        # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-        kafka_scripts = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
-        if not os.path.exists(kafka_scripts):
-            # check the old location
-            kafka_scripts = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-
-        kafka_bin = os.path.join(kafka_scripts, 'kafka-server-start.sh')
-        zookeeper_bin = os.path.join(kafka_scripts, 'zookeeper-server-start.sh')
-
-        for kafka_script in (kafka_bin, zookeeper_bin):
-            if not os.path.exists(kafka_script):
-                raise RuntimeError(f"Required Kafka script not found: {kafka_script}")
-
-        teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-        zookeeper_proc = pytest_kafka.make_zookeeper_process(zookeeper_bin, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(kafka_bin, 'zookeeper_proc', teardown_fn=teardown_fn)
-        kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
-                                                          group_id='morpheus_unittest_reader',
-                                                          client_id='morpheus_unittest_reader',
-                                                          seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
-
-        return True
-    except Exception as e:
-        pytest_kafka_setup_error = e
-        return False
-
-
-PYTEST_KAFKA_AVAIL = init_pytest_kafka()
+(PYTEST_KAFKA_AVAIL, PYTEST_KAFKA_ERROR) = _init_pytest_kafka()
+if PYTEST_KAFKA_AVAIL:
+    # Pull out the fixtures into this namespace
+    from _utils.kafka import _kafka_consumer  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import kafka_server  # noqa: F401  pylint:disable=unused-import
+    from _utils.kafka import zookeeper_proc  # noqa: F401  pylint:disable=unused-import
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -100,6 +61,13 @@ def pytest_addoption(parser: pytest.Parser):
         action="store_true",
         dest="run_kafka",
         help="Run kafka tests that would otherwise be skipped",
+    )
+
+    parser.addoption(
+        "--run_milvus",
+        action="store_true",
+        dest="run_milvus",
+        help="Run milvus tests that would otherwise be skipped",
     )
 
     parser.addoption(
@@ -185,6 +153,10 @@ def pytest_runtest_setup(item):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
 
+    if (not item.config.getoption("--run_milvus")):
+        if (item.get_closest_marker("milvus") is not None):
+            pytest.skip("Skipping milvus tests by default. Use --run_milvus to enable")
+
     if (not item.config.getoption("--run_benchmark")):
         if (item.get_closest_marker("benchmark") is not None):
             pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
@@ -196,7 +168,7 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     """
 
     if config.getoption("--run_kafka") and not PYTEST_KAFKA_AVAIL:
-        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {pytest_kafka_setup_error}")
+        raise RuntimeError(f"--run_kafka requested but pytest_kafka not available due to: {PYTEST_KAFKA_ERROR}")
 
     for item in items:
         if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
@@ -340,23 +312,6 @@ def config(use_cpp: bool):
 
 
 @pytest.fixture(scope="function")
-def kafka_topics():
-    """
-    Returns a named tuple of Kafka topic names in the form of (input_topic, output_topic)
-    """
-    yield KAFKA_TOPICS
-
-
-@pytest.fixture(scope="function")
-def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
-    """
-    Used by tests that require both an input and an output topic
-    """
-    kafka_port = kafka_server[1]
-    yield f"localhost:{kafka_port}"
-
-
-@pytest.fixture(scope="function")
 def restore_environ():
     orig_vars = os.environ.copy()
     yield os.environ
@@ -378,27 +333,104 @@ def restore_sys_path():
 
 
 @pytest.fixture(scope="function")
-def import_mod(request: pytest.FixtureRequest, restore_sys_path):
+def import_mod(request: pytest.FixtureRequest,
+               restore_sys_path) -> typing.Generator[types.ModuleType | list[types.ModuleType], None, None]:
+    # pylint: disable=missing-param-doc
+    # pylint: disable=differing-param-doc
+    # pylint: disable=missing-type-doc
+    # pylint: disable=differing-type-doc
+    """
+    Allows direct import of a module by specifying its path. This is useful for testing examples that import modules in
+    examples or other non-installed directories.
+
+    Parameters
+    ----------
+    modules : str | list[str]
+        The modules to import. Modules can be supplied as a list or multiple arguments.
+    sys_path : str | int,
+        When
+
+    Yields
+    ------
+    Iterator[typing.Generator[types.ModuleType | list[types.ModuleType], None, None]]
+        Imported modules. If more than one module is supplied, or the only argument is a list, the modules will be
+        returned as a list.
+
+    Example
+    -------
+    ```
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'))
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.dirname(TEST_DIRS.examples_dir, 'example/stage.py'))
+        ...
+
+    @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py'), sys_path=-2)
+    def test_python_test(import_mod: types.ModuleType):
+        # Imported with sys.path.append(os.path.join(TEST_DIRS.examples_dir, 'example/stage.py', '../..'))
+        ...
+
+    @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'example/stage.py')], sys_path=TEST_DIRS.examples_dir)
+    def test_python_test(import_mod: list[types.ModuleType]):
+        # Imported with sys.path.append(TEST_DIRS.examples_dir)
+        ...
+    ```
+    """
+
     marker = request.node.get_closest_marker("import_mod")
     if marker is not None:
-        mod_paths = marker.args[0]
-        if not isinstance(mod_paths, list):
-            mod_paths = [mod_paths]
+        mod_paths = sum([x if isinstance(x, list) else [x] for x in marker.args], [])
+
+        mod_kwargs = marker.kwargs
+
+        is_list = len(marker.args) > 1 or isinstance(marker.args[0], list)
 
         modules = []
         module_names = []
+
         for mod_path in mod_paths:
-            mod_dir, mod_fname = os.path.split(mod_path)
-            mod_name, _ = os.path.splitext(mod_fname)
+            # Ensure everything is absolute to avoid issues with relative paths
+            mod_path = os.path.abspath(mod_path)
 
-            sys.path.append(mod_dir)
-            module_names.append(mod_name)
-            mod = importlib.import_module(mod_name)
-            assert mod.__file__ == mod_path
+            # See if its a file or directory
+            is_file = os.path.isfile(mod_path)
 
-            modules.append(mod)
+            # Get the base directory that we should import from. If not specified, use the directory of the module
+            sys_path = mod_kwargs.get("sys_path", os.path.dirname(mod_path))
 
-        yield modules
+            # If sys_path is an integer, use it to get the path relative to the module by number of directories. i.e. if
+            # sys_path=-1, then sys_path=os.path.dirname(mod_path). If sys_path=-2, then
+            # sys_path=os.path.dirname(os.path.dirname(mod_path))
+            if (isinstance(sys_path, int)):
+                sys_path = os.path.join("/", *mod_path.split(os.path.sep)[:sys_path])
+
+            # Get the path relative to the sys_path, ignore the extension if its a file
+            mod_name = os.path.relpath(mod_path if not is_file else os.path.splitext(mod_path)[0], start=sys_path)
+
+            # Convert all / to .
+            mod_name = mod_name.replace(os.path.sep, ".")
+
+            # Add to the sys path so this can be imported
+            sys.path.append(sys_path)
+
+            try:
+
+                # Import the module
+                mod = importlib.import_module(mod_name)
+
+                if (is_file):
+                    assert mod.__file__ == mod_path
+
+                modules.append(mod)
+                module_names.append(mod_name)
+            except ImportError as e:
+
+                raise ImportError(f"Failed to import module {mod_path} as {mod_name} from path {sys_path}") from e
+
+        # Only yield 1 if we only imported 1
+        if (is_list):
+            yield modules
+        else:
+            yield modules[0]
 
         # Un-import modules we previously imported, this allows for multiple examples to contain a `messages.py`
         for mod in module_names:
@@ -483,7 +515,20 @@ def reset_plugins(reset_plugin_manger, reset_global_stage_registry):
     yield
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=5):
+@pytest.fixture(scope="function")
+def disable_gc():
+    """
+    Disable automatic garbage collection and enables debug stats for garbage collection for the duration of the test.
+    This is useful for tests that require explicit control over when garbage collection occurs.
+    """
+    gc.set_debug(gc.DEBUG_STATS)
+    gc.disable()
+    yield
+    gc.set_debug(0)
+    gc.enable()
+
+
+def wait_for_camouflage(host="localhost", port=8000, timeout=10):
 
     start_time = time.time()
     cur_time = start_time
@@ -492,7 +537,7 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
     url = f"http://{host}:{port}/ping"
 
     while cur_time - start_time <= timeout:
-        timeout_epoch = min(cur_time + 1.0, end_time)
+        timeout_epoch = min(cur_time + 2.0, end_time)
 
         try:
             request_timeout = max(timeout_epoch - cur_time, 0.1)
@@ -530,32 +575,18 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-@pytest.fixture(scope="session")
-def _camouflage_is_running():
-    """
-    Responsible for actually starting and shutting down Camouflage. This has the scope of 'session' so we only
-    start/stop Camouflage once per testing session. Should not be used directly. Instead use `launch_mock_triton`
-
-    Yields
-    ------
-    bool
-        Whether or not we are using Camouflage or an actual Triton server
-    """
-
-    from utils import TEST_DIRS
-
+def _start_camouflage(root_dir: str,
+                      host: str = "localhost",
+                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-
-    root_dir = TEST_DIRS.mock_triton_servers_dir
-    startup_timeout = 5
-    shutdown_timeout = 5
+    startup_timeout = 10
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
 
     # First, check to see if camoflage is already open
     if (launch_camouflage):
-        is_running = wait_for_camouflage(timeout=0.0)
+        is_running = wait_for_camouflage(host=host, port=port, timeout=0.0)
 
         if (is_running):
             logger.warning("Camoflage already running. Skipping startup")
@@ -576,48 +607,102 @@ def _camouflage_is_running():
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-            if not wait_for_camouflage(timeout=startup_timeout):
+            def read_logs():
+                camouflage_log = os.path.join(root_dir, 'camouflage.log')
+                if os.path.exists(camouflage_log):
+                    with open(camouflage_log, 'r', encoding='utf-8') as f:
+                        return f.read()
+                return ""
+
+            if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
 
                 if popen.poll() is not None:
-                    camouflage_log = os.path.join(root_dir, 'camouflage.log')
-                    raise RuntimeError(
-                        f"camouflage server exited with status code={popen.poll()} details in: {camouflage_log}")
+                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}\n{read_logs()}")
 
-                raise RuntimeError("Failed to launch camouflage server")
+                raise RuntimeError(f"Failed to launch camouflage server\n{read_logs()}")
 
             # Must have been started by this point
-            yield True
+            return (True, popen)
 
         except Exception:
             # Log the error and rethrow
             logger.exception("Error launching camouflage")
-            raise
-        finally:
             if popen is not None:
-                logger.info("Killing camouflage with pid %s", popen.pid)
-
-                elapsed_time = 0.0
-                sleep_time = 0.1
-                stopped = False
-
-                # It takes a little while to shutdown
-                while not stopped and elapsed_time < shutdown_timeout:
-                    popen.kill()
-                    stopped = (popen.poll() is not None)
-                    if not stopped:
-                        time.sleep(sleep_time)
-                        elapsed_time += sleep_time
+                _stop_camouflage(popen)
+            raise
 
     else:
 
-        yield is_running
+        return (is_running, None)
+
+
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
+    logger.info("Killing camouflage with pid %s", popen.pid)
+
+    elapsed_time = 0.0
+    sleep_time = 0.1
+    stopped = False
+
+    # It takes a little while to shutdown
+    while not stopped and elapsed_time < shutdown_timeout:
+        popen.kill()
+        stopped = (popen.poll() is not None)
+        if not stopped:
+            time.sleep(sleep_time)
+            elapsed_time += sleep_time
+
+
+@pytest.fixture(scope="session")
+def _triton_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_triton_server`
+    dir. This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should
+    not be used directly. Instead use `launch_mock_triton`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Triton server
+    """
+
+    from _utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_triton_servers_dir
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
+
+
+@pytest.fixture(scope="session")
+def _rest_camouflage_is_running():
+    """
+    Responsible for actually starting and shutting down Camouflage running with the mocks in the `mock_rest_server` dir.
+    This has the scope of 'session' so we only start/stop Camouflage once per testing session. This fixture should not
+    be used directly. Instead use `launch_mock_rest`
+
+    Yields
+    ------
+    bool
+        Whether or not we are using Camouflage or an actual Rest server
+    """
+
+    from _utils import TEST_DIRS
+
+    root_dir = TEST_DIRS.mock_rest_server
+    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
+
+    yield is_running
+    if popen is not None:
+        _stop_camouflage(popen)
 
 
 @pytest.fixture(scope="function")
-def launch_mock_triton(_camouflage_is_running):
+def launch_mock_triton(_triton_camouflage_is_running):
     """
-    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/) with a package
-    rooted at `root_dir` and configured with `config`.
+    Launches a mock triton server using camouflage (https://testinggospels.github.io/camouflage/).
 
     This function will wait for up to `timeout` seconds for camoflauge to startup
 
@@ -626,13 +711,32 @@ def launch_mock_triton(_camouflage_is_running):
     """
 
     # Check if we are using Camouflage or not. If so, send the reset command to reset the state
-    if _camouflage_is_running:
+    if _triton_camouflage_is_running:
         # Reset the mock server (necessary to set counters = 0)
         resp = requests.post("http://localhost:8000/reset", timeout=2.0)
 
         assert resp.ok, "Failed to reset Camouflage server state"
 
     yield
+
+
+@pytest.fixture(scope="function")
+def mock_rest_server(_rest_camouflage_is_running):
+    """
+    Launches a mock rest server using camouflage (https://testinggospels.github.io/camouflage/).
+
+    This function will wait for up to `timeout` seconds for camoflauge to startup
+
+    This function is a no-op if the `MORPHEUS_NO_LAUNCH_CAMOUFLAGE` environment variable is defined, which can
+    be useful during test development to run camouflage by hand.
+
+    yields url to the mock rest server
+    """
+
+    # Check if we are using Camouflage or not.
+    assert _rest_camouflage_is_running
+
+    yield "http://localhost:8080"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -791,7 +895,7 @@ def dataset(df_type: typing.Literal['cudf', 'pandas']):
 
     Users who don't want to parametarize over the DataFrame should use the `dataset_pandas` or `dataset_cudf` fixtures.
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type=df_type)
 
 
@@ -816,7 +920,7 @@ def dataset_pandas():
         expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, class_labels)))
     ```
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='pandas')
 
 
@@ -830,7 +934,7 @@ def dataset_cudf():
         cdf = dataset_cudf["filter_probs.csv"]
         pdf = dataset_cudf.pandas["filter_probs.csv"]
     """
-    from utils import dataset_manager
+    from _utils import dataset_manager
     yield dataset_manager.DatasetManager(df_type='cudf')
 
 
@@ -844,3 +948,62 @@ def filter_probs_df(dataset, use_cpp: bool):
     that as well, while excluding the combination of C++ execution and Pandas dataframes.
     """
     yield dataset["filter_probs.csv"]
+
+
+def _get_random_port():
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sckt:
+        sckt.bind(('', 0))
+        return sckt.getsockname()[1]
+
+
+@pytest.fixture(scope="session")
+def milvus_server_uri(tmp_path_factory):
+    """
+    Pytest fixture to start and stop a Milvus server and provide its URI for testing.
+    Due to the high startup time for Milvus users can optionally start a Milvus server before running tests and
+    define a `MORPHEUS_MILVUS_URI` environment variable to use that server instead of starting a new one.
+
+    This fixture starts a Milvus server, retrieves its URI (Uniform Resource Identifier), and provides
+    the URI as a yield value to the tests using this fixture. After all tests in the module are
+    completed, the Milvus server is stopped.
+    """
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
+    uri = os.environ.get('MORPHEUS_MILVUS_URI')
+    if uri is not None:
+        yield uri
+
+    else:
+        from milvus import default_server
+
+        # Milvus checks for already bound ports but it doesnt seem to work for webservice_port. Use a random one
+        default_server.webservice_port = _get_random_port()
+        with default_server:
+            default_server.set_base_dir(tmp_path_factory.mktemp("milvus_store"))
+
+            host = default_server.server_address
+            port = default_server.listen_port
+            uri = f"http://{host}:{port}"
+
+            logger.info("Started Milvus at: %s", uri)
+
+            yield uri
+
+
+@pytest.fixture(scope="session", name="milvus_data")
+def milvus_data_fixture():
+    inital_data = [{"id": i, "embedding": [i / 10.0] * 3, "age": 25 + i} for i in range(10)]
+    yield inital_data
+
+
+@pytest.fixture(scope="session", name="idx_part_collection_config")
+def idx_part_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_idx_part_collection_conf.json")
+
+
+@pytest.fixture(scope="session", name="simple_collection_config")
+def simple_collection_config_fixture():
+    from _utils import load_json_file
+    yield load_json_file(filename="service/milvus_simple_collection_conf.json")

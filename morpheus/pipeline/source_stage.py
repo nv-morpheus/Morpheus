@@ -20,12 +20,11 @@ import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class SourceStage(_pipeline.StreamWrapper):
+class SourceStage(_pipeline.StageBase):
     """
     The SourceStage is mandatory for the Morpheus pipeline to run. This stage represents the start of the pipeline. All
     `SourceStage` object take no input but generate output.
@@ -43,23 +42,17 @@ class SourceStage(_pipeline.StreamWrapper):
         self._start_callbacks: typing.List[typing.Callable] = []
         self._stop_callbacks: typing.List[typing.Callable] = []
 
-        self._source_stream: mrc.SegmentObject = None
+        self._sources: list[mrc.SegmentObject] = []
 
     @property
     def input_count(self) -> int:
         """
         Return None for no max intput count.
-
-        Returns
-        -------
-        int
-            Input count.
-
         """
         return None
 
     @abstractmethod
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_sources(self, builder: mrc.Builder) -> list[mrc.SegmentObject]:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -68,36 +61,42 @@ class SourceStage(_pipeline.StreamWrapper):
         Returns
         -------
 
-        `morpheus.pipeline.pipeline.StreamPair`:
-            A tuple containing the output `mrc.SegmentObject` object from this stage and the message data type.
+        `mrc.SegmentObject`:
+            The MRC nodes for this stage.
         """
 
         pass
 
     @typing.final
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _pre_build(self, do_propagate: bool = True):
+        assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
+        return super()._pre_build(do_propagate=do_propagate)
+
+    @typing.final
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
-        # True source object separate from the output stream. If any other operators need to be added after the source,
+        # True source object separate from the output node. If any other operators need to be added after the source,
         # use `_post_build`
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
+        assert len(input_nodes) == 0, "Sources shouldnt have input nodes"
 
-        source_pair = self._build_source(builder)
+        sources = self._build_sources(builder)
 
-        curr_source = source_pair[0]
+        assert len(sources) == len(self.output_ports), "Number of sources should match number of output ports"
 
-        self._source_stream = curr_source
+        for (i, source) in enumerate(sources):
+            self._output_ports[i]._output_node = source
+            self._sources.append(source)
 
-        # Now set up the output ports
-        self._output_ports[0]._out_stream_pair = source_pair
+        return sources
 
-        return [source_pair]
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
-
-        return out_ports_pair
+        return out_ports_nodes
 
     def _start(self):
-        self._source_stream.start()
+        for source in self._sources:
+            source.start()
 
     async def join(self):
         """

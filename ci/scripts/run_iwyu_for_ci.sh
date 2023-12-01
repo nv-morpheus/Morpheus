@@ -23,7 +23,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Call iwyu_tool.py and append IWYU arguments onto the end
 ${IWYU_TOOL_PY:-iwyu_tool.py} "$@" -- \
-   -Xiwyu --mapping_file=${REPO_DIR:-${SCRIPT_DIR}/../..}/ci/iwyu/mappings.imp \
+   -Xiwyu --mapping_file=${MORPHEUS_ROOT:-${SCRIPT_DIR}/../..}/ci/iwyu/mappings.imp \
    -Xiwyu --verbose=${IWYU_VERBOSITY:-1} \
    -Xiwyu --no_fwd_decls \
    -Xiwyu --quoted_includes_first \

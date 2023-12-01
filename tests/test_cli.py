@@ -24,6 +24,8 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
+from _utils import TEST_DIRS
+from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli import commands
 from morpheus.common import FileTypes
 from morpheus.common import FilterSource
@@ -55,8 +57,6 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
-from utils import TEST_DIRS
-from utils.stages.conv_msg import ConvMsg
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
 MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--unit', 'inf']
@@ -244,7 +244,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_all(self, callback_values):
@@ -338,7 +338,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -404,7 +404,7 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -528,7 +528,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -624,7 +624,7 @@ class TestCLI:
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
-        assert filter_stage._filter_source == FilterSource.TENSOR
+        assert filter_stage._controller._filter_source == FilterSource.TENSOR
 
         assert isinstance(dropna, DropNullStage)
         assert dropna._column == 'xyz'
@@ -662,8 +662,8 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
-        assert to_file._file_type == FileTypes.CSV
+        assert to_file._controller._output_file == 'out.csv'
+        assert to_file._controller._file_type == FileTypes.CSV
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -685,8 +685,8 @@ class TestCLI:
                     '--truncation=True',
                     '--do_lower_case=True',
                     '--add_special_tokens=False'
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -696,7 +696,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -731,7 +731,7 @@ class TestCLI:
         assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -745,7 +745,7 @@ class TestCLI:
         assert isinstance(serialize, SerializeStage)
 
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_all(self, config, callback_values, tmp_path, mlflow_uri):
@@ -781,8 +781,8 @@ class TestCLI:
                     'mlflow-drift',
                     '--tracking_uri',
                     mlflow_uri
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=pred', '--threshold=0.7'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class', '--label=is_phishing', '--threshold=0.7'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -792,7 +792,7 @@ class TestCLI:
         # Ensure our config is populated correctly
         config = obj["config"]
         assert config.mode == PipelineModes.NLP
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == ["not_phishing", "is_phishing"]
         assert config.feature_length == 128
 
         assert config.ae is None
@@ -864,7 +864,7 @@ class TestCLI:
         assert monitor._mc._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ('pred', )
+        assert add_class._labels == ('is_phishing', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -877,7 +877,7 @@ class TestCLI:
 
         assert isinstance(serialize, SerializeStage)
         assert isinstance(to_file, WriteToFileStage)
-        assert to_file._output_file == 'out.csv'
+        assert to_file._controller._output_file == 'out.csv'
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -995,7 +995,7 @@ class TestCLI:
             f.writelines("\n".join(test_labels))
 
         # Use different labels
-        test_columns = [f"column{i}" for i in range(29)]
+        test_columns = [f"column{i}" for i in range(18)]
 
         # Overwrite the copied labels
         with open(columns_file_local, mode="w", encoding='UTF-8') as f:

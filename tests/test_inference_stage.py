@@ -22,6 +22,7 @@ import pytest
 
 import cudf
 
+from _utils.inference_worker import IW
 from morpheus.messages import ResponseMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.tensor_memory import TensorMemory
@@ -29,7 +30,6 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
-from utils.inference_worker import IW
 
 
 class InferenceStageT(InferenceStage):
@@ -123,6 +123,9 @@ def test_split_batches():
 
 @pytest.mark.use_python
 def test_convert_response():
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     message_sizes = [3, 2, 1, 7, 4]
     total_size = sum(message_sizes)
 
@@ -181,6 +184,9 @@ def test_convert_response_errors():
 
 @pytest.mark.use_python
 def test_convert_one_response():
+    # Pylint currently fails to work with classmethod: https://github.com/pylint-dev/pylint/issues/981
+    # pylint: disable=no-member
+
     # Test first branch where `inf.mess_count == inf.count`
     mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
 

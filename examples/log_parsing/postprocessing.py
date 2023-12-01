@@ -22,14 +22,13 @@ import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
-from messages import MultiPostprocLogParsingMessage
-from messages import MultiResponseLogParsingMessage
+from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 
 @register_stage("log-postprocess", modes=[PipelineModes.NLP])
@@ -74,7 +73,10 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiResponseLogParsingMessage, )
+        return (MultiPostprocLogParsingMessage, )
+
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
 
     def _postprocess(self, x: MultiPostprocLogParsingMessage):
 
@@ -160,11 +162,11 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         # Convert the messages to rows of strings
-        stream = builder.make_node(self.unique_name, ops.map(self._postprocess))
+        node = builder.make_node(self.unique_name, ops.map(self._postprocess))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, MessageMeta
+        return node

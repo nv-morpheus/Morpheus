@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -39,8 +41,6 @@ from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
-from utils import TEST_DIRS
-from utils import calc_error_val
 
 # End-to-end test intended to imitate the DFP validation test
 
@@ -75,6 +75,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
+    config.ae.timestamp_column_name = "event_dt"
 
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
@@ -113,7 +114,8 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
                         results_file_name=results_file_name,
                         index_col="_index_",
                         exclude=("event_dt", "zscore"),
-                        rel_tol=0.15))
+                        rel_tol=0.1))
+
     pipe.add_stage(SerializeStage(config, include=[]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
@@ -157,6 +159,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
+    config.ae.timestamp_column_name = "event_dt"
 
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
@@ -238,6 +241,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
+    config.ae.timestamp_column_name = "event_dt"
 
     with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'), encoding='UTF-8') as fh:
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
@@ -284,7 +288,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
                         rel_tol=0.1))
     pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 7
     pipe.add_stage(SerializeStage(config, include=[]))
-    pipe.add_segment_boundary(MessageMeta)  # Boundary 9
+    pipe.add_segment_boundary(MessageMeta)  # Boundary 8
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()

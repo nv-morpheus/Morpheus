@@ -21,14 +21,18 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 import torch
+from torch.utils.data import Dataset as TorchDataset
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import AEFeatureScalar
 from morpheus.models.dfencoder import ae_module
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
+from morpheus.models.dfencoder.dataloader import DataframeDataset
+from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
+from morpheus.models.dfencoder.dataloader import FileSystemDataset
 
 # Only pandas and Python is supported
 pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
@@ -55,8 +59,8 @@ CAT_COLS = [
 NUMERIC_COLS = ['eventID', 'ae_anomaly_score']
 
 
-@pytest.fixture(scope="function")
-def train_ae():
+@pytest.fixture(name="train_ae", scope="function")
+def train_ae_fixture():
     """
     Construct an AutoEncoder instance with the same values used by `train_ae_stage`
     """
@@ -64,9 +68,9 @@ def train_ae():
         encoder_layers=[512, 500],
         decoder_layers=[512],
         activation='relu',
-        swap_p=0.2,
-        lr=0.01,
-        lr_decay=.99,
+        swap_probability=0.2,
+        learning_rate=0.01,
+        learning_rate_decay=.99,
         batch_size=512,
         verbose=False,
         optimizer='sgd',
@@ -76,20 +80,20 @@ def train_ae():
     )
 
 
-@pytest.fixture(scope="function")
-def train_df(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
+@pytest.fixture(name="train_df", scope="function")
+def train_df_fixture(dataset_pandas: DatasetManager) -> typing.Iterator[pd.DataFrame]:
     yield dataset_pandas[os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")]
 
 
 def compare_numeric_features(features, expected_features):
     assert sorted(features.keys()) == sorted(expected_features.keys())
-    for (ft, expected_vals) in expected_features.items():
-        ae_vals = features[ft]
+    for (feature, expected_vals) in expected_features.items():
+        ae_vals = features[feature]
         assert round(ae_vals['mean'], 2) == expected_vals['mean'], \
-            f"Mean value of feature:{ft} does not match {round(ae_vals['mean'], 2)}!= {expected_vals['mean']}"
+            f"Mean value of feature:{feature} does not match {round(ae_vals['mean'], 2)}!= {expected_vals['mean']}"
 
         assert round(ae_vals['std'], 2) == expected_vals['std'], \
-            f"Mean value of feature:{ft} does not match {round(ae_vals['std'], 2)}!= {expected_vals['std']}"
+            f"Mean value of feature:{feature} does not match {round(ae_vals['std'], 2)}!= {expected_vals['std']}"
 
         assert isinstance(ae_vals['scaler'], expected_vals['scaler_cls'])
 
@@ -106,59 +110,59 @@ def test_ohe():
     assert torch.equal(results, expected.to("cuda", copy=True)), f"{results} != {expected}"
 
 
-def test_compute_embedding_size():
-    for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert ae_module._compute_embedding_size(input) == expected
+@pytest.mark.parametrize("num_cats,expected", [(0, 0), (5, 4), (20, 9), (40000, 600)])
+def test_compute_embedding_size(num_cats: int, expected: int):
+    assert ae_module._compute_embedding_size(num_cats) == expected
 
 
 def test_complete_layer_constructor():
-    cc = ae_module.CompleteLayer(4, 5)
-    assert len(cc.layers) == 1
-    assert isinstance(cc.layers[0], torch.nn.Linear)
-    assert cc.layers[0].in_features == 4
-    assert cc.layers[0].out_features == 5
+    complete_layer = ae_module.CompleteLayer(4, 5)
+    assert len(complete_layer.layers) == 1
+    assert isinstance(complete_layer.layers[0], torch.nn.Linear)
+    assert complete_layer.layers[0].in_features == 4
+    assert complete_layer.layers[0].out_features == 5
 
-    cc = ae_module.CompleteLayer(4, 5, activation='tanh')
-    assert len(cc.layers) == 2
-    assert cc.layers[1] is torch.tanh
+    complete_layer = ae_module.CompleteLayer(4, 5, activation='tanh')
+    assert len(complete_layer.layers) == 2
+    assert complete_layer.layers[1] is torch.tanh
 
-    cc = ae_module.CompleteLayer(4, 5, dropout=0.2)
-    assert len(cc.layers) == 2
-    assert isinstance(cc.layers[1], torch.nn.Dropout)
-    assert cc.layers[1].p == 0.2
+    complete_layer = ae_module.CompleteLayer(4, 5, dropout=0.2)
+    assert len(complete_layer.layers) == 2
+    assert isinstance(complete_layer.layers[1], torch.nn.Dropout)
+    assert complete_layer.layers[1].p == 0.2
 
-    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
-    assert len(cc.layers) == 3
-    assert isinstance(cc.layers[0], torch.nn.Linear)
-    assert cc.layers[0].in_features == 6
-    assert cc.layers[0].out_features == 11
-    assert cc.layers[1] is torch.sigmoid
-    assert isinstance(cc.layers[2], torch.nn.Dropout)
-    assert cc.layers[2].p == 0.3
+    complete_layer = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    assert len(complete_layer.layers) == 3
+    assert isinstance(complete_layer.layers[0], torch.nn.Linear)
+    assert complete_layer.layers[0].in_features == 6
+    assert complete_layer.layers[0].out_features == 11
+    assert complete_layer.layers[1] is torch.sigmoid
+    assert isinstance(complete_layer.layers[2], torch.nn.Dropout)
+    assert complete_layer.layers[2].p == 0.3
 
 
 def test_complete_layer_interpret_activation():
-    cc = ae_module.CompleteLayer(4, 5)
-    assert cc.interpret_activation('elu') is torch.nn.functional.elu
+    complete_layer = ae_module.CompleteLayer(4, 5)
+    assert complete_layer.interpret_activation('elu') is torch.nn.functional.elu
 
     # Test for bad activation, this really does raise the base Exception class.
     with pytest.raises(Exception):
-        cc.interpret_activation()
+        complete_layer.interpret_activation()
 
     with pytest.raises(Exception):
-        cc.interpret_activation("does_not_exist")
+        complete_layer.interpret_activation("does_not_exist")
 
-    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid')
-    cc.interpret_activation() is torch.sigmoid
+    complete_layer = ae_module.CompleteLayer(6, 11, activation='sigmoid')
+    assert complete_layer.interpret_activation() is torch.sigmoid
 
 
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
     # Setting dropout probability to 0. The results of dropout our deterministic, but are only
     # consistent when run on the same GPU.
-    cc = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
-    t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
-    results = cc.forward(t)
+    complete_layer = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
+    tensor = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
+    results = complete_layer.forward(tensor)
     expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
                              [1.0000, 0.9995, 1.0000, 0.9417, 1.0000], [1.0000, 1.0000, 1.0000, 0.9806, 1.0000]],
                             dtype=torch.float32)
@@ -172,17 +176,16 @@ def test_auto_encoder_constructor_default_vals():
     assert ae.model.encoder_layers is None
     assert ae.model.decoder_layers is None
     assert ae.min_cats == 10
-    assert ae.swap_p == 0.15
+    assert ae.swap_probability == 0.15
     assert ae.batch_size == 256
     assert ae.eval_batch_size == 1024
     assert ae.model.activation == 'relu'
     assert ae.optimizer == 'adam'
-    assert ae.lr == 0.01
-    assert ae.lr_decay is None
+    assert ae.learning_rate == 0.01
+    assert ae.learning_rate_decay is None
     assert ae.device.type == 'cuda'
     assert ae.scaler == 'standard'
     assert ae.loss_scaler is scalers.StandardScaler
-    assert ae.n_megabatches == 1
 
 
 def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
@@ -193,19 +196,18 @@ def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
     assert train_ae.model.encoder_layers == [512, 500]
     assert train_ae.model.decoder_layers == [512]
     assert train_ae.min_cats == 1
-    assert train_ae.swap_p == 0.2
+    assert train_ae.swap_probability == 0.2
     assert train_ae.batch_size == 512
     assert train_ae.eval_batch_size == 1024
     assert train_ae.model.activation == 'relu'
     assert train_ae.optimizer == 'sgd'
-    assert train_ae.lr == 0.01
-    assert train_ae.lr_decay == 0.99
+    assert train_ae.learning_rate == 0.01
+    assert train_ae.learning_rate_decay == 0.99
     assert not train_ae.progress_bar
     assert not train_ae.verbose
     assert train_ae.device.type == 'cuda'
     assert train_ae.scaler == 'standard'
     assert train_ae.loss_scaler is scalers.StandardScaler
-    assert train_ae.n_megabatches == 1
 
 
 def test_auto_encoder_get_scaler():
@@ -246,8 +248,23 @@ def test_auto_encoder_init_numeric(filter_probs_df):
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
-    train_ae.fit(train_df, epochs=1)
+@pytest.mark.parametrize("input_type", [pd.DataFrame, FileSystemDataset, DFEncoderDataLoader, TorchDataset])
+def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame, input_type):
+    _train_df = train_df
+    if (isinstance(input_type, FileSystemDataset)):
+        _train_df = DataframeDataset(_train_df)
+    elif (isinstance(input_type, DFEncoderDataLoader)):
+        _train_df = DFEncoderDataLoader.get_distributed_training_dataloader_from_df(train_ae,
+                                                                                    _train_df,
+                                                                                    1,
+                                                                                    1,
+                                                                                    num_workers=1)
+    elif (isinstance(input_type, TorchDataset)):
+        with pytest.raises(TypeError):
+            train_ae.fit(_train_df, epochs=1)
+        return
+
+    train_ae.fit(_train_df, epochs=1)
 
     expected_numeric_features = {
         'eventID': {
@@ -267,20 +284,20 @@ def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFr
 
     assert sorted(train_ae.categorical_fts.keys()) == CAT_COLS
     for cat in CAT_COLS:
-        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(train_df[cat].dropna().unique())
+        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(_train_df[cat].dropna().unique())
 
     assert len(train_ae.cyclical_fts) == 0
 
     all_feature_names = sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS)
 
     assert sorted(train_ae.feature_loss_stats.keys()) == all_feature_names
-    for ft in train_ae.feature_loss_stats.values():
-        assert isinstance(ft['scaler'], scalers.StandardScaler)
+    for feature in train_ae.feature_loss_stats.values():
+        assert isinstance(feature['scaler'], scalers.StandardScaler)
 
     assert isinstance(train_ae.optim, torch.optim.SGD)
-    assert isinstance(train_ae.lr_decay, torch.optim.lr_scheduler.ExponentialLR)
-    assert train_ae.lr_decay.gamma == 0.99
-    train_ae.optim is train_ae.lr_decay.optimizer
+    assert isinstance(train_ae.learning_rate_decay, torch.optim.lr_scheduler.ExponentialLR)
+    assert train_ae.learning_rate_decay.gamma == 0.99
+    assert train_ae.optim is train_ae.learning_rate_decay.optimizer
 
 
 def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
@@ -291,30 +308,27 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
 
     # Test normal training loop with no early stopping
     ae = autoencoder.AutoEncoder(patience=5)
-    ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+    ae.fit(train_data, validation_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
     # assert that training runs through all epoches
     assert ae.logger.n_epochs == epochs
 
     class MockHelper:
         """A helper class for mocking the `_validate_dataframe` method in the `AutoEncoder` class."""
 
-        def __init__(self, orig_losses, swapped_loss=1.0):
-            """ Initialization.
+        def __init__(self, orig_losses):
+            """
+            Initialization.
 
             Parameters:
             -----------
-            orig_losses : list
-                A list of original validation losses to be returned by the mocked `_validate_dataframe` method.
-            swapped_loss : float, optional (default=1.0)
-                A fixed loss value to be returned by the mocked `_validate_dataframe` method as the `swapped_loss`.
-                Fixed as it's unrelated to the early-stopping functionality being tested here.
+            mean_loss: list
+                A list of mean validation losses to be returned by the mocked `_validate_dataframe` method.
             """
-            self.swapped_loss = swapped_loss
             self.orig_losses = orig_losses
             # counter to keep track of the number of times the mocked `_validate_dataframe` method has been called
             self.count = 0
 
-        def mocked_validate_dataframe(self, *args, **kwargs):
+        def mocked_validate_dataset(self, *args, **kwargs):  # pylint: disable=unused-argument
             """
             A mocked version of the `_validate_dataframe` method in the `AutoEncoder` class for testing early stopping.
 
@@ -323,9 +337,9 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
             tuple of (float, float)
                 A tuple of original validation loss and swapped loss values for each epoch.
             """
-            orig_loss = self.orig_losses[self.count]
+            mean_loss = self.orig_losses[self.count]
             self.count += 1
-            return orig_loss, self.swapped_loss
+            return mean_loss
 
     # Test early stopping
     orig_losses = [0.1, 0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
@@ -333,16 +347,24 @@ def test_auto_encoder_fit_early_stopping(train_df: pd.DataFrame):
     ae = autoencoder.AutoEncoder(
         patience=3)  # should stop at epoch 3 as the first 3 losses are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
-    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
-        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+    with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
+        ae.fit(train_data,
+               validation_data=validation_data,
+               run_validation=True,
+               use_val_for_loss_stats=True,
+               epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 3
 
     ae = autoencoder.AutoEncoder(
         patience=5)  # should stop at epoch 9 as losses from epoch 5-9 are monotonically increasing
     mock_helper = MockHelper(orig_losses=orig_losses)  # validation loss is strictly increasing
-    with patch.object(ae, '_validate_dataframe', side_effect=mock_helper.mocked_validate_dataframe):
-        ae.fit(train_data, val_data=validation_data, run_validation=True, use_val_for_loss_stats=True, epochs=epochs)
+    with patch.object(ae, '_validate_dataset', side_effect=mock_helper.mocked_validate_dataset):
+        ae.fit(train_data,
+               validation_data=validation_data,
+               run_validation=True,
+               use_val_for_loss_stats=True,
+               epochs=epochs)
         # assert that training early-stops at epoch 3
         assert ae.logger.n_epochs == 9
 
@@ -361,7 +383,7 @@ def test_auto_encoder_get_anomaly_score_losses(train_ae: autoencoder.AutoEncoder
     row_cnt = 10
     # create a dummy DataFrame with categorical features
     data = {
-        'num_1': [i for i in range(row_cnt)],
+        'num_1': list(range(row_cnt)),
         'num_2': [i / 2 for i in range(row_cnt)],
         'num_3': [i / 2 for i in range(row_cnt)],
         'bool_1': [i % 2 == 0 for i in range(row_cnt)],
@@ -385,7 +407,7 @@ def test_auto_encoder_get_anomaly_score_losses_no_cat_feats(train_ae: autoencode
     # create a dummy DataFrame with numerical and boolean features only
     row_cnt = 10
     data = {
-        'num_1': [i for i in range(row_cnt)],
+        'num_1': list(range(row_cnt)),
         'bool_1': [i % 2 == 0 for i in range(row_cnt)],
         'bool_2': [i % 3 == 0 for i in range(row_cnt)]
     }
@@ -410,13 +432,13 @@ def test_auto_encoder_prepare_df(train_ae: autoencoder.AutoEncoder, train_df: pd
 
     assert isinstance(prepared_df, EncoderDataFrame)
 
-    for (i, ft) in enumerate(NUMERIC_COLS):
+    for feature in NUMERIC_COLS:
         scaler = scalers.StandardScaler()
-        scaler.fit(train_df[ft].values)
-        expected_values = scaler.transform(train_df[ft].values.copy())
+        scaler.fit(train_df[feature].values)
+        expected_values = scaler.transform(train_df[feature].values.copy())
 
-        assert (prepared_df[ft].values == expected_values).all(), \
-            f"Values for feature {ft} do not match {prepared_df[ft]} != {expected_values}"
+        assert (prepared_df[feature].values == expected_values).all(), \
+            f"Values for feature {feature} do not match {prepared_df[feature]} != {expected_values}"
 
     # Bin features should remain the same when the input is already boolean, this DF only has one
     assert (prepared_df.ts_anomaly == train_df.ts_anomaly).all()
@@ -447,17 +469,17 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     train_ae.fit(train_df, epochs=1)
     results = train_ae.get_results(train_df)
 
-    for ft in sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS):
-        assert ft in results.columns
-        assert f'{ft}_pred' in results.columns
-        assert f'{ft}_loss' in results.columns
-        assert f'{ft}_z_loss' in results.columns
+    for feature in sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS):
+        assert feature in results.columns
+        assert f'{feature}_pred' in results.columns
+        assert f'{feature}_loss' in results.columns
+        assert f'{feature}_z_loss' in results.columns
 
     assert 'max_abs_z' in results.columns
     assert 'mean_abs_z' in results.columns
 
     assert round(results.loc[0, 'max_abs_z'], 2) == 2.5
 
-    # Not sure why but numpy.float32(0.33) != 0.33
-    assert round(float(results.loc[0, 'mean_abs_z']), 2) == 0.33
+    # Numpy float has different precision checks than python float, so we wrap it.
+    assert round(float(results.loc[0, 'mean_abs_z']), 3) == 0.335
     assert results.loc[0, 'z_loss_scaler_type'] == 'z'

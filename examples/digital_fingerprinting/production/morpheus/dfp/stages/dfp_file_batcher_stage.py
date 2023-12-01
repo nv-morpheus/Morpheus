@@ -18,6 +18,7 @@ import typing
 import warnings
 from collections import namedtuple
 from datetime import datetime
+from datetime import timezone
 
 import fsspec
 import mrc
@@ -26,9 +27,9 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])
 
@@ -46,7 +47,7 @@ class DFPFileBatcherStage(SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
+    config : `morpheus.config.Config`
         Pipeline configuration instance.
     date_conversion_func : callable
         A function that takes a file object and returns a `datetime` object representing the date of the file.
@@ -69,14 +70,14 @@ class DFPFileBatcherStage(SinglePortStage):
     """
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  date_conversion_func: typing.Callable[[fsspec.core.OpenFile], datetime],
                  period: str = "D",
                  sampling_rate_s: typing.Optional[int] = None,
                  start_time: datetime = None,
                  end_time: datetime = None,
                  sampling: typing.Union[str, float, int, None] = None):
-        super().__init__(c)
+        super().__init__(config)
 
         self._date_conversion_func = date_conversion_func
         self._period = period
@@ -108,6 +109,9 @@ class DFPFileBatcherStage(SinglePortStage):
         """Accepted incoming types for this stage"""
         return (fsspec.core.OpenFiles, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(typing.Tuple[fsspec.core.OpenFiles, int])
+
     def on_data(self, file_objects: fsspec.core.OpenFiles) -> typing.List[typing.Tuple[fsspec.core.OpenFiles, int]]:
         """
         Batches incoming data according to date, period and sampling, potentially filtering data based on file dates.
@@ -121,6 +125,9 @@ class DFPFileBatcherStage(SinglePortStage):
             ts = self._date_conversion_func(file_object)
 
             # Exclude any files outside the time window
+            if (ts.tzinfo is None):
+                ts = ts.replace(tzinfo=timezone.utc)
+
             if ((self._start_time is not None and ts < self._start_time)
                     or (self._end_time is not None and ts > self._end_time)):
                 continue
@@ -168,14 +175,19 @@ class DFPFileBatcherStage(SinglePortStage):
 
         for _, period_df in resampled:
 
-            obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs)
+            file_list = period_df["objects"].to_list()
+
+            if (len(file_list) == 0):
+                continue
+
+            obj_list = fsspec.core.OpenFiles(file_list, mode=file_objects.mode, fs=file_objects.fs)
 
             output_batches.append((obj_list, n_groups))
 
         return output_batches
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.flatten())
+        builder.make_edge(input_node, node)
 
-        return stream, typing.Tuple[fsspec.core.OpenFiles, int]
+        return node

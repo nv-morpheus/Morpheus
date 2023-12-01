@@ -52,39 +52,20 @@ limitations under the License.
 ### Motivation
 
 
-This document presents the adaptation of the Digital Fingerprinting pipeline in Morpheus from the existing stage-based
-approach to one that is module-based; this process will provide a basis to work through motivation and
-usage examples for number of new features found in the 23.03 release. The updated pipeline incorporates extensions
-to facilitate event-driven workflows and human-in-the-loop interactions through the use of control messages.
-Moreover, it introduces a dynamic method for acquiring and loading data, further enhancing the pipeline's capabilities.
+This document presents the adaptation of the Digital Fingerprinting pipeline in Morpheus from the existing stage-based approach to one that is module-based; this process will provide a basis to work through motivation and usage examples for number of new features found in the 23.03 release. The updated pipeline incorporates extensions to facilitate event-driven workflows and human-in-the-loop interactions through the use of control messages. Moreover, it introduces a dynamic method for acquiring and loading data, further enhancing the pipeline's capabilities.
 
-The pipeline comprises a series of interconnected modules designed to create a versatile split processing pipeline.
-This design enables the reception and processing of control messages to perform tasks such as inference against observed
-events using either generic or user-specific models. Additionally, the pipeline can train new models based on aggregated
-or predefined training data, offering a more adaptable and user-friendly experience.
+The pipeline comprises a series of interconnected modules designed to create a versatile split processing pipeline. This design enables the reception and processing of control messages to perform tasks such as inference against observed events using either generic or user-specific models. Additionally, the pipeline can train new models based on aggregated or predefined training data, offering a more adaptable and user-friendly experience.
 
 ### Overview
 
 
-At a high level, the pipeline consists of three parts: the front-end file list loader that reads new control messages
-from a Kafka topic and expands the described data sources to be processed, and the training and inference pipelines that
-process the data. The updated pipeline enables the reception and processing of control messages, allowing for tasks such
-as inference against observed events using generic or user-specific models. It also allows for the training of new
-models based on aggregated or predefined training data.
+At a high level, the pipeline consists of three parts: the front-end file list loader that reads new control messages from a Kafka topic and expands the described data sources to be processed, and the training and inference pipelines that process the data. The updated pipeline enables the reception and processing of control messages, allowing for tasks such as inference against observed events using generic or user-specific models. It also allows for the training of new models based on aggregated or predefined training data.
 
-The front-end loader outputs one or more control messages that are passed to the training and inference pipelines.
-Messages are either dropped or passed to the next module in the pipeline based on the message type. The updated pipeline
-implicitly supports two distinct workflows: inference and training. However, because of the use of control messages, it
-can also support a hybrid data processing workflow that handles both streaming data processed in real-time, aggregated,
-batched, and subsequently used for training, as well as interleaved self-contained training tasks that specify the
-training data to be used and are able to bypass batching and aggregation stages.
+The front-end loader outputs one or more control messages that are passed to the training and inference pipelines. Messages are either dropped or passed to the next module in the pipeline based on the message type. The updated pipeline implicitly supports two distinct workflows: inference and training. However, because of the use of control messages, it can also support a hybrid data processing workflow that handles both streaming data processed in real-time, aggregated, batched, and subsequently used for training, as well as interleaved self-contained training tasks that specify the training data to be used and are able to bypass batching and aggregation stages.
 
-Moreover, the updated pipeline supports human-in-the-loop workflows, such as the ability to manually trigger training or
-inference tasks against a specific set of data, and the capacity for real-time labeling of production inference events
-that can be injected back into the training pipeline.
+Moreover, the updated pipeline supports human-in-the-loop workflows, such as the ability to manually trigger training or inference tasks against a specific set of data, and the capacity for real-time labeling of production inference events that can be injected back into the training pipeline.
 
-The following content will track the pipeline declared in
-`examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
+The following content will track the pipeline declared in `examples/digital_fingerprinting/production/morpheus/dfp_integrated_training_streaming_pipeline.py`
 
 ```python
 # Setup and command line argument parsing
@@ -119,24 +100,18 @@ pipeline.run()
 
 ## Setting up Morpheus
 
-For a full introduction in how to set up and run morpheus, please refer to
-the [Getting Started](../../getting_started.md) guide.
+For a full introduction in how to set up and run morpheus, please refer to the [Getting Started](../../getting_started.md) guide.
 
 ## Morpheus Modules
 
-
-For a full introduction to Morpheus modules, refer to the [Python Modules](7_python_modules.md)
-and [C++ Modules](8_cpp_modules.md) guides.
+For a full introduction to Morpheus modules, refer to the [Python Modules](7_python_modules.md) and [C++ Modules](8_cpp_modules.md) guides.
 
 ## DFP Deployment
 
 
 Source: `examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_deployment.py`
 
-This is the top level module that encapsulates the entire Digital Fingerprinting pipeline, it is primarily
-responsible for wrapping the training and inference pipelines, providing the correct module interface, and doing
-some configuration pre-processing. Since this module is monolithic, it supports a significant number of
-configuration options; however, the majority of these have intelligent defaults and are not required to be specified.
+This is the top level module that encapsulates the entire Digital Fingerprinting pipeline, it is primarily responsible for wrapping the training and inference pipelines, providing the correct module interface, and doing some configuration pre-processing. Since this module is monolithic, it supports a significant number of configuration options; however, the majority of these have intelligent defaults and are not required to be specified.
 
 The module consists of three chained sub-modules:
 
@@ -160,7 +135,7 @@ def dfp_deployment(builder: mrc.Builder):
     builder.make_edge(broadcast, dfp_training_pipe_module.input_port("input"))
     builder.make_edge(broadcast, dfp_inference_pipe_module.input_port("input"))
 
-    out_streams = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
+    out_nodes = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
 
     # Register input port for a module.
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
@@ -177,8 +152,7 @@ For a complete reference, refer to: [DataLoader Module](../../modules/core/data_
 
 ## DFP Training and Inference Pipelines
 
-There are a number of modules that are used in both the training and inference pipelines, but which are be
-configured independently. We'll introduce Shared modules here and then dive into the unique modules for each pipeline.
+There are a number of modules that are used in both the training and inference pipelines, but which are be configured independently. We'll introduce Shared modules here and then dive into the unique modules for each pipeline.
 
 ### DFP Preprocessing
 
@@ -191,9 +165,7 @@ The module itself consists of a series of chained sub-modules, which are connect
 - `filter_control_message_module`
     - Responsible for early filtering of control messages that should be not processed by the pipeline.
 - `file_batcher_module`
-    - Responsible for batching files, either into a single control message in the case of an encapsulated training
-      message,
-      or into a series of control messages in the of streaming data.
+    - Responsible for batching files, either into a single control message in the case of an encapsulated training message, or into a series of control messages in the of streaming data.
 - `file_to_df_dataloader_module`
     - Responsible for file retrieval and insertion into a cuDF dataframe.
 - `dfp_split_users_module`
@@ -230,8 +202,7 @@ For a complete reference, refer to: [Filter Control Message](../../modules/core/
 
 Source: `morpheus/modules/file_batcher.py`
 
-The `file_batcher` module is a component that is responsible for loading input files, filtering out
-files older than the specified time window, and grouping the remaining files by periods that fall within the time window. This module offers configurability for parameters such as batching options, cache directory, file type, filtering null values, data schema, and the timestamp column name. The `file_batcher` module processes control messages, validates them, and generates a list of files with their timestamps. The module then groups files by the given period, creates control messages for each batch, and sends them downstream for further processing. A node function is used to handle the processing of control messages, and input and output ports are registered to integrate the module into the data processing pipeline seamlessly.
+The `file_batcher` module is a component that is responsible for loading input files, filtering out files older than the specified time window, and grouping the remaining files by periods that fall within the time window. This module offers configurability for parameters such as batching options, cache directory, file type, filtering null values, data schema, and the timestamp column name. The `file_batcher` module processes control messages, validates them, and generates a list of files with their timestamps. The module then groups files by the given period, creates control messages for each batch, and sends them downstream for further processing. A node function is used to handle the processing of control messages, and input and output ports are registered to integrate the module into the data processing pipeline seamlessly.
 
 The file batcher is one of the first pipeline components that begins to differ more substantially from the previous raw-data pipeline, prior to 23.03. In addition to its previous functionality, the file batcher is now control message aware, and can handle both streaming and encapsulated control messages, a property denoted by the `data_type` property of the control message's metadata being set as either `streaming` or `payload`. Additionally, the file batcher's default processing criteria for `period`, `sampling_rate_s`, `start_time`, and `end_time` can now be overridden by their corresponding values in the control message's `batching_options` metadata entry.
 
@@ -514,3 +485,134 @@ def write_to_file(builder: mrc.Builder):
 ```
 
 For a complete reference, refer to: [Write to File](../../modules/core/write_to_file.md)
+
+## Running Example Modular DFP Pipelines
+
+The following are steps to run modular DFP pipelines with example Azure and Duo datasets.
+
+### System requirements
+* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
+* Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+> **Note:**  For GPU Requirements refer to [getting_started](../../getting_started.md#requirements)
+
+### Building the services
+From the root of the Morpheus repo, run:
+```bash
+cd examples/digital_fingerprinting/production
+docker compose build
+```
+
+> **Note:** This requires version 1.28.0 or higher of Docker Compose, and preferably v2. If you encounter an error similar to:
+>
+> ```
+> ERROR: The Compose file './docker-compose.yml' is invalid because:
+> services.jupyter.deploy.resources.reservations value Additional properties are not allowed ('devices' was
+> unexpected)
+> ```
+>
+> This is most likely due to using an older version of the `docker-compose` command, instead re-run the build with `docker compose`. Refer to [Migrate to Compose V2](https://docs.docker.com/compose/migrate/) for more information.
+
+### Downloading the example datasets
+First, we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
+
+From the Morpheus repo, run:
+```bash
+pip install s3fs
+python examples/digital_fingerprinting/fetch_example_data.py all
+```
+
+### Morpheus Pipeline
+From the `examples/digital_fingerprinting/production` dir, run:
+```bash
+docker compose run morpheus_pipeline bash
+```
+To run the DFP pipelines with the example datasets within the container, run:
+
+* Duo Training Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/duo_payload_training.json"
+    ```
+
+* Duo Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-30" \
+        --input_file "./control_messages/duo_payload_inference.json"
+    ```
+
+* Duo Training + Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source duo \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/duo_payload_load_train_inference.json" 
+    ```
+
+* Azure Training Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/azure_payload_training.json"
+    ```
+
+* Azure Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-30" \
+        --input_file "./control_messages/azure_payload_inference.json"
+    ```
+
+* Azure Training + Inference Pipeline
+    ```bash
+    python dfp_integrated_training_batch_pipeline.py \
+        --log_level DEBUG \
+        --use_cpp=true \
+        --source azure \
+        --start_time "2022-08-01" \
+        --duration "60d" \
+        --train_users generic \
+        --input_file "./control_messages/azure_payload_load_train_inference.json" 
+    ```
+
+### Output Fields
+The output files, `dfp_detectiions_duo.csv` and `dfp_detections_azure.csv`, will contain those logs from the input dataset for which an anomaly was detected; this is determined by the z-score in the `mean_abs_z` field. By default, any logs with a z-score of 2.0 or higher are considered anomalous. Refer to [`DFPPostprocessingStage`](6_digital_fingerprinting_reference.md#post-processing-stage-dfppostprocessingstage).
+
+Most of the fields in the output files generated by running the above examples are input fields or derived from input fields. The additional output fields are:
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| event_time | TEXT | ISO 8601 formatted date string, the time the anomaly was detected by Morpheus |
+| model_version | TEXT | Name and version of the model used to performed the inference, in the form of `<model name>:<version>` |
+| max_abs_z | FLOAT | Max z-score across all features |
+| mean_abs_z | FLOAT | Average z-score across all features |
+
+In addition to this, for each input feature the following output fields will exist:
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `<feature name>_loss` | FLOAT | The loss |
+| `<feature name>_z_loss` | FLOAT | The loss z-score |
+| `<feature name>_pred` | FLOAT | The predicted value |
+
+Refer to [DFPInferenceStage](6_digital_fingerprinting_reference.md#inference-stage-dfpinferencestage) for more on these fields.

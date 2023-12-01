@@ -25,6 +25,11 @@
 #include <utility>  // for pair
 #include <vector>
 
+namespace mrc::coroutines {
+template <typename T>
+class Task;
+}
+
 namespace morpheus {
 
 struct TensorObject;
@@ -42,6 +47,9 @@ using RankType    = int;
 using ShapeType = std::vector<TensorIndex>;
 using RangeType = std::pair<TensorIndex, TensorIndex>;
 using TensorMap = std::map<std::string, TensorObject>;
+
+template <typename T = void>
+using Task = mrc::coroutines::Task<T>;
 // NOLINTEND(readability-identifier-naming)
 
 /** @} */  // end of group

@@ -15,20 +15,18 @@
 import logging
 import typing
 
-import cupy as cp
 import mrc
-import numpy as np
-import typing_utils
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FilterSource
 from morpheus.config import Config
+from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -85,12 +83,10 @@ class FilterDetectionsStage(SinglePortStage):
                  field_name: str = "probs"):
         super().__init__(c)
 
-        # Probability to consider a detection
-        self._threshold = threshold
         self._copy = copy
-
-        self._filter_source = filter_source
-        self._field_name = field_name
+        self._controller = FilterDetectionsController(threshold=threshold,
+                                                      filter_source=filter_source,
+                                                      field_name=field_name)
 
     @property
     def name(self) -> str:
@@ -106,118 +102,37 @@ class FilterDetectionsStage(SinglePortStage):
             Accepted input types.
 
         """
-        if self._filter_source == FilterSource.TENSOR:
+        if self._controller.filter_source == FilterSource.TENSOR:
             return (MultiResponseMessage, )
-        else:
-            return (MultiMessage, )
+
+        return (MultiMessage, )
+
+    def compute_schema(self, schema: StageSchema):
+        self._controller.update_filter_source(message_type=schema.input_type)
+        schema.output_schema.set_type(schema.input_type)
 
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
-    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
-        # Determind the filter source
-        if self._filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(self._field_name)
-        else:
-            filter_source = x.get_meta(self._field_name).values
-
-        if (isinstance(filter_source, np.ndarray)):
-            array_mod = np
-        else:
-            array_mod = cp
-
-        # Get per row detections
-        detections = (filter_source > self._threshold)
-
-        if (len(detections.shape) > 1):
-            detections = detections.any(axis=1)
-
-        # Surround in False to ensure we get an even number of pairs
-        detections = array_mod.concatenate([array_mod.array([False]), detections, array_mod.array([False])])
-
-        return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
-
-    def filter_copy(self, x: MultiMessage) -> MultiMessage:
-        """
-        This function uses a threshold value to filter the messages.
-
-        Parameters
-        ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
-            Response message with probabilities calculated from inference results.
-
-        Returns
-        -------
-        `morpheus.pipeline.messages.MultiMessage`
-            A new message containing a copy of the rows above the threshold.
-
-        """
-        if x is None:
-            return None
-
-        true_pairs = self._find_detections(x)
-
-        # If we didnt have any detections, return None
-        if (true_pairs.shape[0] == 0):
-            return None
-
-        return x.copy_ranges(true_pairs)
-
-    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
-        """
-        This function uses a threshold value to filter the messages.
-
-        Parameters
-        ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
-            Response message with probabilities calculated from inference results.
-
-        Returns
-        -------
-        typing.List[`morpheus.pipeline.messages.MultiMessage`]
-            List of filtered messages.
-
-        """
-        # Unfortunately we have to convert this to a list in case there are non-contiguous groups
-        output_list = []
-        if x is not None:
-            true_pairs = self._find_detections(x)
-            for pair in true_pairs:
-                pair = tuple(pair.tolist())
-                if ((pair[1] - pair[0]) > 0):
-                    output_list.append(x.get_slice(*pair))
-
-        return output_list
-
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        (parent_node, message_type) = input_stream
-        if self._filter_source == FilterSource.Auto:
-            if (typing_utils.issubtype(message_type, MultiResponseMessage)):
-                self._filter_source = FilterSource.TENSOR
-            else:
-                self._filter_source = FilterSource.DATAFRAME
-
-            logger.debug(
-                f"filter_source was set to Auto, inferring a filter source of {self._filter_source} based on an input "
-                f"message type of {message_type}")
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,
                                                  self.unique_name,
-                                                 self._threshold,
+                                                 self._controller.threshold,
                                                  self._copy,
-                                                 self._filter_source,
-                                                 self._field_name)
+                                                 self._controller.filter_source,
+                                                 self._controller.field_name)
         else:
+
             if self._copy:
                 node = builder.make_node(self.unique_name,
-                                         ops.map(self.filter_copy),
+                                         ops.map(self._controller.filter_copy),
                                          ops.filter(lambda x: x is not None))
             else:
                 # Use `ops.flatten` to convert the list returned by `filter_slice` back to individual messages
-                node = builder.make_node(self.unique_name, ops.map(self.filter_slice), ops.flatten())
+                node = builder.make_node(self.unique_name, ops.map(self._controller.filter_slice), ops.flatten())
 
-        builder.make_edge(parent_node, node)
+        builder.make_edge(input_node, node)
 
-        return node, message_type
+        return node
