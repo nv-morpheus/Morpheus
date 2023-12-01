@@ -186,7 +186,7 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
     config.model_max_batch_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["model_max_batch_size"]
     config.feature_length = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["feature_length"]
     config.edge_buffer_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["edge_buffer_size"]
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     CppConfig.set_should_use_cpp(True)
 
     input_filepath = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["file_path"]

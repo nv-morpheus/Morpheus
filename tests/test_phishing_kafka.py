@@ -41,6 +41,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.compare_df import compare_df
+from morpheus.utils.file_utils import load_labels_file
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -87,7 +88,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
     mock_triton_client.async_infer.side_effect = async_infer
 
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -120,7 +121,7 @@ def test_email_no_cpp(mock_triton_client: mock.MagicMock,
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
@@ -154,7 +155,7 @@ def test_email_cpp(dataset_pandas: DatasetManager,
                    kafka_topics: KafkaTopics,
                    kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -187,7 +188,7 @@ def test_email_cpp(dataset_pandas: DatasetManager,
                              server_url='localhost:8001',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
         WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
