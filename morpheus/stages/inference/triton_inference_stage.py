@@ -203,10 +203,11 @@ class InputWrapper:
 
     """
 
-    def __init__(self,
-                 client: tritonclient.InferenceServerClient,
-                 model_name: str,
-                 config: typing.Dict[str, TritonInOut]):
+    def __init__(
+            self,
+            client: tritonclient.InferenceServerClient,  # pylint: disable=unused-argument
+            model_name: str,
+            config: typing.Dict[str, TritonInOut]):
         self._config = config.copy()
 
         self._total_bytes = 0
@@ -357,7 +358,7 @@ class ShmInputWrapper(InputWrapper):
         super().__init__(client, model_name, config)
 
         # Now create the necessary shared memory bits
-        self.region_name = model_name + "_{}".format(ShmInputWrapper.total_count)
+        self.region_name = f"{model_name}_{ShmInputWrapper.total_count}"
         ShmInputWrapper.total_count += 1
 
         # Allocate the total memory
@@ -368,7 +369,7 @@ class ShmInputWrapper(InputWrapper):
             self._config[key].ptr = cp.cuda.MemoryPointer(self._memory, self._config[key].offset)
 
         # Now get the registered IPC handle
-        self._ipc_handle = cp.cuda.runtime.ipcGetMemHandle(self._memory.ptr)
+        self._ipc_handle = cp.cuda.runtime.ipcGetMemHandle(self._memory.ptr)  # pylint: disable=c-extension-no-member
 
         # Finally, regester this memory with the server. Must be base64 for some reason???
         client.register_cuda_shared_memory(self.region_name, base64.b64encode(self._ipc_handle), 0, self._total_bytes)
@@ -507,29 +508,29 @@ class _TritonInferenceWorker(InferenceWorker):
 
             # Make sure the inputs/outputs match our config
             if (int(model_meta["inputs"][0]["shape"][-1]) != self._fea_length):
-                raise RuntimeError("Mismatched Sequence Length. Config specified {} but model specified {}".format(
-                    self._fea_length, int(model_meta["inputs"][0]["shape"][-1])))
+                raise RuntimeError(f"Mismatched Sequence Length. Config specified {self._fea_length} but model"
+                                   f" specified {int(model_meta['inputs'][0]['shape'][-1])}")
 
             # Check batch size
             if (model_config.get("max_batch_size", 0) != self._max_batch_size):
 
                 # If the model is more, thats fine. Gen warning
                 if (model_config["max_batch_size"] > self._max_batch_size):
-                    warnings.warn(("Model max batch size ({}) is more than configured max batch size ({}). "
-                                   "May result in sub optimal performance").format(model_config["max_batch_size"],
-                                                                                   self._max_batch_size))
+                    warnings.warn(
+                        f"Model max batch size ({model_config['max_batch_size']}) is more than configured max batch "
+                        f"size ({self._max_batch_size}). May result in sub optimal performance")
 
                 # If the model is less, raise error. Cant send more to Triton than the max batch size
                 if (model_config["max_batch_size"] < self._max_batch_size):
                     raise RuntimeError(
-                        ("Model max batch size ({}) is less than configured max batch size ({}). "
-                         "Reduce max batch size to be less than or equal to model max batch size.").format(
-                             model_config["max_batch_size"], self._max_batch_size))
+                        f"Model max batch size ({model_config['max_batch_size']}) is less than configured max batch"
+                        f" size ({self._max_batch_size}). Reduce max batch size to be less than or equal to model max"
+                        " batch size.")
 
             shm_config = {}
 
             def build_inout(x: dict):
-                b = np.dtype(triton_to_np_dtype(x["datatype"])).itemsize
+                num_bytes = np.dtype(triton_to_np_dtype(x["datatype"])).itemsize
 
                 shape = []
 
@@ -541,12 +542,12 @@ class _TritonInferenceWorker(InferenceWorker):
 
                     shape.append(y_int)
 
-                    b *= y_int
+                    num_bytes *= y_int
 
                 mapped_name = x["name"] if x["name"] not in self._inout_mapping else self._inout_mapping[x["name"]]
 
                 return TritonInOut(name=x["name"],
-                                   bytes=b,
+                                   bytes=num_bytes,
                                    datatype=x["datatype"],
                                    shape=shape,
                                    mapped_name=mapped_name)
@@ -576,7 +577,8 @@ class _TritonInferenceWorker(InferenceWorker):
             self._mem_pool = ResourcePool(create_fn=create_wrapper, max_size=1000)
 
         except InferenceServerException as ex:
-            logger.exception("Exception occurred while coordinating with Triton. Exception message: \n{}\n".format(ex),
+            logger.exception("Exception occurred while coordinating with Triton. Exception message: \n%s\n",
+                             ex,
                              exc_info=ex)
             raise ex
 
@@ -587,6 +589,7 @@ class _TritonInferenceWorker(InferenceWorker):
     def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
         pass
 
+    # pylint: disable=invalid-name
     def _infer_callback(self,
                         cb: typing.Callable[[TensorMemory], None],
                         m: InputWrapper,
@@ -606,7 +609,9 @@ class _TritonInferenceWorker(InferenceWorker):
 
         self._mem_pool.return_obj(m)
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
+    # pylint: enable=invalid-name
+
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function sends batch of events as a requests to Triton inference server using triton client API.
 
@@ -614,7 +619,7 @@ class _TritonInferenceWorker(InferenceWorker):
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Mini-batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
+        callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
 
         """
@@ -631,7 +636,7 @@ class _TritonInferenceWorker(InferenceWorker):
         # Inference call
         self._triton_client.async_infer(model_name=self._model_name,
                                         inputs=inputs,
-                                        callback=partial(self._infer_callback, cb, mem, batch),
+                                        callback=partial(self._infer_callback, callback, mem, batch),
                                         outputs=outputs)
 
 
@@ -872,8 +877,8 @@ class TritonInferenceAE(_TritonInferenceWorker):
         bce_loss = self._autoencoder.bce(torch.as_tensor(output["bin"], device='cuda'), bin_target)
         net_loss += [bce_loss.data]
         cce_loss = []
-        for i, ft in enumerate(self._autoencoder.categorical_fts):
-            loss = self._autoencoder.cce(torch.as_tensor(output[ft], device='cuda'), codes[i])
+        for i, feature in enumerate(self._autoencoder.categorical_fts):
+            loss = self._autoencoder.cce(torch.as_tensor(output[feature], device='cuda'), codes[i])
             cce_loss.append(loss)
             net_loss += [loss.data.reshape(-1, 1)]
 
@@ -948,12 +953,12 @@ class TritonInferenceStage(InferenceStage):
     def _get_worker_class(self):
         if (self._config.mode == PipelineModes.NLP):
             return TritonInferenceNLP
-        elif (self._config.mode == PipelineModes.FIL):
+        if (self._config.mode == PipelineModes.FIL):
             return TritonInferenceFIL
-        elif (self._config.mode == PipelineModes.AE):
+        if (self._config.mode == PipelineModes.AE):
             return TritonInferenceAE
-        else:
-            raise NotImplementedError("Unknown config mode")
+
+        raise NotImplementedError("Unknown config mode")
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
