@@ -152,7 +152,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 * None
 
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
