@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION &
+ * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,13 +50,29 @@ void TestWithPythonInterpreter::SetUp()
     initialize_interpreter();
 
     LoaderRegistry::register_factory_fn(
-        "file", [](nlohmann::json config) { return std::make_unique<FileDataLoader>(config); }, false);
+        "file",
+        [](nlohmann::json config) {
+            return std::make_unique<FileDataLoader>(config);
+        },
+        false);
     LoaderRegistry::register_factory_fn(
-        "grpc", [](nlohmann::json config) { return std::make_unique<GRPCDataLoader>(config); }, false);
+        "grpc",
+        [](nlohmann::json config) {
+            return std::make_unique<GRPCDataLoader>(config);
+        },
+        false);
     LoaderRegistry::register_factory_fn(
-        "payload", [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); }, false);
+        "payload",
+        [](nlohmann::json config) {
+            return std::make_unique<PayloadDataLoader>(config);
+        },
+        false);
     LoaderRegistry::register_factory_fn(
-        "rest", [](nlohmann::json config) { return std::make_unique<RESTDataLoader>(config); }, false);
+        "rest",
+        [](nlohmann::json config) {
+            return std::make_unique<RESTDataLoader>(config);
+        },
+        false);
 }
 
 void TestWithPythonInterpreter::TearDown() {}

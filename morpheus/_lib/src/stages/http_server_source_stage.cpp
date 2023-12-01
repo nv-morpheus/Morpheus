@@ -78,6 +78,7 @@ HttpServerSourceStage::HttpServerSourceStage(std::string bind_address,
 
         try
         {
+            // NOLINTNEXTLINE(clang-diagnostic-unused-value)
             DCHECK_NOTNULL(table);
             auto queue_status = m_queue.push_wait_for(std::move(table), m_queue_timeout);
 
@@ -156,6 +157,7 @@ void HttpServerSourceStage::source_generator(rxcpp::subscriber<HttpServerSourceS
         auto queue_status = m_queue.try_pop(table_ptr);
         if (queue_status == boost::fibers::channel_op_status::success)
         {
+            // NOLINTNEXTLINE(clang-diagnostic-unused-value)
             DCHECK_NOTNULL(table_ptr);
             try
             {

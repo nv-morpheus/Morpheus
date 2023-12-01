@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import time
-import typing
 
 import mrc
 import mrc.core.operators as ops
@@ -29,7 +28,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
@@ -58,13 +57,18 @@ class SplitStage(Stage):
     def supports_cpp_node(self):
         return False
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def compute_schema(self, schema: StageSchema):
 
-        assert len(in_ports_streams) == 1, "Only 1 input supported"
+        schema.output_schemas[0].set_type(schema.input_type)
+        schema.output_schemas[1].set_type(schema.input_type)
+
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
+
+        assert len(input_nodes) == 1, "Only 1 input supported"
 
         # Create a broadcast node
         broadcast = Broadcast(builder, "broadcast")
-        builder.make_edge(in_ports_streams[0][0], broadcast)
+        builder.make_edge(input_nodes[0], broadcast)
 
         def filter_higher_fn(data: MessageMeta):
             return MessageMeta(data.df[data.df["v2"] >= 0.5])
@@ -80,7 +84,7 @@ class SplitStage(Stage):
         filter_lower = builder.make_node("filter_lower", ops.map(filter_lower_fn))
         builder.make_edge(broadcast, filter_lower)
 
-        return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
+        return [filter_higher, filter_lower]
 
 
 def _build_engine(model_name: str, vdb_service: VectorDBResourceService, llm_service: str):

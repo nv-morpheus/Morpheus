@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved. SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,8 @@ class Session : public std::enable_shared_from_this<Session>
             return;
         }
 
-        // Release ownership of the parsed message and move it into the handle_request method
+        // Release ownership of the parsed message and move it into the
+        // handle_request method
         handle_request(m_parser->release());
     }
 
@@ -259,9 +260,11 @@ void HttpServer::start_listener(std::binary_semaphore& listener_semaphore, std::
 {
     listener_semaphore.acquire();
 
-    // This function will block until the io context is shutdown, and should be called from the first worker thread
+    // This function will block until the io context is shutdown, and should be
+    // called from the first worker thread
     DCHECK(m_listener_threads.size() == 1 && m_listener_threads[0].get_id() == std::this_thread::get_id())
-        << "start_listener must be called from the first thread in m_listener_threads";
+        << "start_listener must be called from the first thread in "
+           "m_listener_threads";
 
     m_listener = std::make_shared<Listener>(m_io_context,
                                             m_payload_parse_fn,
@@ -276,7 +279,9 @@ void HttpServer::start_listener(std::binary_semaphore& listener_semaphore, std::
     for (auto i = 1; i < m_num_threads; ++i)
     {
         net::io_context& ioc = m_io_context;
-        m_listener_threads.emplace_back([&ioc]() { ioc.run(); });
+        m_listener_threads.emplace_back([&ioc]() {
+            ioc.run();
+        });
     }
 
     m_is_running = true;
@@ -297,7 +302,7 @@ void HttpServer::start()
         std::binary_semaphore listener_semaphore{0};
         std::binary_semaphore started_semaphore{0};
         m_listener_threads.emplace_back(
-            std::thread(&HttpServer::start_listener, this, std::ref(listener_semaphore), std::ref(started_semaphore)));
+            &HttpServer::start_listener, this, std::ref(listener_semaphore), std::ref(started_semaphore));
         listener_semaphore.release();
         started_semaphore.acquire();
     } catch (const std::exception& e)

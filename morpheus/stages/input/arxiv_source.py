@@ -139,6 +139,7 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         # Since each result contains at least one page, we know the upper-bound is _max_pages results
+        # pylint: disable=c-extension-no-member
         search_results = arxiv.Search(
             query=self._query,
             max_results=self._max_pages,
