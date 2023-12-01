@@ -123,6 +123,7 @@ dependencies:
     - pip:
         # Add additional dev dependencies here
         - databricks-connect
-        - pytest-kafka==0.6.0
-        - pymilvus==2.3.2
         - milvus==2.3.2
+        - pyarrow_hotfix # CVE-2023-47248. See morpheus/__init__.py for more details
+        - pymilvus==2.3.2
+        - pytest-kafka==0.6.0
