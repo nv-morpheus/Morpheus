@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import queue
 from unittest import mock
 
@@ -23,12 +24,19 @@ import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils import mk_async_infer
+from morpheus.config import Config
+from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceAE
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceFIL
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceNLP
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -117,6 +125,106 @@ def test_resource_pool_create_raises_error():
         pool.borrow_obj()
 
     assert pool.borrow_obj() == 20
+
+
+@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@pytest.mark.parametrize("force_convert_inputs", [True, False])
+@pytest.mark.parametrize("use_shared_memory", [True, False])
+@pytest.mark.parametrize("needs_logits", [True, False, None])
+def test_stage_constructor(config: Config,
+                           pipeline_mode: PipelineModes,
+                           force_convert_inputs: bool,
+                           use_shared_memory: bool,
+                           needs_logits: bool | None):
+    if needs_logits is None:
+        expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
+    else:
+        expexted_needs_logits = needs_logits
+
+    config.mode = pipeline_mode
+
+    stage = TritonInferenceStage(config,
+                                 model_name='test',
+                                 server_url='test:0000',
+                                 force_convert_inputs=force_convert_inputs,
+                                 use_shared_memory=use_shared_memory,
+                                 needs_logits=needs_logits)
+    assert stage._kwargs == {
+        "model_name": "test",
+        "server_url": "test:0000",
+        "force_convert_inputs": force_convert_inputs,
+        "use_shared_memory": use_shared_memory,
+        "needs_logits": expexted_needs_logits
+    }
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP])
+def test_stage_get_worker_class(config: Config, pipeline_mode: PipelineModes):
+    if pipeline_mode == PipelineModes.AE:
+        worker_cls = TritonInferenceAE
+    elif pipeline_mode == PipelineModes.FIL:
+        worker_cls = TritonInferenceFIL
+    elif pipeline_mode == PipelineModes.NLP:
+        worker_cls = TritonInferenceNLP
+
+    config.mode = pipeline_mode
+
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+    worker = stage._get_worker_class()
+    assert worker is worker_cls
+
+
+@pytest.mark.use_python
+def test_stage_get_worker_class_other_not_impl(config: Config):
+    config.mode = PipelineModes.OTHER
+
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+
+    with pytest.raises(NotImplementedError):
+        stage._get_worker_class()
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP])
+@pytest.mark.parametrize("needs_logits", [True, False, None])
+@mock.patch('torch.load')
+def test_stage_get_inference_worker(mock_torch_load: mock.MagicMock,
+                                    config: Config,
+                                    pipeline_mode: PipelineModes,
+                                    needs_logits: bool | None):
+    if pipeline_mode == PipelineModes.AE:
+        worker_cls = TritonInferenceAE
+        config.ae = ConfigAutoEncoder()
+        config.ae.autoencoder_path = os.path.join(TEST_DIRS.tests_data_dir,
+                                                  "filter_probs.csv")  # this just needs to be a valid path
+        mock_torch_load.return_value = {}
+    elif pipeline_mode == PipelineModes.FIL:
+        worker_cls = TritonInferenceFIL
+    elif pipeline_mode == PipelineModes.NLP:
+        worker_cls = TritonInferenceNLP
+
+    if needs_logits is None:
+        expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
+    else:
+        expexted_needs_logits = needs_logits
+
+    config.mode = pipeline_mode
+
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
+    worker = stage._get_inference_worker(ProducerConsumerQueue())
+    assert isinstance(worker, worker_cls)
+    assert worker.needs_logits == expexted_needs_logits
+
+
+@pytest.mark.use_python
+def test_stage_get_inference_worker_other_not_impl(config: Config):
+    config.mode = PipelineModes.OTHER
+
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+
+    with pytest.raises(NotImplementedError):
+        stage._get_inference_worker(ProducerConsumerQueue())
 
 
 @pytest.mark.slow
