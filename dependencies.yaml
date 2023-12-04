@@ -28,13 +28,13 @@ files:
       - cudatoolkit
 
 channels:
+  - conda-forge
   - rapidsai
   - nvidia/label/cuda-11.8.0
   - nvidia
   - rapidsai-nightly
   - nvidia/label/dev
   - pytorch
-  - conda-forge
 
 dependencies:
 
@@ -108,5 +108,6 @@ dependencies:
               - cuda-cudart-dev=11.8
               - cuda-nvml-dev=11.8
               - cuda-nvrtc-dev=11.8
+              - cuda-python=11.8.2
               - cuda-tools=11.8
               - cuda-version=11.8
