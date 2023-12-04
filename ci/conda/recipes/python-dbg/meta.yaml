@@ -16,7 +16,7 @@
 {% set version = environ.get('MORPHEUS_PYTHON_VER') %}
 
 package:
-  name: python
+  name: morpheus-python-dbg
   version: {{ version }}
 
 source:

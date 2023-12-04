@@ -87,6 +87,8 @@ dependencies:
           - tqdm=4
           - typing_utils=0.1
           - watchdog=2.1
+          - pip:
+            - pyarrow_hotfix
   test_python_morpheus:
     common:
       - output_types: [conda]
