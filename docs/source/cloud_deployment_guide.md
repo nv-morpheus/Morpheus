@@ -807,17 +807,3 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
-
-## The dropna stage
-The Drop Null Attributes stage (dropna) requires the specification of a column name. This column will vary from use case (and its input data) to use case. These are the applicable columns for the pre-built pipelines provided by Morpheus.
-
-| Input | Columns |
-| ----- | ------- |
-| Azure DFP | userPrincipalName |
-| Duo DFP | username |
-| DFP Cloudtrail | userIdentitysessionContextsessionIssueruserName |
-| Email | data |
-| GNN | index, client_node, merchant_node |
-| Log Parsing | raw |
-| PCAP | data |
-| Ransomware | PID, Process, snapshot_id, timestamp, source |
