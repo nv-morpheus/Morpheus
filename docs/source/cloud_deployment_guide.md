@@ -47,7 +47,6 @@ limitations under the License.
 - [Additional Documentation](#additional-documentation)
 - [Troubleshooting](#troubleshooting)
   - [Common Problems](#common-problems)
-- [The dropna stage](#the-dropna-stage)
 
 
 ## Introduction
@@ -403,7 +402,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -445,6 +444,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --userid_filter=user123 \
         --feature_scaler=standard \
         --userid_column_name=userIdentitysessionContextsessionIssueruserName \
+        --timestamp_column_name="event_dt" \
         from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
         --max_files=200 \
         train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
@@ -495,7 +495,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8000 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
@@ -525,7 +525,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8000 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize --exclude '^ts_' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
