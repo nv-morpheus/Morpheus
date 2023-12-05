@@ -782,7 +782,7 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/docs/source/developer_guide)
+- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/developer_guide/guides.md)
 - [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/examples)
 
 
