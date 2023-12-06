@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 import pandas as pd
 import pytest
 from langchain import OpenAI
@@ -97,4 +99,8 @@ def test_agents_simple_pipe_integration_openai(config: Config):
 
     assert len(result_df.columns) == 2
     assert any(result_df.columns == ["questions", "response"])
-    assert float(result_df.response.iloc[0]) >= 3.7
+
+    response_txt = result_df.response.iloc[0]
+    response_match = re.match(".*(\d+\.\d+)\.?$", response_txt)
+    assert response_match is not None
+    assert float(response_match.group(1)) >= 3.7
