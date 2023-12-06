@@ -13,10 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import glob
 import os
+import random
+import typing
+from unittest import mock
 
 import GPUtil
+import pytest
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
@@ -70,3 +75,39 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         bench['stats']['max_throughput_bytes'] = (byte_count * repeat) / bench['stats']['min']
         bench['stats']['mean_throughput_bytes'] = (byte_count * repeat) / bench['stats']['mean']
         bench['stats']['median_throughput_bytes'] = (byte_count * repeat) / bench['stats']['median']
+
+
+@pytest.mark.usefixtures("openai", "manual_seed")
+@pytest.fixture(name="mock_chat_completion")
+@pytest.mark.usefixtures()
+def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
+
+    async def sleep_first(*args, **kwargs):
+        # Since we've seeded the random number generator, the sleep time is deterministic
+        await asyncio.sleep(random.uniform(0.86, 1.67))
+        return mock.DEFAULT
+
+    mock_chat_completion.acreate.side_effect = sleep_first
+
+    yield mock_chat_completion
+
+
+@pytest.mark.usefixtures("nemollm")
+@pytest.fixture(name="mock_nemollm")
+def mock_nemollm_fixture(mock_nemollm: mock.MagicMock, event_loop: asyncio.AbstractEventLoop):
+    # The generate function is a blocking call that returns a future when return_type="async"
+
+    async def sleep_first(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
+        # Since we've seeded the random number generator, the sleep time is deterministic
+        await asyncio.sleep(random.uniform(0.86, 1.67))
+        fut.set_result(value)
+
+    def create_future(*args, **kwargs) -> asyncio.Future:
+        nonlocal event_loop
+        fut = event_loop.create_future()
+        event_loop.create_task(sleep_first(fut, mock.DEFAULT))
+        return fut
+
+    mock_nemollm.generate.side_effect = create_future
+
+    yield mock_nemollm
