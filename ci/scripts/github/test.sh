@@ -76,46 +76,8 @@ git lfs ls-files
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
 mkdir -p ${WORKSPACE_TMP}/reports
 
-rapids-logger "Running C++ tests"
-# Running the tests from the tests dir. Normally this isn't nescesary, however since
-# we are testing the installed version of morpheus in site-packages and not the one
-# in the repo dir, the pytest coverage module reports incorrect coverage stats.
-pushd ${MORPHEUS_ROOT}/tests
-
-TEST_RESULTS=0
-for cpp_test in "${CPP_TESTS[@]}"; do
-       test_name=$(basename ${cpp_test})
-       rapids-logger "Running ${test_name}"
-       set +e
-
-       ${cpp_test} --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
-       TEST_RESULT=$?
-       TEST_RESULTS=$(($TEST_RESULTS+$TEST_RESULT))
-
-       set -e
-done
-
-rapids-logger "Running Python tests"
-set +e
-
-python -I -m pytest --run_slow --run_kafka --run_milvus --fail_missing \
-       --junit-xml=${REPORTS_DIR}/report_pytest.xml \
-       --cov=morpheus \
-       --cov-report term-missing \
-       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
+python ${MORPHEUS_ROOT}/ci/scripts/camou_startup_test.py
 
 PYTEST_RESULTS=$?
-TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
-
-set -e
-popd
-
-rapids-logger "Archiving test reports"
-cd $(dirname ${REPORTS_DIR})
-tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
-
-rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-set_job_summary_preamble
-upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
-
+TEST_RESULTS=$PYTEST_RESULTS
 exit ${TEST_RESULTS}
