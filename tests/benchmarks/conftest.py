@@ -94,7 +94,7 @@ def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
-def mock_nemollm_fixture(mock_nemollm: mock.MagicMock, event_loop: asyncio.AbstractEventLoop):
+def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
     # The generate function is a blocking call that returns a future when return_type="async"
 
     async def sleep_first(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
@@ -103,7 +103,7 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock, event_loop: asyncio.Abstr
         fut.set_result(value)
 
     def create_future(*args, **kwargs) -> asyncio.Future:
-        nonlocal event_loop
+        event_loop = asyncio.get_event_loop()
         fut = event_loop.create_future()
         event_loop.create_task(sleep_first(fut, mock.DEFAULT))
         return fut
