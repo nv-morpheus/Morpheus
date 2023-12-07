@@ -29,9 +29,7 @@ docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 
 ##### Start Triton Inference Server container
 ```bash
-cd ${MORPHEUS_ROOT}/models
-
-docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments
@@ -42,6 +40,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 | Model              | Version | Status |
 +--------------------+---------+--------+
 | abp-nvsmi-xgb      | 1       | READY  |
+| all-MiniLM-L6-v2   | 1       | READY  |
 | phishing-bert-onnx | 1       | READY  |
 | sid-minibert-onnx  | 1       | READY  |
 +--------------------+---------+--------+
