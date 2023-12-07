@@ -101,6 +101,6 @@ def test_agents_simple_pipe_integration_openai(config: Config):
     assert any(result_df.columns == ["questions", "response"])
 
     response_txt = result_df.response.iloc[0]
-    response_match = re.match(".*(\d+\.\d+)\.?$", response_txt)
+    response_match = re.match(r".*(\d+\.\d+)\.?$", response_txt)
     assert response_match is not None
     assert float(response_match.group(1)) >= 3.7
