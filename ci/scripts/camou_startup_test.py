@@ -8,7 +8,7 @@ import warnings
 
 import requests
 
-ROOT_DIR = "/home/dagardner/work/morpheus/tests/mock_rest_server"
+ROOT_DIR = f"{os.environ['MORPHEUS_ROOT']}/tests/mock_rest_server"
 
 
 def _set_pdeathsig(sig=signal.SIGTERM):
