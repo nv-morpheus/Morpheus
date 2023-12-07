@@ -47,7 +47,6 @@ limitations under the License.
 - [Additional Documentation](#additional-documentation)
 - [Troubleshooting](#troubleshooting)
   - [Common Problems](#common-problems)
-- [The dropna stage](#the-dropna-stage)
 
 
 ## Introduction
@@ -403,7 +402,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -445,6 +444,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --userid_filter=user123 \
         --feature_scaler=standard \
         --userid_column_name=userIdentitysessionContextsessionIssueruserName \
+        --timestamp_column_name=event_dt \
         from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
         --max_files=200 \
         train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
@@ -495,7 +495,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8000 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
@@ -525,7 +525,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8000 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize --exclude '^ts_' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
@@ -782,7 +782,7 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/docs/source/developer_guide)
+- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/developer_guide/guides.md)
 - [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/examples)
 
 
@@ -807,17 +807,3 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
-
-## The dropna stage
-The Drop Null Attributes stage (dropna) requires the specification of a column name. This column will vary from use case (and its input data) to use case. These are the applicable columns for the pre-built pipelines provided by Morpheus.
-
-| Input | Columns |
-| ----- | ------- |
-| Azure DFP | userPrincipalName |
-| Duo DFP | username |
-| DFP Cloudtrail | userIdentitysessionContextsessionIssueruserName |
-| Email | data |
-| GNN | index, client_node, merchant_node |
-| Log Parsing | raw |
-| PCAP | data |
-| Ransomware | PID, Process, snapshot_id, timestamp, source |
