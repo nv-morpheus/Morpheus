@@ -80,8 +80,8 @@ def _run_pipeline(config: Config,
 @pytest.mark.benchmark
 @pytest.mark.usefixtures("mock_nemollm", "mock_chat_completion")
 @pytest.mark.parametrize("llm_service_cls", [NeMoLLMService, OpenAIChatService])
-def test_completion_pipe_nemo(benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
-                              config: Config,
-                              dataset: DatasetManager,
-                              llm_service_cls: LLMService):
+def test_completion_pipe(benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
+                         config: Config,
+                         dataset: DatasetManager,
+                         llm_service_cls: LLMService):
     benchmark(_run_pipeline, config, llm_service_cls, source_df=dataset["countries.csv"])
