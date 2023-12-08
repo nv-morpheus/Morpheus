@@ -17,6 +17,8 @@
 import collections.abc
 import json
 import os
+import random
+import time
 import types
 import typing
 from unittest import mock
@@ -41,7 +43,7 @@ MODEL_FEA_LENGTH = 512
 def _run_pipeline(config: Config,
                   milvus_server_uri: str,
                   collection_name: str,
-                  rss_files: list[str],
+                  rss_urls: list[str],
                   utils_mod: types.ModuleType,
                   web_scraper_stage_mod: types.ModuleType):
 
@@ -55,7 +57,7 @@ def _run_pipeline(config: Config,
     pipe = LinearPipeline(config)
 
     pipe.set_source(
-        RSSSourceStage(config, feed_input=rss_files, batch_size=128, run_indefinitely=False, enable_cache=False))
+        RSSSourceStage(config, feed_input=rss_urls, batch_size=128, run_indefinitely=False, enable_cache=False))
     pipe.add_stage(web_scraper_stage_mod.WebScraperStage(config, chunk_size=MODEL_FEA_LENGTH, enable_cache=False))
     pipe.add_stage(DeserializeStage(config))
 
@@ -68,7 +70,10 @@ def _run_pipeline(config: Config,
                            column='page_content'))
 
     pipe.add_stage(
-        TritonInferenceStage(config, model_name='test-model', server_url='test:0000', force_convert_inputs=True))
+        TritonInferenceStage(config,
+                             model_name='all-MiniLM-L6-v2',
+                             server_url='localhost:8001',
+                             force_convert_inputs=True))
 
     pipe.add_stage(
         WriteToVectorDBStage(config,
@@ -86,10 +91,12 @@ def _run_pipeline(config: Config,
 @pytest.mark.benchmark
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'),
-    os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py')
+    os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_stage.py'),
 ])
+@mock.patch('feedparser.http.get')
 @mock.patch('requests.Session')
 def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
+                         mock_feedparser_http_get: mock.MagicMock,
                          benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
                          config: Config,
                          milvus_server_uri: str,
@@ -98,26 +105,38 @@ def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
     with open(os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_web_responses.json'), encoding='utf-8') as fh:
         web_responses = json.load(fh)
 
-    # Mock requests, since we are feeding the RSSSourceStage with a local file it won't be using the
-    # requests lib, only web_scraper_stage.py will use it.
     def mock_get_fn(url: str):
+        print("**********\n mock_get_fn\n**********")
         mock_response = mock.MagicMock()
         mock_response.ok = True
         mock_response.status_code = 200
         mock_response.text = web_responses[url]
+        time.sleep(0.5)
         return mock_response
 
     mock_requests_session.return_value = mock_requests_session
     mock_requests_session.get.side_effect = mock_get_fn
 
+    rss_source_file = os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')
+    with open(rss_source_file, 'rb', encoding='utf-8') as fh:
+        rss_source_data = fh.read()
+
+    def mock_feedparser_http_get_fn(*args, **kwargs):
+        nonlocal rss_source_data
+        print("**********\n mock_feedparser_http_get_fn\n**********")
+        time.sleep(0.5)
+
+        return rss_source_data
+
+    mock_feedparser_http_get.side_effect = mock_feedparser_http_get_fn
+
     (utils_mod, web_scraper_stage_mod) = import_mod
     collection_name = "test_bench_vdb_upload_pipeline"
-    rss_source_file = os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')
 
-    benchmark(
-        _run_pipeline(config=config,
-                      milvus_server_uri=milvus_server_uri,
-                      collection_name=collection_name,
-                      rss_files=[rss_source_file],
-                      utils_mod=utils_mod,
-                      web_scraper_stage_mod=web_scraper_stage_mod))
+    benchmark(_run_pipeline,
+              config=config,
+              milvus_server_uri=milvus_server_uri,
+              collection_name=collection_name,
+              rss_urls=["https://www.us-cert.gov/ncas/current-activity.xml"],
+              utils_mod=utils_mod,
+              web_scraper_stage_mod=web_scraper_stage_mod)
