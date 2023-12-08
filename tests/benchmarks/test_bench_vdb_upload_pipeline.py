@@ -106,7 +106,6 @@ def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
         web_responses = json.load(fh)
 
     def mock_get_fn(url: str):
-        print("**********\n mock_get_fn\n**********")
         mock_response = mock.MagicMock()
         mock_response.ok = True
         mock_response.status_code = 200
@@ -118,12 +117,11 @@ def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
     mock_requests_session.get.side_effect = mock_get_fn
 
     rss_source_file = os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')
-    with open(rss_source_file, 'rb', encoding='utf-8') as fh:
+    with open(rss_source_file, 'rb') as fh:
         rss_source_data = fh.read()
 
     def mock_feedparser_http_get_fn(*args, **kwargs):
         nonlocal rss_source_data
-        print("**********\n mock_feedparser_http_get_fn\n**********")
         time.sleep(0.5)
 
         return rss_source_data
