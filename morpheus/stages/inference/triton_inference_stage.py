@@ -894,6 +894,9 @@ class TritonInferenceAE(_TritonInferenceWorker):
         return mem
 
 
+INFERENCE_WORKER_ALIASES = {"ae": TritonInferenceAE, "fil": TritonInferenceFIL, "nlp": TritonInferenceNLP}
+
+
 @register_stage("inf-triton")
 class TritonInferenceStage(InferenceStage):
     """
@@ -920,6 +923,10 @@ class TritonInferenceStage(InferenceStage):
         Determines whether a logits calculation is needed for the value returned by the Triton inference response. If
         undefined, the value will be inferred based on the pipeline mode, defaulting to `True` for NLP and `False` for
         other modes.
+    worker_class : str, optional
+        Worker class to use for inference. If not specified, the worker class will be inferred based on the pipeline
+        mode. Can be specified either as a string or as a class type. If specified as a string, the string must be
+        one of the following: `AE`, `FIL`, or `NLP`. If specified as a
     """
 
     def __init__(self,
@@ -928,7 +935,8 @@ class TritonInferenceStage(InferenceStage):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 needs_logits: bool = None):
+                 needs_logits: bool = None,
+                 worker_class: str = None):
         super().__init__(c)
 
         self._config = c
@@ -946,11 +954,22 @@ class TritonInferenceStage(InferenceStage):
 
         self._requires_seg_ids = False
 
+        if isinstance(worker_class, str):
+            worker_class = self._get_worker_class_from_str(worker_class)
+
+        self._worker_class = worker_class or self._get_worker_class()
+
     def supports_cpp_node(self):
         # Get the value from the worker class
         return self._get_worker_class().supports_cpp_node()
 
-    def _get_worker_class(self):
+    def _get_worker_class_from_str(self, worker_class_name: str) -> type[_TritonInferenceWorker]:
+        try:
+            return INFERENCE_WORKER_ALIASES[worker_class_name.lower()]
+        except KeyError:
+            raise NotImplementedError(f"Unknown Triton inference worker class: {worker_class_name}")
+
+    def _get_worker_class(self) -> type[_TritonInferenceWorker]:
         if (self._config.mode == PipelineModes.NLP):
             return TritonInferenceNLP
         if (self._config.mode == PipelineModes.FIL):
@@ -961,14 +980,11 @@ class TritonInferenceStage(InferenceStage):
         raise NotImplementedError("Unknown config mode")
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
-
-        worker_cls = self._get_worker_class()
-
-        return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
+        return self._worker_class(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder):
 
         return _stages.InferenceClientStage(builder,
                                             name=self.unique_name,
-                                            inout_mapping=self._get_worker_class().default_inout_mapping(),
+                                            inout_mapping=self._worker_class.default_inout_mapping(),
                                             **self._kwargs)
