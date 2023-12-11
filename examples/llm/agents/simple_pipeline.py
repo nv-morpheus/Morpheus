@@ -35,7 +35,6 @@ from morpheus.llm.nodes.haystack_agent_node import HaystackAgentNode
 
 logger = logging.getLogger(__name__)
 
-
 def _build_langchain_agent_executor(model_name: str):
     from langchain import OpenAI
     from langchain.agents import AgentType
@@ -68,29 +67,38 @@ def _build_haystack_agent(model_name: str):
         raise ValueError("Ensure to configure the OPENAI_API_KEY environment variable.")
 
 
-    pn = PromptNode(
+    web_prompt_node = PromptNode(
         model_name,
         api_key=openai_key,
-        default_prompt_template="question-answering-with-document-scores",
+        max_length=256,
+        default_prompt_template="deepset/question-answering",
     )
+
+    calc_prompt_node = PromptNode(
+        model_name,
+        api_key=openai_key,
+        max_length=256,
+        default_prompt_template="Use Math tool.",
+    )
+
     web_retriever = WebRetriever(api_key=search_key)
-    pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=pn)
+    pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
 
     prompt_template = PromptTemplate("deepset/zero-shot-react")
     prompt_node = PromptNode(
-        model_name, api_key=os.environ.get("OPENAI_API_KEY"), stop_words=["Observation:"]
+        model_name, api_key=os.environ.get("OPENAI_API_KEY"), max_length=512, stop_words=["Observation:"]
     )
 
     web_qa_tool = Tool(
         name="Search",
         pipeline_or_node=pipeline,
-        description="useful for when you need to Google questions.",
+        description="Useful when you need to search for answers online.",
         output_variable="results",
     )
 
-    calc_tool = Tool( name="Calculator",
-                     pipeline_or_node=pipeline,
-                     description="Useful when you need to answer questions about math" )
+    calc_tool = Tool(name="Calculator",
+                     pipeline_or_node=calc_prompt_node,
+                     description="Useful when you need to math calculations.")
 
     agent = Agent(
         prompt_node=prompt_node, prompt_template=prompt_template, tools_manager=ToolsManager([web_qa_tool, calc_tool])
@@ -143,8 +151,7 @@ def pipeline(
 
     source_dfs = [
         cudf.DataFrame(
-            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-                           "Who is the current senator of texas?"]})
+            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
