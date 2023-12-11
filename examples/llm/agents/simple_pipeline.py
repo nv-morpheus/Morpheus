@@ -61,11 +61,11 @@ def _build_haystack_agent(model_name: str):
 
     search_key = os.environ.get("SERPERDEV_API_KEY")
     if not search_key:
-        raise ValueError("Please set the SERPERDEV_API_KEY environment variable")
+        raise ValueError("Ensure to configure the SERPERDEV_API_KEY environment variable.")
 
     openai_key = os.environ.get("OPENAI_API_KEY")
     if not openai_key:
-        raise ValueError("Please set the OPENAI_API_KEY environment variable")
+        raise ValueError("Ensure to configure the OPENAI_API_KEY environment variable.")
 
 
     pn = PromptNode(
