@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Mimic the examples/llm/vdb_upload/pipeline.py example"""
+"""
+Benchmark the examples/llm/vdb_upload/pipeline.py example, talking with live Triton and Milvus servers, but mocked
+RSS and web scraper responses."""
 
 import collections.abc
 import json
 import os
-import random
 import time
 import types
 import typing
@@ -116,15 +117,11 @@ def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
     mock_requests_session.return_value = mock_requests_session
     mock_requests_session.get.side_effect = mock_get_fn
 
-    rss_source_file = os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml')
-    with open(rss_source_file, 'rb') as fh:
-        rss_source_data = fh.read()
-
-    def mock_feedparser_http_get_fn(*args, **kwargs):
-        nonlocal rss_source_data
+    def mock_feedparser_http_get_fn(*args, **kwargs):  # pylint: disable=unused-argument
         time.sleep(0.5)
-
-        return rss_source_data
+        # The RSS Parser expects a bytes string
+        with open(os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml'), 'rb') as fh:
+            return fh.read()
 
     mock_feedparser_http_get.side_effect = mock_feedparser_http_get_fn
 
