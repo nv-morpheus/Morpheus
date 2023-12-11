@@ -32,6 +32,7 @@ from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceAE
@@ -46,6 +47,20 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 MODEL_MAX_BATCH_SIZE = 1024
+
+
+@pytest.fixture(scope="function")
+def config(config: Config):
+    """
+    In order to test the TritonInferenceAE worker we need to setup the auto encoder config, rather than feeding it a
+    real model, we just mock the torch.load function to return an empty dict.
+    """
+    config.ae = ConfigAutoEncoder()
+    config.ae.autoencoder_path = os.path.join(TEST_DIRS.tests_data_dir,
+                                              "filter_probs.csv")  # this just needs to be a valid path
+    with mock.patch('torch.load') as mock_torch_load:
+        mock_torch_load.return_value = {}
+        yield config
 
 
 def test_resource_pool():
@@ -148,7 +163,8 @@ def test_stage_constructor(config: Config,
                                  server_url='test:0000',
                                  force_convert_inputs=force_convert_inputs,
                                  use_shared_memory=use_shared_memory,
-                                 needs_logits=needs_logits)
+                                 needs_logits=needs_logits,
+                                 worker_class="AE")
     assert stage._kwargs == {
         "model_name": "test",
         "server_url": "test:0000",
@@ -156,6 +172,24 @@ def test_stage_constructor(config: Config,
         "use_shared_memory": use_shared_memory,
         "needs_logits": expexted_needs_logits
     }
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@pytest.mark.parametrize("worker_class, expected_worker_class",
+                         [("AE", TritonInferenceAE), ("FIL", TritonInferenceFIL), ("NLP", TritonInferenceNLP),
+                          ("ae", TritonInferenceAE), ("fil", TritonInferenceFIL), ("nlp", TritonInferenceNLP),
+                          (TritonInferenceAE, TritonInferenceAE), (TritonInferenceFIL, TritonInferenceFIL),
+                          (TritonInferenceNLP, TritonInferenceNLP)])
+def test_stage_constructor_worker_class(config: Config,
+                                        pipeline_mode: PipelineModes,
+                                        worker_class: str,
+                                        expected_worker_class: type[InferenceWorker]):
+    config.mode = pipeline_mode
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class=worker_class)
+    assert stage._worker_class is expected_worker_class
+    worker = stage._get_inference_worker(ProducerConsumerQueue())
+    assert isinstance(worker, expected_worker_class)
 
 
 @pytest.mark.use_python
@@ -179,26 +213,30 @@ def test_stage_get_worker_class(config: Config, pipeline_mode: PipelineModes):
 def test_stage_get_worker_class_other_not_impl(config: Config):
     config.mode = PipelineModes.OTHER
 
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
+    with pytest.raises(NotImplementedError):
+        TritonInferenceStage(config, model_name='test', server_url='test:0000')
 
     with pytest.raises(NotImplementedError):
+        stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="AE")
         stage._get_worker_class()
+
+
+@pytest.mark.use_python
+def test_stage_get_worker_class_from_str(config: Config):
+    with pytest.raises(NotImplementedError):
+        TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="test")
+
+    with pytest.raises(NotImplementedError):
+        stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="ae")
+        stage._get_worker_class_from_str("test")
 
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP])
 @pytest.mark.parametrize("needs_logits", [True, False, None])
-@mock.patch('torch.load')
-def test_stage_get_inference_worker(mock_torch_load: mock.MagicMock,
-                                    config: Config,
-                                    pipeline_mode: PipelineModes,
-                                    needs_logits: bool | None):
+def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
     if pipeline_mode == PipelineModes.AE:
         worker_cls = TritonInferenceAE
-        config.ae = ConfigAutoEncoder()
-        config.ae.autoencoder_path = os.path.join(TEST_DIRS.tests_data_dir,
-                                                  "filter_probs.csv")  # this just needs to be a valid path
-        mock_torch_load.return_value = {}
     elif pipeline_mode == PipelineModes.FIL:
         worker_cls = TritonInferenceFIL
     elif pipeline_mode == PipelineModes.NLP:
@@ -215,16 +253,6 @@ def test_stage_get_inference_worker(mock_torch_load: mock.MagicMock,
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, worker_cls)
     assert worker.needs_logits == expexted_needs_logits
-
-
-@pytest.mark.use_python
-def test_stage_get_inference_worker_other_not_impl(config: Config):
-    config.mode = PipelineModes.OTHER
-
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
-
-    with pytest.raises(NotImplementedError):
-        stage._get_inference_worker(ProducerConsumerQueue())
 
 
 @pytest.mark.slow
