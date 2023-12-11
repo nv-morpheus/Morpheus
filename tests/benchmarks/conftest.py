@@ -27,7 +27,6 @@ from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 # pylint: disable=unused-argument
 def pytest_benchmark_update_json(config, benchmarks, output_json):
-
     gpus = GPUtil.getGPUs()
 
     for i, gpu in enumerate(gpus):
@@ -42,6 +41,8 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         output_json["machine_info"]["gpu_" + str(i)]["uuid"] = gpu.uuid
 
     for bench in output_json['benchmarks']:
+        if bench["name"] not in E2E_TEST_CONFIGS:
+            continue
 
         line_count = 0
         byte_count = 0
@@ -77,14 +78,14 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         bench['stats']['median_throughput_bytes'] = (byte_count * repeat) / bench['stats']['median']
 
 
-@pytest.mark.usefixtures("openai", "manual_seed")
+@pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 @pytest.mark.usefixtures()
 def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
 
     async def sleep_first(*args, **kwargs):
-        # Since we've seeded the random number generator, the sleep time is deterministic
-        await asyncio.sleep(random.uniform(0.86, 1.67))
+        # Sleep time is based on average request time
+        await asyncio.sleep(1.265)
         return mock.DEFAULT
 
     mock_chat_completion.acreate.side_effect = sleep_first
@@ -98,8 +99,8 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
     # The generate function is a blocking call that returns a future when return_type="async"
 
     async def sleep_first(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
-        # Since we've seeded the random number generator, the sleep time is deterministic
-        await asyncio.sleep(random.uniform(0.86, 1.67))
+        # Sleep time is based on average request time
+        await asyncio.sleep(0.412)
         fut.set_result(value)
 
     def create_future(*args, **kwargs) -> asyncio.Future:
