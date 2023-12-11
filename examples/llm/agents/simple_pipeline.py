@@ -85,7 +85,7 @@ def _build_haystack_agent(model_name: str):
     )
 
     web_retriever = WebRetriever(api_key=search_key)
-    pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
+    web_qa_pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
 
     prompt_template = PromptTemplate("deepset/zero-shot-react")
     prompt_node = PromptNode(model_name,
@@ -95,7 +95,7 @@ def _build_haystack_agent(model_name: str):
 
     web_qa_tool = Tool(
         name="Search",
-        pipeline_or_node=pipeline,
+        pipeline_or_node=web_qa_pipeline,
         description="Useful when you need to search for answers online.",
         output_variable="results",
     )
@@ -163,13 +163,13 @@ def pipeline(num_threads: int,
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, llm_orch=llm_orch)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
-    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
     start_time = time.time()
 
