@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import asyncio
+import concurrent.futures
 import logging
 import typing
-import concurrent.futures
 
 from haystack.agents import Agent
 
@@ -62,7 +62,6 @@ class HaystackAgentNode(LLMNodeBase):
 
         # We are not dealing with a list, so run single
         return [self._agent.run(**kwargs)]
-
 
     async def execute(self, context: LLMContext) -> LLMContext:
         input_dict = context.get_inputs()

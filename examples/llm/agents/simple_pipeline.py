@@ -13,14 +13,16 @@
 # limitations under the License.
 
 import logging
+import os
 import time
 
 import cudf
-import os
+
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
+from morpheus.llm.nodes.haystack_agent_node import HaystackAgentNode
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
@@ -31,9 +33,9 @@ from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
-from morpheus.llm.nodes.haystack_agent_node import HaystackAgentNode
 
 logger = logging.getLogger(__name__)
+
 
 def _build_langchain_agent_executor(model_name: str):
     from langchain import OpenAI
@@ -52,9 +54,11 @@ def _build_langchain_agent_executor(model_name: str):
 
 def _build_haystack_agent(model_name: str):
 
-    from haystack.agents import Agent, Tool
+    from haystack.agents import Agent
+    from haystack.agents import Tool
     from haystack.agents.base import ToolsManager
-    from haystack.nodes import PromptNode, PromptTemplate
+    from haystack.nodes import PromptNode
+    from haystack.nodes import PromptTemplate
     from haystack.nodes.retriever.web import WebRetriever
     from haystack.pipelines import WebQAPipeline
 
@@ -65,7 +69,6 @@ def _build_haystack_agent(model_name: str):
     openai_key = os.environ.get("OPENAI_API_KEY")
     if not openai_key:
         raise ValueError("Ensure to configure the OPENAI_API_KEY environment variable.")
-
 
     web_prompt_node = PromptNode(
         model_name,
@@ -85,9 +88,10 @@ def _build_haystack_agent(model_name: str):
     pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
 
     prompt_template = PromptTemplate("deepset/zero-shot-react")
-    prompt_node = PromptNode(
-        model_name, api_key=os.environ.get("OPENAI_API_KEY"), max_length=512, stop_words=["Observation:"]
-    )
+    prompt_node = PromptNode(model_name,
+                             api_key=os.environ.get("OPENAI_API_KEY"),
+                             max_length=512,
+                             stop_words=["Observation:"])
 
     web_qa_tool = Tool(
         name="Search",
@@ -100,9 +104,9 @@ def _build_haystack_agent(model_name: str):
                      pipeline_or_node=calc_prompt_node,
                      description="Useful when you need to math calculations.")
 
-    agent = Agent(
-        prompt_node=prompt_node, prompt_template=prompt_template, tools_manager=ToolsManager([web_qa_tool, calc_tool])
-    )
+    agent = Agent(prompt_node=prompt_node,
+                  prompt_template=prompt_template,
+                  tools_manager=ToolsManager([web_qa_tool, calc_tool]))
 
     return agent
 
@@ -122,23 +126,19 @@ def _build_engine(model_name: str, llm_orch: str) -> LLMEngine:
     else:
         raise RuntimeError(f"LLM orchestration framework '{llm_orch}' is not supported yet.")
 
-    engine.add_node("agent",
-                    inputs=[("/extracter")],
-                    node=agent_node)
+    engine.add_node("agent", inputs=[("/extracter")], node=agent_node)
 
     engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
 
     return engine
 
 
-def pipeline(
-    num_threads: int,
-    pipeline_batch_size: int,
-    model_max_batch_size: int,
-    model_name: str,
-    repeat_count: int,
-    llm_orch: str
-) -> float:
+def pipeline(num_threads: int,
+             pipeline_batch_size: int,
+             model_max_batch_size: int,
+             model_name: str,
+             repeat_count: int,
+             llm_orch: str) -> float:
     config = Config()
     config.mode = PipelineModes.OTHER
 
