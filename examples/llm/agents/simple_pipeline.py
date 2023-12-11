@@ -15,14 +15,8 @@
 import logging
 import time
 
-from langchain import OpenAI
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents import load_tools
-from langchain.agents.agent import AgentExecutor
-
 import cudf
-
+import os
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
@@ -37,11 +31,16 @@ from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
+from morpheus.llm.nodes.haystack_agent_node import HaystackAgentNode
 
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_executor(model_name: str) -> AgentExecutor:
+def _build_langchain_agent_executor(model_name: str):
+    from langchain import OpenAI
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
 
     llm = OpenAI(model=model_name, temperature=0)
 
@@ -52,15 +51,68 @@ def _build_agent_executor(model_name: str) -> AgentExecutor:
     return agent_executor
 
 
-def _build_engine(model_name: str) -> LLMEngine:
+def _build_haystack_agent(model_name: str):
+
+    from haystack.agents import Agent, Tool
+    from haystack.agents.base import ToolsManager
+    from haystack.nodes import PromptNode, PromptTemplate
+    from haystack.nodes.retriever.web import WebRetriever
+    from haystack.pipelines import WebQAPipeline
+
+    search_key = os.environ.get("SERPERDEV_API_KEY")
+    if not search_key:
+        raise ValueError("Please set the SERPERDEV_API_KEY environment variable")
+
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_key:
+        raise ValueError("Please set the OPENAI_API_KEY environment variable")
+
+
+    pn = PromptNode(
+        "gpt-3.5-turbo",
+        api_key=openai_key,
+        default_prompt_template="question-answering-with-document-scores",
+    )
+    web_retriever = WebRetriever(api_key=search_key)
+    pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=pn)
+
+    prompt_template = PromptTemplate("deepset/zero-shot-react")
+    prompt_node = PromptNode(
+        "gpt-3.5-turbo", api_key=os.environ.get("OPENAI_API_KEY"), stop_words=["Observation:"]
+    )
+
+    web_qa_tool = Tool(
+        name="Search",
+        pipeline_or_node=pipeline,
+        description="useful for when you need to Google questions.",
+        output_variable="results",
+    )
+
+    agent = Agent(
+        prompt_node=prompt_node, prompt_template=prompt_template, tools_manager=ToolsManager([web_qa_tool])
+    )
+
+    return agent
+
+
+def _build_engine(model_name: str, llm_orch: str) -> LLMEngine:
 
     engine = LLMEngine()
 
     engine.add_node("extracter", node=ExtracterNode())
 
+    agent_node = None
+
+    if llm_orch == "langchain":
+        agent_node = LangChainAgentNode(agent_executor=_build_langchain_agent_executor(model_name=model_name))
+    elif llm_orch == "haystack":
+        agent_node = HaystackAgentNode(agent=_build_haystack_agent(model_name=model_name))
+    else:
+        raise RuntimeError(f"LLM orchestration framework '{llm_orch}' is not supported yet.")
+
     engine.add_node("agent",
                     inputs=[("/extracter")],
-                    node=LangChainAgentNode(agent_executor=_build_agent_executor(model_name=model_name)))
+                    node=agent_node)
 
     engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
 
@@ -69,10 +121,11 @@ def _build_engine(model_name: str) -> LLMEngine:
 
 def pipeline(
     num_threads: int,
-    pipeline_batch_size,
-    model_max_batch_size,
-    model_name,
-    repeat_count,
+    pipeline_batch_size: int,
+    model_max_batch_size: int,
+    model_name: str,
+    repeat_count: int,
+    llm_orch: str
 ) -> float:
     config = Config()
     config.mode = PipelineModes.OTHER
@@ -86,7 +139,8 @@ def pipeline(
 
     source_dfs = [
         cudf.DataFrame(
-            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
+            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+                           "Who is the current senator of texas?"]})
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}
@@ -98,13 +152,13 @@ def pipeline(
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
-    pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
+    # pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
+    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, llm_orch=llm_orch)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 
-    pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    # pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
     start_time = time.time()
 
