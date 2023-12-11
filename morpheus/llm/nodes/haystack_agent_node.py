@@ -15,6 +15,7 @@
 import asyncio
 import logging
 import typing
+import concurrent.futures
 
 from haystack.agents import Agent
 
@@ -50,16 +51,17 @@ class HaystackAgentNode(LLMNodeBase):
             # Transform from dict[str, list[Any]] to list[dict[str, Any]]
             input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
 
-            # Run multiple again
+            # Run multiple queries asynchronously
             results = []
-            for x in input_list:
-                result = await self._run_single(**x)
-                results.append(result)
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                loop = asyncio.get_event_loop()
+                tasks = [loop.run_in_executor(executor, self._agent.run, x) for x in input_list]
+                results = await asyncio.gather(*tasks)
 
             return results
 
         # We are not dealing with a list, so run single
-        return self._agent.run(**kwargs)
+        return [self._agent.run(**kwargs)]
 
 
     async def execute(self, context: LLMContext) -> LLMContext:

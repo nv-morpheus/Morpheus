@@ -69,7 +69,7 @@ def _build_haystack_agent(model_name: str):
 
 
     pn = PromptNode(
-        "gpt-3.5-turbo",
+        model_name,
         api_key=openai_key,
         default_prompt_template="question-answering-with-document-scores",
     )
@@ -78,7 +78,7 @@ def _build_haystack_agent(model_name: str):
 
     prompt_template = PromptTemplate("deepset/zero-shot-react")
     prompt_node = PromptNode(
-        "gpt-3.5-turbo", api_key=os.environ.get("OPENAI_API_KEY"), stop_words=["Observation:"]
+        model_name, api_key=os.environ.get("OPENAI_API_KEY"), stop_words=["Observation:"]
     )
 
     web_qa_tool = Tool(
@@ -88,8 +88,12 @@ def _build_haystack_agent(model_name: str):
         output_variable="results",
     )
 
+    calc_tool = Tool( name="Calculator",
+                     pipeline_or_node=pipeline,
+                     description="Useful when you need to answer questions about math" )
+
     agent = Agent(
-        prompt_node=prompt_node, prompt_template=prompt_template, tools_manager=ToolsManager([web_qa_tool])
+        prompt_node=prompt_node, prompt_template=prompt_template, tools_manager=ToolsManager([web_qa_tool, calc_tool])
     )
 
     return agent
