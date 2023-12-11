@@ -74,7 +74,13 @@ TO_FILE_ARGS = ['to-file', '--filename=out.csv']
 FILE_SRC_ARGS = [
     'from-file', '--filename', os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
 ]
-INF_TRITON_ARGS = ['inf-triton', '--model_name=test-model', '--server_url=test:123', '--force_convert_inputs=True']
+INF_TRITON_ARGS = [
+    'inf-triton',
+    '--model_name=test-model',
+    '--server_url=test:123',
+    '--force_convert_inputs=True',
+    '--worker_class=NLP'
+]
 
 KAFKA_BOOTS = ['--bootstrap_servers', 'kserv1:123,kserv2:321']
 FROM_KAFKA_ARGS = ['from-kafka', '--input_topic', 'test_topic'] + KAFKA_BOOTS
