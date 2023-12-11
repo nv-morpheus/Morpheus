@@ -966,8 +966,8 @@ class TritonInferenceStage(InferenceStage):
     def _get_worker_class_from_str(self, worker_class_name: str) -> type[InferenceWorker]:
         try:
             return INFERENCE_WORKER_ALIASES[worker_class_name.lower()]
-        except KeyError:
-            raise NotImplementedError(f"Unknown Triton inference worker class: {worker_class_name}")
+        except KeyError as exc:
+            raise NotImplementedError(f"Unknown Triton inference worker class: {worker_class_name}") from exc
 
     def _get_worker_class(self) -> type[InferenceWorker]:
         if (self._config.mode == PipelineModes.NLP):

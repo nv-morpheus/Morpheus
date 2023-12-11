@@ -49,13 +49,13 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 MODEL_MAX_BATCH_SIZE = 1024
 
 
-@pytest.fixture(scope="function")
-def config(config: Config):
+@pytest.fixture(scope="function", name="config")
+def config_fixture(config: Config):
     """
     In order to test the TritonInferenceAE worker we need to setup the auto encoder config, rather than feeding it a
     real model, we just mock the torch.load function to return an empty dict.
     """
-    config.ae = ConfigAutoEncoder()
+    config.ae = ConfigAutoEncoder()  # This attribute is ignored when not using the AE pipeline mode
     config.ae.autoencoder_path = os.path.join(TEST_DIRS.tests_data_dir,
                                               "filter_probs.csv")  # this just needs to be a valid path
     with mock.patch('torch.load') as mock_torch_load:
