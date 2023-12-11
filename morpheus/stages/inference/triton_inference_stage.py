@@ -926,7 +926,7 @@ class TritonInferenceStage(InferenceStage):
     worker_class : str, optional
         Worker class to use for inference. If not specified, the worker class will be inferred based on the pipeline
         mode. Can be specified either as a string or as a class type. If specified as a string, the string must be
-        one of the following: `AE`, `FIL`, or `NLP`. If specified as a
+        one of the following: `AE`, `FIL`, or `NLP`.
     """
 
     def __init__(self,
@@ -963,13 +963,13 @@ class TritonInferenceStage(InferenceStage):
         # Get the value from the worker class
         return self._get_worker_class().supports_cpp_node()
 
-    def _get_worker_class_from_str(self, worker_class_name: str) -> type[_TritonInferenceWorker]:
+    def _get_worker_class_from_str(self, worker_class_name: str) -> type[InferenceWorker]:
         try:
             return INFERENCE_WORKER_ALIASES[worker_class_name.lower()]
         except KeyError:
             raise NotImplementedError(f"Unknown Triton inference worker class: {worker_class_name}")
 
-    def _get_worker_class(self) -> type[_TritonInferenceWorker]:
+    def _get_worker_class(self) -> type[InferenceWorker]:
         if (self._config.mode == PipelineModes.NLP):
             return TritonInferenceNLP
         if (self._config.mode == PipelineModes.FIL):
