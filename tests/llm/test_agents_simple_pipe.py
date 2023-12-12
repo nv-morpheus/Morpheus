@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import re
+from unittest import mock
 
 import pandas as pd
 import pytest
@@ -36,6 +37,11 @@ from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
+
+
+@pytest.fixture(name="questions")
+def questions_fixture():
+    return ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
 
 
 def _build_agent_executor(model_name: str):
@@ -93,9 +99,30 @@ def _run_pipeline(config: Config, questions: list[str], model_name: str = "test_
 @pytest.mark.usefixtures("openai_api_key")
 @pytest.mark.usefixtures("serpapi_api_key")
 @pytest.mark.use_python
-def test_agents_simple_pipe_integration_openai(config: Config):
-    questions = ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
+def test_agents_simple_pipe_integration_openai(config: Config, questions: list[str]):
     result_df = _run_pipeline(config, questions=questions, model_name="gpt-3.5-turbo-instruct")
+
+    assert len(result_df.columns) == 2
+    assert any(result_df.columns == ["questions", "response"])
+
+    response_txt = result_df.response.iloc[0]
+    response_match = re.match(r".*(\d+\.\d+)\.?$", response_txt)
+    assert response_match is not None
+    assert float(response_match.group(1)) >= 3.7
+
+
+@pytest.mark.usefixtures("openai")
+@pytest.mark.use_python
+@mock.patch("load_tools.SerpAPIWrapper.aresults")  # mocking the SerpAPIWrapper imported in load_tools
+@mock.patch("OpenAI._agenerate")
+def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
+                            mock_serpapi_aresults: mock.AsyncMock,
+                            config: Config,
+                            questions: list[str]):
+    result_df = _run_pipeline(config, questions=questions, model_name="test_model")
+
+    assert len(mock_openai_agenerate.mock_calls) == len(questions)
+    assert len(mock_serpapi_aresults.mock_calls) == len(questions)
 
     assert len(result_df.columns) == 2
     assert any(result_df.columns == ["questions", "response"])
