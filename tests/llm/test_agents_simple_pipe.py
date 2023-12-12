@@ -15,19 +15,19 @@
 
 import os
 import re
-import sys
-import types
 from unittest import mock
 
 import langchain
 import pytest
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
+from langchain.agents import load_tools
+from langchain.agents.tools import Tool
+from langchain.utilities import serpapi
 
 import cudf
 
 from _utils import assert_results
-from _utils import import_module
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
@@ -43,26 +43,6 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
 
 
-@pytest.mark.usefixtures("restore_sys_path")
-@pytest.fixture(name="load_tools_mod")
-def load_tools_mod_fixture():
-    """
-    We need to import the `langchain.agents.load_tools` module in order to mock the `SerpAPIWrapper` class that is
-    imported there. However this is more difficult than it sounds, because `langchain.agents.load_tools` is a module
-    containing a function of the same name. In `agents/__init__.py` we have:
-    ```
-    from langchain.agents.load_tools import load_tools
-    ```
-
-    Making it very difficult to import the module not the function.
-    """
-    mod_path = os.path.join(os.path.dirname(langchain.__file__), 'agents/load_tools.py')
-    (mod_name, mod) = import_module(mod_path=mod_path)
-    yield mod
-
-    sys.modules.pop(mod_name, None)
-
-
 @pytest.fixture(name="questions")
 def questions_fixture():
     return ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
@@ -70,9 +50,17 @@ def questions_fixture():
 
 def _build_agent_executor(model_name: str):
 
-    llm = langchain.OpenAI(model=model_name, temperature=0)
+    llm = langchain.OpenAI(model=model_name, temperature=0, cache=False)
 
-    tools = langchain.agents.load_tools(["serpapi", "llm-math"], llm=llm)
+    tools = [
+        Tool(
+            name="Search",
+            description="",
+            func=serpapi.SerpAPIWrapper().run,
+            coroutine=serpapi.SerpAPIWrapper().arun,
+        )
+    ]
+    tools.extend(load_tools(["llm-math"], llm=llm))
 
     agent_executor = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
@@ -141,32 +129,42 @@ def test_agents_simple_pipe_integration_openai(config: Config, questions: list[s
 
 @pytest.mark.usefixtures("openai", "restore_environ")
 @pytest.mark.use_python
+@mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
-                            load_tools_mod: types.ModuleType,
+                            mock_serpapi_aresults: mock.AsyncMock,
                             config: Config,
                             questions: list[str]):
     os.environ.update({'OPENAI_API_KEY': 'test_api_key', 'SERPAPI_API_KEY': 'test_api_key'})
 
-    # mocking the SerpAPIWrapper imported in load_tools
-    mock_serpapi_aresults = mock.AsyncMock()
-    load_tools_mod.SerpAPIWrapper.aresults = mock_serpapi_aresults
-
     from langchain.schema import Generation
     from langchain.schema import LLMResult
 
+    assert serpapi.SerpAPIWrapper().aresults is mock_serpapi_aresults
+
     model_name = "test_model"
 
-    async def mock_agenerate_impl(*args, **kwargs):
-        nonlocal model_name
-        generations = [[
-            Generation(text="approximately 3.99", generation_info={
-                'finish_reason': 'stop', 'logprobs': None
-            })
-        ]]
-        return LLMResult(generations=generations, llm_output={'token_usage': {}, 'model_name': model_name})
-
-    mock_openai_agenerate.side_effect = mock_agenerate_impl
+    mock_openai_agenerate.side_effect = [
+        LLMResult(generations=[[
+            Generation(text="I should use a search engine to find information about unittests.\n"
+                       "Action: Search\nAction Input: \"unittests\"",
+                       generation_info={
+                           'finish_reason': 'stop', 'logprobs': None
+                       })
+        ]],
+                  llm_output={
+                      'token_usage': {}, 'model_name': model_name
+                  }),
+        LLMResult(generations=[[
+            Generation(text="I now know the final answer.\nFinal Answer: 3.99.",
+                       generation_info={
+                           'finish_reason': 'stop', 'logprobs': None
+                       })
+        ]],
+                  llm_output={
+                      'token_usage': {}, 'model_name': model_name
+                  })
+    ]
 
     mock_serpapi_aresults.return_value = {
         'answer_box': {
@@ -184,11 +182,11 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
         'serpapi_pagination': None
     }
 
-    expected_df = cudf.DataFrame({'questions': questions, 'response': ['approximately 3.99']})
+    expected_df = cudf.DataFrame({'questions': questions, 'response': ["3.99."]})
 
     sink = _run_pipeline(config, questions=questions, model_name=model_name, expected_df=expected_df)
 
-    assert len(mock_openai_agenerate.mock_calls) == len(questions)
-    assert len(mock_serpapi_aresults.mock_calls) == len(questions)
+    assert len(mock_openai_agenerate.mock_calls) == 2
+    mock_serpapi_aresults.assert_awaited_once()
 
     assert_results(sink.get_results())
