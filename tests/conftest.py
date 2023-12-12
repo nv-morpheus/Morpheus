@@ -30,7 +30,6 @@ from unittest import mock
 import pytest
 import requests
 
-from _utils import import_module
 from _utils import import_or_skip
 from _utils.kafka import _init_pytest_kafka
 from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:disable=unused-import
@@ -391,10 +390,43 @@ def import_mod(request: pytest.FixtureRequest,
         module_names = []
 
         for mod_path in mod_paths:
-            sys_path = mod_kwargs.get("sys_path")
-            (mod_name, mod) = import_module(mod_path=mod_path, sys_path=sys_path)
-            modules.append(mod)
-            module_names.append(mod_name)
+            # Ensure everything is absolute to avoid issues with relative paths
+            mod_path = os.path.abspath(mod_path)
+
+            # See if its a file or directory
+            is_file = os.path.isfile(mod_path)
+
+            # Get the base directory that we should import from. If not specified, use the directory of the module
+            sys_path = mod_kwargs.get("sys_path", os.path.dirname(mod_path))
+
+            # If sys_path is an integer, use it to get the path relative to the module by number of directories. i.e. if
+            # sys_path=-1, then sys_path=os.path.dirname(mod_path). If sys_path=-2, then
+            # sys_path=os.path.dirname(os.path.dirname(mod_path))
+            if (isinstance(sys_path, int)):
+                sys_path = os.path.join("/", *mod_path.split(os.path.sep)[:sys_path])
+
+            # Get the path relative to the sys_path, ignore the extension if its a file
+            mod_name = os.path.relpath(mod_path if not is_file else os.path.splitext(mod_path)[0], start=sys_path)
+
+            # Convert all / to .
+            mod_name = mod_name.replace(os.path.sep, ".")
+
+            # Add to the sys path so this can be imported
+            sys.path.append(sys_path)
+
+            try:
+
+                # Import the module
+                mod = importlib.import_module(mod_name)
+
+                if (is_file):
+                    assert mod.__file__ == mod_path
+
+                modules.append(mod)
+                module_names.append(mod_name)
+            except ImportError as e:
+
+                raise ImportError(f"Failed to import module {mod_path} as {mod_name} from path {sys_path}") from e
 
         # Only yield 1 if we only imported 1
         if (is_list):
