@@ -77,12 +77,13 @@ def _build_haystack_agent(model_name: str):
         default_prompt_template="deepset/question-answering",
     )
 
-    calc_prompt_node = PromptNode(
-        model_name,
-        api_key=openai_key,
-        max_length=256,
-        default_prompt_template="Use Math tool.",
-    )
+    calc_prompt_node = PromptNode(model_name,
+                                  api_key=openai_key,
+                                  default_prompt_template="""
+        Calculate the result of the following mathematical expression:
+
+        Expression: ({query})
+        """)
 
     web_retriever = WebRetriever(api_key=search_key)
     web_qa_pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
@@ -150,8 +151,12 @@ def pipeline(num_threads: int,
     config.edge_buffer_size = 128
 
     source_dfs = [
-        cudf.DataFrame(
-            {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
+        cudf.DataFrame({
+            "questions": [
+                "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+                "Who is the 7th president of United States?"
+            ]
+        })
     ]
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"], }}

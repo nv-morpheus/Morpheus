@@ -33,12 +33,16 @@ class HaystackAgentNode(LLMNodeBase):
     ----------
     agent : Agent
         The agent to use to execute.
+    return_only_answer : bool
+        Return only the answer if this flag is set to True; otherwise, return the transcript, query, and answer.
+        Default value is True.
     """
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, return_only_answer: bool = True):
         super().__init__()
 
         self._agent = agent
+        self._return_only_answer = return_only_answer
 
     def get_input_names(self):
         return ["query"]
@@ -63,11 +67,34 @@ class HaystackAgentNode(LLMNodeBase):
         # We are not dealing with a list, so run single
         return [self._agent.run(**kwargs)]
 
+    def _parse_results(self, results: list[dict[str, typing.Any]]) -> list[dict[str, typing.Any]]:
+        parsed_results = []
+
+        for item in results:
+            parsed_result = {}
+
+            if self._return_only_answer:
+                parsed_result["answers"] = [answer.to_dict()["answer"] for answer in item['answers']]
+            else:
+                parsed_result["query"] = item['query']['query']
+                parsed_result["transcript"] = item['transcript']
+                parsed_result["answers"] = [answer.to_dict() for answer in item['answers']]
+
+            parsed_results.append(parsed_result)
+
+        return parsed_results
+
     async def execute(self, context: LLMContext) -> LLMContext:
         input_dict = context.get_inputs()
 
-        # Call _run_single asynchronously
-        results = await self._run_single(**input_dict)
+        try:
+            # Call _run_single asynchronously
+            results = await self._run_single(**input_dict)
+            parsed_results = self._parse_results(results)
 
-        context.set_output(results)
+            context.set_output(parsed_results)
+
+        except Exception as exe:
+            logging.error("Error processing the results: %s", exe)
+
         return context
