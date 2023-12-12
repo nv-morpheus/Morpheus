@@ -27,14 +27,62 @@ files:
       - test_python_morpheus
       - cudatoolkit
 
+  build:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - development_cpp
+      - run_morpheus
+      - test_python_morpheus
+      - cudatoolkit
+
+  test:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - development_cpp
+      - run_morpheus
+      - test_python_morpheus
+      - cudatoolkit
+
+  docs:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - development_cpp
+      - run_morpheus
+      - test_python_morpheus
+      - cudatoolkit
+
+  runtime:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - runtime
+
+
 channels:
   - conda-forge
+  - huggingface
   - rapidsai
   - nvidia/label/cuda-11.8.0
   - nvidia
   - rapidsai-nightly
   - nvidia/label/dev
   - pytorch
+  - dglteam/label/cu118
+  # - defaults
 
 dependencies:
 
@@ -57,14 +105,66 @@ dependencies:
           - scikit-build=0.17.1
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
+
   development_cpp:
     common:
       - output_types: [conda]
         packages:
-          - clangdev=14
-          - include-what-you-use=0.18
+          - clangdev=16
+          - include-what-you-use=0.20
           - isort
           - yapf=0.40.1
+
+  docs:
+    common:
+      - output_types: [conda]
+        packages:
+          - breathe=4.34.0
+          - doxygen=1.9.2
+          - exhale=0.3.6
+          - ipython
+          - myst-parser=0.17.2
+          - nbsphinx
+          - sphinx
+          - sphinx_rtd_theme
+
+  examples:
+    common:
+      - output_types: [conda]
+        packages:
+          - arxiv=1.4
+          - boto3
+          - cuml=23.06
+          - dask>=2023.1.1
+          - dgl=1.0.2
+          - dill=0.3.6
+          - distributed>=2023.1.1
+          - huggingface_hub=0.10.1 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - langchain=0.0.190
+          - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
+          - mlflow>=2.2.1,<3
+          - newspaper3k=0.2
+          - openai=0.28
+          - papermill=2.3.4
+          - pypdf=3.16
+          - requests-cache=1.1
+          - s3fs>=2023.6
+          - sentence-transformers
+          - transformers
+          ####### Pip Transitive Dependencies (keep sorted!) #######
+          # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
+          # better to install them with conda than pip to allow for better dependency resolution.
+          - environs=9.5
+          - minio=7.1
+          - python-dotenv=1.0
+          - ujson=5.8
+          ####### Pip Dependencies (keep sorted!) #######
+          - pip:
+              - google-search-results==2.4
+              - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
+              - nemollm
+
+
   run_morpheus:
     common:
       - output_types: [conda]
@@ -89,6 +189,7 @@ dependencies:
           - watchdog=2.1
           - pip:
             - pyarrow_hotfix
+
   test_python_morpheus:
     common:
       - output_types: [conda]
@@ -99,6 +200,13 @@ dependencies:
           - pytest-cov
           - pip:
               - pytest-kafka==0.6.0
+
+  runtime:
+    common:
+      - output_types: [conda]
+        packages:
+          - nb_conda_kernels
+          - pip
 
   cudatoolkit:
     specific:

@@ -1,0 +1,11 @@
+# Copyright (c) 2023, NVIDIA CORPORATION.
+
+repos:
+      - repo: https://github.com/rapidsai/dependency-file-generator
+        rev: v1.7.1
+        hooks:
+            - id: rapids-dependency-file-generator
+              args: ["--clean"]
+
+default_language_version:
+      python: python3

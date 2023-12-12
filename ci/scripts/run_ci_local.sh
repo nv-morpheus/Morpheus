@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -exo pipefail
+
 case "$1" in
     "" )
         STAGES=("bash")
@@ -74,14 +76,11 @@ for STAGE in "${STAGES[@]}"; do
         CONTAINER="${TEST_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia --gpus all"
         if [[ "${STAGE}" == "test" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_EXAMPLES_YAML=1 --cap-add=sys_nice"
+            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --cap-add=sys_nice"
         fi
     else
         CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=runc"
-        if [[ "${STAGE}" == "docs" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_DOCS_YAML=1"
-        fi
     fi
 
     if [[ "${STAGE}" == "bash" ]]; then

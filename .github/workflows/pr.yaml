@@ -42,6 +42,17 @@ permissions:
   statuses: none
 
 jobs:
+  pr-builder:
+    needs:
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+  checks:
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.02
+    with:
+      enable_check_generated_files: false
   ci_pipe:
     uses: ./.github/workflows/ci_pipe.yml
     with:

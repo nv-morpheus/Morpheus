@@ -18,7 +18,12 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key build \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
+
+update_conda_env env.yaml
 
 log_toolchain
 
@@ -54,9 +59,6 @@ export MORPHEUS_IN_SPHINX_BUILD=1
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
-
-rapids-logger "Running Python style checks"
-${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 rapids-logger "Checking versions"
 ${MORPHEUS_ROOT}/ci/scripts/version_checks.sh

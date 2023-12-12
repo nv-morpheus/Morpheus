@@ -19,7 +19,12 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key test \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
+
+update_conda_env env.yaml
 
 rapids-logger "Check versions"
 python3 --version
