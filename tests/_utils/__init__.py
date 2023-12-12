@@ -15,6 +15,7 @@
 """Utilities for testing Morpheus"""
 
 import collections
+import importlib
 import json
 import os
 import sys
@@ -192,3 +193,46 @@ def load_json_file(filename):
 
     with open(filepath, 'r', encoding="utf-8") as json_file:
         return json.load(json_file)
+
+
+def import_module(mod_path: str, sys_path: int | str = None) -> tuple[str, types.ModuleType]:
+    """
+    Import a module from a given path, and return the module name and module object.
+    """
+
+    # Ensure everything is absolute to avoid issues with relative paths
+    mod_path = os.path.abspath(mod_path)
+
+    # See if its a file or directory
+    is_file = os.path.isfile(mod_path)
+
+    # If sys_path is an integer, use it to get the path relative to the module by number of directories. i.e. if
+    # sys_path=-1, then sys_path=os.path.dirname(mod_path). If sys_path=-2, then
+    # sys_path=os.path.dirname(os.path.dirname(mod_path))
+    if (isinstance(sys_path, int)):
+        sys_path = os.path.join("/", *mod_path.split(os.path.sep)[:sys_path])
+
+    elif (sys_path is None):
+        sys_path = os.path.dirname(mod_path)
+
+    # Get the path relative to the sys_path, ignore the extension if its a file
+    mod_name = os.path.relpath(mod_path if not is_file else os.path.splitext(mod_path)[0], start=sys_path)
+
+    # Convert all / to .
+    mod_name = mod_name.replace(os.path.sep, ".")
+
+    # Add to the sys path so this can be imported
+    sys.path.append(sys_path)
+
+    try:
+
+        # Import the module
+        mod = importlib.import_module(mod_name)
+
+        if (is_file):
+            assert mod.__file__ == mod_path
+
+        return (mod_name, mod)
+    except ImportError as e:
+
+        raise ImportError(f"Failed to import module {mod_path} as {mod_name} from path {sys_path}") from e
