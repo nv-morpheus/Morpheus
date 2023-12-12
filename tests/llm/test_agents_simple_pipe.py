@@ -52,6 +52,7 @@ def _build_agent_executor(model_name: str):
 
     llm = langchain.OpenAI(model=model_name, temperature=0, cache=False)
 
+    # Explicitly construct the serpapi tool, loading it via load_tools makes it too difficult to mock
     tools = [
         Tool(
             name="Search",
