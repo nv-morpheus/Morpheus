@@ -609,7 +609,7 @@ def _start_camouflage(
             console_log_fh = open(console_log, 'w', encoding='utf-8')
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
-                                     stderr=console_log_fh,
+                                     stderr=subprocess.STDOUT,
                                      stdout=console_log_fh,
                                      preexec_fn=_set_pdeathsig(signal.SIGTERM))
             # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
