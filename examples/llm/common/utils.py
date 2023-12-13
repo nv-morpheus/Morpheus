@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
+import os
 
 import pymilvus
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -137,3 +139,93 @@ def build_rss_urls():
         "https://blog.google/threat-analysis-group/rss/",
         "https://intezer.com/feed/",
     ]
+
+
+def build_langchain_agent_executor(model_name: str):
+    """
+    Builds a LangChain agent executor.
+
+    Parameters
+    ----------
+    model_name : str
+        LLM Model name.
+    """
+    from langchain import OpenAI
+    from langchain.agents import AgentType
+    from langchain.agents import initialize_agent
+    from langchain.agents import load_tools
+
+    llm = OpenAI(model=model_name, temperature=0)
+
+    tools = load_tools(["serpapi", "llm-math"], llm=llm)
+
+    agent_executor = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+
+    return agent_executor
+
+
+def build_haystack_agent(model_name: str):
+    """
+    Builds a Haystack agent.
+
+    Parameters
+    ----------
+    model_name : str
+        LLM Model name.
+    """
+    from haystack.agents import Agent
+    from haystack.agents import Tool
+    from haystack.agents.base import ToolsManager
+    from haystack.nodes import PromptNode
+    from haystack.nodes import PromptTemplate
+    from haystack.nodes.retriever.web import WebRetriever
+    from haystack.pipelines import WebQAPipeline
+
+    search_key = os.environ.get("SERPERDEV_API_KEY")
+    if not search_key:
+        raise ValueError("Ensure to configure the SERPERDEV_API_KEY environment variable.")
+
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_key:
+        raise ValueError("Ensure to configure the OPENAI_API_KEY environment variable.")
+
+    web_prompt_node = PromptNode(
+        model_name,
+        api_key=openai_key,
+        max_length=256,
+        default_prompt_template="deepset/question-answering",
+    )
+
+    calc_prompt_node = PromptNode(model_name,
+                                  api_key=openai_key,
+                                  default_prompt_template="""
+        Calculate the result of the following mathematical expression:
+
+        Expression: ({query})
+        """)
+
+    web_retriever = WebRetriever(api_key=search_key)
+    web_qa_pipeline = WebQAPipeline(retriever=web_retriever, prompt_node=web_prompt_node)
+
+    prompt_template = PromptTemplate("deepset/zero-shot-react")
+    prompt_node = PromptNode(model_name,
+                             api_key=os.environ.get("OPENAI_API_KEY"),
+                             max_length=512,
+                             stop_words=["Observation:"])
+
+    web_qa_tool = Tool(
+        name="Search",
+        pipeline_or_node=web_qa_pipeline,
+        description="Useful when you need to search for answers online.",
+        output_variable="results",
+    )
+
+    calc_tool = Tool(name="Calculator",
+                     pipeline_or_node=calc_prompt_node,
+                     description="Useful when you need to math calculations.")
+
+    agent = Agent(prompt_node=prompt_node,
+                  prompt_template=prompt_template,
+                  tools_manager=ToolsManager([web_qa_tool, calc_tool]))
+
+    return agent
