@@ -57,7 +57,13 @@ In the case of models trained by the DFP example, the existing models can be del
 ```bash
 docker volume ls # list current docker volumes
 docker volume rm production_db_data production_mlflow_data
+
+# Re-build the MLflow container for DFP
+cd ${MORPHEUS_ROOT}/examples/digital_fingerprinting/production/
+docker compose build
+docker compose up mlflow
 ```
+
 
 **Debugging Python Code**
 
