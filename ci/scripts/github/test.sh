@@ -93,26 +93,18 @@ do
     ITR=$(expr ${ITR} + 1)
 
     if [ ${RET} -eq 0 ]; then
-        rm -f tests/mock_rest_server/camouflage.log
-        rm -f tests/mock_triton_server/camouflage.log
+        rm -f mock_rest_server/camouflage.log
+        rm -f mock_triton_server/camouflage.log
     else
         rapids-logger "mock rest log:"
-        cat tests/mock_rest_server/camouflage.log
+        cat mock_rest_server/camouflage.log
 
         rapids-logger "mock triton log:"
-        cat tests/mock_triton_server/camouflage.log
+        cat mock_triton_server/camouflage.log
     fi
 
     echo "Iteration ${ITR} exited ${RET}"
 done
-
-find /var/log
-
-rapids-logger "/var/log/lastlog"
-cat /var/log/lastlog
-
-rapids-logger "/var/log/faillog"
-cat /var/log/faillog
 
 
 PYTEST_RESULTS=$RET
