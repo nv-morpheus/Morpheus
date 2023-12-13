@@ -17,12 +17,13 @@ import concurrent.futures
 import logging
 import typing
 
-from haystack.agents import Agent
-
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
 logger = logging.getLogger(__name__)
+
+if typing.TYPE_CHECKING:
+    from haystack.agents import Agent
 
 
 class HaystackAgentNode(LLMNodeBase):
@@ -38,13 +39,13 @@ class HaystackAgentNode(LLMNodeBase):
         Default value is True.
     """
 
-    def __init__(self, agent: Agent, return_only_answer: bool = True):
+    def __init__(self, agent: "Agent", return_only_answer: bool = True):
         super().__init__()
 
         self._agent = agent
         self._return_only_answer = return_only_answer
 
-    def get_input_names(self):
+    def get_input_names(self) -> list[str]:
         return ["query"]
 
     async def _run_single(self, **kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
@@ -94,7 +95,9 @@ class HaystackAgentNode(LLMNodeBase):
 
             context.set_output(parsed_results)
 
+        except KeyError as exe:
+            logger.error("Parsing of results encountered an error: %s", exe)
         except Exception as exe:
-            logging.error("Error processing the results: %s", exe)
+            logger.error("Processing input encountered an error: %s", exe)
 
         return context

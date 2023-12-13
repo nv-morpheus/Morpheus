@@ -99,6 +99,8 @@ Serper Dev API key. Set the API key as an environment variable using the followi
 export SERPERDEV_API_KEY="<YOUR_SERPERDEV_API_KEY>"
 ```
 
+Note: This is required when using the Haystack LLM orchestration framework in the pipeline.
+
 #### Install Dependencies
 
 Install the required dependencies.
@@ -207,6 +209,11 @@ python exmaples/llm/main.py agents kafka [OPTIONS]
 - `--model_name TEXT`
     - **Description**: The name of the model to use in OpenAI.
     - **Default**: `gpt-3.5-turbo-instruct`
+
+- `--llm_orch TEXT`
+    - **Chioce**: `[haystack|langchain]`
+    - **Description**: The name of the model to use in OpenAI.
+    - **Default**: `langchain`
 
 - `--help`
     - **Description**: Show the help message with options and commands details.

@@ -27,6 +27,7 @@ from langchain import OpenAI
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
+from langchain.agents.agent import AgentExecutor
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -152,7 +153,7 @@ def build_rss_urls():
     ]
 
 
-def build_langchain_agent_executor(model_name: str):
+def build_langchain_agent_executor(model_name: str) -> AgentExecutor:
     """
     Builds a LangChain agent executor.
 
@@ -160,6 +161,11 @@ def build_langchain_agent_executor(model_name: str):
     ----------
     model_name : str
         LLM Model name.
+
+    Returns
+    -------
+    AgentExecutor
+        Langchain AgentExecutor instance.
     """
 
     llm = OpenAI(model=model_name, temperature=0)
@@ -171,7 +177,7 @@ def build_langchain_agent_executor(model_name: str):
     return agent_executor
 
 
-def build_haystack_agent(model_name: str):
+def build_haystack_agent(model_name: str) -> Agent:
     """
     Builds a Haystack agent.
 
@@ -179,6 +185,11 @@ def build_haystack_agent(model_name: str):
     ----------
     model_name : str
         LLM Model name.
+
+    Returns
+    -------
+    Agent
+        Haystack Agent instance.
     """
 
     search_key = os.environ.get("SERPERDEV_API_KEY")
