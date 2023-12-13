@@ -74,7 +74,9 @@ function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
 
     # Remove default/conflicting channels from base image
-    rm /opt/conda/.condarc
+    if [[ -d /opt/conda/.condarc ]]; then
+        rm /opt/conda/.condarc
+    fi;
 
     # Update the packages
     rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
@@ -110,6 +112,7 @@ function fetch_base_branch_gh_api() {
 
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
+    git remote remove upstream
     git remote add upstream ${GIT_UPSTREAM_URL}
     git fetch upstream --tags
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh

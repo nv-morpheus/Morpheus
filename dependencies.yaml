@@ -35,6 +35,7 @@ files:
     includes:
       - build_cpp
       - development_cpp
+      - benchmark_cpp
       - run_morpheus
       - test_python_morpheus
       - cudatoolkit
@@ -58,10 +59,8 @@ files:
       arch: [x86_64]
     includes:
       - build_cpp
-      - development_cpp
-      - run_morpheus
-      - test_python_morpheus
       - cudatoolkit
+      - docs
 
   runtime:
     output: none
@@ -90,12 +89,15 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - mrc=24.03 # should this be in build, or somewhere else?
+          - gcc_linux-64=11.2
+          - gxx_linux-64=11.2
+          - cmake=3.25
           - boost-cpp=1.82
           - cuda-nvcc
           - cudf=23.06
           - cxx-compiler
           - cython=0.29.24
-          - libhwloc=2.9.2
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
@@ -119,6 +121,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - git-lfs
           - breathe=4.34.0
           - doxygen=1.9.2
           - exhale=0.3.6
@@ -127,6 +130,12 @@ dependencies:
           - nbsphinx
           - sphinx
           - sphinx_rtd_theme
+
+  benchmark_cpp:
+    common:
+      - output_types: [conda]
+        packages:
+          - benchmark=1.6.1
 
   examples:
     common:
