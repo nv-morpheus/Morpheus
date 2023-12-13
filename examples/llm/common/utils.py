@@ -16,6 +16,17 @@ import logging
 import os
 
 import pymilvus
+from haystack.agents import Agent
+from haystack.agents import Tool
+from haystack.agents.base import ToolsManager
+from haystack.nodes import PromptNode
+from haystack.nodes import PromptTemplate
+from haystack.nodes.retriever.web import WebRetriever
+from haystack.pipelines import WebQAPipeline
+from langchain import OpenAI
+from langchain.agents import AgentType
+from langchain.agents import initialize_agent
+from langchain.agents import load_tools
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -150,10 +161,6 @@ def build_langchain_agent_executor(model_name: str):
     model_name : str
         LLM Model name.
     """
-    from langchain import OpenAI
-    from langchain.agents import AgentType
-    from langchain.agents import initialize_agent
-    from langchain.agents import load_tools
 
     llm = OpenAI(model=model_name, temperature=0)
 
@@ -173,13 +180,6 @@ def build_haystack_agent(model_name: str):
     model_name : str
         LLM Model name.
     """
-    from haystack.agents import Agent
-    from haystack.agents import Tool
-    from haystack.agents.base import ToolsManager
-    from haystack.nodes import PromptNode
-    from haystack.nodes import PromptTemplate
-    from haystack.nodes.retriever.web import WebRetriever
-    from haystack.pipelines import WebQAPipeline
 
     search_key = os.environ.get("SERPERDEV_API_KEY")
     if not search_key:
