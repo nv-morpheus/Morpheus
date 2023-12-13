@@ -101,6 +101,8 @@ def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: 
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                             mock_serpapi_aresults: mock.AsyncMock,
+                            mock_openai_request_time: float,
+                            mock_serpapi_request_time: float,
                             benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
                             config: Config):
     os.environ.update({'OPENAI_API_KEY': 'test_api_key', 'SERPAPI_API_KEY': 'test_api_key'})
@@ -141,13 +143,13 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
 
         # The OpenAI object will raise a ValueError if we attempt to set the attribute directly or use setattr
         self.__dict__['_unittest_call_count'] = call_count + 1
-        await asyncio.sleep(1.265)
+        await asyncio.sleep(mock_openai_request_time)
         return response
 
     mock_openai_agenerate.side_effect = _mock_openai_agenerate
 
     async def _mock_serpapi_aresults(*args, **kwargs):  # pylint: disable=unused-argument
-        await asyncio.sleep(1.7)
+        await asyncio.sleep(mock_serpapi_request_time)
         return {
             'answer_box': {
                 'answer': '25 years', 'link': 'http://unit.test', 'people_also_search_for': []
