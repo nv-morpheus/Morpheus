@@ -104,11 +104,13 @@ from morpheus.stages.input.control_message_file_source_stage import ControlMessa
 @click.option('--mlflow_experiment_name_template',
               type=str,
               default=None,
-              help="The MLflow experiment name template to use when logging experiments. ")
+              help=("The MLflow experiment name template to use when logging experiments."
+                    "If None, defaults to dfp/source/training/{reg_model_name}"))
 @click.option('--mlflow_model_name_template',
               type=str,
               default=None,
-              help="The MLflow model name template to use when logging models. ")
+              help=("The MLflow model name template to use when logging models."
+                    "If None, defaults to DFP-source-{user_id}"))
 @click.option("--disable_pre_filtering",
               is_flag=True,
               help=("Enabling this option will skip pre-filtering of json messages. "
