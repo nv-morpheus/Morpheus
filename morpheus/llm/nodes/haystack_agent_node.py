@@ -13,17 +13,26 @@
 # limitations under the License.
 
 import asyncio
-import concurrent.futures
 import logging
 import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
-logger = logging.getLogger(__name__)
+IMPORT_ERROR_MESSAGE = (
+    "HaystackAgentNode require the farm-haystack package to be installed. "
+    "Install it by running the following command:\n"
+    "`mamba install -n base -c conda-forge conda-merge`\n"
+    "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
+    "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
+    "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
 
-if typing.TYPE_CHECKING:
+try:
     from haystack.agents import Agent
+except ImportError:
+    pass
+
+logger = logging.getLogger(__name__)
 
 
 class HaystackAgentNode(LLMNodeBase):
@@ -56,12 +65,14 @@ class HaystackAgentNode(LLMNodeBase):
             # Transform from dict[str, list[Any]] to list[dict[str, Any]]
             input_list = [dict(zip(kwargs, t)) for t in zip(*kwargs.values())]
 
-            # Run multiple queries asynchronously
             results = []
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                loop = asyncio.get_event_loop()
-                tasks = [loop.run_in_executor(executor, self._agent.run, x) for x in input_list]
-                results = await asyncio.gather(*tasks)
+
+            # Run multiple queries asynchronously
+            loop = asyncio.get_event_loop()
+
+            # The asyncio loop utilizes the default executor when 'None' is passed.
+            tasks = [loop.run_in_executor(None, self._agent.run, x) for x in input_list]
+            results = await asyncio.gather(*tasks)
 
             return results
 
