@@ -81,10 +81,11 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 @pytest.fixture(name="mock_chat_completion")
 @pytest.mark.usefixtures()
 def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
+    sleep_time = float(os.environ.get("MOCK_OPENAI_REQUEST_TIME", 1.265))
 
     async def sleep_first(*args, **kwargs):
         # Sleep time is based on average request time
-        await asyncio.sleep(1.265)
+        await asyncio.sleep(sleep_time)
         return mock.DEFAULT
 
     mock_chat_completion.acreate.side_effect = sleep_first
@@ -95,11 +96,12 @@ def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
 def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
-    # The generate function is a blocking call that returns a future when return_type="async"
+    sleep_time = float(os.environ.get("MOCK_NEMOLLM_REQUEST_TIME", 0.412))
 
+    # The generate function is a blocking call that returns a future when return_type="async"
     async def sleep_first(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
         # Sleep time is based on average request time
-        await asyncio.sleep(0.412)
+        await asyncio.sleep(sleep_time)
         fut.set_result(value)
 
     def create_future(*args, **kwargs) -> asyncio.Future:
