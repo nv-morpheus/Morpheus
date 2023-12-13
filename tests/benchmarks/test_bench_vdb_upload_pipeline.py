@@ -106,19 +106,23 @@ def test_vdb_upload_pipe(mock_requests_session: mock.MagicMock,
     with open(os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_web_responses.json'), encoding='utf-8') as fh:
         web_responses = json.load(fh)
 
+    mock_web_scraper_request_time = float(os.environ.get("MOCK_WEB_SCRAPER_REQUEST_TIME", 0.5))
+
     def mock_get_fn(url: str):
         mock_response = mock.MagicMock()
         mock_response.ok = True
         mock_response.status_code = 200
         mock_response.text = web_responses[url]
-        time.sleep(0.5)
+        time.sleep(mock_web_scraper_request_time)
         return mock_response
 
     mock_requests_session.return_value = mock_requests_session
     mock_requests_session.get.side_effect = mock_get_fn
 
+    mock_feedparser_request_time = float(os.environ.get("MOCK_FEEDPARSER_REQUEST_TIME", 0.5))
+
     def mock_feedparser_http_get_fn(*args, **kwargs):  # pylint: disable=unused-argument
-        time.sleep(0.5)
+        time.sleep(mock_feedparser_request_time)
         # The RSS Parser expects a bytes string
         with open(os.path.join(TEST_DIRS.tests_data_dir, 'service/cisa_rss_feed.xml'), 'rb') as fh:
             return fh.read()
