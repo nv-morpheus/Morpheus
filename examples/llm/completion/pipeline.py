@@ -19,6 +19,7 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
 from morpheus.llm.nodes.llm_generate_node import LLMGenerateNode
@@ -71,8 +72,13 @@ def _build_engine(llm_service: str):
     return engine
 
 
-def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: int, repeat_count: int,
-             llm_service: str) -> float:
+def pipeline(num_threads: int,
+             pipeline_batch_size: int,
+             model_max_batch_size: int,
+             repeat_count: int,
+             llm_service: str,
+             input_file: str = None,
+             shuffle: bool = False) -> float:
 
     config = Config()
 
@@ -83,8 +89,10 @@ def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: i
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
 
-    source_dfs = [
-        cudf.DataFrame({
+    if input_file is not None:
+        source_df = read_file_to_df(input_file, df_type='cudf')
+    else:
+        source_df = cudf.DataFrame({
             "country": [
                 "France",
                 "Spain",
@@ -98,13 +106,15 @@ def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: i
                 "United States",
             ]
         })
-    ]
+
+    if shuffle:
+        source_df = source_df.sample(frac=1, ignore_index=True)
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["country"], }}
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs, repeat=repeat_count))
+    pipe.set_source(InMemorySourceStage(config, dataframes=[source_df], repeat=repeat_count))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
@@ -113,9 +123,9 @@ def pipeline(num_threads: int, pipeline_batch_size: int, model_max_batch_size: i
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service=llm_service)))
 
-    sink = pipe.add_stage(InMemorySinkStage(config))
-
     pipe.add_stage(MonitorStage(config, description="Inference rate", unit="req", delayed_start=True))
+
+    sink = pipe.add_stage(InMemorySinkStage(config))
 
     start_time = time.time()
 

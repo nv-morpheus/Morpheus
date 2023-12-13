@@ -13,61 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
 import pytest
 
-from _utils import import_or_skip
 from _utils import require_env_variable
-
-
-@pytest.fixture(name="nemollm", scope='session')
-def nemollm_fixture(fail_missing: bool):
-    """
-    Fixture to ensure nemollm is installed
-    """
-    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-                   "`mamba install -n base -c conda-forge conda-merge`\n"
-                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
-    yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.fixture(name="openai", scope='session')
-def openai_fixture(fail_missing: bool):
-    """
-    Fixture to ensure openai is installed
-    """
-    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-                   "`mamba install -n base -c conda-forge conda-merge`\n"
-                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
-    yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
-
-
-@pytest.mark.usefixtures("openai")
-@pytest.fixture(name="mock_chat_completion")
-def mock_chat_completion_fixture():
-    with mock.patch("openai.ChatCompletion") as mock_chat_completion:
-        mock_chat_completion.return_value = mock_chat_completion
-
-        response = {'choices': [{'message': {'content': 'test_output'}}]}
-        mock_chat_completion.create.return_value = response.copy()
-        mock_chat_completion.acreate = mock.AsyncMock(return_value=response.copy())
-        yield mock_chat_completion
-
-
-@pytest.mark.usefixtures("nemollm")
-@pytest.fixture(name="mock_nemollm")
-def mock_nemollm_fixture():
-    with mock.patch("nemollm.NemoLLM") as mock_nemollm:
-        mock_nemollm.return_value = mock_nemollm
-        mock_nemollm.generate_multiple.return_value = ["test_output"]
-        mock_nemollm.post_process_generate_response.return_value = {"text": "test_output"}
-
-        yield mock_nemollm
 
 
 @pytest.fixture(name="countries")

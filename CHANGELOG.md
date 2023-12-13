@@ -15,6 +15,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 23.11.01 (7 Dec 2023)
+
+## 🐛 Bug Fixes
+
+- Convert `models/ransomware-models/ransomw-model-short-rf-20220126.sav` to LFS ([#1408](https://github.com/nv-morpheus/Morpheus/pull/1408)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
+## 📖 Documentation
+
+- Cloud deployment guide fixes ([#1406](https://github.com/nv-morpheus/Morpheus/pull/1406)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+
 # Morpheus 23.11.00 (30 Nov 2023)
 
 ## 🚨 Breaking Changes
