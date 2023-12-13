@@ -103,12 +103,14 @@ from morpheus.stages.input.control_message_file_source_stage import ControlMessa
               help=("The MLflow tracking URI to connect to the tracking backend."))
 @click.option('--mlflow_experiment_name_template',
               type=str,
-              default="dfp/{source}/training/{reg_model_name}",
-              help="The MLflow experiment name template to use when logging experiments. ")
+              default=None,
+              help=("The MLflow experiment name template to use when logging experiments."
+                    "If None, defaults to dfp/source/training/{reg_model_name}"))
 @click.option('--mlflow_model_name_template',
               type=str,
-              default="DFP-{source}-{user_id}",
-              help="The MLflow model name template to use when logging models. ")
+              default=None,
+              help=("The MLflow model name template to use when logging models."
+                    "If None, defaults to DFP-source-{user_id}"))
 @click.option("--disable_pre_filtering",
               is_flag=True,
               help=("Enabling this option will skip pre-filtering of json messages. "
@@ -140,6 +142,10 @@ def run_pipeline(source: str,
     if (skip_user and only_user):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
+    if mlflow_experiment_name_template is None:
+        mlflow_experiment_name_template = f'dfp/{source}/training/' + '{reg_model_name}'
+    if mlflow_model_name_template is None:
+        mlflow_model_name_template = f'DFP-{source}-' + '{user_id}'
     dfp_arg_parser = DFPArgParser(skip_user,
                                   only_user,
                                   start_time,
