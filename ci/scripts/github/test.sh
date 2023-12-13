@@ -121,6 +121,4 @@ rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 set_job_summary_preamble
 upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
 
-PYTEST_RESULTS=$?
-TEST_RESULTS=$PYTEST_RESULTS
 exit ${TEST_RESULTS}
