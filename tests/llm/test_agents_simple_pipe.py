@@ -87,9 +87,6 @@ def _run_pipeline(config: Config,
                   questions: list[str],
                   model_name: str = "test_model",
                   expected_df: cudf.DataFrame = None) -> InMemorySinkStage:
-    """
-    Loosely patterned after `examples/llm/completion`
-    """
     source_df = cudf.DataFrame({"questions": questions})
 
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"]}}
