@@ -134,7 +134,7 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                   })
     ]
 
-    async def _mock_openai_agenerate(self, *args, **kwargs):
+    async def _mock_openai_agenerate(self, *args, **kwargs):  # pylint: disable=unused-argument
         nonlocal mock_responses
         call_count = getattr(self, '_unittest_call_count', 0)
         response = mock_responses[call_count % 2]
@@ -146,7 +146,7 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
 
     mock_openai_agenerate.side_effect = _mock_openai_agenerate
 
-    async def _mock_serpapi_aresults(*args, **kwargs):
+    async def _mock_serpapi_aresults(*args, **kwargs):  # pylint: disable=unused-argument
         await asyncio.sleep(1.7)
         return {
             'answer_box': {
