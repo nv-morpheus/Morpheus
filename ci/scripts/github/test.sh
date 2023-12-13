@@ -76,7 +76,51 @@ git lfs ls-files
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
 mkdir -p ${WORKSPACE_TMP}/reports
 
-python ${MORPHEUS_ROOT}/ci/scripts/camou_startup_test.py
+rapids-logger "Running Python tests"
+TEST_RESULTS=0
+pushd ${MORPHEUS_ROOT}/tests
+
+set +e
+
+RET=0
+ITR=0
+
+while [ ${RET} -eq 0 ]
+do
+    python -I -m pytest --run_slow --run_kafka --run_milvus --fail_missing \
+           --junit-xml=${REPORTS_DIR}/report_pytest.xml \
+           --cov=morpheus \
+           --cov-report term-missing \
+           --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml \
+           test_camouflage.py
+    RET=$?
+    ITR=$(expr ${ITR} + 1)
+
+    echo "Iteration ${ITR} exited ${RET}"
+done
+
+find /var/log
+
+rapids-logger "/var/log/lastlog"
+cat /var/log/lastlog
+
+rapids-logger "/var/log/faillog"
+cat /var/log/faillog
+
+
+PYTEST_RESULTS=$RET
+TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
+
+set -e
+popd
+
+rapids-logger "Archiving test reports"
+cd $(dirname ${REPORTS_DIR})
+tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
+
+rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+set_job_summary_preamble
+upload_artifact ${WORKSPACE_TMP}/test_reports.tar.bz
 
 PYTEST_RESULTS=$?
 TEST_RESULTS=$PYTEST_RESULTS
