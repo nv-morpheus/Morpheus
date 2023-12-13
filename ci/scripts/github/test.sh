@@ -88,13 +88,20 @@ ITR=0
 while [ ${RET} -eq 0 ]
 do
     python -I -m pytest --run_slow --run_kafka --run_milvus --fail_missing \
-           --junit-xml=${REPORTS_DIR}/report_pytest.xml \
-           --cov=morpheus \
-           --cov-report term-missing \
-           --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml \
            test_camouflage.py
     RET=$?
     ITR=$(expr ${ITR} + 1)
+
+    if [ ${RET} -eq 0 ]; then
+        rm -f tests/mock_rest_server/camouflage.log
+        rm -f tests/mock_triton_server/camouflage.log
+    else
+        rapids-logger "mock rest log:"
+        cat tests/mock_rest_server/camouflage.log
+
+        rapids-logger "mock triton log:"
+        cat tests/mock_triton_server/camouflage.log
+    fi
 
     echo "Iteration ${ITR} exited ${RET}"
 done
