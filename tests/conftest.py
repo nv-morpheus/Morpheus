@@ -530,7 +530,7 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=10):
+def wait_for_camouflage(host="localhost", port=8000, timeout=30):
 
     start_time = time.time()
     cur_time = start_time
@@ -582,7 +582,7 @@ def _start_camouflage(
         host: str = "localhost",
         port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen], typing.Optional[typing.IO]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-    startup_timeout = 10
+    startup_timeout = 30
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
