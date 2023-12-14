@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import queue
 from unittest import mock
 
@@ -24,20 +23,17 @@ import pytest
 
 import cudf
 
-from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils import mk_async_infer
 from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.stages.inference.triton_inference_stage import INFERENCE_WORKER_DEFAULT_INOUT_MAPPING
 from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
-from morpheus.stages.inference.triton_inference_stage import TritonInferenceFIL
-from morpheus.stages.inference.triton_inference_stage import TritonInferenceNLP
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
@@ -127,19 +123,31 @@ def test_resource_pool_create_raises_error():
     assert pool.borrow_obj() == 20
 
 
-@pytest.mark.parametrize("pipeline_mode", [PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("force_convert_inputs", [True, False])
 @pytest.mark.parametrize("use_shared_memory", [True, False])
 @pytest.mark.parametrize("needs_logits", [True, False, None])
+@pytest.mark.parametrize("expand_dims", [True, False, None])
+@pytest.mark.parametrize("inout_mapping", [None, {'unit': 'test'}])
 def test_stage_constructor(config: Config,
                            pipeline_mode: PipelineModes,
                            force_convert_inputs: bool,
                            use_shared_memory: bool,
-                           needs_logits: bool | None):
+                           needs_logits: bool | None,
+                           expand_dims: bool | None,
+                           inout_mapping: dict[str, str] | None):
     if needs_logits is None:
         expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
     else:
         expexted_needs_logits = needs_logits
+
+    if expand_dims is None:
+        expexted_expand_dims = (pipeline_mode == PipelineModes.FIL)
+    else:
+        expexted_expand_dims = expand_dims
+
+    expected_inout_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {})
+    expected_inout_mapping.update(inout_mapping or {})
 
     config.mode = pipeline_mode
 
@@ -149,91 +157,69 @@ def test_stage_constructor(config: Config,
                                  force_convert_inputs=force_convert_inputs,
                                  use_shared_memory=use_shared_memory,
                                  needs_logits=needs_logits,
-                                 worker_class="FIL")
+                                 expand_dims=expand_dims,
+                                 inout_mapping=inout_mapping)
+
     assert stage._kwargs == {
         "model_name": "test",
         "server_url": "test:0000",
         "force_convert_inputs": force_convert_inputs,
         "use_shared_memory": use_shared_memory,
-        "needs_logits": expexted_needs_logits
+        "needs_logits": expexted_needs_logits,
+        "expand_dims": expexted_expand_dims,
+        'inout_mapping': expected_inout_mapping
     }
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
-@pytest.mark.parametrize("worker_class, expected_worker_class",
-                         [("FIL", TritonInferenceFIL), ("NLP", TritonInferenceNLP), ("fil", TritonInferenceFIL),
-                          ("nlp", TritonInferenceNLP), (TritonInferenceFIL, TritonInferenceFIL),
-                          (TritonInferenceNLP, TritonInferenceNLP)])
-def test_stage_constructor_worker_class(config: Config,
-                                        pipeline_mode: PipelineModes,
-                                        worker_class: str,
-                                        expected_worker_class: type[InferenceWorker]):
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
+def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineModes):
     config.mode = pipeline_mode
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class=worker_class)
-    assert stage._worker_class is expected_worker_class
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
     worker = stage._get_inference_worker(ProducerConsumerQueue())
-    assert isinstance(worker, expected_worker_class)
+    assert isinstance(worker, TritonInferenceWorker)
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("pipeline_mode", [PipelineModes.FIL, PipelineModes.NLP])
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 def test_stage_get_worker_class(config: Config, pipeline_mode: PipelineModes):
-    if pipeline_mode == PipelineModes.FIL:
-        expected_worker_cls = TritonInferenceFIL
-    elif pipeline_mode == PipelineModes.NLP:
-        expected_worker_cls = TritonInferenceNLP
-
     config.mode = pipeline_mode
 
     stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
     worker = stage._get_worker_class()
-    assert worker is expected_worker_cls
+    assert worker is TritonInferenceWorker
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize("pipeline_mode", [PipelineModes.AE, PipelineModes.OTHER])
-def test_stage_get_worker_class_other_not_impl(config: Config, pipeline_mode: PipelineModes):
-    config.mode = pipeline_mode
-
-    with pytest.raises(NotImplementedError):
-        TritonInferenceStage(config, model_name='test', server_url='test:0000')
-
-    with pytest.raises(NotImplementedError):
-        stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="FIL")
-        stage._get_worker_class()
-
-
-@pytest.mark.use_python
-def test_stage_get_worker_class_from_str(config: Config):
-    with pytest.raises(NotImplementedError):
-        TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="test")
-
-    with pytest.raises(NotImplementedError):
-        stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', worker_class="fil")
-        stage._get_worker_class_from_str("test")
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("pipeline_mode", [PipelineModes.FIL, PipelineModes.NLP])
+@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
-def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
-    if pipeline_mode == PipelineModes.FIL:
-        worker_cls = TritonInferenceFIL
-    elif pipeline_mode == PipelineModes.NLP:
-        worker_cls = TritonInferenceNLP
-
+@pytest.mark.parametrize("expand_dims", [True, False, None])
+def test_stage_get_inference_worker(config: Config,
+                                    pipeline_mode: PipelineModes,
+                                    needs_logits: bool | None,
+                                    expand_dims: bool | None):
     if needs_logits is None:
         expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
     else:
         expexted_needs_logits = needs_logits
 
+    if expand_dims is None:
+        expexted_expand_dims = (pipeline_mode == PipelineModes.FIL)
+    else:
+        expexted_expand_dims = expand_dims
+
     config.mode = pipeline_mode
 
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
+    stage = TritonInferenceStage(config,
+                                 model_name='test',
+                                 server_url='test:0000',
+                                 needs_logits=needs_logits,
+                                 expand_dims=expand_dims)
+
     worker = stage._get_inference_worker(ProducerConsumerQueue())
-    assert isinstance(worker, worker_cls)
+    assert isinstance(worker, TritonInferenceWorker)
     assert worker.needs_logits == expexted_needs_logits
+    assert worker._expand_dims == expexted_expand_dims
 
 
 @pytest.mark.slow
