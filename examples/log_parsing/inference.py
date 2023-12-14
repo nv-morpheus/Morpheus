@@ -120,6 +120,9 @@ class LogParsingInferenceStage(TritonInferenceStage):
         transfer time but requires that Morpheus and Triton are located on the same machine
     needs_logits : bool, default = True, is_flag = True
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
+    inout_mapping : dict[str, str], optional
+        Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
+        Morpheus names do not match the model.
     """
 
     def __init__(self,
@@ -128,13 +131,15 @@ class LogParsingInferenceStage(TritonInferenceStage):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 needs_logits: bool = True):
+                 needs_logits: bool = True,
+                 inout_mapping: dict[str, str] = None):
         super().__init__(c,
                          model_name=model_name,
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         needs_logits=needs_logits)
+                         needs_logits=needs_logits,
+                         inout_mapping=inout_mapping)
 
     def supports_cpp_node(self):
         # Get the value from the worker class

@@ -424,7 +424,7 @@ class TritonInferenceWorker(InferenceWorker):
         Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
         data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
         data would be lost (i.e., double -> float).
-    inout_mapping : typing.Dict[str, str]
+    inout_mapping : dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
     use_shared_memory: bool, default = False
@@ -440,7 +440,7 @@ class TritonInferenceWorker(InferenceWorker):
                  model_name: str,
                  server_url: str,
                  force_convert_inputs: bool,
-                 inout_mapping: typing.Dict[str, str] = None,
+                 inout_mapping: dict[str, str] = None,
                  use_shared_memory: bool = False,
                  needs_logits: bool = False):
         super().__init__(inf_queue)
