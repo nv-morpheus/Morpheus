@@ -406,7 +406,7 @@ class ShmInputWrapper(InputWrapper):
 
 
 # This class is exclusively run in the worker thread. Separating the classes helps keeps the threads separate
-class _TritonInferenceWorker(InferenceWorker):
+class TritonInferenceWorker(InferenceWorker):
     """
     This is a base class for all Triton inference server requests.
 
@@ -640,7 +640,7 @@ class _TritonInferenceWorker(InferenceWorker):
                                         outputs=outputs)
 
 
-class TritonInferenceNLP(_TritonInferenceWorker):
+class TritonInferenceNLP(TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.
@@ -720,7 +720,7 @@ class TritonInferenceNLP(_TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceFIL(_TritonInferenceWorker):
+class TritonInferenceFIL(TritonInferenceWorker):
     """
     This class extends `TritonInference` to deal with scenario-specific FIL models inference requests like
     building response.

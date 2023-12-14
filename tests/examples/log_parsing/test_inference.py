@@ -30,7 +30,7 @@ from morpheus.config import Config
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
-from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 
@@ -77,8 +77,8 @@ def build_inf_message(df: typing.Union[pd.DataFrame, cudf.DataFrame],
                                  count=count)
 
 
-def _check_worker(inference_mod: types.ModuleType, worker: _TritonInferenceWorker):
-    assert isinstance(worker, _TritonInferenceWorker)
+def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker):
+    assert isinstance(worker, TritonInferenceWorker)
     assert isinstance(worker, inference_mod.TritonInferenceLogParsing)
     assert worker._model_name == 'test_model'
     assert worker._server_url == 'test_server'

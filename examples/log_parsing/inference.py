@@ -33,13 +33,13 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
 
 
-class TritonInferenceLogParsing(_TritonInferenceWorker):
+class TritonInferenceLogParsing(TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.
