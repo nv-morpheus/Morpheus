@@ -77,15 +77,38 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         bench['stats']['median_throughput_bytes'] = (byte_count * repeat) / bench['stats']['median']
 
 
+@pytest.fixture(name="mock_openai_request_time")
+def mock_openai_request_time_fixture():
+    return float(os.environ.get("MOCK_OPENAI_REQUEST_TIME", 1.265))
+
+
+@pytest.fixture(name="mock_nemollm_request_time")
+def mock_nemollm_request_time_fixture():
+    return float(os.environ.get("MOCK_NEMOLLM_REQUEST_TIME", 0.412))
+
+
+@pytest.fixture(name="mock_web_scraper_request_time")
+def mock_web_scraper_request_time_fixture():
+    return float(os.environ.get("MOCK_WEB_SCRAPER_REQUEST_TIME", 0.5))
+
+
+@pytest.fixture(name="mock_feedparser_request_time")
+def mock_feedparser_request_time_fixture():
+    return float(os.environ.get("MOCK_FEEDPARSER_REQUEST_TIME", 0.5))
+
+
+@pytest.fixture(name="mock_serpapi_request_time")
+def mock_serpapi_request_time_fixture():
+    return float(os.environ.get("MOCK_SERPAPI_REQUEST_TIME", 1.7))
+
+
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
-@pytest.mark.usefixtures()
-def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
-    sleep_time = float(os.environ.get("MOCK_OPENAI_REQUEST_TIME", 1.265))
+def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock, mock_openai_request_time: float):
 
     async def sleep_first(*args, **kwargs):
         # Sleep time is based on average request time
-        await asyncio.sleep(sleep_time)
+        await asyncio.sleep(mock_openai_request_time)
         return mock.DEFAULT
 
     mock_chat_completion.acreate.side_effect = sleep_first
@@ -95,13 +118,12 @@ def mock_chat_completion_fixture(mock_chat_completion: mock.MagicMock):
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.fixture(name="mock_nemollm")
-def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
-    sleep_time = float(os.environ.get("MOCK_NEMOLLM_REQUEST_TIME", 0.412))
+def mock_nemollm_fixture(mock_nemollm: mock.MagicMock, mock_nemollm_request_time: float):
 
     # The generate function is a blocking call that returns a future when return_type="async"
     async def sleep_first(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
         # Sleep time is based on average request time
-        await asyncio.sleep(sleep_time)
+        await asyncio.sleep(mock_nemollm_request_time)
         fut.set_result(value)
 
     def create_future(*args, **kwargs) -> asyncio.Future:
