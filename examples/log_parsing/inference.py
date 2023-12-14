@@ -135,7 +135,7 @@ class LogParsingInferenceStage(TritonInferenceStage):
                          needs_logits=needs_logits,
                          inout_mapping=inout_mapping)
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         # Get the value from the worker class
         return False
 
@@ -145,7 +145,7 @@ class LogParsingInferenceStage(TritonInferenceStage):
     @staticmethod
     def _convert_one_response(output: PostprocMemoryLogParsing,
                               inf: MultiInferenceMessage,
-                              res: ResponseMemoryLogParsing):
+                              res: ResponseMemoryLogParsing) -> MultiPostprocLogParsingMessage:
 
         output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
