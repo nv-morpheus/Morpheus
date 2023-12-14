@@ -799,105 +799,10 @@ class TritonInferenceFIL(_TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceAE(_TritonInferenceWorker):
-    """
-    This class extends `TritonInference` to deal with inference processing specific to the AutoEncoder.
-
-    Parameters
-    ----------
-    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
-        Inference queue.
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-    model_name : str
-        Name of the model specifies which model can handle the inference requests that are sent to Triton
-        inference server.
-    server_url : str
-        Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False
-        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
-        data would be lost (i.e., double -> float).
-    use_shared_memory: bool, default = False
-        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine.
-    inout_mapping : typing.Dict[str, str]
-        Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model.
-    needs_logits : bool, default = False
-        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
-    """
-
-    def __init__(self,
-                 inf_queue: ProducerConsumerQueue,
-                 c: Config,
-                 model_name: str,
-                 server_url: str,
-                 force_convert_inputs: bool = False,
-                 use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None,
-                 needs_logits: bool = False):
-        super().__init__(inf_queue,
-                         c,
-                         model_name=model_name,
-                         server_url=server_url,
-                         force_convert_inputs=force_convert_inputs,
-                         use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping,
-                         needs_logits=needs_logits)
-
-        import torch
-
-        from morpheus.models.dfencoder import AutoEncoder
-
-        # Save the autoencoder path
-        with open(c.ae.autoencoder_path, 'rb') as in_strm:
-            self._autoencoder = AutoEncoder()
-            self._autoencoder.load_state_dict(torch.load(in_strm))
-
-            # Ensure that there is a label_smoothing property on cce. Necessary if pytorch version is different
-            if (not hasattr(self._autoencoder.cce, "label_smoothing")):
-                self._autoencoder.cce.label_smoothing = 0.0
-
-    @classmethod
-    def supports_cpp_node(cls):
-        # Enable support by default
-        return False
-
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
-
-        import torch
-
-        output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
-
-        data = self._autoencoder.prepare_df(batch.get_meta())
-        num_target, bin_target, codes = self._autoencoder.compute_targets(data)
-        mse_loss = self._autoencoder.mse(torch.as_tensor(output["num"], device='cuda'), num_target)
-        net_loss = [mse_loss.data]
-        bce_loss = self._autoencoder.bce(torch.as_tensor(output["bin"], device='cuda'), bin_target)
-        net_loss += [bce_loss.data]
-        cce_loss = []
-        for i, feature in enumerate(self._autoencoder.categorical_fts):
-            loss = self._autoencoder.cce(torch.as_tensor(output[feature], device='cuda'), codes[i])
-            cce_loss.append(loss)
-            net_loss += [loss.data.reshape(-1, 1)]
-
-        net_loss = torch.cat(net_loss, dim=1).mean(dim=1)
-        ae_scores = cp.asarray(net_loss)
-        ae_scores = ae_scores.reshape((batch.count, 1))
-
-        mem = TensorMemory(
-            count=batch.count,
-            tensors={'probs': ae_scores}  # For now, only support one output
-        )
-
-        return mem
+INFERENCE_WORKER_ALIASES = {"fil": TritonInferenceFIL, "nlp": TritonInferenceNLP}
 
 
-INFERENCE_WORKER_ALIASES = {"ae": TritonInferenceAE, "fil": TritonInferenceFIL, "nlp": TritonInferenceNLP}
-
-
-@register_stage("inf-triton")
+@register_stage("inf-triton", modes=[PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER])
 class TritonInferenceStage(InferenceStage):
     """
     Perform inference with Triton Inference Server.
@@ -974,8 +879,6 @@ class TritonInferenceStage(InferenceStage):
             return TritonInferenceNLP
         if (self._config.mode == PipelineModes.FIL):
             return TritonInferenceFIL
-        if (self._config.mode == PipelineModes.AE):
-            return TritonInferenceAE
 
         raise NotImplementedError("Unknown config mode")
 
