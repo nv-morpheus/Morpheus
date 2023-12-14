@@ -36,6 +36,9 @@ from _utils.kafka import kafka_bootstrap_servers_fixture  # noqa: F401 pylint:di
 from _utils.kafka import kafka_consumer_fixture  # noqa: F401 pylint:disable=unused-import
 from _utils.kafka import kafka_topics_fixture  # noqa: F401 pylint:disable=unused-import
 
+CAMOUFLAGE_PKG = "camouflage-server"
+CAMOUFLAGE_VERSION = "0.15"
+
 # Don't let pylint complain about pytest fixtures
 # pylint: disable=redefined-outer-name,unused-argument
 
@@ -607,7 +610,9 @@ def _start_camouflage(
             console_log = os.path.join(root_dir, 'console.log')
             camouflage_log = os.path.join(root_dir, 'camouflage.log')
             console_log_fh = open(console_log, 'w', encoding='utf-8')
-            popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
+            popen = subprocess.Popen([
+                "npx", f"--package={CAMOUFLAGE_PKG}@{CAMOUFLAGE_VERSION}", "--", "camouflage", "--config", "config.yml"
+            ],
                                      cwd=root_dir,
                                      stderr=subprocess.STDOUT,
                                      stdout=console_log_fh,

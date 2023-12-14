@@ -114,7 +114,6 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Install mamba, boa and git here. Conda build breaks with other git installs
     /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
     source activate base
-    # conda clean -afy
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -288,12 +287,6 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
     rm -rf /var/lib/apt/lists/*
-
-# Install camouflage needed for unittests to mock a triton server
-# Pin to v0.9 until #967 is resolved
-RUN source activate morpheus && \
-    npm install -g camouflage-server@0.15 && \
-    npm cache clean --force
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
