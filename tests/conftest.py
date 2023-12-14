@@ -627,6 +627,7 @@ def _start_camouflage(
             if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
                 if console_log_fh is not None:
                     console_log_fh.close()
+
                 read_logs()
 
                 if popen.poll() is not None:
