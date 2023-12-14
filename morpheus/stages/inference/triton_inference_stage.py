@@ -683,9 +683,20 @@ class TritonInferenceStage(InferenceStage):
         Dictionary used to map pipeline input/output names to Triton input/output names.
         Use this if the Morpheus names do not match the model.
         If undefined, a default mapping will be used based on the pipeline mode as follows:
-        - `FIL`: `{"output__0": "probs"}`
-        - `NLP`: `{"attention_mask": "input_mask", "output": "probs"}`
-        - All other modes: `{}`
+
+        * `FIL`: `{"output__0": "probs"}`
+
+        * `NLP`: `{"attention_mask": "input_mask", "output": "probs"}`
+
+        * All other modes: `{}`
+
+        From the command line this can be specified multiple times for each key/value pair, for example:
+
+            --inout-mapping mask input_mask --inout-mapping output probs
+
+        which will be inroduced as:
+
+            inout_mapping={"mask": "input_mask", "output": "probs"}
     """
 
     def __init__(self,
