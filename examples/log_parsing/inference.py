@@ -13,14 +13,10 @@
 # limitations under the License.
 
 import logging
-import typing
-from functools import partial
 
 import cupy as cp
-import mrc
 import numpy as np
 import tritonclient.grpc as tritonclient
-from mrc.core import operators as ops
 from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
@@ -31,10 +27,8 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
-from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
 
