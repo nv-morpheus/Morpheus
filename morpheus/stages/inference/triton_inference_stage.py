@@ -433,6 +433,8 @@ class TritonInferenceWorker(InferenceWorker):
         transfer time but requires that Morpheus and Triton are located on the same machine.
     needs_logits : bool, default = False
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
+    expand_dims : bool, default = False
+        When `True` any output array with only a single dimension will be expanded into a two dimensional array.
     """
 
     def __init__(self,
@@ -443,24 +445,19 @@ class TritonInferenceWorker(InferenceWorker):
                  force_convert_inputs: bool,
                  inout_mapping: typing.Dict[str, str] = None,
                  use_shared_memory: bool = False,
-                 needs_logits: bool = False):
+                 needs_logits: bool = False,
+                 expand_dims: bool = False):
         super().__init__(inf_queue)
-
-        # Combine the class defaults with any user supplied ones
-        default_mapping = type(self).default_inout_mapping()
-
-        default_mapping.update(inout_mapping if inout_mapping is not None else {})
 
         self._model_name = model_name
         self._server_url = server_url
-        self._inout_mapping = default_mapping
+        self._inout_mapping = inout_mapping
         self._use_shared_memory = use_shared_memory
-
-        self._requires_seg_ids = False
 
         self._max_batch_size = c.model_max_batch_size
         self._fea_length = c.feature_length
         self._force_convert_inputs = force_convert_inputs
+        self._expand_dims = expand_dims
 
         # Whether or not the returned value needs a logits calc for the response
         self._needs_logits = needs_logits
@@ -479,10 +476,6 @@ class TritonInferenceWorker(InferenceWorker):
     @property
     def needs_logits(self) -> bool:
         return self._needs_logits
-
-    @classmethod
-    def default_inout_mapping(cls) -> typing.Dict[str, str]:
-        return {}
 
     def init(self):
         """
@@ -585,9 +578,24 @@ class TritonInferenceWorker(InferenceWorker):
     def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
         return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
-    @abstractmethod
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
-        pass
+    def _build_response(
+            self,
+            batch: MultiInferenceMessage,  # pylint: disable=unused-argument
+            result: tritonclient.InferResult) -> TensorMemory:
+        output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
+
+        if (self._expand_dims):
+            for key, val in output.items():
+                if (len(val.shape) == 1):
+                    output[key] = np.expand_dims(val, 1)
+
+        if (self._needs_logits):
+            output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
+
+        return TensorMemory(
+            count=output["probs"].shape[0],
+            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
+        )
 
     # pylint: disable=invalid-name
     def _infer_callback(self,
@@ -683,6 +691,10 @@ class TritonInferenceStage(InferenceStage):
         - `FIL`: `{"output__0": "probs"}`
         - `NLP`: `{"attention_mask": "input_mask", "output": "probs"}`
         - All other modes: `{}`
+    expand_dims : bool, default = None
+        When `True` any output array with only a single dimension will be expanded into a two dimensional array.
+        If undefined, the value will be inferred based on the pipeline mode, defaulting to `True` for FIL pipelines and
+        `False` for other modes.
     """
 
     def __init__(self,
@@ -693,7 +705,7 @@ class TritonInferenceStage(InferenceStage):
                  use_shared_memory: bool = False,
                  needs_logits: bool = None,
                  inout_mapping: dict[str, str] = None,
-                 worker_class: str = None):
+                 expand_dims: bool = None):
         super().__init__(c)
 
         self._config = c
@@ -701,33 +713,37 @@ class TritonInferenceStage(InferenceStage):
         if needs_logits is None:
             needs_logits = c.mode == PipelineModes.NLP
 
-        if inout_mapping is None:
-            inout_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
+        if expand_dims is None:
+            expand_dims = c.mode == PipelineModes.FIL
+
+        # Combine the pipeline mode defaults with any user supplied ones
+        inout_mapping_ = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
+        if inout_mapping is not None:
+            inout_mapping_.update(inout_mapping)
 
         self._kwargs = {
             "model_name": model_name,
             "server_url": server_url,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
-            "inout_mapping": inout_mapping,
-            "needs_logits": needs_logits
+            "inout_mapping": inout_mapping_,
+            "needs_logits": needs_logits,
+            "expand_dims": expand_dims
         }
 
-        self._requires_seg_ids = False
-
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         # Get the value from the worker class
-        return TritonInferenceWorker.supports_cpp_node()
+        return self._get_worker_class().supports_cpp_node()
 
     def _get_worker_class(self) -> type[TritonInferenceWorker]:
-        raise TritonInferenceWorker
+        """
+        Returns the worker class for this stage. Authors of custom sub-classes can override this method to provide a
+        custom worker class.
+        """
+        return TritonInferenceWorker
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceWorker:
-        return self._worker_class(inf_queue=inf_queue, c=self._config, **self._kwargs)
+        return self._get_worker_class()(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, builder: mrc.Builder):
-
-        return _stages.InferenceClientStage(builder,
-                                            name=self.unique_name,
-                                            inout_mapping=self._worker_class.default_inout_mapping(),
-                                            **self._kwargs)
+    def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
+        return _stages.InferenceClientStage(builder, name=self.unique_name, **self._kwargs)
