@@ -32,7 +32,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -62,36 +62,6 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
     needs_logits : bool, default = True
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
-
-    def __init__(self,
-                 inf_queue: ProducerConsumerQueue,
-                 c: Config,
-                 model_name: str,
-                 server_url: str,
-                 force_convert_inputs: bool,
-                 use_shared_memory: bool,
-                 inout_mapping: typing.Dict[str, str] = None,
-                 needs_logits: bool = True):
-        # Some models use different names for the same thing. Set that here but allow user customization
-        default_mapping = {
-            "attention_mask": "input_mask",
-        }
-
-        default_mapping.update(inout_mapping if inout_mapping is not None else {})
-
-        super().__init__(inf_queue,
-                         c,
-                         model_name=model_name,
-                         server_url=server_url,
-                         force_convert_inputs=force_convert_inputs,
-                         use_shared_memory=use_shared_memory,
-                         inout_mapping=default_mapping,
-                         needs_logits=needs_logits)
-
-    @classmethod
-    def default_inout_mapping(cls) -> typing.Dict[str, str]:
-        # Some models use different names for the same thing. Set that here but allow user customization
-        return {"attention_mask": "input_mask"}
 
     def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
 
@@ -129,7 +99,7 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
-class LogParsingInferenceStage(InferenceStage):
+class LogParsingInferenceStage(TritonInferenceStage):
     """
     NLP Triton inference stage for log parsing pipeline.
 
@@ -159,19 +129,12 @@ class LogParsingInferenceStage(InferenceStage):
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
                  needs_logits: bool = True):
-        super().__init__(c)
-
-        self._config = c
-
-        self._kwargs = {
-            "model_name": model_name,
-            "server_url": server_url,
-            "force_convert_inputs": force_convert_inputs,
-            "use_shared_memory": use_shared_memory,
-            "needs_logits": needs_logits
-        }
-
-        self._requires_seg_ids = False
+        super().__init__(c,
+                         model_name=model_name,
+                         server_url=server_url,
+                         force_convert_inputs=force_convert_inputs,
+                         use_shared_memory=use_shared_memory,
+                         needs_logits=needs_logits)
 
     def supports_cpp_node(self):
         # Get the value from the worker class
@@ -179,64 +142,6 @@ class LogParsingInferenceStage(InferenceStage):
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiPostprocLogParsingMessage)
-
-    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-
-        def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-
-            worker = self._get_inference_worker(self._inf_queue)
-
-            worker.init()
-
-            outstanding_requests = 0
-
-            def on_next(x: MultiInferenceMessage):
-                nonlocal outstanding_requests
-
-                batches = self._split_batches(x, self._max_batch_size)
-
-                output_message = worker.build_output_message(x)
-
-                memory = output_message.memory
-
-                fut_list = []
-
-                for batch in batches:
-                    outstanding_requests += 1
-
-                    fut = mrc.Future()
-
-                    def set_output_fut(resp: ResponseMemoryLogParsing, inner_b, inner_f: mrc.Future):
-                        nonlocal outstanding_requests
-                        inner_memory = self._convert_one_response(memory, inner_b, resp)
-
-                        inner_f.set_result(inner_memory)
-
-                        outstanding_requests -= 1
-
-                    fut_list.append(fut)
-
-                    worker.process(batch, partial(set_output_fut, inner_b=batch, inner_f=fut))
-
-                for f in fut_list:
-                    f.result()
-
-                return output_message
-
-            obs.pipe(ops.map(on_next)).subscribe(sub)
-
-            assert outstanding_requests == 0, "Not all inference requests were completed"
-
-        if (self._build_cpp_node()):
-            node = self._get_cpp_inference_node(builder)
-        else:
-            node = builder.make_node(self.unique_name, ops.build(py_inference_fn))
-
-        # Set the concurrency level to be up with the thread count
-        node.launch_options.pe_count = self._thread_count
-        builder.make_edge(input_node, node)
-
-        return node
 
     @staticmethod
     def _convert_one_response(output: PostprocMemoryLogParsing,
@@ -262,6 +167,5 @@ class LogParsingInferenceStage(InferenceStage):
 
         return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
 
-    def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
-
-        return TritonInferenceLogParsing(inf_queue, self._config, **self._kwargs)
+    def _get_worker_class(self) -> type[TritonInferenceWorker]:
+        return TritonInferenceLogParsing
