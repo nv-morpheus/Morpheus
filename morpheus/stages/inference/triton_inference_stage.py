@@ -408,7 +408,7 @@ class ShmInputWrapper(InputWrapper):
 # This class is exclusively run in the worker thread. Separating the classes helps keeps the threads separate
 class TritonInferenceWorker(InferenceWorker):
     """
-    This is a base class for all Triton inference server requests.
+    Inference worker class for all Triton inference server requests.
 
     Parameters
     ----------
@@ -640,166 +640,14 @@ class TritonInferenceWorker(InferenceWorker):
                                         outputs=outputs)
 
 
-class TritonInferenceNLP(TritonInferenceWorker):
-    """
-    This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
-    response.
-
-    Parameters
-    ----------
-    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
-        Inference queue.
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-    model_name : str
-        Name of the model specifies which model can handle the inference requests that are sent to Triton
-        inference server.
-    server_url : str
-        Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False
-        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
-        data would be lost (i.e., double -> float).
-    use_shared_memory : bool, default = False
-        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine.
-    inout_mapping : typing.Dict[str, str]
-        Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model.
-    needs_logits : bool, default = True
-        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
-    """
-
-    def __init__(self,
-                 inf_queue: ProducerConsumerQueue,
-                 c: Config,
-                 model_name: str,
-                 server_url: str,
-                 force_convert_inputs: bool = False,
-                 use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None,
-                 needs_logits: bool = True):
-        super().__init__(inf_queue,
-                         c,
-                         model_name=model_name,
-                         server_url=server_url,
-                         force_convert_inputs=force_convert_inputs,
-                         use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping,
-                         needs_logits=needs_logits)
-
-    @classmethod
-    def default_inout_mapping(cls) -> typing.Dict[str, str]:
-        """
-        Returns default dictionary used to map NLP pipeline input/output names to Triton input/output names
-
-        Returns
-        -------
-        default_inout_mapping : typing.Dict[str, str]
-            Dictionary with default input and output names.
-        """
-
-        # Some models use different names for the same thing. Set that here but allow user customization
-        return {
-            "attention_mask": "input_mask",
-            "output": "probs",
-        }
-
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
-
-        output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
-
-        if (self._needs_logits):
-            output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
-
-        mem = TensorMemory(
-            count=output["probs"].shape[0],
-            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
-        )
-
-        return mem
-
-
-class TritonInferenceFIL(TritonInferenceWorker):
-    """
-    This class extends `TritonInference` to deal with scenario-specific FIL models inference requests like
-    building response.
-
-    Parameters
-    ----------
-    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
-        Inference queue.
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-    model_name : str
-        Name of the model specifies which model can handle the inference requests that are sent to Triton
-        inference server.
-    server_url : str
-        Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False
-        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
-        data would be lost (i.e., double -> float).
-    use_shared_memory: bool, default = False
-        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine.
-    inout_mapping : typing.Dict[str, str]
-        Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model.
-    needs_logits : bool, default = False
-        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
-    """
-
-    def __init__(self,
-                 inf_queue: ProducerConsumerQueue,
-                 c: Config,
-                 model_name: str,
-                 server_url: str,
-                 force_convert_inputs: bool = False,
-                 use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None,
-                 needs_logits: bool = False):
-        super().__init__(inf_queue,
-                         c,
-                         model_name=model_name,
-                         server_url=server_url,
-                         force_convert_inputs=force_convert_inputs,
-                         use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping,
-                         needs_logits=needs_logits)
-
-    @classmethod
-    def default_inout_mapping(cls) -> typing.Dict[str, str]:
-        """
-        Returns default dictionary used to map FIL pipeline input/output names to Triton input/output names
-
-        Returns
-        -------
-        default_inout_mapping : typing.Dict[str, str]
-            Dictionary with default input and output names.
-        """
-        # Some models use different names for the same thing. Set that here but allow user customization
-        return {
-            "output__0": "probs",
-        }
-
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
-
-        output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
-
-        for key, val in output.items():
-            if (len(val.shape) == 1):
-                output[key] = np.expand_dims(val, 1)
-
-        mem = TensorMemory(
-            count=output["probs"].shape[0],
-            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
-        )
-
-        return mem
-
-
-INFERENCE_WORKER_ALIASES = {"fil": TritonInferenceFIL, "nlp": TritonInferenceNLP}
+INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
+    "fil": {
+        "output__0": "probs",
+    }, "nlp": {
+        "attention_mask": "input_mask",
+        "output": "probs",
+    }
+}
 
 
 @register_stage("inf-triton", modes=[PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER])
@@ -828,10 +676,13 @@ class TritonInferenceStage(InferenceStage):
         Determines whether a logits calculation is needed for the value returned by the Triton inference response. If
         undefined, the value will be inferred based on the pipeline mode, defaulting to `True` for NLP and `False` for
         other modes.
-    worker_class : str, optional
-        Worker class to use for inference. If not specified, the worker class will be inferred based on the pipeline
-        mode. Can be specified either as a string or as a class type. If specified as a string, the string must be
-        one of the following: `AE`, `FIL`, or `NLP`.
+    inout_mapping : dict[str, str], optional
+        Dictionary used to map pipeline input/output names to Triton input/output names.
+        Use this if the Morpheus names do not match the model.
+        If undefined, a default mapping will be used based on the pipeline mode as follows:
+        - `FIL`: `{"output__0": "probs"}`
+        - `NLP`: `{"attention_mask": "input_mask", "output": "probs"}`
+        - All other modes: `{}`
     """
 
     def __init__(self,
@@ -841,6 +692,7 @@ class TritonInferenceStage(InferenceStage):
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
                  needs_logits: bool = None,
+                 inout_mapping: dict[str, str] = None,
                  worker_class: str = None):
         super().__init__(c)
 
@@ -849,40 +701,28 @@ class TritonInferenceStage(InferenceStage):
         if needs_logits is None:
             needs_logits = c.mode == PipelineModes.NLP
 
+        if inout_mapping is None:
+            inout_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
+
         self._kwargs = {
             "model_name": model_name,
             "server_url": server_url,
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
+            "inout_mapping": inout_mapping,
             "needs_logits": needs_logits
         }
 
         self._requires_seg_ids = False
 
-        if isinstance(worker_class, str):
-            worker_class = self._get_worker_class_from_str(worker_class)
-
-        self._worker_class = worker_class or self._get_worker_class()
-
     def supports_cpp_node(self):
         # Get the value from the worker class
-        return self._get_worker_class().supports_cpp_node()
+        return TritonInferenceWorker.supports_cpp_node()
 
-    def _get_worker_class_from_str(self, worker_class_name: str) -> type[InferenceWorker]:
-        try:
-            return INFERENCE_WORKER_ALIASES[worker_class_name.lower()]
-        except KeyError as exc:
-            raise NotImplementedError(f"Unknown Triton inference worker class: {worker_class_name}") from exc
+    def _get_worker_class(self) -> type[TritonInferenceWorker]:
+        raise TritonInferenceWorker
 
-    def _get_worker_class(self) -> type[InferenceWorker]:
-        if (self._config.mode == PipelineModes.NLP):
-            return TritonInferenceNLP
-        if (self._config.mode == PipelineModes.FIL):
-            return TritonInferenceFIL
-
-        raise NotImplementedError("Unknown config mode")
-
-    def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
+    def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceWorker:
         return self._worker_class(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder):
