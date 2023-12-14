@@ -38,7 +38,7 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
-def _build_engine(llm_service_cls: LLMService, model_name: str = "test_model"):
+def _build_engine(llm_service_cls: type[LLMService], model_name: str = "test_model"):
     llm_service = llm_service_cls()
     llm_client = llm_service.get_client(model_name=model_name)
 
@@ -54,7 +54,7 @@ def _build_engine(llm_service_cls: LLMService, model_name: str = "test_model"):
 
 
 def _run_pipeline(config: Config,
-                  llm_service_cls: LLMService,
+                  llm_service_cls: type[LLMService],
                   source_df: cudf.DataFrame,
                   model_name: str = "test_model") -> dict:
     """
@@ -83,5 +83,5 @@ def _run_pipeline(config: Config,
 def test_completion_pipe(benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
                          config: Config,
                          dataset: DatasetManager,
-                         llm_service_cls: LLMService):
+                         llm_service_cls: type[LLMService]):
     benchmark(_run_pipeline, config, llm_service_cls, source_df=dataset["countries.csv"])
