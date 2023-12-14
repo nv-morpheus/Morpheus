@@ -18,7 +18,6 @@ import logging
 import queue
 import typing
 import warnings
-from abc import abstractmethod
 from functools import lru_cache
 from functools import partial
 
