@@ -127,24 +127,17 @@ def test_resource_pool_create_raises_error():
 @pytest.mark.parametrize("force_convert_inputs", [True, False])
 @pytest.mark.parametrize("use_shared_memory", [True, False])
 @pytest.mark.parametrize("needs_logits", [True, False, None])
-@pytest.mark.parametrize("expand_dims", [True, False, None])
 @pytest.mark.parametrize("inout_mapping", [None, {'unit': 'test'}])
 def test_stage_constructor(config: Config,
                            pipeline_mode: PipelineModes,
                            force_convert_inputs: bool,
                            use_shared_memory: bool,
                            needs_logits: bool | None,
-                           expand_dims: bool | None,
                            inout_mapping: dict[str, str] | None):
     if needs_logits is None:
         expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
     else:
         expexted_needs_logits = needs_logits
-
-    if expand_dims is None:
-        expexted_expand_dims = (pipeline_mode == PipelineModes.FIL)
-    else:
-        expexted_expand_dims = expand_dims
 
     expected_inout_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {})
     expected_inout_mapping.update(inout_mapping or {})
@@ -157,7 +150,6 @@ def test_stage_constructor(config: Config,
                                  force_convert_inputs=force_convert_inputs,
                                  use_shared_memory=use_shared_memory,
                                  needs_logits=needs_logits,
-                                 expand_dims=expand_dims,
                                  inout_mapping=inout_mapping)
 
     assert stage._kwargs == {
@@ -166,7 +158,6 @@ def test_stage_constructor(config: Config,
         "force_convert_inputs": force_convert_inputs,
         "use_shared_memory": use_shared_memory,
         "needs_logits": expexted_needs_logits,
-        "expand_dims": expexted_expand_dims,
         'inout_mapping': expected_inout_mapping
     }
 
@@ -193,33 +184,19 @@ def test_stage_get_worker_class(config: Config, pipeline_mode: PipelineModes):
 @pytest.mark.use_python
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
-@pytest.mark.parametrize("expand_dims", [True, False, None])
-def test_stage_get_inference_worker(config: Config,
-                                    pipeline_mode: PipelineModes,
-                                    needs_logits: bool | None,
-                                    expand_dims: bool | None):
+def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
     if needs_logits is None:
         expexted_needs_logits = (pipeline_mode == PipelineModes.NLP)
     else:
         expexted_needs_logits = needs_logits
 
-    if expand_dims is None:
-        expexted_expand_dims = (pipeline_mode == PipelineModes.FIL)
-    else:
-        expexted_expand_dims = expand_dims
-
     config.mode = pipeline_mode
 
-    stage = TritonInferenceStage(config,
-                                 model_name='test',
-                                 server_url='test:0000',
-                                 needs_logits=needs_logits,
-                                 expand_dims=expand_dims)
+    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000', needs_logits=needs_logits)
 
     worker = stage._get_inference_worker(ProducerConsumerQueue())
     assert isinstance(worker, TritonInferenceWorker)
     assert worker.needs_logits == expexted_needs_logits
-    assert worker._expand_dims == expexted_expand_dims
 
 
 @pytest.mark.slow

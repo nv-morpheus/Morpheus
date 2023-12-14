@@ -433,8 +433,6 @@ class TritonInferenceWorker(InferenceWorker):
         transfer time but requires that Morpheus and Triton are located on the same machine.
     needs_logits : bool, default = False
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
-    expand_dims : bool, default = False
-        When `True` any output array with only a single dimension will be expanded into a two dimensional array.
     """
 
     def __init__(self,
@@ -445,8 +443,7 @@ class TritonInferenceWorker(InferenceWorker):
                  force_convert_inputs: bool,
                  inout_mapping: typing.Dict[str, str] = None,
                  use_shared_memory: bool = False,
-                 needs_logits: bool = False,
-                 expand_dims: bool = False):
+                 needs_logits: bool = False):
         super().__init__(inf_queue)
 
         self._model_name = model_name
@@ -458,7 +455,6 @@ class TritonInferenceWorker(InferenceWorker):
         self._max_batch_size = c.model_max_batch_size
         self._fea_length = c.feature_length
         self._force_convert_inputs = force_convert_inputs
-        self._expand_dims = expand_dims
 
         # Whether or not the returned value needs a logits calc for the response
         self._needs_logits = needs_logits
@@ -481,7 +477,6 @@ class TritonInferenceWorker(InferenceWorker):
     def init(self):
         """
         This function instantiate triton client and memory allocation for inference input and output.
-
         """
 
         self._triton_client = tritonclient.InferenceServerClient(url=self._server_url, verbose=False)
@@ -585,10 +580,10 @@ class TritonInferenceWorker(InferenceWorker):
             result: tritonclient.InferResult) -> TensorMemory:
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
-        if (self._expand_dims):
-            for key, val in output.items():
-                if (len(val.shape) == 1):
-                    output[key] = np.expand_dims(val, 1)
+        # Make sure we have at least 2 dims
+        for key, val in output.items():
+            if (len(val.shape) == 1):
+                output[key] = np.expand_dims(val, 1)
 
         if (self._needs_logits):
             output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
@@ -693,10 +688,6 @@ class TritonInferenceStage(InferenceStage):
         - `FIL`: `{"output__0": "probs"}`
         - `NLP`: `{"attention_mask": "input_mask", "output": "probs"}`
         - All other modes: `{}`
-    expand_dims : bool, default = None
-        When `True` any output array with only a single dimension will be expanded into a two dimensional array.
-        If undefined, the value will be inferred based on the pipeline mode, defaulting to `True` for FIL pipelines and
-        `False` for other modes.
     """
 
     def __init__(self,
@@ -706,17 +697,13 @@ class TritonInferenceStage(InferenceStage):
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
                  needs_logits: bool = None,
-                 inout_mapping: dict[str, str] = None,
-                 expand_dims: bool = None):
+                 inout_mapping: dict[str, str] = None):
         super().__init__(c)
 
         self._config = c
 
         if needs_logits is None:
             needs_logits = c.mode == PipelineModes.NLP
-
-        if expand_dims is None:
-            expand_dims = c.mode == PipelineModes.FIL
 
         # Combine the pipeline mode defaults with any user supplied ones
         inout_mapping_ = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
@@ -729,8 +716,7 @@ class TritonInferenceStage(InferenceStage):
             "force_convert_inputs": force_convert_inputs,
             "use_shared_memory": use_shared_memory,
             "inout_mapping": inout_mapping_,
-            "needs_logits": needs_logits,
-            "expand_dims": expand_dims
+            "needs_logits": needs_logits
         }
 
     def supports_cpp_node(self) -> bool:
