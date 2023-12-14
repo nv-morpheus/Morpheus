@@ -67,13 +67,12 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
             seq_ids=cp.zeros((x.count, x.seq_ids.shape[1])),
         )
 
-        output_message = MultiPostprocLogParsingMessage(meta=x.meta,
-                                                        mess_offset=x.mess_offset,
-                                                        mess_count=x.mess_count,
-                                                        memory=memory,
-                                                        offset=0,
-                                                        count=x.count)
-        return output_message
+        return MultiPostprocLogParsingMessage(meta=x.meta,
+                                              mess_offset=x.mess_offset,
+                                              mess_count=x.mess_count,
+                                              memory=memory,
+                                              offset=0,
+                                              count=x.count)
 
     def _build_response(self, batch: MultiInferenceMessage,
                         result: tritonclient.InferResult) -> ResponseMemoryLogParsing:
@@ -83,13 +82,11 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         confidences = {key: np.amax(val, axis=2) for key, val in output.items()}
         labels = {key: np.argmax(val, axis=2) for key, val in output.items()}
 
-        mem = ResponseMemoryLogParsing(
+        return ResponseMemoryLogParsing(
             count=output[list(output.keys())[0]].shape[0],
             confidences=cp.array(confidences[list(output.keys())[0]]),
             labels=cp.array(labels[list(output.keys())[0]]),
         )
-
-        return mem
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
