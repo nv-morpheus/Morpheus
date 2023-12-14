@@ -451,7 +451,8 @@ class TritonInferenceWorker(InferenceWorker):
 
         self._model_name = model_name
         self._server_url = server_url
-        self._inout_mapping = inout_mapping
+        self._inout_mapping = inout_mapping or {}
+        print(f"Using inout mapping: {self._inout_mapping}")
         self._use_shared_memory = use_shared_memory
 
         self._max_batch_size = c.model_max_batch_size
@@ -649,9 +650,10 @@ class TritonInferenceWorker(InferenceWorker):
 
 
 INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
-    "fil": {
+    PipelineModes.FIL: {
         "output__0": "probs",
-    }, "nlp": {
+    },
+    PipelineModes.NLP: {
         "attention_mask": "input_mask",
         "output": "probs",
     }
