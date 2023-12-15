@@ -40,12 +40,6 @@ files:
       - test_python_morpheus
       - cudatoolkit
 
-  checks:
-    common:
-      - output_types: [conda]
-        packages:
-          - pre-commit
-
   test:
     output: none
     matrix:
@@ -82,6 +76,11 @@ files:
       arch: [x86_64]
     includes:
       - runtime
+
+  checks:
+    output: none
+    includes:
+      - checks
 
 
 channels:
@@ -120,6 +119,12 @@ dependencies:
           - scikit-build=0.17.1
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
+
+  checks:
+    common:
+      - output_types: [conda]
+        packages:
+          - pre-commit
 
   data_retrieval:
     common:
