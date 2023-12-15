@@ -7,7 +7,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/duo-training-data/*.json"
+				"../../../data/dfp/duo-training-data/*.json"
 			  ]
 			}
 		  },
@@ -34,7 +34,7 @@
 			"properties": {
 			  "loader_id": "fsspec",
 			  "files": [
-				"../../../../../examples/data/dfp/duo-inference-data/*.json"
+				"../../../data/dfp/duo-inference-data/*.json"
 			  ]
 			}
 		  },
