@@ -666,7 +666,8 @@ def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5, console
 
     # It takes a little while to shutdown
     while not stopped and elapsed_time < shutdown_timeout:
-        popen.kill()
+        os.killpg(os.getpgid(popen.pid), signal.SIGKILL)
+        # popen.kill()
         stopped = (popen.poll() is not None)
         if not stopped:
             time.sleep(sleep_time)
