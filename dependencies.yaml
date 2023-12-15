@@ -194,6 +194,7 @@ dependencies:
           - python-dotenv=1.0
           - ujson=5.8
           ####### Pip Dependencies (keep sorted!) #######
+          - pip
           - pip:
               - google-search-results==2.4
               - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
@@ -227,6 +228,7 @@ dependencies:
           - typing_utils=0.1
           - watchdog=2.1
           - websockets
+          - pip
           - pip:
             - databricks-connect
             - milvus==2.3.2
@@ -242,6 +244,7 @@ dependencies:
           - pytest-asyncio
           - pytest-benchmark>=4.0
           - pytest-cov
+          - pip
           - pip:
               - pytest-kafka==0.6.0
 

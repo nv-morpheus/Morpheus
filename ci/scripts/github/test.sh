@@ -74,8 +74,8 @@ rapids-logger "Pulling LFS assets"
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-# List missing files
-rapids-logger "Listing missing files"
+# Listing LFS-known files
+rapids-logger "Listing LFS-known files"
 git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
