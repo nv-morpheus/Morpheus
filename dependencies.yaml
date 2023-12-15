@@ -40,6 +40,12 @@ files:
       - test_python_morpheus
       - cudatoolkit
 
+  checks:
+    common:
+      - output_types: [conda]
+        packages:
+          - pre-commit
+
   test:
     output: none
     matrix:
