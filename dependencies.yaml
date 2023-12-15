@@ -23,7 +23,7 @@ files:
     includes:
       - build_cpp
       - development_cpp
-      - run_morpheus
+      - runtime
       - test_python_morpheus
       - cudatoolkit
 
@@ -36,7 +36,7 @@ files:
       - build_cpp
       - development_cpp
       - benchmark_cpp
-      - run_morpheus
+      - runtime
       - test_python_morpheus
       - cudatoolkit
 
@@ -46,10 +46,13 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
       - development_cpp
-      - run_morpheus
+      - benchmark_cpp
+      - runtime
       - test_python_morpheus
+      - examples
       - cudatoolkit
 
   docs:
@@ -58,9 +61,13 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
+      - benchmark_cpp
       - cudatoolkit
       - docs
+      - runtime
+      - examples
 
   runtime:
     output: none
@@ -108,6 +115,12 @@ dependencies:
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
 
+  data_retrieval:
+    common:
+      - output_types: [conda]
+        packages:
+          - git-lfs
+
   development_cpp:
     common:
       - output_types: [conda]
@@ -121,15 +134,18 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - git-lfs
           - breathe=4.34.0
           - doxygen=1.9.2
           - exhale=0.3.6
           - ipython
           - myst-parser=0.17.2
           - nbsphinx
+          - python-graphviz
           - sphinx
           - sphinx_rtd_theme
+          - numpydoc=1.4
+          - pluggy=1.0
+          - &click click >=8
 
   benchmark_cpp:
     common:
@@ -156,7 +172,6 @@ dependencies:
           - openai=0.28
           - papermill=2.3.4
           - pypdf=3.16
-          - requests-cache=1.1
           - s3fs>=2023.6
           - sentence-transformers
           - transformers
@@ -174,7 +189,7 @@ dependencies:
               - nemollm
 
 
-  run_morpheus:
+  runtime:
     common:
       - output_types: [conda]
         packages:
@@ -182,40 +197,42 @@ dependencies:
           - click>=8
           - datacompy=0.8
           - dill
+          - elasticsearch==8.9.0
+          - feedparser=6.0.10
           - gputil
           - grpcio
           - mlflow>=2.2.1,<3
+          - nb_conda_kernels
           - numpydoc=1.4
           - nvtabular=23.06
           - python-confluent-kafka=1.9.2
           - python-graphviz
           - pytorch-cuda
           - pytorch=2.0.1
+          - requests-cache=1.1
           - scikit-learn=1.2.2
           - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
           - tqdm=4
           - typing_utils=0.1
           - watchdog=2.1
+          - websockets
           - pip:
+            - databricks-connect
+            - milvus==2.3.2
             - pyarrow_hotfix
+            - pymilvus==2.3.2
 
   test_python_morpheus:
     common:
       - output_types: [conda]
         packages:
-          - pip
+          - nodejs=18.*
           - pytest
+          - pytest-asyncio
           - pytest-benchmark>=4.0
           - pytest-cov
           - pip:
               - pytest-kafka==0.6.0
-
-  runtime:
-    common:
-      - output_types: [conda]
-        packages:
-          - nb_conda_kernels
-          - pip
 
   cudatoolkit:
     specific:

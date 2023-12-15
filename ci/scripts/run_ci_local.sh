@@ -74,10 +74,9 @@ for STAGE in "${STAGES[@]}"; do
     DOCKER_RUN_ARGS="--rm -ti --net=host -v "${LOCAL_CI_TMP}":/ci_tmp ${ENV_LIST} --env STAGE=${STAGE}"
     if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
         CONTAINER="${TEST_CONTAINER}"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia --gpus all"
-        if [[ "${STAGE}" == "test" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --cap-add=sys_nice"
-        fi
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia"
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --gpus all"
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --cap-add=sys_nice"
     else
         CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=runc"
