@@ -103,11 +103,11 @@ To ensure the [file_to_df_loader.py](../../../../../morpheus/loaders/file_to_df_
 export MORPHEUS_FILE_DOWNLOAD_TYPE=dask
 ```
 
-Benchmarks for an individual workflow can be run using the following in your dev container:
+Benchmarks for an individual workflow can be run from `examples/digital_fingerprinting/production/morpheus` in your dev container:
 
 ```
 
-pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::<test-workflow>
+pytest -s --log-level=WARN --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py::<test-workflow>
 ```
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
@@ -137,12 +137,12 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the azure logs:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
 ```
 
 To run E2E benchmarks on all workflows:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave benchmarks/test_bench_e2e_dfp_pipeline.py
 ```
 
 Here are the benchmark comparisons for individual tests. When the control message type is "payload", the rolling window stage is bypassed, whereas when it is "streaming", the windows are created with historical data.

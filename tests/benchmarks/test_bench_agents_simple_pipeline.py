@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import collections.abc
 import os
-import re
+import typing
 from unittest import mock
 
 import langchain
@@ -27,7 +29,6 @@ from langchain.utilities import serpapi
 
 import cudf
 
-from _utils import assert_results
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
@@ -37,15 +38,8 @@ from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils.concat_df import concat_dataframes
-
-
-@pytest.fixture(name="questions")
-def questions_fixture():
-    return ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]
 
 
 def _build_agent_executor(model_name: str):
@@ -83,56 +77,34 @@ def _build_engine(model_name: str):
     return engine
 
 
-def _run_pipeline(config: Config,
-                  questions: list[str],
-                  model_name: str = "test_model",
-                  expected_df: cudf.DataFrame = None) -> InMemorySinkStage:
-    source_df = cudf.DataFrame({"questions": questions})
-
+def _run_pipeline(config: Config, source_dfs: list[cudf.DataFrame], model_name: str = "test_model"):
     completion_task = {"task_type": "completion", "task_dict": {"input_keys": ["questions"]}}
 
     pipe = LinearPipeline(config)
 
-    pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
+    pipe.set_source(InMemorySourceStage(config, dataframes=source_dfs))
 
     pipe.add_stage(
         DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name)))
 
-    if expected_df is not None:
-        sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
-    else:
-        sink = pipe.add_stage(InMemorySinkStage(config))
+    pipe.add_stage(InMemorySinkStage(config))
 
     pipe.run()
-
-    return sink
-
-
-@pytest.mark.usefixtures("openai", "openai_api_key", "serpapi_api_key")
-@pytest.mark.use_python
-def test_agents_simple_pipe_integration_openai(config: Config, questions: list[str]):
-    sink = _run_pipeline(config, questions=questions, model_name="gpt-3.5-turbo-instruct")
-
-    result_df = concat_dataframes(sink.get_messages())
-    assert len(result_df.columns) == 2
-    assert sorted(result_df.columns) == ["questions", "response"]
-
-    response_txt = result_df.response.iloc[0]
-    response_match = re.match(r".*(\d+\.\d+)\.?$", response_txt)
-    assert response_match is not None
-    assert float(response_match.group(1)) >= 3.7
 
 
 @pytest.mark.usefixtures("openai", "restore_environ")
 @pytest.mark.use_python
+@pytest.mark.benchmark
 @mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                             mock_serpapi_aresults: mock.AsyncMock,
-                            config: Config,
-                            questions: list[str]):
+                            mock_openai_request_time: float,
+                            mock_serpapi_request_time: float,
+                            benchmark: collections.abc.Callable[[collections.abc.Callable], typing.Any],
+                            config: Config):
     os.environ.update({'OPENAI_API_KEY': 'test_api_key', 'SERPAPI_API_KEY': 'test_api_key'})
 
     from langchain.schema import Generation
@@ -142,7 +114,7 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
 
     model_name = "test_model"
 
-    mock_openai_agenerate.side_effect = [
+    mock_responses = [
         LLMResult(generations=[[
             Generation(text="I should use a search engine to find information about unittests.\n"
                        "Action: Search\nAction Input: \"unittests\"",
@@ -164,27 +136,39 @@ def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
                   })
     ]
 
-    mock_serpapi_aresults.return_value = {
-        'answer_box': {
-            'answer': '25 years', 'link': 'http://unit.test', 'people_also_search_for': []
-        },
-        'inline_people_also_search_for': [],
-        'knowledge_graph': {},
-        'organic_results': [],
-        'pagination': {},
-        'related_questions': [],
-        'related_searches': [],
-        'search_information': {},
-        'search_metadata': {},
-        'search_parameters': {},
-        'serpapi_pagination': None
-    }
+    async def _mock_openai_agenerate(self, *args, **kwargs):  # pylint: disable=unused-argument
+        nonlocal mock_responses
+        call_count = getattr(self, '_unittest_call_count', 0)
+        response = mock_responses[call_count % 2]
 
-    expected_df = cudf.DataFrame({'questions': questions, 'response': ["3.99."]})
+        # The OpenAI object will raise a ValueError if we attempt to set the attribute directly or use setattr
+        self.__dict__['_unittest_call_count'] = call_count + 1
+        await asyncio.sleep(mock_openai_request_time)
+        return response
 
-    sink = _run_pipeline(config, questions=questions, model_name=model_name, expected_df=expected_df)
+    mock_openai_agenerate.side_effect = _mock_openai_agenerate
 
-    assert len(mock_openai_agenerate.mock_calls) == 2
-    mock_serpapi_aresults.assert_awaited_once()
+    async def _mock_serpapi_aresults(*args, **kwargs):  # pylint: disable=unused-argument
+        await asyncio.sleep(mock_serpapi_request_time)
+        return {
+            'answer_box': {
+                'answer': '25 years', 'link': 'http://unit.test', 'people_also_search_for': []
+            },
+            'inline_people_also_search_for': [],
+            'knowledge_graph': {},
+            'organic_results': [],
+            'pagination': {},
+            'related_questions': [],
+            'related_searches': [],
+            'search_information': {},
+            'search_metadata': {},
+            'search_parameters': {},
+            'serpapi_pagination': None
+        }
 
-    assert_results(sink.get_results())
+    mock_serpapi_aresults.side_effect = _mock_serpapi_aresults
+
+    source_df = cudf.DataFrame(
+        {"questions": ["Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"]})
+
+    benchmark(_run_pipeline, config, source_dfs=[source_df], model_name=model_name)
