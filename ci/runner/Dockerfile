@@ -66,8 +66,6 @@ RUN apt update && \
 COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
 COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
-WORKDIR /workspace
-
 # Install camouflage needed for unittests to mock a triton server
 RUN source activate ${PROJ_NAME} && \
     npm install camouflage-server@0.15 && \
