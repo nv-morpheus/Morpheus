@@ -13,7 +13,7 @@ channels:
 dependencies:
 - appdirs
 - arxiv=1.4
-- benchmark=1.6.1
+- benchmark=1.6.0
 - boost-cpp=1.82
 - boto3
 - breathe=4.34.0
@@ -94,7 +94,7 @@ dependencies:
 - sphinx_rtd_theme
 - sqlalchemy<2.0
 - tqdm=4
-- transformers
+- transformers=4.30.2
 - tritonclient=2.26
 - typing_utils=0.1
 - ucx=1.14
