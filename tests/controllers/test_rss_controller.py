@@ -21,6 +21,7 @@ from unittest.mock import patch
 import feedparser
 import pandas as pd
 import pytest
+import requests
 
 from _utils import TEST_DIRS
 from morpheus.controllers.rss_controller import FeedStats
@@ -147,21 +148,16 @@ def test_batch_size(feed_input: list[str], batch_size: int):
 def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 
-    if is_url:
-        if enable_cache:
-            with patch("morpheus.controllers.rss_controller.requests_cache.CachedSession.get") as mock_get:
-                mock_get.return_value = mock_get_response
-                feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-        else:
-            with patch("morpheus.controllers.rss_controller.requests.get") as mock_get:
-                mock_get.return_value = mock_get_response
-                feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-
+    if is_url and not enable_cache:
+        with patch.object(requests.Session, 'get') as mock_get:
+            mock_get.return_value = mock_get_response
+            feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
     else:
-        feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
+        # When enable_cache is set to 'True', the feed content is provided as input.
+        feed_data = controller._try_parse_feed_with_beautiful_soup(
+            mock_get_response.text if enable_cache else feed_input, is_url)
 
     assert isinstance(feed_data, feedparser.FeedParserDict)
-
     assert len(feed_data.entries) > 0
 
     for entry in feed_data.entries:
@@ -178,16 +174,6 @@ def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enabl
     assert isinstance(feed_data, dict)
     assert "entries" in feed_data
     assert isinstance(feed_data["entries"], list)
-
-
-@pytest.mark.parametrize("enable_cache", [True, False])
-def test_enable_disable_cache(enable_cache):
-    controller = RSSController(feed_input=test_urls, enable_cache=enable_cache)
-
-    if enable_cache:
-        assert controller.session_exist
-    else:
-        assert not controller.session_exist
 
 
 def test_parse_feeds(mock_feed: feedparser.FeedParserDict):

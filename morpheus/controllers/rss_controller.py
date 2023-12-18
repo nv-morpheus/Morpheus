@@ -102,11 +102,18 @@ class RSSController:
             run_indefinitely = any(RSSController.is_url(f) for f in self._feed_input)
 
         self._run_indefinitely = run_indefinitely
+        self._enable_cache = enable_cache
 
-        self._session = None
         if enable_cache:
             self._session = requests_cache.CachedSession(os.path.join(cache_dir, "RSSController.sqlite"),
                                                          backend="sqlite")
+        else:
+            self._session = requests.session()
+
+        self._session.headers.update({
+            "User-Agent":
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+        })
 
         self._feed_stats_dict = {
             input:
@@ -118,11 +125,6 @@ class RSSController:
     def run_indefinitely(self):
         """Property that determines to run the source indefinitely"""
         return self._run_indefinitely
-
-    @property
-    def session_exist(self) -> bool:
-        """Property that indicates the existence of a session."""
-        return bool(self._session)
 
     def get_feed_stats(self, feed_url: str) -> FeedStats:
         """
@@ -148,22 +150,27 @@ class RSSController:
 
         return self._feed_stats_dict[feed_url]
 
-    def _get_response_text(self, url: str) -> str:
-        if self.session_exist:
-            response = self._session.get(url)
-        else:
-            response = requests.get(url, timeout=self._request_timeout)
-
-        return response.text
-
     def _read_file_content(self, file_path: str) -> str:
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
 
+    def _fetch_feed_content(self, feed_input: str, is_url: bool) -> str:
+        # If input is an URL.
+        if is_url:
+            if not self._enable_cache:
+                # If cache is not enabled, fetch feed directly using requests.Session.
+                response = self._session.get(feed_input, timeout=self._request_timeout)
+                return response.text
+
+            # If we are here, feed_input is an actual feed content retrieved from the cache.
+            return feed_input
+
+        # If original input is not an URL, then read the content from the file path.
+        return self._read_file_content(feed_input)
+
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
 
-        feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
-
+        feed_input = self._fetch_feed_content(feed_input, is_url)
         soup = BeautifulSoup(feed_input, 'xml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
@@ -205,10 +212,10 @@ class RSSController:
 
         fallback = False
         cache_hit = False
-        is_url_with_session = is_url and self.session_exist
+        use_cache = is_url and self._enable_cache
 
-        if is_url_with_session:
-            response = self._session.get(url)
+        if use_cache:
+            response = self._session.get(url, timeout=self._request_timeout)
             cache_hit = response.from_cache
             feed_input = response.text
         else:
@@ -219,15 +226,15 @@ class RSSController:
         if feed["bozo"]:
             cache_hit = False
 
-            if is_url_with_session:
+            if use_cache:
                 fallback = True
-                logger.info("Failed to parse feed: %s. Trying to parse using feedparser directly.", url)
+                logger.info("Parsing the cached feed for URL '%s' failed. Attempting direct parsing with feedparser.",
+                            url)
                 feed = feedparser.parse(url)
 
             if feed["bozo"]:
                 try:
-                    logger.info("Failed to parse feed: %s, %s. Try parsing feed manually", url, feed['bozo_exception'])
-                    feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
+                    feed = self._parse_feed_with_beautiful_soup(feed_input, is_url)
                 except Exception:
                     logger.error("Failed to parse the feed manually: %s", url)
                     raise
