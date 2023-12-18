@@ -168,7 +168,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - benchmark=1.6.1
+          - benchmark=1.6.0
 
   examples:
     common:
@@ -191,7 +191,7 @@ dependencies:
           - pypdf=3.16
           - s3fs>=2023.6
           - sentence-transformers
-          - transformers
+          - transformers=4.30.2 # newer versions are incompatible with our pinned version of huggingface_hub
           ####### Pip Transitive Dependencies (keep sorted!) #######
           # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
           # better to install them with conda than pip to allow for better dependency resolution.
