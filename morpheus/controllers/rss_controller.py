@@ -234,7 +234,7 @@ class RSSController:
 
             if feed["bozo"]:
                 try:
-                    feed = self._parse_feed_with_beautiful_soup(feed_input, is_url)
+                    feed = self._try_parse_feed_with_beautiful_soup(feed_input, is_url)
                 except Exception:
                     logger.error("Failed to parse the feed manually: %s", url)
                     raise
