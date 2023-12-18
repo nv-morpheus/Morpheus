@@ -610,20 +610,13 @@ def _start_camouflage(
             console_log = os.path.join(root_dir, 'console.log')
             camouflage_log = os.path.join(root_dir, 'camouflage.log')
             console_log_fh = open(console_log, 'w', encoding='utf-8')
-            popen = subprocess.Popen(
-                [
-                    "npx",
-                    f"--package={CAMOUFLAGE_PKG}@{CAMOUFLAGE_VERSION}",
-                    "--",
-                    "camouflage",
-                    "--config",
-                    "config.yml"
-                ],
-                cwd=root_dir,
-                stderr=subprocess.STDOUT,
-                stdout=console_log_fh,
-                start_new_session=True,  # ensure the process starts in its own process group
-                preexec_fn=_set_pdeathsig(signal.SIGTERM))
+            popen = subprocess.Popen([
+                "npx", f"--package={CAMOUFLAGE_PKG}@{CAMOUFLAGE_VERSION}", "--", "camouflage", "--config", "config.yml"
+            ],
+                                     cwd=root_dir,
+                                     stderr=subprocess.STDOUT,
+                                     stdout=console_log_fh,
+                                     preexec_fn=_set_pdeathsig(signal.SIGTERM))
             # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
@@ -674,6 +667,7 @@ def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5, console
     # It takes a little while to shutdown
     while not stopped and elapsed_time < shutdown_timeout:
         os.killpg(os.getpgid(popen.pid), signal.SIGKILL)
+        # popen.kill()
         stopped = (popen.poll() is not None)
         if not stopped:
             time.sleep(sleep_time)
