@@ -33,8 +33,8 @@ IMPORT_ERROR_MESSAGE = (
 
 try:
     import openai
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class OpenAIChatClient(LLMClient):

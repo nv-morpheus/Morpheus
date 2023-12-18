@@ -31,8 +31,8 @@ IMPORT_ERROR_MESSAGE = "RSSController requires the bs4 and feedparser packages t
 try:
     import feedparser
     from bs4 import BeautifulSoup
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 @dataclass

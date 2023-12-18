@@ -26,8 +26,8 @@ try:
     from elasticsearch import ConnectionError as ESConnectionError
     from elasticsearch import Elasticsearch
     from elasticsearch.helpers import parallel_bulk
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class ElasticsearchController:

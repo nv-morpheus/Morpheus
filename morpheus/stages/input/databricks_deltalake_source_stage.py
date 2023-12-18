@@ -34,8 +34,8 @@ try:
     from databricks.connect import DatabricksSession
     from pyspark.sql import functions as sf
     from pyspark.sql.window import Window
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 @register_stage("from-databricks-deltalake")

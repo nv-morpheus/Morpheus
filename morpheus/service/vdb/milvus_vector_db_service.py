@@ -37,8 +37,8 @@ try:
     from pymilvus.orm.mutation import MutationResult
 
     from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class FieldSchemaEncoder(json.JSONEncoder):

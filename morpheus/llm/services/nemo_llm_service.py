@@ -32,8 +32,8 @@ IMPORT_ERROR_MESSAGE = (
 
 try:
     import nemollm
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class NeMoLLMClient(LLMClient):

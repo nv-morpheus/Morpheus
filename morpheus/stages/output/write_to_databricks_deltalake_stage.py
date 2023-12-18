@@ -35,8 +35,8 @@ IMPORT_ERROR_MESSAGE = "DataBricksDeltaLakeSinkStage requires the databricks-con
 try:
     from databricks.connect import DatabricksSession
     from pyspark.sql import types as sql_types
-except ImportError as exc:
-    IMPORT_EXCEPTION = exc
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 @register_stage("to-databricks-deltalake")
