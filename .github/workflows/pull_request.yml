@@ -59,6 +59,8 @@ jobs:
     name: CI Pipeline
     needs: [prepare]
     uses: ./.github/workflows/ci_pipe.yml
+
+    # Only run the CI pipeline if the PR does not have the skip-ci label
     if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
