@@ -62,8 +62,8 @@ jobs:
     needs: [prepare]
     uses: ./.github/workflows/ci_pipe.yml
     with:
-      pr_outcome: ${{ needs.prepare.outputs.pr_outcome }}
-      has_skip_ci_label: ${{ needs.prepare.outputs.has_skip_ci_label }}
+      pr_outcome: ${{ fromJSON(needs.prepare.outputs.pr_outcome) }}
+      has_skip_ci_label: ${{ fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230913
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230913
