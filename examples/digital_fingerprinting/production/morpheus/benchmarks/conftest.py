@@ -15,14 +15,9 @@
 
 import glob
 import json
-import warnings
 from os import path
 
-with warnings.catch_warnings():
-    # Ignore deprecation warnings from GPUtil
-    # https://github.com/nv-morpheus/Morpheus/issues/1446
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    import GPUtil
+import GPUtil
 
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 

@@ -17,15 +17,9 @@ import asyncio
 import glob
 import os
 import typing
-import warnings
 from unittest import mock
 
-with warnings.catch_warnings():
-    # Ignore deprecation warnings from GPUtil
-    # https://github.com/nv-morpheus/Morpheus/issues/1446
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    import GPUtil
-
+import GPUtil
 import pytest
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
