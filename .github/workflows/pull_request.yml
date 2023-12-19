@@ -53,6 +53,8 @@ jobs:
         uses: rapidsai/shared-action-workflows/get-pr-info@branch-23.08
         if: ${{ startsWith(github.ref_name, 'pull-request/') }}
     outputs:
+      pr_output: ${{ steps.get-pr-info.outcome == 'success' }}
+      pr_info: ${{ steps.get-pr-info.outputs.pr-info }}
       has_skip_ci_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'skip-ci') || false }}
 
   ci_pipe:
