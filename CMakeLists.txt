@@ -172,16 +172,11 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
   morpheus_utils_print_all_targets()
 
   morpheus_utils_print_target_properties(
-    <<<<<<< HEAD
     TARGETS
       morpheus._lib.cudf_helpers
+      morpheus morpheus._lib.llm
       morpheus
     WRITE_TO_FILE
-    =======
-      TARGETS
-    morpheus morpheus._lib.llm
-      WRITE_TO_FILE
-    >>>>>>> 9f951a841fe13ad6088505ca4e83360137b367a4
   )
 
   morpheus_utils_print_global_properties(
