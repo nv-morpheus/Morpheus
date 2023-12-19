@@ -43,6 +43,8 @@ permissions:
 
 jobs:
   prepare:
+    # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
+    # PR does not have the label
     name: Prepare
     runs-on: ubuntu-latest
     container:
