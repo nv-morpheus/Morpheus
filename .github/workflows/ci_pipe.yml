@@ -27,13 +27,6 @@ on:
       test_container:
         required: true
         type: string
-      pr_outcome:
-        required: true
-        type: boolean
-      has_skip_ci_label:
-        required: true
-        type: boolean
-
     secrets:
       NGC_API_KEY:
         required: true
@@ -47,8 +40,6 @@ env:
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
-  PR_OUTCOME: "${{ github.event.inputs.pr_outcome }}"
-  HAS_SKIP_CI_LABEL: "${{ github.event.inputs.has_skip_ci_label }}"
 
 permissions:
   actions: none
