@@ -35,6 +35,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
     return mock_parse_fn
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
 @pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])
