@@ -135,8 +135,10 @@ def test_custom_params(config,
                        expected_count,
                        expected_exception):
 
+    expected_warning = False
     if timestamp_column_name:
         filter_probs_df["timestamp"] = TIMESTAMPS
+        expected_warning = timestamp_pattern is None
 
     pipe = Pipeline(config)
 
@@ -182,6 +184,10 @@ def test_custom_params(config,
     if expected_exception:
         with pytest.raises(type(expected_exception), match=str(expected_exception)):
             pipe.run()
+    elif expected_warning:
+        with pytest.warns(UserWarning):
+            pipe.run()
+            assert len(sink_stage.get_messages()) == expected_count
     else:
         pipe.run()
         assert len(sink_stage.get_messages()) == expected_count
