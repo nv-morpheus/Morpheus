@@ -61,7 +61,7 @@ jobs:
     name: CI Pipeline
     needs: [prepare]
     uses: ./.github/workflows/ci_pipe.yml
-    if: ${{ !needs.prepare.outputs.has_skip_ci_label }}
+    if: ${{ ! needs.prepare.outputs.has_skip_ci_label }}
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230913
