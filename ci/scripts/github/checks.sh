@@ -16,6 +16,10 @@
 
 set -e
 
+rapids-logger "PR_OUTCOME=${PR_OUTCOME}"
+rapids-logger "HAS_SKIP_CI_LABEL=${HAS_SKIP_CI_LABEL}"
+exit 1
+
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
