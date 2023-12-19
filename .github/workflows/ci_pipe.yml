@@ -27,9 +27,6 @@ on:
       test_container:
         required: true
         type: string
-      pr_info:
-        required: true
-        type: string
       pr_outcome:
         required: true
         type: boolean
