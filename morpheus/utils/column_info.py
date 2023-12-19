@@ -17,10 +17,15 @@ import json
 import logging
 import re
 import typing
+import warnings
 from datetime import datetime
 from functools import partial
 
-import nvtabular as nvt
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.simplefilter("ignore")
+    import nvtabular as nvt
+
 import pandas as pd
 
 import cudf

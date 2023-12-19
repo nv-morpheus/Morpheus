@@ -15,8 +15,8 @@
 import logging
 import os
 import typing
+import warnings
 
-import nvtabular as nvt
 import pandas as pd
 
 import cudf
@@ -27,17 +27,22 @@ from morpheus.utils.nvt import patches
 from morpheus.utils.nvt.extensions import morpheus_ext
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
-if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
-    # Apply patches to NVT
-    # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
-    # ========================================================================
-    patches.patch_numpy_dtype_registry()
-    # ========================================================================
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.simplefilter("ignore")
+    import nvtabular as nvt
 
-    # Add morpheus conversion mappings
-    # ========================================================================
-    morpheus_ext.register_morpheus_extensions()
-    # =========================================================================
+    if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
+        # Apply patches to NVT
+        # TODO(Devin): Can be removed, once numpy mappings are updated in Merlin
+        # ========================================================================
+        patches.patch_numpy_dtype_registry()
+        # ========================================================================
+
+        # Add morpheus conversion mappings
+        # ========================================================================
+        morpheus_ext.register_morpheus_extensions()
+        # =========================================================================
 
 logger = logging.getLogger(__name__)
 
