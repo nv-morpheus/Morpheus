@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "../test_morpheus.hpp"  // IWYU pragma: associated
+#include "../test_utils/common.hpp"  // IWYU pragma: associated
 
 namespace morpheus::test {
 

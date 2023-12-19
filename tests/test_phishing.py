@@ -20,6 +20,9 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
+from _utils import calc_error_val
+from _utils import mk_async_infer
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -31,8 +34,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from utils import TEST_DIRS
-from utils import calc_error_val
+from morpheus.utils.file_utils import load_labels_file
 
 # End-to-end test intended to imitate the Phishing validation test
 FEATURE_LENGTH = 128
@@ -65,16 +67,12 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
     data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_phishing_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
-    mock_infer_result = mock.MagicMock()
-    mock_infer_result.as_numpy.side_effect = inf_results
-
-    def async_infer(callback=None, **k):
-        callback(mock_infer_result, None)
+    async_infer = mk_async_infer(inf_results)
 
     mock_triton_client.async_infer.side_effect = async_infer
 
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -99,7 +97,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))
@@ -115,7 +113,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_email_cpp(config, tmp_path):
     config.mode = PipelineModes.NLP
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
     config.pipeline_batch_size = 1024
     config.feature_length = FEATURE_LENGTH
@@ -142,7 +140,7 @@ def test_email_cpp(config, tmp_path):
                              server_url='localhost:8001',
                              force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
-    pipe.add_stage(AddClassificationsStage(config, labels=["pred"], threshold=0.7))
+    pipe.add_stage(AddClassificationsStage(config, labels=["is_phishing"], threshold=0.7))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))

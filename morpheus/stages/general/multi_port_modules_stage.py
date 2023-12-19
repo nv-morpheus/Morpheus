@@ -20,7 +20,7 @@ import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.stage import Stage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class MultiPortModulesStage(Stage):
 
     def __init__(self,
                  c: Config,
-                 module_conf: typing.Dict[str, any],
+                 module_conf: typing.Dict[str, typing.Any],
                  input_ports: typing.List[str],
                  output_ports: typing.List[str],
                  input_type=typing.Any,
@@ -99,6 +99,10 @@ class MultiPortModulesStage(Stage):
         """
         return (typing.Any, )
 
+    def compute_schema(self, schema: StageSchema):
+        for port_schema in schema.output_schemas:
+            port_schema.set_type(self._ouput_type)
+
     def _validate_ports(self, module) -> None:
 
         input_ids = module.input_ids()
@@ -112,7 +116,7 @@ class MultiPortModulesStage(Stage):
             raise ValueError(f"Provided output ports do not match module output ports. Module: {output_ids}, "
                              f"Provided: {self._out_ports}.")
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
         # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
@@ -121,15 +125,15 @@ class MultiPortModulesStage(Stage):
 
         # Make an edges with input ports
         for index in range(self._num_in_ports):
-            in_stream_node = in_ports_streams[index][0]
+            in_stream_node = input_nodes[index]
             in_port = self._in_ports[index]
             mod_in_stream = module.input_port(in_port)
             builder.make_edge(in_stream_node, mod_in_stream)
 
-        out_stream_pairs = []
+        out_nodes = []
 
         for index in range(self._num_out_ports):
             out_port = self._out_ports[index]
-            out_stream_pairs.append((module.output_port(out_port), self._ouput_type))
+            out_nodes.append(module.output_port(out_port))
 
-        return out_stream_pairs
+        return out_nodes

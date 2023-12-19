@@ -25,13 +25,13 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.type_aliases import DataFrameType
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..utils.logging_timer import log_time
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPSplitUsersStage(SinglePortStage):
@@ -85,6 +85,9 @@ class DFPSplitUsersStage(SinglePortStage):
         """Input types accepted by this stage."""
         return (cudf.DataFrame, pd.DataFrame)
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(DFPMessageMeta)
+
     def extract_users(self, message: DataFrameType) -> typing.List[DFPMessageMeta]:
         """
         Extract users from a message, splitting the incoming data into unique messages on a per-user basis, and
@@ -114,6 +117,7 @@ class DFPSplitUsersStage(SinglePortStage):
 
             if (self._include_individual):
 
+                # pylint: disable=unnecessary-comprehension
                 split_dataframes.update({
                     username: user_df
                     for username,
@@ -160,8 +164,8 @@ class DFPSplitUsersStage(SinglePortStage):
 
             return output_messages
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self.extract_users), ops.flatten())
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.extract_users), ops.flatten())
+        builder.make_edge(input_node, node)
 
-        return stream, DFPMessageMeta
+        return node

@@ -20,7 +20,7 @@ from merlin.schema import ColumnSchema
 from merlin.schema import Schema
 from nvtabular.ops.operator import ColumnSelector
 
-from morpheus.utils.nvt import MutateOp
+from morpheus.utils.nvt.mutate import MutateOp
 
 
 @pytest.fixture(name="df")

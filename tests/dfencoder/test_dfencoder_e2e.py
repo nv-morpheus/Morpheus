@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from utils import TEST_DIRS
 
 INFERENCE_START_DATE = "2022-11-01"
 VALIDATION_SET_SIZE = 3000  # around 1/10 of the train set
@@ -96,9 +96,9 @@ def test_dfencoder_e2e():
         encoder_layers=[512, 500],  # layers of the encoding part
         decoder_layers=[512],  # layers of the decoding part
         activation="relu",  # activation function
-        swap_p=0.2,  # noise parameter
-        lr=0.01,  # learning rate
-        lr_decay=0.99,  # learning decay
+        swap_probability=0.2,  # noise parameter
+        learning_rate=0.01,  # learning rate
+        learning_rate_decay=0.99,  # learning decay
         batch_size=1024,
         logger="basic",
         verbose=False,
@@ -112,7 +112,7 @@ def test_dfencoder_e2e():
     model.fit(
         train_df,
         epochs=10,
-        val_data=validation_df,
+        validation_data=validation_df,
         run_validation=True,
         use_val_for_loss_stats=True,
     )
@@ -120,9 +120,9 @@ def test_dfencoder_e2e():
     # Make sure model converges (low loss)
     for loss_type in LOSS_TYPES:
         ft_losses = getattr(model.logger, f"{loss_type}_fts")
-        for ft, losses_l in ft_losses.items():
+        for feature, losses_l in ft_losses.items():
             losses = losses_l[1]
-            assert min(losses) < LOSS_TARGETS[loss_type][ft] * LOSS_TOLERANCE_RATIO
+            assert min(losses) < LOSS_TARGETS[loss_type][feature] * LOSS_TOLERANCE_RATIO
 
     # Inference
     inf_res = model.get_results(inference_df)
@@ -130,10 +130,11 @@ def test_dfencoder_e2e():
     # Assert the consistency of output rows and columns
     assert len(inf_res) == len(inference_df)
     assert sorted(inf_res.columns) == sorted(
-        [ft + col_suffix for ft in FEATURE_COLUMNS
+        [feature + col_suffix for feature in FEATURE_COLUMNS
          for col_suffix in ["", "_pred", "_loss", "_z_loss"]] + ["max_abs_z", "mean_abs_z", "z_loss_scaler_type"])
     # make sure the user baseline is modeled well enough so the minimum and median z scores
     # from inference are in range
     assert min(inf_res.mean_abs_z) < 1
-    assert (np.median(inf_res.mean_abs_z) < 100
-            )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+
+    # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+    assert (np.median(inf_res.mean_abs_z) < 100)

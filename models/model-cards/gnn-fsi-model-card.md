@@ -18,7 +18,7 @@ limitations under the License.
 # Model Overview
 
 ### Description:
-* This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks. <br>
+* This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks.  This model is for demonstration purposes and not for production usage. <br>
 
 ## References(s):
 1. https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
@@ -81,9 +81,6 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * A training data consists of raw 753 synthetic labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. <br>
 
-**Dataset License:**  
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
-
 ## Evaluation Dataset:
 **Link:**  
 * [fraud-detection-validation-data.csv](models/dataset/fraud-detection-validation-data.csv)  <br>
@@ -91,49 +88,36 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
 * Data consists of raw 265 labeled credit card transaction synthetically created<br>
 
-**Dataset License:**
-*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
-
 ## Inference:
 **Engine:** 
 * Triton <br>
 
 **Test Hardware:** <br>
-* Other   <br>
+* DGX (V100) <br>
+
+## Ethical Considerations:
+NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their supporting model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse.  For more detailed information on ethical considerations for this model, please see the Model Card++ Explainability, Bias, Safety & Security, and Privacy Subcards below.  Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
 
 # Subcards
 ## Model Card ++ Bias Subcard
 
-### What is the gender balance of the model validation data?  
+### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 * Not Applicable
 
-### What is the racial/ethnicity balance of the model validation data?
-* Not Applicable
-
-### What is the age balance of the model validation data?
-* Not Applicable
-
-### What is the language balance of the model validation data?
-* Not Applicable
-
-### What is the geographic origin language balance of the model validation data?
-* Not Applicable
-
-### What is the educational background balance of the model validation data?
-* Not Applicable
-
-### What is the accent balance of the model validation data?
-* Not Applicable
 ### Describe measures taken to mitigate against unwanted bias.
 * Not Applicable
+
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
 * The model is primarily designed for testing purposes and serves as a small pretrained model specifically used to evaluate and validate the GNN FSI pipeline. Its application is focused on assessing the effectiveness of the pipeline rather than being intended for broader use cases or specific applications beyond testing.
+
 ### Fill in the blank for the model technique.
 * This model is designed for developers seeking to test the GNN fraud detection pipeline with a small pretrained model on a synthetic dataset.
+
 ### Name who is intended to benefit from this model. 
 * The intended beneficiaries of this model are developers who aim to test the performance and functionality of the GNN fraud detection pipeline using synthetic datasets. It may not be suitable or provide significant value for real-world transactions. 
+
 ### Describe the model output.
 * This model outputs fraud probability score b/n (0 & 1). 
 
@@ -146,16 +130,18 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### List the technical limitations of the model.
 * This model version requires a transactional data schema with entities (user, merchant, transaction) as requirement for the model.
 
+### Has this been verified to have met prescribed NVIDIA standards?
+
+* Yes
+
 ### What performance metrics were used to affirm the model's performance?
 * Area under ROC curve and Accuracy
 
 ### What are the potential known risks to users and stakeholders? 
 * None
 
-### What training is recommended for developers working with this model?  If none, please state "none."
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
@@ -165,22 +151,21 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 ### Is the model used in an application with physical safety impact?
 * No
 
-### Describe physical safety impact (if present).
+### Describe life-critical impact (if present).
 * Not Applicable
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
+
 ### Name applications for the model.
 * Used for testing fraud detection application in Morpheus pipeline, under the defined dataset schema description.
+
 ### Name use case restrictions for the model.
 * The model's use case is restricted to testing the Morpheus pipeline and may not be suitable for other applications.
-### Has this been verified to have met prescribed quality standards?
-* No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * Not Applicable
-### Technical robustness and model security validated?
-* Not Applicable
+
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
 
@@ -189,38 +174,38 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 
 ### Are there access restrictions to systems, model, and data?
 * No
+
 ### Is there a digital signature?
 * No
 
 ## Model Card ++ Privacy Subcard
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
+* None
 
-* Neither
+### Protected classes used to create this model? (The following were used in model the model's training:)
+* Not applicable
 
 ### Was consent obtained for any PII used?
 * Not Applicable (Data is extracted from synthetically created credit card transaction,refer[3] for the source of data creation)
-
-### Protected classes used to create this model? (The following were used in model the model's training:)
-
-* Not applicable
 
 ### How often is dataset reviewed?
 * The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data
 * Yes
+
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
 * Not applicable
 
 ### Is data in dataset traceable?
 * No
-### Scanned for malware?
-* No
+
 ### Are we able to identify and trace source of dataset?
 * Yes
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * Not applicable
+
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
 * Not applicable

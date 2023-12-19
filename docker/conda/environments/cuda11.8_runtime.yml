@@ -19,10 +19,7 @@ channels:
     - nvidia
     - rapidsai-nightly
     - conda-forge
+    - defaults
 dependencies:
     - nb_conda_kernels
     - pip
-    ####### Morpheus Pip Dependencies (keep sorted!) #######
-    - pip:
-        # Ensure all runtime requirements are installed using the requirements file
-        - --requirement requirements.txt

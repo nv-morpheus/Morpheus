@@ -15,46 +15,17 @@
 # limitations under the License.
 
 import logging
-import typing
 
-import mrc
 import pandas as pd
 import pytest
 
+from _utils.stages.error_raiser import ErrorRaiserStage
+from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils.stages.error_raiser import ErrorRaiserStage
-
-
-class InMemSourceXStage(SingleOutputSource):
-    """
-    InMemorySourceStage subclass that emits whatever you give it and doesn't assume the source data
-    is a dataframe.
-    """
-
-    def __init__(self, c: Config, data: typing.List[typing.Any]):
-        super().__init__(c)
-        self._data = data
-
-    @property
-    def name(self) -> str:
-        return "from-data"
-
-    def supports_cpp_node(self) -> bool:
-        return False
-
-    def _emit_data(self) -> typing.Iterator[typing.Any]:
-        for x in self._data:
-            yield x
-
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
-        node = builder.make_source(self.unique_name, self._emit_data())
-        return node, type(self._data[0])
 
 
 @pytest.mark.parametrize("exception_cls", [RuntimeError, ValueError, NotImplementedError])

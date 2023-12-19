@@ -41,8 +41,9 @@ function(find_and_configure_SimpleAmqpClient version)
   # Needed to pick up the generated export.h
   target_include_directories(SimpleAmqpClient PUBLIC "${rabbitmq_BINARY_DIR}/include")
 
-  # Suppress #warning deprecation messages from rabbitmq
-  target_compile_options(SimpleAmqpClient PRIVATE -Wno-cpp)
+  # Suppress #warning deprecation messages from rabbitmq and SimpleAmqpClient
+  # https://github.com/nv-morpheus/Morpheus/issues/1255
+  target_compile_options(SimpleAmqpClient PRIVATE -Wno-cpp -DBOOST_DISABLE_PRAGMA_MESSAGE)
 
 endfunction()
 

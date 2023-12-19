@@ -17,6 +17,8 @@
 
 import argparse
 import datetime
+import functools
+import json
 import logging
 import os
 import re
@@ -24,93 +26,387 @@ import subprocess
 import typing
 
 
-def isFileEmpty(f):
-    return os.stat(f).st_size == 0
+def _run_cmd(exe: str, *args: str):
+    """Runs a command with args and returns its output"""
+
+    cmd_list = (exe, ) + args
+
+    # Join the args to make the command string (for logging only)
+    cmd_str = " ".join(cmd_list)
+
+    # If we only passed in one executable (could be piping commands together) then use a shell
+    shell = len(args) <= 0
+
+    if (shell):
+        # For logging purposes, if we only passed in one executable, then clear the exe name to make logging better
+        exe = ""
+
+    try:
+        ret = subprocess.check_output(cmd_list, stderr=subprocess.PIPE, shell=shell)
+        output = ret.decode("UTF-8").rstrip("\n")
+
+        logging.debug("Running %s command: `%s`, Output: '%s'", exe, cmd_str, output)
+
+        return output
+    except subprocess.CalledProcessError as e:
+        logging.warning("Running %s command [ERRORED]: `%s`, Output: '%s'",
+                        exe,
+                        cmd_str,
+                        e.stderr.decode("UTF-8").rstrip("\n"))
+        raise
 
 
-def __git(*opts):
+def _gh(*args):
+    """Runs a Github CLI command and returns its output"""
+
+    return _run_cmd("gh", *args)
+
+
+def _git(*args):
     """Runs a git command and returns its output"""
-    cmd = "git " + " ".join(list(opts))
-    ret = subprocess.check_output(cmd, shell=True)
-    return ret.decode("UTF-8").rstrip("\n")
+    return _run_cmd("git", *args)
 
 
-def __gitdiff(*opts):
-    """Runs a git diff command with no pager set"""
-    return __git("--no-pager", "diff", *opts)
+class GitWrapper:
+
+    @functools.lru_cache
+    @staticmethod
+    def get_closest_tag():
+        """
+        Determines the version of the repo by using `git describe`
+
+        Returns
+        -------
+        str
+            The full version of the repo in the format 'v#.#.#{a|b|rc}'
+        """
+        return _git("describe", "--tags", "--abbrev=0")
+
+    @functools.lru_cache
+    @staticmethod
+    def get_repo_version():
+        """
+        Determines the version of the repo using `git describe` and returns only
+        the major and minor portion
+
+        Returns
+        -------
+        str
+            The partial version of the repo in the format '{major}.{minor}'
+        """
+
+        full_repo_version = GitWrapper.get_closest_tag()
+
+        match = re.match(r"^v?(?P<major>[0-9]+)(?:\.(?P<minor>[0-9]+))?", full_repo_version)
+
+        if (match is None):
+            logging.debug("Could not determine repo major minor version. Full repo version: %s.", full_repo_version)
+            return None
+
+        out_version = match.group("major")
+
+        if (match.group("minor")):
+            out_version += "." + match.group("minor")
+
+        return out_version
+
+    @functools.lru_cache
+    @staticmethod
+    def get_repo_owner_name():
+
+        # pylint: disable=anomalous-backslash-in-string
+        return "nv-morpheus/" + _run_cmd("git remote -v | grep -oP '/\K\w*(?=\.git \(fetch\))' | head -1")  # noqa: W605
+
+    @functools.lru_cache
+    @staticmethod
+    def get_repo_remote_name(repo_owner_and_name: str):
+
+        return _run_cmd(f"git remote -v | grep :{repo_owner_and_name} | grep \"(fetch)\" | head -1 | cut -f1")
+
+    @functools.lru_cache
+    @staticmethod
+    def is_ref_valid(git_ref: str):
+
+        try:
+            return _git("rev-parse", "--verify", git_ref) != ""
+        except subprocess.CalledProcessError:
+            return False
+
+    @functools.lru_cache
+    @staticmethod
+    def get_remote_branch(local_branch_ref: str, *, repo_owner_and_name: str = None):
+
+        if (repo_owner_and_name is None):
+            repo_owner_and_name = GitWrapper.get_repo_owner_name()
+
+        remote_name = GitWrapper.get_repo_remote_name(repo_owner_and_name)
+
+        remote_branch_ref = f"{remote_name}/{local_branch_ref}"
+
+        if (GitWrapper.is_ref_valid(remote_branch_ref)):
+            return remote_branch_ref
+
+        logging.info("Remote branch '%s' for repo '%s' does not exist. Falling back to rev-parse",
+                     remote_branch_ref,
+                     repo_owner_and_name)
+
+        remote_branch_ref = _git("rev-parse", "--abbrev-ref", "--symbolic-full-name", local_branch_ref + "@{upstream}")
+
+        return remote_branch_ref
+
+    @functools.lru_cache
+    @staticmethod
+    def get_target_remote_branch():
+        try:
+            # Try and guess the target branch as "branch-<major>.<minor>"
+            version = GitWrapper.get_repo_version()
+
+            if (version is None):
+                return None
+
+            base_ref = f"branch-{version}"
+
+            # If our current branch and the base ref are the same, then use main
+            if (base_ref == GitWrapper.get_current_branch()):
+                logging.warning("Current branch is the same as the tagged branch: %s. Falling back to 'main'", base_ref)
+                base_ref = "main"
+
+        except Exception:
+            logging.debug("Could not determine branch version falling back to main")
+            base_ref = "main"
+
+        return GitWrapper.get_remote_branch(base_ref)
+
+    @functools.lru_cache
+    @staticmethod
+    def get_repo_dir():
+        """
+        Returns the top level directory for this git repo
+        """
+        return _git("rev-parse", "--show-toplevel")
+
+    @functools.lru_cache
+    @staticmethod
+    def get_current_branch():
+        """Returns the name of the current branch"""
+        name = _git("rev-parse", "--abbrev-ref", "HEAD")
+        name = name.rstrip()
+        return name
+
+    @staticmethod
+    def add_files(*files_to_add):
+        """Runs git add on file"""
+        return _git("add", *files_to_add)
+
+    @functools.lru_cache
+    @staticmethod
+    def get_file_add_date(file_path):
+        """Return the date a given file was added to git"""
+        date_str = _git("log", "--follow", "--format=%as", "--", file_path, "|", "tail", "-n 1")
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+
+    @staticmethod
+    def get_uncommitted_files():
+        """
+        Returns a list of all changed files that are not yet committed. This
+        means both untracked/unstaged as well as uncommitted files too.
+        """
+        files = _git("status", "-u", "-s")
+        ret = []
+        for f in files.splitlines():
+            f = f.strip(" ")
+            f = re.sub(r"\s+", " ", f)  # noqa: W605
+            tmp = f.split(" ", 1)
+            # only consider staged files or uncommitted files
+            # in other words, ignore untracked files
+            if tmp[0] == "M" or tmp[0] == "A":
+                ret.append(tmp[1])
+        return ret
+
+    @staticmethod
+    def diff(target_ref: str, base_ref: str, merge_base: bool = False, staged: bool = False):
+
+        assert base_ref is not None or base_ref != "", "base_ref must be a valid ref"
+        assert target_ref is not None or target_ref != "", "target_ref must be a valid ref"
+
+        args = ["--no-pager", "diff", "--name-only", "--ignore-submodules"]
+
+        if (merge_base):
+            args.append("--merge-base")
+
+        if (staged):
+            args.append("--cached")
+
+        args += [target_ref, base_ref]
+
+        return _git(*args).splitlines()
+
+    @staticmethod
+    def diff_index(target_ref: str, merge_base: bool = False, staged: bool = False):
+
+        assert target_ref is not None or target_ref != "", "target_ref must be a valid ref"
+
+        args = ["--no-pager", "diff-index", "--name-only", "--ignore-submodules"]
+
+        if (merge_base):
+            args.append("--merge-base")
+
+        if (staged):
+            args.append("--cached")
+
+        args += [target_ref]
+
+        return _git(*args).splitlines()
+
+    @staticmethod
+    def merge_base(target_ref: str, base_ref: str = "HEAD"):
+
+        assert base_ref is not None or base_ref != "", "base_ref must be a valid ref"
+        assert target_ref is not None or target_ref != "", "target_ref must be a valid ref"
+
+        return _git("merge-base", target_ref, base_ref)
 
 
-def top_level_dir():
+class GithubWrapper:
+
+    @functools.lru_cache
+    @staticmethod
+    def has_cli():
+        try:
+            _gh("--version")
+
+            # Run a test function
+            repo_name = _gh("repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
+
+            logging.debug("Github CLI is installed. Using repo: %s", repo_name)
+            return True
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            logging.debug("Github CLI is not installed")
+            return False
+
+    @functools.lru_cache
+    @staticmethod
+    def get_repo_owner_name():
+
+        # Make sure we have the CLI
+        if (not GithubWrapper.has_cli()):
+            return None
+
+        return _gh("repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
+
+    @functools.lru_cache
+    @staticmethod
+    def get_pr_info() -> dict | None:
+
+        # Make sure we have the CLI
+        if (not GithubWrapper.has_cli()):
+            return None
+
+        # List of fields to get from the PR
+        fields = [
+            "baseRefName",
+            "number",
+        ]
+
+        json_output = _gh("pr", "status", "--json", ",".join(fields), "--jq", ".currentBranch")
+
+        if (json_output == ""):
+            return None
+
+        return json.loads(json_output)
+
+    @functools.lru_cache
+    @staticmethod
+    def is_pr():
+
+        return GithubWrapper.get_pr_info() is not None
+
+    @functools.lru_cache
+    @staticmethod
+    def get_pr_number():
+
+        pr_info = GithubWrapper.get_pr_info()
+
+        if (pr_info is None):
+            return None
+
+        return pr_info["number"]
+
+    @functools.lru_cache
+    @staticmethod
+    def get_pr_base_ref_name():
+
+        pr_info = GithubWrapper.get_pr_info()
+
+        if (pr_info is None):
+            return None
+
+        return pr_info["baseRefName"]
+
+    @functools.lru_cache
+    @staticmethod
+    def get_pr_target_remote_branch():
+
+        # Make sure we are in a PR
+        if (not GithubWrapper.is_pr()):
+            return None
+
+        # Get the PR base reference
+        base_ref = GithubWrapper.get_pr_base_ref_name()
+
+        # Now determine the remote ref name matching our repository
+        remote_name = GitWrapper.get_remote_branch(base_ref, repo_owner_and_name=GithubWrapper.get_repo_owner_name())
+
+        return remote_name
+
+
+def _is_repo_relative(f: str, git_root: str = None):
+    if (git_root is None):
+        git_root = GitWrapper.get_repo_dir()
+
+    abs_f = os.path.abspath(f)
+
+    rel_path = os.path.relpath(abs_f, git_root)
+
+    return not rel_path.startswith("../")
+
+
+def get_merge_target():
     """
-    Returns the top level directory for this git repo
-    """
-    return __git("rev-parse", "--show-toplevel")
+    Returns the merge target branch for the current branch as if it were a PR/MR
 
-
-def branch():
-    """Returns the name of the current branch"""
-    name = __git("rev-parse", "--abbrev-ref", "HEAD")
-    name = name.rstrip()
-    return name
-
-
-def repo_version():
-    """
-    Determines the version of the repo by using `git describe`
+    Order of operations:
+    1. Try to determine the target branch from GitLab CI (assuming were in a PR)
+    2. Try to guess the target branch as "branch-<major>.<minor>" using the most recent tag (assuming we have a remote
+       pointing to the base repo)
+    3. Try to determine the target branch by finding a head reference that matches "branch-*" and is in this history
+    4. Fall back to "main" if all else fails or the target branch and current branch are the same
 
     Returns
     -------
     str
-        The full version of the repo in the format 'v#.#.#{a|b|rc}'
+        Ref name of the target branch
     """
-    return __git("describe", "--tags", "--abbrev=0")
+    #
 
+    remote_branch = GithubWrapper.get_pr_target_remote_branch()
 
-def add(f):
-    """Runs git add on file"""
-    return __git("add", f)
+    if (remote_branch is None):
+        # Try to use tags
+        remote_branch = GitWrapper.get_target_remote_branch()
 
+    if (remote_branch is None):
 
-def repo_version_major_minor():
-    """
-    Determines the version of the repo using `git describe` and returns only
-    the major and minor portion
+        raise RuntimeError("Could not determine remote_branch. Manually set TARGET_BRANCH to continue")
 
-    Returns
-    -------
-    str
-        The partial version of the repo in the format '{major}.{minor}'
-    """
-
-    full_repo_version = repo_version()
-
-    match = re.match(r"^v?(?P<major>[0-9]+)(?:\.(?P<minor>[0-9]+))?", full_repo_version)
-
-    if (match is None):
-        logging.debug("Could not determine repo major minor version. "
-                      f"Full repo version: {full_repo_version}.")
-        return None
-
-    out_version = match.group("major")
-
-    if (match.group("minor")):
-        out_version += "." + match.group("minor")
-
-    return out_version
-
-
-def determine_add_date(file_path):
-    """Return the date a given file was added to git"""
-    date_str = __git("log", "--follow", "--format=%as", "--", file_path, "|", "tail", "-n 1")
-    return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    return remote_branch
 
 
 def determine_merge_commit(current_branch="HEAD"):
     """
-    When running outside of CI, this will estimate the target merge commit hash
-    of `current_branch` by finding a common ancester with the remote branch
-    'branch-{major}.{minor}' where {major} and {minor} are determined from the
-    repo version.
+    When running outside of CI, this will estimate the target merge commit hash of `current_branch` by finding a common
+    ancester with the remote branch 'branch-{major}.{minor}' where {major} and {minor} are determined from the repo
+    version.
 
     Parameters
     ----------
@@ -123,241 +419,228 @@ def determine_merge_commit(current_branch="HEAD"):
         The common commit hash ID
     """
 
-    try:
-        # Try to determine the target branch from the most recent tag
-        head_branch = __git("describe", "--all", "--tags", "--match='branch-*'", "--abbrev=0")
-    except subprocess.CalledProcessError:
-        logging.debug("Could not determine target branch from most recent "
-                      "tag. Falling back to 'branch-{major}.{minor}.")
-        head_branch = None
+    remote_branch = get_merge_target()
 
-    if (head_branch is not None):
-        # Convert from head to branch name
-        head_branch = __git("name-rev", "--name-only", head_branch)
-    else:
-        try:
-            # Try and guess the target branch as "branch-<major>.<minor>"
-            version = repo_version_major_minor()
+    common_commit = GitWrapper.merge_base(remote_branch, current_branch)
 
-            if (version is None):
-                return None
-
-            head_branch = "branch-{}".format(version)
-        except Exception:
-            logging.debug("Could not determine branch version falling back to main")
-            head_branch = "main"
-
-    try:
-        # Now get the remote tracking branch
-        remote_branch = __git("rev-parse", "--abbrev-ref", "--symbolic-full-name", head_branch + "@{upstream}")
-    except subprocess.CalledProcessError:
-        logging.debug("Could not remote tracking reference for "
-                      f"branch {head_branch}.")
-        remote_branch = None
-
-    if (remote_branch is None):
-        return None
-
-    logging.debug(f"Determined TARGET_BRANCH as: '{remote_branch}'. "
-                  "Finding common ancestor.")
-
-    common_commit = __git("merge-base", remote_branch, current_branch)
+    logging.info("Determined TARGET_BRANCH as: '%s'. With merge-commit: %s", remote_branch, common_commit)
 
     return common_commit
 
 
-def uncommittedFiles():
+def filter_files(files: typing.Union[str, typing.List[str]],
+                 path_filter: typing.Callable[[str], bool] = None) -> list[str]:
     """
-    Returns a list of all changed files that are not yet committed. This
-    means both untracked/unstaged as well as uncommitted files too.
+    Filters out the input files according to a predicate
+
+    Parameters
+    ----------
+    files : typing.Union[str, typing.List[str]]
+        List of files to filter
+    path_filter : typing.Callable[[str], bool], optional
+        Predicate that returns True/False for each file, by default None
+
+    Returns
+    -------
+    list[str]
+        Filtered list of files
     """
-    files = __git("status", "-u", "-s")
-    ret = []
-    for f in files.splitlines():
-        f = f.strip(" ")
-        f = re.sub("\s+", " ", f)  # noqa: W605
-        tmp = f.split(" ", 1)
-        # only consider staged files or uncommitted files
-        # in other words, ignore untracked files
-        if tmp[0] == "M" or tmp[0] == "A":
-            ret.append(tmp[1])
-    return ret
 
-
-def changedFilesBetween(baseName, branchName, commitHash):
-    """
-    Returns a list of files changed between branches baseName and latest commit
-    of branchName.
-    """
-    current = branch()
-    # checkout "base" branch
-    __git("checkout", "--force", baseName)
-    # checkout branch for comparing
-    __git("checkout", "--force", branchName)
-    # checkout latest commit from branch
-    __git("checkout", "-fq", commitHash)
-
-    files = __gitdiff("--name-only", "--ignore-submodules", f"{baseName}..{branchName}")
-
-    # restore the original branch
-    __git("checkout", "--force", current)
-    return files.splitlines()
-
-
-def is_repo_relative(f: str, git_root: str = None):
-    if (git_root is None):
-        git_root = top_level_dir()
-
-    abs_f = os.path.abspath(f)
-
-    rel_path = os.path.relpath(abs_f, git_root)
-
-    return not rel_path.startswith("../")
-
-
-def filter_files(files: typing.Union[str, typing.List[str]], path_filter=None):
     # Convert all to array of strings
     if (isinstance(files, str)):
         files = files.splitlines()
 
-    git_root = top_level_dir()
+    git_root = GitWrapper.get_repo_dir()
 
-    ret_files = []
-    for fn in files:
+    ret_files: list[str] = []
+
+    for file in files:
         # Check that we are relative to the git repo
-        assert is_repo_relative(fn, git_root=git_root), f"Path {fn} must be relative to git root: {git_root}"
+        assert _is_repo_relative(file, git_root=git_root), f"Path {file} must be relative to git root: {git_root}"
 
-        if (path_filter is None or path_filter(fn)):
-            ret_files.append(fn)
+        if (path_filter is None or path_filter(file)):
+            ret_files.append(file)
 
     return ret_files
 
 
-def changesInFileBetween(file, b1, b2, pathFilter=None):
-    """Filters the changed lines to a file between the branches b1 and b2"""
-    current = branch()
-    __git("checkout", "--quiet", b1)
-    __git("checkout", "--quiet", b2)
-    diffs = __gitdiff("--ignore-submodules", "-w", "--minimal", "-U0", "%s...%s" % (b1, b2), "--", file)
-    __git("checkout", "--quiet", current)
-    return filter_files(diffs, pathFilter)
-
-
-def modifiedFiles(pathFilter=None):
+def changed_files(target_ref: str = None,
+                  base_ref="HEAD",
+                  *,
+                  merge_base: bool = True,
+                  staged=False,
+                  path_filter: typing.Callable[[str], bool] = None):
     """
-    If inside a CI-env (ie. TARGET_BRANCH and COMMIT_HASH are defined, and
-    current branch is "current-pr-branch"), then lists out all files modified
-    between these 2 branches. Locally, TARGET_BRANCH will try to be determined
-    from the current repo version and finding a coresponding branch named
-    'branch-{major}.{minor}'. If this fails, this functino will list out all
-    the uncommitted files in the current branch.
+    Comparison between 2 commits in the repo. Returns a list of files that have been filtered by `path_filter`
 
-    Such utility function is helpful while putting checker scripts as part of
-    cmake, as well as CI process. This way, during development, only the files
-    touched (but not yet committed) by devs can be checked. But, during the CI
-    process ALL files modified by the dev, as submiited in the PR, will be
-    checked. This happens, all the while using the same script.
+    Parameters
+    ----------
+    target_ref : str, optional
+        The branch name to use as the target. If set to None, it will use the value in $TARGET_BRANCH
+    base_ref : str, optional
+        The base branch name, by default "HEAD"
+    merge_base : bool, optional
+        Setting this to True will calculate the diff to the merge-base between `taget_ref` and `base_ref`. Setting to
+        False will compre the HEAD of each ref
+    staged : bool, optional
+        Whether or not to include staged, but not committed, files, by default False
+    path_filter : typing.Callable[[str], bool], optional
+        A predicate to apply to the list of files, by default None
+
+    Returns
+    -------
+    list[str]
+        The list of files that have changed between the refs filtered by `path_filter`
     """
-    targetBranch = os.environ.get("TARGET_BRANCH")
-    commitHash = os.environ.get("COMMIT_HASH")
-    currentBranch = branch()
-    logging.debug(f"TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, "
-                  f"currentBranch={currentBranch}")
 
-    if targetBranch and commitHash and (currentBranch == "current-pr-branch"):
-        logging.debug("Assuming a CI environment.")
-        allFiles = changedFilesBetween(targetBranch, currentBranch, commitHash)
-    else:
-        logging.debug("Did not detect CI environment. "
-                      "Determining TARGET_BRANCH locally.")
+    if (target_ref is None):
+        target_ref = os.environ.get("TARGET_BRANCH", None)
 
-        common_commit = determine_merge_commit(currentBranch)
+    if (target_ref is None):
+        target_ref = get_merge_target()
 
-        if (common_commit is not None):
+    logging.info("Comparing %s..%s with merge_base: %s, staged: %s", target_ref, base_ref, merge_base, staged)
 
-            # Now get the diff. Use --staged to get both diff between
-            # common_commit..HEAD and any locally staged files
-            allFiles = __gitdiff("--name-only", "--ignore-submodules", "--staged", f"{common_commit}").splitlines()
-        else:
-            # Fallback to just uncommitted files
-            allFiles = uncommittedFiles()
+    diffs = GitWrapper.diff(target_ref, base_ref, merge_base=merge_base, staged=staged)
 
-    files = []
-    for f in allFiles:
-        if pathFilter is None or pathFilter(f):
-            files.append(f)
-
-    filesToCheckString = "\n\t".join(files) if files else "<None>"
-    logging.debug(f"Found files to check:\n\t{filesToCheckString}\n")
-    return files
+    return filter_files(diffs, path_filter=path_filter)
 
 
-def changedFilesBetweenCommits(base_commit, commit, pathFilter=None):
-    diffs = __gitdiff("--name-only", f"{base_commit}...{commit}")
-    return filter_files(diffs, pathFilter)
-
-
-def stagedFiles(base='HEAD', pathFilter=None):
-    diffs = __gitdiff("--cached", "--name-only", base)
-    return filter_files(diffs, pathFilter)
-
-
-def list_files_under_source_control(*paths: str, ref: str = None):
-
-    # Use HEAD if no ref is supplied
-    if (ref is None):
-        ref = "HEAD"
-
-    git_args = ["ls-tree", "-r", "--name-only", ref] + list(paths)
-
-    return __git(*git_args).split("\n")
-
-
-def listAllFilesInDir(folder):
-    """Utility function to list all files/subdirs in the input folder"""
-    allFiles = []
-    for root, dirs, files in os.walk(folder):
-        for name in files:
-            allFiles.append(os.path.join(root, name))
-    return allFiles
-
-
-def listFilesToCheck(filesDirs, filter=None):
+def modified_files(target_ref: str = None,
+                   *,
+                   merge_base: bool = True,
+                   staged=False,
+                   path_filter: typing.Callable[[str], bool] = None):
     """
-    Utility function to filter the input list of files/dirs based on the input
-    filter method and returns all the files that need to be checked
+    Comparison between the working tree and a target branch. Returns a list of files that have been filtered by
+    `path_filter`
+
+    Parameters
+    ----------
+    target_ref : str, optional
+        The branch name to use as the target. If set to None, it will use the value in $TARGET_BRANCH
+    merge_base : bool, optional
+        Setting this to True will calculate the diff to the merge-base between `taget_ref` and `base_ref`. Setting to
+        False will compre the HEAD of each ref
+    staged : bool, optional
+        Whether or not to include staged, but not committed, files, by default False
+    path_filter : typing.Callable[[str], bool], optional
+        A predicate to apply to the list of files, by default None
+
+    Returns
+    -------
+    list[str]
+        The list of files that have changed between the refs filtered by `path_filter`
     """
-    allFiles = []
-    for f in filesDirs:
-        if os.path.isfile(f):
-            if filter is None or filter(f):
-                allFiles.append(f)
-        elif os.path.isdir(f):
-            files = listAllFilesInDir(f)
-            for f_ in files:
-                if filter is None or filter(f_):
-                    allFiles.append(f_)
-    return allFiles
+
+    if (target_ref is None):
+        target_ref = os.environ.get("TARGET_BRANCH", None)
+
+    if (target_ref is None):
+        target_ref = get_merge_target()
+
+    logging.info("Comparing index to %s with merge_base: %s, staged: %s", target_ref, merge_base, staged)
+
+    diffs = GitWrapper.diff_index(target_ref, merge_base=merge_base, staged=staged)
+
+    return filter_files(diffs, path_filter=path_filter)
 
 
-def get_merge_target():
-    currentBranch = branch()
-    return determine_merge_commit(currentBranch)
+def staged_files(base_ref="HEAD", *, path_filter: typing.Callable[[str], bool] = None):
+    """
+    Calculates the different between the working tree and the index including staged files. Returns a list of files that
+    have been filtered by `path_filter`.
+
+    Identical to `modified_files` with `staged=True`
+
+    Parameters
+    ----------
+    base_ref : str, optional
+        The base branch name, by default "HEAD"
+    path_filter : typing.Callable[[str], bool], optional
+        A predicate to apply to the list of files, by default None
+
+    Returns
+    -------
+    list[str]
+        The list of files that have changed between the refs filtered by `path_filter`
+    """
+
+    return modified_files(target_ref=base_ref, merge_base=False, staged=True, path_filter=path_filter)
 
 
-def parse_args():
+def all_files(*paths, base_ref="HEAD", path_filter: typing.Callable[[str], bool] = None):
+    """
+    Returns a list of all files in the repo that have been filtered by `path_filter`.
+
+    Parameters
+    ----------
+    paths : typing.List[str]
+        The list of paths to include in the search
+    base_ref : str, optional
+        The base branch name, by default "HEAD"
+    path_filter : typing.Callable[[str], bool], optional
+        A predicate to apply to the list of files, by default None
+
+    Returns
+    -------
+    list[str]
+        The list of files in the repo filtered by `path_filter`
+    """
+
+    git_args = ["ls-tree", "-r", "--name-only", base_ref] + list(paths)
+
+    ls_files = _git(*git_args)
+
+    return filter_files(ls_files, path_filter=path_filter)
+
+
+def add_files(*files_to_add):
+    """
+    Calls `git add` on the input files
+
+    Returns
+    -------
+    str
+        Output of the git command
+    """
+    return GitWrapper.add_files(*files_to_add)
+
+
+def get_file_add_date(filename: str):
+    """
+    Returns the date a given file was added to git.
+
+    Parameters
+    ----------
+    filename : str
+        Filename in question
+
+    Returns
+    -------
+    datetime.datetime
+        Time the file was added.
+    """
+
+    return GitWrapper.get_file_add_date(filename)
+
+
+def _parse_args():
     argparser = argparse.ArgumentParser("Executes a gitutil action")
     argparser.add_argument("action", choices=['get_merge_target'], help="Action to execute")
     args = argparser.parse_args()
     return args
 
 
-def main():
-    args = parse_args()
-    logging.basicConfig(level=logging.ERROR)
+def _main():
+    log_level = logging.getLevelName(os.environ.get("MORPHEUS_LOG_LEVEL", "INFO"))
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=log_level)
+
+    args = _parse_args()
+
     if args.action == 'get_merge_target':
-        print(get_merge_target())
+        print(determine_merge_commit())
 
 
 if __name__ == '__main__':
-    main()
+    _main()

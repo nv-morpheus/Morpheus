@@ -28,7 +28,7 @@ def get_json_lines_count(filename):
     return len(lines)
 
 
-def pytest_benchmark_update_json(config, benchmarks, output_json):
+def pytest_benchmark_update_json(config, benchmarks, output_json):  # pylint:disable=unused-argument
 
     curr_dir = path.dirname(path.abspath(__file__))
 
@@ -58,9 +58,9 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 
         elif "glob_path" in PIPELINES_CONF[bench["name"]]:
             source_files_glob = path.join(curr_dir, PIPELINES_CONF[bench["name"]]["glob_path"])
-            for fn in glob.glob(source_files_glob):
-                line_count += get_json_lines_count(fn)
-                byte_count += path.getsize(fn)
+            for filename in glob.glob(source_files_glob):
+                line_count += get_json_lines_count(filename)
+                byte_count += path.getsize(filename)
         elif "message_path" in PIPELINES_CONF[bench["name"]]:
             source_message_glob = path.join(curr_dir, PIPELINES_CONF[bench["name"]]["message_path"])
             for message_fn in glob.glob(source_message_glob):

@@ -16,7 +16,7 @@
 
 # This must come before torch
 # isort: off
-import cudf  # noqa: F401
+import cudf  # noqa: F401 pylint: disable=unused-import
 # isort: on
 
 import json
@@ -25,11 +25,11 @@ import os
 import numpy as np
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
+from morpheus.models.dfencoder.dataloader import FileSystemDataset
 from morpheus.models.dfencoder.multiprocessing import start_processes
-from utils import TEST_DIRS
 
 # import torch
 
@@ -106,9 +106,7 @@ def cleanup_dist():
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
-
     world_size = 1
 
     start_processes(_run_test, args=(world_size, ), nprocs=world_size, join=True)
@@ -117,23 +115,28 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
+    from morpheus.utils import seed as seed_utils
+    seed_utils.manual_seed(42)
 
     import torch
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
 
-    preset_cats = json.load(open(PRESET_CATS_FILEPATH, 'r'))
-    preset_numerical_scaler_params = json.load(open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r'))
+    with open(PRESET_CATS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_cats = json.load(fh)
+
+    with open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r', encoding='utf-8') as fh:
+        preset_numerical_scaler_params = json.load(fh)
 
     # Initializing model
     model = AutoEncoder(
         encoder_layers=[512, 500],
         decoder_layers=[512],
         activation='relu',
-        swap_p=0.2,
-        lr=0.01,
-        lr_decay=0.99,
+        swap_probability=0.2,
+        learning_rate=0.01,
+        learning_rate_decay=0.99,
         batch_size=4096,
         logger='basic',
         verbose=True,
@@ -156,14 +159,21 @@ def _run_test(rank, world_size):
                                                                                    rank=rank,
                                                                                    world_size=world_size)
     # Load validation set
-    val_dataset = DatasetFromPath.get_validation_dataset(model, VALIDATION_FOLDER)
+    val_dataset = FileSystemDataset(
+        data_folder=VALIDATION_FOLDER,
+        batch_size=model.eval_batch_size,
+        preprocess_fn=model.preprocess_validation_data,
+        shuffle_rows_in_batch=False,
+        shuffle_batch_indices=False,
+        preload_data_into_memory=True,  # very small validation set
+    )
 
     # Train
-    model.fit(train_data=dataloader,
+    model.fit(training_data=dataloader,
               rank=rank,
               world_size=world_size,
               epochs=10,
-              val_data=val_dataset,
+              validation_data=val_dataset,
               run_validation=True,
               use_val_for_loss_stats=True)
 
@@ -171,12 +181,12 @@ def _run_test(rank, world_size):
         # Make sure model converges (low loss)
         for loss_type in LOSS_TYPES:
             ft_losses = getattr(model.logger, f"{loss_type}_fts")
-            for ft, losses_l in ft_losses.items():
+            for feature, losses_l in ft_losses.items():
                 losses = losses_l[1]
-                assert min(losses) < LOSS_TARGETS[loss_type][ft] * LOSS_TOLERANCE_RATIO
+                assert min(losses) < LOSS_TARGETS[loss_type][feature] * LOSS_TOLERANCE_RATIO
 
         # Inference
-        inf_dataset = DatasetFromPath(
+        inf_dataset = FileSystemDataset(
             data_folder=INFERENCE_FOLDER,
             batch_size=1024,
             preprocess_fn=model.preprocess_validation_data,
@@ -196,7 +206,8 @@ def _run_test(rank, world_size):
         # make sure the user baseline is modeled well enough so the minimum and median z scores
         # from inference are in range
         assert min(inf_res.mean_abs_z) < 1
-        assert (np.median(inf_res.mean_abs_z) < 100
-                )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+
+        # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
+        assert (np.median(inf_res.mean_abs_z) < 100)
 
     cleanup_dist()

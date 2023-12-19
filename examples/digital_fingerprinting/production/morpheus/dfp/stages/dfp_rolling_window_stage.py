@@ -24,14 +24,14 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.cached_user_window import CachedUserWindow
 from ..utils.logging_timer import log_time
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class DFPRollingWindowStage(SinglePortStage):
@@ -91,6 +91,9 @@ class DFPRollingWindowStage(SinglePortStage):
         """Input types accepted by this stage."""
         return (DFPMessageMeta, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiDFPMessage)
+
     @contextmanager
     def _get_user_cache(self, user_id: str) -> typing.Generator[CachedUserWindow, None, None]:
 
@@ -124,8 +127,8 @@ class DFPRollingWindowStage(SinglePortStage):
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning
-                logger.warn(("Incoming data preceeded existing history. "
-                             "Consider deleting the rolling window cache and restarting."))
+                logger.warning(("Incoming data preceeded existing history. "
+                                "Consider deleting the rolling window cache and restarting."))
                 return None
 
             # Exit early if we dont have enough data
@@ -146,7 +149,7 @@ class DFPRollingWindowStage(SinglePortStage):
             match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]
 
             if (len(match) == 0):
-                raise RuntimeError("Invalid rolling window")
+                raise RuntimeError(f"Invalid rolling window for user {user_id}")
 
             first_row_idx = match.index[0].item()
             last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
@@ -190,8 +193,8 @@ class DFPRollingWindowStage(SinglePortStage):
 
             return result
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
-        builder.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        node = builder.make_node(self.unique_name, ops.map(self.on_data), ops.filter(lambda x: x is not None))
+        builder.make_edge(input_node, node)
 
-        return stream, MultiDFPMessage
+        return node

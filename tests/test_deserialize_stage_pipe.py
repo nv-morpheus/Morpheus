@@ -16,6 +16,8 @@
 
 import pytest
 
+from _utils import assert_results
+from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -23,12 +25,11 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import assert_results
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.mark.use_cudf
-def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
+@pytest.mark.usefixtures("use_cpp")
+def test_fixing_non_unique_indexes(dataset: DatasetManager):
     # Set 2 ids equal to others
     df = dataset.dup_index(dataset["filter_probs.csv"], count=2)
 
@@ -39,14 +40,14 @@ def test_fixing_non_unique_indexes(use_cpp: bool, dataset: DatasetManager):
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
 
-        DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=False)
+        DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
 
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
     dataset.assert_df_equal(meta.df, df)
 
-    DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=True)
+    DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
 
     assert meta.has_sliceable_index()
     assert "_index_" in meta.df.columns

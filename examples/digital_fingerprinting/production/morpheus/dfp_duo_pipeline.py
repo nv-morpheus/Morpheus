@@ -62,6 +62,18 @@ from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
 
+def _file_type_name_to_enum(file_type: str) -> FileTypes:
+    """Converts a file type name to a FileTypes enum."""
+    if (file_type == "JSON"):
+        return FileTypes.JSON
+    if (file_type == "CSV"):
+        return FileTypes.CSV
+    if (file_type == "PARQUET"):
+        return FileTypes.PARQUET
+
+    return FileTypes.Auto
+
+
 @click.command()
 @click.option(
     "--train_users",
@@ -126,6 +138,14 @@ from morpheus.utils.logger import configure_logging
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
           "Refer to fsspec documentation for list of possible options."),
 )
+@click.option("--file_type_override",
+              "-t",
+              type=click.Choice(["AUTO", "JSON", "CSV", "PARQUET"], case_sensitive=False),
+              default="JSON",
+              help="Override the detected file type. Values can be 'AUTO', 'JSON', 'CSV', or 'PARQUET'.",
+              callback=lambda _,
+              __,
+              value: None if value is None else _file_type_name_to_enum(value))
 @click.option('--watch_inputs',
               type=bool,
               is_flag=True,
@@ -141,6 +161,14 @@ from morpheus.utils.logger import configure_logging
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
+@click.option('--mlflow_experiment_name_template',
+              type=str,
+              default="dfp/duo/training/{reg_model_name}",
+              help="The MLflow experiment name template to use when logging experiments. ")
+@click.option('--mlflow_model_name_template',
+              type=str,
+              default="DFP-duo-{user_id}",
+              help="The MLflow model name template to use when logging models. ")
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -150,6 +178,9 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  filter_threshold,
+                 mlflow_experiment_name_template,
+                 mlflow_model_name_template,
+                 file_type_override,
                  **kwargs):
     """Runs the DFP pipeline."""
     # To include the generic, we must be training all or generic
@@ -264,7 +295,7 @@ def run_pipeline(train_users,
                         watch=kwargs["watch_inputs"],
                         watch_interval=kwargs["watch_interval"]))
 
-    # Batch files into buckets by time. Use the default ISO date extractor from the filename
+    # Batch files into batches by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
         DFPFileBatcherStage(config,
                             period=None,
@@ -273,14 +304,16 @@ def run_pipeline(train_users,
                             start_time=start_time,
                             end_time=end_time))
 
-    # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
+    parser_kwargs = None
+    if (file_type_override == FileTypes.JSON):
+        parser_kwargs = {"lines": False, "orient": "records"}
+
+    # Output is a list of fsspec files. Convert to DataFrames. This caches downloaded data
     pipeline.add_stage(
         DFPFileToDataFrameStage(config,
                                 schema=source_schema,
-                                file_type=FileTypes.JSON,
-                                parser_kwargs={
-                                    "lines": False, "orient": "records"
-                                },
+                                file_type=file_type_override,
+                                parser_kwargs=parser_kwargs,
                                 cache_dir=cache_dir))
 
     pipeline.add_stage(MonitorStage(config, description="Input data rate"))
@@ -306,8 +339,8 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    model_name_formatter = "DFP-duo-{user_id}"
-    experiment_name_formatter = "dfp/duo/training/{reg_model_name}"
+    model_name_formatter = mlflow_model_name_template
+    experiment_name_formatter = mlflow_experiment_name_template
 
     if (is_training):
 

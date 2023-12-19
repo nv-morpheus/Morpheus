@@ -19,6 +19,7 @@ import os
 
 import pytest
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
@@ -34,7 +35,6 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
@@ -42,7 +42,6 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
-from utils import TEST_DIRS
 
 E2E_CONFIG_FILE = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
 with open(E2E_CONFIG_FILE, 'r', encoding='UTF-8') as f:
@@ -112,14 +111,6 @@ def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file
     pipeline.add_stage(PreprocessAEStage(config))
     pipeline.add_stage(AutoEncoderInferenceStage(config))
     pipeline.add_stage(AddScoresStage(config))
-    pipeline.add_stage(
-        TimeSeriesStage(config,
-                        resolution="1m",
-                        min_window=" 12 h",
-                        hot_start=True,
-                        cold_end=False,
-                        filter_percent=90.0,
-                        zscore_threshold=8.0))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
@@ -195,7 +186,7 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
     config.model_max_batch_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["model_max_batch_size"]
     config.feature_length = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["feature_length"]
     config.edge_buffer_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["edge_buffer_size"]
-    config.class_labels = ["score", "pred"]
+    config.class_labels = load_labels_file(os.path.join(TEST_DIRS.data_dir, "labels_phishing.txt"))
     CppConfig.set_should_use_cpp(True)
 
     input_filepath = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["file_path"]

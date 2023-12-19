@@ -23,15 +23,13 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 
 Example:
 
-```
+```bash
 docker pull nvcr.io/nvidia/tritonserver:23.06-py3
 ```
 
 ##### Start Triton Inference Server container
-```
-cd ${MORPHEUS_ROOT}/models
-
-docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx
+```bash
+docker run --gpus=all --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:23.06-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model sid-minibert-onnx --load-model abp-nvsmi-xgb --load-model phishing-bert-onnx --load-model all-MiniLM-L6-v2
 ```
 
 ##### Verify Model Deployments
@@ -42,6 +40,7 @@ Once Triton server finishes starting up, it will display the status of all loade
 | Model              | Version | Status |
 +--------------------+---------+--------+
 | abp-nvsmi-xgb      | 1       | READY  |
+| all-MiniLM-L6-v2   | 1       | READY  |
 | phishing-bert-onnx | 1       | READY  |
 | sid-minibert-onnx  | 1       | READY  |
 +--------------------+---------+--------+
@@ -50,32 +49,32 @@ Once Triton server finishes starting up, it will display the status of all loade
 ### Set up Morpheus Dev Container
 
 If you don't already have the Morpheus Dev container, run the following to build it:
-```
+```bash
 ./docker/build_container_dev.sh
 ```
 
 Now run the container:
-```
+```bash
 ./docker/run_container_dev.sh
 ```
 
 Note that Morpheus containers are tagged by date. By default, `run_container_dev.sh` will try to use current date as tag. Therefore, if you are trying to run a container that was not built on the current date, you must set the `DOCKER_IMAGE_TAG` environment variable. For example,
-```
+```bash
 DOCKER_IMAGE_TAG=dev-221003 ./docker/run_container_dev.sh
 ```
 
 In the `/workspace` directory of the container, run the following to compile Morpheus:
-```
+```bash
 ./scripts/compile.sh
 ```
 
 Now install Morpheus:
-```
+```bash
 pip install -e /workspace
 ```
 
 Fetch input data for benchmarks:
-```
+```bash
 ./scripts/fetch_data.py fetch validation
 ```
 
@@ -100,17 +99,27 @@ Morpheus configurations for each workflow are managed using `e2e_test_configs.js
 ...
 ```
 
-Benchmarks for an individual workflow can be run using the following:
-
-```
+To run all benchmarks run the following:
+```bash
 cd tests/benchmarks
 
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::<test-workflow>
+pytest -s --run_benchmark --run_milvus --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave
 ```
+
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
-The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements.
+The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements. The `--run_milvus` flag enables benchmarks which require the Milvus database.
 
+#### Running with an existing Milvus database
+
+By default when `--run_milvus` flag is provided, pytest will start a new Milvus database. If you wish to use an existing Milvus database, you can set the `MORPHEUS_MILVUS_URI` environment variable. For a local Milvus database, running on the default port, you can set the environment variable as follows:
+```bash
+export MORPHEUS_MILVUS_URI="http://127.0.0.1:19530"
+```
+
+#### test_bench_e2e_pipelines.py
+
+The `test_bench_e2e_pipelines.py` script contains several benchmarks within it.
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
 - `test_sid_nlp_e2e`
 - `test_abp_fil_e2e`
@@ -118,12 +127,12 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 - `test_cloudtrail_ae_e2e`
 
 For example, to run E2E benchmarks on the SID NLP workflow:
-```
+```bash
 pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py::test_sid_nlp_e2e
 ```
 
 To run E2E benchmarks on all workflows:
-```
+```bash
 pytest -s --run_benchmark --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_pipelines.py
 ```
 
@@ -180,3 +189,19 @@ Additional benchmark stats for each workflow:
 - max_throughput_bytes
 - mean_throughput_bytes
 - median_throughput_bytes
+
+
+### Production DFP E2E Benchmarks
+
+Note that the `test_cloudtrail_ae_e2e` benchmarks measure performance of a pipeline built using [Starter DFP](../../examples/digital_fingerprinting/starter/README.md) stages. Separate benchmark tests are also provided to measure performance of the example [Production DFP](../../examples/digital_fingerprinting/production/README.md) pipelines. More information about running those benchmarks can be found [here](../../examples/digital_fingerprinting/production/morpheus/benchmarks/README.md).
+
+You can use the same Dev container created here to run the Production DFP benchmarks. You would just need to install additional dependencies as follows:
+
+```bash
+export CUDA_VER=11.8
+mamba install -n base -c conda-forge conda-merge
+conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
+  docker/conda/environments/cuda${CUDA_VER}_examples.yml > .tmp/merged.yml \
+  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
+
+```

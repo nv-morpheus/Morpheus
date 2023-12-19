@@ -47,7 +47,6 @@ limitations under the License.
 - [Additional Documentation](#additional-documentation)
 - [Troubleshooting](#troubleshooting)
   - [Common Problems](#common-problems)
-- [The dropna stage](#the-dropna-stage)
 
 
 ## Introduction
@@ -105,7 +104,7 @@ The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components requi
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -147,7 +146,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -185,7 +184,7 @@ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Helm chart offers MLflow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
-helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-23.11.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-24.03.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -403,7 +402,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/basics/building_a_pipeline.md) documentation for more information regarding the commands.
 
 > **Note**: Before running the example pipelines, ensure the criteria below are met:
 -   Ensure models specific to the pipeline are deployed.
@@ -445,6 +444,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         --userid_filter=user123 \
         --feature_scaler=standard \
         --userid_column_name=userIdentitysessionContextsessionIssueruserName \
+        --timestamp_column_name=event_dt \
         from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
         --max_files=200 \
         train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
@@ -495,7 +495,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8000 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
@@ -525,7 +525,7 @@ helm install --set ngc.apiKey="$API_KEY" \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8000 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
-        add-class --label=pred --threshold=0.7 \
+        add-class --label=is_phishing --threshold=0.7 \
         serialize --exclude '^ts_' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
@@ -782,8 +782,8 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 ## Additional Documentation
 For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/docs/source/developer_guide)
-- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/examples)
+- [Morpheus Developer Guides](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/docs/source/developer_guide/guides.md)
+- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/examples)
 
 
 ## Troubleshooting
@@ -807,17 +807,3 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
-
-## The dropna stage
-The Drop Null Attributes stage (dropna) requires the specification of a column name. This column will vary from use case (and its input data) to use case. These are the applicable columns for the pre-built pipelines provided by Morpheus.
-
-| Input | Columns |
-| ----- | ------- |
-| Azure DFP | userPrincipalName |
-| Duo DFP | username |
-| DFP Cloudtrail | userIdentitysessionContextsessionIssueruserName |
-| Email | data |
-| GNN | index, client_node, merchant_node |
-| Log Parsing | raw |
-| PCAP | data |
-| Ransomware | PID, Process, snapshot_id, timestamp, source |

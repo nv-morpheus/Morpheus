@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../test_morpheus.hpp"  // IWYU pragma: associated
+#include "../test_utils/common.hpp"  // IWYU pragma: associated
 
 #include "morpheus/io/deserializers.hpp"     // for load_table_from_file, prepare_df_index
 #include "morpheus/messages/meta.hpp"        // for MessageMeta and SlicedMessageMeta

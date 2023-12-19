@@ -98,6 +98,11 @@ class DataLoader
     DataLoader() = default;
 
     /**
+     * @brief Constructor with config for the DataLoader class.
+     */
+    DataLoader(nlohmann::json config);
+
+    /**
      * @brief Destructor for the DataLoader class.
      */
     ~DataLoader() = default;
@@ -128,6 +133,7 @@ class DataLoader
 
   private:
     std::map<std::string, std::shared_ptr<Loader>> m_loaders{};  // Map of registered loader instances.
+    nlohmann::json m_config;
 };
 
 #pragma GCC visibility pop

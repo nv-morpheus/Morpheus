@@ -13,18 +13,16 @@
 # limitations under the License.
 
 import logging
-import typing
+import warnings
 
 import mrc
 
 import morpheus.pipeline as _pipeline
-from morpheus.config import Config
-from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
 
-class Stage(_pipeline.StreamWrapper):
+class Stage(_pipeline.StageBase):
     """
     This class serves as the base for all pipeline stage implementations that are not source objects.
 
@@ -35,21 +33,11 @@ class Stage(_pipeline.StreamWrapper):
 
     """
 
-    def __init__(self, c: Config):
-        super().__init__(c)
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
-
-        return out_ports_pair
+        return out_ports_nodes
 
     def _start(self):
-        pass
-
-    def on_start(self):
-        """
-        This function can be overridden to add usecase-specific implementation at the start of any stage in
-        the pipeline.
-        """
         pass
 
     async def start_async(self):
@@ -57,8 +45,12 @@ class Stage(_pipeline.StreamWrapper):
         This function is called along with on_start during stage initialization. Allows stages to utilize the
         asyncio loop if needed.
         """
-        pass
+        if (hasattr(self, 'on_start')):
+            warnings.warn(
+                "The on_start method is deprecated and may be removed in the future. "
+                "Please use start_async instead.",
+                DeprecationWarning)
+            self.on_start()
 
-    def _on_complete(self, stream):
-
-        logger.info("Stage Complete: {}".format(self.name))
+    def _on_complete(self, node):  # pylint: disable=unused-argument
+        logger.info("Stage Complete: %s", self.name)

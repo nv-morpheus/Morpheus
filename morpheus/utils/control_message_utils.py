@@ -37,6 +37,7 @@ def cm_skip_processing_if_failed(func: Callable[CM_SKIP_P, T]) -> Callable[CM_SK
         The decorated function.
     """
 
+    @wraps(func)
     def wrapper(control_message: ControlMessage, *args: CM_SKIP_P.args, **kwargs: CM_SKIP_P.kwargs) -> T:
         if (control_message.has_metadata("cm_failed") and control_message.get_metadata("cm_failed")):
             return control_message
@@ -83,10 +84,11 @@ def cm_default_failure_context_manager(raise_on_failure: bool = False) -> typing
     def decorator(func):
 
         @wraps(func)
-        def wrapper(control_messsage: ControlMessage, *args, **kwargs):
-            with CMDefaultFailureContextManager(control_message=control_messsage,
+        def wrapper(control_message: ControlMessage, *args, **kwargs):
+            ret_cm = control_message
+            with CMDefaultFailureContextManager(control_message=control_message,
                                                 raise_on_failure=raise_on_failure) as ctx_mgr:
-                cm_ensure_payload_not_null(control_message=control_messsage)
+                cm_ensure_payload_not_null(control_message=control_message)
                 ret_cm = func(ctx_mgr.control_message, *args, **kwargs)
 
             return ret_cm

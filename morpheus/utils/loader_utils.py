@@ -14,7 +14,7 @@
 
 import logging
 
-from morpheus._lib.messages import DataLoaderRegistry as registry
+from morpheus.messages import DataLoaderRegistry as registry
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +38,9 @@ def register_loader(loader_id):
         # Register a loader if not exists in the registry.
         if not registry.contains(loader_id):
             registry.register_loader(loader_id, func)
-            logger.debug("Loader '{}' was successfully registered.".format(loader_id))
+            logger.debug("Loader '%s' was successfully registered.", loader_id)
         else:
-            logger.debug("Loader: '{}' already exists.".format(loader_id))
+            logger.debug("Loader: '%s' already exists.", loader_id)
 
         return func
 

@@ -16,7 +16,7 @@
 
 function print_env_vars() {
     rapids-logger "Environ:"
-    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
+    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN|NGC_API_KEY" | sort
 }
 
 rapids-logger "Env Setup"
@@ -51,7 +51,7 @@ export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
 if [[ "${LOCAL_CI}" == "1" ]]; then
     export DISPLAY_ARTIFACT_URL="${LOCAL_CI_TMP}"
 else
-    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
+    export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}"
 fi
 
 # Set sccache env vars
@@ -64,7 +64,6 @@ export SCCACHE_IDLE_TIMEOUT=32768
 export CONDA_ENV_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 export CONDA_EXAMPLES_YML=${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_examples.yml
 export CONDA_DOCS_YML=${MORPHEUS_ROOT}/docs/conda_docs.yml
-export PIP_REQUIREMENTS=${MORPHEUS_ROOT}/docker/conda/environments/requirements.txt
 
 export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_CUDA_ARCHITECTURES=60;70;75;80 -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_PYTHON_BUILD_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
 
@@ -88,17 +87,19 @@ function update_conda_env() {
             YAMLS="${YAMLS} ${CONDA_DOCS_YML}"
         fi
 
-        # Conda is going to expect a requirements.txt file to be in the same directory as the env yaml
-        cp ${PIP_REQUIREMENTS} ${WORKSPACE_TMP}/requirements.txt
-
         rapids-logger "Merging conda envs: ${YAMLS}"
         conda run -n morpheus --live-stream conda-merge ${YAMLS} > ${ENV_YAML}
     fi
 
-    rapids-logger "Checking for updates to conda env"
+    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
+        rapids-logger "Checking for updates to conda env"
 
-    # Update the packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+        # Remove default/conflicting channels from base image
+        rm /opt/conda/.condarc
+
+        # Update the packages
+        rapids-mamba-retry env update -n morpheus --prune -q --file ${ENV_YAML}
+    fi
 
     # Finally, reactivate
     conda activate morpheus
@@ -156,6 +157,16 @@ function show_conda_info() {
     conda list --show-channel-urls
 }
 
+function log_toolchain() {
+    rapids-logger "Check versions"
+    python3 --version
+    x86_64-conda-linux-gnu-cc --version
+    x86_64-conda-linux-gnu-c++ --version
+    cmake --version
+    ninja --version
+    sccache --version
+}
+
 function upload_artifact() {
     FILE_NAME=$1
     BASE_NAME=$(basename "${FILE_NAME}")
@@ -164,6 +175,7 @@ function upload_artifact() {
         cp ${FILE_NAME} "${LOCAL_CI_TMP}/${BASE_NAME}"
     else
         aws s3 cp --only-show-errors "${FILE_NAME}" "${ARTIFACT_URL}/${BASE_NAME}"
+        echo "- ${DISPLAY_ARTIFACT_URL}/${BASE_NAME}" >> ${GITHUB_STEP_SUMMARY}
     fi
 }
 
@@ -174,5 +186,13 @@ function download_artifact() {
         cp "${LOCAL_CI_TMP}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
     else
         aws s3 cp --only-show-errors "${ARTIFACT_URL}/${ARTIFACT}" "${WORKSPACE_TMP}/${ARTIFACT}"
+    fi
+}
+
+function set_job_summary_preamble() {
+    if [[ "${LOCAL_CI}" == "" ]]; then
+        msg="Note: NVIDIA VPN access is required to view these URLs."
+        echo $msg >> ${GITHUB_STEP_SUMMARY}
+        rapids-logger $msg
     fi
 }

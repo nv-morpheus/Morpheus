@@ -30,16 +30,16 @@ from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
 
 
-class _UserModelManager(object):
+class _UserModelManager:
 
     def __init__(self,
-                 c: Config,
+                 config: Config,
                  user_id: str,
                  save_model: bool,
                  epochs: int,
@@ -51,8 +51,8 @@ class _UserModelManager(object):
         self._history: pd.DataFrame = None
         self._max_history: int = max_history
         self._seed: int = seed
-        self._feature_columns = c.ae.feature_columns
-        self._feature_scaler = c.ae.feature_scaler
+        self._feature_columns = config.ae.feature_columns
+        self._feature_scaler = config.ae.feature_scaler
         self._epochs = epochs
         self._save_model = save_model
 
@@ -92,9 +92,9 @@ class _UserModelManager(object):
             encoder_layers=[512, 500],  # layers of the encoding part
             decoder_layers=[512],  # layers of the decoding part
             activation='relu',  # activation function
-            swap_p=0.2,  # noise parameter
-            lr=0.01,  # learning rate
-            lr_decay=.99,  # learning decay
+            swap_probability=0.2,  # noise parameter
+            learning_rate=0.01,  # learning rate
+            learning_rate_decay=.99,  # learning decay
             batch_size=512,
             # logger='ipynb',
             verbose=False,
@@ -209,6 +209,9 @@ class TrainAEStage(MultiMessageStage):
         """
         return (UserMessageMeta, )
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MultiAEMessage)
+
     def supports_cpp_node(self):
         return False
 
@@ -243,9 +246,7 @@ class TrainAEStage(MultiMessageStage):
 
         return self._user_models[x.user_id].train(x.df)
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
-
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         get_model_fn = None
 
         # If a pretrained model was specified, load that now
@@ -330,7 +331,6 @@ class TrainAEStage(MultiMessageStage):
             return to_send
 
         node = builder.make_node(self.unique_name, ops.map(on_next), ops.flatten())
-        builder.make_edge(stream, node)
-        stream = node
+        builder.make_edge(input_node, node)
 
-        return stream, MultiAEMessage
+        return node

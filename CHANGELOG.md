@@ -15,6 +15,125 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Morpheus 23.11.01 (7 Dec 2023)
+
+## 🐛 Bug Fixes
+
+- Convert `models/ransomware-models/ransomw-model-short-rf-20220126.sav` to LFS ([#1408](https://github.com/nv-morpheus/Morpheus/pull/1408)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
+## 📖 Documentation
+
+- Cloud deployment guide fixes ([#1406](https://github.com/nv-morpheus/Morpheus/pull/1406)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+
+# Morpheus 23.11.00 (30 Nov 2023)
+
+## 🚨 Breaking Changes
+
+- Separate Pipeline type inference/checking &amp; MRC pipeline construction ([#1233](https://github.com/nv-morpheus/Morpheus/pull/1233)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove multiprocess download option ([#1189](https://github.com/nv-morpheus/Morpheus/pull/1189)) [@efajardo-nv](https://github.com/efajardo-nv)
+
+## 🐛 Bug Fixes
+
+- CVE-2023-47248 Mitigation ([#1399](https://github.com/nv-morpheus/Morpheus/pull/1399)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fixing the hammah and phishing validation pipelines ([#1398](https://github.com/nv-morpheus/Morpheus/pull/1398)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fix the SID Viz workflow shutdown process with the new pipeline shutdown process ([#1392](https://github.com/nv-morpheus/Morpheus/pull/1392)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fix race condition in the C++ impl for the pre-process fil stage ([#1390](https://github.com/nv-morpheus/Morpheus/pull/1390)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fixing the conda-build with DOCA enabled and upgrading to CMake 3.25 ([#1386](https://github.com/nv-morpheus/Morpheus/pull/1386)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Add missing milvus marker ([#1385](https://github.com/nv-morpheus/Morpheus/pull/1385)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Register DataBricksDeltaLakeSourceStage with the CLI ([#1384](https://github.com/nv-morpheus/Morpheus/pull/1384)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Guard optional dependencies in try/except blocks ([#1382](https://github.com/nv-morpheus/Morpheus/pull/1382)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix test_vdb_upload_pipe ([#1381](https://github.com/nv-morpheus/Morpheus/pull/1381)) [@dagardner-nv](https://github.com/dagardner-nv)
+- DFP container updates ([#1347](https://github.com/nv-morpheus/Morpheus/pull/1347)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Removed Mutex Related Milvus Tests ([#1325](https://github.com/nv-morpheus/Morpheus/pull/1325)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Pin cuda-python to 11.8.2 as a work around for 11.8.3 incompatibility. ([#1320](https://github.com/nv-morpheus/Morpheus/pull/1320)) [@drobison00](https://github.com/drobison00)
+- Forward-merge branch-23.07 to branch-23.11 [resolved conflicts] ([#1246](https://github.com/nv-morpheus/Morpheus/pull/1246)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix tests to support mlflow v2.7 ([#1220](https://github.com/nv-morpheus/Morpheus/pull/1220)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update DFP training model_kwargs ([#1216](https://github.com/nv-morpheus/Morpheus/pull/1216)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix Kafka offset checking test ([#1212](https://github.com/nv-morpheus/Morpheus/pull/1212)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add `review_requested` as a trigger &amp; increased timeouts for camouflage ([#1200](https://github.com/nv-morpheus/Morpheus/pull/1200)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove multiprocess download option ([#1189](https://github.com/nv-morpheus/Morpheus/pull/1189)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update feature length  for test_abp_fil_e2e benchmark ([#1188](https://github.com/nv-morpheus/Morpheus/pull/1188)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Make manual_seed an autouse fixture for gnn_fraud_detection_pipeline tests ([#1165](https://github.com/nv-morpheus/Morpheus/pull/1165)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update Downloader utility class to use static dask cluster ([#1161](https://github.com/nv-morpheus/Morpheus/pull/1161)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update to handle GitHub CLI not installed ([#1157](https://github.com/nv-morpheus/Morpheus/pull/1157)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update TimeSeries stage to also work with Production DFP ([#1121](https://github.com/nv-morpheus/Morpheus/pull/1121)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Fix issue where DFPFileToDataFrameStage logs messages about S3 even when S3 is not in use ([#1120](https://github.com/nv-morpheus/Morpheus/pull/1120)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix Tests broken by Test Reorganization ([#1118](https://github.com/nv-morpheus/Morpheus/pull/1118)) [@cwharris](https://github.com/cwharris)
+- Break circular reference issue causing a memory leak ([#1115](https://github.com/nv-morpheus/Morpheus/pull/1115)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Fix intermittent failures in test_dfencoder_distributed_e2e test ([#1113](https://github.com/nv-morpheus/Morpheus/pull/1113)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Resolve forward merger conflices for `branch-23.11` ([#1092](https://github.com/nv-morpheus/Morpheus/pull/1092)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fix local CI building from a specific commit ([#1083](https://github.com/nv-morpheus/Morpheus/pull/1083)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Grafana example readme update ([#1393](https://github.com/nv-morpheus/Morpheus/pull/1393)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Align model card requirements ([#1388](https://github.com/nv-morpheus/Morpheus/pull/1388)) [@drobison00](https://github.com/drobison00)
+- Docs update to indicate use of conda-merge to generate install files ([#1387](https://github.com/nv-morpheus/Morpheus/pull/1387)) [@drobison00](https://github.com/drobison00)
+- Stage documentation improvements ([#1362](https://github.com/nv-morpheus/Morpheus/pull/1362)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Documentation patch for Examples ([#1357](https://github.com/nv-morpheus/Morpheus/pull/1357)) [@pranavm7](https://github.com/pranavm7)
+- Update developer documentation to reflect new compute_schema changes ([#1341](https://github.com/nv-morpheus/Morpheus/pull/1341)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Create LICENSE.psycopg2 ([#1295](https://github.com/nv-morpheus/Morpheus/pull/1295)) [@exactlyallan](https://github.com/exactlyallan)
+- Fix documentation for morpheus.loaders.sql_loader ([#1264](https://github.com/nv-morpheus/Morpheus/pull/1264)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Phishing example fix ([#1215](https://github.com/nv-morpheus/Morpheus/pull/1215)) [@efajardo-nv](https://github.com/efajardo-nv)
+- ABP PCAP detection readme update ([#1205](https://github.com/nv-morpheus/Morpheus/pull/1205)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Command line examples for module-based DFP pipelines ([#1154](https://github.com/nv-morpheus/Morpheus/pull/1154)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update DFP E2E Benchmarks README to use dev container ([#1125](https://github.com/nv-morpheus/Morpheus/pull/1125)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Less intrusive doc builds ([#1060](https://github.com/nv-morpheus/Morpheus/pull/1060)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🚀 New Features
+
+- Add source &amp; stage decorators ([#1364](https://github.com/nv-morpheus/Morpheus/pull/1364)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add a Vector Database Service to allow stages to read and write to VDBs ([#1225](https://github.com/nv-morpheus/Morpheus/pull/1225)) [@bsuryadevara](https://github.com/bsuryadevara)
+- CI test stage no longer depends on build stage ([#1219](https://github.com/nv-morpheus/Morpheus/pull/1219)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Updates for MRC/Morpheus to build in the same RAPIDS devcontainer environment ([#1171](https://github.com/nv-morpheus/Morpheus/pull/1171)) [@cwharris](https://github.com/cwharris)
+- KafkaSourceStage OAuth Callback Support ([#1169](https://github.com/nv-morpheus/Morpheus/pull/1169)) [@cwharris](https://github.com/cwharris)
+- GitHub Project Automation and Infra Updates ([#1168](https://github.com/nv-morpheus/Morpheus/pull/1168)) [@jarmak-nv](https://github.com/jarmak-nv)
+- Elasticsearch Sink Module ([#1163](https://github.com/nv-morpheus/Morpheus/pull/1163)) [@bsuryadevara](https://github.com/bsuryadevara)
+- RSS Source Stage for Reading RSS Feeds ([#1149](https://github.com/nv-morpheus/Morpheus/pull/1149)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Add `parser_kwargs` to `FileSourceStage` to support json files ([#1137](https://github.com/nv-morpheus/Morpheus/pull/1137)) [@cwharris](https://github.com/cwharris)
+- Add a --viz_direction flag to CLI ([#1119](https://github.com/nv-morpheus/Morpheus/pull/1119)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adds support to read and write to Databricks delta tables ([#630](https://github.com/nv-morpheus/Morpheus/pull/630)) [@pthalasta](https://github.com/pthalasta)
+
+## 🛠️ Improvements
+
+- LLM C++ test and doc updates ([#1379](https://github.com/nv-morpheus/Morpheus/pull/1379)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Merge fea-sherlock feature branch into branch-23.11 ([#1359](https://github.com/nv-morpheus/Morpheus/pull/1359)) [@drobison00](https://github.com/drobison00)
+- Make dfp_azure_pipeline inference output file configurable. ([#1290](https://github.com/nv-morpheus/Morpheus/pull/1290)) [@drobison00](https://github.com/drobison00)
+- Loosen nodejs version restriction ([#1262](https://github.com/nv-morpheus/Morpheus/pull/1262)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Use conda environment yaml&#39;s for training-tuning-scripts ([#1256](https://github.com/nv-morpheus/Morpheus/pull/1256)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Cherry pick to pull in august DFP enhancements ([#1248](https://github.com/nv-morpheus/Morpheus/pull/1248)) [@drobison00](https://github.com/drobison00)
+- [DRAFT] Add model and experiment template &#39;click&#39; options to dfp example pipelines, and make model names Databricks compatible. ([#1245](https://github.com/nv-morpheus/Morpheus/pull/1245)) [@drobison00](https://github.com/drobison00)
+- Separate Pipeline type inference/checking &amp; MRC pipeline construction ([#1233](https://github.com/nv-morpheus/Morpheus/pull/1233)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Adopt updated camouflage-server &amp; fix test_dfp_mlflow_model_writer ([#1195](https://github.com/nv-morpheus/Morpheus/pull/1195)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add development deps to dependencies.yaml ([#1193](https://github.com/nv-morpheus/Morpheus/pull/1193)) [@cwharris](https://github.com/cwharris)
+- Update to clang-16 &amp; boost-1.82 ([#1186](https://github.com/nv-morpheus/Morpheus/pull/1186)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Scope Zookeeper &amp; Kafka fixtures to session ([#1160](https://github.com/nv-morpheus/Morpheus/pull/1160)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Use `copy-pr-bot` ([#1159](https://github.com/nv-morpheus/Morpheus/pull/1159)) [@ajschmidt8](https://github.com/ajschmidt8)
+- Update dfp_training stage to support ControlMessages or MultiDFPMessages ([#1155](https://github.com/nv-morpheus/Morpheus/pull/1155)) [@drobison00](https://github.com/drobison00)
+- Prefer conda package over pip dependencies ([#1135](https://github.com/nv-morpheus/Morpheus/pull/1135)) [@cwharris](https://github.com/cwharris)
+- Add tasks and metadata properties to python ControlMessage ([#1134](https://github.com/nv-morpheus/Morpheus/pull/1134)) [@cwharris](https://github.com/cwharris)
+- Eliminate redundant code blocks in modules and stages ([#1123](https://github.com/nv-morpheus/Morpheus/pull/1123)) [@bsuryadevara](https://github.com/bsuryadevara)
+- update devcontainer base to 23.10 ([#1116](https://github.com/nv-morpheus/Morpheus/pull/1116)) [@cwharris](https://github.com/cwharris)
+- Slimmed down CI runners and published artifact urls ([#1112](https://github.com/nv-morpheus/Morpheus/pull/1112)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Updating tests to force .pyi files to be committed into the repo ([#1111](https://github.com/nv-morpheus/Morpheus/pull/1111)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- ABP nvsmi sample data generation ([#1108](https://github.com/nv-morpheus/Morpheus/pull/1108)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Reorganize C++ Tests ([#1095](https://github.com/nv-morpheus/Morpheus/pull/1095)) [@cwharris](https://github.com/cwharris)
+- Improve `gitutils.py` by using the Github CLI when available ([#1088](https://github.com/nv-morpheus/Morpheus/pull/1088)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Fixing linting errors which could not be resolved in 23.07 ([#1082](https://github.com/nv-morpheus/Morpheus/pull/1082)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Move testing utilities into tests/_utils ([#1065](https://github.com/nv-morpheus/Morpheus/pull/1065)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update Versions for v23.11.00 ([#1059](https://github.com/nv-morpheus/Morpheus/pull/1059)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Update GNN  stellargraph with DGL ([#1032](https://github.com/nv-morpheus/Morpheus/pull/1032)) [@tzemicheal](https://github.com/tzemicheal)
+- Implement rest data loader ([#986](https://github.com/nv-morpheus/Morpheus/pull/986)) [@yuchenz427](https://github.com/yuchenz427)
+- Adding HTTP sources &amp; sinks ([#977](https://github.com/nv-morpheus/Morpheus/pull/977)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+# Morpheus 23.07.03 (11 Oct 2023)
+
+## 🐛 Bug Fixes
+- Add pinned libwebp to resolve CVE ([#1236](https://github.com/nv-morpheus/Morpheus/pull/1236)) [@drobison00](https://github.com/drobison00)
+- Add libwebp to meta.yaml for CVE 2307 ([#1242](https://github.com/nv-morpheus/Morpheus/pull/1242)) [@drobison00](https://github.com/drobison00)
+- [BUG] Fix Control Message Utils & SQL Max Connections Exhaust ([#1243](https://github.com/nv-morpheus/Morpheus/pull/1243)) [@bsuryadevara](https://github.com/bsuryadevara)
+
 # Morpheus 23.07.02 (25 Jul 2023)
 
 ## 🐛 Bug Fixes

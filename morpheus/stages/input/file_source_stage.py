@@ -27,7 +27,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,8 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     filter_null : bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
+    parser_kwargs : dict, default = {}
+        Extra options to pass to the file parser.
     """
 
     def __init__(self,
@@ -65,7 +67,8 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                  iterative: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
-                 filter_null: bool = True):
+                 filter_null: bool = True,
+                 parser_kwargs: dict = None):
 
         super().__init__(c)
 
@@ -74,6 +77,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._filename = filename
         self._file_type = file_type
         self._filter_null = filter_null
+        self._parser_kwargs = parser_kwargs or {}
 
         self._input_count = None
         self._max_concurrent = c.num_threads
@@ -97,17 +101,22 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         """Indicates whether or not this stage supports a C++ node"""
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            out_stream = _stages.FileSourceStage(builder, self.unique_name, self._filename, self._repeat_count)
+            node = _stages.FileSourceStage(builder,
+                                           self.unique_name,
+                                           self._filename,
+                                           self._repeat_count,
+                                           self._parser_kwargs)
         else:
-            out_stream = builder.make_source(self.unique_name, self._generate_frames())
+            node = builder.make_source(self.unique_name, self._generate_frames())
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        return node
 
     def _generate_frames(self) -> typing.Iterable[MessageMeta]:
 
@@ -115,6 +124,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
             self._filename,
             self._file_type,
             filter_nulls=self._filter_null,
+            parser_kwargs=self._parser_kwargs,
             df_type="cudf",
         )
 

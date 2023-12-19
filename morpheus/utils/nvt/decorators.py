@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import inspect
+import os
 import typing
 
 import pandas as pd
@@ -98,3 +100,24 @@ def sync_df_as_pandas(df_arg_name='df'):
         return wrapper
 
     return decorator
+
+
+# Avoid using the annotate decorator in sphinx builds, instead define a simple pass-through decorator
+if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
+    from merlin.core.dispatch import annotate  # pylint: disable=unused-import
+else:
+
+    def annotate(*args, **kwargs):  # pylint: disable=unused-argument
+        """
+        `merlin.core.dispatch.annotate`
+        """
+
+        def decorator(func):
+
+            @functools.wraps(func)
+            def wrappper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrappper
+
+        return decorator

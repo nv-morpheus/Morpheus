@@ -21,16 +21,16 @@ from tqdm import tqdm
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.controllers.monitor_controller import MonitorController
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.logger import LogLevels
-from morpheus.utils.monitor_utils import MonitorController
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("monitor", ignore_args=["determine_count_fn"])
-class MonitorStage(SinglePortStage):
+class MonitorStage(PassThruTypeMixin, SinglePortStage):
     """
     Display throughput numbers at a specific point in the pipeline.
 
@@ -118,16 +118,16 @@ class MonitorStage(SinglePortStage):
         if (self._mc.progress is not None):
             self._mc.progress.close()
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if not self._mc.is_enabled():
-            return input_stream
+            return input_node
 
         # Use a component so we track progress using the upstream progress engine. This will provide more accurate
         # results
-        stream = builder.make_node_component(self.unique_name,
-                                             ops.map(self._mc.progress_sink),
-                                             ops.on_completed(self._mc.sink_on_completed))
+        node = builder.make_node_component(self.unique_name,
+                                           ops.map(self._mc.progress_sink),
+                                           ops.on_completed(self._mc.sink_on_completed))
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(input_node, node)
 
-        return stream, input_stream[1]
+        return node

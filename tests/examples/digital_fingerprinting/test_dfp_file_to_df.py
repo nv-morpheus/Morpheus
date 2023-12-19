@@ -22,14 +22,16 @@ import fsspec
 import pandas as pd
 import pytest
 
+import morpheus.utils.downloader
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
 from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.controllers.file_to_df_controller import single_object_to_dataframe
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 
 @pytest.fixture
@@ -40,17 +42,18 @@ def single_file_obj():
                               'threadlist_2022-01-30_10-26-01.670391.json')
     file_specs = fsspec.open_files(input_file)
     assert len(file_specs) == 1
+
+    # pylint: disable=no-member
     yield fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
 
 # pylint: disable=redefined-outer-name
 def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
-    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
     fake_lambda = mock.MagicMock()
 
     schema = DataFrameInputSchema(column_info=[CustomColumn(name='data', dtype=str, process_column_fn=fake_lambda)])
-    df = _single_object_to_dataframe(single_file_obj, schema, FileTypes.Auto, False, {})
+    df = single_object_to_dataframe(single_file_obj, schema, FileTypes.Auto, False, {})
 
     fake_lambda.assert_not_called()
     assert sorted(df.columns) == sorted(['plugin', 'titles', 'data', 'count'])
@@ -65,12 +68,11 @@ def test_single_object_to_dataframe(single_file_obj: fsspec.core.OpenFile):
 
 
 def test_single_object_to_dataframe_timeout():
-    from dfp.stages.dfp_file_to_df import _single_object_to_dataframe
 
     input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', 'fake_wont_match*.json')
     bad_file = fsspec.core.OpenFile(fs=fsspec.open_files(input_glob).fs, path='/tmp/fake/doesnt/exit.csv')
 
-    assert _single_object_to_dataframe(bad_file, DataFrameInputSchema(), FileTypes.CSV, False, {}) is None
+    assert single_object_to_dataframe(bad_file, DataFrameInputSchema(), FileTypes.CSV, False, {}) is None
 
 
 @pytest.mark.usefixtures("restore_environ")
@@ -90,35 +92,34 @@ def test_constructor(config: Config):
 
     assert isinstance(stage, SinglePortStage)
     assert isinstance(stage, PreallocatorMixin)
-    assert stage._schema is schema
-    assert stage._file_type == FileTypes.PARQUET
-    assert not stage._filter_null
-    assert stage._parser_kwargs == {'test': 'this'}
-    assert stage._cache_dir.startswith('/test/path/cache')
+    assert stage._controller._schema is schema
+    assert stage._controller._file_type == FileTypes.PARQUET
+    assert not stage._controller._filter_null
+    assert stage._controller._parser_kwargs == {'test': 'this'}
+    assert stage._controller._cache_dir.startswith('/test/path/cache')
 
 
 # pylint: disable=redefined-outer-name
-@pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.reload_modules(morpheus.utils.downloader)
+@pytest.mark.usefixtures("reload_modules", "restore_environ")
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
 @mock.patch('morpheus.utils.downloader.Distributed')
-@mock.patch('dfp.stages.dfp_file_to_df.process_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.MagicMock,
-                                                          mock_distributed: mock.MagicMock,
-                                                          mock_obf_to_df: mock.MagicMock,
-                                                          mock_dask_cluster: mock.MagicMock,
-                                                          mock_dask_client: mock.MagicMock,
-                                                          mock_mp_gc: mock.MagicMock,
-                                                          config: Config,
-                                                          dl_type: str,
-                                                          use_convert_to_dataframe: bool,
-                                                          tmp_path: str,
-                                                          single_file_obj: fsspec.core.OpenFile,
-                                                          dataset_pandas: DatasetManager):
+@mock.patch('morpheus.controllers.file_to_df_controller.process_dataframe')
+def test_get_or_create_dataframe_from_batch_cache_miss(mock_proc_df: mock.MagicMock,
+                                                       mock_distributed: mock.MagicMock,
+                                                       mock_obf_to_df: mock.MagicMock,
+                                                       mock_dask_cluster: mock.MagicMock,
+                                                       mock_dask_client: mock.MagicMock,
+                                                       config: Config,
+                                                       dl_type: str,
+                                                       use_convert_to_dataframe: bool,
+                                                       tmp_path: str,
+                                                       single_file_obj: fsspec.core.OpenFile,
+                                                       dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -131,13 +132,6 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
     mock_distributed.client = mock_dist_client
     mock_distributed.__enter__.return_value = mock_distributed
     mock_distributed.__exit__.return_value = False
-
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-    mock_mp_pool.return_value = mock_mp_pool
-    mock_mp_pool.__enter__.return_value = mock_mp_pool
-    mock_mp_pool.__exit__.return_value = False
 
     expected_hash = hashlib.md5(json.dumps([{
         'ukey': single_file_obj.fs.ukey(single_file_obj.path)
@@ -157,8 +151,6 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
     if dl_type.startswith('dask'):
         mock_dist_client.map.return_value = [returned_df]
         mock_dist_client.gather.return_value = [returned_df]
-    elif dl_type in ("multiprocess", "multiprocessing"):
-        mock_mp_pool.map.return_value = [returned_df]
     else:
         mock_obf_to_df.return_value = returned_df
 
@@ -168,19 +160,12 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
     batch = fsspec.core.OpenFiles([single_file_obj], fs=single_file_obj.fs)
 
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
-        output_df = stage.convert_to_dataframe((batch, 1))
+        output_df = stage._controller.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_batch((batch, 1))
         assert not cache_hit
-
-    if dl_type in ("multiprocess", "multiprocessing"):
-        mock_mp_gc.assert_called_once()
-        mock_mp_pool.map.assert_called_once()
-    else:
-        mock_mp_gc.assert_not_called()
-        mock_mp_pool.map.assert_not_called()
 
     if dl_type == "single_thread":
         mock_obf_to_df.assert_called_once()
@@ -198,30 +183,28 @@ def test_get_or_create_dataframe_from_s3_batch_cache_miss(mock_proc_df: mock.Mag
 
     dataset_pandas.assert_df_equal(output_df, expected_df)
 
-    expected_cache_file_path = os.path.join(stage._cache_dir, "batches", f"{expected_hash}.pkl")
+    expected_cache_file_path = os.path.join(stage._controller._cache_dir, "batches", f"{expected_hash}.pkl")
     assert os.path.exists(expected_cache_file_path)
     dataset_pandas.assert_df_equal(pd.read_pickle(expected_cache_file_path),
                                    expected_df[dataset_pandas['filter_probs.csv'].columns])
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str,
-                                                         dataset_pandas: DatasetManager):
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
+def test_get_or_create_dataframe_from_batch_cache_hit(mock_obf_to_df: mock.MagicMock,
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str,
+                                                      dataset_pandas: DatasetManager):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     config.ae.timestamp_column_name = 'v1'
     mock_dask_cluster.return_value = mock_dask_cluster
@@ -229,14 +212,9 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
     mock_dask_client.__enter__.return_value = mock_dask_client
     mock_dask_client.__exit__.return_value = False
 
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-    mock_mp_pool.return_value = mock_mp_pool
-    mock_mp_pool.__enter__.return_value = mock_mp_pool
-    mock_mp_pool.__exit__.return_value = False
-
     file_specs = fsspec.open_files(os.path.abspath(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')))
+
+    # pylint: disable=no-member
     file_obj = fsspec.core.OpenFile(fs=file_specs.fs, path=file_specs[0].path)
 
     hash_data = hashlib.md5(json.dumps([{'ukey': file_obj.fs.ukey(file_obj.path)}]).encode()).hexdigest()
@@ -254,16 +232,14 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
     batch = fsspec.core.OpenFiles([file_obj], fs=file_obj.fs)
     if use_convert_to_dataframe:
-        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_s3_batch, no need to create
+        # convert_to_dataframe is a thin wrapper around _get_or_create_dataframe_from_batch, no need to create
         # a new test for it
-        output_df = stage.convert_to_dataframe((batch, 1))
+        output_df = stage._controller.convert_to_dataframe((batch, 1))
     else:
-        (output_df, cache_hit) = stage._get_or_create_dataframe_from_s3_batch((batch, 1))
+        (output_df, cache_hit) = stage._controller._get_or_create_dataframe_from_batch((batch, 1))
         assert cache_hit
 
     # When we get a cache hit, none of the download methods should be executed
-    mock_mp_gc.assert_not_called()
-    mock_mp_pool.map.assert_not_called()
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
     mock_dask_client.assert_not_called()
@@ -273,43 +249,35 @@ def test_get_or_create_dataframe_from_s3_batch_cache_hit(mock_obf_to_df: mock.Ma
 
 
 @pytest.mark.usefixtures("restore_environ")
-@pytest.mark.parametrize('dl_type', ["single_thread", "multiprocess", "multiprocessing", "dask", "dask_thread"])
+@pytest.mark.parametrize('dl_type', ["single_thread", "dask", "dask_thread"])
 @pytest.mark.parametrize('use_convert_to_dataframe', [True, False])
-@mock.patch('multiprocessing.get_context')
 @mock.patch('dask.config')
 @mock.patch('dask.distributed.Client')
 @mock.patch('dask_cuda.LocalCUDACluster')
-@mock.patch('dfp.stages.dfp_file_to_df._single_object_to_dataframe')
-def test_get_or_create_dataframe_from_s3_batch_none_noop(mock_obf_to_df: mock.MagicMock,
-                                                         mock_dask_cluster: mock.MagicMock,
-                                                         mock_dask_client: mock.MagicMock,
-                                                         mock_dask_config: mock.MagicMock,
-                                                         mock_mp_gc: mock.MagicMock,
-                                                         config: Config,
-                                                         dl_type: str,
-                                                         use_convert_to_dataframe: bool,
-                                                         tmp_path: str):
+@mock.patch('morpheus.controllers.file_to_df_controller.single_object_to_dataframe')
+def test_get_or_create_dataframe_from_batch_none_noop(mock_obf_to_df: mock.MagicMock,
+                                                      mock_dask_cluster: mock.MagicMock,
+                                                      mock_dask_client: mock.MagicMock,
+                                                      mock_dask_config: mock.MagicMock,
+                                                      config: Config,
+                                                      dl_type: str,
+                                                      use_convert_to_dataframe: bool,
+                                                      tmp_path: str):
     from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
     mock_dask_cluster.return_value = mock_dask_cluster
     mock_dask_client.return_value = mock_dask_client
 
-    mock_mp_gc.return_value = mock_mp_gc
-    mock_mp_pool = mock.MagicMock()
-    mock_mp_gc.Pool.return_value = mock_mp_pool
-
     os.environ['MORPHEUS_FILE_DOWNLOAD_TYPE'] = dl_type
     stage = DFPFileToDataFrameStage(config, DataFrameInputSchema(), cache_dir=tmp_path)
     if use_convert_to_dataframe:
-        assert stage.convert_to_dataframe(None) is None
+        assert stage._controller.convert_to_dataframe(None) is None
     else:
         with pytest.raises(RuntimeError, match="No file objects to process"):
-            stage._get_or_create_dataframe_from_s3_batch(None)
+            stage._controller._get_or_create_dataframe_from_batch(None)
 
     mock_obf_to_df.assert_not_called()
     mock_dask_cluster.assert_not_called()
     mock_dask_client.assert_not_called()
     mock_dask_config.assert_not_called()
-    mock_mp_gc.assert_not_called()
-    mock_mp_pool.map.assert_not_called()
 
     assert os.listdir(tmp_path) == []

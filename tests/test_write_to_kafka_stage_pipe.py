@@ -20,12 +20,13 @@ import pytest
 
 import cudf
 
+from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -37,7 +38,7 @@ def test_write_to_kafka_stage_pipe(config,
                                    dataset_cudf: DatasetManager,
                                    kafka_bootstrap_servers: str,
                                    kafka_consumer: "KafkaConsumer",
-                                   kafka_topics: typing.Tuple[str, str]) -> None:
+                                   kafka_topics: KafkaTopics) -> None:
     """
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution
     to ensure it works just as well with the C++ impls of the message classes.

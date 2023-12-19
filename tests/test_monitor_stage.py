@@ -22,23 +22,22 @@ import typing
 from unittest import mock
 
 import fsspec
-import mrc
 import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
+from _utils.stages.record_thread_id_stage import RecordThreadIdStage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logger import set_log_level
-from utils import TEST_DIRS
 
 
-def test_constructor(config):
+def test_constructor(config: Config):
     # Intentionally not making assumptions about the defaults other than they exist
     # and still create a valid stage.
     stage = MonitorStage(config, log_level=logging.WARNING)
@@ -59,8 +58,8 @@ def test_constructor(config):
     assert stage._mc._determine_count_fn is two_x
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
-def test_on_start(mock_morph_tqdm, config):
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
+def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
@@ -72,8 +71,8 @@ def test_on_start(mock_morph_tqdm, config):
     assert stage._mc._progress is mock_morph_tqdm
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
-def test_stop(mock_morph_tqdm, config):
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
+def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
@@ -88,8 +87,8 @@ def test_stop(mock_morph_tqdm, config):
     mock_morph_tqdm.close.assert_called_once()
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
-def test_refresh(mock_morph_tqdm, config):
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
+def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
@@ -115,7 +114,7 @@ def test_refresh(mock_morph_tqdm, config):
                              (set(), True, 0),
                              (fsspec.open_files(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')), True, 1),
                          ])
-def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: typing.Union[int, None]):
+def test_auto_count_fn(config: Config, value: typing.Any, expected_fn: bool, expected: typing.Union[int, None]):
     stage = MonitorStage(config, log_level=logging.WARNING)
 
     auto_fn = stage._mc.auto_count_fn(value)
@@ -127,15 +126,15 @@ def test_auto_count_fn(config, value: typing.Any, expected_fn: bool, expected: t
 
 
 @pytest.mark.parametrize('value', [1, [1], [2, 0]])
-def test_auto_count_fn_not_impl(config, value: typing.Any):
+def test_auto_count_fn_not_impl(config: Config, value: typing.Any):
     stage = MonitorStage(config, log_level=logging.WARNING)
 
     with pytest.raises(NotImplementedError):
         stage._mc.auto_count_fn(value)
 
 
-@mock.patch('morpheus.utils.monitor_utils.MorpheusTqdm')
-def test_progress_sink(mock_morph_tqdm, config):
+@mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
+def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
@@ -155,7 +154,10 @@ def test_progress_sink(mock_morph_tqdm, config):
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.sink_on_completed', autospec=True)
 @mock.patch('morpheus.stages.general.monitor_stage.MonitorController.progress_sink', autospec=True)
-def test_log_level(mock_progress_sink, mock_sink_on_completed, config, morpheus_log_level):
+def test_log_level(mock_progress_sink: mock.MagicMock,
+                   mock_sink_on_completed: mock.MagicMock,
+                   config: Config,
+                   morpheus_log_level: int):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
@@ -178,42 +180,13 @@ def test_log_level(mock_progress_sink, mock_sink_on_completed, config, morpheus_
 
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.use_python
-def test_thread(config):
+def test_thread(config: Config):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
     set_log_level(log_level=logging.INFO)
-
-    # Create a dummy forwarding stage that allows us to save the thread id from this progress engine
-    class DummyStage(SinglePortStage):
-
-        def __init__(self, config: Config):
-            super().__init__(config)
-
-            self.thread_id = None
-
-        @property
-        def name(self):
-            return "dummy"
-
-        def accepted_types(self):
-            return (typing.Any, )
-
-        def supports_cpp_node(self):
-            return False
-
-        def _save_thread(self, x):
-            self.thread_id = threading.current_thread().ident
-            return x
-
-        def _build_single(self, builder: mrc.Builder, input_stream):
-            stream = builder.make_node(self.unique_name, mrc.core.operators.map(self._save_thread))
-
-            builder.make_edge(input_stream[0], stream)
-
-            return stream, input_stream[1]
 
     monitor_thread_id = None
 
@@ -227,7 +200,7 @@ def test_thread(config):
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
-    dummy_stage = pipe.add_stage(DummyStage(config))
+    dummy_stage = pipe.add_stage(RecordThreadIdStage(config))
     pipe.add_stage(MonitorStage(config, determine_count_fn=fake_determine_count_fn))
     pipe.run()
 

@@ -14,17 +14,13 @@
 
 import logging
 import pickle
-import typing
 
-import cupy as cp
 import mrc
-import numpy as np
-import typing_utils
 from mrc.core import operators as ops
 
+import morpheus._lib.stages as _stages
 from morpheus.common import FilterSource
-from morpheus.messages import MultiMessage
-from morpheus.messages.multi_response_message import MultiResponseMessage
+from morpheus.controllers.filter_detections_controller import FilterDetectionsController
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -85,6 +81,10 @@ def filter_detections(builder: mrc.Builder):
     field_name = config.get("field_name", "probs")
     threshold = config.get("threshold", 0.5)
     filter_source = config.get("filter_source", "AUTO")
+    use_cpp = config.get("use_cpp", False)
+
+    filter_source_dict = {"AUTO": FilterSource.Auto, "DATAFRAME": FilterSource.DATAFRAME, "TENSOR": FilterSource.TENSOR}
+
     copy = config.get("copy", True)
 
     if ("schema" not in config):
@@ -96,100 +96,27 @@ def filter_detections(builder: mrc.Builder):
 
     message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    def find_detections(multi_message: MultiMessage, _filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
+    controller = FilterDetectionsController(threshold=threshold,
+                                            filter_source=filter_source_dict[filter_source],
+                                            field_name=field_name)
 
-        # Determind the filter source
-        if _filter_source == FilterSource.TENSOR:
-            _filter_source = multi_message.get_output(field_name)
-        else:
-            _filter_source = multi_message.get_meta(field_name).values
+    controller.update_filter_source(message_type=message_type)
 
-        if (isinstance(_filter_source, np.ndarray)):
-            array_mod = np
-        else:
-            array_mod = cp
-
-        # Get per row detections
-        detections = (_filter_source > threshold)
-
-        if (len(detections.shape) > 1):
-            detections = detections.any(axis=1)
-
-        # Surround in False to ensure we get an even number of pairs
-        detections = array_mod.concatenate([array_mod.array([False]), detections, array_mod.array([False])])
-
-        return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
-
-    def filter_copy(multi_message: MultiMessage) -> typing.Union[MultiMessage, None]:
-        """
-        This function uses a threshold value to filter the messages.
-
-        Parameters
-        ----------
-        multi_message : `morpheus.pipeline.messages.MultiMessage`
-            Response message with probabilities calculated from inference results.
-
-        Returns
-        -------
-        `morpheus.pipeline.messages.MultiMessage`
-            A new message containing a copy of the rows above the threshold.
-
-        """
-        if multi_message is None:
-            return None
-
-        true_pairs = find_detections(multi_message, filter_source)
-
-        if (true_pairs.shape[0] == 0):
-            return None
-
-        return multi_message.copy_ranges(true_pairs)
-
-    def filter_slice(multi_message: MultiMessage) -> typing.List[MultiMessage]:
-        """
-        This function uses a threshold value to filter the messages.
-
-        Parameters
-        ----------
-        multi_message : `morpheus.pipeline.messages.MultiMessage`
-            Response message with probabilities calculated from inference results.
-
-        Returns
-        -------
-        typing.List[`morpheus.pipeline.messages.MultiMessage`]
-            List of filtered messages.
-
-        """
-
-        # Unfortunately we have to convert this to a list in case there are non-contiguous groups
-        output_list = []
-        if multi_message is not None:
-            true_pairs = find_detections(multi_message, filter_source)
-            for pair in true_pairs:
-                pair = tuple(pair.tolist())
-                if ((pair[1] - pair[0]) > 0):
-                    output_list.append(multi_message.get_slice(*pair))
-
-        return output_list
-
-    if filter_source == "AUTO":
-        if (typing_utils.issubtype(message_type, MultiResponseMessage)):
-            filter_source = FilterSource.TENSOR
-        else:
-            filter_source = FilterSource.DATAFRAME
-
-        # logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
-        #             "message type of {message_type}")
-    elif filter_source == "DATAFRAME":
-        filter_source = FilterSource.DATAFRAME
+    if use_cpp:
+        node = _stages.FilterDetectionsStage(builder,
+                                             FILTER_DETECTIONS,
+                                             controller.threshold,
+                                             copy,
+                                             controller.filter_source,
+                                             controller.field_name)
     else:
-        raise Exception(f"Unknown filter source: {filter_source}")
-
-    if copy:
-        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_copy))
-    else:
-        # Convert list returned by `filter_slice` back to individual messages
-        node = builder.make_node(FILTER_DETECTIONS, ops.map(filter_slice), ops.flatten())
+        if copy:
+            node = builder.make_node(FILTER_DETECTIONS,
+                                     ops.map(controller.filter_copy),
+                                     ops.filter(lambda x: x is not None))
+        else:
+            # Convert list returned by `filter_slice` back to individual messages
+            node = builder.make_node(FILTER_DETECTIONS, ops.map(controller.filter_slice), ops.flatten())
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

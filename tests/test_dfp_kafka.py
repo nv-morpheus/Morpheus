@@ -24,6 +24,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from _utils import TEST_DIRS
+from _utils.dataset_manager import DatasetManager
+from _utils.kafka import KafkaTopics
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -42,8 +45,6 @@ from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
-from utils import TEST_DIRS
-from utils.dataset_manager import DatasetManager
 
 if (typing.TYPE_CHECKING):
     from kafka import KafkaConsumer
@@ -62,7 +63,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
                    dataset_pandas: DatasetManager,
                    config: Config,
                    kafka_bootstrap_servers: str,
-                   kafka_topics: typing.Tuple[str, str],
+                   kafka_topics: KafkaTopics,
                    kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_roleg_anomaly_score.csv'), delimiter=',')
@@ -89,6 +90,7 @@ def test_dfp_roleg(mock_ae: mock.MagicMock,
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "role-g"
     config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
@@ -163,7 +165,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
                      dataset_pandas: DatasetManager,
                      config: Config,
                      kafka_bootstrap_servers: str,
-                     kafka_topics: typing.Tuple[str, str],
+                     kafka_topics: KafkaTopics,
                      kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'dfp_user123_anomaly_score.csv'), delimiter=',')
@@ -189,6 +191,7 @@ def test_dfp_user123(mock_ae: mock.MagicMock,
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.userid_filter = "user123"
     config.ae.feature_columns = load_labels_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
+    config.ae.timestamp_column_name = "event_dt"
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")

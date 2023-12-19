@@ -33,8 +33,8 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
-class GenerateVizFramesStage(SinglePortStage):
+class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
     """
     Write out visualization DataFrames.
 
@@ -57,11 +57,18 @@ class GenerateVizFramesStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, server_url: str = "0.0.0.0", server_port: int = 8765):
+    def __init__(self,
+                 c: Config,
+                 server_url: str = "0.0.0.0",
+                 server_port: int = 8765,
+                 out_dir: str = None,
+                 overwrite: bool = False):
         super().__init__(c)
 
         self._server_url = server_url
         self._server_port = server_port
+        self._out_dir = out_dir
+        self._overwrite = overwrite
 
         self._first_timestamp = -1
         self._buffers = []
@@ -166,7 +173,7 @@ class GenerateVizFramesStage(SinglePortStage):
 
         out_file = os.path.join(self._out_dir, f"{offset}.csv")
 
-        assert not os.path.exists(out_file)
+        assert self._overwrite or not os.path.exists(out_file)
 
         in_df.to_csv(out_file, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
@@ -228,7 +235,20 @@ class GenerateVizFramesStage(SinglePortStage):
 
         return await super().start_async()
 
+    def stop(self):
+        """
+        Stages can implement this to perform cleanup steps when pipeline is stopped.
+        """
+
+        if (self._loop is not None):
+            asyncio.run_coroutine_threadsafe(self._stop_server(), loop=self._loop)
+            pass
+
     async def _stop_server(self):
+
+        # Only run this once
+        if (self._buffer_queue.is_closed()):
+            return
 
         logger.info("Shutting down queue")
 
@@ -236,12 +256,10 @@ class GenerateVizFramesStage(SinglePortStage):
 
         self._server_close_event.set()
 
-        # Wait for it to
+        # Wait for it to fully shut down
         await self._server_task
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        stream = input_stream[0]
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         def node_fn(input_obs, output_obs):
 
@@ -269,8 +287,12 @@ class GenerateVizFramesStage(SinglePortStage):
 
                 out_buf = sink.getvalue()
 
-                # Enqueue the buffer and block until that completes
-                asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                try:
+                    # Enqueue the buffer and block until that completes
+                    asyncio.run_coroutine_threadsafe(self._buffer_queue.put(out_buf), loop=self._loop).result()
+                except Closed:
+                    # Ignore closed errors. Likely the pipeline is shutting down
+                    pass
 
             input_obs.pipe(ops.map(write_batch)).subscribe(output_obs)
 
@@ -284,9 +306,7 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Gen-viz shutdown complete")
 
         # Sink to file
-        to_file = builder.make_node(self.unique_name, ops.build(node_fn))
-        builder.make_edge(stream, to_file)
-        stream = to_file
+        to_filenode = builder.make_node(self.unique_name, ops.build(node_fn))
+        builder.make_edge(input_node, to_filenode)
 
-        # Return input unchanged to allow passthrough
-        return input_stream
+        return to_filenode

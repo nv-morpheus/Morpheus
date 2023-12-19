@@ -18,40 +18,33 @@ import sys
 
 import pytest
 
-from utils import TEST_DIRS
-from utils import import_or_skip
+from _utils import TEST_DIRS
+from _utils import import_or_skip
+from _utils import remove_module
 
 SKIP_REASON = ("Tests for the gnn_fraud_detection_pipeline example require a number of packages not installed in the "
                "Morpheus development environment. See `examples/gnn_fraud_detection_pipeline/README.md` for details on "
                "installing these additional dependencies")
 
 
-@pytest.fixture(autouse=True, scope='session')
-def stellargraph(fail_missing: bool):
+@pytest.fixture(name="dgl", autouse=True, scope='session')
+def dgl_fixture(fail_missing: bool):
     """
-    All of the tests in this subdir require stellargraph
+    All of the tests in this subdir require dgl
     """
-    yield import_or_skip("stellargraph", reason=SKIP_REASON, fail_missing=fail_missing)
+    yield import_or_skip("dgl", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def cuml(fail_missing: bool):
+@pytest.fixture(name="cuml", autouse=True, scope='session')
+def cuml_fixture(fail_missing: bool):
     """
     All of the tests in this subdir require cuml
     """
     yield import_or_skip("cuml", reason=SKIP_REASON, fail_missing=fail_missing)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def tensorflow(fail_missing: bool):
-    """
-    All of the tests in this subdir require tensorflow
-    """
-    yield import_or_skip("tensorflow", reason=SKIP_REASON, fail_missing=fail_missing)
-
-
-@pytest.fixture
-def config(config):
+@pytest.fixture(name="config")
+def config_fixture(config):
     """
     The GNN fraud detection pipeline utilizes the "other" pipeline mode.
     """
@@ -60,38 +53,61 @@ def config(config):
     yield config
 
 
-@pytest.fixture
-def example_dir():
+@pytest.fixture(name="manual_seed", scope="function", autouse=True)
+def manual_seed_fixture(manual_seed):
+    """
+    Extends the base `manual_seed` fixture to also set the seed for dgl, ensuring deterministic results in tests
+    """
+    import dgl
+
+    def seed_fn(seed=42):
+        manual_seed(seed)
+        dgl.seed(seed)
+
+    seed_fn()
+    yield seed_fn
+
+
+@pytest.fixture(name="example_dir")
+def example_dir_fixture():
     yield os.path.join(TEST_DIRS.examples_dir, 'gnn_fraud_detection_pipeline')
 
 
-@pytest.fixture
-def training_file(example_dir: str):
+@pytest.fixture(name="training_file")
+def training_file_fixture(example_dir: str):
     yield os.path.join(example_dir, 'training.csv')
 
 
-@pytest.fixture
-def hinsage_model(example_dir: str):
-    yield os.path.join(example_dir, 'model/hinsage-model.pt')
+@pytest.fixture(name="model_dir")
+def model_dir_fixture(example_dir: str):
+    yield os.path.join(example_dir, 'model')
 
 
-@pytest.fixture
-def xgb_model(example_dir: str):
-    yield os.path.join(example_dir, 'model/xgb-model.pt')
+@pytest.fixture(name="xgb_model")
+def xgb_model_fixture(model_dir: str):
+    yield os.path.join(model_dir, 'xgb.pt')
 
 
 # Some of the code inside gnn_fraud_detection_pipeline performs some relative imports in the form of:
 #    from .mod import Class
 # For this reason we need to ensure that the examples dir is in the sys.path first
-@pytest.fixture
-def gnn_fraud_detection_pipeline(request: pytest.FixtureRequest, restore_sys_path, reset_plugins):
-    sys.path.append(TEST_DIRS.examples_dir)
-    import gnn_fraud_detection_pipeline
-    yield gnn_fraud_detection_pipeline
+@pytest.mark.usefixtures("restore_sys_path", "reset_plugins")
+@pytest.fixture(name="ex_in_sys_path", autouse=True)
+def ex_in_sys_path_fixture(example_dir: str):
+    sys.path.insert(0, example_dir)
 
 
-@pytest.fixture
-def test_data():
+@pytest.fixture(autouse=True)
+def reset_modules():
+    """
+    Other examples have a stages module, ensure it is un-imported after running tests in this subdir
+    """
+    yield
+    remove_module('stages')
+
+
+@pytest.fixture(name="test_data")
+def test_data_fixture():
     """
     Construct test data, a small DF of 10 rows which we will build a graph from
     The nodes in our graph will be the unique values from each of our three columns, and the index is also
@@ -102,10 +118,11 @@ def test_data():
     thus we should expect 20 edges, although 2697 is duplicated in the client_node column we should expect two
     unique edges for each entry (2697, 14) & (2697, 91)
     """
-    import pandas as pd
+    import cudf
     index = [2, 14, 16, 26, 41, 42, 70, 91, 93, 95]
-    client_data = [795, 2697, 5531, 415, 2580, 3551, 6547, 2697, 3503, 7173]
-    merchant_data = [8567, 4609, 2781, 7844, 629, 6915, 7071, 570, 2446, 8110]
+
+    client_data = [795.0, 2697.0, 5531.0, 415.0, 2580.0, 3551.0, 6547.0, 2697.0, 3503.0, 7173.0]
+    merchant_data = [8567.0, 4609.0, 2781.0, 7844.0, 629.0, 6915.0, 7071.0, 570.0, 2446.0, 8110.0]
 
     df_data = {
         'index': index,
@@ -118,23 +135,38 @@ def test_data():
     for i in range(1000, 1113):
         # these two values are skipped, apparently place-holders for client_node & merchant_node
         if i not in (1002, 1003):
-            df_data[str(i)] = [0 for _ in range(len(index))]
+            df_data[str(i)] = [0.0 for _ in range(len(index))]
 
-    df = pd.DataFrame(df_data, index=index)
+    df = cudf.DataFrame(df_data, index=index)
 
-    expected_nodes = set(index + client_data + merchant_data)
-    assert len(expected_nodes) == 29  # ensuring test data & assumptions are correct
+    # Create indexed nodeId
+    meta_cols = ['index', 'client_node', 'merchant_node']
+    for col in meta_cols:
+        df[col] = cudf.CategoricalIndex(df[col]).codes
+    df.index = df['index']
 
-    expected_edges = set()
-    for data in (client_data, merchant_data):
-        for (i, val) in enumerate(data):
-            expected_edges.add((val, index[i]))
+    # Collect expected nodes, since hetero nodes could share same index
+    # We use dict of node_name:index
+    expected_nodes = {}
+    for col in meta_cols:
+        expected_nodes[col] = set(df[col].to_arrow().tolist())
 
-    assert len(expected_edges) == 20  # ensuring test data & assumptions are correct
+    # ensuring test data & assumptions are correct
+    assert sum(len(nodes) for _, nodes in expected_nodes.items()) == 29
 
-    yield dict(index=index,
-               client_data=client_data,
-               merchant_data=merchant_data,
-               df=df,
-               expected_nodes=expected_nodes,
-               expected_edges=expected_edges)
+    expected_edges = {'buy': [], 'sell': []}
+    for i in range(df.shape[0]):
+        for key, val in {'buy': 'client_node', 'sell': 'merchant_node'}.items():
+            expected_edges[key].append([df[val].iloc[i], i])
+
+    # ensuring test data & assumptions are correct
+    assert sum(len(edges) for _, edges in expected_edges.items()) == 20
+
+    yield {
+        "index": df['index'].to_arrow().tolist(),
+        "client_data": df['client_node'].to_arrow().tolist(),
+        "merchant_data": df['merchant_node'].to_arrow().tolist(),
+        "df": df,
+        "expected_nodes": expected_nodes,
+        "expected_edges": expected_edges
+    }

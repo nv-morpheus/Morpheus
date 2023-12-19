@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# pylint: disable=invalid-name
 """
 Example Usage:
 python hammah-20211017-script.py \
@@ -24,13 +25,14 @@ import argparse
 import dill
 import pandas as pd
 import torch
+
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.seed import manual_seed
 
 
 def main():
-    X_train = pd.read_csv(args.trainingdata)
-    X_val = pd.read_csv(args.valdata)
+    x_train = pd.read_csv(args.trainingdata)
+    x_val = pd.read_csv(args.valdata)
 
     features = [
         'eventSource',
@@ -67,31 +69,31 @@ def main():
         'responseElementsreservationId',
         'requestParametersgroupName'
     ]  # NO userIdentitysessionContextsessionIssuerarn,userIdentityuserName
-    for i in list(X_train):
+    for i in list(x_train):
         if i not in features:
-            X_train = X_train.drop(i, axis=1)
-    for i in list(X_val):
+            x_train = x_train.drop(i, axis=1)
+    for i in list(x_val):
         if i not in features:
-            X_val = X_val.drop(i, axis=1)
+            x_val = x_val.drop(i, axis=1)
 
-    X_train = X_train.dropna(axis=1, how='all')
-    X_val = X_val.dropna(axis=1, how='all')
+    x_train = x_train.dropna(axis=1, how='all')
+    x_val = x_val.dropna(axis=1, how='all')
 
-    for i in list(X_val):
-        if i not in list(X_train):
-            X_val = X_val.drop([i], axis=1)
+    for i in list(x_val):
+        if i not in list(x_train):
+            x_val = x_val.drop([i], axis=1)
 
-    for i in list(X_train):
-        if i not in list(X_val):
-            X_train = X_train.drop([i], axis=1)
+    for i in list(x_train):
+        if i not in list(x_val):
+            x_train = x_train.drop([i], axis=1)
     manual_seed(42)
     model = AutoEncoder(
         encoder_layers=[512, 500],  # layers of the encoding part
         decoder_layers=[512],  # layers of the decoding part
         activation='relu',  # activation function
-        swap_p=0.2,  # noise parameter
-        lr=0.01,  # learning rate
-        lr_decay=.99,  # learning decay
+        swap_probability=0.2,  # noise parameter
+        learning_rate=0.01,  # learning rate
+        learning_rate_decay=.99,  # learning decay
         batch_size=512,
         logger='ipynb',
         verbose=False,
@@ -100,7 +102,7 @@ def main():
         min_cats=1  # cut off for minority categories
     )
 
-    model.fit(X_train, epochs=25, val=X_val)
+    model.fit(x_train, epochs=25, validation_data=x_val, run_validation=True)
 
     torch.save(model.state_dict(), args.trainingdata[:-4] + ".pkl")
     with open(args.trainingdata[:-4] + 'dill' + '.pkl', 'wb') as f:

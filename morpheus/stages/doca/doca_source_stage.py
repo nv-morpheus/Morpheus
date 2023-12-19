@@ -22,7 +22,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +53,10 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         # Attempt to import the C++ stage on creation
         try:
-            # pylint: disable=C0415
-            from morpheus._lib.doca import DocaSourceStage as _DocaSourceStage
+            # pylint: disable=c-extension-no-member
+            import morpheus._lib.doca as _doca
 
-            self._doca_source_class = _DocaSourceStage
+            self._doca_source_class = _doca.DocaSourceStage
         except ImportError as ex:
             raise NotImplementedError(("The Morpheus DOCA components could not be imported. "
                                        "Ensure the DOCA components have been built and installed. Error message: ") +
@@ -77,19 +77,15 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         """Return None for no max input count"""
         return None
 
+    def compute_schema(self, schema: StageSchema):
+        schema.output_schema.set_type(MessageMeta)
+
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            out_stream = self._doca_source_class(builder,
-                                                 self.unique_name,
-                                                 self._nic_pci_address,
-                                                 self._gpu_pci_address)
-        else:
-            raise NotImplementedError("Does not support Python nodes")
+            return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address)
 
-        out_type = MessageMeta
-
-        return out_stream, out_type
+        raise NotImplementedError("Does not support Python nodes")

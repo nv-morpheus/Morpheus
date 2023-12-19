@@ -16,6 +16,9 @@
 # It is assumed that this script is executed from the root of the repo directory by conda-build
 # (https://conda-forge.org/docs/maintainer/knowledge_base.html#using-cmake)
 
+# Need to ensure this value is set before checking it in the if block
+MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
+
 # This will store all of the cmake args. Make sure to prepend args to allow
 # incoming values to overwrite them
 CMAKE_ARGS=${CMAKE_ARGS:-""}
@@ -32,6 +35,15 @@ if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    mkdir -p ${MORPHEUS_CACHE_DIR}
 fi
 
+if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then
+   CMAKE_ARGS="-DMORPHEUS_SUPPORT_DOCA=ON ${CMAKE_ARGS}"
+
+   # Set the CMAKE_CUDA_ARCHITECTURES to just 80;86 since that is what DOCA supports for now
+   CMAKE_CUDA_ARCHITECTURES="80;86"
+
+   echo "MORPHEUS_SUPPORT_DOCA is ON. Setting CMAKE_CUDA_ARCHITECTURES to supported values: '${CMAKE_CUDA_ARCHITECTURES}'"
+fi
+
 CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=$PREFIX ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_INSTALL_LIBDIR=lib ${CMAKE_ARGS}"
@@ -45,6 +57,7 @@ CMAKE_ARGS="-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"RAPIDS"} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DPython_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DPYTHON_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}" # for pybind11
+CMAKE_ARGS="--log-level=VERBOSE ${CMAKE_ARGS}"
 
 if [[ "${USE_SCCACHE}" == "1" ]]; then
    CMAKE_ARGS="-DCCACHE_PROGRAM_PATH=$(which sccache) ${CMAKE_ARGS}"
@@ -80,4 +93,4 @@ cmake -B ${BUILD_DIR} \
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
 
 # Install just the python wheel components
-${PYTHON} -m pip install -vv --no-deps ${BUILD_DIR}/dist/*.whl
+${PYTHON} -m pip install -vv ${BUILD_DIR}/dist/*.whl

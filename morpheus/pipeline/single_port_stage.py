@@ -21,7 +21,6 @@ import typing_utils
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ class SinglePortStage(_pipeline.Stage):
         self._create_ports(1, 1)
 
     @abstractmethod
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         """
         Accepted input types for this stage are returned. Derived classes should override this method. An
         error will be generated if the input types to the stage do not match one of the available types
@@ -51,48 +50,48 @@ class SinglePortStage(_pipeline.Stage):
 
         Returns
         -------
-        typing.Tuple
+        tuple
             Accepted input types.
 
         """
         pass
 
-    def _pre_build(self, builder: mrc.Builder) -> typing.List[StreamPair]:
-        in_ports_pairs = super()._pre_build(builder=builder)
-
-        # Check the types of all inputs
-        for x in in_ports_pairs:
-            if (not typing_utils.issubtype(x[1], typing.Union[self.accepted_types()])):
-                raise RuntimeError("The {} stage cannot handle input of {}. Accepted input types: {}".format(
-                    self.name, x[1], self.accepted_types()))
-
-        return in_ports_pairs
+    def _pre_compute_schema(self, schema: _pipeline.StageSchema):
+        # Pre-flight check to verify that the input type is one of the accepted types
+        super()._pre_compute_schema(schema)
+        accepted_types = typing.Union[self.accepted_types()]
+        input_type = schema.input_type
+        if (not typing_utils.issubtype(input_type, accepted_types)):
+            raise RuntimeError((f"The {self.name} stage cannot handle input of {input_type}. "
+                                f"Accepted input types: {self.accepted_types()}"))
 
     @abstractmethod
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         pass
 
-    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
-        # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
-        # True source object separate from the output stream. If any other operators need to be added after the source,
+    def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
+        # Derived source stages should override `_build_single` instead of this method. This allows for tracking the
+        # True source object separate from the output node. If any other operators need to be added after the node,
         # use `_post_build`
         assert len(self.input_ports) == 1 and len(self.output_ports) == 1, \
             "SinglePortStage must have 1 input port and 1 output port"
 
-        assert len(in_ports_streams) == 1, "Should only have 1 port on input"
+        assert len(input_nodes) == 1, "Should only have 1 input node"
 
-        return [self._build_single(builder, in_ports_streams[0])]
+        return [self._build_single(builder, input_nodes[0])]
 
-    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
-        return out_pair
+    def _post_build_single(self, _: mrc.Builder, out_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        return out_node
 
     @typing.final
-    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
 
-        ret_val = self._post_build_single(builder, out_ports_pair[0])
+        ret_val = self._post_build_single(builder, out_ports_nodes[0])
 
-        logger.info("Added stage: {}\n  └─ {} -> {}".format(str(self),
-                                                            pretty_print_type_name(self.input_ports[0].in_type),
-                                                            pretty_print_type_name(ret_val[1])))
+        # pylint: disable=logging-format-interpolation
+        logger.info("Added stage: %s\n  └─ %s -> %s",
+                    str(self),
+                    pretty_print_type_name(self.input_ports[0].input_type),
+                    pretty_print_type_name(self.output_ports[0].output_type))
 
         return [ret_val]

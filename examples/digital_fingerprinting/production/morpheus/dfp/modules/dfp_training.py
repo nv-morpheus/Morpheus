@@ -16,6 +16,7 @@ import logging
 
 import mrc
 from mrc.core import operators as ops
+from sklearn.model_selection import train_test_split
 
 import cudf
 
@@ -87,8 +88,16 @@ def dfp_training(builder: mrc.Builder):
             # Only train on the feature columns
             train_df = final_df[final_df.columns.intersection(feature_columns)]
 
+            validation_df = None
+            run_validation = False
+
+            # Split into training and validation sets
+            if validation_size > 0.0:
+                train_df, validation_df = train_test_split(train_df, test_size=validation_size, shuffle=False)
+                run_validation = True
+
             logger.debug("Training AE model for user: '%s'...", user_id)
-            model.fit(train_df, epochs=epochs)
+            model.fit(train_df, epochs=epochs, validation_data=validation_df, run_validation=run_validation)
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
             dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)

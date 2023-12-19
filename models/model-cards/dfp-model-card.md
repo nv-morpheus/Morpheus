@@ -64,42 +64,36 @@ The model architecture consists of an Autoencoder, where the reconstruction loss
 * Linux<br>
 
 ## Model Version(s):
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/dfp-models/hammah-role-g-20211017-dill.pkl
-* https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/dfp-models/hammah-user123-20211017-dill.pkl
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/dfp-models/hammah-role-g-20211017-dill.pkl
+* https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/dfp-models/hammah-user123-20211017-dill.pkl
 
 # Training & Evaluation:
 
 ## Training Dataset:
 
 **Link:**
-* https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/training-data/cloudtrail
+* https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/models/datasets/training-data/cloudtrail
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):**
 
 The training dataset consists of AWS CloudTrail logs. It contains logs from two entities, providing information about their activities within the AWS environment.
-* [hammah-role-g-training-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-role-g-training-part1.json): 700 records <br>
-* [hammah-role-g-training-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-role-g-training-part2.json): 1187 records <br>
-* [hammah-user123-training-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part2.json): 1000 records <br>
-* [hammah-user123-training-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part3.json): 1000 records <br>
-* [hammah-user123-training-part4.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/training-data/cloudtrail/hammah-user123-training-part4.json): 387 records <br>
-
-**Dataset License:**
-* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
+* [hammah-role-g-training-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/training-data/cloudtrail/hammah-role-g-training-part1.json): 700 records <br>
+* [hammah-role-g-training-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/training-data/cloudtrail/hammah-role-g-training-part2.json): 1187 records <br>
+* [hammah-user123-training-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/training-data/cloudtrail/hammah-user123-training-part2.json): 1000 records <br>
+* [hammah-user123-training-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/training-data/cloudtrail/hammah-user123-training-part3.json): 1000 records <br>
+* [hammah-user123-training-part4.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/training-data/cloudtrail/hammah-user123-training-part4.json): 387 records <br>
 
 ## Evaluation Dataset:
 **Link:**
-* https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/validation-data/cloudtrail <br>
+* https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/models/datasets/validation-data/cloudtrail <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):**
 
 The evaluation dataset consists of AWS CloudTrail logs. It contains logs from two entities, providing information about their activities within the AWS environment.
-* [hammah-role-g-validation.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-role-g-validation.json): 314 records
-* [hammah-user123-validation-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part1.json): 300 records
-* [hammah-user123-validation-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part2.json): 300 records
-* [hammah-user123-validation-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part3.json): 247 records
-
-**Dataset License:**
-*  [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
+* [hammah-role-g-validation.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/validation-data/cloudtrail/hammah-role-g-validation.json): 314 records
+* [hammah-user123-validation-part1.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part1.json): 300 records
+* [hammah-user123-validation-part2.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part2.json): 300 records
+* [hammah-user123-validation-part3.json](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/datasets/validation-data/cloudtrail/hammah-user123-validation-part3.json): 247 records
 
 ## Inference:
 **Engine:**
@@ -165,7 +159,7 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 ### List the steps explaining how this model works.
 * The model works by training on baseline behaviors and subsequently detecting deviations from the established baseline, triggering alerts accordingly.
-* [Training notebook](https://github.com/nv-morpheus/Morpheus/blob/branch-23.11/models/training-tuning-scripts/dfp-models/hammah-20211017.ipynb)
+* [Training notebook](https://github.com/nv-morpheus/Morpheus/blob/branch-24.03/models/training-tuning-scripts/dfp-models/hammah-20211017.ipynb)
 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
 * Not Applicable
@@ -179,16 +173,13 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### What are the potential known risks to users and stakeholders?
 * None
 
-### What training is recommended for developers working with this model?  If none, please state "none."
-* Familiarity with the Morpheus SDK is recommended for developers working with this model.
-
 ### Link the relevant end user license agreement
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository (if able to share).
-* https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/training-data/cloudtrail
+* https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/models/datasets/training-data/cloudtrail
 
 ### Is the model used in an application with physical safety impact?
 * No
@@ -210,9 +201,6 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.
 * None
-
-### Technical robustness and model security validated?
-* No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * No
@@ -251,11 +239,8 @@ The evaluation dataset consists of AWS CloudTrail logs. It contains logs from tw
 ### Is data in dataset traceable?
 * No
 
-### Scanned for malware?
-* No
-
 ### Are we able to identify and trace source of dataset?
-* Yes ([fully synthetic dataset](https://github.com/nv-morpheus/Morpheus/tree/branch-23.11/models/datasets/training-data/cloudtrail))
+* Yes ([fully synthetic dataset](https://github.com/nv-morpheus/Morpheus/tree/branch-24.03/models/datasets/training-data/cloudtrail))
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * Not applicable (as the dataset is fully synthetic)

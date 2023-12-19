@@ -16,12 +16,12 @@
 
 import pytest
 
+from _utils import assert_results
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from utils import assert_results
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
@@ -36,6 +36,7 @@ def test_linear_boundary_stages(config, filter_probs_df):
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.skip(reason="Skipping due to MRC issue #360")
 @pytest.mark.use_cudf
 def test_multi_segment_bad_data_type(config, filter_probs_df):
     with pytest.raises(RuntimeError):
@@ -46,3 +47,14 @@ def test_multi_segment_bad_data_type(config, filter_probs_df):
         pipe.run()
 
     assert len(mem_sink.get_messages()) == 0
+
+
+def test_add_segment_boundary_as_shared_pointer_error(config, filter_probs_df):
+    """
+    Test for the assertion error raised when `as_shared_pointer=True` is passed to `add_segment_boundary`.
+    Remove this test when the `as_shared_pointer` functionality is implemented.
+    """
+    with pytest.raises(AssertionError):
+        pipe = LinearPipeline(config)
+        pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+        pipe.add_segment_boundary(MessageMeta, as_shared_pointer=True)

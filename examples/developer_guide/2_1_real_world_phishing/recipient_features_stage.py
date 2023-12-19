@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import mrc
 from mrc.core import operators as ops
 
@@ -23,12 +21,12 @@ from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
 
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
-class RecipientFeaturesStage(SinglePortStage):
+class RecipientFeaturesStage(PassThruTypeMixin, SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
 
@@ -45,7 +43,7 @@ class RecipientFeaturesStage(SinglePortStage):
         if config.mode != PipelineModes.NLP:
             raise RuntimeError("RecipientFeaturesStage must be used in a pipeline configured for NLP")
 
-        if len(sep_token):
+        if len(sep_token) > 0:
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
@@ -65,7 +63,7 @@ class RecipientFeaturesStage(SinglePortStage):
     def name(self) -> str:
         return "recipient-features"
 
-    def accepted_types(self) -> typing.Tuple:
+    def accepted_types(self) -> tuple:
         return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
@@ -87,8 +85,8 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
-        builder.make_edge(input_stream[0], node)
+        builder.make_edge(input_node, node)
 
-        return node, input_stream[1]
+        return node
