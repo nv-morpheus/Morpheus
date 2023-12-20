@@ -24,19 +24,18 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('DatabricksSession', 'sf', 'Window')
+IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "DatabricksDeltaLakeSourceStage requires the databricks-connect package to be installed."
 
 try:
     from databricks.connect import DatabricksSession
     from pyspark.sql import functions as sf
     from pyspark.sql.window import Window
-except ImportError:
-    pass
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 @register_stage("from-databricks-deltalake")
@@ -67,7 +66,9 @@ class DataBricksDeltaLakeSourceStage(PreallocatorMixin, SingleOutputSource):
                  databricks_host: str = None,
                  databricks_token: str = None,
                  databricks_cluster_id: str = None):
-        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+
         super().__init__(config)
         self.spark_query = spark_query
         self.spark = DatabricksSession.builder.remote(host=databricks_host,
