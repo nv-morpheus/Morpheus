@@ -137,7 +137,6 @@ class LogParsingInferenceStage(TritonInferenceStage):
                          inout_mapping=inout_mapping)
 
     def supports_cpp_node(self) -> bool:
-        # Get the value from the worker class
         return False
 
     def compute_schema(self, schema: StageSchema):

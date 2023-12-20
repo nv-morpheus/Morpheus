@@ -172,16 +172,6 @@ def test_stage_constructor_worker_class(config: Config, pipeline_mode: PipelineM
 
 @pytest.mark.use_python
 @pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
-def test_stage_get_worker_class(config: Config, pipeline_mode: PipelineModes):
-    config.mode = pipeline_mode
-
-    stage = TritonInferenceStage(config, model_name='test', server_url='test:0000')
-    worker = stage._get_worker_class()
-    assert worker is TritonInferenceWorker
-
-
-@pytest.mark.use_python
-@pytest.mark.parametrize("pipeline_mode", list(PipelineModes))
 @pytest.mark.parametrize("needs_logits", [True, False, None])
 def test_stage_get_inference_worker(config: Config, pipeline_mode: PipelineModes, needs_logits: bool | None):
     if needs_logits is None:
