@@ -22,10 +22,9 @@ from scipy.special import softmax
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ResponseMemory
+from morpheus.messages import TensorMemory
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
@@ -62,7 +61,7 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + x.count, dtype=cp.uint32)
         seq_ids[:, 2] = x.seq_ids[:, 2]
 
-        memory = ResponseMemory(
+        memory = TensorMemory(
             count=x.count,
             tensors={
                 'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
@@ -78,18 +77,18 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
                                     offset=0,
                                     count=x.count)
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
 
         outputs = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
         outputs = {key: softmax(val, axis=2) for key, val in outputs.items()}
         confidences = {key: np.amax(val, axis=2) for key, val in outputs.items()}
         labels = {key: np.argmax(val, axis=2) for key, val in outputs.items()}
 
-        return ResponseMemory(count=outputs[list(outputs.keys())[0]].shape[0],
-                              tensors={
-                                  'confidences': cp.array(confidences[list(outputs.keys())[0]]),
-                                  'labels': cp.array(labels[list(outputs.keys())[0]])
-                              })
+        return TensorMemory(count=outputs[list(outputs.keys())[0]].shape[0],
+                            tensors={
+                                'confidences': cp.array(confidences[list(outputs.keys())[0]]),
+                                'labels': cp.array(labels[list(outputs.keys())[0]])
+                            })
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
@@ -144,15 +143,15 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
     @staticmethod
     def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage,
-                              res: ResponseMemory) -> MultiResponseMessage:
+                              res: TensorMemory) -> MultiResponseMessage:
 
         output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            output.confidences[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
-            output.labels[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
+            output.confidences[inf.offset:inf.count + inf.offset, :] = res.get_tensor('confidences')
+            output.labels[inf.offset:inf.count + inf.offset, :] = res.get_tensor('labels')
         else:
             assert inf.count == res.count
 
@@ -160,8 +159,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.get_output('confidences')[i, :])
-                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.get_output('labels')[i, :])
+                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.get_tensor('confidences')[i, :])
+                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.get_tensor('labels')[i, :])
 
         return MultiResponseMessage.from_message(inf, memory=output.memory, offset=inf.offset, count=inf.mess_count)
 
