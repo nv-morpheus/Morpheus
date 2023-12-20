@@ -24,7 +24,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -57,12 +57,12 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiInferenceMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseMessage:
         seq_ids = cp.zeros((x.count, 3), dtype=cp.uint32)
         seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + x.count, dtype=cp.uint32)
         seq_ids[:, 2] = x.seq_ids[:, 2]
 
-        memory = InferenceMemory(
+        memory = ResponseMemory(
             count=x.count,
             tensors={
                 'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
@@ -71,12 +71,12 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
                 'seq_ids': seq_ids
             })
 
-        return MultiInferenceMessage(meta=x.meta,
-                                     mess_offset=x.mess_offset,
-                                     mess_count=x.mess_count,
-                                     memory=memory,
-                                     offset=0,
-                                     count=x.count)
+        return MultiResponseMessage(meta=x.meta,
+                                    mess_offset=x.mess_offset,
+                                    mess_count=x.mess_count,
+                                    memory=memory,
+                                    offset=0,
+                                    count=x.count)
 
     def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
@@ -140,19 +140,19 @@ class LogParsingInferenceStage(TritonInferenceStage):
         return False
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiInferenceMessage)
+        schema.output_schema.set_type(MultiResponseMessage)
 
     @staticmethod
-    def _convert_one_response(output: MultiInferenceMessage, inf: MultiInferenceNLPMessage,
-                              res: ResponseMemory) -> MultiInferenceMessage:
+    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage,
+                              res: ResponseMemory) -> MultiResponseMessage:
 
-        output.get_input('input_ids')[inf.offset:inf.count + inf.offset, :] = inf.input_ids
-        output.get_input('seq_ids')[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
+        output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
+        output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            output.get_input('confidences')[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
-            output.get_input('labels')[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
+            output.confidences[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
+            output.labels[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
         else:
             assert inf.count == res.count
 
@@ -160,12 +160,10 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                output.get_input('confidences')[idx, :] = cp.maximum(
-                    output.get_input('confidences')[idx, :], res.get_output('confidences')[i, :])
-                output.get_input('labels')[idx, :] = cp.maximum(
-                    output.get_input('labels')[idx, :], res.get_output('labels')[i, :])
+                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.get_output('confidences')[i, :])
+                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.get_output('labels')[i, :])
 
-        return MultiInferenceMessage.from_message(inf, memory=output.memory, offset=inf.offset, count=inf.mess_count)
+        return MultiResponseMessage.from_message(inf, memory=output.memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_worker_class(self) -> type[TritonInferenceWorker]:
         return TritonInferenceLogParsing
