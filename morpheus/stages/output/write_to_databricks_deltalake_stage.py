@@ -26,18 +26,17 @@ from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('DatabricksSession', 'sql_types')
+IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "DataBricksDeltaLakeSinkStage requires the databricks-connect package to be installed."
 
 try:
     from databricks.connect import DatabricksSession
     from pyspark.sql import types as sql_types
-except ImportError:
-    pass
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 @register_stage("to-databricks-deltalake")
@@ -68,7 +67,9 @@ class DataBricksDeltaLakeSinkStage(PassThruTypeMixin, SinglePortStage):
                  databricks_token: str = None,
                  databricks_cluster_id: str = None,
                  delta_table_write_mode: str = "append"):
-        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+
         super().__init__(config)
         self.delta_path = delta_path
         self.delta_table_write_mode = delta_table_write_mode
