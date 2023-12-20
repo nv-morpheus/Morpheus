@@ -19,19 +19,7 @@ import cupy as cp
 from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ResponseMemory
 from morpheus.messages.data_class_prop import DataClassProp
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemoryLogParsing(ResponseMemory, cpp_class=None):
-
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop,
-                                                                 ResponseMemory.set_output)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
-
-    def __init__(self, *, count: int, confidences: cp.ndarray, labels: cp.ndarray):
-        super().__init__(count=count, tensors={'confidences': confidences, 'labels': labels})
 
 
 @dataclasses.dataclass

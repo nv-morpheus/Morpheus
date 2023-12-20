@@ -21,11 +21,11 @@ from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
 from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
-from messages import ResponseMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ResponseMemory
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
@@ -74,19 +74,18 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
                                               offset=0,
                                               count=x.count)
 
-    def _build_response(self, batch: MultiInferenceMessage,
-                        result: tritonclient.InferResult) -> ResponseMemoryLogParsing:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
         output = {key: softmax(val, axis=2) for key, val in output.items()}
         confidences = {key: np.amax(val, axis=2) for key, val in output.items()}
         labels = {key: np.argmax(val, axis=2) for key, val in output.items()}
 
-        return ResponseMemoryLogParsing(
-            count=output[list(output.keys())[0]].shape[0],
-            confidences=cp.array(confidences[list(output.keys())[0]]),
-            labels=cp.array(labels[list(output.keys())[0]]),
-        )
+        return ResponseMemory(count=output[list(output.keys())[0]].shape[0],
+                              tensors={
+                                  'confidences': cp.array(confidences[list(output.keys())[0]]),
+                                  'labels': cp.array(labels[list(output.keys())[0]])
+                              })
 
 
 @register_stage("inf-logparsing", modes=[PipelineModes.NLP])
@@ -140,17 +139,16 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(MultiPostprocLogParsingMessage)
 
     @staticmethod
-    def _convert_one_response(output: PostprocMemoryLogParsing,
-                              inf: MultiInferenceMessage,
-                              res: ResponseMemoryLogParsing) -> MultiPostprocLogParsingMessage:
+    def _convert_one_response(output: PostprocMemoryLogParsing, inf: MultiInferenceMessage,
+                              res: ResponseMemory) -> MultiPostprocLogParsingMessage:
 
         output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            output.confidences[inf.offset:inf.count + inf.offset, :] = res.confidences
-            output.labels[inf.offset:inf.count + inf.offset, :] = res.labels
+            output.confidences[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
+            output.labels[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
         else:
             assert inf.count == res.count
 
@@ -158,8 +156,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.confidences[i, :])
-                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.labels[i, :])
+                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.get_output('confidences')[i, :])
+                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.get_output('labels')[i, :])
 
         return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
 

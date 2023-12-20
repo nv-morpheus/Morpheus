@@ -31,6 +31,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ResponseMemory
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -41,7 +42,7 @@ def config_fixture(config: Config):
     yield config
 
 
-def build_response_mem(messages_mod, log_test_data_dir: str):
+def build_response_mem(log_test_data_dir: str) -> ResponseMemory:
     # we have tensor data for the first five rows
     count = 5
     tensors = {}
@@ -50,7 +51,7 @@ def build_response_mem(messages_mod, log_test_data_dir: str):
         host_data = np.loadtxt(tensor_file, delimiter=',')
         tensors[tensor_name] = cp.asarray(host_data)
 
-    return messages_mod.ResponseMemoryLogParsing(count=count, **tensors)
+    return ResponseMemory(count=count, **tensors)
 
 
 def build_inf_message(df: typing.Union[pd.DataFrame, cudf.DataFrame],
@@ -225,7 +226,7 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
 
     ttl_count = len(filter_probs_df)
 
-    input_res = build_response_mem(messages_mod, os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing'))
+    input_res = build_response_mem(os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing'))
 
     # confidences, labels & input_ids all have the same shape
     num_cols = input_res.confidences.shape[1]
