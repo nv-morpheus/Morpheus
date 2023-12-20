@@ -74,6 +74,7 @@ dependencies:
 - pre-commit
 - protobuf=4.21.*
 - pybind11-stubgen=0.10
+- pylint>=2.17.4,<2.18
 - pypdf=3.16
 - pytest
 - pytest-asyncio

@@ -23,7 +23,7 @@ files:
     includes:
       - data_retrieval
       - build_cpp
-      - development_cpp
+      - development
       - benchmark_cpp
       - examples
       - runtime
@@ -41,7 +41,7 @@ files:
     includes:
       - data_retrieval
       - build_cpp
-      - development_cpp
+      - development
       - benchmark_cpp
       - runtime
       - test_python_morpheus
@@ -57,7 +57,7 @@ files:
       arch: [x86_64]
     includes:
       - build_cpp
-      - development_cpp
+      - development
       - benchmark_cpp
       - runtime
       - test_python_morpheus
@@ -71,7 +71,7 @@ files:
     includes:
       - data_retrieval
       - build_cpp
-      - development_cpp
+      - development
       - benchmark_cpp
       - runtime
       - test_python_morpheus
@@ -155,7 +155,7 @@ dependencies:
         packages:
           - git-lfs
 
-  development_cpp:
+  development:
     common:
       - output_types: [conda]
         packages:
@@ -163,6 +163,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - yapf=0.40.1
+          - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
 
   docs:
     common:
