@@ -23,6 +23,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import TensorMemory
 from morpheus.pipeline.stage_schema import StageSchema
@@ -142,7 +143,7 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(MultiResponseMessage)
 
     @staticmethod
-    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage,
+    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceNLPMessage,
                               res: TensorMemory) -> MultiResponseMessage:
 
         output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
