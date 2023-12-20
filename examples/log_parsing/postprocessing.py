@@ -22,11 +22,11 @@ import numpy as np
 import pandas as pd
 from mrc.core import operators as ops
 
-from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -73,12 +73,12 @@ class LogParsingPostProcessingStage(SinglePortStage):
         return False
 
     def accepted_types(self) -> typing.Tuple:
-        return (MultiPostprocLogParsingMessage, )
+        return (MultiInferenceMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _postprocess(self, x: MultiPostprocLogParsingMessage):
+    def _postprocess(self, x: MultiInferenceMessage):
 
         infer_pdf = pd.DataFrame(x.seq_ids.get()).astype(int)
         infer_pdf.columns = ["doc", "start", "stop"]

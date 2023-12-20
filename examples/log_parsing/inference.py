@@ -25,6 +25,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -57,7 +58,10 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
     """
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiInferenceMessage:
+        seq_ids = cp.zeros((x.count, 3), dtype=cp.uint32)
+        seq_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + x.count, dtype=cp.uint32)
+        seq_ids[:, 2] = x.seq_ids[:, 2]
 
         memory = InferenceMemory(
             count=x.count,
@@ -65,15 +69,15 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
                 'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
                 'labels': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
                 'input_ids': cp.zeros((x.count, x.input_ids.shape[1])),
-                'seq_ids': cp.zeros((x.count, x.seq_ids.shape[1]))
+                'seq_ids': seq_ids
             })
 
-        return MultiPostprocLogParsingMessage(meta=x.meta,
-                                              mess_offset=x.mess_offset,
-                                              mess_count=x.mess_count,
-                                              memory=memory,
-                                              offset=0,
-                                              count=x.count)
+        return MultiInferenceMessage(meta=x.meta,
+                                     mess_offset=x.mess_offset,
+                                     mess_count=x.mess_count,
+                                     memory=memory,
+                                     offset=0,
+                                     count=x.count)
 
     def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
@@ -137,11 +141,11 @@ class LogParsingInferenceStage(TritonInferenceStage):
         return False
 
     def compute_schema(self, schema: StageSchema):
-        schema.output_schema.set_type(MultiPostprocLogParsingMessage)
+        schema.output_schema.set_type(MultiInferenceMessage)
 
     @staticmethod
-    def _convert_one_response(output: InferenceMemory, inf: MultiInferenceMessage,
-                              res: ResponseMemory) -> MultiPostprocLogParsingMessage:
+    def _convert_one_response(output: MultiInferenceMessage, inf: MultiInferenceNLPMessage,
+                              res: ResponseMemory) -> MultiInferenceMessage:
 
         output.get_input('input_ids')[inf.offset:inf.count + inf.offset, :] = inf.input_ids
         output.get_input('seq_ids')[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
