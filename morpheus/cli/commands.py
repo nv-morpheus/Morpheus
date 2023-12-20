@@ -288,13 +288,22 @@ def install(**kwargs):
               type=bool,
               help=("Whether or not to use C++ node and message types or to prefer python. "
                     "Only use as a last resort if bugs are encountered"))
+@click.option('--manual_seed',
+              default=None,
+              type=click.IntRange(min=1),
+              envvar="MORPHEUS_MANUAL_SEED",
+              help=("Manually seed the random number generators used by Morpheus, useful for testing."))
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
     """Run subcommand, used for running a pipeline"""
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
     CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
 
-    pass
+    manual_seed_val = kwargs.pop("manual_seed", None)
+    if manual_seed_val is not None:
+        from morpheus.utils.seed import manual_seed
+        logger.debug("Manually seeding random number generators to %d", manual_seed_val)
+        manual_seed(manual_seed_val)
 
 
 @click.group(chain=True,
