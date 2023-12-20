@@ -26,11 +26,10 @@ import cudf
 
 from morpheus.service.vdb.vector_db_service import VectorDBResourceService
 from morpheus.service.vdb.vector_db_service import VectorDBService
-from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('pymilvus', 'MilvusClient', 'MutationResult')
+IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "MilvusVectorDBResourceService requires the milvus and pymilvus packages to be installed."
 
 try:
@@ -38,8 +37,8 @@ try:
     from pymilvus.orm.mutation import MutationResult
 
     from morpheus.service.vdb.milvus_client import MilvusClient  # pylint: disable=ungrouped-imports
-except ImportError:
-    pass
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class FieldSchemaEncoder(json.JSONEncoder):
@@ -226,7 +225,9 @@ class MilvusVectorDBResourceService(VectorDBResourceService):
     """
 
     def __init__(self, name: str, client: "MilvusClient") -> None:
-        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+
         super().__init__()
 
         self._name = name
