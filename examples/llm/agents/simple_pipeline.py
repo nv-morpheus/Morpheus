@@ -35,6 +35,7 @@ from morpheus.utils.concat_df import concat_dataframes
 
 from ..common.utils import build_haystack_agent
 from ..common.utils import build_langchain_agent_executor
+from ..common.utils import build_llama_index_agent_executor
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,9 @@ def _build_engine(model_name: str, llm_orch: str) -> LLMEngine:
         agent_node = LangChainAgentNode(agent_executor=build_langchain_agent_executor(model_name=model_name))
     elif llm_orch == "haystack":
         agent_node = HaystackAgentNode(agent=build_haystack_agent(model_name=model_name))
+    elif llm_orch == "llama_index":
+        # LlamaIndex uses Langchain under the hood
+        agent_node = LangChainAgentNode(agent_executor=build_llama_index_agent_executor(model_name=model_name))
     else:
         raise RuntimeError(f"LLM orchestration framework '{llm_orch}' is not supported yet.")
 

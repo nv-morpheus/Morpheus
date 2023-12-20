@@ -30,6 +30,10 @@ from langchain.agents import load_tools
 from langchain.agents.agent import AgentExecutor
 from langchain.embeddings import HuggingFaceEmbeddings
 
+from llama_index import VectorStoreIndex
+from llama_index.vector_stores import MilvusVectorStore
+from llama_index.langchain_helpers.agents import IndexToolConfig, LlamaToolkit
+
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
@@ -176,6 +180,31 @@ def build_langchain_agent_executor(model_name: str) -> AgentExecutor:
 
     return agent_executor
 
+
+def build_llama_index_agent_executor(model_name: str,) -> AgentExecutor:
+
+    llm = OpenAI(model=model_name, temperature=0)
+
+    vector_store = MilvusVectorStore(dim=1536, overwrite=False)
+    index = VectorStoreIndex.from_vector_store(vector_store)
+    query_engine = index.as_query_engine()
+
+    query_enige_config = IndexToolConfig(query_engine=query_engine, 
+                                         name="Brief biography of celebrities",
+                                         description="Category of the celebrity, one of [Sports, Entertainment, Business, Music]",
+                                         tool_kwargs={"return_direct": False}
+                                         )
+    toolkit = LlamaToolkit(index_configs=[query_enige_config])
+    langchain_tools = load_tools(["llm-math"], llm=llm)
+    tools = (toolkit.get_tools() + langchain_tools)
+    
+    # The 'initialize_agent' function in langchain is being utilized by llamaindex's 'create_llama_agent' behind the scenes.
+    agent_executor = initialize_agent(tools,
+                                      llm,
+                                      agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                                      verbose=True)
+    
+    return agent_executor
 
 def build_haystack_agent(model_name: str) -> Agent:
     """

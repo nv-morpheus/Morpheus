@@ -60,7 +60,7 @@ def run():
 @click.option(
     "--llm_orch",
     default="langchain",
-    type=click.Choice(["haystack", "langchain"], case_sensitive=False),
+    type=click.Choice(["haystack", "langchain", "llama_index"], case_sensitive=False),
     help="LLM orchestration frameworks, that you can use to include in the pipeline.",
 )
 def simple(**kwargs):

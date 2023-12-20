@@ -131,7 +131,7 @@ This example demonstrates the basic implementation of Morpheus pipeline, showcas
 
 
 ```bash
-python exmaples/llm/main.py agents simple [OPTIONS]
+python examples/llm/main.py agents simple [OPTIONS]
 ```
 
 ### Options:
@@ -157,7 +157,7 @@ python exmaples/llm/main.py agents simple [OPTIONS]
     - **Default**: `1`
 
 - `--llm_orch TEXT`
-    - **Chioce**: `[haystack|langchain]`
+    - **Chioce**: `[haystack|langchain|llama_index]`
     - **Description**: The name of the model to use in OpenAI.
     - **Default**: `langchain`
 
