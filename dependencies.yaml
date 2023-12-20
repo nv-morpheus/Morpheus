@@ -116,7 +116,6 @@ channels:
   - nvidia/label/dev
   - pytorch
   - dglteam/label/cu118
-  # - defaults
 
 dependencies:
 
