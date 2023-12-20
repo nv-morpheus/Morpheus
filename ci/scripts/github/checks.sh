@@ -60,6 +60,9 @@ export MORPHEUS_IN_SPHINX_BUILD=1
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
 
+rapids-logger "Running Python style checks"
+${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
+
 rapids-logger "Checking versions"
 ${MORPHEUS_ROOT}/ci/scripts/version_checks.sh
 
