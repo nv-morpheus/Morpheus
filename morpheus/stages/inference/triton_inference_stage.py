@@ -729,17 +729,15 @@ class TritonInferenceStage(InferenceStage):
 
     def supports_cpp_node(self) -> bool:
         # Get the value from the worker class
-        return self._get_worker_class().supports_cpp_node()
-
-    def _get_worker_class(self) -> type[TritonInferenceWorker]:
-        """
-        Returns the worker class for this stage. Authors of custom sub-classes can override this method to provide a
-        custom worker class.
-        """
-        return TritonInferenceWorker
+        return TritonInferenceWorker.supports_cpp_node()
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceWorker:
-        return self._get_worker_class()(inf_queue=inf_queue, c=self._config, **self._kwargs)
+        """
+        Returns the worker for this stage. Authors of custom sub-classes can override this method to provide a custom 
+        worker.
+        """
+
+        return TritonInferenceWorker(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
     def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return _stages.InferenceClientStage(builder, name=self.unique_name, **self._kwargs)

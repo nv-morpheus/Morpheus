@@ -29,6 +29,7 @@ from morpheus.messages import TensorMemory
 from morpheus.pipeline.stage_schema import StageSchema
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
+from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
 
@@ -165,5 +166,5 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
         return MultiResponseMessage.from_message(inf, memory=output.memory, offset=inf.offset, count=inf.mess_count)
 
-    def _get_worker_class(self) -> type[TritonInferenceWorker]:
-        return TritonInferenceLogParsing
+    def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceLogParsing:
+        return TritonInferenceLogParsing(inf_queue=inf_queue, c=self._config, **self._kwargs)
