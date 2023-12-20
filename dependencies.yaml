@@ -160,10 +160,11 @@ dependencies:
       - output_types: [conda]
         packages:
           - clangdev=16
+          - flake8
           - include-what-you-use=0.20
           - isort
-          - yapf=0.40.1
           - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
+          - yapf=0.40.1
 
   docs:
     common:

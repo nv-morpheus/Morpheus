@@ -35,6 +35,7 @@ dependencies:
 - elasticsearch==8.9.0
 - exhale=0.3.6
 - feedparser=6.0.10
+- flake8
 - gcc_linux-64=11.2
 - git-lfs
 - gputil
