@@ -16,10 +16,8 @@ import dataclasses
 
 import cupy as cp
 
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.messages.data_class_prop import DataClassProp
 
 
 @dataclasses.dataclass
@@ -85,47 +83,6 @@ class MultiResponseLogParsingMessage(MultiResponseMessage, cpp_class=None):
         """
 
         return self.get_output("seq_ids")
-
-
-@dataclasses.dataclass(init=False)
-class PostprocMemoryLogParsing(InferenceMemory):
-    """
-    This is a container class for data that needs to be submitted to the inference server for NLP category
-    usecases.
-
-    Parameters
-    ----------
-    confidences: cp.ndarray
-        confidences calculated from softmax
-    labels: cp.ndarray
-        index of highest confidence
-    input_ids : cp.ndarray
-        The token-ids for each string padded with 0s to max_length.
-    seq_ids : cp.ndarray
-        Ids used to index from an inference input to a message. Necessary since there can be more inference
-        inputs than messages (i.e. If some messages get broken into multiple inference requests)
-
-    """
-
-    confidences: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                                 InferenceMemory.set_input)
-    labels: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop, InferenceMemory.set_input)
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                               InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
-
-    def __init__(self,
-                 *,
-                 count: int,
-                 confidences: cp.ndarray,
-                 labels: cp.ndarray,
-                 input_ids: cp.ndarray,
-                 seq_ids: cp.ndarray):
-        super().__init__(count=count,
-                         tensors={
-                             'confidences': confidences, 'labels': labels, 'input_ids': input_ids, 'seq_ids': seq_ids
-                         })
 
 
 @dataclasses.dataclass

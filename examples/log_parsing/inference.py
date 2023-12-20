@@ -20,10 +20,10 @@ import tritonclient.grpc as tritonclient
 from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
-from messages import PostprocMemoryLogParsing  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.pipeline.stage_schema import StageSchema
@@ -59,13 +59,14 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
 
     def build_output_message(self, x: MultiInferenceMessage) -> MultiPostprocLogParsingMessage:
 
-        memory = PostprocMemoryLogParsing(
+        memory = InferenceMemory(
             count=x.count,
-            confidences=cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
-            labels=cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
-            input_ids=cp.zeros((x.count, x.input_ids.shape[1])),
-            seq_ids=cp.zeros((x.count, x.seq_ids.shape[1])),
-        )
+            tensors={
+                'confidences': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                'labels': cp.zeros((x.count, self._inputs[list(self._inputs.keys())[0]].shape[1])),
+                'input_ids': cp.zeros((x.count, x.input_ids.shape[1])),
+                'seq_ids': cp.zeros((x.count, x.seq_ids.shape[1]))
+            })
 
         return MultiPostprocLogParsingMessage(meta=x.meta,
                                               mess_offset=x.mess_offset,
@@ -76,15 +77,15 @@ class TritonInferenceLogParsing(TritonInferenceWorker):
 
     def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
-        output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
-        output = {key: softmax(val, axis=2) for key, val in output.items()}
-        confidences = {key: np.amax(val, axis=2) for key, val in output.items()}
-        labels = {key: np.argmax(val, axis=2) for key, val in output.items()}
+        outputs = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
+        outputs = {key: softmax(val, axis=2) for key, val in outputs.items()}
+        confidences = {key: np.amax(val, axis=2) for key, val in outputs.items()}
+        labels = {key: np.argmax(val, axis=2) for key, val in outputs.items()}
 
-        return ResponseMemory(count=output[list(output.keys())[0]].shape[0],
+        return ResponseMemory(count=outputs[list(outputs.keys())[0]].shape[0],
                               tensors={
-                                  'confidences': cp.array(confidences[list(output.keys())[0]]),
-                                  'labels': cp.array(labels[list(output.keys())[0]])
+                                  'confidences': cp.array(confidences[list(outputs.keys())[0]]),
+                                  'labels': cp.array(labels[list(outputs.keys())[0]])
                               })
 
 
@@ -139,16 +140,16 @@ class LogParsingInferenceStage(TritonInferenceStage):
         schema.output_schema.set_type(MultiPostprocLogParsingMessage)
 
     @staticmethod
-    def _convert_one_response(output: PostprocMemoryLogParsing, inf: MultiInferenceMessage,
+    def _convert_one_response(output: InferenceMemory, inf: MultiInferenceMessage,
                               res: ResponseMemory) -> MultiPostprocLogParsingMessage:
 
-        output.input_ids[inf.offset:inf.count + inf.offset, :] = inf.input_ids
-        output.seq_ids[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
+        output.get_input('input_ids')[inf.offset:inf.count + inf.offset, :] = inf.input_ids
+        output.get_input('seq_ids')[inf.offset:inf.count + inf.offset, :] = inf.seq_ids
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
-            output.confidences[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
-            output.labels[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
+            output.get_input('confidences')[inf.offset:inf.count + inf.offset, :] = res.get_output('confidences')
+            output.get_input('labels')[inf.offset:inf.count + inf.offset, :] = res.get_output('labels')
         else:
             assert inf.count == res.count
 
@@ -156,8 +157,10 @@ class LogParsingInferenceStage(TritonInferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                output.confidences[idx, :] = cp.maximum(output.confidences[idx, :], res.get_output('confidences')[i, :])
-                output.labels[idx, :] = cp.maximum(output.labels[idx, :], res.get_output('labels')[i, :])
+                output.get_input('confidences')[idx, :] = cp.maximum(
+                    output.get_input('confidences')[idx, :], res.get_output('confidences')[i, :])
+                output.get_input('labels')[idx, :] = cp.maximum(
+                    output.get_input('labels')[idx, :], res.get_output('labels')[i, :])
 
         return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
 

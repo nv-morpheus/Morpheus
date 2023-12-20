@@ -24,6 +24,7 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
+from morpheus.messages import InferenceMemory
 from morpheus.messages import MessageMeta
 
 
@@ -40,7 +41,7 @@ def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test
         host_data = np.loadtxt(tensor_file, delimiter=',')
         tensors[tensor_name] = cp.asarray(host_data)
 
-    memory = messages_mod.PostprocMemoryLogParsing(count=5, **tensors)
+    memory = InferenceMemory(count=5, **tensors)
     return messages_mod.MultiPostprocLogParsingMessage(meta=meta,
                                                        mess_offset=0,
                                                        mess_count=count,

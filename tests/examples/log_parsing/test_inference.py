@@ -28,6 +28,7 @@ import cudf
 from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import InferenceMemory
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
@@ -230,13 +231,13 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
 
     # confidences, labels & input_ids all have the same shape
     num_cols = input_res.confidences.shape[1]
-    input_mem = messages_mod.PostprocMemoryLogParsing(
-        count=ttl_count,
-        confidences=cp.zeros((ttl_count, num_cols), dtype=cp.float32),
-        input_ids=cp.zeros((ttl_count, num_cols), dtype=cp.float32),
-        labels=cp.zeros((ttl_count, num_cols), dtype=cp.float32),
-        seq_ids=cp.zeros((ttl_count, 3), dtype=cp.uint32),
-    )
+    input_mem = InferenceMemory(count=ttl_count,
+                                tensors={
+                                    'confidences': cp.zeros((ttl_count, num_cols), dtype=cp.float32),
+                                    'input_ids': cp.zeros((ttl_count, num_cols), dtype=cp.float32),
+                                    'labels': cp.zeros((ttl_count, num_cols), dtype=cp.float32),
+                                    'seq_ids': cp.zeros((ttl_count, 3), dtype=cp.uint32)
+                                })
 
     input_inf = build_inf_message(filter_probs_df,
                                   mess_offset=mess_offset,
