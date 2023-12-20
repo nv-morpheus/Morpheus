@@ -73,11 +73,6 @@ function update_conda_env() {
 
     rapids-logger "Checking for updates to conda env"
 
-    # Remove default/conflicting channels from base image
-    if [[ -d /opt/conda/.condarc ]]; then
-        rm /opt/conda/.condarc
-    fi;
-
     # Update the packages
     rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
 
