@@ -530,7 +530,7 @@ def disable_gc():
     gc.enable()
 
 
-def wait_for_camouflage(host="localhost", port=8000, timeout=10):
+def wait_for_camouflage(host="localhost", port=8000, timeout=30):
 
     start_time = time.time()
     cur_time = start_time
@@ -577,11 +577,12 @@ def _set_pdeathsig(sig=signal.SIGTERM):
     return prctl_fn
 
 
-def _start_camouflage(root_dir: str,
-                      host: str = "localhost",
-                      port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen]]:
+def _start_camouflage(
+        root_dir: str,
+        host: str = "localhost",
+        port: int = 8000) -> typing.Tuple[bool, typing.Optional[subprocess.Popen], typing.Optional[typing.IO]]:
     logger = logging.getLogger(f"morpheus.{__name__}")
-    startup_timeout = 10
+    startup_timeout = 30
 
     launch_camouflage = os.environ.get('MORPHEUS_NO_LAUNCH_CAMOUFLAGE') is None
     is_running = False
@@ -598,47 +599,58 @@ def _start_camouflage(root_dir: str,
     # Actually launch camoflague
     if launch_camouflage:
         popen = None
+        console_log_fh = None
         try:
             # pylint: disable=subprocess-popen-preexec-fn,consider-using-with
+            # We currently don't have control over camouflage's console logger
+            # https://github.com/testinggospels/camouflage/issues/244
+            console_log = os.path.join(root_dir, 'console.log')
+            camouflage_log = os.path.join(root_dir, 'camouflage.log')
+            console_log_fh = open(console_log, 'w', encoding='utf-8')
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
-                                     stderr=subprocess.DEVNULL,
-                                     stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.STDOUT,
+                                     stdout=console_log_fh,
                                      preexec_fn=_set_pdeathsig(signal.SIGTERM))
             # pylint: enable=subprocess-popen-preexec-fn,consider-using-with
 
             logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
             def read_logs():
-                camouflage_log = os.path.join(root_dir, 'camouflage.log')
-                if os.path.exists(camouflage_log):
-                    with open(camouflage_log, 'r', encoding='utf-8') as f:
-                        return f.read()
-                return ""
+                for log_file in (console_log, camouflage_log):
+                    if os.path.exists(log_file):
+                        with open(log_file, 'r', encoding='utf-8') as f:
+                            logger.error("%s:\n%s", log_file, f.read())
+                            # We only need to display the first log file that exists
+                            return
 
             if not wait_for_camouflage(host=host, port=port, timeout=startup_timeout):
+                if console_log_fh is not None:
+                    console_log_fh.close()
+
+                read_logs()
 
                 if popen.poll() is not None:
-                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}\n{read_logs()}")
+                    raise RuntimeError(f"camouflage server exited with status code={popen.poll()}")
 
-                raise RuntimeError(f"Failed to launch camouflage server\n{read_logs()}")
+                raise RuntimeError("Failed to launch camouflage server")
 
             # Must have been started by this point
-            return (True, popen)
+            return (True, popen, console_log_fh)
 
         except Exception:
             # Log the error and rethrow
             logger.exception("Error launching camouflage")
             if popen is not None:
-                _stop_camouflage(popen)
+                _stop_camouflage(popen, console_log_fh=console_log_fh)
             raise
 
     else:
 
-        return (is_running, None)
+        return (is_running, None, None)
 
 
-def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
+def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5, console_log_fh: typing.IO = None):
     logger = logging.getLogger(f"morpheus.{__name__}")
 
     logger.info("Killing camouflage with pid %s", popen.pid)
@@ -654,6 +666,9 @@ def _stop_camouflage(popen: subprocess.Popen, shutdown_timeout: int = 5):
         if not stopped:
             time.sleep(sleep_time)
             elapsed_time += sleep_time
+
+    if console_log_fh is not None:
+        console_log_fh.close()
 
 
 @pytest.fixture(scope="session")
@@ -672,10 +687,10 @@ def _triton_camouflage_is_running():
     from _utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_triton_servers_dir
-    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8000)
+    (is_running, popen, console_log_fh) = _start_camouflage(root_dir=root_dir, port=8000)
     yield is_running
     if popen is not None:
-        _stop_camouflage(popen)
+        _stop_camouflage(popen, console_log_fh=console_log_fh)
 
 
 @pytest.fixture(scope="session")
@@ -694,11 +709,11 @@ def _rest_camouflage_is_running():
     from _utils import TEST_DIRS
 
     root_dir = TEST_DIRS.mock_rest_server
-    (is_running, popen) = _start_camouflage(root_dir=root_dir, port=8080)
+    (is_running, popen, console_log_fh) = _start_camouflage(root_dir=root_dir, port=8080)
 
     yield is_running
     if popen is not None:
-        _stop_camouflage(popen)
+        _stop_camouflage(popen, console_log_fh=console_log_fh)
 
 
 @pytest.fixture(scope="function")
