@@ -31,7 +31,6 @@ from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
-from morpheus.stages.inference.triton_inference_stage import INFERENCE_WORKER_DEFAULT_INOUT_MAPPING
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
@@ -161,6 +160,22 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
+
+    expected_kwargs = {
+        "model_name":
+            'test_model',
+        "server_url":
+            'test_server',
+        "force_convert_inputs":
+            False,
+        "use_shared_memory":
+            False,
+        "needs_logits":
+            True,
+        "inout_mapping":
+            inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}),
+    }
+
     stage = inference_mod.LogParsingInferenceStage(
         config,
         model_name='test_model',
@@ -170,14 +185,7 @@ def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typ
     )
 
     assert stage._config is config
-    assert stage._kwargs == {
-        "model_name": 'test_model',
-        "server_url": 'test_server',
-        "force_convert_inputs": False,
-        "use_shared_memory": False,
-        "needs_logits": True,
-        "inout_mapping": INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {}),
-    }
+    assert stage._kwargs == expected_kwargs
 
 
 @pytest.mark.use_python
@@ -192,7 +200,8 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
                                                    use_shared_memory=False,
                                                    inout_mapping={'test': 'this'})
 
-    expected_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(PipelineModes.NLP, {})
+    expected_mapping = inference_mod.LogParsingInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(
+        PipelineModes.NLP, {})
     expected_mapping.update({'test': 'this'})
 
     worker = stage._get_inference_worker(inf_queue=ProducerConsumerQueue())

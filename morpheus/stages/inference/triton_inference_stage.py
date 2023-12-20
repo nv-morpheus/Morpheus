@@ -642,17 +642,6 @@ class TritonInferenceWorker(InferenceWorker):
                                         outputs=outputs)
 
 
-INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
-    PipelineModes.FIL: {
-        "output__0": "probs",
-    },
-    PipelineModes.NLP: {
-        "attention_mask": "input_mask",
-        "output": "probs",
-    }
-}
-
-
 @register_stage("inf-triton", modes=[PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER])
 class TritonInferenceStage(InferenceStage):
     """
@@ -699,6 +688,16 @@ class TritonInferenceStage(InferenceStage):
             inout_mapping={"mask": "input_mask", "output": "probs"}
     """
 
+    _INFERENCE_WORKER_DEFAULT_INOUT_MAPPING = {
+        PipelineModes.FIL: {
+            "output__0": "probs",
+        },
+        PipelineModes.NLP: {
+            "attention_mask": "input_mask",
+            "output": "probs",
+        }
+    }
+
     def __init__(self,
                  c: Config,
                  model_name: str,
@@ -715,7 +714,7 @@ class TritonInferenceStage(InferenceStage):
             needs_logits = c.mode == PipelineModes.NLP
 
         # Combine the pipeline mode defaults with any user supplied ones
-        inout_mapping_ = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
+        inout_mapping_ = self._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(c.mode, {})
         if inout_mapping is not None:
             inout_mapping_.update(inout_mapping)
 

@@ -29,7 +29,6 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.inference.triton_inference_stage import INFERENCE_WORKER_DEFAULT_INOUT_MAPPING
 from morpheus.stages.inference.triton_inference_stage import ProducerConsumerQueue
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -139,7 +138,7 @@ def test_stage_constructor(config: Config,
     else:
         expexted_needs_logits = needs_logits
 
-    expected_inout_mapping = INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {})
+    expected_inout_mapping = TritonInferenceStage._INFERENCE_WORKER_DEFAULT_INOUT_MAPPING.get(pipeline_mode, {})
     expected_inout_mapping.update(inout_mapping or {})
 
     config.mode = pipeline_mode
