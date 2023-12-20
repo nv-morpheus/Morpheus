@@ -19,7 +19,6 @@ import numpy as np
 import tritonclient.grpc as tritonclient
 from scipy.special import softmax
 
-from messages import MultiPostprocLogParsingMessage  # pylint: disable=no-name-in-module
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -166,7 +165,7 @@ class LogParsingInferenceStage(TritonInferenceStage):
                 output.get_input('labels')[idx, :] = cp.maximum(
                     output.get_input('labels')[idx, :], res.get_output('labels')[i, :])
 
-        return MultiPostprocLogParsingMessage.from_message(inf, memory=output, offset=inf.offset, count=inf.mess_count)
+        return MultiInferenceMessage.from_message(inf, memory=output.memory, offset=inf.offset, count=inf.mess_count)
 
     def _get_worker_class(self) -> type[TritonInferenceWorker]:
         return TritonInferenceLogParsing
