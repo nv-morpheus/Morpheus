@@ -35,12 +35,6 @@ from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 from morpheus.utils.type_aliases import DataFrameType
 
 
-@pytest.fixture(name="config")
-def config_fixture(config: Config):
-    config.mode = PipelineModes.NLP
-    yield config
-
-
 def build_response_mem(log_test_data_dir: str) -> TensorMemory:
     # we have tensor data for the first five rows
     count = 5
@@ -113,11 +107,9 @@ def _check_worker(inference_mod: types.ModuleType, worker: TritonInferenceWorker
     assert worker._inout_mapping == expected_mapping
 
 
-@pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
                                                               import_mod: typing.List[types.ModuleType]):
-    config.mode = PipelineModes.NLP
     inference_mod = import_mod[0]
     worker = inference_mod.TritonInferenceLogParsing(inf_queue=ProducerConsumerQueue(),
                                                      c=config,
@@ -131,7 +123,6 @@ def test_log_parsing_triton_inference_log_parsing_constructor(config: Config,
     _check_worker(inference_mod, worker, {'test': 'this'})
 
 
-@pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 20, 0, 20), (5, 10, 5, 10)])
 def test_log_parsing_triton_inference_log_parsing_build_output_message(config: Config,
@@ -173,7 +164,6 @@ def test_log_parsing_triton_inference_log_parsing_build_output_message(config: C
     assert msg.seq_ids.shape == (count, 3)
 
 
-@pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
@@ -205,7 +195,6 @@ def test_log_parsing_inference_stage_constructor(config: Config, import_mod: typ
     assert stage._kwargs == expected_kwargs
 
 
-@pytest.mark.use_python
 @pytest.mark.import_mod([os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py')])
 def test_log_parsing_inference_stage_get_inference_worker(config: Config, import_mod: typing.List[types.ModuleType]):
     inference_mod = import_mod[0]
@@ -225,7 +214,6 @@ def test_log_parsing_inference_stage_get_inference_worker(config: Config, import
     _check_worker(inference_mod, worker, expected_mapping)
 
 
-@pytest.mark.use_python
 @pytest.mark.usefixtures("manual_seed", "config")
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'))
 @pytest.mark.parametrize("mess_offset,mess_count,offset,count", [(0, 5, 0, 5), (5, 5, 0, 5)])
@@ -236,8 +224,6 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
                                                           offset,
                                                           count):
     inference_mod = import_mod
-
-    ttl_count = len(filter_probs_df)
 
     input_res = build_response_mem(os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing'))
 
