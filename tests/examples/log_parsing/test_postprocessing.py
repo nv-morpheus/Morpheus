@@ -24,9 +24,9 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import InferenceMemory
+from morpheus.messages import TensorMemory
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiResponseMessage
 
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
@@ -37,16 +37,21 @@ def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str
     # we have tensor data for the first five rows
     count = 5
     tensors = {}
-    for tensor_name in ['confidences', 'input_ids', 'labels', 'seq_ids']:
+    for tensor_name in ['confidences', 'input_ids', 'labels']:
         tensor_file = os.path.join(log_test_data_dir, f'{tensor_name}.csv')
         host_data = np.loadtxt(tensor_file, delimiter=',')
         tensors[tensor_name] = cp.asarray(host_data)
 
-    memory = InferenceMemory(count=5, tensors=tensors)
-    return MultiInferenceMessage(meta=meta, mess_offset=0, mess_count=count, memory=memory, offset=0, count=count)
+    host__seq_data = np.loadtxt(os.path.join(log_test_data_dir, 'seq_ids.csv'), delimiter=',')
+    seq_ids = cp.zeros((count, 3), dtype=cp.uint32)
+    seq_ids[:, 0] = cp.arange(0, 5, dtype=cp.uint32)
+    seq_ids[:, 2] = cp.asarray(host__seq_data)[:, 2]
+    tensors['seq_ids'] = seq_ids
+
+    memory = TensorMemory(count=5, tensors=tensors)
+    return MultiResponseMessage(meta=meta, mess_offset=0, mess_count=count, memory=memory, offset=0, count=count)
 
 
-@pytest.mark.use_python
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
@@ -67,4 +72,4 @@ def test_log_parsing_post_processing_stage(config: Config,
     out_meta = stage._postprocess(post_proc_message)
 
     assert isinstance(out_meta, MessageMeta)
-    DatasetManager.assert_compare_df(out_meta._df, expected_df)
+    DatasetManager.assert_compare_df(out_meta.df, expected_df)
