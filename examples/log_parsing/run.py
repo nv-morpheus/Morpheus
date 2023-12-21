@@ -92,8 +92,6 @@ def run_pipeline(
     model_config_file,
     server_url,
 ):
-    CppConfig.set_should_use_cpp(False)
-
     config = Config()
     config.mode = PipelineModes.NLP
     config.num_threads = num_threads
