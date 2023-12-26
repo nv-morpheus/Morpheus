@@ -56,8 +56,6 @@ PYBIND11_MODULE(pass_thru_cpp, m)
     // Make sure to load mrc.core.segment to get ObjectProperties
     mrc::pymrc::import(m, "mrc.core.segment");
 
-    mrc::pymrc::import(m, "morpheus._lib.messages");
-
     py::class_<mrc::segment::Object<PassThruStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
