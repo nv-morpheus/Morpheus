@@ -21,20 +21,101 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
-      - development_cpp
-      - run_morpheus
+      - development
+      - benchmark_cpp
+      - examples
+      - runtime
+      - test_python_morpheus
+      - docs
+      - cudatoolkit
+      - runtime
+      - checks
+
+  dev:
+    output: conda
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - data_retrieval
+      - build_cpp
+      - development
+      - benchmark_cpp
+      - runtime
+      - test_python_morpheus
+      - docs
+      - cudatoolkit
+      - runtime
+      - checks
+
+  build:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - build_cpp
+      - development
+      - benchmark_cpp
+      - runtime
       - test_python_morpheus
       - cudatoolkit
 
+  test:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - data_retrieval
+      - build_cpp
+      - development
+      - benchmark_cpp
+      - runtime
+      - test_python_morpheus
+      - examples
+      - cudatoolkit
+
+  docs:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - data_retrieval
+      - build_cpp
+      - benchmark_cpp
+      - cudatoolkit
+      - docs
+      - runtime
+      - examples
+
+  runtime:
+    output: none
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - runtime
+
+  checks:
+    output: none
+    includes:
+      - checks
+
+
 channels:
+  - conda-forge
+  - huggingface
   - rapidsai
   - nvidia/label/cuda-11.8.0
   - nvidia
   - rapidsai-nightly
   - nvidia/label/dev
   - pytorch
-  - conda-forge
+  - dglteam/label/cu118
 
 dependencies:
 
@@ -42,12 +123,15 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - mrc=24.03 # should this be in build, or somewhere else?
+          - gcc_linux-64=11.2
+          - gxx_linux-64=11.2
+          - cmake=3.25
           - boost-cpp=1.82
           - cuda-nvcc
           - cudf=23.06
           - cxx-compiler
           - cython=0.29.24
-          - libhwloc=2.9.2
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
@@ -57,15 +141,91 @@ dependencies:
           - scikit-build=0.17.1
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
-  development_cpp:
+
+  checks:
     common:
       - output_types: [conda]
         packages:
-          - clangdev=14
-          - include-what-you-use=0.18
+          - pre-commit
+
+  data_retrieval:
+    common:
+      - output_types: [conda]
+        packages:
+          - git-lfs
+
+  development:
+    common:
+      - output_types: [conda]
+        packages:
+          - clangdev=16
+          - flake8
+          - include-what-you-use=0.20
           - isort
+          - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
           - yapf=0.40.1
-  run_morpheus:
+
+  docs:
+    common:
+      - output_types: [conda]
+        packages:
+          - breathe=4.34.0
+          - doxygen=1.9.2
+          - exhale=0.3.6
+          - ipython
+          - myst-parser=0.17.2
+          - nbsphinx
+          - python-graphviz
+          - sphinx
+          - sphinx_rtd_theme
+          - numpydoc=1.4
+          - pluggy=1.0
+          - &click click >=8
+
+  benchmark_cpp:
+    common:
+      - output_types: [conda]
+        packages:
+          - benchmark=1.6.0
+
+  examples:
+    common:
+      - output_types: [conda]
+        packages:
+          - arxiv=1.4
+          - boto3
+          - cuml=23.06
+          - dask>=2023.1.1
+          - dgl=1.0.2
+          - dill=0.3.6
+          - distributed>=2023.1.1
+          - huggingface_hub=0.10.1 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - langchain=0.0.190
+          - libwebp>=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
+          - mlflow>=2.2.1,<3
+          - newspaper3k=0.2
+          - openai=0.28
+          - papermill=2.3.4
+          - pypdf=3.16
+          - s3fs>=2023.6
+          - sentence-transformers
+          - transformers=4.30.2 # newer versions are incompatible with our pinned version of huggingface_hub
+          ####### Pip Transitive Dependencies (keep sorted!) #######
+          # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
+          # better to install them with conda than pip to allow for better dependency resolution.
+          - environs=9.5
+          - minio=7.1
+          - python-dotenv=1.0
+          - ujson=5.8
+          ####### Pip Dependencies (keep sorted!) #######
+          - pip
+          - pip:
+              - google-search-results==2.4
+              - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
+              - nemollm
+
+
+  runtime:
     common:
       - output_types: [conda]
         packages:
@@ -73,28 +233,42 @@ dependencies:
           - click>=8
           - datacompy=0.8
           - dill
+          - elasticsearch==8.9.0
+          - feedparser=6.0.10
           - gputil
           - grpcio
           - mlflow>=2.2.1,<3
+          - nb_conda_kernels
           - numpydoc=1.4
           - nvtabular=23.06
           - python-confluent-kafka=1.9.2
           - python-graphviz
           - pytorch-cuda
           - pytorch=2.0.1
+          - requests-cache=1.1
           - scikit-learn=1.2.2
           - sqlalchemy<2.0 # 2.0 is incompatible with pandas=1.3
           - tqdm=4
           - typing_utils=0.1
           - watchdog=2.1
+          - websockets
+          - pip
+          - pip:
+            - databricks-connect
+            - milvus==2.3.2
+            - pyarrow_hotfix
+            - pymilvus==2.3.2
+
   test_python_morpheus:
     common:
       - output_types: [conda]
         packages:
-          - pip
+          - nodejs=18.*
           - pytest
+          - pytest-asyncio
           - pytest-benchmark>=4.0
           - pytest-cov
+          - pip
           - pip:
               - pytest-kafka==0.6.0
 
@@ -108,5 +282,6 @@ dependencies:
               - cuda-cudart-dev=11.8
               - cuda-nvml-dev=11.8
               - cuda-nvrtc-dev=11.8
+              - cuda-python=11.8.2
               - cuda-tools=11.8
               - cuda-version=11.8
