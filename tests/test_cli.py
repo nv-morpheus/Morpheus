@@ -16,6 +16,7 @@
 
 import os
 import shutil
+from unittest import mock
 
 import click
 import mlflow
@@ -156,6 +157,24 @@ class TestCLI:
         result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
+
+    @pytest.mark.usefixtures("restore_environ")
+    @pytest.mark.parametrize('use_environ', [True, False])
+    @pytest.mark.parametrize('value', [1, 13, 33])
+    @mock.patch('morpheus.utils.seed.manual_seed')
+    def test_manual_seed(self, mock_manual_seed: mock.MagicMock, value: int, use_environ: bool):
+        flags = ['run']
+        if use_environ:
+            os.environ['MORPHEUS_MANUAL_SEED'] = str(value)
+        else:
+            flags.append(f'--manual_seed={value}')
+
+        flags.append('pipeline-other')
+
+        runner = CliRunner()
+        result = runner.invoke(commands.cli, flags)
+        assert result.exit_code == 0, result.output
+        mock_manual_seed.assert_called_once_with(value)
 
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):

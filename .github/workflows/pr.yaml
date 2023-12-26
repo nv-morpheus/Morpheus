@@ -42,8 +42,44 @@ permissions:
   statuses: none
 
 jobs:
+
+  pr-builder:
+    needs:
+      - prepare
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+
+  prepare:
+    # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
+    # PR does not have the label
+    name: Prepare
+    runs-on: ubuntu-latest
+    container:
+      image: rapidsai/ci-conda:latest
+    steps:
+      - name: Get PR Info
+        id: get-pr-info
+        uses: rapidsai/shared-action-workflows/get-pr-info@branch-23.08
+        if: ${{ startsWith(github.ref_name, 'pull-request/') }}
+    outputs:
+      has_skip_ci_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'skip-ci') || false }}
+
+  checks:
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.02
+    # Only run the CI pipeline if the PR does not have the skip-ci label
+    if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
+    with:
+      enable_check_generated_files: false
+
   ci_pipe:
+    name: CI Pipeline
+    needs: [prepare]
     uses: ./.github/workflows/ci_pipe.yml
+    # Only run the CI pipeline if the PR does not have the skip-ci label
+    if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230913
