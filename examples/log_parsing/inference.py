@@ -166,8 +166,8 @@ class LogParsingInferenceStage(TritonInferenceStage):
         # Two scenarios:
         if (inf.mess_count == inf.count):
             assert seq_count == res.count
-            confidences[seq_offset:seq_offset + seq_count, :] = resp_confidences
-            labels[seq_offset:seq_offset + seq_count, :] = resp_labels
+            confidences[inf.offset:inf.offset + inf.count, :] = resp_confidences
+            labels[inf.offset:inf.offset + inf.count, :] = resp_labels
         else:
             assert inf.count == res.count
 
