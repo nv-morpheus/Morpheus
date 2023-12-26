@@ -29,10 +29,16 @@ PassThruStage::PassThruStage() : PythonNode(base_t::op_factory_from_sub_fn(build
 PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(
-            rxcpp::make_observer<sink_type_t>([this, &output](sink_type_t x) { output.on_next(std::move(x)); },
-                                              [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-                                              [&]() { output.on_completed(); }));
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
+                output.on_next(std::move(x));
+            },
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 
@@ -47,6 +53,9 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(pass_thru_cpp, m)
 {
+    // Make sure to load mrc.core.segment to get ObjectProperties
+    mrc::pymrc::import(m, "mrc.core.segment");
+
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
     py::class_<mrc::segment::Object<PassThruStage>,
