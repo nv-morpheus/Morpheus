@@ -160,19 +160,22 @@ class LogParsingInferenceStage(TritonInferenceStage):
         input_ids[inf.offset:inf.count + inf.offset, :] = inf.get_tensor('input_ids')
         out_seq_ids[inf.offset:inf.count + inf.offset, :] = seq_ids
 
+        resp_confidences = res.get_tensor('confidences')
+        resp_labels = res.get_tensor('labels')
+
         # Two scenarios:
         if (inf.mess_count == inf.count):
             assert seq_count == res.count
-            confidences[seq_offset:seq_offset + seq_count, :] = res.get_tensor('confidences')
-            labels[seq_offset:seq_offset + seq_count, :] = res.get_tensor('labels')
+            confidences[seq_offset:seq_offset + seq_count, :] = resp_confidences
+            labels[seq_offset:seq_offset + seq_count, :] = resp_labels
         else:
             assert inf.count == res.count
 
             mess_ids = seq_ids[:, 0].get().tolist()
 
             for i, idx in enumerate(mess_ids):
-                confidences[idx, :] = cp.maximum(confidences[idx, :], res.get_tensor('confidences')[i, :])
-                labels[idx, :] = cp.maximum(labels[idx, :], res.get_tensor('labels')[i, :])
+                confidences[idx, :] = cp.maximum(confidences[idx, :], resp_confidences[i, :])
+                labels[idx, :] = cp.maximum(labels[idx, :], resp_labels[i, :])
 
         return MultiResponseMessage.from_message(inf, memory=memory, offset=inf.offset, count=inf.mess_count)
 
