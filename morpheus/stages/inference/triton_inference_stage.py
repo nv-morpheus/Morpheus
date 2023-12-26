@@ -733,7 +733,7 @@ class TritonInferenceStage(InferenceStage):
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> TritonInferenceWorker:
         """
-        Returns the worker for this stage. Authors of custom sub-classes can override this method to provide a custom 
+        Returns the worker for this stage. Authors of custom sub-classes can override this method to provide a custom
         worker.
         """
 

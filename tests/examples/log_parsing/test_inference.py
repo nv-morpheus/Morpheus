@@ -259,5 +259,7 @@ def test_log_parsing_inference_stage_convert_one_response(import_mod: typing.Lis
     tensors = resp_msg.memory.get_tensors()
     for (tensor_name, tensor) in tensors.items():
         orig_tensor = orig_tensors[tensor_name]
-        assert (tensor[0:offset] == orig_tensor[0:offset]).all(), f"Out of bounds values for {tensor_name}"
-        assert (tensor[offset + count:] == orig_tensor[offset + count:]).all(), f"Out of bounds values for {tensor_name}"
+
+        error_msg = f"Out of bounds values for {tensor_name}"
+        assert (tensor[0:offset] == orig_tensor[0:offset]).all(), error_msg
+        assert (tensor[offset + count:] == orig_tensor[offset + count:]).all(), error_msg

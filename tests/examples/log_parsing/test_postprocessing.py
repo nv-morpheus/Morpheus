@@ -24,9 +24,9 @@ import pytest
 from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
-from morpheus.messages import TensorMemory
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiResponseMessage
+from morpheus.messages import TensorMemory
 
 
 def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):

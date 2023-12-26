@@ -19,7 +19,6 @@ from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
