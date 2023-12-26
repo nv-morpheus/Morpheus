@@ -1055,13 +1055,45 @@ def openai_fixture(fail_missing: bool):
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_chat_completion")
 def mock_chat_completion_fixture():
-    with mock.patch("openai.ChatCompletion") as mock_chat_completion:
-        mock_chat_completion.return_value = mock_chat_completion
 
-        response = {'choices': [{'message': {'content': 'test_output'}}]}
-        mock_chat_completion.create.return_value = response.copy()
-        mock_chat_completion.acreate = mock.AsyncMock(return_value=response.copy())
-        yield mock_chat_completion
+    from openai.types.chat.chat_completion import ChatCompletion
+    from openai.types.chat.chat_completion import ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
+
+    chat_completion = ChatCompletion(id='chatcmpl-8Xurraq4bdGlFDRvJMx9C2TsVkyQM',
+                                     choices=[
+                                         Choice(finish_reason='stop',
+                                                index=0,
+                                                logprobs=None,
+                                                message=ChatCompletionMessage(content='This is a test.',
+                                                                              role='assistant',
+                                                                              function_call=None,
+                                                                              tool_calls=None))
+                                     ],
+                                     created=1703094115,
+                                     model='gpt-3.5-turbo',
+                                     object='chat.completion')
+
+    mock_chat_completion = mock.MagicMock()
+    mock_chat_completion.return_value = chat_completion
+
+    yield mock_chat_completion
+
+
+@pytest.mark.usefixtures("openai")
+@pytest.fixture(name="mock_async_openai")
+def mock_async_openai_fixture():
+    # Mock AsyncOpenAI class
+    with mock.patch("openai.AsyncOpenAI", autospec=True) as mock_instance:
+        yield mock_instance
+
+
+@pytest.mark.usefixtures("openai")
+@pytest.fixture(name="mock_openai")
+def mock_openai_fixture():
+    # Mock OpenAI class
+    with mock.patch("openai.OpenAI", autospec=True) as mock_instance:
+        yield mock_instance
 
 
 @pytest.mark.usefixtures("nemollm")

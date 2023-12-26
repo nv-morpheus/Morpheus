@@ -18,7 +18,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - langchain=0.0.190
   - numexpr=2.8.7
   - pip
   - requests-cache=1.1

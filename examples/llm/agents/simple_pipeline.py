@@ -19,11 +19,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.llm import LLMEngine
-from morpheus.llm.nodes.extracter_node import ExtracterNode
-from morpheus.llm.nodes.haystack_agent_node import HaystackAgentNode
-from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
-from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -33,36 +28,9 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.concat_df import concat_dataframes
 
-from ..common.utils import build_haystack_agent
-from ..common.utils import build_langchain_agent_executor
-from ..common.utils import build_llama_index_agent_executor
+from ..common.engine_builder import build_engine_with_agent_node
 
 logger = logging.getLogger(__name__)
-
-
-def _build_engine(model_name: str, llm_orch: str) -> LLMEngine:
-
-    engine = LLMEngine()
-
-    engine.add_node("extracter", node=ExtracterNode())
-
-    agent_node = None
-
-    if llm_orch == "langchain":
-        agent_node = LangChainAgentNode(agent_executor=build_langchain_agent_executor(model_name=model_name))
-    elif llm_orch == "haystack":
-        agent_node = HaystackAgentNode(agent=build_haystack_agent(model_name=model_name))
-    elif llm_orch == "llama_index":
-        # LlamaIndex uses Langchain under the hood
-        agent_node = LangChainAgentNode(agent_executor=build_llama_index_agent_executor(model_name=model_name))
-    else:
-        raise RuntimeError(f"LLM orchestration framework '{llm_orch}' is not supported yet.")
-
-    engine.add_node("agent", inputs=[("/extracter")], node=agent_node)
-
-    engine.add_task_handler(inputs=["/agent"], handler=SimpleTaskHandler())
-
-    return engine
 
 
 def pipeline(num_threads: int,
@@ -101,7 +69,8 @@ def pipeline(num_threads: int,
 
     pipe.add_stage(MonitorStage(config, description="Source rate", unit='questions'))
 
-    pipe.add_stage(LLMEngineStage(config, engine=_build_engine(model_name=model_name, llm_orch=llm_orch)))
+    pipe.add_stage(LLMEngineStage(config, engine=build_engine_with_agent_node(model_name=model_name,
+                                                                              llm_orch=llm_orch)))
 
     sink = pipe.add_stage(InMemorySinkStage(config))
 

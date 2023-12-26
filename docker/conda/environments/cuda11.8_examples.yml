@@ -40,7 +40,6 @@ dependencies:
     - mlflow>=2.2.1,<3
     - newspaper3k=0.2
     - numexpr=2.8.7
-    - openai=0.28
     - papermill=2.3.4
     - pypdf=3.16
     - requests-cache=1.1

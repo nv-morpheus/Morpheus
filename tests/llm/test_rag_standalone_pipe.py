@@ -14,6 +14,7 @@
 # limitations under the License.
 """Mimic the examples/llm/rag/standalone_pipeline.py example"""
 
+import copy
 import os
 import types
 from unittest import mock
@@ -170,17 +171,26 @@ def test_rag_standalone_pipe_nemo(
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_openai(config: Config,
                                     mock_chat_completion: mock.MagicMock,
+                                    mock_openai: mock.MagicMock,
+                                    mock_async_openai: mock.MagicMock,
                                     dataset: DatasetManager,
                                     milvus_server_uri: str,
                                     repeat_count: int,
                                     import_mod: types.ModuleType):
-    mock_chat_completion.acreate.side_effect = [{
-        "choices": [{
-            'message': {
-                'content': EXPECTED_RESPONSE
-            }
-        }]
-    } for _ in range(repeat_count)]
+
+    chat_completions = []
+    for _ in range(repeat_count):
+        chat_completion_cp = copy.deepcopy(mock_chat_completion())
+        chat_completion_cp.choices[0].message.content = EXPECTED_RESPONSE
+        chat_completions.append(chat_completion_cp)
+
+    async_openai_instance = mock.AsyncMock()
+    async_openai_instance.chat.completions.create.side_effect = chat_completions
+    mock_async_openai.return_value = async_openai_instance
+
+    openai_instance = mock.Mock()
+    openai_instance.chat.completions.create.side_effect = chat_completions
+    mock_openai.return_value = openai_instance
 
     collection_name = "test_rag_standalone_pipe_openai"
     populate_milvus(milvus_server_uri=milvus_server_uri,
