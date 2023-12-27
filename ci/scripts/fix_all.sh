@@ -105,5 +105,5 @@ fi
 # Run yapf
 if [[ "${SKIP_YAPF}" == "" ]]; then
    echo "Running yapf..."
-   python3 -m yapf -i --style ${PY_CFG} ${YAPF_EXCLUDE_FLAGS} -r ${PY_MODIFIED_FILES[@]}
+   python3 -m yapf -i --style ${PY_CFG} -r ${PY_MODIFIED_FILES[@]}
 fi
