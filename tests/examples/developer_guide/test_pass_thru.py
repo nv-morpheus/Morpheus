@@ -56,3 +56,10 @@ def test_pass_thru_ex1_deco(config: Config, filter_probs_df: DataFrameType, impo
 def test_pass_thru_ex3(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
     pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
+
+
+@pytest.mark.import_mod(
+    os.path.join(TEST_DIRS.examples_dir, 'external_cpp_stage/morpheus_ex/external_cpp_stage/pass_thru.py'))
+def test_external_cpp_stage(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
+    pass_thru = import_mod
+    _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)
