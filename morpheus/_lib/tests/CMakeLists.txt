@@ -20,7 +20,6 @@ find_package(pybind11 REQUIRED)
 include(GoogleTest)
 
 # Cuda Test
-
 add_executable(test_cuda
   test_cuda.cu
 )
@@ -50,7 +49,6 @@ install(
 )
 
 # Morpheus Test Utilities
-
 add_library(
   morpheus_test_utilities
     test_utils/common.cpp
@@ -64,8 +62,7 @@ target_link_libraries(
 )
 
 # Morpheus Tests
-
-function (add_morpheus_test)
+function(add_morpheus_test)
   set(options)
   set(oneValueArgs NAME)
   set(multiValueArgs FILES)
@@ -82,6 +79,7 @@ function (add_morpheus_test)
       GTest::gtest_main
       morpheus_test_utilities
       pybind11::embed
+      TritonClient::httpclient_static
   )
 
   gtest_discover_tests(test_${MORPHEUS_TEST_NAME})
@@ -100,7 +98,6 @@ function (add_morpheus_test)
       "${MORPHEUS_LIB_INSTALL_DIR}/tests"
     COMPONENT Wheel
   )
-
 endfunction()
 
 add_morpheus_test(
