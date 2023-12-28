@@ -33,6 +33,8 @@ project(morpheus-ex-external-cpp-stage
   LANGUAGES C CXX
 )
 
+set(CMAKE_CXX_STANDARD 20)
+
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
 # Ensure CPM is initialized
@@ -60,14 +62,6 @@ add_subdirectory(morpheus_ex/external_cpp_stage)
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
   list(APPEND extra_args "IS_INPLACE")
 endif()
-
-# if(MORPHEUS_PYTHON_BUILD_WHEEL)
-#   list(APPEND extra_args "BUILD_WHEEL")
-# endif()
-
-# if(MORPHEUS_PYTHON_PERFORM_INSTALL)
-#   list(APPEND extra_args "INSTALL_WHEEL")
-# endif()
 
 if(TARGET morpheus-package-install)
   list(APPEND extra_args "PYTHON_DEPENDENCIES" "morpheus-package-install")
