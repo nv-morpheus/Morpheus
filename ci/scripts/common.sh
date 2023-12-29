@@ -26,7 +26,7 @@ export PY_DIRS="${PY_ROOT} ci/scripts"
 export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target)}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
-export CPP_FILE_REGEX='^(\.\/)?(morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
+export CPP_FILE_REGEX='^(\.\/)?(examples|morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
 export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build|external).*\.(py|pyx|pxd)$'
 
 # Use these options to skip any of the checks
