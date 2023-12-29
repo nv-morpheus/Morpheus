@@ -24,7 +24,7 @@ echo "Runing CMake configure..."
 cmake -B ${BUILD_DIR} -GNinja \
    -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
    -DMORPHEUS_PYTHON_INPLACE_BUILD:BOOL=ON \
-   -DMORPHEUS_PYTHON_PERFORM_INSTALL:BOOL=ON # Ensure all of the libraries are installed` \
+   -DMORPHEUS_PYTHON_PERFORM_INSTALL:BOOL=ON `# Ensure all of the libraries are installed` \
    ${CMAKE_CONFIGURE_EXTRA_ARGS:+CMAKE_CONFIGURE_EXTRA_ARGS} .
 
 echo "Running CMake build..."
