@@ -23,7 +23,7 @@ from functools import partial
 
 with warnings.catch_warnings():
     # Ignore warning regarding tensorflow not being installed
-    warnings.simplefilter("ignore")
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
     import nvtabular as nvt
 
 import pandas as pd

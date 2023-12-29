@@ -29,7 +29,7 @@ from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 
 with warnings.catch_warnings():
     # Ignore warning regarding tensorflow not being installed
-    warnings.simplefilter("ignore")
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
     import nvtabular as nvt
 
     if os.environ.get("MORPHEUS_IN_SPHINX_BUILD") is None:
