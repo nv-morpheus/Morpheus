@@ -18,7 +18,12 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key build \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
+
+update_conda_env env.yaml
 
 log_toolchain
 
