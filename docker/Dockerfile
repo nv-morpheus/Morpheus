@@ -114,7 +114,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Install mamba, boa and git here. Conda build breaks with other git installs
     /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
     source activate base
-    # conda clean -afy
+# conda clean -afy
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -261,6 +261,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
 COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
 COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
 COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
+COPY "${MORPHEUS_ROOT_HOST}/external/utilities" "./external/utilities"
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
 COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
