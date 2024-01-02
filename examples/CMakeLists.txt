@@ -19,6 +19,4 @@ list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
 add_subdirectory(developer_guide/3_simple_cpp_stage)
 add_subdirectory(developer_guide/4_rabbitmq_cpp_stage)
 
-add_subdirectory(external_cpp_stage)
-
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

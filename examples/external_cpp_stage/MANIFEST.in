@@ -1,2 +1,0 @@
-include versioneer.py
-include morpheus_ex/external_cpp_stage/_version.py
