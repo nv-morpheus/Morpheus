@@ -115,7 +115,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                                                              stride,
                                                              this->m_do_lower_case,
                                                              this->m_truncation,
-                                                             normalized_col_view.size() * 2);
+                                                             rmm::mr::get_current_device_resource());
                 }
                 else
                 {

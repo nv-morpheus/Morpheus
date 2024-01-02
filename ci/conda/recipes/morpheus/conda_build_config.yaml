@@ -32,4 +32,4 @@ boost:
   - 1.82
 
 rapids_version:
-  - 23.06
+  - 23.08

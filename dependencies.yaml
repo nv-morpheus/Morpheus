@@ -18,7 +18,7 @@ files:
   all:
     output: conda
     matrix:
-      cuda: ["11.8"]
+      cuda: ["12.0"]
       arch: [x86_64]
     includes:
       - build_cpp
@@ -28,13 +28,13 @@ files:
       - cudatoolkit
 
 channels:
+  - conda-forge
   - rapidsai
-  - nvidia/label/cuda-11.8.0
+  - nvidia/label/cuda-12.0.0
   - nvidia
   - rapidsai-nightly
   - nvidia/label/dev
   - pytorch
-  - conda-forge
 
 dependencies:
 
@@ -43,26 +43,27 @@ dependencies:
       - output_types: [conda]
         packages:
           - boost-cpp=1.82
+          - cmake=3.26.4
           - cuda-nvcc
-          - cudf=23.06
+          - cudf=23.10
           - cxx-compiler
-          - cython=0.29.24
+          - cython>=3.0.3
           - libhwloc=2.9.2
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
-          - protobuf=4.21.*
+          - protobuf>=4.21.*
           - pybind11-stubgen=0.10
           - rapidjson=1.1.0
           - scikit-build=0.17.1
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
-          - ucx=1.14
+          - ucx=1.15
   development_cpp:
     common:
       - output_types: [conda]
         packages:
-          - clangdev=14
-          - include-what-you-use=0.18
+          - clangdev=16
+          - include-what-you-use=0.20
           - isort
           - yapf=0.40.1
   run_morpheus:
@@ -77,7 +78,7 @@ dependencies:
           - grpcio
           - mlflow>=2.2.1,<3
           - numpydoc=1.4
-          - nvtabular=23.06
+          - nvtabular=23.08
           - python-confluent-kafka=1.9.2
           - python-graphviz
           - pytorch-cuda
@@ -103,10 +104,10 @@ dependencies:
       - output_types: [conda]
         matrices:
           - matrix:
-              cuda: "11.8"
+              cuda: "12.0"
             packages:
-              - cuda-cudart-dev=11.8
-              - cuda-nvml-dev=11.8
-              - cuda-nvrtc-dev=11.8
-              - cuda-tools=11.8
-              - cuda-version=11.8
+              - cuda-cudart-dev=12.0
+              - cuda-nvml-dev=12.0
+              - cuda-nvrtc-dev=12.0
+              - cuda-tools=12.0
+              - cuda-version=12.0
