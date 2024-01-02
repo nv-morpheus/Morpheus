@@ -19,10 +19,10 @@ import typing
 
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.llm_service import LLMService
-from morpheus.utils.verify_dependencies import _verify_deps
 
 logger = logging.getLogger(__name__)
 
+IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = (
     "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
     "`mamba install -n base -c conda-forge conda-merge`\n"
@@ -32,8 +32,8 @@ IMPORT_ERROR_MESSAGE = (
 
 try:
     import nemollm
-except ImportError:
-    pass
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class NeMoLLMClient(LLMClient):
@@ -53,9 +53,10 @@ class NeMoLLMClient(LLMClient):
     """
 
     def __init__(self, parent: "NeMoLLMService", model_name: str, **model_kwargs: dict[str, typing.Any]) -> None:
-        super().__init__()
-        _verify_deps(('nemollm', ), IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
+        super().__init__()
         self._parent = parent
         self._model_name = model_name
         self._model_kwargs = model_kwargs
@@ -149,9 +150,10 @@ class NeMoLLMService(LLMService):
     """
 
     def __init__(self, *, api_key: str = None, org_id: str = None) -> None:
-        super().__init__()
-        _verify_deps(('nemollm', ), IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
 
+        super().__init__()
         api_key = api_key if api_key is not None else os.environ.get("NGC_API_KEY", None)
         org_id = org_id if org_id is not None else os.environ.get("NGC_ORG_ID", None)
 

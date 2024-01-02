@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-c_compiler_version:
-  - 11.2
+repos:
+      - repo: https://github.com/rapidsai/dependency-file-generator
+        rev: v1.7.1
+        hooks:
+            - id: rapids-dependency-file-generator
+              args: ["--clean"]
 
-cxx_compiler_version:
-  - 11.2
-
-cuda_compiler:
-  - cuda-nvcc
-
-cuda_compiler_version:
-  - 12.0
-
-python:
-  - 3.10
-
-boost:
-  - 1.82
-
-rapids_version:
-  - 23.08
+default_language_version:
+      python: python3

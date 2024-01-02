@@ -17,19 +17,17 @@ import time
 
 import pandas as pd
 
-from morpheus.utils.verify_dependencies import _verify_deps
-
 logger = logging.getLogger(__name__)
 
-REQUIRED_DEPS = ('ESConnectionError', 'Elasticsearch', 'parallel_bulk')
+IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = "ElasticsearchController requires the elasticsearch package to be installed."
 
 try:
     from elasticsearch import ConnectionError as ESConnectionError
     from elasticsearch import Elasticsearch
     from elasticsearch.helpers import parallel_bulk
-except ImportError:
-    pass
+except ImportError as import_exc:
+    IMPORT_EXCEPTION = import_exc
 
 
 class ElasticsearchController:
@@ -47,7 +45,9 @@ class ElasticsearchController:
     """
 
     def __init__(self, connection_kwargs: dict, raise_on_exception: bool = False, refresh_period_secs: int = 2400):
-        _verify_deps(REQUIRED_DEPS, IMPORT_ERROR_MESSAGE, globals())
+        if IMPORT_EXCEPTION is not None:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from IMPORT_EXCEPTION
+
         self._client = None
         self._last_refresh_time = None
         self._raise_on_exception = raise_on_exception
