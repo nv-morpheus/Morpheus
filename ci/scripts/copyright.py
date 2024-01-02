@@ -48,7 +48,8 @@ ExemptFiles: typing.List[re.Pattern] = [
     re.compile(r"^[^ \/\n]*build[^ \/\n]*\/.*$"),  # Ignore any build*/ folder
     re.compile(r"^external\/.*$"),  # Ignore external
     re.compile(r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"),
-    re.compile(r"PULL_REQUEST_TEMPLATE.md"),  # Ignore the PR template
+    re.compile(r"PULL_REQUEST_TEMPLATE.md"),  # Ignore the PR template,
+    re.compile(r"[^ \/\n]*conda/environments/.*\.yaml$"),  # Ignore generated environment files
 ]
 
 # this will break starting at year 10000, which is probably OK :)

@@ -27,6 +27,6 @@ ENV_NAME=${ENV_NAME:-morpheus}
 sed -ri "s/conda activate base/conda activate $ENV_NAME/g" ~/.bashrc;
 
 if conda_env_find "${ENV_NAME}" ; \
-then mamba env update --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.8_dev.yml --prune; \
-else mamba env create --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.8_dev.yml; \
+then mamba env update --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/conda/environments/all_cuda-118_arch-x86_64.yaml --prune; \
+else mamba env create --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/conda/environments/all_cuda-118_arch-x86_64.yaml; \
 fi
