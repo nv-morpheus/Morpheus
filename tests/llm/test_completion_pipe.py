@@ -101,26 +101,18 @@ def test_completion_pipe_nemo(
 @pytest.mark.usefixtures("openai")
 @pytest.mark.use_python
 def test_completion_pipe_openai(config: Config,
-                                mock_chat_completion: mock.MagicMock,
-                                mock_openai: mock.MagicMock,
+                                chat_completion,
                                 mock_async_openai: mock.MagicMock,
                                 countries: list[str],
                                 capital_responses: list[str]):
 
     chat_completions = []
     for response in capital_responses:
-        chat_completion_cp = copy.deepcopy(mock_chat_completion())
+        chat_completion_cp = copy.deepcopy(chat_completion)
         chat_completion_cp.choices[0].message.content = response
-        print(chat_completion_cp)
         chat_completions.append(chat_completion_cp)
 
-    async_openai_instance = mock.AsyncMock()
-    async_openai_instance.chat.completions.create.side_effect = chat_completions
-    mock_async_openai.return_value = async_openai_instance
-
-    openai_instance = mock.Mock()
-    openai_instance.chat.completions.create.side_effect = chat_completions
-    mock_openai.return_value = openai_instance
+    mock_async_openai.chat.completions.create.side_effect = chat_completions
 
     results = _run_pipeline(config, OpenAIChatService, countries=countries, capital_responses=capital_responses)
     assert_results(results)

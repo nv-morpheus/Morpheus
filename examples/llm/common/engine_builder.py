@@ -21,7 +21,7 @@ from haystack.nodes import PromptNode
 from haystack.nodes import PromptTemplate
 from haystack.nodes.retriever.web import WebRetriever
 from haystack.pipelines import WebQAPipeline
-from langchain import OpenAI
+from langchain import OpenAI  # pylint: disable=no-name-in-module
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
 from langchain.agents import load_tools
@@ -140,9 +140,9 @@ def _build_haystack_agent(model_name: str) -> Agent:
         Haystack Agent instance.
     """
 
-    search_key = os.environ.get("SERPERDEV_API_KEY")
+    search_key = os.environ.get("SERPER_API_KEY")
     if not search_key:
-        raise ValueError("Ensure to configure the SERPERDEV_API_KEY environment variable.")
+        raise ValueError("Ensure to configure the SERPER_API_KEY environment variable.")
 
     openai_key = os.environ.get("OPENAI_API_KEY")
     if not openai_key:

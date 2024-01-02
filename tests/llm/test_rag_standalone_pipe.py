@@ -20,6 +20,7 @@ import types
 from unittest import mock
 
 import pytest
+from openai.types.chat.chat_completion import ChatCompletion
 
 import cudf
 
@@ -170,7 +171,7 @@ def test_rag_standalone_pipe_nemo(
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
 def test_rag_standalone_pipe_openai(config: Config,
-                                    mock_chat_completion: mock.MagicMock,
+                                    chat_completion: ChatCompletion,
                                     mock_openai: mock.MagicMock,
                                     mock_async_openai: mock.MagicMock,
                                     dataset: DatasetManager,
@@ -180,17 +181,12 @@ def test_rag_standalone_pipe_openai(config: Config,
 
     chat_completions = []
     for _ in range(repeat_count):
-        chat_completion_cp = copy.deepcopy(mock_chat_completion())
+        chat_completion_cp = copy.deepcopy(chat_completion)
         chat_completion_cp.choices[0].message.content = EXPECTED_RESPONSE
         chat_completions.append(chat_completion_cp)
 
-    async_openai_instance = mock.AsyncMock()
-    async_openai_instance.chat.completions.create.side_effect = chat_completions
-    mock_async_openai.return_value = async_openai_instance
-
-    openai_instance = mock.Mock()
-    openai_instance.chat.completions.create.side_effect = chat_completions
-    mock_openai.return_value = openai_instance
+    mock_async_openai.chat.completions.create.side_effect = chat_completions
+    mock_openai.chat.completions.create.side_effect = chat_completions
 
     collection_name = "test_rag_standalone_pipe_openai"
     populate_milvus(milvus_server_uri=milvus_server_uri,

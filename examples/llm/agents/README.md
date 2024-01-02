@@ -96,7 +96,7 @@ Go to [SerperDev](https://serper.dev/login) to register and create an account. O
 Serper Dev API key. Set the API key as an environment variable using the following command:
 
 ```bash
-export SERPERDEV_API_KEY="<YOUR_SERPERDEV_API_KEY>"
+export SERPERDEV_API_KEY="<SERPER_API_KEY>"
 ```
 
 Note: This is required when using the Haystack LLM orchestration framework in the pipeline.
