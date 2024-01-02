@@ -61,7 +61,6 @@ FROM base as jupyter
 RUN source activate morpheus &&\
     mamba install -y -c conda-forge \
         ipywidgets \
-        nb_conda_kernels \
         jupyter_contrib_nbextensions \
         # notebook v7 is incompatible with jupyter_contrib_nbextensions
         notebook=6 &&\

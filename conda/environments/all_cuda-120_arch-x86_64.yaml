@@ -20,17 +20,16 @@ dependencies:
 - clangdev=16
 - click >=8
 - click>=8
-- cmake=3.25
+- cmake=3.26
 - cmake=3.26.4
 - cuda-cudart-dev=12.0
 - cuda-nvcc
 - cuda-nvml-dev=12.0
 - cuda-nvrtc-dev=12.0
-- cuda-python=12.0
 - cuda-tools=12.0
 - cuda-version=12.0
-- cudf=23.10
-- cuml=23.06
+- cudf=23.12
+- cuml=23.12
 - cxx-compiler
 - cython>=3.0.3
 - dask>=2023.1.1
@@ -61,7 +60,6 @@ dependencies:
 - mlflow>=2.2.1,<3
 - mrc=24.03
 - myst-parser=0.17.2
-- nb_conda_kernels
 - nbsphinx
 - newspaper3k=0.2
 - ninja=1.10
