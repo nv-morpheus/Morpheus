@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus_pass_thru_example")
+list(APPEND CMAKE_MESSAGE_CONTEXT "3_simple_cpp_stage")
 
 cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
@@ -27,7 +27,7 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/ut
 
 include(morpheus_utils/load)
 
-project(morpheus_pass_thru_example
+project(3_simple_cpp_stage
   VERSION 24.03.00
   LANGUAGES C CXX
 )
@@ -50,12 +50,12 @@ rapids_find_package(CUDAToolkit REQUIRED)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-morpheus_utils_create_python_package(morpheus_pass_thru_example
+morpheus_utils_create_python_package(3_simple_cpp_stage
   PROJECT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/morpheus_pass_thru_example"
+  SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-add_subdirectory(morpheus_pass_thru_example/_lib)
+add_subdirectory(src/_lib)
 
 # Complete the python package
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
@@ -66,6 +66,6 @@ if(TARGET morpheus-package-install)
   list(APPEND extra_args "PYTHON_DEPENDENCIES" "morpheus-package-install")
 endif()
 
-morpheus_utils_build_python_package(morpheus_pass_thru_example ${extra_args})
+morpheus_utils_build_python_package(3_simple_cpp_stage ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

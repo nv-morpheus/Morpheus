@@ -52,8 +52,7 @@ def test_pass_thru_ex1_deco(config: Config, filter_probs_df: DataFrameType, impo
     _check_pass_thru(config, filter_probs_df, pass_thru.pass_thru_stage, on_data_fn_name='_on_data_fn')
 
 
-@pytest.mark.import_mod(
-    os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/morpheus_pass_thru_example/pass_thru.py'))
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'developer_guide/3_simple_cpp_stage/src/pass_thru.py'))
 def test_pass_thru_ex3(config: Config, filter_probs_df: DataFrameType, import_mod: types.ModuleType):
     pass_thru = import_mod
     _check_pass_thru(config, filter_probs_df, pass_thru.PassThruStage)

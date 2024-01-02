@@ -1,1 +1,1 @@
-morpheus_pass_thru_example/_version.py export-subst
+src/_version.py export-subst

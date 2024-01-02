@@ -1,2 +1,2 @@
 include versioneer.py
-include morpheus_pass_thru_example/_version.py
+include src/_version.py
