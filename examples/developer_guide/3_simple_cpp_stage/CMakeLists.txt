@@ -55,7 +55,7 @@ morpheus_utils_create_python_package(morpheus_pass_thru_example
   SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/morpheus_pass_thru_example"
 )
 
-add_subdirectory(morpheus_pass_thru_example)
+add_subdirectory(morpheus_pass_thru_example/_lib)
 
 # Complete the python package
 if(MORPHEUS_PYTHON_INPLACE_BUILD)

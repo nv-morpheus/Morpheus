@@ -17,9 +17,9 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "pass_thru_cpp_stage")
 
 morpheus_add_pybind11_module(pass_thru_cpp
   SOURCE_FILES
-    "_lib/pass_thru.cpp"
+    "pass_thru.cpp"
   INCLUDE_DIRS
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_lib>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   LINK_TARGETS
     morpheus
 )
