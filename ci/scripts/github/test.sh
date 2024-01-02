@@ -19,7 +19,12 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key test \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
+
+update_conda_env env.yaml
 
 rapids-logger "Check versions"
 python3 --version
@@ -69,8 +74,8 @@ rapids-logger "Pulling LFS assets"
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-# List missing files
-rapids-logger "Listing missing files"
+# Listing LFS-known files
+rapids-logger "Listing LFS-known files"
 git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
