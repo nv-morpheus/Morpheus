@@ -17,7 +17,8 @@ import glob
 import json
 from os import path
 
-import GPUtil
+from pynvml.smi import NVSMI_QUERY_GPU
+from pynvml.smi import nvidia_smi
 
 from benchmarks.test_bench_e2e_dfp_pipeline import PIPELINES_CONF
 
@@ -32,18 +33,40 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):  # pylint:dis
 
     curr_dir = path.dirname(path.abspath(__file__))
 
-    gpus = GPUtil.getGPUs()
+    query_opts = NVSMI_QUERY_GPU.copy()
+    nvsmi = nvidia_smi.getInstance()
+    device_query = nvsmi.DeviceQuery([
+        query_opts["driver_version"],
+        query_opts["count"],
+        query_opts["index"],
+        query_opts["gpu_name"],
+        query_opts["gpu_uuid"],
+        query_opts["memory.total"],
+        query_opts["memory.used"],
+        query_opts["memory.free"],
+        query_opts["utilization.gpu"],
+        query_opts["utilization.memory"],
+        query_opts["temperature.gpu"]
+    ])
 
-    for i, gpu in enumerate(gpus):
-        # output_json["machine_info"]["gpu_" + str(i)] = gpu.name
-        output_json["machine_info"]["gpu_" + str(i)] = {}
-        output_json["machine_info"]["gpu_" + str(i)]["id"] = gpu.id
-        output_json["machine_info"]["gpu_" + str(i)]["name"] = gpu.name
-        output_json["machine_info"]["gpu_" + str(i)]["load"] = f"{gpu.load*100}%"
-        output_json["machine_info"]["gpu_" + str(i)]["free_memory"] = f"{gpu.memoryFree}MB"
-        output_json["machine_info"]["gpu_" + str(i)]["used_memory"] = f"{gpu.memoryUsed}MB"
-        output_json["machine_info"]["gpu_" + str(i)]["temperature"] = f"{gpu.temperature} C"
-        output_json["machine_info"]["gpu_" + str(i)]["uuid"] = gpu.uuid
+    output_json["machine_info"]["gpu_driver_version"] = device_query["driver_version"]
+
+    for gpu in device_query["gpu"]:
+        gpu_num = gpu["minor_number"]
+        output_json["machine_info"]["gpu_" + gpu_num] = {}
+        output_json["machine_info"]["gpu_" + gpu_num]["id"] = gpu_num
+        output_json["machine_info"]["gpu_" + gpu_num]["name"] = gpu["product_name"]
+        output_json["machine_info"][
+            "gpu_" + gpu_num]["utilization"] = f"{gpu['utilization']['gpu_util']}{gpu['utilization']['unit']}"
+        output_json["machine_info"][
+            "gpu_" + gpu_num]["total_memory"] = f"{gpu['fb_memory_usage']['total']} {gpu['fb_memory_usage']['unit']}"
+        output_json["machine_info"][
+            "gpu_" + gpu_num]["used_memory"] = f"{gpu['fb_memory_usage']['used']} {gpu['fb_memory_usage']['unit']}"
+        output_json["machine_info"][
+            "gpu_" + gpu_num]["free_memory"] = f"{gpu['fb_memory_usage']['free']} {gpu['fb_memory_usage']['unit']}"
+        output_json["machine_info"][
+            "gpu_" + gpu_num]["temperature"] = f"{gpu['temperature']['gpu_temp']} {gpu['temperature']['unit']}"
+        output_json["machine_info"]["gpu_" + gpu_num]["uuid"] = gpu["uuid"]
 
     for bench in output_json['benchmarks']:
 

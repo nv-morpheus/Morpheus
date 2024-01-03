@@ -110,7 +110,7 @@ outputs:
         - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
     test:
       requires:
-        - gputil
+        - pynvml
         - pytest
         - pytest-cov
         - pytest-benchmark
