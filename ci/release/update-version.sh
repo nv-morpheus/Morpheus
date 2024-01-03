@@ -77,8 +77,8 @@ fi
 # Root CMakeLists.txt
 sed_runner 's/'"VERSION ${CURRENT_FULL_VERSION}.*"'/'"VERSION ${NEXT_FULL_VERSION}"'/g' CMakeLists.txt
 
-# Conda environment file
-sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" docker/conda/environments/cuda11.8_dev.yml
+# Depedencies file
+sed_runner "s/mrc=${CURRENT_SHORT_TAG}/mrc=${NEXT_SHORT_TAG}/g" dependencies.yaml
 
 # examples/digital_fingerprinting
 sed_runner "s/v${CURRENT_FULL_VERSION}-runtime/v${NEXT_FULL_VERSION}-runtime/g" \

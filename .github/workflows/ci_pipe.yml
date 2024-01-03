@@ -132,7 +132,6 @@ jobs:
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
         PARALLEL_LEVEL: '10'
-        MERGE_EXAMPLES_YAML: '1'
     strategy:
       fail-fast: true
 
@@ -164,8 +163,6 @@ jobs:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: ${{ inputs.container }}
-      env:
-        MERGE_DOCS_YAML: '1'
     strategy:
       fail-fast: true
 
