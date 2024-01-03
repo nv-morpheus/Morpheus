@@ -1091,7 +1091,7 @@ def mock_openai_fixture(chat_completion):
 
 @pytest.mark.usefixtures("openai")
 @pytest.fixture(name="mock_async_openai")
-def mock_async_openai_fixture(chat_completion:):
+def mock_async_openai_fixture(chat_completion):
     with mock.patch("openai.AsyncOpenAI") as mock_async_openai:
         mock_async_openai_instance = mock.MagicMock()
         mock_create = mock.AsyncMock()

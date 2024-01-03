@@ -169,15 +169,14 @@ def test_rag_standalone_pipe_nemo(
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
-def test_rag_standalone_pipe_openai(
-        config: Config,
-        chat_completion,
-        mock_openai: mock.MagicMock,
-        mock_async_openai: mock.MagicMock,
-        dataset: DatasetManager,
-        milvus_server_uri: str,
-        repeat_count: int,
-        import_mod: types.ModuleType):
+def test_rag_standalone_pipe_openai(config: Config,
+                                    chat_completion,
+                                    mock_openai: mock.MagicMock,
+                                    mock_async_openai: mock.MagicMock,
+                                    dataset: DatasetManager,
+                                    milvus_server_uri: str,
+                                    repeat_count: int,
+                                    import_mod: types.ModuleType):
 
     chat_completions = []
     for _ in range(repeat_count):

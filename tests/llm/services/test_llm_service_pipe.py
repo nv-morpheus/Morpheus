@@ -90,12 +90,11 @@ def test_completion_pipe_nemo(
 
 
 @pytest.mark.use_python
-def test_completion_pipe_openai(
-        config: Config,
-        chat_completion,
-        mock_async_openai: mock.MagicMock,
-        country_prompts: list[str],
-        capital_responses: list[str]):
+def test_completion_pipe_openai(config: Config,
+                                chat_completion,
+                                mock_async_openai: mock.MagicMock,
+                                country_prompts: list[str],
+                                capital_responses: list[str]):
 
     chat_completions = []
     for response in capital_responses:
