@@ -16,7 +16,7 @@
 import logging
 import os
 
-from write_to_rabbitmq_stage import WriteToRabbitMQStage
+from rabbitmq_cpp_stage.write_to_rabbitmq_stage import WriteToRabbitMQStage
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline

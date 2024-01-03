@@ -17,7 +17,7 @@ import logging
 import os
 
 import click
-from rabbitmq_source_stage import RabbitMQSourceStage
+from rabbitmq_cpp_stage.rabbitmq_source_stage import RabbitMQSourceStage
 
 from morpheus.common import FileTypes
 from morpheus.config import Config
