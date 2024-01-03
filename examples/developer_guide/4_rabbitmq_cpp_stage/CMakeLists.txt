@@ -34,6 +34,8 @@ project(4_rabbitmq_cpp_stage
 )
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
@@ -44,10 +46,8 @@ rapids_cpm_init()
 set(OPTION_PREFIX "MORPHEUS")
 
 morpheus_utils_python_configure()
-include(cmake/dependencies.cmake)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(cmake/dependencies.cmake)
 
 morpheus_utils_create_python_package(morpheus_rabbit
   PROJECT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -67,49 +67,4 @@ endif()
 
 morpheus_utils_build_python_package(morpheus_rabbit ${extra_args})
 
-# -----------
-# pybind11_add_module(morpheus_rabbit MODULE "${CMAKE_CURRENT_SOURCE_DIR}/_lib/rabbitmq_source.cpp")
-
-# add_library(${PROJECT_NAME}::morpheus_rabbit ALIAS morpheus_rabbit)
-
-# target_link_libraries(morpheus_rabbit
-# PUBLIC
-# morpheus
-# rabbitmq
-# SimpleAmqpClient
-# mrc::pymrc
-# )
-
-# target_include_directories(morpheus_rabbit
-# PUBLIC
-# $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-# $<BUILD_INTERFACE:${MORPHEUS_ROOT}/morpheus/_lib/include>
-# rabbitmq
-# ${SimpleAmqpClient_SOURCE_DIR}/src
-# )
-
-# set_target_properties(morpheus_rabbit PROPERTIES CXX_VISIBILITY_PRESET hidden)
-
-# if(MORPHEUS_PYTHON_INPLACE_BUILD)
-# set_target_properties(morpheus_rabbit
-# PROPERTIES
-# INSTALL_RPATH "${PROJECT_SOURCE_DIR}/morpheus/_lib"
-# )
-# else()
-# # TODO: https://github.com/nv-morpheus/Morpheus/issues/331
-# set_target_properties(morpheus_rabbit
-# PROPERTIES
-# INSTALL_RPATH "${Python3_SITELIB}/morpheus/_lib"
-# )
-# endif()
-
-# morpheus_utils_inplace_build_copy(morpheus_rabbit "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
-
-# message(STATUS " Install dest: (morpheus_rabbit) ${CMAKE_CURRENT_BINARY_DIR}/_lib")
-# install(
-# TARGETS
-# morpheus_rabbit
-# LIBRARY DESTINATION
-# "${CMAKE_CURRENT_BINARY_DIR}/_lib"
-# )
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
