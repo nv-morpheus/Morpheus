@@ -43,8 +43,7 @@ ignore_patterns = [
   "**/*.pyx",
   "**/*.pxd",
   "versioneer.py",
-  "morpheus/_version.py",
-  "examples/external_cpp_stage/morpheus_ex/external_cpp_stage/_version.py",
+  "**/_version.py",
 ]
 
 [tool.mypy]
