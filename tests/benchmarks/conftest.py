@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@ import os
 import typing
 from unittest import mock
 
+import pytest
 from pynvml.smi import NVSMI_QUERY_GPU
 from pynvml.smi import nvidia_smi
-import pytest
 from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
