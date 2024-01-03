@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
+list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq_cpp_stage")
 
-rapids_find_package(morpheus REQUIRED)
-rapids_find_package(CUDAToolkit REQUIRED)
-
-set(RABBITMQ_VERSION "0.12.0" CACHE STRING "Version of RabbitMQ-C to use")
-include(Configure_rabbitmq)
-
-set(SIMPLE_AMQP_CLIENT_VERSION "2.5.1" CACHE STRING "Version of SimpleAmqpClient to use")
-include(Configure_SimpleAmqpClient)
+morpheus_add_pybind11_module(rabbitmq_cpp_stage
+  SOURCE_FILES
+    "rabbitmq_source.cpp"
+  INCLUDE_DIRS
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    ${SimpleAmqpClient_SOURCE_DIR}/src
+  LINK_TARGETS
+    morpheus
+    mrc::pymrc
+    rabbitmq
+    SimpleAmqpClient
+)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

@@ -122,7 +122,7 @@ std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageIn
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_rabbit, m)
+PYBIND11_MODULE(rabbitmq_cpp_stage, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
