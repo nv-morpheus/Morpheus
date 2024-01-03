@@ -79,9 +79,13 @@ def test_run_indefinitely_false(feed_input: list[str]):
 
 
 @pytest.mark.parametrize("feed_input", test_urls)
-def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedParserDict):
+def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedParserDict, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
-    with patch("morpheus.controllers.rss_controller.feedparser.parse") as mock_feedparser_parse:
+
+    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    mock_get = patch.object(requests.Session, 'get')
+    with mock_feedparser_parse, mock_get:
+        mock_get.return_value = mock_get_response
         mock_feedparser_parse.return_value = mock_feed
         feed = list(controller.parse_feeds())[0]
         assert feed.entries
@@ -113,10 +117,15 @@ def test_is_url_false(feed_input: list[str]):
 
 
 @pytest.mark.parametrize("feed_input", [test_urls, test_urls[0]])
-def test_fetch_dataframes_url(feed_input: str | list[str], mock_feed: feedparser.FeedParserDict):
+def test_fetch_dataframes_url(feed_input: str | list[str],
+                              mock_feed: feedparser.FeedParserDict,
+                              mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
 
-    with patch("morpheus.controllers.rss_controller.feedparser.parse") as mock_feedparser_parse:
+    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    mock_get = patch.object(requests.Session, 'get')
+    with mock_feedparser_parse, mock_get:
+        mock_get.return_value = mock_get_response
         mock_feedparser_parse.return_value = mock_feed
         dataframes_generator = controller.fetch_dataframes()
         dataframe = next(dataframes_generator, None)
@@ -143,19 +152,13 @@ def test_batch_size(feed_input: list[str], batch_size: int):
         assert len(df) <= batch_size
 
 
-@pytest.mark.parametrize("feed_input, is_url, enable_cache", [(test_file_paths[0], False, False),
-                                                              (test_urls[0], True, True), (test_urls[0], True, False)])
-def test_try_parse_feed_with_beautiful_soup(feed_input: str, is_url: bool, enable_cache: bool, mock_get_response: Mock):
+@pytest.mark.parametrize("feed_input, enable_cache", [(test_file_paths[0], False), (test_urls[0], True),
+                                                      (test_urls[0], False)])
+def test_try_parse_feed_with_beautiful_soup(feed_input: str, enable_cache: bool, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input, enable_cache=enable_cache)
 
-    if is_url and not enable_cache:
-        with patch.object(requests.Session, 'get') as mock_get:
-            mock_get.return_value = mock_get_response
-            feed_data = controller._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-    else:
-        # When enable_cache is set to 'True', the feed content is provided as input.
-        feed_data = controller._try_parse_feed_with_beautiful_soup(
-            mock_get_response.text if enable_cache else feed_input, is_url)
+    # When enable_cache is set to 'True', the feed content is provided as input.
+    feed_data = controller._try_parse_feed_with_beautiful_soup(mock_get_response.text)
 
     assert isinstance(feed_data, feedparser.FeedParserDict)
     assert len(feed_data.entries) > 0

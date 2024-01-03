@@ -116,9 +116,9 @@ class RSSController:
         })
 
         self._feed_stats_dict = {
-            input:
+            url:
                 FeedStats(failure_count=0, success_count=0, last_failure=-1, last_success=-1, last_try_result="Unknown")
-            for input in self._feed_input
+            for url in self._feed_input
         }
 
     @property
@@ -128,7 +128,7 @@ class RSSController:
 
     def get_feed_stats(self, feed_url: str) -> FeedStats:
         """
-        Get feed input stats.
+        Get feed url stats.
 
         Parameters
         ----------
@@ -143,10 +143,10 @@ class RSSController:
         Raises
         ------
         ValueError
-            If the feed URL is not found in the feed input provided to the constructor.
+            If the feed URL is not found in the feed url provided to the constructor.
         """
         if feed_url not in self._feed_stats_dict:
-            raise ValueError("The feed URL is not part of the feed input provided to the constructor.")
+            raise ValueError("The feed URL is not part of the feed url provided to the constructor.")
 
         return self._feed_stats_dict[feed_url]
 
@@ -154,23 +154,8 @@ class RSSController:
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
 
-    def _fetch_feed_content(self, feed_input: str, is_url: bool) -> str:
-        # If input is an URL.
-        if is_url:
-            if not self._enable_cache:
-                # If cache is not enabled, fetch feed directly using requests.Session.
-                response = self._session.get(feed_input, timeout=self._request_timeout)
-                return response.text
+    def _try_parse_feed_with_beautiful_soup(self, feed_input: str) -> "feedparser.FeedParserDict":
 
-            # If we are here, feed_input is an actual feed content retrieved from the cache.
-            return feed_input
-
-        # If original input is not an URL, then read the content from the file path.
-        return self._read_file_content(feed_input)
-
-    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
-
-        feed_input = self._fetch_feed_content(feed_input, is_url)
         soup = BeautifulSoup(feed_input, 'xml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
@@ -211,12 +196,9 @@ class RSSController:
         is_url = RSSController.is_url(url)
 
         fallback = False
-        cache_hit = False
-        use_cache = is_url and self._enable_cache
 
-        if use_cache:
+        if is_url:
             response = self._session.get(url, timeout=self._request_timeout)
-            cache_hit = response.from_cache
             feed_input = response.text
         else:
             feed_input = url
@@ -224,22 +206,18 @@ class RSSController:
         feed = feedparser.parse(feed_input)
 
         if feed["bozo"]:
-            cache_hit = False
+            fallback = True
+            try:
+                if not is_url:
+                    # Read file content
+                    feed_input = self._read_file_content(feed_input)
+                # Parse feed content with beautifulsoup
+                feed = self._try_parse_feed_with_beautiful_soup(feed_input)
+            except Exception:
+                logger.error("Failed to parse the feed manually: %s", url)
+                raise
 
-            if use_cache:
-                fallback = True
-                logger.info("Parsing the cached feed for URL '%s' failed. Attempting direct parsing with feedparser.",
-                            url)
-                feed = feedparser.parse(url)
-
-            if feed["bozo"]:
-                try:
-                    feed = self._try_parse_feed_with_beautiful_soup(feed_input, is_url)
-                except Exception:
-                    logger.error("Failed to parse the feed manually: %s", url)
-                    raise
-
-        logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
+        logger.debug("Parsed feed: %s. Fallback: %s", url, fallback)
 
         return feed
 
@@ -319,17 +297,17 @@ class RSSController:
     @classmethod
     def is_url(cls, feed_input: str) -> bool:
         """
-        Check if the provided input is a valid URL.
+        Check if the provided url is a valid URL.
 
         Parameters
         ----------
         feed_input : str
-            The input string to be checked.
+            The url string to be checked.
 
         Returns
         -------
         bool
-            True if the input is a valid URL, False otherwise.
+            True if the url is a valid URL, False otherwise.
         """
         try:
             parsed_url = urlparse(feed_input)
