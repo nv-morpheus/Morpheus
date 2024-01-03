@@ -1,5 +1,5 @@
 from __future__ import annotations
-import src._lib.pass_thru_cpp
+import src.simple_cpp_stage._lib.pass_thru_cpp
 import typing
 import morpheus._lib.messages
 import mrc.core.segment

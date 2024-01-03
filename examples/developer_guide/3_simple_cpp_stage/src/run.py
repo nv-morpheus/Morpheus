@@ -17,7 +17,7 @@
 import logging
 import os
 
-from pass_thru import PassThruStage
+from simple_cpp_stage.pass_thru import PassThruStage
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline

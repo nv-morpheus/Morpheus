@@ -53,7 +53,7 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
-            from _lib import pass_thru_cpp
+            from ._lib import pass_thru_cpp
 
             # pylint: disable=c-extension-no-member
             node = pass_thru_cpp.PassThruStage(builder, self.unique_name)

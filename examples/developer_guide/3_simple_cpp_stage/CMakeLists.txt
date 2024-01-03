@@ -50,12 +50,12 @@ rapids_find_package(CUDAToolkit REQUIRED)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-morpheus_utils_create_python_package(3_simple_cpp_stage
+morpheus_utils_create_python_package(simple_cpp_stage
   PROJECT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-add_subdirectory(src/_lib)
+add_subdirectory(src/simple_cpp_stage/_lib)
 
 # Complete the python package
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
@@ -66,6 +66,6 @@ if(TARGET morpheus-package-install)
   list(APPEND extra_args "PYTHON_DEPENDENCIES" "morpheus-package-install")
 endif()
 
-morpheus_utils_build_python_package(3_simple_cpp_stage ${extra_args})
+morpheus_utils_build_python_package(simple_cpp_stage ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
