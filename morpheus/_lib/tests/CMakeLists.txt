@@ -40,14 +40,6 @@ set_target_properties(test_cuda
     CUDA_STANDARD_REQUIRED ON
 )
 
-install(
-  TARGETS
-    test_cuda
-  RUNTIME DESTINATION
-    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-  COMPONENT Wheel
-)
-
 # Morpheus Test Utilities
 add_library(
   morpheus_test_utilities
@@ -89,14 +81,6 @@ function(add_morpheus_test)
       INSTALL_RPATH "$ORIGIN/.."
       CUDA_STANDARD 17
       CUDA_STANDARD_REQUIRED ON
-  )
-
-  install(
-    TARGETS
-      test_${MORPHEUS_TEST_NAME}
-    RUNTIME DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-    COMPONENT Wheel
   )
 endfunction()
 
