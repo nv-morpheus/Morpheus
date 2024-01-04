@@ -56,6 +56,7 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
       - development
       - benchmark_cpp
