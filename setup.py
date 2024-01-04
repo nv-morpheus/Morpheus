@@ -21,7 +21,7 @@ from setuptools import setup  # noqa: E402
 
 setup(
     name="morpheus",
-    version=versioneer.get_version(),
+    version=versioneer.get_version(),  # pylint: disable=no-member
     description="Morpheus",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -44,7 +44,7 @@ setup(
     ],
     license="Apache",
     python_requires='>=3.10, <4',
-    cmdclass=versioneer.get_cmdclass(),
+    cmdclass=versioneer.get_cmdclass(),  # pylint: disable=no-member
     entry_points='''
         [console_scripts]
         morpheus=morpheus.cli:run_cli
