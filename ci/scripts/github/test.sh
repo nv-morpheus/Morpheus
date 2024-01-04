@@ -49,7 +49,7 @@ rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
 cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build build --parallel ${PARALLEL_LEVEL} --target install
 
 if [[ "${LOCAL_CI}" == "" ]]; then
     rapids-logger "sccache usage for morpheus build:"
