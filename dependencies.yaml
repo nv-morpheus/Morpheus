@@ -132,6 +132,7 @@ dependencies:
           - cudf=23.06
           - cxx-compiler
           - cython=0.29.24
+          - glog=0.6
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
