@@ -165,7 +165,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
-          - versioneer=0.22
+          - versioneer
           - yapf=0.40.1
 
   docs:
