@@ -20,8 +20,14 @@ This example builds upon the `examples/developer_guide/2_2_rabbitmq` example add
 
 This example adds two flags to the `read_simple.py` script. A `--use_cpp` flag which defaults to `True` and a `--num_threads` flag which defaults to the number of cores on the system as returned by `os.cpu_count()`.
 
+## Installing Pika
+The `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages use the [pika](https://pika.readthedocs.io/en/stable/#) RabbitMQ client for Python. To install this into the current env run:
+```bash
+pip install -r examples/developer_guide/4_rabbitmq_cpp_stage/requirements.txt
+```
+
 ## Building the Example
-There are two ways to build the example. The first is to build the example along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
 ```bash
 CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
 ```
@@ -34,7 +40,6 @@ cd examples/developer_guide/4_rabbitmq_cpp_stage
 # Optionally install the package into the current python environment
 pip install ./
 ```
-
 
 ## Testing with a RabbitMQ container
 Testing can be performed locally with the RabbitMQ supplied docker image from the [RabbitMQ container registry](https://registry.hub.docker.com/_/rabbitmq/):
