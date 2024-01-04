@@ -39,7 +39,7 @@ git submodule update --init --recursive
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
-CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON"
 if [[ "${LOCAL_CI}" == "" ]]; then
     CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
@@ -50,7 +50,6 @@ cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL} --target install
-pip install ./build
 
 if [[ "${LOCAL_CI}" == "" ]]; then
     rapids-logger "sccache usage for morpheus build:"
