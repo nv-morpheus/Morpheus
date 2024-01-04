@@ -74,6 +74,21 @@ morpheus_utils_configure_pybind11()
 # =====
 morpheus_utils_configure_rdkafka()
 
+# glog
+# ====
+morpheus_utils_configure_glog()
+
+# grpc-repo
+# =========
+rapids_find_package(gRPC REQUIRED
+  GLOBAL_TARGETS
+  gRPC::address_sorting gRPC::gpr gRPC::grpc gRPC::grpc_unsecure gRPC::grpc++ gRPC::grpc++_alts gRPC::grpc++_error_details gRPC::grpc++_reflection
+  gRPC::grpc++_unsecure gRPC::grpc_plugin_support gRPC::grpcpp_channelz gRPC::upb gRPC::grpc_cpp_plugin gRPC::grpc_csharp_plugin gRPC::grpc_node_plugin
+  gRPC::grpc_objective_c_plugin gRPC::grpc_php_plugin gRPC::grpc_python_plugin gRPC::grpc_ruby_plugin
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
+
 # MRC (Should come after all third party but before NVIDIA repos)
 # =====
 morpheus_utils_configure_mrc()
