@@ -42,7 +42,6 @@ asyncio_mode = "auto"
 ignore_patterns = [
   "**/*.pyx",
   "**/*.pxd",
-  "versioneer.py",
   "**/_version.py",
 ]
 

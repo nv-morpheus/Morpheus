@@ -19,7 +19,7 @@ requires = ["setuptools", "wheel", "versioneer[toml]==0.29"]
 
 [tool.versioneer]
 # See the docstring in versioneer.py for instructions. Note that you must
-# re-run 'versioneer.py setup' after changing this section, and commit the
+# re-run 'versioneer setup' after changing this section, and commit the
 # resulting files.
 VCS = "git"
 style = "pep440"

@@ -12,24 +12,12 @@
 # limitations under the License.
 
 # See the docstring in versioneer.py for instructions. Note that you must
-# re-run 'versioneer.py setup' after changing this section, and commit the
+# re-run 'versioneer setup' after changing this section, and commit the
 # resulting files.
 
-import os
-import sys
-
+import versioneer
 from setuptools import find_packages  # noqa: E402
 from setuptools import setup  # noqa: E402
-
-try:
-    import versioneer
-except ImportError:
-    # we have a versioneer.py file living in the same directory as this file, but
-    # if we're using pep 517/518 to build from pyproject.toml its not going to find it
-    # https://github.com/python-versioneer/python-versioneer/issues/193#issue-408237852
-    # make this work by adding this directory to the python path
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-    import versioneer
 
 setup(
     name="morpheus",
