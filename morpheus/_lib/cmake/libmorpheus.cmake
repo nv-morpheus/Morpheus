@@ -96,7 +96,7 @@ target_link_libraries(morpheus
 
   PUBLIC
     cudf::cudf
-    CUDA::nvToolsExt
+    CUDA::nvtx3
     mrc::pymrc
     RDKAFKA::RDKAFKA
     TritonClient::httpclient_static
