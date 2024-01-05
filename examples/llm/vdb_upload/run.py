@@ -32,51 +32,10 @@ def run():
 
 @run.command()
 @click.option(
-    "--num_threads",
-    default=os.cpu_count(),
-    type=click.IntRange(min=1),
-    help="Number of internal pipeline threads to use",
-)
-@click.option(
-    "--pipeline_batch_size",
-    default=1024,
-    type=click.IntRange(min=1),
-    help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
-          "Also used for Kafka consumers"),
-)
-@click.option(
-    "--model_max_batch_size",
-    default=64,
-    type=click.IntRange(min=1),
-    help="Max batch size to use for the model",
-)
-@click.option(
-    "--model_fea_length",
-    default=512,
-    type=click.IntRange(min=1),
-    help="Features length to use for the model",
-)
-@click.option(
     "--embedding_size",
     default=384,
     type=click.IntRange(min=1),
     help="Output size of the embedding model",
-)
-@click.option(
-    "--model_name",
-    required=True,
-    default='all-MiniLM-L6-v2',
-    help="The name of the model that is deployed on Triton server",
-)
-@click.option("--isolate_embeddings",
-              is_flag=True,
-              default=False,
-              help="Whether to fetch all data prior to executing the rest of the pipeline.")
-@click.option(
-    "--stop_after",
-    default=0,
-    type=click.IntRange(min=0),
-    help="Stop after emitting this many records from the RSS source stage. Useful for testing. Disabled if `0`",
 )
 @click.option(
     "--enable_cache",
@@ -91,16 +50,73 @@ def run():
     help="Interval in seconds between fetching new feed items.",
 )
 @click.option(
+    "--isolate_embeddings",
+    is_flag=True,
+    default=False,
+    help="Whether to fetch all data prior to executing the rest of the pipeline."
+)
+@click.option(
+    "--model_fea_length",
+    default=512,
+    type=click.IntRange(min=1),
+    help="Features length to use for the model",
+)
+@click.option(
+    "--model_max_batch_size",
+    default=64,
+    type=click.IntRange(min=1),
+    help="Max batch size to use for the model",
+)
+@click.option(
+    "--model_name",
+    required=True,
+    default='all-MiniLM-L6-v2',
+    help="The name of the model that is deployed on Triton server",
+)
+@click.option(
+    "--num_threads",
+    default=os.cpu_count(),
+    type=click.IntRange(min=1),
+    help="Number of internal pipeline threads to use",
+)
+@click.option(
+    "--pipeline_batch_size",
+    default=1024,
+    type=click.IntRange(min=1),
+    help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
+          "Also used for Kafka consumers"),
+)
+@click.option(
     "--run_indefinitely",
     is_flag=True,
     default=False,
-    help=" Indicates whether the process should run continuously.",
+    help="Indicates whether the process should run continuously.",
 )
 @click.option(
-    "--vector_db_uri",
+    "--source-type",
+    multiple=True,
+    type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
+    default=['rss'],
+    show_default=True,
+    help="The type of source to use. Can specify multiple times for different source types."
+)
+@click.option(
+    "--stop_after",
+    default=0,
+    type=click.IntRange(min=0),
+    help="Stop after emitting this many records from the RSS source stage. Useful for testing. Disabled if `0`",
+)
+@click.option(
+    "--triton_server_url",
     type=str,
-    default="http://localhost:19530",
-    help="URI for connecting to Vector Database server.",
+    default="localhost:8001",
+    help="Triton server URL.",
+)
+@click.option(
+    "--vector_db_resource_name",
+    type=str,
+    default="RSS",
+    help="The identifier of the resource on which operations are to be performed in the vector database.",
 )
 @click.option(
     "--vector_db_service",
@@ -110,19 +126,12 @@ def run():
     help="Name of the vector database service to use.",
 )
 @click.option(
-    "--vector_db_resource_name",
+    "--vector_db_uri",
     type=str,
-    default="RSS",
-    help="The identifier of the resource on which operations are to be performed in the vector database.",
-)
-@click.option(
-    "--triton_server_url",
-    type=str,
-    default="localhost:8001",
-    help="Triton server URL.",
+    default="http://localhost:19530",
+    help="URI for connecting to Vector Database server.",
 )
 def pipeline(**kwargs):
-
     from .pipeline import pipeline as _pipeline
 
     return _pipeline(**kwargs)

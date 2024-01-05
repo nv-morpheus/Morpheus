@@ -177,7 +177,7 @@ class RSSController:
         feed_items = []
         for item in items:
             feed_item = {}
-            # Iterate over each children in an item
+            # Iterate over each child in an item
             for child in item.children:
                 if child.name is not None:
                     # If child link doesn't have a text, get it from href
@@ -187,7 +187,7 @@ class RSSController:
                             feed_item[child.name] = child.get('href', 'Unknown value')
                         else:
                             feed_item[child.name] = link_value
-                    # To be consistant with feedparser entries, rename guid to id
+                    # To be consistent with feedparser entries, rename guid to id
                     elif child.name == "guid":
                         feed_item["id"] = child.get_text()
                     else:
@@ -294,7 +294,9 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            yield pd.DataFrame(entry_accumulator)
+                            _df = pd.DataFrame(entry_accumulator)
+                            _df.to_csv("debug.csv")
+                            yield _df
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries

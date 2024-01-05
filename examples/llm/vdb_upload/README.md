@@ -235,7 +235,7 @@ using `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` as an exampl
      all-MiniLM-L6-v2 --load-model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
     ```
 
-    - You should see seomthing similar to the following, indicating Triton has succesfully loaded the model:
+    - You should see something similar to the following, indicating Triton has successfully loaded the model:
     ```shell
     +----------------------------------+------------------------------------------------------------------------------------------+
     | Option                           | Value                                                                                    |

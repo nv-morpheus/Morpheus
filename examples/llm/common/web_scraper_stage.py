@@ -16,6 +16,7 @@ import logging
 import os
 import typing
 
+import cudf
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
@@ -23,8 +24,6 @@ import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -66,7 +65,8 @@ class WebScraperStage(SinglePortStage):
         self._cache_dir = "./.cache/llm/rss/"
 
         # Ensure the directory exists
-        os.makedirs(self._cache_dir, exist_ok=True)
+        if (enable_cache):
+            os.makedirs(self._cache_dir, exist_ok=True)
 
         self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size,
                                                              chunk_overlap=self._chunk_size // 10,
@@ -97,7 +97,7 @@ class WebScraperStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MessageMeta, )
+        return (MessageMeta,)
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
