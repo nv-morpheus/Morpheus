@@ -26,21 +26,16 @@ rapids-dependency-file-generator \
 
 update_conda_env env.yaml
 
-rapids-logger "Check versions"
-python3 --version
-x86_64-conda-linux-gnu-cc --version
-x86_64-conda-linux-gnu-c++ --version
-cmake --version
-ninja --version
-sccache --version
+log_toolchain
 
 git submodule update --init --recursive
 
 CMAKE_FLAGS="${CMAKE_BUILD_ALL_FEATURES}"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
-CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=ON"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}"
 if [[ "${LOCAL_CI}" == "" ]]; then
     CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
 fi
