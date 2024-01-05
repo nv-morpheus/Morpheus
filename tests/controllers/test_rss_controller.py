@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,6 @@ from unittest.mock import patch
 import feedparser
 import pandas as pd
 import pytest
-import requests
 
 from _utils import TEST_DIRS
 from morpheus.controllers.rss_controller import FeedStats
@@ -83,9 +82,8 @@ def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedP
     controller = RSSController(feed_input=feed_input)
 
     mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
-    mock_get = patch.object(requests.Session, 'get')
-    with mock_feedparser_parse, mock_get:
-        mock_get.return_value = mock_get_response
+
+    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response):
         mock_feedparser_parse.return_value = mock_feed
         feed = list(controller.parse_feeds())[0]
         assert feed.entries
@@ -123,9 +121,8 @@ def test_fetch_dataframes_url(feed_input: str | list[str],
     controller = RSSController(feed_input=feed_input)
 
     mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
-    mock_get = patch.object(requests.Session, 'get')
-    with mock_feedparser_parse, mock_get:
-        mock_get.return_value = mock_get_response
+
+    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response):
         mock_feedparser_parse.return_value = mock_feed
         dataframes_generator = controller.fetch_dataframes()
         dataframe = next(dataframes_generator, None)
