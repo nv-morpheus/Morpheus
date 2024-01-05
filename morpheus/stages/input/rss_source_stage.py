@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import logging
-import time
 
 import mrc
 
 from morpheus.cli import register_stage
 from morpheus.config import Config
-from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
+from morpheus.modules.input.rss_source import rss_source  # noqa: F401
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +68,6 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  request_timeout: float = 2.0):
         super().__init__(c)
         self._stop_requested = False
-        self._stop_after = stop_after
-        self._interval_secs = interval_secs
 
         if (batch_size is None):
             batch_size = c.pipeline_batch_size
@@ -80,14 +78,22 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
 
             run_indefinitely = False
 
-        self._records_emitted = 0
-        self._controller = RSSController(feed_input=feed_input,
-                                         batch_size=batch_size,
-                                         run_indefinitely=run_indefinitely,
-                                         enable_cache=enable_cache,
-                                         cache_dir=cache_dir,
-                                         cooldown_interval=cooldown_interval,
-                                         request_timeout=request_timeout)
+        self._module_config = {
+            "module_id": "rss_source",
+            "module_name": "rss_source",
+            "namespace": "morpheus",
+            "rss_config": {
+                "feed_input": feed_input,
+                "interval_secs": interval_secs,
+                "stop_after": stop_after,
+                "run_indefinitely": run_indefinitely,
+                "batch_size": batch_size,
+                "enable_cache": enable_cache,
+                "cache_dir": cache_dir,
+                "cooldown_interval": cooldown_interval,
+                "request_timeout": request_timeout
+            }
+        }
 
     @property
     def name(self) -> str:
@@ -106,42 +112,9 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
 
-    def _fetch_feeds(self) -> MessageMeta:
-        """
-        Fetch RSS feed entries and yield as MessageMeta object.
-        """
-
-        while (not self._stop_requested):
-            try:
-                for df in self._controller.fetch_dataframes():
-                    df_size = len(df)
-
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("Received %d new entries...", df_size)
-                        logger.debug("Emitted %d records so far.", self._records_emitted)
-
-                    yield MessageMeta(df=df)
-
-                    self._records_emitted += df_size
-
-                    if (self._stop_after > 0 and self._records_emitted >= self._stop_after):
-                        self._stop_requested = True
-                        logger.debug("Stop limit reached... preparing to halt the source.")
-                        break
-
-            except Exception as exc:
-                if not self._controller.run_indefinitely:
-                    logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
-                    raise
-
-            if not self._controller.run_indefinitely:
-                self._stop_requested = True
-                continue
-
-            logger.debug("Waiting for %d seconds before fetching again...", self._interval_secs)
-            time.sleep(self._interval_secs)
-
-        logger.debug("Source stopped.")
-
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._fetch_feeds)
+        module = load_module(self._module_config, builder=builder)
+
+        mod_out_node = module.output_port("output")
+
+        return mod_out_node

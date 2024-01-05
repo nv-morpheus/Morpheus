@@ -11,26 +11,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import logging
 import time
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.pipeline import Pipeline
+from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.input.rss_source_stage import RSSSourceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from .module.transform_module import schema_transform  # noqa: F401
+from .module.rss_source_pipe import rss_source_pipe  # noqa: F401
+from .module.schema_transform import schema_transform  # noqa: F401
 from .stages.multi_file_source import MultiFileSource
 from ..common.utils import build_milvus_config
 from ..common.utils import build_rss_urls
-from ..common.web_scraper_stage import WebScraperStage
 
 logger = logging.getLogger(__name__)
 
@@ -41,51 +43,88 @@ class FileSystemSourceStage:
         pass
 
 
-def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs, model_fea_length):
-    pipe.set_source(
-        RSSSourceStage(config,
-                       feed_input=build_rss_urls(),
-                       batch_size=128,
-                       stop_after=stop_after,
-                       run_indefinitely=run_indefinitely,
-                       enable_cache=enable_cache,
-                       interval_secs=interval_secs))
-
-    pipe.add_stage(MonitorStage(config, description="RSS Source rate", unit='pages'))
-    pipe.add_stage(WebScraperStage(config, chunk_size=model_fea_length, enable_cache=enable_cache))
-    pipe.add_stage(MonitorStage(config, description="RSS Download rate", unit='pages'))
-
-    transform_config = {
-        "module_id": "schema_transform",
-        "module_name": "schema_transform_rss",
+def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs, model_fea_length,
+                     cache_dir="./.cache/http"):
+    # TODO(Devin): Read via YAML
+    module_config = {
+        "module_id": "rss_source_pipe",
+        "module_name": "rss_source_pipe",
         "namespace": "morpheus_examples_llm",
-        "schema_transform": {
-            "summary": {"dtype": "str", "op_type": "select"},
-            "title": {"dtype": "str", "op_type": "select"},
-            "content": {"from": "page_content", "dtype": "str", "op_type": "rename"},
-            "source": {"from": "link", "dtype": "str", "op_type": "rename"}
-        }
+        "rss_config": {
+            "feed_input": build_rss_urls(),
+            "interval_secs": interval_secs,
+            "stop_after": stop_after,
+            "run_indefinitely": run_indefinitely,
+            "batch_size": 128,
+            "enable_cache": enable_cache,
+            "cache_dir": cache_dir,
+            "cooldown_interval": 600,
+            "request_timeout": 2.0,
+        },
+        "web_scraper_config": {
+            "chunk_size": model_fea_length,
+            "enable_cache": enable_cache,
+        },
     }
-    pipe.add_stage(
-        LinearModulesStage(config,
-                           transform_config,
-                           input_type=MessageMeta,
-                           output_type=MessageMeta,
-                           input_port_name="input",
-                           output_port_name="output"))
+    sub_pipe = pipe.add_stage(
+        LinearModuleSourceStage(config,
+                                module_config,
+                                input_type=MessageMeta,
+                                output_type=MessageMeta,
+                                input_port_name="input",
+                                output_port_name="output"))
+
+    # rss_source = pipe.add_stage(
+    #    RSSSourceStage(config,
+    #                   feed_input=build_rss_urls(),
+    #                   batch_size=128,
+    #                   stop_after=stop_after,
+    #                   run_indefinitely=run_indefinitely,
+    #                   enable_cache=enable_cache,
+    #                   interval_secs=interval_secs))
+
+    # monitor_1 = pipe.add_stage(MonitorStage(config, description="RSS Source rate", unit='pages'))
+    # web_scraper = pipe.add_stage(WebScraperStage(config, chunk_size=model_fea_length, enable_cache=enable_cache))
+    # monitor_2 = pipe.add_stage(MonitorStage(config, description="RSS Download rate", unit='pages'))
+
+    # transform_config = {
+    #    "module_id": "schema_transform",
+    #    "module_name": "schema_transform_rss",
+    #    "namespace": "morpheus_examples_llm",
+    #    "schema_transform": {
+    #        "summary": {"dtype": "str", "op_type": "select"},
+    #        "title": {"dtype": "str", "op_type": "select"},
+    #        "content": {"from": "page_content", "dtype": "str", "op_type": "rename"},
+    #        "source": {"from": "link", "dtype": "str", "op_type": "rename"}
+    #    }
+    # }
+    # transform = pipe.add_stage(
+    #    LinearModulesStage(config,
+    #                       transform_config,
+    #                       input_type=MessageMeta,
+    #                       output_type=MessageMeta,
+    #                       input_port_name="input",
+    #                       output_port_name="output"))
+
+    ## Connect the pipeline
+    # pipe.add_edge(rss_source, monitor_1)
+    # pipe.add_edge(monitor_1, web_scraper)
+    # pipe.add_edge(web_scraper, monitor_2)
+    # pipe.add_edge(monitor_2, transform)
+
+    return sub_pipe
 
 
 def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
     # Initialize the MultiFileSource stage with the run_indefinitely parameter for watch
-    file_source_stage = MultiFileSource(
+    file_source = pipe.add_stage(MultiFileSource(
         config,
         filenames=filenames,
         watch=run_indefinitely
-    )
+    ))
 
-    pipe.set_source(file_source_stage)
     # Add any additional stages specific to filesystem processing if needed
-    pipe.add_stage(MonitorStage(config, description="Filesystem Source rate", unit='files'))
+    monitor_1 = pipe.add_stage(MonitorStage(config, description="Filesystem Source rate", unit='files'))
 
     # TODO(Devin)
     # Need a stage to process the file contents into a dataframe
@@ -103,13 +142,19 @@ def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
             "source": {"dtype": "str", "op_type": "select"}
         }
     }
-    pipe.add_stage(
+    transform = pipe.add_stage(
         LinearModulesStage(config,
                            transform_config,
                            input_type=MessageMeta,
                            output_type=MessageMeta,
                            input_port_name="input",
                            output_port_name="output"))
+
+    # Connect the pipeline
+    pipe.add_edge(file_source, monitor_1)
+    pipe.add_edge(monitor_1, transform)
+
+    return transform
 
 
 def pipeline(num_threads: int,
@@ -140,21 +185,27 @@ def pipeline(num_threads: int,
 
     config.class_labels = [str(i) for i in range(embedding_size)]
 
-    pipe = LinearPipeline(config)
+    pipe = Pipeline(config)
 
+    source_outputs = []
     if ('rss' in source_type):
-        setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs, model_fea_length)
+        rss_output = setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs,
+                                      model_fea_length)
+        source_outputs.append(rss_output)
     elif ('filesystem' in source_type):
-        setup_filesystem_source(pipe, config)
+        # TODO(Devin)
+        file_output = setup_filesystem_source(pipe, config, filenames=[], run_indefinitely=run_indefinitely)
+        source_outputs.append(file_output)
     else:
         raise ValueError("Unsupported source type")
 
-    pipe.add_stage(DeserializeStage(config))
+    deserialize = pipe.add_stage(DeserializeStage(config))
 
+    trigger = None
     if isolate_embeddings:
-        pipe.add_stage(TriggerStage(config))
+        trigger = pipe.add_stage(TriggerStage(config))
 
-    pipe.add_stage(
+    nlp_stage = pipe.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file="data/bert-base-uncased-hash.txt",
                            do_lower_case=True,
@@ -162,17 +213,17 @@ def pipeline(num_threads: int,
                            add_special_tokens=False,
                            column='content'))
 
-    pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
+    monitor_1 = pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
-    pipe.add_stage(
+    triton_inference = pipe.add_stage(
         TritonInferenceStage(config,
                              model_name=model_name,
                              server_url=triton_server_url,
                              force_convert_inputs=True,
                              use_shared_memory=True))
-    pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
-    pipe.add_stage(
+    vector_db = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name=vector_db_resource_name,
                              resource_kwargs=build_milvus_config(embedding_size=embedding_size),
@@ -180,7 +231,23 @@ def pipeline(num_threads: int,
                              service=vector_db_service,
                              uri=vector_db_uri))
 
-    pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    monitor_3 = pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+
+    # Connect the pipeline
+    for source_output in source_outputs:
+        pipe.add_edge(source_output, deserialize)
+
+    if (isolate_embeddings):
+        pipe.add_edge(deserialize, trigger)
+        pipe.add_edge(trigger, nlp_stage)
+    else:
+        pipe.add_edge(deserialize, nlp_stage)
+
+    pipe.add_edge(nlp_stage, monitor_1)
+    pipe.add_edge(monitor_1, triton_inference)
+    pipe.add_edge(triton_inference, monitor_2)
+    pipe.add_edge(monitor_2, vector_db)
+    pipe.add_edge(vector_db, monitor_3)
 
     start_time = time.time()
 

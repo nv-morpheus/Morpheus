@@ -57,7 +57,7 @@ def schema_transform(builder: mrc.Builder):
     }
     """
     module_config = builder.get_current_module_config()
-    schema_config = module_config.get("schema_transform")
+    schema_config = module_config.get("schema_transform_config")
 
     source_column_info = []
 

@@ -1,0 +1,126 @@
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import logging
+import os
+
+import pandas as pd
+import requests
+import requests_cache
+from bs4 import BeautifulSoup
+
+logging
+
+import cudf
+import mrc
+import mrc.core.operators as ops
+
+from morpheus.messages import MessageMeta
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from morpheus.utils.module_utils import register_module
+
+logger = logging.getLogger(__name__)
+
+
+@register_module("web_scraper", "morpheus_examples_llm")
+def web_scraper(builder: mrc.Builder):
+    module_config = builder.get_current_module_config()
+    web_scraper_config = module_config.get("web_scraper_config")
+
+    link_column = web_scraper_config.get("link_column", "link")
+    chunk_size = web_scraper_config.get("chunk_size", 100)
+    enable_cache = web_scraper_config.get("enable_cache", False)
+    cache_path = web_scraper_config.get("cache_path", "./.cache/http/RSSDownloadStage.sqlite")
+    cache_dir = web_scraper_config.get("cache_dir", "./.cache/llm/rss")
+
+    if (enable_cache):
+        os.makedirs(cache_dir, exist_ok=True)
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size,
+                                                   chunk_overlap=chunk_size // 10,
+                                                   length_function=len)
+
+    if (enable_cache):
+        session = requests_cache.CachedSession(cache_path, backend='sqlite')
+    else:
+        session = requests.Session()
+
+    session.headers.update({
+        "User-Agent":
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+    })
+
+    def download_and_split(msg: MessageMeta) -> MessageMeta:
+        """
+        Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
+        it in the output, excludes output for any links which produce an error.
+        """
+        if link_column not in msg.get_column_names():
+            return None
+
+        df = msg.df
+
+        if isinstance(df, cudf.DataFrame):
+            df: pd.DataFrame = df.to_pandas()
+
+        # Convert the dataframe into a list of dictionaries
+        df_dicts = df.to_dict(orient="records")
+
+        final_rows: list[dict] = []
+
+        for row in df_dicts:
+            url = row[link_column]
+
+            try:
+                # Try to get the page content
+                response = session.get(url)
+
+                if (not response.ok):
+                    logger.warning(
+                        "Error downloading document from URL '%s'. " +
+                        "Returned code: %s. With reason: '%s'",
+                        url,
+                        response.status_code,
+                        response.reason)
+                    continue
+
+                raw_html = response.text
+                soup = BeautifulSoup(raw_html, "html.parser")
+
+                text = soup.get_text(strip=True, separator=' ')
+                split_text = text_splitter.split_text(text)
+
+                for text in split_text:
+                    row_cp = row.copy()
+                    row_cp.update({"page_content": text})
+                    final_rows.append(row_cp)
+
+                if isinstance(response, requests_cache.models.response.CachedResponse):
+                    logger.debug("Processed cached page: '%s'", url)
+                else:
+                    logger.debug("Processed page: '%s'", url)
+
+            except ValueError as exc:
+                logger.error("Error parsing document: %s", exc)
+                continue
+            except Exception as exc:
+                logger.error("Error downloading document from URL '%s'. Error: %s", url, exc)
+                continue
+
+        return MessageMeta(df=pd.DataFrame(final_rows))
+
+    node = builder.make_node("web_scraper", ops.map(download_and_split), ops.filter(lambda x: x is not None))
+
+    builder.register_module_input("input", node)
+    builder.register_module_output("output", node)

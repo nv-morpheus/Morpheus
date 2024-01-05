@@ -33,6 +33,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
+# TODO(Devin) Convert to use module
 class WebScraperStage(SinglePortStage):
     """
     Stage for scraping web based content using the HTTP GET protocol.
