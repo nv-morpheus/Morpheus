@@ -157,19 +157,25 @@ def payload_batcher(builder: mrc.Builder):
         groups = df.groupby(group_by_columns_)
 
         dfs = []
-        for _, group in groups:
-            if disable_max_batch_size:
-                dfs.append(group)
-            else:
-                group_length = len(group)
-                if group_length <= max_batch_size:
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.",
+                category=DeprecationWarning)
+            for _, group in groups:
+                if disable_max_batch_size:
                     dfs.append(group)
                 else:
-                    num_batches = (group_length + max_batch_size - 1) // max_batch_size
-                    group_batches = [
-                        group.iloc[i * max_batch_size:(i + 1) * max_batch_size] for i in range(num_batches)
-                    ]
-                    dfs.extend(group_batches)
+                    group_length = len(group)
+                    if group_length <= max_batch_size:
+                        dfs.append(group)
+                    else:
+                        num_batches = (group_length + max_batch_size - 1) // max_batch_size
+                        group_batches = [
+                            group.iloc[i * max_batch_size:(i + 1) * max_batch_size] for i in range(num_batches)
+                        ]
+                        dfs.extend(group_batches)
 
         return dfs
 
