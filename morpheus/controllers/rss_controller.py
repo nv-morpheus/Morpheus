@@ -161,7 +161,7 @@ class RSSController:
             return file.read()
 
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
-
+        url = feed_input if is_url else None
         feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
 
         soup = BeautifulSoup(feed_input, 'xml')
@@ -172,7 +172,21 @@ class RSSController:
         elif soup.find('entry'):
             items = soup.find_all("entry")
         else:
-            raise RuntimeError(f"Unable to find item or entry tags in {feed_input}.")
+            if (is_url):
+                err_msg = f"Unable to find item or entry tags in response from {url}."
+            else:
+                # Check if the current logging level is DEBUG
+                if (logger.getEffectiveLevel() == logging.DEBUG):
+                    # If DEBUG, print feed_input in full
+                    err_msg = f"Unable to find item or entry tags in response from {feed_input}."
+                else:
+                    # If not DEBUG, truncate feed_input to 256 characters
+                    truncated_input = (feed_input[:253] + '...') if len(feed_input) > 256 else feed_input
+                    err_msg = (
+                        f"Unable to find item or entry tags in response from feed input (truncated, set logging to debug"
+                        f" for full output): {truncated_input}.")
+
+            raise RuntimeError(err_msg)
 
         feed_items = []
         for item in items:

@@ -27,6 +27,7 @@ from morpheus.stages.inference.triton_inference_stage import TritonInferenceStag
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from .module.file_source_pipe import file_source_pipe  # noqa: F401
 from .module.rss_source_pipe import rss_source_pipe  # noqa: F401
 from .module.schema_transform import schema_transform  # noqa: F401
 from ..common.utils import build_milvus_config
@@ -114,10 +115,10 @@ def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, i
 def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
     # TODO(Devin): Read via YAML
     module_config = {
-        "module_id": "pdf_file_source_pipe",
-        "module_name": "pdf_file_source_pipe",
+        "module_id": "file_source_pipe",
+        "module_name": "file_source_pipe",
         "namespace": "morpheus_examples_llm",
-        "pdf_file_source_config": {
+        "file_source_config": {
             "filenames": filenames,
             "watch": run_indefinitely,
         },
@@ -146,7 +147,8 @@ def pipeline(num_threads: int,
              vector_db_service: str,
              vector_db_resource_name: str,
              triton_server_url: str,
-             source_type: tuple):
+             source_type: tuple,
+             file_source: list):  # New parameter for file sources
     config = Config()
     config.mode = PipelineModes.NLP
 
@@ -161,17 +163,22 @@ def pipeline(num_threads: int,
 
     pipe = Pipeline(config)
 
+    # Mapping of source types to their setup functions
+    source_setup_functions = {
+        'rss': lambda: setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs,
+                                        model_fea_length),
+        'filesystem': lambda: setup_filesystem_source(pipe, config, filenames=file_source,
+                                                      run_indefinitely=run_indefinitely)
+        # Add other source types here in the future
+    }
+
     source_outputs = []
-    if ('rss' in source_type):
-        rss_output = setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs,
-                                      model_fea_length)
-        source_outputs.append(rss_output)
-    elif ('filesystem' in source_type):
-        # TODO(Devin)
-        file_output = setup_filesystem_source(pipe, config, filenames=[], run_indefinitely=run_indefinitely)
-        source_outputs.append(file_output)
-    else:
-        raise ValueError("Unsupported source type")
+    for src_type in source_type:
+        if src_type in source_setup_functions:
+            source_output = source_setup_functions[src_type]()
+            source_outputs.append(source_output)
+        else:
+            raise ValueError(f"Unsupported source type: {src_type}")
 
     deserialize = pipe.add_stage(DeserializeStage(config))
 

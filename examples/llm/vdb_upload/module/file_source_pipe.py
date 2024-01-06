@@ -20,13 +20,13 @@ from morpheus.modules.input.multi_file_source import multi_file_source  # noqa: 
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 from .schema_transform import schema_transform  # noqa: F401
-from ...common.pdf_extractor_module import pdf_extractor  # noqa: F401
+from ...common.content_extractor_module import file_content_extractor  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 
-@register_module("pdf_file_source_pipe", "morpheus_examples_llm")
-def pdf_file_source_pipe(builder: mrc.Builder):
+@register_module("file_source_pipe", "morpheus_examples_llm")
+def file_source_pipe(builder: mrc.Builder):
     """
     Sets up a pipeline for processing PDF files.
 
@@ -46,17 +46,19 @@ def pdf_file_source_pipe(builder: mrc.Builder):
         "module_id": "multi_file_source",
         "module_name": "multi_file_source",
         "namespace": "morpheus",
-        "source_config": module_config["pdf_file_source_config"],
+        "source_config": module_config["file_source_config"],
     }
     multi_file_module = load_module(config=multi_file_config, builder=builder)
 
-    # Configure and load the PDF extractor module
-    pdf_extractor_config = {
-        "module_id": "pdf_extractor",
-        "module_name": "pdf_extractor",
+    # Configure and load the file content extractor module
+    file_content_extractor_config = {
+        "module_id": "file_content_extractor",
+        "module_name": "file_content_extractor",
         "namespace": "morpheus_examples_llm",
+        "batch_size": module_config.get("batch_size", 32),  # Example configuration option
+        "num_threads": module_config.get("num_threads", 10)  # Example configuration option
     }
-    pdf_extractor_module = load_module(config=pdf_extractor_config, builder=builder)
+    file_content_extractor_module = load_module(config=file_content_extractor_config, builder=builder)
 
     # Configure and load the schema transformation module
     transform_config = {
@@ -73,8 +75,8 @@ def pdf_file_source_pipe(builder: mrc.Builder):
     transform_module = load_module(config=transform_config, builder=builder)
 
     # Connect the modules in the pipeline
-    builder.make_edge(multi_file_module.output_port("output"), pdf_extractor_module.input_port("input"))
-    builder.make_edge(pdf_extractor_module.output_port("output"), transform_module.input_port("input"))
+    builder.make_edge(multi_file_module.output_port("output"), file_content_extractor_module.input_port("input"))
+    builder.make_edge(file_content_extractor_module.output_port("output"), transform_module.input_port("input"))
 
     # Register the final output of the transformation module
     builder.register_module_output("output", transform_module.output_port("output"))

@@ -103,12 +103,18 @@ def multi_file_source(builder: mrc.Builder):
     watch_interval = module_config.get('watch_interval', 1.0)
     batch_size = source_config.get('batch_size', 128)
 
-    def polling_generate_frames_fsspec() -> typing.Generator[fsspec.core.OpenFiles, None, None]:
+    def polling_generate_frames_fsspec():
         files_seen = set()
 
         while True:
             start_time = time.monotonic()
             next_update_epoch = start_time + watch_interval
+
+            if not filenames:
+                # Log warning or handle the case where filenames is None or empty
+                logger.warning("No filenames provided. Skipping iteration.")
+                time.sleep(watch_interval)
+                continue
 
             files = fsspec.open_files(filenames)
             new_files = [file for file in files if file.full_name not in files_seen]
@@ -135,17 +141,25 @@ def multi_file_source(builder: mrc.Builder):
                 time.sleep(sleep_duration)
 
     def generate_frames_fsspec():
+        # Check if filenames is None or empty
+        if not filenames:
+            logger.warning("Multi-file-source was provided with no filenames for processing this is probably not what"
+                           "you want")
+            return
+
         files: fsspec.core.OpenFiles = fsspec.open_files(filenames)
 
-        if (len(files) == 0):
-            raise RuntimeError(f"No files matched input strings: '{filenames}'. "
-                               "Check your input pattern and ensure any credentials are correct")
+        # Check if the provided filenames resulted in any files being opened
+        if len(files) == 0:
+            logger.warning(f"Multi-file-source did not match any of the provided filter strings: {filenames}."
+                           f"This is probably not what you want.")
+            return
 
         yield files
 
     if (watch_dir):
-        node = builder.make_source("multi_file_source", polling_generate_frames_fsspec())
+        node = builder.make_source("multi_file_source", polling_generate_frames_fsspec)
     else:
-        node = builder.make_source("multi_file_source", generate_frames_fsspec())
+        node = builder.make_source("multi_file_source", generate_frames_fsspec)
 
-    builder.register_module_output(node, "output")
+    builder.register_module_output("output", node)

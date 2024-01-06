@@ -43,6 +43,11 @@ def run():
     default=False,
     help="Enable caching of RSS feed request data.",
 )
+@click.option('--file-source',
+              multiple=True,
+              default=[],
+              type=str,
+              help='List of file sources/paths to be processed.')
 @click.option(
     "--interval_secs",
     default=600,
@@ -151,7 +156,6 @@ def pipeline(**kwargs):
     help="Location to save the cache to",
 )
 def langchain(**kwargs):
-
     from .langchain import chain
 
     return chain(**kwargs)
@@ -188,7 +192,6 @@ def langchain(**kwargs):
     help="Overrides the model name that is used in triton. Defaults to `model_name`",
 )
 def export_triton_model(**kwargs):
-
     from .export_model import build_triton_model
 
     return build_triton_model(**kwargs)
