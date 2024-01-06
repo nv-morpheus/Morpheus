@@ -148,6 +148,8 @@ def payload_batcher(builder: mrc.Builder):
             df[period_column] = df[period_column].to_pandas().dt.to_period(period).astype('str')
 
         if len(group_by_columns) == 1:
+            # Avoid warning from cudf regardning an upcoming change of behavior when applying a groupby to a single
+            # element list.
             group_by_columns_ = group_by_columns[0]
         else:
             group_by_columns_ = group_by_columns
