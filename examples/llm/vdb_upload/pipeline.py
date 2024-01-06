@@ -21,7 +21,6 @@ from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -30,7 +29,6 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from .module.rss_source_pipe import rss_source_pipe  # noqa: F401
 from .module.schema_transform import schema_transform  # noqa: F401
-from .stages.multi_file_source import MultiFileSource
 from ..common.utils import build_milvus_config
 from ..common.utils import build_rss_urls
 
@@ -69,9 +67,7 @@ def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, i
     sub_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_config,
-                                input_type=MessageMeta,
                                 output_type=MessageMeta,
-                                input_port_name="input",
                                 output_port_name="output"))
 
     # rss_source = pipe.add_stage(
@@ -116,45 +112,23 @@ def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, i
 
 
 def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
-    # Initialize the MultiFileSource stage with the run_indefinitely parameter for watch
-    file_source = pipe.add_stage(MultiFileSource(
-        config,
-        filenames=filenames,
-        watch=run_indefinitely
-    ))
-
-    # Add any additional stages specific to filesystem processing if needed
-    monitor_1 = pipe.add_stage(MonitorStage(config, description="Filesystem Source rate", unit='files'))
-
-    # TODO(Devin)
-    # Need a stage to process the file contents into a dataframe
-
-    # TODO(Devin)
-    # Add a schema_transform to ensure the dataframe has the expected schema
-    transform_config = {
-        "module_id": "schema_transform",
-        "module_name": "schema_transform_rss",
+    # TODO(Devin): Read via YAML
+    module_config = {
+        "module_id": "pdf_file_source_pipe",
+        "module_name": "pdf_file_source_pipe",
         "namespace": "morpheus_examples_llm",
-        "schema_transform": {
-            "summary": {"dtype": "str", "op_type": "select"},
-            "title": {"dtype": "str", "op_type": "select"},
-            "content": {"dtype": "str", "op_type": "select"},
-            "source": {"dtype": "str", "op_type": "select"}
-        }
+        "pdf_file_source_config": {
+            "filenames": filenames,
+            "watch": run_indefinitely,
+        },
     }
-    transform = pipe.add_stage(
-        LinearModulesStage(config,
-                           transform_config,
-                           input_type=MessageMeta,
-                           output_type=MessageMeta,
-                           input_port_name="input",
-                           output_port_name="output"))
+    sub_pipe = pipe.add_stage(
+        LinearModuleSourceStage(config,
+                                module_config,
+                                output_type=MessageMeta,
+                                output_port_name="output"))
 
-    # Connect the pipeline
-    pipe.add_edge(file_source, monitor_1)
-    pipe.add_edge(monitor_1, transform)
-
-    return transform
+    return sub_pipe
 
 
 def pipeline(num_threads: int,
