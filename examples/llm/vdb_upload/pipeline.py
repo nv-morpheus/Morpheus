@@ -69,44 +69,6 @@ def setup_rss_source(pipe, config, source_name, rss_config):
                                 output_type=MessageMeta,
                                 output_port_name="output"))
 
-    # rss_source = pipe.add_stage(
-    #    RSSSourceStage(config,
-    #                   feed_input=build_rss_urls(),
-    #                   batch_size=128,
-    #                   stop_after=stop_after,
-    #                   run_indefinitely=run_indefinitely,
-    #                   enable_cache=enable_cache,
-    #                   interval_secs=interval_secs))
-
-    # monitor_1 = pipe.add_stage(MonitorStage(config, description="RSS Source rate", unit='pages'))
-    # web_scraper = pipe.add_stage(WebScraperStage(config, chunk_size=model_fea_length, enable_cache=enable_cache))
-    # monitor_2 = pipe.add_stage(MonitorStage(config, description="RSS Download rate", unit='pages'))
-
-    # transform_config = {
-    #    "module_id": "schema_transform",
-    #    "module_name": "schema_transform_rss",
-    #    "namespace": "morpheus_examples_llm",
-    #    "schema_transform": {
-    #        "summary": {"dtype": "str", "op_type": "select"},
-    #        "title": {"dtype": "str", "op_type": "select"},
-    #        "content": {"from": "page_content", "dtype": "str", "op_type": "rename"},
-    #        "source": {"from": "link", "dtype": "str", "op_type": "rename"}
-    #    }
-    # }
-    # transform = pipe.add_stage(
-    #    LinearModulesStage(config,
-    #                       transform_config,
-    #                       input_type=MessageMeta,
-    #                       output_type=MessageMeta,
-    #                       input_port_name="input",
-    #                       output_port_name="output"))
-
-    ## Connect the pipeline
-    # pipe.add_edge(rss_source, monitor_1)
-    # pipe.add_edge(monitor_1, web_scraper)
-    # pipe.add_edge(web_scraper, monitor_2)
-    # pipe.add_edge(monitor_2, transform)
-
     return sub_pipe
 
 

@@ -61,7 +61,7 @@ def build_milvus_config(embedding_size: int):
             "schema_fields": [
                 pymilvus.FieldSchema(name="id",
                                      dtype=pymilvus.DataType.INT64,
-                                     description="Unique identifier for the data entry",
+                                     description="Primary key for the collection",
                                      is_primary=True,
                                      auto_id=True).to_dict(),
                 pymilvus.FieldSchema(name="title",
