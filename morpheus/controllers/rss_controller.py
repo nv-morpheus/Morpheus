@@ -308,9 +308,7 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            _df = pd.DataFrame(entry_accumulator)
-                            _df.to_csv("debug.csv")
-                            yield _df
+                            yield pd.DataFrame(entry_accumulator)
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries
