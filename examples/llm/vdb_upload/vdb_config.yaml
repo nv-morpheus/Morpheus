@@ -1,0 +1,67 @@
+vdb_pipeline:
+  sources:
+    - type: rss
+      name: "rss_cve"
+      config:
+        feed_input:
+          - "https://www.theregister.com/security/headlines.atom"
+          - "https://isc.sans.edu/dailypodcast.xml"
+          - "https://threatpost.com/feed/"
+          - "http://feeds.feedburner.com/TheHackersNews?format=xml"
+          - "https://www.bleepingcomputer.com/feed/"
+          - "https://therecord.media/feed/"
+          - "https://blog.badsectorlabs.com/feeds/all.atom.xml"
+          - "https://krebsonsecurity.com/feed/"
+          - "https://www.darkreading.com/rss_simple.asp"
+          - "https://blog.malwarebytes.com/feed/"
+          - "https://msrc.microsoft.com/blog/feed"
+          - "https://securelist.com/feed"
+          - "https://www.crowdstrike.com/blog/feed/"
+          - "https://threatconnect.com/blog/rss/"
+          - "https://news.sophos.com/en-us/feed/"
+          - "https://www.us-cert.gov/ncas/current-activity.xml"
+          - "https://www.csoonline.com/feed"
+          - "https://www.cyberscoop.com/feed"
+          - "https://research.checkpoint.com/feed"
+          - "https://feeds.fortinet.com/fortinet/blog/threat-research"
+          - "https://www.mcafee.com/blogs/rss"
+          - "https://www.digitalshadows.com/blog-and-research/rss.xml"
+          - "https://www.nist.gov/news-events/cybersecurity/rss.xml"
+          - "https://www.sentinelone.com/blog/rss/"
+          - "https://www.bitdefender.com/blog/api/rss/labs/"
+          - "https://www.welivesecurity.com/feed/"
+          - "https://unit42.paloaltonetworks.com/feed/"
+          - "https://mandiant.com/resources/blog/rss.xml"
+          - "https://www.wired.com/feed/category/security/latest/rss"
+          - "https://www.wired.com/feed/tag/ai/latest/rss"
+          - "https://blog.google/threat-analysis-group/rss/"
+          - "https://intezer.com/feed/"
+        batch_size: 128
+        cache_dir: "./.cache/http"
+        cooldown_interval: 600
+        enable_cache: false
+        interval_secs: 600
+        request_timeout: 2.0
+        run_indefinitely: true
+        stop_after: 0
+        web_scraper_config:
+          chunk_size: 512
+          enable_cache: false
+
+    - type: filesystem
+      name: "demo_filesystem_source"
+      config:
+        filenames:
+          - "morpheus/data/scratch/random_cybersecurity_data.txt"
+        watch: false
+
+    - type: custom
+      name: "demo_custom_source"
+      config:
+        config_name_mapping: "file_source_config"
+        namespace: "morpheus_examples_llm"
+        module_id: "file_source_pipe"
+        module_output_id: "output"
+        filenames:
+          - "morpheus/data/scratch/random_cybersecurity_data.txt"
+        watch: false

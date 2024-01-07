@@ -40,26 +40,23 @@ def rss_source_pipe(builder: mrc.Builder):
     """
     # Load the module configuration from the builder
     module_config = builder.get_current_module_config()
+    rss_config = module_config.get("rss_config", {})
 
-    # Configure and load the RSS source module
+    # Build sub-module configurations
     rss_source_config = {
         "module_id": "rss_source",
         "module_name": "rss_source",
         "namespace": "morpheus",
         "rss_config": module_config["rss_config"],
     }
-    rss_source_module = load_module(config=rss_source_config, builder=builder)
 
-    # Configure and load the web scraper module
     web_scraper_config = {
         "module_id": "web_scraper",
         "module_name": "web_scraper",
         "namespace": "morpheus_examples_llm",
-        "web_scraper_config": module_config["web_scraper_config"],
+        "web_scraper_config": rss_config.get("web_scraper_config", {}),
     }
-    web_scraper_module = load_module(config=web_scraper_config, builder=builder)
 
-    # Configure and load the schema transformation module
     transform_config = {
         "module_id": "schema_transform",
         "module_name": "schema_transform",
@@ -71,6 +68,10 @@ def rss_source_pipe(builder: mrc.Builder):
             "source": {"from": "link", "dtype": "str", "op_type": "rename"}
         }
     }
+
+    # Load modules
+    rss_source_module = load_module(config=rss_source_config, builder=builder)
+    web_scraper_module = load_module(config=web_scraper_config, builder=builder)
     transform_module = load_module(config=transform_config, builder=builder)
 
     # Connect the modules: RSS source -> Web scraper -> Schema transform

@@ -16,6 +16,8 @@
 import logging
 import time
 
+import yaml
+
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
@@ -30,40 +32,36 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from .module.file_source_pipe import file_source_pipe  # noqa: F401
 from .module.rss_source_pipe import rss_source_pipe  # noqa: F401
 from .module.schema_transform import schema_transform  # noqa: F401
-from ..common.utils import build_milvus_config
-from ..common.utils import build_rss_urls
+from ..common.utils import build_milvus_config, build_rss_urls
 
 logger = logging.getLogger(__name__)
 
 
-class FileSystemSourceStage:
-    def __init__(self, config):
-        # Implementation for FileSystemSourceStage
-        pass
+def setup_rss_source(pipe, config, source_name, rss_config):
+    """
+    Setup the RSS source stage in the pipeline.
 
+    Parameters
+    ----------
+    pipe : Pipeline
+        The pipeline to which the RSS source stage will be added.
+    config : Config
+        Configuration object for the pipeline.
+    source_name : str
+        The name of the RSS source stage.
+    rss_config : dict
+        Configuration parameters for the RSS source stage.
 
-def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs, model_fea_length,
-                     cache_dir="./.cache/http"):
-    # TODO(Devin): Read via YAML
+    Returns
+    -------
+    sub_pipe
+        The sub-pipeline stage created for the RSS source.
+    """
     module_config = {
         "module_id": "rss_source_pipe",
-        "module_name": "rss_source_pipe",
+        "module_name": f"rss_source_pipe__{source_name}",
         "namespace": "morpheus_examples_llm",
-        "rss_config": {
-            "feed_input": build_rss_urls(),
-            "interval_secs": interval_secs,
-            "stop_after": stop_after,
-            "run_indefinitely": run_indefinitely,
-            "batch_size": 128,
-            "enable_cache": enable_cache,
-            "cache_dir": cache_dir,
-            "cooldown_interval": 600,
-            "request_timeout": 2.0,
-        },
-        "web_scraper_config": {
-            "chunk_size": model_fea_length,
-            "enable_cache": enable_cache,
-        },
+        "rss_config": rss_config,
     }
     sub_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
@@ -112,16 +110,31 @@ def setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, i
     return sub_pipe
 
 
-def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
-    # TODO(Devin): Read via YAML
+def setup_filesystem_source(pipe, config, source_name, fs_config):
+    """
+    Setup the filesystem source stage in the pipeline.
+
+    Parameters
+    ----------
+    pipe : Pipeline
+        The pipeline to which the filesystem source stage will be added.
+    config : Config
+        Configuration object for the pipeline.
+    source_name : str
+        The name of the filesystem source stage.
+    fs_config : dict
+        Configuration parameters for the filesystem source stage.
+
+    Returns
+    -------
+    sub_pipe
+        The sub-pipeline stage created for the filesystem source.
+    """
     module_config = {
         "module_id": "file_source_pipe",
-        "module_name": "file_source_pipe",
+        "module_name": f"file_source_pipe__{source_name}",
         "namespace": "morpheus_examples_llm",
-        "file_source_config": {
-            "filenames": filenames,
-            "watch": run_indefinitely,
-        },
+        "file_source_config": fs_config,
     }
     sub_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
@@ -130,6 +143,121 @@ def setup_filesystem_source(pipe, config, filenames, run_indefinitely):
                                 output_port_name="output"))
 
     return sub_pipe
+
+
+def setup_custom_source(pipe, config, source_name, custom_config):
+    """
+    Setup a custom source stage in the pipeline.
+
+    Parameters
+    ----------
+    pipe : Pipeline
+        The pipeline to which the custom source stage will be added.
+    config : Config
+        Configuration object for the pipeline.
+    source_name : str
+        The name of the custom source stage.
+    custom_config : dict
+        Configuration parameters for the custom source stage, including
+        the module_id, module_name, namespace, and any additional parameters.
+
+    Returns
+    -------
+    sub_pipe
+        The sub-pipeline stage created for the custom source.
+    """
+    module_config = {
+        "module_id": custom_config['module_id'],
+        "module_name": f"{custom_config['module_id']}__{source_name}",
+        "namespace": custom_config['namespace'],
+    }
+
+    if ('config_name_mapping' in custom_config):
+        module_config[custom_config['config_name_mapping']] = custom_config
+    else:
+        module_config['config'] = custom_config
+
+    # Adding the custom module stage to the pipeline
+    sub_pipe = pipe.add_stage(
+        LinearModuleSourceStage(config,
+                                module_config,
+                                output_type=MessageMeta,
+                                output_port_name=custom_config.get('module_output_id', 'output')))
+
+    return sub_pipe
+
+
+def validate_source_config(source_info):
+    """
+    Validates the configuration of a source.
+
+    This function checks whether the given source configuration dictionary
+    contains all required keys: 'type', 'name', and 'config'.
+
+    Parameters
+    ----------
+    source_info : dict
+        The source configuration dictionary to validate.
+
+    Raises
+    ------
+    ValueError
+        If any of the required keys ('type', 'name', 'config') are missing
+        in the source configuration.
+    """
+    if ('type' not in source_info or 'name' not in source_info or 'config' not in source_info):
+        raise ValueError(f"Each source must have 'type', 'name', and 'config':\n {source_info}")
+
+
+def process_vdb_sources(pipe, config, vdb_config_path):
+    """
+    Processes and sets up sources defined in a YAML configuration file.
+
+    This function reads the given YAML file and sets up each source
+    defined within it, based on its type ('rss', 'filesystem', or 'custom').
+    It validates each source configuration and then calls the appropriate
+    setup function to add the source to the pipeline.
+
+    Parameters
+    ----------
+    pipe : Pipeline
+        The pipeline to which the sources will be added.
+    config : Config
+        Configuration object for the pipeline.
+    vdb_config_path : str
+        Path to the YAML file containing the source configurations.
+
+    Returns
+    -------
+    list
+        A list of the sub-pipeline stages created for each defined source.
+
+    Raises
+    ------
+    ValueError
+        If an unsupported source type is encountered in the configuration.
+    """
+    with open(vdb_config_path, 'r') as file:
+        vdb_config = yaml.safe_load(file).get('vdb_pipeline', {}).get('sources', [])
+
+    defined_sources = []
+
+    for source_info in vdb_config:
+        validate_source_config(source_info)
+        source_type = source_info['type']
+        source_name = source_info['name']
+        source_config = source_info['config']
+
+        if (source_type == 'rss'):
+            defined_sources.append(setup_rss_source(pipe, config, source_name, source_config))
+        elif (source_type == 'filesystem'):
+            defined_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
+        elif (source_type == 'custom'):
+            defined_sources.append(setup_custom_source(pipe, config, source_name, source_config))
+        else:
+            raise ValueError(f"Unsupported source type: {source_type}")
+
+    return defined_sources
 
 
 def pipeline(num_threads: int,
@@ -147,8 +275,9 @@ def pipeline(num_threads: int,
              vector_db_service: str,
              vector_db_resource_name: str,
              triton_server_url: str,
+             file_source: list,
              source_type: tuple,
-             file_source: list):  # New parameter for file sources
+             vdb_config: str):  # New parameter for file sources
     config = Config()
     config.mode = PipelineModes.NLP
 
@@ -162,17 +291,28 @@ def pipeline(num_threads: int,
     config.class_labels = [str(i) for i in range(embedding_size)]
 
     pipe = Pipeline(config)
+    source_outputs = []
+    if (vdb_config):
+        source_outputs = process_vdb_sources(pipe, config, vdb_config)
 
-    # Mapping of source types to their setup functions
+    # Additional source setup using command-line options if needed
     source_setup_functions = {
-        'rss': lambda: setup_rss_source(pipe, config, stop_after, run_indefinitely, enable_cache, interval_secs,
-                                        model_fea_length),
-        'filesystem': lambda: setup_filesystem_source(pipe, config, filenames=file_source,
-                                                      run_indefinitely=run_indefinitely)
+        'rss': lambda: setup_rss_source(pipe, config, "cli_rss_source", {
+            "batch_size": 128,  # Example value
+            "cache_dir": "./.cache/http",
+            "cooldown_interval": 600,
+            "enable_cache": enable_cache,
+            "feed_input": build_rss_urls(),
+            "interval_secs": interval_secs,
+            "request_timeout": 2.0,
+            "run_indefinitely": run_indefinitely,
+            "stop_after": stop_after,
+        }),
+        'filesystem': lambda: setup_filesystem_source(pipe, config, "cli_filesystem_source",
+                                                      {"filenames": file_source, "watch": run_indefinitely})
         # Add other source types here in the future
     }
 
-    source_outputs = []
     for src_type in source_type:
         if src_type in source_setup_functions:
             source_output = source_setup_functions[src_type]()
@@ -183,7 +323,7 @@ def pipeline(num_threads: int,
     deserialize = pipe.add_stage(DeserializeStage(config))
 
     trigger = None
-    if isolate_embeddings:
+    if (isolate_embeddings):
         trigger = pipe.add_stage(TriggerStage(config))
 
     nlp_stage = pipe.add_stage(

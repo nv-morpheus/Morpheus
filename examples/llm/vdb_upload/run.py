@@ -98,10 +98,10 @@ def run():
     help="Indicates whether the process should run continuously.",
 )
 @click.option(
-    "--source-type",
+    "--source_type",
     multiple=True,
     type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
-    default=['rss'],
+    default=[],
     show_default=True,
     help="The type of source to use. Can specify multiple times for different source types."
 )
@@ -116,6 +116,12 @@ def run():
     type=str,
     default="localhost:8001",
     help="Triton server URL.",
+)
+@click.option(
+    "--vdb_config",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default=None,
+    help="Path to a YAML configuration file.",
 )
 @click.option(
     "--vector_db_resource_name",
