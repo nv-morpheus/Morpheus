@@ -23,7 +23,6 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 
 # Add the Conda environment to the prefix path and add the CMake files
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
-list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/utilities/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(morpheus_utils/load)
