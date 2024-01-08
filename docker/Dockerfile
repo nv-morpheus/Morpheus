@@ -257,7 +257,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
 COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
 COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
 COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
-COPY "${MORPHEUS_ROOT_HOST}/external/utilities" "./external/utilities"
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
 COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
