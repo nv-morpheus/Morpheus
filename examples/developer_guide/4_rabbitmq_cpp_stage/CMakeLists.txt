@@ -25,8 +25,6 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-include(morpheus_utils/load)
-
 project(4_rabbitmq_cpp_stage
   VERSION 24.03.00
   LANGUAGES C CXX
