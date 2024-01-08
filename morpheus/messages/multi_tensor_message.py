@@ -113,7 +113,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         if hasattr(super(), "__getattr__"):
             return super().__getattr__(name)
-        raise AttributeError
+        raise AttributeError(f'No attribute named "{name}" exists')
 
     def _check_id_tensor(self):
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@ import json
 import logging
 import re
 import typing
+import warnings
 from datetime import datetime
 from functools import partial
 
-import nvtabular as nvt
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    import nvtabular as nvt
+
 import pandas as pd
 
 import cudf
