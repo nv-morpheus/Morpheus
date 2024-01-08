@@ -212,6 +212,24 @@ set(code_string "")
 
 set(rapids_project_version_compat SameMinorVersion)
 
+if(NOT MORPHEUS_PYTHON_INPLACE_BUILD)
+  # Install cmake helper scripts needed to build examples
+  set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
+
+  install(DIRECTORY
+    "${MORPHEUS_UTILS_ROOT_PATH}/python"
+    DESTINATION ${cmake_lib_dir}
+    COMPONENT Core
+  )
+
+  set(register_python_code_block
+    [=[
+    set(MORPHEUS_UTILS_ROOT_PATH "${CMAKE_CURRENT_LIST_DIR}")
+    include(${MORPHEUS_UTILS_ROOT_PATH}/python/register_api.cmake)
+    ]=])
+  string(APPEND code_string ${register_python_code_block})
+endif()
+
 # Need to explicitly set VERSION ${PROJECT_VERSION} here since rapids_cmake gets
 # confused with the `RAPIDS_VERSION` variable we use
 rapids_export(INSTALL ${PROJECT_NAME}
