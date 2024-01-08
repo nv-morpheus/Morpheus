@@ -208,22 +208,18 @@ set(doc_string
 Provide targets for mrc.
 ]=])
 
-set(code_string "")
-
 set(rapids_project_version_compat SameMinorVersion)
 
-if(NOT MORPHEUS_PYTHON_INPLACE_BUILD)
-  # Install cmake helper scripts needed to build examples
-  set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
+# Install cmake helper scripts needed to build examples
+set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
 
-  install(DIRECTORY
-    "${MORPHEUS_UTILS_ROOT_PATH}"
-    DESTINATION "${cmake_lib_dir}"
-    COMPONENT Core
-  )
+install(DIRECTORY
+  "${MORPHEUS_UTILS_ROOT_PATH}"
+  DESTINATION "${cmake_lib_dir}"
+  COMPONENT Core
+)
 
-  string(APPEND code_string "include(morpheus_utils/load)\n")
-endif()
+set(code_string "include(morpheus_utils/load)")
 
 # Need to explicitly set VERSION ${PROJECT_VERSION} here since rapids_cmake gets
 # confused with the `RAPIDS_VERSION` variable we use
