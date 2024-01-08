@@ -217,17 +217,12 @@ if(NOT MORPHEUS_PYTHON_INPLACE_BUILD)
   set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
 
   install(DIRECTORY
-    "${MORPHEUS_UTILS_ROOT_PATH}/python"
-    DESTINATION ${cmake_lib_dir}
+    "${MORPHEUS_UTILS_ROOT_PATH}"
+    DESTINATION "${cmake_lib_dir}"
     COMPONENT Core
   )
 
-  set(register_python_code_block
-    [=[
-    set(MORPHEUS_UTILS_ROOT_PATH "${CMAKE_CURRENT_LIST_DIR}")
-    include(${MORPHEUS_UTILS_ROOT_PATH}/python/register_api.cmake)
-    ]=])
-  string(APPEND code_string ${register_python_code_block})
+  string(APPEND code_string "include(morpheus_utils/load)\n")
 endif()
 
 # Need to explicitly set VERSION ${PROJECT_VERSION} here since rapids_cmake gets

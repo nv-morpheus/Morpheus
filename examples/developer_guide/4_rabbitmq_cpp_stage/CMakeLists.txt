@@ -37,13 +37,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
+set(OPTION_PREFIX "MORPHEUS")
+find_package(morpheus REQUIRED)
+
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
 # Ensure CPM is initialized
 rapids_cpm_init()
-
-# Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
-set(OPTION_PREFIX "MORPHEUS")
 
 morpheus_utils_python_configure()
 

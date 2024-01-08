@@ -23,9 +23,6 @@ mark_as_advanced(MORPHEUS_CACHE_DIR)
 
 # Add the Conda environment to the prefix path and add the CMake files
 list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
-list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/utilities/cmake")
-
-include(morpheus_utils/load)
 
 project(3_simple_cpp_stage
   VERSION 24.03.00
@@ -34,17 +31,17 @@ project(3_simple_cpp_stage
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
+set(OPTION_PREFIX "MORPHEUS")
+find_package(morpheus REQUIRED)
+
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
 # Ensure CPM is initialized
 rapids_cpm_init()
 
-# Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
-set(OPTION_PREFIX "MORPHEUS")
-
 morpheus_utils_python_configure()
 
-rapids_find_package(morpheus REQUIRED)
 rapids_find_package(CUDAToolkit REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
