@@ -87,7 +87,6 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            # pylint: disable=c-extension-no-member,no-name-in-module
             from ._lib import rabbitmq_cpp_stage
 
             node = rabbitmq_cpp_stage.RabbitMQSourceStage(builder,

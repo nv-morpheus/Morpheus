@@ -523,7 +523,6 @@ Lastly, our `_build_source` method needs to be updated to build a C++ node when 
 ```python
 def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
     if self._build_cpp_node():
-        # pylint: disable=c-extension-no-member,no-name-in-module
         from ._lib import rabbitmq_cpp_stage
 
         node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
