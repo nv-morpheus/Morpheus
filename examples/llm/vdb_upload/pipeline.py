@@ -57,7 +57,7 @@ def setup_rss_source(pipe, config, source_name, rss_config):
         The sub-pipeline stage created for the RSS source.
     """
     module_definition = RSSSourcePipe.get_definition(module_name=f"rss_source_pipe__{source_name}",
-                                                     module_config=rss_config, )
+                                                     module_config={"rss_config": rss_config}, )
     rss_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_definition,
@@ -89,7 +89,7 @@ def setup_filesystem_source(pipe, config, source_name, fs_config):
     """
 
     module_definition = FileSourcePipe.get_definition(module_name=f"file_source_pipe__{source_name}",
-                                                      module_config=fs_config)
+                                                      module_config={"file_source_config": fs_config})
     file_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_definition,

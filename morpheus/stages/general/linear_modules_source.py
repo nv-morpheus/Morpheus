@@ -38,6 +38,11 @@ class LinearModuleSourceStage(SingleOutputSource):
         self._module_config = module_config
         self._output_port_name = output_port_name
 
+        if (isinstance(self._module_config, dict)):
+            self._unique_name = self._module_config.get("unique_name", "linear_source")
+        else:
+            self._unique_name = self._module_config.name
+
     @property
     def name(self) -> str:
         return self._module_config.get("module_name", "linear_source")

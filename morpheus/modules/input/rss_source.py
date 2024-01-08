@@ -23,6 +23,7 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
+
 @register_module("rss_source", "morpheus")
 def rss_source(builder: mrc.Builder):
     """
@@ -117,7 +118,7 @@ def rss_source(builder: mrc.Builder):
             logger.info("Waiting for %d seconds before fetching again...", interval_secs)
             time.sleep(interval_secs)
 
-        logger.info("Source stopped.")
+        logger.info("RSS source exhausted, stopping.")
 
     node = builder.make_source("fetch_feeds", fetch_feeds)
 

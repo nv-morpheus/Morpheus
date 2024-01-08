@@ -325,6 +325,10 @@ class ModuleDefinition:
         self._name = name
         self._config = config
 
+    @property
+    def name(self):
+        return self._name
+
     def load(self, builder: mrc.Builder):
         """
         Loads the module instance.
@@ -341,8 +345,8 @@ class ModuleDefinition:
                                      self._config)
 
         logger.debug("Module '%s' with namespace '%s' is successfully loaded.",
-                     self._module_interface._module_id,
-                     self._module_interface._module_namespace)
+                     self._module_interface._id,
+                     self._module_interface._namespace)
 
         return module
 
@@ -362,6 +366,14 @@ class ModuleInterface:
     def __init__(self, module_id, module_namespace):
         self._id = module_id
         self._namespace = module_namespace
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def namespace(self):
+        return self._namespace
 
     def get_definition(self, module_name: str, module_config: dict) -> ModuleDefinition:
         """
