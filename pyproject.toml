@@ -29,7 +29,12 @@ filterwarnings = [
   'ignore:`np.object` is a deprecated alias for the builtin `object`. To silence this warning, use `object` by itself. Doing this will not modify any behavior and is safe',
   'ignore:Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe context manager to modify the DataFrame in-place instead.',
   'ignore:`np.MachAr` is deprecated \(NumPy 1.22\):DeprecationWarning',
-  'ignore:Please use `spmatrix` from the `scipy.sparse` namespace, the `scipy.sparse.base` namespace is deprecated:DeprecationWarning',
+  'ignore:Please use `spmatrix` from the `scipy.sparse` namespace, the `scipy.sparse.base` namespace is deprecated:DeprecationWarning', 
+
+  # Deprecation warning from any project using distutils, currently known sources of this are:
+  # GPUtils https://github.com/anderskm/gputil/issues/48
+  # PySpark https://issues.apache.org/jira/browse/SPARK-45390
+  'ignore:The distutils package is deprecated and slated for removal in Python 3.12. Use setuptools or check PEP 632 for potential alternatives',
 ]
 
 testpaths = ["tests"]

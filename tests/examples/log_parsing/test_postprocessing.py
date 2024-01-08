@@ -25,9 +25,11 @@ from _utils import TEST_DIRS
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import TensorMemory
 
 
-def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test_data_dir: str):
+def build_post_proc_message(dataset_cudf: DatasetManager, log_test_data_dir: str):
     input_file = os.path.join(TEST_DIRS.validation_data_dir, 'log-parsing-validation-data-input.csv')
     input_df = dataset_cudf[input_file]
     meta = MessageMeta(input_df)
@@ -35,29 +37,26 @@ def build_post_proc_message(messages_mod, dataset_cudf: DatasetManager, log_test
     # we have tensor data for the first five rows
     count = 5
     tensors = {}
-    for tensor_name in ['confidences', 'input_ids', 'labels', 'seq_ids']:
+    for tensor_name in ['confidences', 'input_ids', 'labels']:
         tensor_file = os.path.join(log_test_data_dir, f'{tensor_name}.csv')
         host_data = np.loadtxt(tensor_file, delimiter=',')
         tensors[tensor_name] = cp.asarray(host_data)
 
-    memory = messages_mod.PostprocMemoryLogParsing(count=5, **tensors)
-    return messages_mod.MultiPostprocLogParsingMessage(meta=meta,
-                                                       mess_offset=0,
-                                                       mess_count=count,
-                                                       memory=memory,
-                                                       offset=0,
-                                                       count=count)
+    host__seq_data = np.loadtxt(os.path.join(log_test_data_dir, 'seq_ids.csv'), delimiter=',')
+    seq_ids = cp.zeros((count, 3), dtype=cp.uint32)
+    seq_ids[:, 0] = cp.arange(0, 5, dtype=cp.uint32)
+    seq_ids[:, 2] = cp.asarray(host__seq_data)[:, 2]
+    tensors['seq_ids'] = seq_ids
+
+    memory = TensorMemory(count=5, tensors=tensors)
+    return MultiResponseMessage(meta=meta, mess_offset=0, mess_count=count, memory=memory, offset=0, count=count)
 
 
-@pytest.mark.use_python
-@pytest.mark.import_mod([
-    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'messages.py'),
-    os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')
-])
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py'))
 def test_log_parsing_post_processing_stage(config: Config,
                                            dataset_cudf: DatasetManager,
                                            import_mod: typing.List[types.ModuleType]):
-    messages_mod, postprocessing_mod = import_mod
+    postprocessing_mod = import_mod
 
     model_vocab_file = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-vocab.txt')
     log_test_data_dir = os.path.join(TEST_DIRS.tests_data_dir, 'examples/log_parsing')
@@ -67,10 +66,10 @@ def test_log_parsing_post_processing_stage(config: Config,
                                                              vocab_path=model_vocab_file,
                                                              model_config_path=model_config_file)
 
-    post_proc_message = build_post_proc_message(messages_mod, dataset_cudf, log_test_data_dir)
+    post_proc_message = build_post_proc_message(dataset_cudf, log_test_data_dir)
     expected_df = dataset_cudf.pandas[os.path.join(log_test_data_dir, 'expected_out.csv')]
 
     out_meta = stage._postprocess(post_proc_message)
 
     assert isinstance(out_meta, MessageMeta)
-    DatasetManager.assert_compare_df(out_meta._df, expected_df)
+    DatasetManager.assert_compare_df(out_meta.df, expected_df)

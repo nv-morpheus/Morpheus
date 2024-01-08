@@ -238,7 +238,6 @@ dependencies:
           - dill
           - elasticsearch==8.9.0
           - feedparser=6.0.10
-          - gputil
           - grpcio
           - mlflow>=2.2.1,<3
           - nb_conda_kernels

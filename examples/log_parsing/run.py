@@ -19,7 +19,6 @@ from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -92,8 +91,6 @@ def run_pipeline(
     model_config_file,
     server_url,
 ):
-    CppConfig.set_should_use_cpp(False)
-
     config = Config()
     config.mode = PipelineModes.NLP
     config.num_threads = num_threads
