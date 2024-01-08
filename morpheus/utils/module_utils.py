@@ -335,8 +335,8 @@ class ModuleDefinition:
             The Morpheus builder instance.
         """
 
-        module = builder.load_module(self._module_interface._module_id,
-                                     self._module_interface._module_namespace,
+        module = builder.load_module(self._module_interface._id,
+                                     self._module_interface._namespace,
                                      self._name,
                                      self._config)
 
