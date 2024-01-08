@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import warnings
 from unittest import mock
 
 import click
@@ -127,6 +128,15 @@ def mlflow_uri(tmp_path):
     num_runs = len(fluent._active_run_stack)
     for _ in range(num_runs):
         mlflow.end_run()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def config_warning_fixture():
+    # morpheus.cli.utils._apply_to_config method will warn about any keyword arguments that don't match a config option
+    # this isn't triggered in normal production code, but is triggered in the cli tests.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="No config option matches for.*", category=UserWarning)
+        yield
 
 
 @pytest.mark.reload_modules(commands)
