@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 
 include(FindPackageHandleStandardArgs)
 
@@ -37,7 +36,6 @@ pkg_check_modules(PC_UCX ${components})
 # message(STATUS "${mod_prefix}_PREFIX: ${${mod_prefix}_PREFIX}")
 # message(STATUS "${mod_prefix}_INCLUDEDIR: ${${mod_prefix}_INCLUDEDIR}")
 # message(STATUS "${mod_prefix}_LIBDIR: ${${mod_prefix}_LIBDIR}")
-
 set(ucx_VERSION ${PC_UCX_VERSION})
 
 find_package_handle_standard_args(ucx
@@ -47,11 +45,11 @@ find_package_handle_standard_args(ucx
   VERSION_VAR ucx_VERSION
 )
 
-if (UCX_FOUND)
+if(UCX_FOUND)
   set(all_ucx_targets "")
 
   foreach(ucx_library IN ZIP_LISTS PC_UCX_LIBRARIES PC_UCX_LINK_LIBRARIES)
-    if (NOT TARGET ucx::${ucx_library_0})
+    if(NOT TARGET ucx::${ucx_library_0})
       add_library(ucx::${ucx_library_0} UNKNOWN IMPORTED)
       set_target_properties(ucx::${ucx_library_0} PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${PC_UCX_INCLUDE_DIRS}"
@@ -65,11 +63,11 @@ if (UCX_FOUND)
     list(APPEND all_ucx_targets "ucx::${ucx_library_0}")
   endforeach()
 
-  if (NOT TARGET ucx::ucx)
+  if(NOT TARGET ucx::ucx)
     # Combined ucx::ucx target
     add_library(ucx::ucx INTERFACE IMPORTED GLOBAL)
     set_target_properties(ucx::ucx PROPERTIES
       INTERFACE_LINK_LIBRARIES "${all_ucx_targets}"
     )
-    endif()
+  endif()
 endif()
