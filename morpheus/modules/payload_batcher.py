@@ -159,6 +159,8 @@ def payload_batcher(builder: mrc.Builder):
         dfs = []
 
         with warnings.catch_warnings():
+            # cudf is triggering a deprecation warning when using np.find_common_type which is deprecated in numpy 1.26
+            # Future versions of cudf are pinned to numpy<1.25
             warnings.filterwarnings(
                 "ignore",
                 message="np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.",
