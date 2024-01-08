@@ -155,6 +155,8 @@ def multi_file_source(builder: mrc.Builder):
                            f"This is probably not what you want.")
             return
 
+        logger.info(f"File source exhausted, discovered {len(files)} files.")
+
         yield files
 
     if (watch_dir):

@@ -27,6 +27,34 @@ logger = logging.getLogger(__name__)
 
 
 class LinearModuleSourceStage(SingleOutputSource):
+    """
+    A stage in the pipeline that serves as a linear module source.
+
+    This stage is responsible for integrating a module into the pipeline as a source stage.
+
+    Parameters
+    ----------
+    c : Config
+        The configuration object for the pipeline.
+    module_config : Union[Dict, ModuleDefinition]
+        The configuration for the module. This can be either a dictionary of configuration parameters or a ModuleDefinition object.
+    output_port_name : str
+        The name of the output port of the module.
+    output_type : Any, optional
+        The type of the output.
+
+    Attributes
+    ----------
+    _output_type : Any
+        The output type of the stage.
+    _module_config : Union[Dict, ModuleDefinition]
+        The configuration of the module.
+    _output_port_name : str
+        The name of the module's output port.
+    _unique_name : str
+        The unique name of the module.
+    """
+
     def __init__(self,
                  c: Config,
                  module_config: typing.Union[typing.Dict, ModuleDefinition],

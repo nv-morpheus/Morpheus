@@ -39,6 +39,7 @@ def _rss_source_pipe(builder: mrc.Builder):
     builder : mrc.Builder
         The Morpheus builder to which the pipeline modules will be added.
     """
+
     # Load the module configuration from the builder
     module_config = builder.get_current_module_config()
     rss_config = module_config.get("rss_config", {})
