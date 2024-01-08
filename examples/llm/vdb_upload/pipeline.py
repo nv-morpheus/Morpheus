@@ -20,17 +20,16 @@ import yaml
 
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from .module.file_source_pipe import file_source_pipe  # noqa: F401
-from .module.rss_source_pipe import rss_source_pipe  # noqa: F401
+from .module.file_source_pipe import FileSourcePipe
+from .module.rss_source_pipe import RSSSourcePipe
 from .module.schema_transform import schema_transform  # noqa: F401
 from ..common.utils import build_milvus_config, build_rss_urls
 
@@ -39,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 def setup_rss_source(pipe, config, source_name, rss_config):
     """
-    Setup the RSS source stage in the pipeline.
+    Set up the RSS source stage in the pipeline.
 
     Parameters
     ----------
@@ -57,24 +56,20 @@ def setup_rss_source(pipe, config, source_name, rss_config):
     sub_pipe
         The sub-pipeline stage created for the RSS source.
     """
-    module_config = {
-        "module_id": "rss_source_pipe",
-        "module_name": f"rss_source_pipe__{source_name}",
-        "namespace": "morpheus_examples_llm",
-        "rss_config": rss_config,
-    }
-    sub_pipe = pipe.add_stage(
+    module_definition = RSSSourcePipe.get_definition(module_name=f"rss_source_pipe__{source_name}",
+                                                     module_config=rss_config, )
+    rss_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
-                                module_config,
-                                output_type=MessageMeta,
+                                module_definition,
+                                output_type=MultiMessage,
                                 output_port_name="output"))
 
-    return sub_pipe
+    return rss_pipe
 
 
 def setup_filesystem_source(pipe, config, source_name, fs_config):
     """
-    Setup the filesystem source stage in the pipeline.
+    Set up the filesystem source stage in the pipeline.
 
     Parameters
     ----------
@@ -92,19 +87,16 @@ def setup_filesystem_source(pipe, config, source_name, fs_config):
     sub_pipe
         The sub-pipeline stage created for the filesystem source.
     """
-    module_config = {
-        "module_id": "file_source_pipe",
-        "module_name": f"file_source_pipe__{source_name}",
-        "namespace": "morpheus_examples_llm",
-        "file_source_config": fs_config,
-    }
-    sub_pipe = pipe.add_stage(
+
+    module_definition = FileSourcePipe.get_definition(module_name=f"file_source_pipe__{source_name}",
+                                                      module_config=fs_config)
+    file_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
-                                module_config,
-                                output_type=MessageMeta,
+                                module_definition,
+                                output_type=MultiMessage,
                                 output_port_name="output"))
 
-    return sub_pipe
+    return file_pipe
 
 
 def setup_custom_source(pipe, config, source_name, custom_config):
@@ -140,13 +132,13 @@ def setup_custom_source(pipe, config, source_name, custom_config):
         module_config['config'] = custom_config
 
     # Adding the custom module stage to the pipeline
-    sub_pipe = pipe.add_stage(
+    custom_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_config,
-                                output_type=MessageMeta,
+                                output_type=MultiMessage,
                                 output_port_name=custom_config.get('module_output_id', 'output')))
 
-    return sub_pipe
+    return custom_pipe
 
 
 def validate_source_config(source_info):
@@ -200,26 +192,28 @@ def process_vdb_sources(pipe, config, vdb_config_path):
         If an unsupported source type is encountered in the configuration.
     """
     with open(vdb_config_path, 'r') as file:
-        vdb_config = yaml.safe_load(file).get('vdb_pipeline', {}).get('sources', [])
+        vdb_pipeline = yaml.safe_load(file).get('vdb_pipeline', {})
+        vdb_source_config = vdb_pipeline.get('sources', [])
+        vdb_database = vdb_pipeline.get('vdb', {})
+        vdb_embeddings = vdb_pipeline.get('embeddings', {})
 
-    defined_sources = []
-
-    for source_info in vdb_config:
+    vdb_sources = []
+    for source_info in vdb_source_config:
         validate_source_config(source_info)
         source_type = source_info['type']
         source_name = source_info['name']
         source_config = source_info['config']
 
         if (source_type == 'rss'):
-            defined_sources.append(setup_rss_source(pipe, config, source_name, source_config))
+            vdb_sources.append(setup_rss_source(pipe, config, source_name, source_config))
         elif (source_type == 'filesystem'):
-            defined_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
+            vdb_sources.append(setup_filesystem_source(pipe, config, source_name, source_config))
         elif (source_type == 'custom'):
-            defined_sources.append(setup_custom_source(pipe, config, source_name, source_config))
+            vdb_sources.append(setup_custom_source(pipe, config, source_name, source_config))
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
 
-    return defined_sources
+    return vdb_sources, vdb_database, vdb_embeddings
 
 
 def pipeline(num_threads: int,
@@ -253,9 +247,13 @@ def pipeline(num_threads: int,
     config.class_labels = [str(i) for i in range(embedding_size)]
 
     pipe = Pipeline(config)
-    source_outputs = []
+
+    # TODO(Devin) Merge with priority against cli parameters
+    vdb_sources = []
+    vdb_database = {}
+    vdb_embeddings = {}
     if (vdb_config):
-        source_outputs = process_vdb_sources(pipe, config, vdb_config)
+        vdb_sources, vdb_database, vdb_embeddings = process_vdb_sources(pipe, config, vdb_config)
 
     # Additional source setup using command-line options if needed
     source_setup_functions = {
@@ -278,11 +276,9 @@ def pipeline(num_threads: int,
     for src_type in source_type:
         if src_type in source_setup_functions:
             source_output = source_setup_functions[src_type]()
-            source_outputs.append(source_output)
+            vdb_sources.append(source_output)
         else:
             raise ValueError(f"Unsupported source type: {src_type}")
-
-    deserialize = pipe.add_stage(DeserializeStage(config))
 
     trigger = None
     if (isolate_embeddings):
@@ -308,23 +304,23 @@ def pipeline(num_threads: int,
 
     vector_db = pipe.add_stage(
         WriteToVectorDBStage(config,
-                             resource_name=vector_db_resource_name,
-                             resource_kwargs=build_milvus_config(embedding_size=embedding_size),
-                             recreate=True,
-                             service=vector_db_service,
-                             uri=vector_db_uri))
+                             resource_name=vdb_database.get('resource_name', vector_db_resource_name),
+                             resource_kwargs=build_milvus_config(embedding_size=vdb_embeddings.get('size', 384)),
+                             recreate=vdb_database.get('recreate', False),
+                             service=vdb_database.get('service', vector_db_service),
+                             uri=vdb_database.get('uri', vector_db_uri)))
 
     monitor_3 = pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
     # Connect the pipeline
-    for source_output in source_outputs:
-        pipe.add_edge(source_output, deserialize)
+    for source_output in vdb_sources:
+        if (isolate_embeddings):
+            pipe.add_edge(source_output, trigger)
+        else:
+            pipe.add_edge(source_output, nlp_stage)
 
     if (isolate_embeddings):
-        pipe.add_edge(deserialize, trigger)
         pipe.add_edge(trigger, nlp_stage)
-    else:
-        pipe.add_edge(deserialize, nlp_stage)
 
     pipe.add_edge(nlp_stage, monitor_1)
     pipe.add_edge(monitor_1, triton_inference)

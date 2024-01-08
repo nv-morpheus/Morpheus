@@ -17,7 +17,8 @@ import logging
 import mrc
 
 from morpheus.modules.input.rss_source import rss_source  # noqa: F401
-from morpheus.utils.module_utils import load_module
+from morpheus.modules.preprocess.deserialize import deserialize  # noqa: F401
+from morpheus.utils.module_utils import load_module, ModuleInterface
 from morpheus.utils.module_utils import register_module
 from .schema_transform import schema_transform  # noqa: F401
 from ...common.web_scraper_module import web_scraper  # noqa: F401
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module("rss_source_pipe", "morpheus_examples_llm")
-def rss_source_pipe(builder: mrc.Builder):
+def _rss_source_pipe(builder: mrc.Builder):
     """
     Creates a pipeline for processing RSS feeds.
 
@@ -69,14 +70,24 @@ def rss_source_pipe(builder: mrc.Builder):
         }
     }
 
+    deserialize_config = {
+        "module_id": "deserialize",
+        "module_name": "deserialize",
+        "namespace": "morpheus",
+    }
+
     # Load modules
     rss_source_module = load_module(config=rss_source_config, builder=builder)
     web_scraper_module = load_module(config=web_scraper_config, builder=builder)
     transform_module = load_module(config=transform_config, builder=builder)
+    deserialize_module = load_module(config=deserialize_config, builder=builder)
 
     # Connect the modules: RSS source -> Web scraper -> Schema transform
     builder.make_edge(rss_source_module.output_port("output"), web_scraper_module.input_port("input"))
     builder.make_edge(web_scraper_module.output_port("output"), transform_module.input_port("input"))
+    builder.make_edge(transform_module.output_port("output"), deserialize_module.input_port("input"))
 
     # Register the final output of the transformation module
-    builder.register_module_output("output", transform_module.output_port("output"))
+    builder.register_module_output("output", deserialize_module.output_port("output"))
+
+RSSSourcePipe = ModuleInterface("rss_source_pipe", "morpheus_examples_llm")

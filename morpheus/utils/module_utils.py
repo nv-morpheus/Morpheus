@@ -18,10 +18,9 @@ import logging
 import re
 import typing
 
+import cudf
 import mrc
 import pandas as pd
-
-import cudf
 
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -305,3 +304,80 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
         # Register input and output port for a module.
         builder.register_module_input("input", head_module.input_port("input"))
         builder.register_module_output("output", prev_module.output_port("output"))
+
+
+class ModuleDefinition:
+    """
+    Class to hold the definition of a module.
+
+    Attributes
+    ----------
+    module_instance : ModuleDefinition
+        The instance of the loaded module.
+    name : str
+        The name of the module.
+    config : dict
+        The configuration dictionary for the module.
+    """
+
+    def __init__(self, module_interface, name, config):
+        self._module_interface = module_interface
+        self._name = name
+        self._config = config
+
+    def load(self, builder: mrc.Builder):
+        """
+        Loads the module instance.
+
+        Parameters
+        ----------
+        builder : mrc.Builder
+            The Morpheus builder instance.
+        """
+
+        module = builder.load_module(self._module_instance._module_id,
+                                     self._module_interface._module_namespace,
+                                     self._name,
+                                     self._config)
+
+        logger.debug("Module '%s' with namespace '%s' is successfully loaded.",
+                     self._module_interface._module_id,
+                     self._module_interface._module_namespace)
+
+        return module
+
+
+class ModuleInterface:
+    """
+    Class that acts as a simple wrapper to load a SegmentModule.
+
+    Attributes
+    ----------
+    _id : str
+        The module identifier.
+    _namespace : str
+        The namespace of the module.
+    """
+
+    def __init__(self, module_id, module_namespace):
+        self._id = module_id
+        self._namespace = module_namespace
+
+    def get_definition(self, module_name: str, module_config: dict) -> ModuleDefinition:
+        """
+        Loads a module instance and returns its definition.
+
+        Parameters
+        ----------
+        module_name : str
+            The name of the module to be loaded.
+        module_config : dict
+            The configuration dictionary for the module.
+
+        Returns
+        -------
+        ModuleDefinition
+            A specific instance of this module.
+        """
+
+        return ModuleDefinition(self, module_name, module_config)

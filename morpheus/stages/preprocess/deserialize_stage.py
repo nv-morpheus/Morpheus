@@ -15,11 +15,8 @@
 
 import logging
 import typing
-import warnings
-from functools import partial
 
 import mrc
-from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -28,6 +25,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.modules.preprocess.deserialize import deserialize
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -80,6 +78,16 @@ class DeserializeStage(MultiMessageStage):
             if (self._task_type is not None or self._task_payload is not None):
                 raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
 
+        self._module_config = {
+            "ensure_sliceable_index": self._ensure_sliceable_index,
+            "message_type": "MultiMessage" if self._message_type == MultiMessage else "ControlMessage",
+            "task_type": self._task_type,
+            "task_payload": self._task_payload,
+            "batch_size": self._batch_size,
+            "max_concurrency": self._max_concurrent,
+            "should_log_timestamp": self._should_log_timestamps
+        }
+
     @property
     def name(self) -> str:
         return "deserialize"
@@ -89,7 +97,7 @@ class DeserializeStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta, )
+        return (MessageMeta,)
 
     def supports_cpp_node(self):
         # Enable support by default
@@ -98,138 +106,20 @@ class DeserializeStage(MultiMessageStage):
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
 
-    @staticmethod
-    def check_slicable_index(x: MessageMeta, ensure_sliceable_index: bool = True):
-        if (not x.has_sliceable_index()):
-            if (ensure_sliceable_index):
-                old_index_name = x.ensure_sliceable_index()
-
-                if (old_index_name):
-                    logger.warning(("Incoming MessageMeta does not have a unique and monotonic index. "
-                                    "Updating index to be unique. "
-                                    "Existing index will be retained in column '%s'"),
-                                   old_index_name)
-
-            else:
-                warnings.warn(
-                    "Detected a non-sliceable index on an incoming MessageMeta. "
-                    "Performance when taking slices of messages may be degraded. "
-                    "Consider setting `ensure_sliceable_index==True`",
-                    RuntimeWarning)
-
-        return x
-
-    @staticmethod
-    def process_dataframe_to_multi_message(x: MessageMeta, batch_size: int,
-                                           ensure_sliceable_index: bool) -> typing.List[MultiMessage]:
-        """
-        The deserialization of the cudf is implemented in this function.
-
-        Parameters
-        ----------
-        x : cudf.DataFrame
-            Input rows that needs to be deserilaized.
-        batch_size : int
-            Batch size.
-        ensure_sliceable_index : bool
-            Calls `MessageMeta.ensure_sliceable_index()` on incoming messages to ensure unique and monotonic indices.
-
-        """
-
-        x = DeserializeStage.check_slicable_index(x, ensure_sliceable_index)
-
-        full_message = MultiMessage(meta=x)
-
-        # Now break it up by batches
-        output = []
-
-        for i in range(0, full_message.mess_count, batch_size):
-            output.append(full_message.get_slice(i, min(i + batch_size, full_message.mess_count)))
-
-        return output
-
-    @staticmethod
-    def process_dataframe_to_control_message(x: MessageMeta,
-                                             batch_size: int,
-                                             ensure_sliceable_index: bool,
-                                             task_tuple: tuple[str, dict] | None) -> typing.List[ControlMessage]:
-        """
-        The deserialization of the cudf is implemented in this function.
-
-        Parameters
-        ----------
-        x : cudf.DataFrame
-            Input rows that needs to be deserilaized.
-        batch_size : int
-            Batch size.
-        ensure_sliceable_index : bool
-            Calls `MessageMeta.ensure_sliceable_index()` on incoming messages to ensure unique and monotonic indices.
-        task_tuple: typing.Tuple[str, dict] | None
-            If specified, adds the specified task to the ControlMessage. The first parameter is the task type and second
-            parameter is the task payload
-
-        """
-
-        # Because ControlMessages only have a C++ implementation, we need to import the C++ MessageMeta and use that
-        # 100% of the time
-        # pylint: disable=morpheus-incorrect-lib-from-import
-        from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-
-        x = DeserializeStage.check_slicable_index(x, ensure_sliceable_index)
-
-        # Now break it up by batches
-        output = []
-
-        if (x.count > batch_size):
-            df = x.df
-
-            # Break the message meta into smaller chunks
-            for i in range(0, x.count, batch_size):
-
-                message = ControlMessage()
-
-                message.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
-
-                if (task_tuple is not None):
-                    message.add_task(task_type=task_tuple[0], task=task_tuple[1])
-
-                output.append(message)
-        else:
-            message = ControlMessage()
-
-            message.payload(MessageMetaCpp(x.df))
-
-            if (task_tuple is not None):
-                message.add_task(task_type=task_tuple[0], task=task_tuple[1])
-
-            output.append(message)
-
-        return output
-
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            builder.make_edge(input_node, out_node)
         else:
+            module_instance = deserialize.get_definition(module_name=f"deserialize_{self.unique_name}",
+                                                         module_config=self._module_config)
 
-            if (self._message_type == MultiMessage):
-                map_func = partial(DeserializeStage.process_dataframe_to_multi_message,
-                                   batch_size=self._batch_size,
-                                   ensure_sliceable_index=self._ensure_sliceable_index)
-            else:
+            module = module_instance.load(builder)
 
-                if (self._task_type is not None and self._task_payload is not None):
-                    task_tuple = (self._task_type, self._task_payload)
-                else:
-                    task_tuple = None
+            mod_in_node = module.input_port("input")
+            out_node = module.output_port("output")
 
-                map_func = partial(DeserializeStage.process_dataframe_to_control_message,
-                                   batch_size=self._batch_size,
-                                   ensure_sliceable_index=self._ensure_sliceable_index,
-                                   task_tuple=task_tuple)
+            builder.make_edge(input_node, mod_in_node)
 
-            node = builder.make_node(self.unique_name, ops.map(map_func), ops.flatten())
-
-        builder.make_edge(input_node, node)
-
-        return node
+        return out_node

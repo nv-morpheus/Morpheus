@@ -43,11 +43,12 @@ def run():
     default=False,
     help="Enable caching of RSS feed request data.",
 )
-@click.option('--file-source',
-              multiple=True,
-              default=[],
-              type=str,
-              help='List of file sources/paths to be processed.')
+@click.option(
+    '--file_source',
+    multiple=True,
+    default=[],
+    type=str,
+    help='List of file sources/paths to be processed.')
 @click.option(
     "--interval_secs",
     default=600,
