@@ -46,7 +46,6 @@ dependencies:
 - flake8
 - gcc_linux-64=11.2
 - git-lfs
-- gputil
 - grpcio
 - gxx_linux-64=11.2
 - huggingface_hub=0.10.1
