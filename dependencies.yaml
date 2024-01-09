@@ -238,6 +238,8 @@ dependencies:
           - grpcio
           - mlflow>=2.2.1,<3
           - nb_conda_kernels
+          # Avoids numerous warnings triggered by cudf, recent versions of cudf impost this version requirement
+          - numpy>=1.21,<1.25
           - numpydoc=1.4
           - nvtabular=23.06
           - python-confluent-kafka=1.9.2

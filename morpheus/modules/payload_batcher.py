@@ -157,27 +157,19 @@ def payload_batcher(builder: mrc.Builder):
         groups = df.groupby(group_by_columns_)
 
         dfs = []
-
-        with warnings.catch_warnings():
-            # cudf is triggering a deprecation warning when using np.find_common_type which is deprecated in numpy 1.26
-            # Future versions of cudf are pinned to numpy<1.25
-            warnings.filterwarnings(
-                "ignore",
-                message="np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.",
-                category=DeprecationWarning)
-            for _, group in groups:
-                if disable_max_batch_size:
+        for _, group in groups:
+            if disable_max_batch_size:
+                dfs.append(group)
+            else:
+                group_length = len(group)
+                if group_length <= max_batch_size:
                     dfs.append(group)
                 else:
-                    group_length = len(group)
-                    if group_length <= max_batch_size:
-                        dfs.append(group)
-                    else:
-                        num_batches = (group_length + max_batch_size - 1) // max_batch_size
-                        group_batches = [
-                            group.iloc[i * max_batch_size:(i + 1) * max_batch_size] for i in range(num_batches)
-                        ]
-                        dfs.extend(group_batches)
+                    num_batches = (group_length + max_batch_size - 1) // max_batch_size
+                    group_batches = [
+                        group.iloc[i * max_batch_size:(i + 1) * max_batch_size] for i in range(num_batches)
+                    ]
+                    dfs.extend(group_batches)
 
         return dfs
 

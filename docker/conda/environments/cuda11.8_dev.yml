@@ -74,6 +74,8 @@ dependencies:
     - ninja=1.10
     - nodejs=18.*
     - numba>=0.56.2
+    # Avoids numerous warnings triggered by cudf, recent versions of cudf impost this version
+    - numpy>=1.21,<1.25
     - numpydoc=1.4
     - nvtabular=23.06
     - pandas=1.3
