@@ -221,8 +221,8 @@ install(DIRECTORY
 
 set(code_string
     [=[
-if(EXISTS "\${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
-  include("\${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
 endif()
 ]=])
 
