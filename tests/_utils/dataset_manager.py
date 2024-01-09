@@ -18,6 +18,7 @@ import logging
 import os
 import random
 import typing
+import warnings
 
 import cupy as cp
 import pandas as pd
@@ -235,7 +236,10 @@ class DatasetManager:
                    dfb: typing.Union[pd.DataFrame, cdf.DataFrame],
                    **compare_args):
         """Wrapper for `morpheus.utils.compare_df.compare_df`."""
-        return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
+        with warnings.catch_warnings():
+            # Ignore performance warnings from pandas triggered by the comparison
+            warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+            return compare_df.compare_df(cls._value_as_pandas(dfa), cls._value_as_pandas(dfb), **compare_args)
 
     @classmethod
     def assert_compare_df(cls,
