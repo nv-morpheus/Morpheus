@@ -219,7 +219,12 @@ install(DIRECTORY
   COMPONENT Core
 )
 
-set(code_string "include(\"\${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake\")\n")
+set(code_string
+    [=[
+if(EXISTS "\${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
+  include("\${CMAKE_CURRENT_LIST_DIR}/morpheus_utils/load.cmake")
+endif()
+]=])
 
 # Need to explicitly set VERSION ${PROJECT_VERSION} here since rapids_cmake gets
 # confused with the `RAPIDS_VERSION` variable we use
