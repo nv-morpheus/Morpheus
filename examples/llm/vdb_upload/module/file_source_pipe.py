@@ -18,10 +18,12 @@ import mrc
 
 from morpheus.modules.input.multi_file_source import multi_file_source  # noqa: F401
 from morpheus.modules.preprocess.deserialize import deserialize  # noqa: F401
-from morpheus.utils.module_utils import load_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
-from .schema_transform import schema_transform  # noqa: F401
+
 from ...common.content_extractor_module import file_content_extractor  # noqa: F401
+from .schema_transform import schema_transform  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +59,8 @@ def _file_source_pipe(builder: mrc.Builder):
         "module_name": "file_content_extractor",
         "namespace": "morpheus_examples_llm",
         "batch_size": module_config.get("batch_size", 32),  # Example configuration option
-        "num_threads": module_config.get("num_threads", 10)  # Example configuration option
+        "num_threads": module_config.get("num_threads", 10),  # Example configuration option
+        "converters_meta": module_config["file_source_config"].get("converters_meta", None)
     }
 
     # Configure and load the schema transformation module
@@ -66,10 +69,18 @@ def _file_source_pipe(builder: mrc.Builder):
         "module_name": "schema_transform",
         "namespace": "morpheus_examples_llm",
         "schema_transform_config": {
-            "summary": {"dtype": "str", "op_type": "select"},
-            "title": {"dtype": "str", "op_type": "select"},
-            "content": {"dtype": "str", "op_type": "select"},
-            "source": {"dtype": "str", "op_type": "select"}
+            "summary": {
+                "dtype": "str", "op_type": "select"
+            },
+            "title": {
+                "dtype": "str", "op_type": "select"
+            },
+            "content": {
+                "dtype": "str", "op_type": "select"
+            },
+            "source": {
+                "dtype": "str", "op_type": "select"
+            }
         }
     }
 
@@ -92,5 +103,6 @@ def _file_source_pipe(builder: mrc.Builder):
 
     # Register the final output of the transformation module
     builder.register_module_output("output", deserialize_module.output_port("output"))
+
 
 FileSourcePipe = ModuleInterface("file_source_pipe", "morpheus_examples_llm")

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import logging
 import time
 
@@ -28,10 +27,12 @@ from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+
+from ..common.utils import build_milvus_config
+from ..common.utils import build_rss_urls
 from .module.file_source_pipe import FileSourcePipe
 from .module.rss_source_pipe import RSSSourcePipe
 from .module.schema_transform import schema_transform  # noqa: F401
-from ..common.utils import build_milvus_config, build_rss_urls
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +57,12 @@ def setup_rss_source(pipe, config, source_name, rss_config):
     sub_pipe
         The sub-pipeline stage created for the RSS source.
     """
-    module_definition = RSSSourcePipe.get_definition(module_name=f"rss_source_pipe__{source_name}",
-                                                     module_config={"rss_config": rss_config}, )
+    module_definition = RSSSourcePipe.get_definition(
+        module_name=f"rss_source_pipe__{source_name}",
+        module_config={"rss_config": rss_config},
+    )
     rss_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config,
-                                module_definition,
-                                output_type=MultiMessage,
-                                output_port_name="output"))
+        LinearModuleSourceStage(config, module_definition, output_type=MultiMessage, output_port_name="output"))
 
     return rss_pipe
 
@@ -87,14 +87,10 @@ def setup_filesystem_source(pipe, config, source_name, fs_config):
     sub_pipe
         The sub-pipeline stage created for the filesystem source.
     """
-
     module_definition = FileSourcePipe.get_definition(module_name=f"file_source_pipe__{source_name}",
                                                       module_config={"file_source_config": fs_config})
     file_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config,
-                                module_definition,
-                                output_type=MultiMessage,
-                                output_port_name="output"))
+        LinearModuleSourceStage(config, module_definition, output_type=MultiMessage, output_port_name="output"))
 
     return file_pipe
 
@@ -257,19 +253,27 @@ def pipeline(num_threads: int,
 
     # Additional source setup using command-line options if needed
     source_setup_functions = {
-        'rss': lambda: setup_rss_source(pipe, config, "cli_rss_source", {
-            "batch_size": 128,  # Example value
-            "cache_dir": "./.cache/http",
-            "cooldown_interval": 600,
-            "enable_cache": enable_cache,
-            "feed_input": build_rss_urls(),
-            "interval_secs": interval_secs,
-            "request_timeout": 2.0,
-            "run_indefinitely": run_indefinitely,
-            "stop_after": stop_after,
-        }),
-        'filesystem': lambda: setup_filesystem_source(pipe, config, "cli_filesystem_source",
-                                                      {"filenames": file_source, "watch": run_indefinitely})
+        'rss':
+            lambda: setup_rss_source(
+                pipe,
+                config,
+                "cli_rss_source",
+                {
+                    "batch_size": 128,  # Example value
+                    "cache_dir": "./.cache/http",
+                    "cooldown_interval": 600,
+                    "enable_cache": enable_cache,
+                    "feed_input": build_rss_urls(),
+                    "interval_secs": interval_secs,
+                    "request_timeout": 2.0,
+                    "run_indefinitely": run_indefinitely,
+                    "stop_after": stop_after,
+                }),
+        'filesystem':
+            lambda: setup_filesystem_source(
+                pipe, config, "cli_filesystem_source", {
+                    "filenames": file_source, "watch": run_indefinitely
+                })
         # Add other source types here in the future
     }
 
