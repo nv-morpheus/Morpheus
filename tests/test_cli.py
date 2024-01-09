@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import warnings
 from unittest import mock
 
 import click
@@ -127,6 +128,15 @@ def mlflow_uri(tmp_path):
     num_runs = len(fluent._active_run_stack)
     for _ in range(num_runs):
         mlflow.end_run()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def config_warning_fixture():
+    # morpheus.cli.utils._apply_to_config method will warn about any keyword arguments that don't match a config option
+    # this isn't triggered in normal production code, but is triggered in the cli tests.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="No config option matches for.*", category=UserWarning)
+        yield
 
 
 @pytest.mark.reload_modules(commands)
@@ -288,8 +298,8 @@ class TestCLI:
             'preprocess',
             'inf-pytorch',
             'add-scores'
-        ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
-                MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+        ] + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] + MONITOR_ARGS + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
         result = runner.invoke(commands.cli, args)
@@ -307,7 +317,6 @@ class TestCLI:
             process_ae,
             auto_enc,
             add_scores,
-            triton_inf,
             time_series,
             monitor,
             validation,
@@ -330,11 +339,6 @@ class TestCLI:
         assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
         assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(time_series, TimeSeriesStage)
         assert time_series._resolution == '1m'

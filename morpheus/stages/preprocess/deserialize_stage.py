@@ -107,8 +107,8 @@ class DeserializeStage(MultiMessageStage):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-
-        if self._build_cpp_node():
+        # TODO(Devin)
+        if self._build_cpp_node:
             out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
             builder.make_edge(input_node, out_node)
         else:

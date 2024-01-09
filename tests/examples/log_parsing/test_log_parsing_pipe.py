@@ -126,7 +126,6 @@ def _run_mocked_pipeline(config: Config, dataset_cudf: DatasetManager, import_mo
 
 
 @pytest.mark.slow
-@pytest.mark.use_python
 @pytest.mark.import_mod([
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'inference.py'),
     os.path.join(TEST_DIRS.examples_dir, 'log_parsing', 'postprocessing.py')

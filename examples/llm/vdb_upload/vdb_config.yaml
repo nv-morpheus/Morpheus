@@ -51,10 +51,11 @@ vdb_pipeline:
           - "https://www.wired.com/feed/tag/ai/latest/rss"
           - "https://blog.google/threat-analysis-group/rss/"
           - "https://intezer.com/feed/"
-        batch_size: 128
+        batch_size: 1024
         cache_dir: "./.cache/http"
         cooldown_interval: 600
         enable_cache: False
+        enable_monitor: True
         interval_secs: 600
         request_timeout: 2.0
         run_indefinitely: true
@@ -66,9 +67,18 @@ vdb_pipeline:
     - type: filesystem
       name: "demo_filesystem_source"
       config:
+        batch_size: 1024
+        enable_monitor: False
+        extractor_config:
+          chunk_size: 512
+          num_threads: 10 # Number of threads to use for file reads
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-2.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-3.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-4.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-5.pdf"
           - "models/datasets/training-data/log-parsing-training-data.csv"
         watch: false
         converters_meta:
@@ -83,13 +93,14 @@ vdb_pipeline:
         namespace: "morpheus_examples_llm"
         module_id: "file_source_pipe"
         module_output_id: "output"
+        batch_size: 1024
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
-          # - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
-          # - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-2.pdf"
-          # - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-3.pdf"
-          # - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-4.pdf"
-          # - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-5.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-2.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-3.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-4.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-5.pdf"
         watch: false
 
   embeddings:
@@ -103,5 +114,5 @@ vdb_pipeline:
   vdb:
     service: "milvus"  # Specify the type of vector database
     uri: "http://localhost:19530"  # URI for connecting to the Vector Database server
-    resource_name: "VDB_GENERAL"  # Identifier for the resource in the vector database
-    recreate: true  # Whether to recreate the resource if it already exists
+    resource_name: "VDB2"  # Identifier for the resource in the vector database
+    recreate: True  # Whether to recreate the resource if it already exists

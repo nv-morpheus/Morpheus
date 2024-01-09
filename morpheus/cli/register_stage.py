@@ -211,6 +211,11 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         else:
             options_kwargs["type"] = annotation
 
+    elif (issubtype(annotation, dict)):
+        options_kwargs["multiple"] = True
+        options_kwargs["type"] = click.Tuple([str, str])
+        options_kwargs["callback"] = lambda ctx, param, value: dict(value)
+
     else:
         options_kwargs["type"] = annotation
 
@@ -265,7 +270,10 @@ def register_stage(command_name: str = None,
 
         nonlocal command_name
 
-        if (not hasattr(stage_class, "_morpheus_registered_stage")):
+        # A subclass of a stage that is already registered with the CLI will already have this attribute set,
+        # but the command name won't match.
+        if (not hasattr(stage_class, "_morpheus_registered_stage")
+                or stage_class._morpheus_registered_stage.name != command_name):
 
             # Determine the command name if it wasnt supplied
             if (command_name is None):

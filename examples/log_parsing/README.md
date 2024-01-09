@@ -110,7 +110,7 @@ PYTHONPATH="examples/log_parsing" \
 morpheus --log_level INFO \
 	--plugin "inference" \
 	--plugin "postprocessing" \
-	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
+	run --num_threads 1 --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \

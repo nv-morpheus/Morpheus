@@ -16,6 +16,7 @@ import logging
 
 import mrc
 
+from morpheus.modules.general.monitor import Monitor
 from morpheus.modules.input.multi_file_source import multi_file_source  # noqa: F401
 from morpheus.modules.preprocess.deserialize import deserialize  # noqa: F401
 from morpheus.utils.module_utils import ModuleInterface
@@ -44,13 +45,15 @@ def _file_source_pipe(builder: mrc.Builder):
 
     # Load the module configuration from the builder
     module_config = builder.get_current_module_config()
+    file_source_config = module_config.get("file_source_config", {})
+    enable_monitor = file_source_config.get("enable_monitor", False)
 
     # Configure and load the multi-file source module
     multi_file_config = {
         "module_id": "multi_file_source",
         "module_name": "multi_file_source",
         "namespace": "morpheus",
-        "source_config": module_config["file_source_config"],
+        "source_config": file_source_config,
     }
 
     # Configure and load the file content extractor module
@@ -88,21 +91,31 @@ def _file_source_pipe(builder: mrc.Builder):
         "module_id": "deserialize",
         "module_name": "deserialize",
         "namespace": "morpheus",
+        "batch_size": file_source_config.get("batch_size", 32),  # Example configuration option
     }
+
+    monitor_1 = Monitor.get_definition("monitor_1", {"description": "FileSourcePipe Transform",
+                                                     "silence_monitors": not enable_monitor})
+    monitor_2 = Monitor.get_definition("monitor_2", {"description": "File Source Deserialize",
+                                                     "silence_monitors": not enable_monitor})
 
     # Load modules
     multi_file_module = load_module(config=multi_file_config, builder=builder)
     file_content_extractor_module = load_module(config=file_content_extractor_config, builder=builder)
     transform_module = load_module(config=transform_config, builder=builder)
+    monitor_1_module = monitor_1.load(builder=builder)
     deserialize_module = load_module(config=deserialize_config, builder=builder)
+    monitor_2_module = monitor_2.load(builder=builder)
 
     # Connect the modules in the pipeline
     builder.make_edge(multi_file_module.output_port("output"), file_content_extractor_module.input_port("input"))
     builder.make_edge(file_content_extractor_module.output_port("output"), transform_module.input_port("input"))
-    builder.make_edge(transform_module.output_port("output"), deserialize_module.input_port("input"))
+    builder.make_edge(transform_module.output_port("output"), monitor_1_module.input_port("input"))
+    builder.make_edge(monitor_1_module.output_port("output"), deserialize_module.input_port("input"))
+    builder.make_edge(deserialize_module.output_port("output"), monitor_2_module.input_port("input"))
 
     # Register the final output of the transformation module
-    builder.register_module_output("output", deserialize_module.output_port("output"))
+    builder.register_module_output("output", monitor_2_module.output_port("output"))
 
 
 FileSourcePipe = ModuleInterface("file_source_pipe", "morpheus_examples_llm")

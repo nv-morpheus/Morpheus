@@ -22,8 +22,8 @@ from morpheus.config import PipelineModes
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
-from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
@@ -299,26 +299,27 @@ def pipeline(num_threads: int,
     monitor_1 = pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
     triton_inference = pipe.add_stage(
-        TritonInferenceStage(config,
-                             model_name=model_name,
-                             server_url=triton_server_url,
-                             force_convert_inputs=True,
-                             use_shared_memory=True))
+       TritonInferenceStage(config,
+                            model_name=model_name,
+                            server_url=triton_server_url,
+                            force_convert_inputs=True,
+                            use_shared_memory=True))
     monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     vector_db = pipe.add_stage(
-        WriteToVectorDBStage(config,
-                             resource_name=vdb_database.get('resource_name', vector_db_resource_name),
-                             resource_kwargs=build_milvus_config(embedding_size=vdb_embeddings.get('size', 384)),
-                             recreate=vdb_database.get('recreate', False),
-                             service=vdb_database.get('service', vector_db_service),
-                             uri=vdb_database.get('uri', vector_db_uri)))
+       WriteToVectorDBStage(config,
+                            resource_name=vdb_database.get('resource_name', vector_db_resource_name),
+                            resource_kwargs=build_milvus_config(embedding_size=vdb_embeddings.get('size', 384)),
+                            recreate=vdb_database.get('recreate', True),
+                            service=vdb_database.get('service', vector_db_service),
+                            uri=vdb_database.get('uri', vector_db_uri)))
 
     monitor_3 = pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
     # Connect the pipeline
     for source_output in vdb_sources:
         if (isolate_embeddings):
+            pass
             pipe.add_edge(source_output, trigger)
         else:
             pipe.add_edge(source_output, nlp_stage)

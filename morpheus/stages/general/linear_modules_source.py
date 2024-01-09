@@ -73,7 +73,7 @@ class LinearModuleSourceStage(SingleOutputSource):
 
     @property
     def name(self) -> str:
-        return self._module_config.get("module_name", "linear_source")
+        return self._unique_name
 
     @property
     def input_count(self) -> int:

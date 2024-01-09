@@ -364,7 +364,9 @@ def file_content_extractor(builder: mrc.Builder):
                         if result:
                             data.extend(result)
 
-        return MessageMeta(df=pd.DataFrame(data))
+        df_final = pd.DataFrame(data)
+
+        return MessageMeta(df=df_final)
 
     node = builder.make_node("text_extractor", ops.map(parse_files), ops.filter(lambda x: x is not None))
     builder.register_module_input("input", node)
