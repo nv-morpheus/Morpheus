@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import typing
+import warnings
 from functools import partial
 
 import mrc
@@ -148,13 +149,18 @@ class PreprocessNLPStage(PreprocessBaseStage):
         """
         text_ser = cudf.Series(x.get_meta(column))
 
-        tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
-                                         do_lower_case=do_lower_case,
-                                         text_ser=text_ser,
-                                         seq_len=seq_len,
-                                         stride=stride,
-                                         truncation=truncation,
-                                         add_special_tokens=add_special_tokens)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="When truncation is not True, the behavior currently differs from HuggingFace.*",
+                category=UserWarning)
+            tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
+                                             do_lower_case=do_lower_case,
+                                             text_ser=text_ser,
+                                             seq_len=seq_len,
+                                             stride=stride,
+                                             truncation=truncation,
+                                             add_special_tokens=add_special_tokens)
         del text_ser
 
         seg_ids = tokenized.segment_ids
