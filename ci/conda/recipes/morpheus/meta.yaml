@@ -63,6 +63,7 @@ outputs:
         - mrc {{ minor_version }}
         - pip
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
+        - pyarrow-hotfix # CVE-2023-47248
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
