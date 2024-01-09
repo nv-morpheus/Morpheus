@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ def make_parse_fn(status: HTTPStatus = HTTPStatus.OK,
     return mock_parse_fn
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("endpoint", ["/test", "test/", "/a/b/c/d"])
 @pytest.mark.parametrize("port", [8088, 9090])
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT"])

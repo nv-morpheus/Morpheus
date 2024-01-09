@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,6 @@ dependencies:
     - git>=2.35.3 # Needed for wildcards on safe.directory
     - glog=0.6
     - gmock>=1.13.0
-    - gputil
     - grpcio
     - gtest>=1.13.0
     - gxx_linux-64=11.2
