@@ -38,6 +38,7 @@ dependencies:
 - flake8
 - gcc_linux-64=11.2
 - git-lfs
+- glog=0.6
 - grpcio
 - gxx_linux-64=11.2
 - include-what-you-use=0.20
@@ -52,13 +53,13 @@ dependencies:
 - ninja=1.10
 - nlohmann_json=3.9
 - nodejs=18.*
-- numpy>=1.21,<1.25
 - numpydoc=1.4
 - nvtabular=23.06
 - pip
 - pluggy=1.0
 - pre-commit
 - protobuf=4.21.*
+- pyarrow-hotfix
 - pybind11-stubgen=0.10
 - pylint>=2.17.4,<2.18
 - pytest
@@ -76,20 +77,18 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy<2.0
-- sysroot_linux-64=2.17
 - tqdm=4
 - tritonclient=2.26
 - typing_utils=0.1
 - ucx=1.14
+- versioneer
 - watchdog=2.1
 - websockets
 - yapf=0.40.1
 - pip:
   - databricks-connect
   - milvus==2.3.2
-  - pyarrow_hotfix
   - pymilvus==2.3.2
   - pytest-kafka==0.6.0
-  - rapids-dependency-file-generator
 name: dev_cuda-118_arch-x86_64_py-310
 

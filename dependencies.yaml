@@ -246,6 +246,7 @@ dependencies:
           - numpy>=1.21,<1.25
           - numpydoc=1.4
           - nvtabular=23.06
+          - pyarrow-hotfix
           - python-confluent-kafka=1.9.2
           - python-graphviz
           - pytorch-cuda
@@ -261,7 +262,6 @@ dependencies:
           - pip:
             - databricks-connect
             - milvus==2.3.2
-            - pyarrow_hotfix
             - pymilvus==2.3.2
 
   test_python_morpheus:
