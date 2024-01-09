@@ -16,9 +16,11 @@ import logging
 
 import mrc
 
+from morpheus.modules.general.monitor import Monitor
 from morpheus.modules.input.rss_source import rss_source  # noqa: F401
 from morpheus.modules.preprocess.deserialize import deserialize  # noqa: F401
-from morpheus.utils.module_utils import load_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 from .schema_transform import schema_transform  # noqa: F401
 from ...common.web_scraper_module import web_scraper  # noqa: F401
@@ -58,6 +60,7 @@ def _rss_source_pipe(builder: mrc.Builder):
         "namespace": "morpheus_examples_llm",
         "web_scraper_config": rss_config.get("web_scraper_config", {}),
     }
+    monitor_0 = Monitor.get_definition("monitor_0", {"description": "RSSSourcePipe Web Scraper"})
 
     transform_config = {
         "module_id": "schema_transform",
@@ -70,6 +73,7 @@ def _rss_source_pipe(builder: mrc.Builder):
             "source": {"from": "link", "dtype": "str", "op_type": "rename"}
         }
     }
+    monitor_1 = Monitor.get_definition("monitor_1", {"description": "RSSSourcePipe Transform"})
 
     deserialize_config = {
         "module_id": "deserialize",
@@ -77,18 +81,27 @@ def _rss_source_pipe(builder: mrc.Builder):
         "namespace": "morpheus",
     }
 
+    monitor_2 = Monitor.get_definition("monitor_2", {"description": "RSSSourcePipe Deserialize"})
+
     # Load modules
     rss_source_module = load_module(config=rss_source_config, builder=builder)
     web_scraper_module = load_module(config=web_scraper_config, builder=builder)
+    monitor_0_module = monitor_0.load(builder=builder)
     transform_module = load_module(config=transform_config, builder=builder)
+    monitor_1_module = monitor_1.load(builder=builder)
     deserialize_module = load_module(config=deserialize_config, builder=builder)
+    monitor_2_module = monitor_2.load(builder=builder)
 
     # Connect the modules: RSS source -> Web scraper -> Schema transform
     builder.make_edge(rss_source_module.output_port("output"), web_scraper_module.input_port("input"))
-    builder.make_edge(web_scraper_module.output_port("output"), transform_module.input_port("input"))
-    builder.make_edge(transform_module.output_port("output"), deserialize_module.input_port("input"))
+    builder.make_edge(web_scraper_module.output_port("output"), monitor_0_module.input_port("input"))
+    builder.make_edge(monitor_0_module.output_port("output"), transform_module.input_port("input"))
+    builder.make_edge(transform_module.output_port("output"), monitor_1_module.input_port("input"))
+    builder.make_edge(monitor_1_module.output_port("output"), deserialize_module.input_port("input"))
+    builder.make_edge(deserialize_module.output_port("output"), monitor_2_module.input_port("input"))
 
     # Register the final output of the transformation module
-    builder.register_module_output("output", deserialize_module.output_port("output"))
+    builder.register_module_output("output", monitor_2_module.output_port("output"))
+
 
 RSSSourcePipe = ModuleInterface("rss_source_pipe", "morpheus_examples_llm")
