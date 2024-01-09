@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import typing
+from unittest import mock
+
 import pytest
 
 from _utils import require_env_variable
@@ -94,3 +98,22 @@ def serpapi_api_key_fixture():
     yield require_env_variable(
         varname="SERPAPI_API_KEY",
         reason="serpapi integration tests require the `SERPAPI_API_KEY` environment variable to be defined.")
+
+
+@pytest.mark.usefixtures("nemollm")
+@pytest.fixture(name="mock_nemollm")
+def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
+
+    # The generate function is a blocking call that returns a future when return_type="async"
+    async def mock_task(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
+        fut.set_result(value)
+
+    def create_future(*args, **kwargs) -> asyncio.Future:
+        event_loop = asyncio.get_event_loop()
+        fut = event_loop.create_future()
+        event_loop.create_task(mock_task(fut, mock.DEFAULT))
+        return fut
+
+    mock_nemollm.generate.side_effect = create_future
+
+    yield mock_nemollm

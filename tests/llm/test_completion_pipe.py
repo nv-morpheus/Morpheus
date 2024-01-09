@@ -82,16 +82,10 @@ def _run_pipeline(config: Config,
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.use_python
-@mock.patch("asyncio.wrap_future")
-@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
-def test_completion_pipe_nemo(
-        mock_asyncio_gather: mock.AsyncMock,
-        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
-        config: Config,
-        mock_nemollm: mock.MagicMock,
-        countries: list[str],
-        capital_responses: list[str]):
-    mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(len(countries))]
+def test_completion_pipe_nemo(config: Config,
+                              mock_nemollm: mock.MagicMock,
+                              countries: list[str],
+                              capital_responses: list[str]):
     mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
     results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
     assert_results(results)
