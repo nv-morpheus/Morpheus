@@ -44,13 +44,15 @@ def _file_source_pipe(builder: mrc.Builder):
 
     # Load the module configuration from the builder
     module_config = builder.get_current_module_config()
+    file_source_config = module_config.get("file_source_config", {})
+    enable_monitor = file_source_config.get("enable_monitor", False)
 
     # Configure and load the multi-file source module
     multi_file_config = {
         "module_id": "multi_file_source",
         "module_name": "multi_file_source",
         "namespace": "morpheus",
-        "source_config": module_config["file_source_config"],
+        "source_config": file_source_config,
     }
 
     # Configure and load the file content extractor module
@@ -58,8 +60,8 @@ def _file_source_pipe(builder: mrc.Builder):
         "module_id": "file_content_extractor",
         "module_name": "file_content_extractor",
         "namespace": "morpheus_examples_llm",
-        "batch_size": module_config.get("batch_size", 32),  # Example configuration option
-        "num_threads": module_config.get("num_threads", 10)  # Example configuration option
+        "batch_size": file_source_config.get("batch_size", 32),  # Example configuration option
+        "num_threads": file_source_config.get("num_threads", 10)  # Example configuration option
     }
 
     # Configure and load the schema transformation module
@@ -74,15 +76,18 @@ def _file_source_pipe(builder: mrc.Builder):
             "source": {"dtype": "str", "op_type": "select"}
         }
     }
-    monitor_1 = Monitor.get_definition("monitor_1", {"description": "FileSourcePipe Transform"})
 
     deserialize_config = {
         "module_id": "deserialize",
         "module_name": "deserialize",
         "namespace": "morpheus",
+        "batch_size": file_source_config.get("batch_size", 32),  # Example configuration option
     }
 
-    monitor_2 = Monitor.get_definition("monitor_2", {"description": "File Source Deserialize"})
+    monitor_1 = Monitor.get_definition("monitor_1", {"description": "FileSourcePipe Transform",
+                                                     "silence_monitors": not enable_monitor})
+    monitor_2 = Monitor.get_definition("monitor_2", {"description": "File Source Deserialize",
+                                                     "silence_monitors": not enable_monitor})
 
     # Load modules
     multi_file_module = load_module(config=multi_file_config, builder=builder)

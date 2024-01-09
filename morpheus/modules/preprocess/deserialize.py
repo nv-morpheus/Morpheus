@@ -188,7 +188,7 @@ def _deserialize(builder: mrc.Builder):
     message_type = module_config.get('message_type', "MultiMessage")
     task_type = module_config.get('task_type', None)
     task_payload = module_config.get('task_payload', None)
-    batch_size = module_config.get('batch_size', 1)
+    batch_size = module_config.get('batch_size', 2048)
     max_concurrency = module_config.get('max_concurrency', 1)  # TODO(Devin): Unused
     should_log_timestamp = module_config.get('should_log_timestamp', True)  # TODO(Devin): Unused
 
