@@ -55,6 +55,7 @@ files:
       arch: [x86_64]
     includes:
       - examples
+      - runtime
 
   build:
     output: none
