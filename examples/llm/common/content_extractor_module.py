@@ -85,7 +85,7 @@ class CsvTextConverter(BaseConverter):
 
         docs: list[Document] = []
         if meta is None:
-            text_column_name = "page_content"
+            text_column_name = "content"
         else:
             text_column_name = meta["csv"]["text_column_name"]
 
