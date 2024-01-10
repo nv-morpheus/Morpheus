@@ -149,38 +149,138 @@ To retrieve models from LFS run the following:
 
 ### Running the Morpheus Pipeline
 
-The top level entrypoint to each of the LLM example pipelines is `examples/llm/main.py`. This script accepts a set
-of Options and a Pipeline to run. Baseline options are below, and for the purposes of this document we'll assume a
-pipeline option of `vdb_upload`:
+The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector database (VDB) settings.
 
 ### Run example:
 
+Usage with CLI-Defined Sources:
+
+*Example: Defining an RSS Source via CLI*
 ```bash
-python examples/llm/main.py [OPTIONS...] vdb_upload [ACTION] --model_name all-MiniLM-L6-v2
+python examples/llm/main.py vdb_upload \
+  --source_type rss \
+  --interval_secs 300 \
+  --rss_request_timeout_sec 5.0 \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
 ```
 
-### Options:
+*Example: Defining a Filesystem Source via CLI*
+```bash
+python examples/llm/main.py vdb_upload \
+  --source_type filesystem \
+  --file_source "/path/to/files1" "/path/to/files2" \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
 
-- `--log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]`
-    - **Description**: Specifies the logging level.
-    - **Default**: `INFO`
+*Example: Combining RSS and Filesystem Sources via CLI*
+```bash
+python examples/llm/main.py vdb_upload \
+  --source_type rss filesystem \
+  --file_source "/path/to/files" \
+  --interval_secs 600 \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
 
-- `--use_cpp BOOLEAN`
-    - **Description**: Opt to use C++ node and message types over python. Recommended only in case of bugs.
-    - **Default**: `False`
+*Example: Defining sources via a config file*
+Note: see `vdb_config.yaml` for a full configuration example.
 
-- `--version`
-    - **Description**: Display the script's current version.
+`vdb_config.yaml`
+```yaml
+vdb_pipeline:
+  sources:
+    - type: filesystem
+      name: "demo_filesystem_source"
+      config:
+        batch_size: 1024
+        enable_monitor: False
+        extractor_config:
+          chunk_size: 512
+          num_threads: 10 # Number of threads to use for file reads
+        filenames:
+          - "/path/to/data/*"
+        watch: false
+```
+```bash
+python examples/llm/main.py vdb_upload \
+  --vdb_config_path "./vdb_config.yaml"
+```
 
-- `--help`
-    - **Description**: Show the help message with options and commands details.
+## Morpheus Pipeline Configuration Schema
 
-### Commands:
+The Morpheus Pipeline configuration allows for detailed specification of various pipeline stages, including source definitions (like RSS feeds and filesystem paths), embedding configurations, and vector database settings.
 
-- ... other pipelines ...
-- `vdb_upload`
+### Sources Configuration
 
----
+The `sources` section allows you to define multiple data sources of different types: RSS, filesystem, and custom.
+
+#### RSS Source Configuration
+
+- **type**: `rss`
+- **name**: A unique name for the source.
+- **config**:
+    - **feed_input**: List of URLs for RSS feeds.
+    - **batch_size**: Number of feed items to process in a batch.
+    - **cache_dir**: Path to the directory for caching feed data.
+    - **cooldown_interval**: Time in seconds between successive fetches.
+    - **enable_cache**: Boolean to enable or disable caching.
+    - **enable_monitor**: Boolean to enable or disable monitoring.
+    - **interval_secs**: Time in seconds between feed checks.
+    - **request_timeout**: Timeout in seconds for RSS feed requests.
+    - **run_indefinitely**: Boolean to keep the process running continuously.
+    - **stop_after**: Stop after processing a certain number of feed items.
+    - **web_scraper_config**:
+        - **chunk_size**: Size of content chunks for processing.
+        - **enable_cache**: Boolean to enable or disable web scraper caching.
+
+#### Filesystem Source Configuration
+
+- **type**: `filesystem`
+- **name**: A unique name for the source.
+- **config**:
+    - **batch_size**: Number of files to process in a batch.
+    - **enable_monitor**: Boolean to enable or disable monitoring.
+    - **extractor_config**:
+        - **chunk_size**: Size of content chunks for processing.
+        - **num_threads**: Number of threads for file reads.
+    - **filenames**: List of file paths to be processed.
+    - **watch**: Boolean to continuously watch the file path for new files.
+
+#### Custom Source Configuration
+
+- **type**: `custom`
+- **name**: A unique name for the source.
+- **config**:
+    - **config_name_mapping**: Key name for the source configuration.
+    - **namespace**: Namespace identifier.
+    - **module_id**: Module identifier for the source.
+    - **module_output_id**: Output identifier for the module.
+    - **batch_size**: Number of items to process in a batch.
+    - **filenames**: List of file paths to be processed.
+    - **arbitrary config params for custom module**:
+      - **param1**: Value for param1.
+      - **param2**: Value for param2.
+
+### Embeddings Configuration
+
+- **model_name**: Name of the embedding model (e.g., `all-MiniLM-L6-v2`).
+- **model_kwargs**: Keyword arguments for the model configuration.
+    - **device**: Device to run the model on (e.g., `"cuda"`).
+- **encode_kwargs**: Keyword arguments for the encoding process.
+    - **normalize_embeddings**: Boolean to normalize embeddings.
+- **size**: Size of the embedding vectors.
+
+### Vector Database (VDB) Configuration
+
+- **embedding_size**: Size of the embeddings to store in the vector database.
+- **recreate**: Boolean to recreate the resource if it exists.
+- **resource_name**: Identifier for the resource in the vector database.
+- **service**: Type of vector database service (e.g., `"milvus"`).
+- **uri**: URI for connecting to the Vector Database server.
 
 ## Options for `vdb_upload` Command
 
