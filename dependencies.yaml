@@ -30,7 +30,6 @@ files:
       - test_python_morpheus
       - docs
       - cudatoolkit
-      - runtime
       - checks
 
   dev:
@@ -47,8 +46,15 @@ files:
       - test_python_morpheus
       - docs
       - cudatoolkit
-      - runtime
       - checks
+
+  examples:
+    output: conda
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - examples
 
   build:
     output: none
