@@ -107,13 +107,12 @@ The following command line is the entire command to build and launch the pipelin
 
 From the  Morpheus repo root directory, run:
 ```bash
-export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 1024 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil --columns_file=${MORPHEUS_ROOT}/morpheus/data/columns_fil.txt \
+   pipeline-fil --columns_file=data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
