@@ -65,9 +65,9 @@ class CsvTextConverter(BaseConverter):
         file_path:
             Path to the CSV file you want to convert.
         meta:
-            A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
+            Optional dictionary of metadata key-value pairs that you want to append to the returned document.
         encoding:
-            Specifies the file encoding. It's optional. The default value is `UTF-8`.
+            Optional file encoding format, default: `UTF-8`.
         id_hash_keys:
             Generates the document ID from a custom list of strings that refer to the document's attributes.
         remove_numeric_tables: bool
@@ -85,7 +85,7 @@ class CsvTextConverter(BaseConverter):
 
         docs: list[Document] = []
         if meta is None:
-            text_column_name = "page_content"
+            text_column_name = "content"
         else:
             text_column_name = meta["csv"]["text_column_name"]
 
