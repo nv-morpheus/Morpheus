@@ -16,6 +16,7 @@ import io
 import logging
 import typing
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 
 import fsspec
@@ -33,6 +34,13 @@ from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FileMeta:
+    file_path: str
+    file_name: str
+    file_type: str
 
 
 class CsvTextConverter(BaseConverter):
@@ -103,31 +111,38 @@ class CsvTextConverter(BaseConverter):
         return docs
 
 
-def get_file_extension(file_name: str) -> str:
+def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
     """
-    Extract the file extension from the given file name.
+    Extract file metadata from the given open file.
 
     Parameters
     ----------
-    file_name: str
-        The name of the file.
+    open_file: fsspec.core.OpenFile
+        OpenFile object
 
     Returns
     -------
-    str
-        The file extension.
+    FileMeta
+        Returns FileMeta instance.
     """
-    split_result = file_name.lower().rsplit('.', 1)
+    try:
+        file_path = open_file.path
+        file_name = file_path.split('/')[-1]
+        split_result = file_name.lower().rsplit('.', 1)
 
-    if len(split_result) > 1:
-        _, file_extension = split_result
-    else:
-        file_extension = "txt"
+        if len(split_result) > 1:
+            _, file_type = split_result
+        else:
+            file_type = "none"
 
-    return file_extension
+        return FileMeta(file_path=file_path, file_name=file_name, file_type=file_type)
+
+    except Exception as e:
+        logger.error(f"Error getting file metadata for {open_file.path}: {e}")
+        raise
 
 
-def process_content(docs: list[Document], file_path: str, chunk_size: int, chunk_overlap: int) -> list[dict]:
+def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, chunk_overlap: int) -> list[dict]:
     """
     Processes the content of a file and splits it into chunks.
 
@@ -135,6 +150,8 @@ def process_content(docs: list[Document], file_path: str, chunk_size: int, chunk
     ----------
     docs : list[Document]
         List of documents.
+    file_meta: FileMeta
+        FileMeta parsed information of a file path.
     chunk_size : int
         Size of each chunk.
     chunk_overlap : int
@@ -151,8 +168,6 @@ def process_content(docs: list[Document], file_path: str, chunk_size: int, chunk
                                                    length_function=len)
 
     processed_data = []
-    file_name = file_path.split('/')[-1]
-    file_extension = get_file_extension(file_name=file_name)
 
     for document in docs:
         try:
@@ -160,11 +175,14 @@ def process_content(docs: list[Document], file_path: str, chunk_size: int, chunk
 
             for chunk in split_text:
                 processed_data.append({
-                    'title': file_name, 'source': f"{file_extension}:{file_path}", 'summary': 'none', 'content': chunk
+                    'title': file_meta.file_name,
+                    'source': f"{file_meta.file_type}:{file_meta.file_path}",
+                    'summary': 'none',
+                    'content': chunk
                 })
 
         except Exception as e:
-            logger.error(f"Error processing file {file_path}: {e}")
+            logger.error(f"Error processing file {file_meta.file_path}: {e}")
             continue
 
     return processed_data
@@ -188,6 +206,9 @@ def file_content_extractor(builder: mrc.Builder):
     The `module_config` should contain:
     - 'batch_size': int, the number of files to process in parallel.
     - 'num_threads': int, the number of threads to use for parallel file reading.
+    - 'chunk_size' : int, size of each chunk of document.
+    - 'chunk_overlap' : int, overlap between consecutive chunks.
+    - 'converters_meta' : dict, converters configuration.
 
     The function reads files in parallel but processes the content serially within each batch to prevent CPU contention.
 
@@ -209,7 +230,8 @@ def file_content_extractor(builder: mrc.Builder):
         "pdf": PDFToTextConverter(),
         "csv": CsvTextConverter(),
         "docx": DocxToTextConverter(valid_languages=["de", "en"]),
-        "txt": TextConverter()
+        "txt": TextConverter(),
+        "none": TextConverter()
     }
 
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
@@ -217,20 +239,28 @@ def file_content_extractor(builder: mrc.Builder):
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for i in range(0, len(open_files), batch_size):
                 batch = open_files[i:i + batch_size]
-
                 futures = []
+                files_meta = []
                 for open_file in batch:
-                    file_path = open_file.path
-                    file_name = file_path.split('/')[-1]
-                    file_extension = get_file_extension(file_name=file_name)
-                    futures.append(executor.submit(converters[file_extension].convert, file_path, converters_meta))
+                    try:
+                        file_meta: FileMeta = get_file_meta(open_file=open_file)
+                        futures.append(
+                            executor.submit(converters[file_meta.file_type].convert,
+                                            file_meta.file_path,
+                                            converters_meta))
+                        files_meta.append(file_meta)
+                    except Exception as e:
+                        logger.error(f"Error processing file {open_file.path}: {e}")
 
-                for file, future in zip(batch, futures):
-                    docs = future.result()
-                    if docs:
-                        result = process_content(docs, file.path, chunk_size, chunk_overlap)
-                        if result:
-                            data.extend(result)
+                for file_meta, future in zip(files_meta, futures):
+                    try:
+                        docs = future.result()
+                        if docs:
+                            result = process_content(docs, file_meta, chunk_size, chunk_overlap)
+                            if result:
+                                data.extend(result)
+                    except Exception as e:
+                        logger.error(f"Error processing file {file_meta.file_path}: {e}")
 
         df_final = pd.DataFrame(data)
 
