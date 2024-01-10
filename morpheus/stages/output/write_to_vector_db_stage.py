@@ -30,6 +30,9 @@ from morpheus.service.vdb.vector_db_service import VectorDBService
 logger = logging.getLogger(__name__)
 
 
+# TODO(Bhargav): Add accumulator functionality and related config options
+# TODO(Bhargav): Add support for dynamic 'collection' target check for CMs, such that if 'collection' is set we use it
+#               instead of the default collection name.
 class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     """
     Writes messages to a Vector Database.
@@ -129,6 +132,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
 
             if isinstance(msg, ControlMessage):
                 df = msg.payload().df
+                # For control message, check if we have a collection tag
             elif isinstance(msg, MultiResponseMessage):
                 df = msg.get_meta()
                 if df is not None and not df.empty:
@@ -139,11 +143,14 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
             else:
                 raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
 
-            return df
+            return df # Return df, collection_tag or df, None
 
         def on_data(msg):
             try:
                 df = extract_df(msg)
+                # df, collection_name = extract_df(msg)
+                # Call accumulator function, progress if we have enough data or our timeout has elapsed
+                # Need a different accumulator for each collection_name
 
                 if df is not None and not df.empty:
                     result = self._service.insert_dataframe(name=self._resource_name, df=df, **self._resource_kwargs)

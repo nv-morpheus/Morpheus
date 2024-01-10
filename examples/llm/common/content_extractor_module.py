@@ -224,6 +224,7 @@ def file_content_extractor(builder: mrc.Builder):
     chunk_size = module_config.get("chunk_size", 1024)  # Example default value
     chunk_overlap = module_config.get("chunk_overlap", chunk_size // 10)
     num_threads = module_config.get("num_threads", 10)
+    # TODO(Bhargav): Add support for overriding chunk_size and chunk_overlap per file type.
     converters_meta = module_config.get("converters_meta", {})
 
     converters = {

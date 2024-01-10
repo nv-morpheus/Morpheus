@@ -153,6 +153,14 @@ The top-level entry point for each of the LLM example pipelines is examples/llm/
 
 ### Run example:
 
+Default example usage, with pre-defined RSS source
+```bash
+python examples/llm/main.py vdb_upload \
+  --enable_cache \
+  --enable_monitors \
+  --embedding_model_name all-MiniLM-L6-v2
+```
+
 Usage with CLI-Defined Sources:
 
 *Example: Defining an RSS Source via CLI*
@@ -235,6 +243,7 @@ The `sources` section allows you to define multiple data sources of different ty
     - **stop_after**: Stop after processing a certain number of feed items.
     - **web_scraper_config**:
         - **chunk_size**: Size of content chunks for processing.
+        - **chunk_overlap**: Number of overlapping characters between consecutive chunks.
         - **enable_cache**: Boolean to enable or disable web scraper caching.
 
 #### Filesystem Source Configuration
@@ -246,8 +255,12 @@ The `sources` section allows you to define multiple data sources of different ty
     - **enable_monitor**: Boolean to enable or disable monitoring.
     - **extractor_config**:
         - **chunk_size**: Size of content chunks for processing.
+        - **chunk_overlap**: Number of overlapping characters between consecutive chunks.
         - **num_threads**: Number of threads for file reads.
     - **filenames**: List of file paths to be processed.
+    - **meta_converters**:
+        - **csv**:
+          - **text_column_name**: "raw" # Requires same schema for all CSV files.
     - **watch**: Boolean to continuously watch the file path for new files.
 
 #### Custom Source Configuration

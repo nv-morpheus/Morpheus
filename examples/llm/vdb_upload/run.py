@@ -73,6 +73,12 @@ def run():
     type=str,
     help='List of file sources/paths to be processed.')
 @click.option(
+    '--feed_inputs',
+    multiple=True,
+    default=[],
+    type=str,
+    help='List of RSS source feeds to process.')
+@click.option(
     "--interval_secs",
     default=600,
     type=click.IntRange(min=1),
@@ -175,7 +181,7 @@ def run():
 def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate_embeddings, embedding_model_name,
              enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
              vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
-             rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, **kwargs):
+             rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, feed_inputs, **kwargs):
     final_config = {}
 
     # Initialize CLI sources config
@@ -193,7 +199,7 @@ def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate
                     "cooldown_interval_sec": interval_secs,
                     "enable_cache": enable_cache,
                     "enable_monitor": enable_monitors,
-                    "feed_input": build_rss_urls(),
+                    "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
                     "interval_sec": interval_secs,
                     "request_timeout_sec": rss_request_timeout_sec,  # Assuming default request timeout
                     "run_indefinitely": run_indefinitely,

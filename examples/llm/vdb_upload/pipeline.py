@@ -29,7 +29,7 @@ from ..common.utils import build_milvus_config
 
 logger = logging.getLogger(__name__)
 
-
+# TODO(Devin): Look into making this a morpheus.llm function call (the whole pipeline)
 def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_config: typing.Dict,
              embeddings_config: typing.Dict) -> float:
     """
@@ -77,6 +77,7 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
     if (pipeline_config.get('isolate_embeddings', False)):
         trigger = pipe.add_stage(TriggerStage(config))
 
+    # TODO(Devin) : Add support for alternative vocabulary configurations
     nlp_stage = pipe.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file="data/bert-base-uncased-hash.txt",
@@ -87,6 +88,7 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
 
     monitor_1 = pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
+    # TODO(Devin): Make this more configurable + test with multiple embedding model types
     triton_inference = pipe.add_stage(
         TritonInferenceStage(config,
                              model_name=embedding_model_name,
@@ -95,6 +97,7 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
                              use_shared_memory=True))
     monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
+    # TODO(Bhargav): Convert WriteToVectorDBStage to module + retain backwards compatibility.
     vector_db = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name=vdb_config.get('resource_name'),

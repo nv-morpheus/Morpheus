@@ -28,6 +28,7 @@ from ...common.web_scraper_module import web_scraper  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
+# TODO(): Improve module documentation
 @register_module("rss_source_pipe", "morpheus_examples_llm")
 def _rss_source_pipe(builder: mrc.Builder):
     """

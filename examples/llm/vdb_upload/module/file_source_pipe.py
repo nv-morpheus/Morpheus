@@ -29,6 +29,7 @@ from .schema_transform import schema_transform  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
+# TODO(): Improve module documentation
 @register_module("file_source_pipe", "morpheus_examples_llm")
 def _file_source_pipe(builder: mrc.Builder):
     """
@@ -93,6 +94,8 @@ def _file_source_pipe(builder: mrc.Builder):
         "namespace": "morpheus",
         "batch_size": file_source_config.get("batch_size", 32),  # Example configuration option
     }
+
+    # TODO(Devin): Create CMTagger to set metadata items
 
     monitor_1 = Monitor.get_definition("monitor_1", {"description": "FileSourcePipe Transform",
                                                      "silence_monitors": not enable_monitor})
