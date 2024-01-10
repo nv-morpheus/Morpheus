@@ -138,7 +138,7 @@ def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
         return FileMeta(file_path=file_path, file_name=file_name, file_type=file_type)
 
     except Exception as e:
-        logger.error(f"Error getting file metadata for {open_file.path}: {e}")
+        logger.error(f"Error retrieving file metadata for {open_file.path}: {e}")
         raise
 
 
@@ -182,7 +182,7 @@ def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, 
                 })
 
         except Exception as e:
-            logger.error(f"Error processing file {file_meta.file_path}: {e}")
+            logger.error(f"Error processing file {file_meta.file_path} content: {e}")
             continue
 
     return processed_data
@@ -253,14 +253,11 @@ def file_content_extractor(builder: mrc.Builder):
                         logger.error(f"Error processing file {open_file.path}: {e}")
 
                 for file_meta, future in zip(files_meta, futures):
-                    try:
-                        docs = future.result()
-                        if docs:
-                            result = process_content(docs, file_meta, chunk_size, chunk_overlap)
-                            if result:
-                                data.extend(result)
-                    except Exception as e:
-                        logger.error(f"Error processing file {file_meta.file_path}: {e}")
+                    docs = future.result()
+                    if docs:
+                        result = process_content(docs, file_meta, chunk_size, chunk_overlap)
+                        if result:
+                            data.extend(result)
 
         df_final = pd.DataFrame(data)
 
