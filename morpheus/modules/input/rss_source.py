@@ -61,7 +61,7 @@ def rss_source(builder: mrc.Builder):
 
     # Required configuration keys for RSSController
     required_config_keys = ['feed_input', 'run_indefinitely', 'batch_size',
-                            'enable_cache', 'cache_dir', 'cooldown_interval', 'request_timeout']
+                            'enable_cache', 'cache_dir', 'cooldown_interval_sec', 'request_timeout_sec']
 
     # Validate that all required configuration keys are present
     missing_keys = [key for key in required_config_keys if key not in rss_config]
@@ -75,8 +75,8 @@ def rss_source(builder: mrc.Builder):
         batch_size=rss_config['batch_size'],
         enable_cache=rss_config['enable_cache'],
         cache_dir=rss_config['cache_dir'],
-        cooldown_interval=rss_config['cooldown_interval'],
-        request_timeout=rss_config['request_timeout']
+        cooldown_interval=rss_config['cooldown_interval_sec'],
+        request_timeout=rss_config['request_timeout_sec']
     )
 
     stop_requested = False

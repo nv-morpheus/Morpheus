@@ -94,7 +94,8 @@ vdb_pipeline:
     size: 384
 
   vdb:
+    embedding_size: 384  # Size of the embeddings to store in the vector database
+    recreate: True  # Whether to recreate the resource if it already exists
+    resource_name: "VDB2"  # Identifier for the resource in the vector database
     service: "milvus"  # Specify the type of vector database
     uri: "http://localhost:19530"  # URI for connecting to the Vector Database server
-    resource_name: "VDB2"  # Identifier for the resource in the vector database
-    recreate: True  # Whether to recreate the resource if it already exists
