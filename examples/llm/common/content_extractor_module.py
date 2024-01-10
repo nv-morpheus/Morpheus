@@ -92,7 +92,7 @@ class CsvTextConverter(BaseConverter):
         for path in file_path:
             df = pd.read_csv(path, encoding=encoding)
             if len(df.columns) == 0 or (text_column_name not in df.columns):
-                raise ValueError("The CSV file must either include a 'page_content' column or have a "
+                raise ValueError("The CSV file must either include a 'content' column or have a "
                                  "column specified in the meta configuraton with key 'text_column_name'.")
 
             df.fillna(value="", inplace=True)
