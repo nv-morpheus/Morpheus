@@ -190,7 +190,7 @@ dependencies:
           - sphinx_rtd_theme
           - numpydoc=1.4
           - pluggy=1.0
-          - &click click >=8
+          - &click click>=8
 
   benchmark_cpp:
     common:

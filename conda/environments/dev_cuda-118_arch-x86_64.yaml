@@ -16,7 +16,6 @@ dependencies:
 - boost-cpp=1.82
 - breathe=4.34.0
 - clangdev=16
-- click >=8
 - click>=8
 - cmake=3.25
 - cuda-cudart-dev=11.8
