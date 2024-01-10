@@ -63,7 +63,7 @@ python run.py \
     --num_threads 1 \
     --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt \
+    --model_vocab_hash_file=data/bert-base-cased-hash.txt \
     --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_seq_length=256 \
     --model_name log-parsing-onnx \
