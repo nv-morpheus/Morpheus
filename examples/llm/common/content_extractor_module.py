@@ -23,7 +23,6 @@ import mrc
 import mrc.core.operators as ops
 import pandas as pd
 from haystack import Document
-from haystack import Pipeline
 from haystack.nodes import DocxToTextConverter
 from haystack.nodes import PDFToTextConverter
 from haystack.nodes import TextConverter
@@ -104,111 +103,6 @@ class CsvTextConverter(BaseConverter):
         return docs
 
 
-def _haystack_converter_wrapper(converter, file, meta):
-    """
-    Wrapper for the text converters.
-
-    Parameters
-    ----------
-    converter: Converter
-        The text converter instance.
-    file: str | list[str]
-        Path to the text files you want to convert.
-    meta: typing.Optional[dict]
-        A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
-
-    Returns
-    -------
-    dict
-        Returns text documents in a dictionary.
-    """
-    pipe = Pipeline()
-
-    if isinstance(file, str):
-        file = [file]
-
-    pipe.add_node(component=converter, name=f"{converter.__class__.__name__}", inputs=["File"])
-    docs_dict = pipe.run_batch(file_paths=file, meta=meta)
-    return docs_dict
-
-
-def docx2text_converter(file: str | list[str], meta: typing.Optional[dict]) -> dict:
-    """
-    Load a DOCX file and convert it to Document.
-
-    Parameters
-    ----------
-    file: str | list[str]
-        Path to the docx files you want to convert.
-    meta: typing.Optional[dict]
-        A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
-
-    Returns
-    -------
-    dict
-        Returns text documents in a dictionary.
-    """
-    converter = DocxToTextConverter(valid_languages=["de", "en"])
-    return _haystack_converter_wrapper(converter, file, meta)
-
-
-def pdf2text_converter(file: str | list[str], meta: typing.Optional[dict]):
-    """
-    Load a PDF file or files and convert it to Document.
-
-    Parameters
-    ----------
-    file: str | list[str]
-        Path to the pdf files you want to convert.
-    meta: typing.Optional[dict]
-        A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
-
-    Returns
-    -------
-    dict
-        Returns text documents in a dictionary.
-    """
-    return _haystack_converter_wrapper(PDFToTextConverter(), file, meta)
-
-
-def csv_text_converter(file: str | list[str], meta: typing.Optional[dict]):
-    """
-    Load a csv file or files and convert it to Documents.
-
-    Parameters
-    ----------
-    file: str | list[str]
-        Path to the pdf files you want to convert.
-    meta: typing.Optional[dict]
-        A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
-
-    Returns
-    -------
-    dict
-        Returns text documents in a dictionary.
-    """
-    return _haystack_converter_wrapper(CsvTextConverter(), file, meta)
-
-
-def text_converter(file: str | list[str], meta: typing.Optional[dict]):
-    """
-    Load a text file or files and convert it to Documents.
-
-    Parameters
-    ----------
-    file: str | list[str]
-        Path to the text files you want to convert.
-    meta: typing.Optional[dict]
-        A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
-
-    Returns
-    -------
-    dict
-        Returns text documents in a dictionary.
-    """
-    return _haystack_converter_wrapper(TextConverter(), file, meta)
-
-
 def get_file_extension(file_name: str) -> str:
     """
     Extract the file extension from the given file name.
@@ -233,42 +127,14 @@ def get_file_extension(file_name: str) -> str:
     return file_extension
 
 
-def segregate_files_by_extension(open_files: list[fsspec.core.OpenFile]) -> dict[str, list[str]]:
-    """
-    Segregate a list of open files based on their file extensions.
-
-    Parameters
-    ----------
-    open_files: list[fsspec.core.OpenFile]
-        List of open files.
-
-    Returns
-    -------
-    dict[str, list[str]]
-        A dictionary where keys are file extensions and values are lists of file paths with that extension.
-    """
-    segregated_files = {}
-
-    for open_file in open_files:
-        file_path = open_file.path
-        file_extension = get_file_extension(file_name=file_path)
-
-        # Add the file to the corresponding list based on the extension
-        if file_extension not in segregated_files:
-            segregated_files[file_extension] = []
-        segregated_files[file_extension].append(file_path)
-
-    return segregated_files
-
-
-def process_content(docs_dict: dict, chunk_size: int, chunk_overlap: int) -> list[dict]:
+def process_content(docs: list[Document], file_path: str, chunk_size: int, chunk_overlap: int) -> list[dict]:
     """
     Processes the content of a file and splits it into chunks.
 
     Parameters
     ----------
-    docs_dict : dict[str, typing.Any]
-        Dictionary that contains documents and meta information.
+    docs : list[Document]
+        List of documents.
     chunk_size : int
         Size of each chunk.
     chunk_overlap : int
@@ -284,17 +150,13 @@ def process_content(docs_dict: dict, chunk_size: int, chunk_overlap: int) -> lis
                                                    chunk_overlap=chunk_overlap,
                                                    length_function=len)
 
-    documents: Document = docs_dict["documents"]
-    file_paths = docs_dict["file_paths"]
-
     processed_data = []
+    file_name = file_path.split('/')[-1]
+    file_extension = get_file_extension(file_name=file_name)
 
-    for document, file_path in zip(documents, file_paths):
+    for document in docs:
         try:
             split_text = text_splitter.split_text(document.content)
-            processed_data = []
-            file_name = file_path.split('/')[-1]
-            file_extension = get_file_extension(file_name=file_name)
 
             for chunk in split_text:
                 processed_data.append({
@@ -344,23 +206,29 @@ def file_content_extractor(builder: mrc.Builder):
     converters_meta = module_config.get("converters_meta", {})
 
     converters = {
-        "pdf": pdf2text_converter, "csv": csv_text_converter, "docx": docx2text_converter, "txt": text_converter
+        "pdf": PDFToTextConverter(),
+        "csv": CsvTextConverter(),
+        "docx": DocxToTextConverter(valid_languages=["de", "en"]),
+        "txt": TextConverter()
     }
 
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
         data = []
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for i in range(0, len(open_files), batch_size):
-                segregated_batch = segregate_files_by_extension(open_files[i:i + batch_size])
-                futures = []
-                for extension, files in segregated_batch.items():
-                    converter_func = converters.get(extension, text_converter)
-                    futures.append(executor.submit(converter_func, files, converters_meta))
+                batch = open_files[i:i + batch_size]
 
-                for future in futures:
-                    docs_dict = future.result()
-                    if docs_dict:
-                        result = process_content(docs_dict, chunk_size, chunk_overlap)
+                futures = []
+                for open_file in batch:
+                    file_path = open_file.path
+                    file_name = file_path.split('/')[-1]
+                    file_extension = get_file_extension(file_name=file_name)
+                    futures.append(executor.submit(converters[file_extension].convert, file_path, converters_meta))
+
+                for file, future in zip(batch, futures):
+                    docs = future.result()
+                    if docs:
+                        result = process_content(docs, file.path, chunk_size, chunk_overlap)
                         if result:
                             data.extend(result)
 
