@@ -67,7 +67,7 @@ class CsvTextConverter(BaseConverter):
         meta:
             Optional dictionary of metadata key-value pairs that you want to append to the returned document.
         encoding:
-            Specifies the file encoding. It's optional. The default value is `UTF-8`.
+            Optional file encoding format, default: `UTF-8`.
         id_hash_keys:
             Generates the document ID from a custom list of strings that refer to the document's attributes.
         remove_numeric_tables: bool
