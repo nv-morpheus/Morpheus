@@ -341,7 +341,7 @@ def file_content_extractor(builder: mrc.Builder):
     chunk_size = module_config.get("chunk_size", 1024)  # Example default value
     chunk_overlap = module_config.get("chunk_overlap", chunk_size // 10)
     num_threads = module_config.get("num_threads", 10)
-    converters_meta = module_config.get("converters_meta", None)
+    converters_meta = module_config.get("converters_meta", {})
 
     converters = {
         "pdf": pdf2text_converter, "csv": csv_text_converter, "docx": docx2text_converter, "txt": text_converter
