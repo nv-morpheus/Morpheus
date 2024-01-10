@@ -11,10 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 import os
 
 import click
+import yaml
+
+from ..common.utils import build_rss_urls
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +29,25 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
     return validate_service(service_name=value)
 
 
+def merge_configs(file_config, cli_config):
+    """Merge two dictionaries, giving priority to the second one for overlapping keys."""
+    merged_config = file_config.copy()
+    merged_config.update({k: v for k, v in cli_config.items() if v is not None})
+    return merged_config
+
+
 @click.group(name=__name__)
 def run():
     pass
 
 
 @run.command()
+@click.option(
+    "--content_chunking_size",
+    default=512,  # Set a sensible default value
+    type=click.IntRange(min=1),  # Ensure that only positive integers are valid
+    help="The size of content chunks for processing."
+)
 @click.option(
     "--embedding_size",
     default=384,
@@ -42,6 +59,12 @@ def run():
     is_flag=True,
     default=False,
     help="Enable caching of RSS feed request data.",
+)
+@click.option(
+    "--enable_monitors",
+    is_flag=True,
+    default=False,
+    help="Enable or disable monitor functionality."
 )
 @click.option(
     '--file_source',
@@ -74,7 +97,7 @@ def run():
     help="Max batch size to use for the model",
 )
 @click.option(
-    "--model_name",
+    "--embedding_model_name",
     required=True,
     default='all-MiniLM-L6-v2',
     help="The name of the model that is deployed on Triton server",
@@ -99,6 +122,12 @@ def run():
     help="Indicates whether the process should run continuously.",
 )
 @click.option(
+    "--rss_request_timeout_sec",
+    default=2.0,  # Set a default value, adjust as needed
+    type=click.FloatRange(min=0.0),  # Ensure that only non-negative floats are valid
+    help="Timeout in seconds for RSS feed requests."
+)
+@click.option(
     "--source_type",
     multiple=True,
     type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
@@ -119,7 +148,7 @@ def run():
     help="Triton server URL.",
 )
 @click.option(
-    "--vdb_config",
+    "--vdb_config_path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
     default=None,
     help="Path to a YAML configuration file.",
@@ -143,10 +172,102 @@ def run():
     default="http://localhost:19530",
     help="URI for connecting to Vector Database server.",
 )
-def pipeline(**kwargs):
-    from .pipeline import pipeline as _pipeline
+def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate_embeddings, embedding_model_name,
+             enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
+             vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
+             rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, **kwargs):
+    final_config = {}
 
-    return _pipeline(**kwargs)
+    # Initialize CLI sources config
+    cli_source_config = {}
+
+    # Create RSS source entry if 'rss' is specified in the source_type
+    for source in set(source_type):
+        if (source == 'rss'):
+            cli_source_config['rss'] = {
+                'type': 'rss',
+                'name': 'rss-cli',
+                'config': {
+                    "batch_size": pipeline_batch_size,
+                    "cache_dir": "./.cache/http",  # Assuming default cache directory
+                    "cooldown_interval_sec": interval_secs,
+                    "enable_cache": enable_cache,
+                    "enable_monitor": enable_monitors,
+                    "feed_input": build_rss_urls(),
+                    "interval_sec": interval_secs,
+                    "request_timeout_sec": rss_request_timeout_sec,  # Assuming default request timeout
+                    "run_indefinitely": run_indefinitely,
+                    "stop_after_sec": stop_after,
+                    "web_scraper_config": {
+                        "chunk_size": content_chunking_size,  # Assuming default chunk size
+                        "enable_cache": enable_cache,
+                    }
+                }
+            }
+        elif (source == 'filesystem'):
+            cli_source_config['filesystem'] = {
+                'type': 'filesystem',
+                'name': 'filesystem-cli',
+                'config': {
+                    "batch_size": pipeline_batch_size,
+                    "enable_monitor": enable_monitors,
+                    "extractor_config": {
+                        "chunk_size": content_chunking_size,
+                        "num_threads": num_threads  # Number of threads for file reads
+                    },
+                    "filenames": file_source,
+                    "watch": run_indefinitely
+                }
+            }
+        else:
+            raise ValueError(f"Invalid source type: {source}")
+
+    embeddings_config = {
+        "model_name": embedding_model_name,
+        "size": embedding_size
+    }
+
+    pipeline_config = {
+        "num_threads": num_threads,
+        "isolate_embeddings": isolate_embeddings,
+        "model_fea_length": model_fea_length,
+        "model_max_batch_size": model_max_batch_size,
+        "pipeline_batch_size": pipeline_batch_size,
+        "triton_server_url": triton_server_url,
+    }
+
+    cli_vdb_config = {
+        'resource_name': vector_db_resource_name,
+        'service': vector_db_service,
+        'uri': vector_db_uri
+    }
+
+    # Load the YAML configuration file if it exists and extract the vdb section
+    if (vdb_config_path):
+        with open(vdb_config_path, 'r') as file:
+            vdb_pipeline_config = yaml.safe_load(file).get('vdb_pipeline', {})
+
+        vdb_config = vdb_pipeline_config.get('vdb', {})
+        source_config = vdb_pipeline_config.get('sources', [])
+
+        vdb_config = merge_configs(cli_vdb_config, vdb_config)
+
+        for source in cli_source_config.values():
+            source_config.append(source)
+
+        # Add the merged vdb_config under the key "vdb_config" in the final config
+        final_config['vdb_config'] = vdb_config
+        final_config['source_config'] = source_config
+    else:
+        final_config['source_config'] = list(cli_source_config.values())
+        final_config['vdb_config'] = cli_vdb_config
+
+    final_config['pipeline_config'] = pipeline_config
+    final_config['embeddings_config'] = embeddings_config
+
+    # Call the internal pipeline function with the final config dictionary
+    from .pipeline import pipeline as _pipeline
+    return _pipeline(**final_config)
 
 
 @run.command()
