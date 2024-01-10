@@ -114,7 +114,7 @@ morpheus --log_level INFO \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
 	deserialize \
-	preprocess --vocab_hash_file ${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --stride 64 --column=raw \
+	preprocess --vocab_hash_file data/bert-base-cased-hash.txt --stride 64 --column=raw \
 	monitor --description "Preprocessing rate" \
 	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
 	monitor --description "Inference rate" --unit inf \
