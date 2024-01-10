@@ -65,7 +65,7 @@ class CsvTextConverter(BaseConverter):
         file_path:
             Path to the CSV file you want to convert.
         meta:
-            A dictionary of metadata key-value pairs that you want to append to the returned document. It's optional.
+            Optional dictionary of metadata key-value pairs that you want to append to the returned document.
         encoding:
             Specifies the file encoding. It's optional. The default value is `UTF-8`.
         id_hash_keys:
