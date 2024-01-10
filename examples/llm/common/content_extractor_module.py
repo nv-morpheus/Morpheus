@@ -230,8 +230,7 @@ def file_content_extractor(builder: mrc.Builder):
         "pdf": PDFToTextConverter(),
         "csv": CsvTextConverter(),
         "docx": DocxToTextConverter(valid_languages=["de", "en"]),
-        "txt": TextConverter(),
-        "none": TextConverter()
+        "txt": TextConverter()
     }
 
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
@@ -244,11 +243,10 @@ def file_content_extractor(builder: mrc.Builder):
                 for open_file in batch:
                     try:
                         file_meta: FileMeta = get_file_meta(open_file=open_file)
-                        futures.append(
-                            executor.submit(converters[file_meta.file_type].convert,
-                                            file_meta.file_path,
-                                            converters_meta))
+                        converter = converters.get(file_meta.file_type, TextConverter())
+                        futures.append(executor.submit(converter.convert, file_meta.file_path, converters_meta))
                         files_meta.append(file_meta)
+
                     except Exception as e:
                         logger.error(f"Error processing file {open_file.path}: {e}")
 
