@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,13 +15,17 @@
 
 import functools
 import logging
+import logging.handlers
+import multiprocessing
 import os
 import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 
+import appdirs
 import click
+import logging_loki
 import mlflow
 import mrc
 import pandas as pd
@@ -59,13 +63,8 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.file_utils import date_extractor
-from morpheus.utils.logger import set_log_level
 from morpheus.utils.logger import TqdmLoggingHandler
-
-import appdirs
-import logging.handlers
-import logging_loki
-import multiprocessing
+from morpheus.utils.logger import set_log_level
 
 
 def configure_logging(log_level: int, loki_url: str):
