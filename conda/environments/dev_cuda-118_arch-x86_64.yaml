@@ -76,6 +76,7 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy<2.0
+- sysroot_linux-64=2.17
 - tqdm=4
 - tritonclient=2.26
 - typing_utils=0.1
