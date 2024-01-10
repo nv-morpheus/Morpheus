@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 vdb_pipeline:
   sources:
     - type: rss
@@ -64,10 +79,13 @@ vdb_pipeline:
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-3.pdf"
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-4.pdf"
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-5.pdf"
+          - "models/datasets/training-data/log-parsing-training-data.csv"
         watch: false
+        converters_meta:
+            csv:
+              text_column_name: "raw" # Requires same schema for all CSV files.
 
-    # Custom source example -- Here we just use the filesystem source but specify
-    # the module to use, explicitly.
+    # Custom source example -- Here we just use the filesystem source but specify the module to use, explicitly.
     - type: custom
       name: "demo_custom_source"
       config:
