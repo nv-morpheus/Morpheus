@@ -18,8 +18,8 @@ import os
 import typing
 from unittest.mock import patch
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 from torch.utils.data import Dataset as TorchDataset
@@ -488,19 +488,15 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
 
 @pytest.mark.usefixtures("manual_seed")
 def test_auto_encoder_num_only_convergence(train_ae: autoencoder.AutoEncoder):
-    num_df = pd.DataFrame(
-        {
-            'num_feat_1': [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9],
-            'num_feat_2': [3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1],
-        }
-    )
+    num_df = pd.DataFrame({
+        'num_feat_1': [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9],
+        'num_feat_2': [3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1],
+    })
 
     train_ae.fit(num_df, epochs=50)
 
-    avg_loss = np.sum(
-        [np.array(loss[1]) for loss in train_ae.logger.train_fts.values()], axis=0
-    ) / len(train_ae.logger.train_fts)
+    avg_loss = np.sum([np.array(loss[1])
+                       for loss in train_ae.logger.train_fts.values()], axis=0) / len(train_ae.logger.train_fts)
 
     # Make sure the model converges with numerical feats only
     assert avg_loss[-1] < avg_loss[0] / 2
-    
