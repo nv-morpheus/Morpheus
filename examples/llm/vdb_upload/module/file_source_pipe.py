@@ -13,65 +13,106 @@
 # limitations under the License.
 
 import logging
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import mrc
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
 
 from morpheus.modules.general.monitor import Monitor
-from morpheus.modules.input.multi_file_source import multi_file_source  # noqa: F401
-from morpheus.modules.preprocess.deserialize import deserialize  # noqa: F401
+from morpheus.modules.input.multi_file_source import MultiFileSourceInterface
+from morpheus.modules.preprocess.deserialize import DeserializeInterface
 from morpheus.utils.module_utils import ModuleInterface
-from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
-
-from ...common.content_extractor_module import file_content_extractor  # noqa: F401
-from .schema_transform import schema_transform  # noqa: F401
+from .schema_transform import SchemaTransformInterface
+from ...common.content_extractor_module import FileContentExtractorInterface
 
 logger = logging.getLogger(__name__)
 
 
-# TODO(): Improve module documentation
+class FileSourceParamContract(BaseModel):
+    batch_size: int = 1024
+    chunk_overlap: int = 51
+    chunk_size: int = 512
+    converters_meta: Optional[Dict[Any, Any]] = {}  # Flexible dictionary for converters metadata
+    enable_monitor: bool = False
+    extractor_config: Optional[Dict[Any, Any]] = {}  # Flexible dictionary for extractor configuration
+    filenames: List[str] = Field(default_factory=list)  # List of file paths
+    num_threads: int = 1  # Number of threads for processing
+    watch: bool = False  # Flag to watch file changes
+
+
 @register_module("file_source_pipe", "morpheus_examples_llm")
 def _file_source_pipe(builder: mrc.Builder):
     """
-    Sets up a pipeline for processing PDF files.
+    Sets up a pipeline for processing file sources.
 
-    This function configures a pipeline that reads PDF files, extracts text from them,
-    and then transforms the extracted data according to a specified schema.
+    This function configures a pipeline that reads files, processes their content
+    based on specified configurations, and outputs the processed data. It integrates modules for
+    multi-file sourcing, file content extraction, and schema transformation, along with monitoring
+    at various stages.
 
     Parameters
     ----------
     builder : mrc.Builder
         The Morpheus builder to which the pipeline modules will be added.
+
+    Notes
+    -----
+    The module configuration can include the following parameters:
+
+    - **file_source_config**: Configuration for the file source module.
+      - **batch_size**: Number of files to process in each batch.
+      - **chunk_overlap**: Overlap size for chunks in file processing.
+      - **chunk_size**: Size of chunks for file processing.
+      - **converters_meta**: Metadata for file format converters.
+        - **csv**: Configuration for CSV files.
+          - **chunk_size**: Chunk size for CSV processing.
+          - **text_column_name**: Name of the text column in CSV files.
+      - **enable_monitor**: Boolean to enable monitoring for this module.
+      - **extractor_config**: Configuration for the file content extractor module.
+        - **chunk_size**: Size of chunks for the extractor.
+        - **num_threads**: Number of threads for file content extraction.
+      - **filenames**: List of file paths to be processed.
+      - **watch**: Boolean to watch for file changes.
+
+    The pipeline connects these modules in the following order:
+    Multi-File Source -> File Content Extractor -> Schema Transform -> Deserialize,
+    with monitoring at each stage.
     """
 
-    # Load the module configuration from the builder
     module_config = builder.get_current_module_config()
     file_source_config = module_config.get("file_source_config", {})
-    enable_monitor = file_source_config.get("enable_monitor", False)
+    try:
+        validated_config = FileSourceParamContract(**file_source_config)
+    except ValidationError as e:
+        error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
+        log_error_message = f"Invalid file source configuration: {error_messages}"
+        logger.error(log_error_message)
+        raise ValueError(log_error_message)
+
+    # Use the validated configuration
+    enable_monitor = validated_config.enable_monitor
 
     # Configure and load the multi-file source module
-    multi_file_config = {
-        "module_id": "multi_file_source",
-        "module_name": "multi_file_source",
-        "namespace": "morpheus",
-        "source_config": file_source_config,
-    }
+    multi_file_definition = MultiFileSourceInterface.get_definition("multi_file_source",
+                                                                    {"source_config": validated_config.dict()})
 
     # Configure and load the file content extractor module
     file_content_extractor_config = {
-        "module_id": "file_content_extractor",
-        "module_name": "file_content_extractor",
-        "namespace": "morpheus_examples_llm",
-        "batch_size": module_config.get("batch_size", 32),  # Example configuration option
-        "num_threads": module_config.get("num_threads", 10),  # Example configuration option
-        "converters_meta": module_config["file_source_config"].get("converters_meta", None)
+        "batch_size": validated_config.batch_size,
+        "num_threads": validated_config.num_threads,
+        "converters_meta": validated_config.converters_meta
     }
+    extractor_definition = FileContentExtractorInterface.get_definition("file_content_extractor",
+                                                                        file_content_extractor_config)
 
     # Configure and load the schema transformation module
     transform_config = {
-        "module_id": "schema_transform",
-        "module_name": "schema_transform",
-        "namespace": "morpheus_examples_llm",
         "schema_transform_config": {
             "summary": {
                 "dtype": "str", "op_type": "select"
@@ -87,15 +128,10 @@ def _file_source_pipe(builder: mrc.Builder):
             }
         }
     }
+    schema_transform_definition = SchemaTransformInterface.get_definition("schema_transform", transform_config)
 
-    deserialize_config = {
-        "module_id": "deserialize",
-        "module_name": "deserialize",
-        "namespace": "morpheus",
-        "batch_size": file_source_config.get("batch_size", 32),  # Example configuration option
-    }
-
-    # TODO(Devin): Create CMTagger to set metadata items
+    deserialize_definition = DeserializeInterface.get_definition("deserialize",
+                                                                 {"batch_size": validated_config.batch_size})
 
     monitor_1 = Monitor.get_definition("monitor_1", {"description": "FileSourcePipe Transform",
                                                      "silence_monitors": not enable_monitor})
@@ -103,11 +139,11 @@ def _file_source_pipe(builder: mrc.Builder):
                                                      "silence_monitors": not enable_monitor})
 
     # Load modules
-    multi_file_module = load_module(config=multi_file_config, builder=builder)
-    file_content_extractor_module = load_module(config=file_content_extractor_config, builder=builder)
-    transform_module = load_module(config=transform_config, builder=builder)
+    multi_file_module = multi_file_definition.load(builder=builder)
+    file_content_extractor_module = extractor_definition.load(builder=builder)
+    transform_module = schema_transform_definition.load(builder=builder)
     monitor_1_module = monitor_1.load(builder=builder)
-    deserialize_module = load_module(config=deserialize_config, builder=builder)
+    deserialize_module = deserialize_definition.load(builder=builder)
     monitor_2_module = monitor_2.load(builder=builder)
 
     # Connect the modules in the pipeline
@@ -121,4 +157,6 @@ def _file_source_pipe(builder: mrc.Builder):
     builder.register_module_output("output", monitor_2_module.output_port("output"))
 
 
-FileSourcePipe = ModuleInterface("file_source_pipe", "morpheus_examples_llm")
+FileSourcePipe = ModuleInterface("file_source_pipe", "morpheus_examples_llm",
+                                 FileSourceParamContract)
+FileSourcePipe.print_schema()

@@ -53,6 +53,7 @@ def pipeline(pipeline_config: Config, source_config: typing.List, vdb_config: ty
 
     isolate_embeddings = embeddings_config.get('isolate_embeddings', False)
 
+    pipeline_config.debug = True
     pipe = Pipeline(pipeline_config)
 
     vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)

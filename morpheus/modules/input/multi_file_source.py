@@ -15,11 +15,15 @@
 import logging
 import time
 import typing
+from typing import List
 
 import fsspec
 import mrc
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
 
-from morpheus.utils.module_utils import register_module
+from morpheus.utils.module_utils import register_module, ModuleInterface
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -68,6 +72,13 @@ def expand_paths_simple(filenames: typing.List[str]) -> typing.List[str]:
     return updated_list
 
 
+class MultiFileSourceParamContract(BaseModel):
+    filenames: List[str] = Field(default_factory=list)
+    watch_dir: bool = False
+    watch_interval: float = 1.0
+    batch_size: int = 128
+
+
 @register_module("multi_file_source", "morpheus")
 def multi_file_source(builder: mrc.Builder):
     """
@@ -95,13 +106,19 @@ def multi_file_source(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
     source_config = module_config.get('source_config', {})
 
-    if "filenames" not in source_config:
-        raise ValueError("source_config must contain a list of filenames, or simple wildcard paths to read from")
+    try:
+        validated_config = MultiFileSourceParamContract(**source_config)
+    except ValidationError as e:
+        # Format the error message for better readability
+        error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
+        log_error_message = f"Invalid configuration for file_content_extractor: {error_messages}"
+        logger.error(log_error_message)
+        raise ValueError(log_error_message)
 
-    filenames = expand_paths_simple(source_config['filenames'])
-    watch_dir = module_config.get('watch_dir', False)
-    watch_interval = module_config.get('watch_interval', 1.0)
-    batch_size = source_config.get('batch_size', 128)
+    filenames = expand_paths_simple(validated_config.filenames)
+    watch_dir = validated_config.watch_dir
+    watch_interval = validated_config.watch_interval
+    batch_size = validated_config.batch_size
 
     def polling_generate_frames_fsspec():
         files_seen = set()
@@ -165,3 +182,7 @@ def multi_file_source(builder: mrc.Builder):
         node = builder.make_source("multi_file_source", generate_frames_fsspec)
 
     builder.register_module_output("output", node)
+
+
+MultiFileSourceInterface = ModuleInterface("multi_file_source", "morpheus",
+                                           MultiFileSourceParamContract)

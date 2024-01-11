@@ -88,12 +88,10 @@ vdb_pipeline:
         chunk_size: 512
         converters_meta:
           csv:
+            chunk_overlap: 51
             chunk_size: 1024
             text_column_name: "raw"  # Requires same schema for all CSV files.
         enable_monitor: False
-        extractor_config:
-          chunk_size: 512
-          num_threads: 10  # Number of threads to use for file reads
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
