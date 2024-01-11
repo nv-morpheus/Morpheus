@@ -14,6 +14,7 @@
 import logging
 
 import pymilvus
+from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
@@ -45,51 +46,17 @@ def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int
     return llm_service.get_client(model_name, **model_kwargs)
 
 
-def build_milvus_config(embedding_size: int):
-    milvus_resource_kwargs = {
-        "index_conf": {
-            "field_name": "embedding",
-            "metric_type": "L2",
-            "index_type": "HNSW",
-            "params": {
-                "M": 8,
-                "efConstruction": 64,
-            },
-        },
-        "schema_conf": {
-            "enable_dynamic_field": True,
-            "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
-                pymilvus.FieldSchema(name="title",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="Title or heading of the data entry",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="source",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="Source or origin of the data entry",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="summary",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="Brief summary or abstract of the data content",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="Main content or body of the data entry",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="embedding",
-                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
-                                     description="Embedding vectors representing the data entry",
-                                     dim=embedding_size).to_dict(),
-            ],
-            "description": "Collection schema for diverse data sources"
-        }
-    }
+def build_milvus_config(resource_schema_config: dict):
 
-    return milvus_resource_kwargs
+    schema_fields = []
+    for field_data in resource_schema_config["schema_conf"]["schema_fields"]:
+        field_data["dtype"] = DATA_TYPE_MAP.get(field_data["dtype"])
+        field_schema = pymilvus.FieldSchema(**field_data)
+        schema_fields.append(field_schema.to_dict())
+
+    resource_schema_config["schema_conf"]["schema_fields"] = schema_fields
+
+    return resource_schema_config
 
 
 def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530"):

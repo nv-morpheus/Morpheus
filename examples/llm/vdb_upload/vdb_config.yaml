@@ -119,8 +119,45 @@ vdb_pipeline:
     size: 384
 
   vdb:
-    embedding_size: 384  # Size of the embeddings to store in the vector database
     recreate: True  # Whether to recreate the resource if it already exists
     resource_name: "VDB2"  # Identifier for the resource in the vector database
     service: "milvus"  # Specify the type of vector database
     uri: "http://localhost:19530"  # URI for connecting to the Vector Database server
+    resource_schema:
+        index_conf:
+          field_name: embedding
+          metric_type: L2
+          index_type: HNSW
+          params:
+            M: 8
+            efConstruction: 64
+
+        schema_conf:
+          enable_dynamic_field: true
+          schema_fields:
+            - name: id
+              dtype: INT64
+              description: Primary key for the collection
+              is_primary: true
+              auto_id: true
+            - name: title
+              dtype: VARCHAR
+              description: Title or heading of the data entry
+              max_length: 65535
+            - name: source
+              dtype: VARCHAR
+              description: Source or origin of the data entry
+              max_length: 65535
+            - name: summary
+              dtype: VARCHAR
+              description: Brief summary or abstract of the data content
+              max_length: 65535
+            - name: content
+              dtype: VARCHAR
+              description: Main content or body of the data entry
+              max_length: 65535
+            - name: embedding
+              dtype: FLOAT_VECTOR
+              description: Embedding vectors representing the data entry
+              dim: 384 # Size of the embeddings to store in the vector database
+          description: Collection schema for diverse data sources
