@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +51,7 @@ GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
-CONTAINER_VER=${CONTAINER_VER:-230913}
+CONTAINER_VER=${CONTAINER_VER:-240111}
 CUDA_VER=${CUDA_VER:-11.8}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
