@@ -42,6 +42,7 @@ FEATURE_COLUMNS = [
     "log_count",
     "location_incr",
     "app_incr",
+    "has_error",
 ]
 LOSS_TYPES = ["train", "val", "id_val"]
 # 75th quantile of the losses from 100 times of offline training
@@ -146,7 +147,7 @@ def _run_test(rank, world_size):
         min_cats=1,
         device=rank,
         preset_numerical_scaler_params=preset_numerical_scaler_params,
-        binary_feature_list=[],
+        binary_feature_list=['has_error'],
         preset_cats=preset_cats,
         eval_batch_size=1024,
         patience=5,
