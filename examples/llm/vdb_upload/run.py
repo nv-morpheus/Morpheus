@@ -18,6 +18,7 @@ import os
 import click
 import yaml
 
+from ..common.utils import build_milvus_config
 from ..common.utils import build_rss_urls
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,9 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
 
 
 def merge_configs(file_config, cli_config):
-    """Merge two dictionaries, giving priority to the second one for overlapping keys."""
+    import json
+    logger.info(f"file_config: {json.dumps(file_config, indent=2)}")
+    logger.info(f"cli_config: {json.dumps(cli_config, indent=2)}")
     merged_config = file_config.copy()
     merged_config.update({k: v for k, v in cli_config.items() if v is not None})
     return merged_config
@@ -182,6 +185,7 @@ def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate
              enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
              vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
              rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, feed_inputs, **kwargs):
+    # TODO(Devin) turn the preprocessing here into a function so we can unit test it without calling the pipeline
     final_config = {}
 
     # Initialize CLI sources config
@@ -228,24 +232,48 @@ def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate
         else:
             raise ValueError(f"Invalid source type: {source}")
 
-    embeddings_config = {
+    # Default embeddings configuration, can be overridden by config file.
+    cli_embeddings_config = {
+        "feature_length": model_fea_length,
+        "max_batch_size": model_max_batch_size,
+        "model_kwargs": {
+            "force_convert_inputs": True,
+            "model_name": "all-MiniLM-L6-v2",
+            "server_url": triton_server_url,
+            "use_shared_memory": True,
+        },
         "model_name": embedding_model_name,
-        "size": embedding_size
-    }
-
-    pipeline_config = {
         "num_threads": num_threads,
-        "isolate_embeddings": isolate_embeddings,
-        "model_fea_length": model_fea_length,
-        "model_max_batch_size": model_max_batch_size,
-        "pipeline_batch_size": pipeline_batch_size,
-        "triton_server_url": triton_server_url,
     }
 
+    # Default tokenizer configuration, can be overridden by config file.
+    cli_tokenizer_config = {
+        "model_name": "bert-base-uncased-hash",
+        "model_kwargs": {
+            "add_special_tokens": False,
+            "column": "content",
+            "do_lower_case": True,
+            "truncation": True,
+            "vocab_hash_file": "data/bert-base-uncased-hash.txt",
+        }
+    }
+
+    cli_pipeline_config = {
+        "num_threads": num_threads,
+        "feature_length": model_fea_length,  # TODO(Devin): Bad terminology and used inconsistently
+        "isolate_embeddings": isolate_embeddings,
+        "pipeline_batch_size": pipeline_batch_size,
+    }
+
+    # Default vdb configuration, can be overridden by config file.
+    # TODO(Devin): resource_kwargs is a bit complicated, need to handle this better if an alternative is specified.
     cli_vdb_config = {
+        'embedding_size': embedding_size,
+        'recreate': True,
+        'resource_kwargs': build_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
         'resource_name': vector_db_resource_name,
         'service': vector_db_service,
-        'uri': vector_db_uri
+        'uri': vector_db_uri,
     }
 
     # Load the YAML configuration file if it exists and extract the vdb section
@@ -255,21 +283,29 @@ def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate
 
         vdb_config = vdb_pipeline_config.get('vdb', {})
         source_config = vdb_pipeline_config.get('sources', [])
+        tokenizer_config = vdb_pipeline_config.get('tokenizer', {})
+        embeddings_config = vdb_pipeline_config.get('embeddings', {})
+        pipeline_config = cli_pipeline_config  # TODO
 
-        vdb_config = merge_configs(cli_vdb_config, vdb_config)
+        vdb_config = merge_configs(vdb_config, cli_vdb_config)
+        embeddings_config = merge_configs(embeddings_config, cli_embeddings_config)
+        tokenizer_config = merge_configs(tokenizer_config, cli_tokenizer_config)
 
         for source in cli_source_config.values():
             source_config.append(source)
 
         # Add the merged vdb_config under the key "vdb_config" in the final config
-        final_config['vdb_config'] = vdb_config
+        final_config['embeddings_config'] = embeddings_config
+        final_config['pipeline_config'] = pipeline_config
         final_config['source_config'] = source_config
+        final_config['tokenizer_config'] = tokenizer_config
+        final_config['vdb_config'] = vdb_config
     else:
+        final_config['embeddings_config'] = cli_embeddings_config
+        final_config['pipeline_config'] = cli_pipeline_config
         final_config['source_config'] = list(cli_source_config.values())
+        final_config['tokenizer_config'] = cli_tokenizer_config
         final_config['vdb_config'] = cli_vdb_config
-
-    final_config['pipeline_config'] = pipeline_config
-    final_config['embeddings_config'] = embeddings_config
 
     # Call the internal pipeline function with the final config dictionary
     from .pipeline import pipeline as _pipeline

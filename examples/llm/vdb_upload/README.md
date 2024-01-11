@@ -116,6 +116,7 @@ Before running the pipeline, we need to ensure that the following services are r
 #### Ensure LFS files are downloaded
 
 To retrieve models from LFS run the following:
+
 ```bash
 ./scripts/fetch_data.py fetch models
 ```
@@ -149,11 +150,15 @@ To retrieve models from LFS run the following:
 
 ### Running the Morpheus Pipeline
 
-The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector database (VDB) settings.
+The top-level entry point for each of the LLM example pipelines is examples/llm/main.py. This script accepts a set of
+options and a pipeline to run. For the purposes of this document, we'll focus on the vdb_upload pipeline option, which
+incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector
+database (VDB) settings.
 
 ### Run example:
 
 Default example usage, with pre-defined RSS source
+
 ```bash
 python examples/llm/main.py vdb_upload \
   --enable_cache \
@@ -164,6 +169,7 @@ python examples/llm/main.py vdb_upload \
 Usage with CLI-Defined Sources:
 
 *Example: Defining an RSS Source via CLI*
+
 ```bash
 python examples/llm/main.py vdb_upload \
   --source_type rss \
@@ -175,6 +181,7 @@ python examples/llm/main.py vdb_upload \
 ```
 
 *Example: Defining a Filesystem Source via CLI*
+
 ```bash
 python examples/llm/main.py vdb_upload \
   --source_type filesystem \
@@ -184,6 +191,7 @@ python examples/llm/main.py vdb_upload \
 ```
 
 *Example: Combining RSS and Filesystem Sources via CLI*
+
 ```bash
 python examples/llm/main.py vdb_upload \
   --source_type rss filesystem \
@@ -198,6 +206,7 @@ python examples/llm/main.py vdb_upload \
 Note: see `vdb_config.yaml` for a full configuration example.
 
 `vdb_config.yaml`
+
 ```yaml
 vdb_pipeline:
   sources:
@@ -213,6 +222,7 @@ vdb_pipeline:
           - "/path/to/data/*"
         watch: false
 ```
+
 ```bash
 python examples/llm/main.py vdb_upload \
   --vdb_config_path "./vdb_config.yaml"
@@ -220,7 +230,8 @@ python examples/llm/main.py vdb_upload \
 
 ## Morpheus Pipeline Configuration Schema
 
-The Morpheus Pipeline configuration allows for detailed specification of various pipeline stages, including source definitions (like RSS feeds and filesystem paths), embedding configurations, and vector database settings.
+The Morpheus Pipeline configuration allows for detailed specification of various pipeline stages, including source
+definitions (like RSS feeds and filesystem paths), embedding configurations, and vector database settings.
 
 ### Sources Configuration
 
@@ -260,7 +271,7 @@ The `sources` section allows you to define multiple data sources of different ty
     - **filenames**: List of file paths to be processed.
     - **meta_converters**:
         - **csv**:
-          - **text_column_name**: "raw" # Requires same schema for all CSV files.
+            - **text_column_name**: "raw" # Requires same schema for all CSV files.
     - **watch**: Boolean to continuously watch the file path for new files.
 
 #### Custom Source Configuration
@@ -275,17 +286,15 @@ The `sources` section allows you to define multiple data sources of different ty
     - **batch_size**: Number of items to process in a batch.
     - **filenames**: List of file paths to be processed.
     - **arbitrary config params for custom module**:
-      - **param1**: Value for param1.
-      - **param2**: Value for param2.
+        - **param1**: Value for param1.
+        - **param2**: Value for param2.
 
 ### Embeddings Configuration
 
 - **model_name**: Name of the embedding model (e.g., `all-MiniLM-L6-v2`).
 - **model_kwargs**: Keyword arguments for the model configuration.
-    - **device**: Device to run the model on (e.g., `"cuda"`).
-- **encode_kwargs**: Keyword arguments for the encoding process.
-    - **normalize_embeddings**: Boolean to normalize embeddings.
-- **size**: Size of the embedding vectors.
+    - **param1**: Value for param1.
+    - **param2**: Value for param2
 
 ### Vector Database (VDB) Configuration
 

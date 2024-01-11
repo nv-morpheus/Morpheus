@@ -29,9 +29,10 @@ from ..common.utils import build_milvus_config
 
 logger = logging.getLogger(__name__)
 
+
 # TODO(Devin): Look into making this a morpheus.llm function call (the whole pipeline)
-def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_config: typing.Dict,
-             embeddings_config: typing.Dict) -> float:
+def pipeline(source_config: typing.List, vdb_config: typing.Dict, pipeline_config: typing.Dict,
+             embeddings_config: typing.Dict, tokenizer_config: typing.Dict) -> float:
     """
     Sets up and runs a data processing pipeline based on provided configurations.
 
@@ -55,14 +56,13 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
     config = Config()
     config.mode = PipelineModes.NLP
 
-    # Below properties are specified by the kwargs dictionary
     config.num_threads = pipeline_config.get('num_threads')
     config.pipeline_batch_size = pipeline_config.get('pipeline_batch_size')
-    config.model_max_batch_size = pipeline_config.get('model_max_batch_size')
-    config.feature_length = pipeline_config.get('model_fea_length')
-    config.edge_buffer_size = 128  # Assuming this is a constant, otherwise add to kwargs
+    config.model_max_batch_size = embeddings_config.get('max_batch_size')
+    config.feature_length = pipeline_config.get('feature_length')
+    config.edge_buffer_size = 128
 
-    embedding_size = embeddings_config.get('size')
+    embedding_size = vdb_config.get('embedding_size')
     config.class_labels = [str(i) for i in range(embedding_size)]
 
     pipe = Pipeline(config)
@@ -70,41 +70,21 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
     vdb_sources = process_vdb_sources(pipe, config, source_config)
 
     isolate_embeddings = pipeline_config.get('isolate_embeddings', False)
-    triton_server_url = pipeline_config.get('triton_server_url')
-    embedding_model_name = embeddings_config.get('model_name')
 
     trigger = None
     if (pipeline_config.get('isolate_embeddings', False)):
         trigger = pipe.add_stage(TriggerStage(config))
 
-    # TODO(Devin) : Add support for alternative vocabulary configurations
-    nlp_stage = pipe.add_stage(
-        PreprocessNLPStage(config,
-                           vocab_hash_file="data/bert-base-uncased-hash.txt",
-                           do_lower_case=True,
-                           truncation=True,
-                           add_special_tokens=False,
-                           column='content'))
+    nlp_stage = pipe.add_stage(PreprocessNLPStage(config, **tokenizer_config.get("model_kwargs", {})))
 
     monitor_1 = pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
 
-    # TODO(Devin): Make this more configurable + test with multiple embedding model types
-    triton_inference = pipe.add_stage(
-        TritonInferenceStage(config,
-                             model_name=embedding_model_name,
-                             server_url=triton_server_url,
-                             force_convert_inputs=True,
-                             use_shared_memory=True))
+    embedding_stage = pipe.add_stage(TritonInferenceStage(config, **embeddings_config.get('model_kwargs', {})))
+
     monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
     # TODO(Bhargav): Convert WriteToVectorDBStage to module + retain backwards compatibility.
-    vector_db = pipe.add_stage(
-        WriteToVectorDBStage(config,
-                             resource_name=vdb_config.get('resource_name'),
-                             resource_kwargs=build_milvus_config(embedding_size=embeddings_config.get('size', 384)),
-                             recreate=vdb_config.get('recreate', True),
-                             service=vdb_config.get('service'),
-                             uri=vdb_config.get('uri')))
+    vector_db = pipe.add_stage(WriteToVectorDBStage(config, **vdb_config))
 
     monitor_3 = pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
 
@@ -119,8 +99,8 @@ def pipeline(source_config: typing.Dict, vdb_config: typing.Dict, pipeline_confi
         pipe.add_edge(trigger, nlp_stage)
 
     pipe.add_edge(nlp_stage, monitor_1)
-    pipe.add_edge(monitor_1, triton_inference)
-    pipe.add_edge(triton_inference, monitor_2)
+    pipe.add_edge(monitor_1, embedding_stage)
+    pipe.add_edge(embedding_stage, monitor_2)
     pipe.add_edge(monitor_2, vector_db)
     pipe.add_edge(vector_db, monitor_3)
 
