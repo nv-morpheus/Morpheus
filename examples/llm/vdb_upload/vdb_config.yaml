@@ -15,8 +15,7 @@
 
 vdb_pipeline:
   embeddings:
-    feature_length: 512
-    max_batch_size: 1024
+    isolate_embeddings: false
     model_kwargs:
       force_convert_inputs: true
       model_name: "all-MiniLM-L6-v2"
@@ -25,8 +24,9 @@ vdb_pipeline:
     num_threads: 10
 
   pipeline:
+    edge_buffer_size: 128
     feature_length: 512
-    isolate_embeddings: false
+    max_batch_size: 256
     num_threads: 10
     pipeline_batch_size: 1024
 

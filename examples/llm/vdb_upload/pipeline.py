@@ -17,7 +17,6 @@ import time
 import typing
 
 from morpheus.config import Config
-from morpheus.config import PipelineModes
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.trigger_stage import TriggerStage
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO(Devin): Look into making this a morpheus.llm function call (the whole pipeline)
-def pipeline(source_config: typing.List, vdb_config: typing.Dict, pipeline_config: typing.Dict,
+def pipeline(pipeline_config: Config, source_config: typing.List, vdb_config: typing.Dict,
              embeddings_config: typing.Dict, tokenizer_config: typing.Dict) -> float:
     """
     Sets up and runs a data processing pipeline based on provided configurations.
@@ -52,40 +51,31 @@ def pipeline(source_config: typing.List, vdb_config: typing.Dict, pipeline_confi
         The start time of the pipeline execution.
     """
 
-    config = Config()
-    config.mode = PipelineModes.NLP
+    isolate_embeddings = embeddings_config.get('isolate_embeddings', False)
 
-    config.num_threads = pipeline_config.get('num_threads')
-    config.pipeline_batch_size = pipeline_config.get('pipeline_batch_size')
-    config.model_max_batch_size = embeddings_config.get('max_batch_size')
-    config.feature_length = pipeline_config.get('feature_length')
-    config.edge_buffer_size = 128
+    pipe = Pipeline(pipeline_config)
 
-    embedding_size = vdb_config.get('embedding_size')
-    config.class_labels = [str(i) for i in range(embedding_size)]
-
-    pipe = Pipeline(config)
-
-    vdb_sources = process_vdb_sources(pipe, config, source_config)
-
-    isolate_embeddings = pipeline_config.get('isolate_embeddings', False)
+    vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)
 
     trigger = None
-    if (pipeline_config.get('isolate_embeddings', False)):
-        trigger = pipe.add_stage(TriggerStage(config))
+    if (isolate_embeddings):
+        trigger = pipe.add_stage(TriggerStage(pipeline_config))
 
-    nlp_stage = pipe.add_stage(PreprocessNLPStage(config, **tokenizer_config.get("model_kwargs", {})))
+    nlp_stage = pipe.add_stage(PreprocessNLPStage(pipeline_config, **tokenizer_config.get("model_kwargs", {})))
 
-    monitor_1 = pipe.add_stage(MonitorStage(config, description="Tokenize rate", unit='events', delayed_start=True))
+    monitor_1 = pipe.add_stage(
+        MonitorStage(pipeline_config, description="Tokenize rate", unit='events', delayed_start=True))
 
-    embedding_stage = pipe.add_stage(TritonInferenceStage(config, **embeddings_config.get('model_kwargs', {})))
+    embedding_stage = pipe.add_stage(TritonInferenceStage(pipeline_config, **embeddings_config.get('model_kwargs', {})))
 
-    monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
+    monitor_2 = pipe.add_stage(
+        MonitorStage(pipeline_config, description="Inference rate", unit="events", delayed_start=True))
 
     # TODO(Bhargav): Convert WriteToVectorDBStage to module + retain backwards compatibility.
-    vector_db = pipe.add_stage(WriteToVectorDBStage(config, **vdb_config))
+    vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
 
-    monitor_3 = pipe.add_stage(MonitorStage(config, description="Upload rate", unit="events", delayed_start=True))
+    monitor_3 = pipe.add_stage(
+        MonitorStage(pipeline_config, description="Upload rate", unit="events", delayed_start=True))
 
     # Connect the pipeline
     for source_output in vdb_sources:
