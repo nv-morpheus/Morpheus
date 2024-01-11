@@ -18,10 +18,10 @@ import pytest
 from _utils import import_or_skip
 
 
-@pytest.fixture(name="nemollm", autouse=True, scope='session')
-def nemollm_fixture(fail_missing: bool):
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(fail_missing: bool):
     """
-    All the tests in this subdir require nemollm
+    All the tests in this subdir require langchain
     """
     skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
                    "`mamba install -n base -c conda-forge conda-merge`\n"
