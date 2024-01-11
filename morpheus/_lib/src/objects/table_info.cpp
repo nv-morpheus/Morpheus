@@ -300,7 +300,8 @@ std::optional<std::string> MutableTableInfo::ensure_sliceable_index()
         auto df_index = py_df.attr("index");
 
         // Check to see if we actually need the change
-        if (df_index.attr("is_unique").cast<bool>() && df_index.attr("is_monotonic").cast<bool>())
+        if (df_index.attr("is_unique").cast<bool>() && (df_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                        df_index.attr("is_monotonic_decreasing").cast<bool>()))
         {
             // Set the outputname to nullopt
             old_index_col_name = std::nullopt;
