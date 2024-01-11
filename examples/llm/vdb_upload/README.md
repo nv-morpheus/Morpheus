@@ -237,64 +237,83 @@ definitions (like RSS feeds and filesystem paths), embedding configurations, and
 
 The `sources` section allows you to define multiple data sources of different types: RSS, filesystem, and custom.
 
+### Embeddings Configuration
+
+- **isolate_embeddings**: Boolean to isolate embeddings.
+- **model_kwargs**:
+    - **force_convert_inputs**: Boolean to force the conversion of inputs.
+    - **model_name**: Name of the model, e.g., `"all-MiniLM-L6-v2"`.
+    - **server_url**: URL of the server, e.g., `"http://localhost:8001"`.
+    - **use_shared_memory**: Boolean to use shared memory.
+
+### Pipeline Configuration
+
+- **edge_buffer_size**: Size of the edge buffer, e.g., `128`.
+- **feature_length**: Length of the features, e.g., `512`.
+- **max_batch_size**: Maximum size of the batch, e.g., `256`.
+- **num_threads**: Number of threads, e.g., `10`.
+- **pipeline_batch_size**: Size of the batch for the pipeline, e.g., `1024`.
+
 #### RSS Source Configuration
 
-- **type**: `rss`
-- **name**: A unique name for the source.
+- **type**: `'rss'`
+- **name**: Name of the RSS source.
 - **config**:
-    - **feed_input**: List of URLs for RSS feeds.
-    - **batch_size**: Number of feed items to process in a batch.
-    - **cache_dir**: Path to the directory for caching feed data.
-    - **cooldown_interval**: Time in seconds between successive fetches.
-    - **enable_cache**: Boolean to enable or disable caching.
-    - **enable_monitor**: Boolean to enable or disable monitoring.
-    - **interval_secs**: Time in seconds between feed checks.
-    - **request_timeout**: Timeout in seconds for RSS feed requests.
-    - **run_indefinitely**: Boolean to keep the process running continuously.
-    - **stop_after**: Stop after processing a certain number of feed items.
+    - **batch_size**: Number of RSS feeds to process at a time.
+    - **cache_dir**: Directory for caching.
+    - **cooldown_interval_sec**: Cooldown interval in seconds.
+    - **enable_cache**: Boolean to enable caching.
+    - **enable_monitor**: Boolean to enable monitoring.
+    - **feed_input**: List of RSS feed URLs.
+    - **interval_sec**: Interval in seconds for fetching new feed items.
+    - **request_timeout_sec**: Timeout in seconds for RSS feed requests.
+    - **run_indefinitely**: Boolean to indicate continuous running.
+    - **stop_after**: Stop after emitting a specific number of records.
     - **web_scraper_config**:
+        - **chunk_overlap**: Overlap size for chunks.
         - **chunk_size**: Size of content chunks for processing.
-        - **chunk_overlap**: Number of overlapping characters between consecutive chunks.
-        - **enable_cache**: Boolean to enable or disable web scraper caching.
+        - **enable_cache**: Boolean to enable caching.
 
 #### Filesystem Source Configuration
 
-- **type**: `filesystem`
-- **name**: A unique name for the source.
+- **type**: `'filesystem'`
+- **name**: Name of the filesystem source.
 - **config**:
-    - **batch_size**: Number of files to process in a batch.
-    - **enable_monitor**: Boolean to enable or disable monitoring.
+    - **batch_size**: Number of files to process at a time.
+    - **chunk_overlap**: Overlap size for chunks.
+    - **chunk_size**: Size of chunks for processing.
+    - **converters_meta**: Metadata for converters.
+        - **csv**:
+            - **chunk_size**: Chunk size for CSV processing.
+            - **text_column_name**: Column name to be used as text.
+    - **enable_monitor**: Boolean to enable monitoring.
     - **extractor_config**:
-        - **chunk_size**: Size of content chunks for processing.
-        - **chunk_overlap**: Number of overlapping characters between consecutive chunks.
+        - **chunk_size**: Size of chunks for the extractor.
         - **num_threads**: Number of threads for file reads.
     - **filenames**: List of file paths to be processed.
-    - **meta_converters**:
-        - **csv**:
-            - **text_column_name**: "raw" # Requires same schema for all CSV files.
-    - **watch**: Boolean to continuously watch the file path for new files.
+    - **watch**: Boolean to watch for file changes.
 
 #### Custom Source Configuration
 
-- **type**: `custom`
-- **name**: A unique name for the source.
+- **type**: `'custom'`
+- **name**: Name of the custom source.
 - **config**:
-    - **config_name_mapping**: Key name for the source configuration.
-    - **namespace**: Namespace identifier.
-    - **module_id**: Module identifier for the source.
-    - **module_output_id**: Output identifier for the module.
-    - **batch_size**: Number of items to process in a batch.
-    - **filenames**: List of file paths to be processed.
-    - **arbitrary config params for custom module**:
-        - **param1**: Value for param1.
-        - **param2**: Value for param2.
+    - **config_name_mapping**: Mapping name for file source config.
+    - **module_id**: Identifier of the module to use.
+    - **module_output_id**: Output identifier of the module.
+    - **namespace**: Namespace of the module.
+    - **other_config_parameter_1**: Other config parameter 1.
+    - **other_config_parameter_2**: Other config parameter 2.
 
-### Embeddings Configuration
+### Tokenizer Configuration
 
-- **model_name**: Name of the embedding model (e.g., `all-MiniLM-L6-v2`).
-- **model_kwargs**: Keyword arguments for the model configuration.
-    - **param1**: Value for param1.
-    - **param2**: Value for param2
+- **model_kwargs**:
+    - **add_special_tokens**: Boolean to add special tokens.
+    - **column**: Column name, e.g., `"content"`.
+    - **do_lower_case**: Boolean to convert to lowercase.
+    - **truncation**: Boolean to truncate.
+    - **vocab_hash_file**: Path to the vocabulary hash file.
+- **model_name**: Name of the tokenizer model.
 
 ### Vector Database (VDB) Configuration
 
