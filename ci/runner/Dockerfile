@@ -16,37 +16,38 @@
 # limitations under the License.
 
 # Args used in FROM commands must come first
-ARG FROM_IMAGE="rapidsai/ci"
+ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=11-8
-ARG CUDA_SHORT_VER=11.8
+ARG CUDA_SHORT_VER=118
 ARG CUDA_VER=11.8.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PROJ_NAME=morpheus
 ARG PYTHON_VER=3.10
+ARG ARCH=x86_64
 
 # Configure the base docker img
 FROM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
-ARG PROJ_NAME
-ARG CUDA_SHORT_VER
-
 SHELL ["/bin/bash",  "-c"]
 
 # Create conda environment
-COPY ./docker/conda/environments/* /tmp/conda/
-
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
-    /opt/conda/bin/mamba install -n morpheus -c conda-forge "conda-merge>=0.2" && \
-    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
-    conda clean -afy && \
-    rm -rf /tmp/conda
-
+COPY ./conda/environments/* /tmp/conda/
 
 # ============ build ==================
 FROM base as build
 
 # Add any build only dependencies here.
+
+ARG PROJ_NAME
+ARG CUDA_SHORT_VER
+ARG ARCH
+
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file \
+    /tmp/conda/dev_cuda-${CUDA_SHORT_VER}_arch-${ARCH}.yaml && \
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
+    conda clean -afy && \
+    rm -rf /tmp/conda
 
 # ============ test ==================
 FROM base as test
@@ -55,6 +56,7 @@ FROM base as test
 
 ARG PROJ_NAME
 ARG CUDA_SHORT_VER
+ARG ARCH
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
@@ -63,7 +65,12 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_examples.yml /tmp/conda/cuda${CUDA_SHORT_VER}_examples.yml
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file \
+    /tmp/conda/all_cuda-${CUDA_SHORT_VER}_arch-${ARCH}.yaml && \
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
+    conda clean -afy && \
+    rm -rf /tmp/conda
+
 COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
 # Install camouflage needed for unittests to mock a triton server
