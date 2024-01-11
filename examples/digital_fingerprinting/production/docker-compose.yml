@@ -137,7 +137,7 @@ services:
       - sys_nice
 
   grafana:
-    image: grafana/grafana:10.0.0
+    image: grafana/grafana:10.2.3
     environment:
       GF_INSTALL_PLUGINS: "marcusolsson-csv-datasource"
     volumes:
@@ -155,7 +155,7 @@ services:
       - loki
 
   loki:
-    image: grafana/loki:2.9.1
+    image: grafana/loki:2.9.3
     volumes:
       - ./grafana/config/loki-config.yml:/etc/loki/loki-config.yml
     ports:
