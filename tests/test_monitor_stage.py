@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import inspect
 import logging
 import os
@@ -59,13 +60,13 @@ def test_constructor(config: Config):
 
 
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
-def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
+def test_start_async(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    stage.on_start()
+    asyncio.run(stage.start_async())
     mock_morph_tqdm.assert_called_once()
     mock_morph_tqdm.reset.assert_called_once()
     assert stage._mc._progress is mock_morph_tqdm
@@ -82,7 +83,7 @@ def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
     stage.stop()
     mock_morph_tqdm.assert_not_called()
 
-    stage.on_start()
+    asyncio.run(stage.start_async())
     stage.stop()
     mock_morph_tqdm.close.assert_called_once()
 
@@ -94,7 +95,7 @@ def test_refresh(mock_morph_tqdm: mock.MagicMock, config: Config):
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    stage.on_start()
+    asyncio.run(stage.start_async())
     stage._mc.refresh_progress(None)
     mock_morph_tqdm.refresh.assert_called_once()
 
@@ -138,7 +139,7 @@ def test_progress_sink(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
-    stage.on_start()
+    asyncio.run(stage.start_async())
 
     stage._mc.progress_sink(None)
     assert stage._mc._determine_count_fn is None
