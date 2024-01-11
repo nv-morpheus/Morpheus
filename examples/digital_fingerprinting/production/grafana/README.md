@@ -98,6 +98,7 @@ While the training pipeline is running, you can view Morpheus logs live in a Gra
 
 Click on `DFP Logs` in the `General` folder. You may need to expand the `General` folder to see the link.
 
+<img src="./img/dfp_logs_dashboard.png">
 
 ## Run Azure DFP Inference:
 
@@ -115,7 +116,7 @@ When the inference pipeline completes, you can view visualizations of the infere
 
 Click on `DFP Detections` in the `General` folder. You may need to expand the `General` folder to see the link.
 
-<img src="./img/screenshot.png">
+<img src="./img/dfp_detections_dashboard.png">
 
 The dashboard has the following visualization panels:
 
