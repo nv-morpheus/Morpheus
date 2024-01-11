@@ -40,7 +40,9 @@ conda info
 rapids-logger "Building Conda Package"
 
 # Run the conda build, and upload to conda forge if requested
-MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_ARGS="--skip-existing" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus "${CI_SCRIPT_ARGS}"
+export MORPHEUS_PYTHON_BUILD_STUBS=OFF
+export CONDA_ARGS="--skip-existing"
+${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus "${CI_SCRIPT_ARGS}"
 
 # If we didn't receive the upload argument, upload the artifact to S3
 if [[ " ${CI_SCRIPT_ARGS} " =~ " upload " ]]; then
