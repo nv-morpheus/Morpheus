@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,7 +82,7 @@ jobs:
     if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230913
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230913
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240111
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240111
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
