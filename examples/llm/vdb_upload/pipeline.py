@@ -25,7 +25,6 @@ from morpheus.stages.inference.triton_inference_stage import TritonInferenceStag
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from .common import process_vdb_sources
-from ..common.utils import build_milvus_config
 
 logger = logging.getLogger(__name__)
 

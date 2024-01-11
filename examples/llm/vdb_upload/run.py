@@ -31,12 +31,146 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
 
 
 def merge_configs(file_config, cli_config):
-    import json
-    logger.info(f"file_config: {json.dumps(file_config, indent=2)}")
-    logger.info(f"cli_config: {json.dumps(cli_config, indent=2)}")
     merged_config = file_config.copy()
     merged_config.update({k: v for k, v in cli_config.items() if v is not None})
     return merged_config
+
+
+def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddings, embedding_model_name,
+                      enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
+                      vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
+                      rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, feed_inputs):
+    """
+    Create configuration dictionaries for CLI arguments.
+
+    Returns
+    -------
+    Tuple containing configurations for source, embeddings, pipeline, tokenizer, and vdb.
+    """
+    # Source Configuration
+    cli_source_config = {}
+    if 'rss' in source_type:
+        cli_source_config['rss'] = {
+            'type': 'rss',
+            'name': 'rss-cli',
+            'config': {
+                "batch_size": pipeline_batch_size,
+                "cache_dir": "./.cache/http",
+                "cooldown_interval_sec": interval_secs,
+                "enable_cache": enable_cache,
+                "enable_monitor": enable_monitors,
+                "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
+                "interval_sec": interval_secs,
+                "request_timeout_sec": rss_request_timeout_sec,
+                "run_indefinitely": run_indefinitely,
+                "stop_after_sec": stop_after,
+                "web_scraper_config": {
+                    "chunk_size": content_chunking_size,
+                    "enable_cache": enable_cache,
+                }
+            }
+        }
+    if 'filesystem' in source_type:
+        cli_source_config['filesystem'] = {
+            'type': 'filesystem',
+            'name': 'filesystem-cli',
+            'config': {
+                "batch_size": pipeline_batch_size,
+                "enable_monitor": enable_monitors,
+                "extractor_config": {
+                    "chunk_size": content_chunking_size,
+                    "num_threads": num_threads
+                },
+                "filenames": file_source,
+                "watch": run_indefinitely
+            }
+        }
+
+    # Embeddings Configuration
+    cli_embeddings_config = {
+        "feature_length": model_fea_length,
+        "max_batch_size": model_max_batch_size,
+        "model_kwargs": {
+            "force_convert_inputs": True,
+            "model_name": embedding_model_name,
+            "server_url": triton_server_url,
+            "use_shared_memory": True,
+        },
+        "num_threads": num_threads,
+    }
+
+    # Pipeline Configuration
+    cli_pipeline_config = {
+        "feature_length": model_fea_length,
+        "isolate_embeddings": isolate_embeddings,
+        "num_threads": num_threads,
+        "pipeline_batch_size": pipeline_batch_size,
+    }
+
+    # Tokenizer Configuration
+    cli_tokenizer_config = {
+        "model_name": "bert-base-uncased-hash",
+        "model_kwargs": {
+            "add_special_tokens": False,
+            "column": "content",
+            "do_lower_case": True,
+            "truncation": True,
+            "vocab_hash_file": "data/bert-base-uncased-hash.txt",
+        }
+    }
+
+    # VDB Configuration
+    cli_vdb_config = {
+        'embedding_size': embedding_size,
+        'recreate': True,
+        'resource_kwargs': build_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
+        'resource_name': vector_db_resource_name,
+        'service': vector_db_service,
+        'uri': vector_db_uri,
+    }
+
+    return cli_source_config, cli_embeddings_config, cli_pipeline_config, cli_tokenizer_config, cli_vdb_config
+
+
+def build_final_config(vdb_config_path, cli_source_config, cli_embeddings_config, cli_pipeline_config,
+                       cli_tokenizer_config,
+                       cli_vdb_config):
+    """
+    Load and merge configurations from the CLI and YAML file.
+    """
+    final_config = {}
+
+    # Load and merge configurations from the YAML file if it exists
+    if vdb_config_path:
+        with open(vdb_config_path, 'r') as file:
+            vdb_pipeline_config = yaml.safe_load(file).get('vdb_pipeline', {})
+
+        embeddings_config = merge_configs(vdb_pipeline_config.get('embeddings', {}), cli_embeddings_config)
+        pipeline_config = merge_configs(vdb_pipeline_config.get('pipeline', {}), cli_pipeline_config)
+        tokenizer_config = merge_configs(vdb_pipeline_config.get('tokenizer', {}), cli_tokenizer_config)
+        vdb_config = merge_configs(vdb_pipeline_config.get('vdb', {}), cli_vdb_config)
+
+        # Append CLI source configurations
+        source_config = vdb_pipeline_config.get('sources', []) + list(cli_source_config.values())
+
+        final_config.update({
+            'embeddings_config': embeddings_config,
+            'pipeline_config': pipeline_config,
+            'source_config': source_config,
+            'tokenizer_config': tokenizer_config,
+            'vdb_config': vdb_config,
+        })
+    else:
+        # Use CLI configurations only
+        final_config.update({
+            'embeddings_config': cli_embeddings_config,
+            'pipeline_config': cli_pipeline_config,
+            'source_config': list(cli_source_config.values()),
+            'tokenizer_config': cli_tokenizer_config,
+            'vdb_config': cli_vdb_config,
+        })
+
+    return final_config
 
 
 @click.group(name=__name__)
@@ -181,131 +315,14 @@ def run():
     default="http://localhost:19530",
     help="URI for connecting to Vector Database server.",
 )
-def pipeline(vdb_config_path, source_type, enable_cache, embedding_size, isolate_embeddings, embedding_model_name,
-             enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
-             vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
-             rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, feed_inputs, **kwargs):
-    # TODO(Devin) turn the preprocessing here into a function so we can unit test it without calling the pipeline
-    final_config = {}
-
-    # Initialize CLI sources config
-    cli_source_config = {}
-
-    # Create RSS source entry if 'rss' is specified in the source_type
-    for source in set(source_type):
-        if (source == 'rss'):
-            cli_source_config['rss'] = {
-                'type': 'rss',
-                'name': 'rss-cli',
-                'config': {
-                    "batch_size": pipeline_batch_size,
-                    "cache_dir": "./.cache/http",  # Assuming default cache directory
-                    "cooldown_interval_sec": interval_secs,
-                    "enable_cache": enable_cache,
-                    "enable_monitor": enable_monitors,
-                    "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
-                    "interval_sec": interval_secs,
-                    "request_timeout_sec": rss_request_timeout_sec,  # Assuming default request timeout
-                    "run_indefinitely": run_indefinitely,
-                    "stop_after_sec": stop_after,
-                    "web_scraper_config": {
-                        "chunk_size": content_chunking_size,  # Assuming default chunk size
-                        "enable_cache": enable_cache,
-                    }
-                }
-            }
-        elif (source == 'filesystem'):
-            cli_source_config['filesystem'] = {
-                'type': 'filesystem',
-                'name': 'filesystem-cli',
-                'config': {
-                    "batch_size": pipeline_batch_size,
-                    "enable_monitor": enable_monitors,
-                    "extractor_config": {
-                        "chunk_size": content_chunking_size,
-                        "num_threads": num_threads  # Number of threads for file reads
-                    },
-                    "filenames": file_source,
-                    "watch": run_indefinitely
-                }
-            }
-        else:
-            raise ValueError(f"Invalid source type: {source}")
-
-    # Default embeddings configuration, can be overridden by config file.
-    cli_embeddings_config = {
-        "feature_length": model_fea_length,
-        "max_batch_size": model_max_batch_size,
-        "model_kwargs": {
-            "force_convert_inputs": True,
-            "model_name": "all-MiniLM-L6-v2",
-            "server_url": triton_server_url,
-            "use_shared_memory": True,
-        },
-        "model_name": embedding_model_name,
-        "num_threads": num_threads,
-    }
-
-    # Default tokenizer configuration, can be overridden by config file.
-    cli_tokenizer_config = {
-        "model_name": "bert-base-uncased-hash",
-        "model_kwargs": {
-            "add_special_tokens": False,
-            "column": "content",
-            "do_lower_case": True,
-            "truncation": True,
-            "vocab_hash_file": "data/bert-base-uncased-hash.txt",
-        }
-    }
-
-    cli_pipeline_config = {
-        "num_threads": num_threads,
-        "feature_length": model_fea_length,  # TODO(Devin): Bad terminology and used inconsistently
-        "isolate_embeddings": isolate_embeddings,
-        "pipeline_batch_size": pipeline_batch_size,
-    }
-
-    # Default vdb configuration, can be overridden by config file.
-    # TODO(Devin): resource_kwargs is a bit complicated, need to handle this better if an alternative is specified.
-    cli_vdb_config = {
-        'embedding_size': embedding_size,
-        'recreate': True,
-        'resource_kwargs': build_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
-        'resource_name': vector_db_resource_name,
-        'service': vector_db_service,
-        'uri': vector_db_uri,
-    }
-
-    # Load the YAML configuration file if it exists and extract the vdb section
-    if (vdb_config_path):
-        with open(vdb_config_path, 'r') as file:
-            vdb_pipeline_config = yaml.safe_load(file).get('vdb_pipeline', {})
-
-        vdb_config = vdb_pipeline_config.get('vdb', {})
-        source_config = vdb_pipeline_config.get('sources', [])
-        tokenizer_config = vdb_pipeline_config.get('tokenizer', {})
-        embeddings_config = vdb_pipeline_config.get('embeddings', {})
-        pipeline_config = cli_pipeline_config  # TODO
-
-        vdb_config = merge_configs(vdb_config, cli_vdb_config)
-        embeddings_config = merge_configs(embeddings_config, cli_embeddings_config)
-        tokenizer_config = merge_configs(tokenizer_config, cli_tokenizer_config)
-
-        for source in cli_source_config.values():
-            source_config.append(source)
-
-        # Add the merged vdb_config under the key "vdb_config" in the final config
-        final_config['embeddings_config'] = embeddings_config
-        final_config['pipeline_config'] = pipeline_config
-        final_config['source_config'] = source_config
-        final_config['tokenizer_config'] = tokenizer_config
-        final_config['vdb_config'] = vdb_config
-    else:
-        final_config['embeddings_config'] = cli_embeddings_config
-        final_config['pipeline_config'] = cli_pipeline_config
-        final_config['source_config'] = list(cli_source_config.values())
-        final_config['tokenizer_config'] = cli_tokenizer_config
-        final_config['vdb_config'] = cli_vdb_config
+def pipeline(**kwargs):
+    """
+    Main pipeline function to configure and run the data processing pipeline.
+    """
+    vdb_config_path = kwargs.pop('vdb_config_path', None)
+    cli_source_conf, cli_embed_conf, cli_pipe_conf, cli_tok_conf, cli_vdb_conf = build_cli_configs(**kwargs)
+    final_config = build_final_config(vdb_config_path, cli_source_conf, cli_embed_conf, cli_pipe_conf, cli_tok_conf,
+                                      cli_vdb_conf)
 
     # Call the internal pipeline function with the final config dictionary
     from .pipeline import pipeline as _pipeline
