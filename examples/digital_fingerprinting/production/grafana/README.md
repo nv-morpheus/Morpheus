@@ -36,11 +36,6 @@ The following data sources for this example are configured in [datasources.yaml]
 
 The [CSV data source plugin](https://grafana.com/grafana/plugins/marcusolsson-csv-datasource/) is installed to Grafana to read the Azure inference results CSV file. This example assumes we are using the CSV file generated from running the Python script for [Azure DFP pipeline example](../production/README.md).
 
-If using the [notebook version](../production/morpheus/notebooks/dfp_azure_inference.ipynb) to run inference, you'll need to update the `url` in [datasources.yaml](./datasources/datasources.yaml) as follows:
-```
-url: /workspace/notebooks/dfp_detections_azure.csv
-```
-
 Please note that the use of the CSV plugin is for demonstration purposes only. Grafana includes support for many data sources more suitable for production deployments. See [here](https://grafana.com/docs/grafana/latest/datasources/) for more information.
 
 #### Updates to grafana.ini
@@ -99,6 +94,45 @@ While the training pipeline is running, you can view Morpheus logs live in a Gra
 Click on `DFP Logs` in the `General` folder. You may need to expand the `General` folder to see the link.
 
 <img src="./img/dfp_logs_dashboard.png">
+
+This dashboard was provisioned using config files but can also be manually created with the following steps:
+1. Click `Dashboards` in the left-side menu.
+2. Click `New` and select `New Dashboard`.
+3. On the empty dashboard, click `+ Add visualization`.
+4. In the dialog box that opens, Select the `Loki` data source.
+5. In the `Edit Panel` view, change from `Time Series` visualization to `Logs`.
+6. Add label filter: `app = morpheus`.
+7. Change Order to `Oldest first`.
+8. Click `Apply` to see your changes applied to the dashboard. Then click the save icon in the dashboard header.
+
+## Set up Error Alerting
+
+We demonstrate here with a simple example how we can use Grafana Alerting to notify us of a pipeline error moments after it occurs. This is especially useful with long-running pipelines.
+
+1. Click `Alert Rules` under `Alerting` in the left-side menu.
+2. Click `New Alert Rule`
+3. Enter alert rule name: `DFP Error Alert Rule`
+4. In `Define query and alert condition` section, select `Loki` data source.
+5. Switch to `Code` view by clicking the `Code` button on the right.
+6. Enter the folling Loki Query which counts the number of log lines in last minute that have an error label (`severity=error`):
+```
+count_over_time({severity="error"}[1m])
+```
+7. Under `Expressions`, keep default configurations for `Reduce` and `Threshold`. The alert condition threshold will be error counts > 0.
+7. In `Set evaluation behavior` section, click `+ New folder`, enter `morpheus` then click `Create` button.
+8. Click `+ New evaluation group`, enter `dfp` for `Evaluation group name` and `1m` for `Evaluation interval`, then click `Create` button.
+9. Enter `0s` for `Pending period`. This configures alert to be fired instantly when alert condition is met.
+10. Test your alert rule, by running the following in your `morpheus_pipeline` container. This will cause an error because `--input-file` glob will no longer match any of our training data files.
+```
+python run.py --log_level DEBUG --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
+```
+11. Click the `Preview` button to test run the alert rule. You should now see the how our alert query picks up the error log, processes through our reduce/threshold expressions and satisfies our alert condition. This is indicated by the `Firing` label in the `Threshold` section.
+
+<img src="./img/dfp_error_alert_setup.png">
+
+12. Finally, click `Save rule and exit` at top right of the page. 
+
+By default, all alerts will be sent through the `grafana-default-email` contact point. You can add email addresses to this contact point by clicking on `Contact points` under `Alerting` in the left-side menu. You would also have to configure SMTP in the `[smtp]` section of your `grafana.ini`. More information about about Grafana Alerting contact points can found [here](https://grafana.com/docs/grafana/latest/alerting/fundamentals/contact-points/).
 
 ## Run Azure DFP Inference:
 
