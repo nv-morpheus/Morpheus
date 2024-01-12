@@ -18,6 +18,7 @@ import os
 import subprocess
 import time
 import typing
+import warnings
 from collections import namedtuple
 from functools import partial
 
@@ -73,10 +74,15 @@ def seek_to_beginning(kafka_consumer: "KafkaConsumer", timeout: int = PARTITION_
 
 @pytest.fixture(name='kafka_consumer', scope='function')
 def kafka_consumer_fixture(kafka_topics: KafkaTopics, _kafka_consumer: "KafkaConsumer"):
-    _kafka_consumer.subscribe([kafka_topics.output_topic])
-    seek_to_beginning(_kafka_consumer)
+    with warnings.catch_warnings():
+        # Ignore warnings specific to the test fixture and not the actual morpheus code
+        warnings.filterwarnings("ignore",
+                                message=r"Exception ignored in:.*ConsumerCoordinator\.__del__",
+                                category=pytest.PytestUnraisableExceptionWarning)
+        _kafka_consumer.subscribe([kafka_topics.output_topic])
+        seek_to_beginning(_kafka_consumer)
 
-    yield _kafka_consumer
+        yield _kafka_consumer
 
 
 def _init_pytest_kafka() -> (bool, Exception):
