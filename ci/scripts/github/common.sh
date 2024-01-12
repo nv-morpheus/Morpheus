@@ -71,10 +71,11 @@ function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
 
-
     if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
         rapids-logger "Checking for updates to conda env"
 
+        # Temp add channel_alias to get around conda 404 errors
+        conda config --env --set channel_alias "https://conda.anaconda.org"
 
         # Update the packages
         rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
