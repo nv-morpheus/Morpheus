@@ -23,32 +23,32 @@ import torch
 from morpheus.models.dfencoder import scalers
 
 
-@pytest.fixture(scope="function")
-def fit_tensor():
+@pytest.fixture(name="fit_tensor", scope="function")
+def fit_tensor_fixture():
     yield torch.tensor([4.4, 5.3, 6.5], dtype=torch.float32)
 
 
-@pytest.fixture(scope="function")
-def tensor():
+@pytest.fixture(name="tensor", scope="function")
+def tensor_fixture():
     yield torch.tensor([7.4, 8.3, 9.5], dtype=torch.float32)
 
 
-@pytest.fixture(scope="function")
-def standard_scaler(fit_tensor):
+@pytest.fixture(name="standard_scalar", scope="function")
+def standard_scaler_fixture(fit_tensor):
     scaler = scalers.StandardScaler()
     scaler.fit(fit_tensor)
     yield scaler
 
 
-@pytest.fixture(scope="function")
-def modified_scaler(fit_tensor):
+@pytest.fixture(name="modified_scalar", scope="function")
+def modified_scaler_fixture(fit_tensor):
     scaler = scalers.ModifiedScaler()
     scaler.fit(fit_tensor)
     yield scaler
 
 
-@pytest.fixture(scope="function")
-def gauss_rank_scaler(fit_tensor):
+@pytest.fixture(name="gauss_rank_scaler", scope="function")
+def gauss_rank_scaler_fixture(fit_tensor):
     scaler = scalers.GaussRankScaler()
 
     with warnings.catch_warnings():

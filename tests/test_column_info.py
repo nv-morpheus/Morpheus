@@ -18,7 +18,6 @@ import io
 import json
 import os
 from datetime import datetime
-from datetime import timezone
 from functools import partial
 
 import numpy as np
@@ -28,7 +27,6 @@ import pytest
 import cudf
 
 from _utils import TEST_DIRS
-from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -40,6 +38,7 @@ from morpheus.utils.column_info import StringJoinColumn
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
 
+
 @pytest.fixture(name="_azure_ad_logs_pdf", scope="module")
 def fixture__azure_ad_logs_pdf():
     # Explicitly reading this in to ensure that lines=False.
@@ -48,15 +47,18 @@ def fixture__azure_ad_logs_pdf():
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "azure_ad_logs.json")
     yield read_file_to_df(src_file, df_type='pandas', parser_kwargs={'lines': False})
 
+
 @pytest.fixture(name="azure_ad_logs_pdf", scope="function")
 def fixture_azure_ad_logs_pdf(_azure_ad_logs_pdf: pd.DataFrame):
     yield _azure_ad_logs_pdf.copy(deep=True)
+
 
 @pytest.fixture(name="azure_ad_logs_cdf", scope="function")
 def fixture_azure_ad_logs_cdf(azure_ad_logs_pdf: pd.DataFrame):
     # cudf.from_pandas essentially does a deep copy, so we can use this to ensure that the source pandas df is not
     # modified
     yield cudf.from_pandas(azure_ad_logs_pdf)
+
 
 @pytest.mark.use_python
 def test_dataframe_input_schema_with_json_cols(azure_ad_logs_cdf: cudf.DataFrame):
