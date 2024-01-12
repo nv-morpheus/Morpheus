@@ -1,0 +1,1 @@
+src/rabbitmq_cpp_stage/_version.py export-subst

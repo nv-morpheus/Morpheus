@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +16,46 @@
 import logging
 import os
 
-from write_to_rabbitmq_stage import WriteToRabbitMQStage
+import click
+from rabbitmq_cpp_stage.rabbitmq_source_stage import RabbitMQSourceStage
 
+from morpheus.common import FileTypes
 from morpheus.config import Config
+from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.utils.logger import configure_logging
 
 
-def run_pipeline():
+@click.command()
+@click.option('--use_cpp', default=True)
+@click.option(
+    "--num_threads",
+    default=os.cpu_count(),
+    type=click.IntRange(min=1),
+    help="Number of internal pipeline threads to use",
+)
+def run_pipeline(use_cpp, num_threads):
     # Enable the Morpheus logger
     configure_logging(log_level=logging.DEBUG)
 
-    root_dir = os.environ['MORPHEUS_ROOT']
-    input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
+    CppConfig.set_should_use_cpp(use_cpp)
 
     config = Config()
-    config.num_threads = os.cpu_count()
+    config.num_threads = num_threads
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
-    pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
     # Set source stage
-    pipeline.add_stage(WriteToRabbitMQStage(config, host='localhost', exchange='logs'))
+    pipeline.set_source(RabbitMQSourceStage(config, host='localhost', exchange='logs'))
+
+    # Add monitor to record the performance of our new stages
+    pipeline.add_stage(MonitorStage(config))
+
+    # Write the to the output file
+    pipeline.add_stage(WriteToFileStage(config, filename='/tmp/results.json', file_type=FileTypes.JSON, overwrite=True))
 
     # Run the pipeline
     pipeline.run()

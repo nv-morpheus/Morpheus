@@ -30,7 +30,6 @@ files:
       - test_python_morpheus
       - docs
       - cudatoolkit
-      - runtime
       - checks
 
   dev:
@@ -47,8 +46,17 @@ files:
       - test_python_morpheus
       - docs
       - cudatoolkit
-      - runtime
       - checks
+
+  examples:
+    output: conda
+    matrix:
+      cuda: ["11.8"]
+      arch: [x86_64]
+    includes:
+      - examples
+      - runtime
+      - cudatoolkit
 
   build:
     output: none
@@ -56,6 +64,7 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
       - development
       - benchmark_cpp
@@ -131,6 +140,7 @@ dependencies:
           - cudf=23.06
           - cxx-compiler
           - cython=0.29.24
+          - glog=0.6
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
@@ -138,6 +148,7 @@ dependencies:
           - pybind11-stubgen=0.10
           - rapidjson=1.1.0
           - scikit-build=0.17.1
+          - sysroot_linux-64=2.17
           - tritonclient=2.26 # Required by NvTabular, force the version, so we get protobufs compatible with 4.21
           - ucx=1.14
 
@@ -162,6 +173,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
+          - versioneer
           - yapf=0.40.1
 
   docs:
@@ -179,7 +191,7 @@ dependencies:
           - sphinx_rtd_theme
           - numpydoc=1.4
           - pluggy=1.0
-          - &click click >=8
+          - &click click>=8
 
   benchmark_cpp:
     common:
@@ -239,6 +251,7 @@ dependencies:
           - nb_conda_kernels
           - numpydoc=1.4
           - nvtabular=23.06
+          - pyarrow-hotfix
           - python-confluent-kafka=1.9.2
           - python-graphviz
           - pytorch-cuda
@@ -254,7 +267,6 @@ dependencies:
           - pip:
             - databricks-connect
             - milvus==2.3.2
-            - pyarrow_hotfix
             - pymilvus==2.3.2
 
   test_python_morpheus:

@@ -71,6 +71,7 @@ function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
 
+
     if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
         rapids-logger "Checking for updates to conda env"
 
