@@ -47,6 +47,26 @@ The following is added to the default `grafana.ini` to enable local mode for CSV
 allow_local_mode = true
 ```
 
+## Add Loki logging handler to DFP pipeline
+
+The [pipeline run script](./run.py) for the Azure DFP example has been updated with the following to add the Loki logging handler which will publish the Morpheus logs to our Loki service:
+
+```
+loki_handler = logging_loki.LokiHandler(
+    url=f"{loki_url}/loki/api/v1/push",
+    tags={"app": "morpheus"},
+    version="1",
+)
+
+queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
+                                                console_handler,
+                                                file_handler,
+                                                loki_handler,
+                                                respect_handler_level=True)
+```
+
+More information about Loki Python logging can be found [here](https://pypi.org/project/python-logging-loki/).
+
 ## Build the Morpheus container:
 From the root of the Morpheus repo:
 ```bash
@@ -114,19 +134,19 @@ We demonstrate here with a simple example how we can use Grafana Alerting to not
 3. Enter alert rule name: `DFP Error Alert Rule`
 4. In `Define query and alert condition` section, select `Loki` data source.
 5. Switch to `Code` view by clicking the `Code` button on the right.
-6. Enter the folling Loki Query which counts the number of log lines in last minute that have an error label (`severity=error`):
+6. Enter the following Loki Query which counts the number of log lines in last minute that have an error label (`severity=error`):
 ```
 count_over_time({severity="error"}[1m])
 ```
 7. Under `Expressions`, keep default configurations for `Reduce` and `Threshold`. The alert condition threshold will be error counts > 0.
 7. In `Set evaluation behavior` section, click `+ New folder`, enter `morpheus` then click `Create` button.
 8. Click `+ New evaluation group`, enter `dfp` for `Evaluation group name` and `1m` for `Evaluation interval`, then click `Create` button.
-9. Enter `0s` for `Pending period`. This configures alert to be fired instantly when alert condition is met.
+9. Enter `0s` for `Pending period`. This configures alerts to be fired instantly when alert condition is met.
 10. Test your alert rule, by running the following in your `morpheus_pipeline` container. This will cause an error because `--input-file` glob will no longer match any of our training data files.
 ```
 python run.py --log_level DEBUG --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
 ```
-11. Click the `Preview` button to test run the alert rule. You should now see the how our alert query picks up the error log, processes through our reduce/threshold expressions and satisfies our alert condition. This is indicated by the `Firing` label in the `Threshold` section.
+11. Click the `Preview` button to test run the alert rule. You should now see how our alert query picks up the error log, processes it through our reduce/threshold expressions and satisfies our alert condition. This is indicated by the `Firing` label in the `Threshold` section.
 
 <img src="./img/dfp_error_alert_setup.png">
 

@@ -104,7 +104,6 @@ def configure_logging(log_level: int, loki_url: str):
 
     loki_handler = logging_loki.LokiHandler(
         url=f"{loki_url}/loki/api/v1/push",
-        # url="http://loki:3100/loki/api/v1/push",
         tags={"app": "morpheus"},
         version="1",
     )
