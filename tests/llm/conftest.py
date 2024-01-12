@@ -108,7 +108,7 @@ def mock_nemollm_fixture(mock_nemollm: mock.MagicMock):
     async def mock_task(fut: asyncio.Future, value: typing.Any = mock.DEFAULT):
         fut.set_result(value)
 
-    def create_future(*args, **kwargs) -> asyncio.Future:
+    def create_future(*args, **kwargs) -> asyncio.Future:  # pylint: disable=unused-argument
         event_loop = asyncio.get_event_loop()
         fut = event_loop.create_future()
         event_loop.create_task(mock_task(fut, mock.DEFAULT))
