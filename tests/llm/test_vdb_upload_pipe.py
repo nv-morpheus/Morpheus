@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
 EMBEDDING_SIZE = 384
-MODEL_MAX_BATCH_SIZE = 64
+MODEL_MAX_BATCH_SIZE = 256
 MODEL_FEA_LENGTH = 512
 
 
@@ -116,7 +116,7 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
             "name": "output", "datatype": "FP32", "shape": [-1, EMBEDDING_SIZE]
         }]
     }
-    mock_model_config = {"config": {"max_batch_size": 256}}
+    mock_model_config = {"config": {"max_batch_size": MODEL_MAX_BATCH_SIZE}}
 
     mock_triton_client.return_value = mock_triton_client
     mock_triton_client.is_server_live.return_value = True
