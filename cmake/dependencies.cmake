@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,37 +24,46 @@ morpheus_utils_print_config()
 include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
 
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
-rapids_find_package(Protobuf
+rapids_find_package(Protobuf REQUIRED
   REQUIRED
   BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
-find_package(CUDAToolkit REQUIRED)
+rapids_find_package(CUDAToolkit REQUIRED
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
   # - Expects package to pre-exist in the build environment
   # ================
   rapids_find_package(benchmark REQUIRED
-    GLOBAL_TARGETS      benchmark::benchmark
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    GLOBAL_TARGETS benchmark::benchmark
+    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    FIND_ARGS CONFIG
   )
 endif()
+
+# glog
+# ====
+morpheus_utils_configure_glog()
+
+# grpc
+# =========
+morpheus_utils_configure_grpc()
 
 if(MORPHEUS_BUILD_TESTS)
   # google test
   # - Expects package to pre-exist in the build environment
   # ===========
   rapids_find_package(GTest REQUIRED
-    GLOBAL_TARGETS      GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    GLOBAL_TARGETS GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
+    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    FIND_ARGS CONFIG
   )
 endif()
 

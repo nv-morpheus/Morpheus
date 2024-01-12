@@ -52,7 +52,7 @@ GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
 CONTAINER_VER=${CONTAINER_VER:-230913}
-CUDA_VER=${CUDA_VER:-12.0}
+CUDA_VER=${CUDA_VER:-12.1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"

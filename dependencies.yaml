@@ -136,7 +136,7 @@ dependencies:
           - boost-cpp=1.84
           - cmake=3.26.4
           - cuda-nvcc
-          - cudf=23.12
+          - cudf=24.02
           - cxx-compiler
           - cython=3.0
           - librdkafka=2.2
@@ -201,7 +201,7 @@ dependencies:
         packages:
           - arxiv=1.4
           - boto3
-          - cuml=23.12.*
+          - cuml=24.02.*
           - dask=2023.12.1
           # - dglteam/label/cu121::dgl
           - dill=0.3.7

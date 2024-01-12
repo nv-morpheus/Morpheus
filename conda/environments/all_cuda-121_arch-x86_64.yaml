@@ -28,8 +28,8 @@ dependencies:
 - cuda-nvtx-dev=12.1
 - cuda-tools=12.1
 - cuda-version=12.1
-- cudf=23.12
-- cuml=23.12.*
+- cudf=24.02
+- cuml=24.02.*
 - cxx-compiler
 - cython=3.0
 - dask=2023.12.1
