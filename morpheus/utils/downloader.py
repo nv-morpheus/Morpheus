@@ -21,6 +21,7 @@ import multiprocessing as mp
 import os
 import threading
 import typing
+import warnings
 from enum import Enum
 
 import fsspec
@@ -131,7 +132,13 @@ class Downloader:
         dask.config.set({"distributed.client.heartbeat": self._dask_heartbeat_interval})
 
         if (self._merlin_distributed is None):
-            self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
+            with warnings.catch_warnings():
+                # Merlin.Distributed will warn if a client already exists, the client in question is the one created
+                # and are explicitly passing to it in the constructor.
+                warnings.filterwarnings("ignore",
+                                        message="Existing Dask-client object detected in the current context.*",
+                                        category=UserWarning)
+                self._merlin_distributed = Distributed(client=dask.distributed.Client(self.get_dask_cluster()))
 
         return self._merlin_distributed
 
