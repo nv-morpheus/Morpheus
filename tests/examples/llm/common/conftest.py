@@ -13,9 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
+import os
+import sys
 
+import pytest
+from _utils import TEST_DIRS
 from _utils import import_or_skip
+
+
+@pytest.fixture(scope="module")
+def import_utils():
+    utils_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
+    sys.path.insert(0, utils_path)
+
+    import utils
+
+    return utils
+
+@pytest.fixture(scope="module")
+def import_web_scraper_module():
+    web_scaper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
+    sys.path.insert(0, web_scraper_path)
+
+    import web_scraper_module
+
+    return web_scraper_module
 
 
 @pytest.fixture(name="nemollm", autouse=True, scope='session')

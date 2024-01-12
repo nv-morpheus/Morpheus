@@ -159,4 +159,3 @@ def _file_source_pipe(builder: mrc.Builder):
 
 FileSourcePipe = ModuleInterface("file_source_pipe", "morpheus_examples_llm",
                                  FileSourceParamContract)
-FileSourcePipe.print_schema()
