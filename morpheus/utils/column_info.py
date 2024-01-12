@@ -387,9 +387,7 @@ class DateTimeColumn(RenameColumn):
             The processed column as a datetime Series.
         """
 
-        dt_series = pd.to_datetime(df[self.input_name],
-                                   infer_datetime_format=True,
-                                   utc=True)
+        dt_series = pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True)
 
         dtype = self.get_pandas_dtype()
         if dtype == 'datetime64[ns]':
