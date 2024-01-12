@@ -298,8 +298,8 @@ class TestCLI:
             'preprocess',
             'inf-pytorch',
             'add-scores'
-        ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
-                MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
+        ] + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] + MONITOR_ARGS + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
         result = runner.invoke(commands.cli, args)
@@ -317,7 +317,6 @@ class TestCLI:
             process_ae,
             auto_enc,
             add_scores,
-            triton_inf,
             time_series,
             monitor,
             validation,
@@ -340,11 +339,6 @@ class TestCLI:
         assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
         assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(triton_inf, TritonInferenceStage)
-        assert triton_inf._kwargs['model_name'] == 'test-model'
-        assert triton_inf._kwargs['server_url'] == 'test:123'
-        assert triton_inf._kwargs['force_convert_inputs']
 
         assert isinstance(time_series, TimeSeriesStage)
         assert time_series._resolution == '1m'
