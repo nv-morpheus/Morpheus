@@ -387,7 +387,16 @@ class DateTimeColumn(RenameColumn):
             The processed column as a datetime Series.
         """
 
-        return pd.to_datetime(df[self.input_name], infer_datetime_format=True, utc=True).astype(self.get_pandas_dtype())
+        dt_series = pd.to_datetime(df[self.input_name],
+                                   infer_datetime_format=True,
+                                   utc=True)
+
+        dtype = self.get_pandas_dtype()
+        if dtype == 'datetime64[ns]':
+            # avoid deprecation warning about using .astype to convert from a tz-aware type to a tz-naive type
+            return dt_series.dt.tz_localize(None)
+
+        return dt_series.astype(dtype)
 
 
 @dataclasses.dataclass
