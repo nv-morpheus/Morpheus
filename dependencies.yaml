@@ -107,14 +107,13 @@ files:
 
 
 channels:
-  - conda-forge
-  - huggingface
   - rapidsai
   - nvidia/label/cuda-11.8.0
   - nvidia
-  - rapidsai-nightly
   - nvidia/label/dev
+  - huggingface
   - pytorch
+  - conda-forge
   - dglteam/label/cu118
 
 dependencies:
