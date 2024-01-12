@@ -34,7 +34,7 @@ dependencies:
 - cython=0.29.24
 - dask>=2023.1.1
 - datacompy=0.8
-- dgl=1.0.2
+- dgl=1.1.1
 - dill
 - dill=0.3.6
 - distributed>=2023.1.1
@@ -113,5 +113,6 @@ dependencies:
   - pyarrow_hotfix
   - pymilvus==2.3.2
   - pytest-kafka==0.6.0
+  - rapids-dependency-file-generator
 name: all_cuda-118_arch-x86_64_py-310
 

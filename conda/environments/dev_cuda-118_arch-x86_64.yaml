@@ -89,5 +89,6 @@ dependencies:
   - pyarrow_hotfix
   - pymilvus==2.3.2
   - pytest-kafka==0.6.0
+  - rapids-dependency-file-generator
 name: dev_cuda-118_arch-x86_64_py-310
 

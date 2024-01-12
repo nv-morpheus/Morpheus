@@ -21,4 +21,4 @@ channels:
     - defaults
 dependencies:
     - cuml=23.06
-    - dgl=1.0.2
+    - dgl=1.1.1

@@ -32,7 +32,7 @@ dependencies:
     - boto3
     - cuml=23.06
     - dask>=2023.1.1
-    - dgl=1.0.2
+    - dgl=1.1.1
     - dill=0.3.6
     - distributed>=2023.1.1
     - huggingface_hub=0.10.1 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
