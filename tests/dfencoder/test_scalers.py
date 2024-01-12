@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import numpy as np
 import pytest
 import torch
@@ -48,8 +50,14 @@ def modified_scaler(fit_tensor):
 @pytest.fixture(scope="function")
 def gauss_rank_scaler(fit_tensor):
     scaler = scalers.GaussRankScaler()
-    scaler.fit(fit_tensor)
-    yield scaler
+
+    with warnings.catch_warnings():
+        # This warning is triggered by the abnormally small tensor size used in this test
+        warnings.filterwarnings("ignore",
+                                message=r"n_quantiles \(1000\) is greater than the total number of samples \(3\).*",
+                                category=UserWarning)
+        scaler.fit(fit_tensor)
+        yield scaler
 
 
 def test_ensure_float_type():
