@@ -17,6 +17,9 @@ import functools
 import logging
 import re
 import typing
+from typing import Optional
+from typing import Type
+from pydantic import BaseModel
 
 import cudf
 import mrc
@@ -361,11 +364,14 @@ class ModuleInterface:
         The module identifier.
     _namespace : str
         The namespace of the module.
+    _param_contract : Type[BaseModel], optional
+        The Pydantic model representing the parameter contract for the module.
     """
 
-    def __init__(self, module_id, module_namespace):
+    def __init__(self, module_id, module_namespace, param_contract: Optional[Type[BaseModel]] = None):
         self._id = module_id
         self._namespace = module_namespace
+        self._param_contract = param_contract
 
     @property
     def id(self):
@@ -391,5 +397,22 @@ class ModuleInterface:
         ModuleDefinition
             A specific instance of this module.
         """
-
         return ModuleDefinition(self, module_name, module_config)
+
+    def print_schema(self) -> str:
+        """
+        Returns a human-readable description of the module's parameter schema.
+
+        Returns
+        -------
+        str
+            A description of the module's parameter schema.
+        """
+        if not self._param_contract:
+            return "No parameter contract defined for this module."
+
+        description = f"Schema for {self._id}:\n"
+        for field in self._param_contract.__fields__.values():
+            description += f"  - {field.name} ({field.type_.__name__}): {field.field_info.description}\n"
+
+        return description

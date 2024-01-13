@@ -14,14 +14,31 @@
 
 import logging
 import time
+from typing import List
 
 import mrc
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
 
 from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import register_module
+from morpheus.utils.module_utils import register_module, ModuleInterface
 
 logger = logging.getLogger(__name__)
+
+
+class RSSSourceParamContract(BaseModel):
+    feed_input: List[str] = Field(default_factory=list)
+    run_indefinitely: bool = True
+    batch_size: int = 128
+    enable_cache: bool = False
+    cache_dir: str = "./.cache/http"
+    cooldown_interval_sec: int = 600
+    request_timeout_sec: float = 2.0
+    interval_secs: int = 600
+    stop_after: int = 0
+    web_scraper_config: dict = Field(default_factory=dict)
 
 
 @register_module("rss_source", "morpheus")
@@ -54,29 +71,24 @@ def rss_source(builder: mrc.Builder):
     """
 
     module_config = builder.get_current_module_config()
-    rss_config = module_config.get('rss_config', {})
-
-    interval_secs = rss_config.get('interval_secs', 600)
-    stop_after = rss_config.get('stop_after', 0)
-
-    # Required configuration keys for RSSController
-    required_config_keys = ['feed_input', 'run_indefinitely', 'batch_size',
-                            'enable_cache', 'cache_dir', 'cooldown_interval_sec', 'request_timeout_sec']
-
-    # Validate that all required configuration keys are present
-    missing_keys = [key for key in required_config_keys if key not in rss_config]
-    if missing_keys:
-        raise ValueError(f"Missing required configuration keys: {missing_keys}")
+    rss_config = module_config.get("rss_source", {})
+    try:
+        validated_config = RSSSourceParamContract(**rss_config)
+    except ValidationError as e:
+        error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
+        log_error_message = f"Invalid RSS source configuration: {error_messages}"
+        logger.error(log_error_message)
+        raise ValueError(log_error_message)
 
     # Initialize RSSController with validated configuration
     controller = RSSController(
-        feed_input=rss_config['feed_input'],
-        run_indefinitely=rss_config['run_indefinitely'],
-        batch_size=rss_config['batch_size'],
-        enable_cache=rss_config['enable_cache'],
-        cache_dir=rss_config['cache_dir'],
-        cooldown_interval=rss_config['cooldown_interval_sec'],
-        request_timeout=rss_config['request_timeout_sec']
+        feed_input=validated_config.feed_input,
+        run_indefinitely=validated_config.run_indefinitely,
+        batch_size=validated_config.batch_size,
+        enable_cache=validated_config.enable_cache,
+        cache_dir=validated_config.cache_dir,
+        cooldown_interval=validated_config.cooldown_interval_sec,
+        request_timeout=validated_config.request_timeout_sec
     )
 
     stop_requested = False
@@ -101,7 +113,7 @@ def rss_source(builder: mrc.Builder):
 
                     records_emitted += df_size
 
-                    if (0 < stop_after <= records_emitted):
+                    if (0 < validated_config.stop_after <= records_emitted):
                         stop_requested = True
                         logger.info("Stop limit reached... preparing to halt the source.")
                         break
@@ -110,16 +122,20 @@ def rss_source(builder: mrc.Builder):
                 if not controller.run_indefinitely:
                     logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
                     raise
+                logger.error("Failed either in the process of fetching or processing entries: %d.", exc)
 
             if not controller.run_indefinitely:
                 stop_requested = True
                 continue
 
-            logger.info("Waiting for %d seconds before fetching again...", interval_secs)
-            time.sleep(interval_secs)
+            logger.info("Waiting for %d seconds before fetching again...", validated_config.interval_secs)
+            time.sleep(validated_config.interval_secs)
 
         logger.info("RSS source exhausted, stopping.")
 
     node = builder.make_source("fetch_feeds", fetch_feeds)
 
     builder.register_module_output("output", node)
+
+
+RSSSourceInterface = ModuleInterface("rss_source", "morpheus", RSSSourceParamContract)

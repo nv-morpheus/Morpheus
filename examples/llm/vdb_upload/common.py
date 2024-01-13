@@ -202,7 +202,7 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
     return vdb_sources
 
 
-def build_milvus_config(embedding_size: int) -> typing.Dict[str, typing.Any]:
+def build_defualt_milvus_config(embedding_size: int) -> typing.Dict[str, typing.Any]:
     """
     Builds the configuration for Milvus.
 

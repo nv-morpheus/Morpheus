@@ -25,7 +25,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.modules.preprocess.deserialize import deserialize
+from morpheus.modules.preprocess.deserialize import DeserializeInterface
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -112,8 +112,8 @@ class DeserializeStage(MultiMessageStage):
             out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
             builder.make_edge(input_node, out_node)
         else:
-            module_instance = deserialize.get_definition(module_name=f"deserialize_{self.unique_name}",
-                                                         module_config=self._module_config)
+            module_instance = DeserializeInterface.get_definition(module_name=f"deserialize_{self.unique_name}",
+                                                                  module_config=self._module_config)
 
             module = module_instance.load(builder)
 
