@@ -75,7 +75,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
                  recreate: bool = False,
                  resource_kwargs: dict = None,
                  batch_size: int = 1024,
-                 write_time_interval: float = 2.0,
+                 write_time_interval: float = 3.0,
                  **service_kwargs):
 
         super().__init__(config)

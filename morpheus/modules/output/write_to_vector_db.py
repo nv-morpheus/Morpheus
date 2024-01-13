@@ -59,6 +59,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     - 'resource_name': str, the name of the collection resource (must not be None or empty).
     - 'resource_kwargs': dict, additional keyword arguments for resource creation.
     - 'service_kwargs': dict, additional keyword arguments for VectorDBService creation.
+    - 'batch_size': int, accumulates messages until reaching the specified batch size for writing to VDB.
+    - 'write_time_interval': float, specifies the time interval (in seconds) for writing messages, or writing messages
+    when the accumulated batch size is reached.
 
     Raises
     ------
@@ -75,8 +78,8 @@ def _write_to_vector_db(builder: mrc.Builder):
     resource_name = module_config.get("resource_name", None)
     resource_kwargs = module_config.get("resource_kwargs", {})
     service_kwargs = module_config.get("service_kwargs", {})
-    batch_size = module_config.get("batch_size", 3)
-    write_time_interval = module_config.get("write_time_interval", 2.0)
+    batch_size = module_config.get("batch_size", 1024)
+    write_time_interval = module_config.get("write_time_interval", 3.0)
 
     if not resource_name:
         raise ValueError("Resource name must not be None or Empty.")
@@ -161,7 +164,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
                             final_df_references.append(merged_df)
-                            print(">>>>>>>>>>>>>>", accum_stats.msg_count)
+
                             # Reset accumlator stats
                             accum_stats.data.clear()
                             accum_stats.last_insert_time = current_time
