@@ -13,27 +13,19 @@
 # limitations under the License.
 
 import logging
-import os
 import typing
 
-import cudf
 import mrc
-import mrc.core.operators as ops
-import pandas as pd
-import requests
-import requests_cache
-from bs4 import BeautifulSoup
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
+from web_scraper_module import WebScraperInterface
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-# TODO(Devin) Convert to use module
 class WebScraperStage(SinglePortStage):
     """
     Stage for scraping web based content using the HTTP GET protocol.
@@ -61,27 +53,20 @@ class WebScraperStage(SinglePortStage):
                  cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"):
         super().__init__(c)
 
-        self._link_column = link_column
-        self._chunk_size = chunk_size
-        self._cache_dir = "./.cache/llm/rss/"
+        self._module_config = {
+            "web_scraper_config": {
+                "link_column": link_column,
+                "chunk_size": chunk_size,
+                "enable_cache": enable_cache,
+                "cache_path": cache_path,
+                "cache_dir": "./.cache/llm/rss",
+            }
+        }
 
-        # Ensure the directory exists
-        if (enable_cache):
-            os.makedirs(self._cache_dir, exist_ok=True)
+        self._input_port_name = "input"
+        self._output_port_name = "output"
 
-        self._text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size,
-                                                             chunk_overlap=self._chunk_size // 10,
-                                                             length_function=len)
-
-        if enable_cache:
-            self._session = requests_cache.CachedSession(cache_path, backend="sqlite")
-        else:
-            self._session = requests.Session()
-
-        self._session.headers.update({
-            "User-Agent":
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
-        })
+        self._module_definition = WebScraperInterface.get_definition("web_scraper", self._module_config)
 
     @property
     def name(self) -> str:
@@ -108,75 +93,11 @@ class WebScraperStage(SinglePortStage):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
+        module = self._module_definition.load(builder=builder)
 
-        node = builder.make_node(self.unique_name,
-                                 ops.map(self._download_and_split),
-                                 ops.filter(lambda x: x is not None))
+        mod_in_node = module.input_port(self._input_port_name)
+        mod_out_node = module.output_port(self._output_port_name)
 
-        node.launch_options.pe_count = self._config.num_threads
+        builder.make_edge(input_node, mod_in_node)
 
-        builder.make_edge(input_node, node)
-
-        return node
-
-    def _download_and_split(self, msg: MessageMeta) -> MessageMeta:
-        """
-        Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
-        it in the output, excludes output for any links which produce an error.
-        """
-        if self._link_column not in msg.get_column_names():
-            return None
-
-        df = msg.df
-
-        if isinstance(df, cudf.DataFrame):
-            df: pd.DataFrame = df.to_pandas()
-
-        # Convert the dataframe into a list of dictionaries
-        df_dicts = df.to_dict(orient="records")
-
-        final_rows: list[dict] = []
-
-        for row in df_dicts:
-
-            url = row[self._link_column]
-
-            try:
-                # Try to get the page content
-                response = self._session.get(url)
-
-                if (not response.ok):
-                    logger.warning(
-                        "Error downloading document from URL '%s'. " + "Returned code: %s. With reason: '%s'",
-                        url,
-                        response.status_code,
-                        response.reason)
-                    continue
-
-                raw_html = response.text
-
-                soup = BeautifulSoup(raw_html, "html.parser")
-
-                text = soup.get_text(strip=True, separator=' ')
-
-                split_text = self._text_splitter.split_text(text)
-
-                for text in split_text:
-                    row_cp = row.copy()
-                    row_cp.update({"page_content": text})
-                    final_rows.append(row_cp)
-
-                if isinstance(response, requests_cache.models.response.CachedResponse):
-                    logger.debug("Processed page: '%s'. Cache hit: %s", url, response.from_cache)
-                else:
-                    logger.debug("Processed page: '%s'", url)
-
-            except ValueError as exc:
-                logger.error("Error parsing document: %s", exc)
-                continue
-            except Exception as exc:
-                logger.error("Error downloading document from URL '%s'. Error: %s", url, exc)
-                continue
-
-        # Not using cudf to avoid error: pyarrow.lib.ArrowInvalid: cannot mix list and non-list, non-null values
-        return MessageMeta(pd.DataFrame(final_rows))
+        return mod_out_node

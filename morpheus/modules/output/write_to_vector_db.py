@@ -59,6 +59,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     - 'resource_name': str, the name of the collection resource (must not be None or empty).
     - 'resource_kwargs': dict, additional keyword arguments for resource creation.
     - 'service_kwargs': dict, additional keyword arguments for VectorDBService creation.
+    - 'batch_size': int, accumulates messages until reaching the specified batch size for writing to VDB.
+    - 'write_time_interval': float, specifies the time interval (in seconds) for writing messages, or writing messages
+    when the accumulated batch size is reached.
 
     Raises
     ------
@@ -75,9 +78,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     resource_name = module_config.get("resource_name", None)
     resource_kwargs = module_config.get("resource_kwargs", {})
     service_kwargs = module_config.get("service_kwargs", {})
-    batch_size = module_config.get("batch_size", 3)
-    write_time_interval = module_config.get("write_time_interval", 2.0)
-
+    batch_size = module_config.get("batch_size", 1024)
+    write_time_interval = module_config.get("write_time_interval", 3.0)
+    
     if not resource_name:
         raise ValueError("Resource name must not be None or Empty.")
 
@@ -106,14 +109,16 @@ def _write_to_vector_db(builder: mrc.Builder):
     
     def on_completed():
         final_df_references = []
+        
         # Pushing remaining messages
         for key, accum_stats in accumulator_dict.items():
             if accum_stats.data:
                 merged_df = cudf.concat(accum_stats.data)
-                service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
+                service.insert_dataframe(name=key, df=merged_df)
                 final_df_references.append(accum_stats.data)
         # Close vector database service connection
         service.close()
+
         return final_df_references
 
     def extract_df(msg):
@@ -140,12 +145,16 @@ def _write_to_vector_db(builder: mrc.Builder):
             df, resrc_name = extract_df(msg)
 
             if df is not None and not df.empty:
+                final_df_references = []
                 df_size = len(df)
                 current_time = time.time()
                 
                 # Use default resource name
                 if not resrc_name:
                     resrc_name = resource_name
+                    if not service.has_store_object(resrc_name):
+                        logger.error("Resource not exists in the vector database: %s", resource_name)
+                        return final_df_references
 
                 if resrc_name in accumulator_dict:
                     accumlator: AccumulationStats = accumulator_dict[resrc_name]
@@ -154,9 +163,8 @@ def _write_to_vector_db(builder: mrc.Builder):
                 else:
                     accumulator_dict[resrc_name] = AccumulationStats(msg_count=df_size, last_insert_time=-1, data=[df])
                 
-                final_df_references = []
                 for key, accum_stats in accumulator_dict.items():
-                    if accum_stats.msg_count >= batch_size or (accum_stats.last_insert_time != -1 and (current_time - accum_stats.last_insert_time) >= write_time_interval):
+                    if accum_stats.msg_count <= batch_size or (accum_stats.last_insert_time != -1 and (current_time - accum_stats.last_insert_time) >= write_time_interval):
                         if accum_stats.data:
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
@@ -168,11 +176,10 @@ def _write_to_vector_db(builder: mrc.Builder):
 
                 return final_df_references          
         except Exception as exc:
-            logger.error("Unable to insert into collection: %s due to %s", resource_name, exc)
+            logger.error("Unable to insert into collection: %s due to %s", resrc_name, exc)
 
     node = builder.make_node(WRITE_TO_VECTOR_DB,
                              ops.map(on_data),
-
                              ops.on_completed(on_completed))
 
     builder.register_module_input("input", node)

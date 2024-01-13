@@ -75,13 +75,12 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
                  recreate: bool = False,
                  resource_kwargs: dict = None,
                  batch_size: int = 1024,
-                 write_time_interval: float = 2.0,
+                 write_time_interval: float = 3.0,
                  **service_kwargs):
 
         super().__init__(config)
 
         resource_kwargs = resource_kwargs if resource_kwargs is not None else {}
-
         is_service_serialized = False
         if isinstance(service, VectorDBService):
             service = str(pickle.dumps(service), encoding="latin1")

@@ -17,6 +17,24 @@ import typing
 import warnings
 from functools import partial
 
+import logging
+from typing import Any
+from typing import Dict
+from typing import Optional
+
+import mrc
+import mrc.core.operators as ops
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
+
+from morpheus.messages import MessageMeta
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
+from morpheus.utils.schema_transforms import process_dataframe
 import mrc
 from mrc.core import operators as ops
 
@@ -26,6 +44,8 @@ from morpheus.messages import MultiMessage
 from morpheus.utils.module_utils import ModuleInterface
 from morpheus.utils.module_utils import register_module
 
+
+logger = logging.getLogger(__name__)
 
 def _check_slicable_index(message: MessageMeta, ensure_sliceable_index: bool = True):
     """
@@ -157,8 +177,15 @@ def _process_dataframe_to_control_message(message: MessageMeta, batch_size: int,
     return output
 
 
-logger = logging.getLogger(__name__)
 
+class DeserializeParamContract(BaseModel):
+    ensure_sliceable_index: bool = True
+    message_type: str = "MultiMessage"
+    task_type: Optional[str] = None
+    task_payload: Optional[Dict[Any, Any]] = None
+    batch_size: int = 1024
+    max_concurrency: int = 1
+    should_log_timestamp: bool = True
 
 @register_module("deserialize", "morpheus")
 def _deserialize(builder: mrc.Builder):
@@ -184,13 +211,22 @@ def _deserialize(builder: mrc.Builder):
 
     module_config = builder.get_current_module_config()
 
-    ensure_sliceable_index = module_config.get('ensure_sliceable_index', True)
-    message_type = module_config.get('message_type', "MultiMessage")
-    task_type = module_config.get('task_type', None)
-    task_payload = module_config.get('task_payload', None)
-    batch_size = module_config.get('batch_size', 2048)
-    max_concurrency = module_config.get('max_concurrency', 1)  # TODO(Devin): Unused
-    should_log_timestamp = module_config.get('should_log_timestamp', True)  # TODO(Devin): Unused
+    # Validate the module configuration using the contract
+    try:
+        deserializer_config = DeserializeParamContract(**module_config)
+    except ValidationError as e:
+        error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
+        log_error_message = f"Invalid deserialize configuration: {error_messages}"
+        logger.error(log_error_message)
+        raise ValueError(log_error_message)
+
+    ensure_sliceable_index = deserializer_config.ensure_sliceable_index
+    message_type = deserializer_config.message_type
+    task_type = deserializer_config.task_type
+    task_payload = deserializer_config.task_payload
+    batch_size = deserializer_config.batch_size
+    max_concurrency = deserializer_config.max_concurrency
+    should_log_timestamp = deserializer_config.should_log_timestamp
 
     if (task_type is not None) != (task_payload is not None):
         raise ValueError("task_type and task_payload must be both specified or both None")
@@ -220,4 +256,4 @@ def _deserialize(builder: mrc.Builder):
     builder.register_module_output("output", node)
 
 
-deserialize = ModuleInterface("deserialize", "morpheus")
+DeserializeInterface = ModuleInterface("deserialize", "morpheus")

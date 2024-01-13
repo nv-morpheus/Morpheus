@@ -57,7 +57,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
     do_lower_case : bool
         If set to true, original text will be lowercased before encoding.
     add_special_tokens : bool
-        Whether or not to encode the sequences with the special tokens of the BERT classification model.
+        Whether to encode the sequences with the special tokens of the BERT classification model.
     stride : int
         If `truncation` == False and the tokenized string is larger than max_length, the sequences containing the
         overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is equal to stride
@@ -111,7 +111,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                           add_special_tokens: bool,
                           column: str) -> MultiInferenceNLPMessage:
         """
-        For NLP category usecases, this function performs pre-processing.
+        For NLP category use cases, this function performs pre-processing.
 
         Parameters
         ----------
@@ -136,7 +136,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
             one output sequence. If set to false, there may be multiple output sequences when the max_length is smaller
             than generated tokens.
         add_special_tokens : bool
-            Whether or not to encode the sequences with the special tokens of the BERT classification model.
+            Whether to encode the sequences with the special tokens of the BERT classification model.
         column : str
             Name of the column containing the data that needs to be preprocessed.
 

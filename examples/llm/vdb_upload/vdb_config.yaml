@@ -14,10 +14,30 @@
 # limitations under the License.
 
 vdb_pipeline:
+  embeddings:
+    isolate_embeddings: false
+    model_kwargs:
+      force_convert_inputs: true
+      model_name: "all-MiniLM-L6-v2"
+      server_url: "http://localhost:8001"
+      use_shared_memory: true
+
+  pipeline:
+    edge_buffer_size: 128
+    feature_length: 512
+    max_batch_size: 256
+    num_threads: 10
+    pipeline_batch_size: 1024
+
   sources:
     - type: rss
       name: "rss_cve"
       config:
+        batch_size: 128  # Number of rss feeds to process at a time
+        cache_dir: "./.cache/http"
+        cooldown_interval_sec: 600
+        enable_cache: False
+        enable_monitor: True
         feed_input:
           - "https://www.theregister.com/security/headlines.atom"
           - "https://isc.sans.edu/dailypodcast.xml"
@@ -51,69 +71,55 @@ vdb_pipeline:
           - "https://www.wired.com/feed/tag/ai/latest/rss"
           - "https://blog.google/threat-analysis-group/rss/"
           - "https://intezer.com/feed/"
-        batch_size: 128 # Number of rss feeds to process at a time
-        cache_dir: "./.cache/http"
-        cooldown_interval_sec: 600
-        enable_cache: False
-        enable_monitor: True
         interval_sec: 600
         request_timeout_sec: 2.0
         run_indefinitely: true
         stop_after: 0
         web_scraper_config:
-          chunk_size: 512
           chunk_overlap: 51
+          chunk_size: 512
           enable_cache: false
 
-    # TODO(Bhargav): Find a dataset for us to use to demo the different filesystem possibilties.
     - type: filesystem
       name: "demo_filesystem_source"
       config:
         batch_size: 1024
-        chunk_size: 512
         chunk_overlap: 51
+        chunk_size: 512
+        converters_meta:
+          csv:
+            chunk_overlap: 51
+            chunk_size: 1024
+            text_column_name: "raw"  # Requires same schema for all CSV files.
         enable_monitor: False
-        extractor_config:
-          chunk_size: 512
-          num_threads: 10 # Number of threads to use for file reads
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
           - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-2.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-3.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-4.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-5.pdf"
           - "models/datasets/training-data/log-parsing-training-data.csv"
         watch: false
-        converters_meta:
-            csv:
-              chunk_size: 1024
-              text_column_name: "raw" # Requires same schema for all CSV files.
 
-    # Custom source example -- Here we just use the filesystem source but specify the module to use, explicitly.
     - type: custom
       name: "demo_custom_source"
       config:
-        config_name_mapping: "file_source_config"
-        namespace: "morpheus_examples_llm"
-        module_id: "file_source_pipe"
-        module_output_id: "output"
         batch_size: 1024
-        chunk_size: 512
         chunk_overlap: 51
+        chunk_size: 512
+        config_name_mapping: "file_source_config"
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
-          - "models/datasets/training-data/log-parsing-training-data.csv"
+        module_id: "file_source_pipe"
+        module_output_id: "output"
+        namespace: "morpheus_examples_llm"
         watch: false
 
-  embeddings:
-    model_name: "all-MiniLM-L6-v2"
+  tokenizer:
     model_kwargs:
-      - device: "cuda"
-    encode_kwargs:
-      - normalize_embeddings: true
-    size: 384
+      add_special_tokens: false
+      column: "content"
+      do_lower_case: true
+      truncation: true
+      vocab_hash_file: "data/bert-base-uncased-hash.txt"
+    model_name: "bert-base-uncased-hash"
 
   vdb:
     embedding_size: 384
