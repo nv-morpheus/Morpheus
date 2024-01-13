@@ -31,9 +31,6 @@ from morpheus.service.vdb.vector_db_service import VectorDBService
 logger = logging.getLogger(__name__)
 
 
-# TODO(Bhargav): Add accumulator functionality and related config options
-# TODO(Bhargav): Add support for dynamic 'collection' target check for CMs, such that if 'collection' is set we use it
-#               instead of the default collection name.
 class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     """
     Writes messages to a Vector Database.
