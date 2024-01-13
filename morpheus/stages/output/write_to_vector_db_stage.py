@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import logging
+import pickle
 import typing
+from morpheus.modules.output.write_to_vector_db import WriteToVectorDB
 
 import mrc
-from mrc.core import operators as ops
+from morpheus.utils.module_utils import ModuleDefinition
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
@@ -24,7 +26,6 @@ from morpheus.messages import MultiResponseMessage
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.service.vdb.vector_db_service import VectorDBService
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,11 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
         Specifies whether to recreate the resource if it already exists, by default False.
     resource_kwargs : dict, optional
         Additional keyword arguments to pass when performing vector database writes on a given resource.
+    batch_size : int
+        Accumulates messages until reaching the specified batch size for writing to VDB.
+    write_time_interval : float
+        Specifies the time interval (in seconds) for writing messages, or writing messages
+        when the accumulated batch size is reached.
     **service_kwargs : dict
         Additional keyword arguments to pass when creating a VectorDBService instance.
 
@@ -68,38 +74,37 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
                  embedding_column_name: str = "embedding",
                  recreate: bool = False,
                  resource_kwargs: dict = None,
+                 batch_size: int = 1024,
+                 write_time_interval: float = 2.0,
                  **service_kwargs):
 
         super().__init__(config)
 
-        self._resource_name = resource_name
-        self._embedding_column_name = embedding_column_name
-        self._recreate = recreate
-        self._resource_kwargs = resource_kwargs if resource_kwargs is not None else {}
+        resource_kwargs = resource_kwargs if resource_kwargs is not None else {}
 
-        if isinstance(service, str):
-            # If service is a string, assume it's the service name
-            self._service: VectorDBService = VectorDBServiceFactory.create_instance(service_name=service,
-                                                                                    **service_kwargs)
-        elif isinstance(service, VectorDBService):
-            # If service is an instance of VectorDBService, use it directly
-            self._service: VectorDBService = service
-        else:
-            raise ValueError("service must be a string (service name) or an instance of VectorDBService")
+        is_service_serialized = False
+        if isinstance(service, VectorDBService):
+            service = str(pickle.dumps(service), encoding="latin1")
+            is_service_serialized = True
 
-        has_object = self._service.has_store_object(name=self._resource_name)
+        module_config = {
+            "service": service,
+            "is_service_serialized": is_service_serialized,
+            "recreate": recreate,
+            "resource_name": resource_name,
+            "embedding_column_name": embedding_column_name,
+            "resource_kwargs":  resource_kwargs,
+            "service_kwargs": service_kwargs,
+            "batch_size": batch_size,
+            "write_time_interval": write_time_interval
+        }
 
-        if (self._recreate and has_object):
-            # Delete the existing resource
-            self._service.drop(name=self._resource_name)
-            has_object = False
-
-        # Ensure that the resource exists
-        if (not has_object):
-            self._service.create(name=self._resource_name, **self._resource_kwargs)
-
-        # Get the service for just the resource we are interested in
-        self._resource_service = self._service.load_resource(name=self._resource_name)
+        module_name = f"write_to_vector_db__{resource_name}"
+        
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Module will be loading with name: {module_name}")
+        
+        self._module_defination: ModuleDefinition = WriteToVectorDB.get_definition(module_name, module_config)
 
     @property
     def name(self) -> str:
@@ -120,57 +125,15 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
         return False
-
-    def on_completed(self):
-        # Close vector database service connection
-        self._service.close()
-
+    
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        def extract_df(msg):
-            df = None
+        module = self._module_defination.load(builder)
 
-            if isinstance(msg, ControlMessage):
-                df = msg.payload().df
-                # For control message, check if we have a collection tag
-            elif isinstance(msg, MultiResponseMessage):
-                df = msg.get_meta()
-                if df is not None and not df.empty:
-                    embeddings = msg.get_probs_tensor()
-                    df[self._embedding_column_name] = embeddings.tolist()
-            elif isinstance(msg, MultiMessage):
-                df = msg.get_meta()
-            else:
-                raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
+        # Input and Output port names should be same as input and output port names of write_to_vector_db module.
+        mod_in_node = module.input_port("input")
+        mod_out_node = module.output_port("output")
 
-            return df # Return df, collection_tag or df, None
+        builder.make_edge(input_node, mod_in_node)
 
-        def on_data(msg):
-            try:
-                df = extract_df(msg)
-                # df, collection_name = extract_df(msg)
-                # Call accumulator function, progress if we have enough data or our timeout has elapsed
-                # Need a different accumulator for each collection_name
-
-                if df is not None and not df.empty:
-                    result = self._service.insert_dataframe(name=self._resource_name, df=df, **self._resource_kwargs)
-
-                    if isinstance(msg, ControlMessage):
-                        msg.set_metadata("insert_response", result)
-
-                    return msg
-
-            except Exception as exc:
-                logger.error("Unable to insert into collection: %s due to %s", self._resource_name, exc)
-
-            return None
-
-        to_vector_db = builder.make_node(self.unique_name,
-                                         ops.map(on_data),
-                                         ops.filter(lambda x: x is not None),
-                                         ops.on_completed(self.on_completed))
-
-        builder.make_edge(input_node, to_vector_db)
-
-        # Return input unchanged to allow passthrough
-        return to_vector_db
+        return mod_out_node

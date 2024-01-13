@@ -101,7 +101,6 @@ def pipeline(source_config: typing.Dict,
                              use_shared_memory=True))
     monitor_2 = pipe.add_stage(MonitorStage(config, description="Inference rate", unit="events", delayed_start=True))
 
-    # TODO(Bhargav): Convert WriteToVectorDBStage to module + retain backwards compatibility.
     vector_db = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name=vdb_config.get('resource_name'),

@@ -56,7 +56,7 @@ def _file_source_pipe(builder: mrc.Builder):
         "namespace": "morpheus",
         "source_config": file_source_config,
     }
-
+    
     # Configure and load the file content extractor module
     file_content_extractor_config = {
         "module_id": "file_content_extractor",
@@ -64,7 +64,7 @@ def _file_source_pipe(builder: mrc.Builder):
         "namespace": "morpheus_examples_llm",
         "batch_size": module_config.get("batch_size", 32),  # Example configuration option
         "num_threads": module_config.get("num_threads", 10),  # Example configuration option
-        "converters_meta": module_config["file_source_config"].get("converters_meta", None)
+        "converters_meta": module_config["file_source_config"].get("converters_meta", {})
     }
 
     # Configure and load the schema transformation module
