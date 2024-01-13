@@ -18,7 +18,7 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci-conda"
 ARG CUDA_PKG_VER=11-8
-ARG CUDA_SHORT_VER=118
+ARG CUDA_SHORT_VER=11.8
 ARG CUDA_VER=11.8.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
@@ -32,19 +32,24 @@ FROM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} A
 SHELL ["/bin/bash",  "-c"]
 
 # Create conda environment
-COPY ./conda/environments/* /tmp/conda/
+COPY ./dependencies.yaml /tmp/conda/
 
 # ============ build ==================
 FROM base as build
 
 # Add any build only dependencies here.
 
-ARG PROJ_NAME
-ARG CUDA_SHORT_VER
 ARG ARCH
+ARG CUDA_SHORT_VER
+ARG PROJ_NAME
+ARG PYTHON_VER
 
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file \
-    /tmp/conda/dev_cuda-${CUDA_SHORT_VER}_arch-${ARCH}.yaml && \
+RUN rapids-dependency-file-generator \
+      --config /tmp/conda/dependencies.yaml \
+      --output conda \
+      --file_key build \
+      --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
     rm -rf /tmp/conda
@@ -54,9 +59,10 @@ FROM base as test
 
 # Add any test only dependencies here.
 
-ARG PROJ_NAME
-ARG CUDA_SHORT_VER
 ARG ARCH
+ARG CUDA_SHORT_VER
+ARG PROJ_NAME
+ARG PYTHON_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
@@ -65,8 +71,12 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file \
-    /tmp/conda/all_cuda-${CUDA_SHORT_VER}_arch-${ARCH}.yaml && \
+RUN rapids-dependency-file-generator \
+      --config /tmp/conda/dependencies.yaml \
+      --output conda \
+      --file_key test \
+      --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
     rm -rf /tmp/conda
