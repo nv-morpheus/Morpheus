@@ -161,7 +161,6 @@ def _write_to_vector_db(builder: mrc.Builder):
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
                             final_df_references.append(merged_df)
-                            print(">>>>>>>>>>>>>>", accum_stats.msg_count)
                             # Reset accumlator stats
                             accum_stats.data.clear()
                             accum_stats.last_insert_time = current_time
