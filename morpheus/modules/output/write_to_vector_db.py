@@ -164,7 +164,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                     accumulator_dict[resrc_name] = AccumulationStats(msg_count=df_size, last_insert_time=-1, data=[df])
                 
                 for key, accum_stats in accumulator_dict.items():
-                    if accum_stats.msg_count <= batch_size or (accum_stats.last_insert_time != -1 and (current_time - accum_stats.last_insert_time) >= write_time_interval):
+                    if accum_stats.msg_count >= batch_size or (accum_stats.last_insert_time != -1 and (current_time - accum_stats.last_insert_time) >= write_time_interval):
                         if accum_stats.data:
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
@@ -174,7 +174,8 @@ def _write_to_vector_db(builder: mrc.Builder):
                             accum_stats.last_insert_time = current_time
                             accum_stats.msg_count = 0
 
-                return final_df_references          
+                return final_df_references
+         
         except Exception as exc:
             logger.error("Unable to insert into collection: %s due to %s", resrc_name, exc)
 
