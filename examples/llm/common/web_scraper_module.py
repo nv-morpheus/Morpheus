@@ -71,7 +71,6 @@ it in the output, excludes output for any links which produce an error.
         try:
             # Try to get the page content
             response = session.get(url)
-            logger.info(f"RESPONSE TEXT: {response.text}")
 
             if (not response.ok):
                 logger.warning(
@@ -92,8 +91,6 @@ it in the output, excludes output for any links which produce an error.
                 row_cp = row.copy()
                 row_cp.update({"page_content": text})
                 final_rows.append(row_cp)
-
-            logger.info(final_rows)
 
             if isinstance(response, requests_cache.models.response.CachedResponse):
                 logger.debug("Processed cached page: '%s'", url)

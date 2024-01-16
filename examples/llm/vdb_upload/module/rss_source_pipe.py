@@ -36,13 +36,14 @@ logger = logging.getLogger(__name__)
 
 
 class RSSSourceParamContract(BaseModel):
-    batch_size: int = 128
+    batch_size: int = 32
     cache_dir: str = "./.cache/http"
     cooldown_interval_sec: int = 600
     enable_cache: bool = False
     enable_monitor: bool = True
     feed_input: List[str] = Field(default_factory=list)
     interval_sec: int = 600
+    output_batch_size: int = 2048
     request_timeout_sec: float = 2.0
     run_indefinitely: bool = True
     stop_after: int = 0
@@ -125,7 +126,7 @@ def _rss_source_pipe(builder: mrc.Builder):
     schema_transform_definition = SchemaTransformInterface.get_definition("schema_transform", transform_config)
 
     deserialize_definition = DeserializeInterface.get_definition("deserialize",
-                                                                {"batch_size": validated_config.batch_size})
+                                                                 {"batch_size": validated_config.output_batch_size})
 
     monitor_m1 = Monitor.get_definition("monitor_m1", {"description": "RSSSourcePipe RSS Source",
                                                        "silence_monitors": not enable_monitor})

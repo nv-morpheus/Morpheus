@@ -155,12 +155,31 @@ options and a pipeline to run. For the purposes of this document, we'll focus on
 incorporates various functionalities like handling RSS and filesystem sources, embedding configurations, and vector
 database (VDB) settings.
 
+#### Configuration Balance Considerations
+
+When configuring the Morpheus Pipeline, especially for stages like the RSS source and the Vector Database Upload, it's
+important to balance responsiveness and performance.
+
+- **RSS Source Stage**: The RSS source stage is responsible for yielding webpage links for processing. A larger batch size
+  at this stage can lead to decreased responsiveness, as the subsequent web scraper stage may take a considerable amount of
+  time to retrieve and process all the items in each batch. To ensure a responsive experience for users, it's recommended
+  to configure the RSS source stage with a relatively smaller batch size. This adjustment tends to have minimal impact on
+  overall performance while significantly improving the time to process each batch of links.
+
+- **Vector Database Upload Stage**: At the other end of the pipeline, the Vector Database Upload stage has its own
+  considerations. This stage experiences a significant transaction overhead. To mitigate this, it is advisable to configure
+  this stage with the largest batch size possible. This approach helps in efficiently managing transaction overheads and
+  improves the throughput of the pipeline, especially when dealing with large volumes of data.
+
+Balancing these configurations ensures that the pipeline runs efficiently, with optimized responsiveness at the RSS
+source stage and improved throughput at the Vector Database Upload stage.
+
 ### Run example:
 
 Default example usage, with pre-defined RSS source
 
 ```bash
-python examples/llm/main.py vdb_upload \
+python examples/llm/main.py vdb_upload pipeline \
   --enable_cache \
   --enable_monitors \
   --embedding_model_name all-MiniLM-L6-v2
@@ -171,7 +190,7 @@ Usage with CLI-Defined Sources:
 *Example: Defining an RSS Source via CLI*
 
 ```bash
-python examples/llm/main.py vdb_upload \
+python examples/llm/main.py vdb_upload pipeline \
   --source_type rss \
   --interval_secs 300 \
   --rss_request_timeout_sec 5.0 \
@@ -183,9 +202,9 @@ python examples/llm/main.py vdb_upload \
 *Example: Defining a Filesystem Source via CLI*
 
 ```bash
-python examples/llm/main.py vdb_upload \
+python examples/llm/main.py vdb_upload pipeline \
   --source_type filesystem \
-  --file_source "/path/to/files1" "/path/to/files2" \
+  --file_source "./morpheus/data/scratch/*" \
   --enable_monitors \
   --embedding_model_name all-MiniLM-L6-v2
 ```
@@ -193,9 +212,9 @@ python examples/llm/main.py vdb_upload \
 *Example: Combining RSS and Filesystem Sources via CLI*
 
 ```bash
-python examples/llm/main.py vdb_upload \
-  --source_type rss filesystem \
-  --file_source "/path/to/files" \
+python examples/llm/main.py vdb_upload pipeline \
+  --source_type rss --source_type filesystem \
+  --file_source "./morpheus/data/scratch/*" \
   --interval_secs 600 \
   --enable_cache \
   --enable_monitors \
@@ -224,7 +243,7 @@ vdb_pipeline:
 ```
 
 ```bash
-python examples/llm/main.py vdb_upload \
+python examples/llm/main.py vdb_upload pipeline \
   --vdb_config_path "./vdb_config.yaml"
 ```
 

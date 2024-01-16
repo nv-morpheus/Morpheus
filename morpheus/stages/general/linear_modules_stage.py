@@ -103,7 +103,7 @@ class LinearModulesStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if (isinstance(self._module_config, dict) and
                 "module_id" in self._module_config):
-            module = load_module(self._module_config["module_id"], builder=builder)
+            module = load_module(self._module_config, builder=builder)
         else:
             module = self._module_config.load(builder)
 

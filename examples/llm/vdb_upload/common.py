@@ -185,7 +185,7 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
     """
     vdb_sources = []
     for source_info in vdb_source_config:
-        validate_source_config(source_info)  # Assuming this function exists
+        validate_source_config(source_info)
         source_type = source_info['type']
         source_name = source_info['name']
         source_config = source_info['config']

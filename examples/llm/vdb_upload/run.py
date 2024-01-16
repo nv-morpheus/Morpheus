@@ -149,7 +149,9 @@ def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddi
             'type': 'rss',
             'name': 'rss-cli',
             'config': {
-                "batch_size": pipeline_batch_size,
+                # RSS feeds can take a while to pull, smaller batch sizes allows the pipeline to feel more responsive
+                "batch_size": 32,
+                "output_batch_size": 2048,
                 "cache_dir": "./.cache/http",
                 "cooldown_interval_sec": interval_secs,
                 "enable_cache": enable_cache,
@@ -196,8 +198,11 @@ def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddi
 
     # Pipeline Configuration
     cli_pipeline_conf = {
+        "edge_buffer_size": 128,
+        "embedding_size": embedding_size,
         "feature_length": model_fea_length,
         "isolate_embeddings": isolate_embeddings,
+        "max_batch_size": 256,
         "num_threads": num_threads,
         "pipeline_batch_size": pipeline_batch_size,
     }
@@ -311,7 +316,7 @@ def build_final_config(vdb_conf_path, cli_source_conf, cli_embeddings_conf, cli_
         vdb_conf = merge_configs(vdb_pipeline_config.get('vdb', {}), cli_vdb_conf)
 
         # TODO: class labels depends on this, so it should be a pipeline level parameter, not a vdb level parameter
-        pipeline_conf['embedding_size'] = vdb_conf.get('embedding_size')
+        pipeline_conf['embedding_size'] = vdb_conf.get('embedding_size', 384)
 
         final_config.update({
             'embeddings_config': embeddings_conf,

@@ -27,13 +27,13 @@ vdb_pipeline:
     feature_length: 512
     max_batch_size: 256
     num_threads: 10
-    pipeline_batch_size: 1024
+    pipeline_batch_size: 128
 
   sources:
     - type: rss
       name: "rss_cve"
       config:
-        batch_size: 128  # Number of rss feeds to process at a time
+        batch_size: 32 # Number of rss feeds per batch
         cache_dir: "./.cache/http"
         cooldown_interval_sec: 600
         enable_cache: False
@@ -72,6 +72,7 @@ vdb_pipeline:
           - "https://blog.google/threat-analysis-group/rss/"
           - "https://intezer.com/feed/"
         interval_sec: 600
+        output_batch_size: 2048 # Number of chunked documents per output batch
         request_timeout_sec: 2.0
         run_indefinitely: true
         stop_after: 0
