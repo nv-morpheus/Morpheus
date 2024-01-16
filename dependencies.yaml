@@ -146,6 +146,7 @@ dependencies:
           - nlohmann_json=3.9
           - protobuf=4.21.*
           - pybind11-stubgen=0.10
+          - python=3.10
           - rapidjson=1.1.0
           - scikit-build=0.17.1
           - sysroot_linux-64=2.17
