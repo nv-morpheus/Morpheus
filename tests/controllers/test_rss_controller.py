@@ -81,10 +81,9 @@ def test_run_indefinitely_false(feed_input: list[str]):
 def test_parse_feed_valid_url(feed_input: list[str], mock_feed: feedparser.FeedParserDict, mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
 
-    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    patch("morpheus.controllers.rss_controller.feedparser.parse", return_value=mock_feed)
 
-    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response):
-        mock_feedparser_parse.return_value = mock_feed
+    with patch("requests.Session.get", return_value=mock_get_response):
         feed = list(controller.parse_feeds())[0]
         assert feed.entries
 
@@ -120,10 +119,9 @@ def test_fetch_dataframes_url(feed_input: str | list[str],
                               mock_get_response: Mock):
     controller = RSSController(feed_input=feed_input)
 
-    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    patch("morpheus.controllers.rss_controller.feedparser.parse", return_value=mock_feed)
 
-    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response):
-        mock_feedparser_parse.return_value = mock_feed
+    with patch("requests.Session.get", return_value=mock_get_response):
         dataframes_generator = controller.fetch_dataframes()
         dataframe = next(dataframes_generator, None)
         assert isinstance(dataframe, pd.DataFrame)
@@ -225,3 +223,15 @@ def test_parse_feeds(mock_feed: feedparser.FeedParserDict):
 
         with pytest.raises(ValueError):
             controller.get_feed_stats("http://testfeed.com")
+
+
+@pytest.mark.parametrize("feed_input", [test_urls[0]])
+def test_redundant_fetch(feed_input: str, mock_feed: feedparser.FeedParserDict, mock_get_response: Mock):
+
+    controller = RSSController(feed_input=feed_input)
+    mock_feedparser_parse = patch("morpheus.controllers.rss_controller.feedparser.parse")
+    with mock_feedparser_parse, patch("requests.Session.get", return_value=mock_get_response) as mocked_session_get:
+        mock_feedparser_parse.return_value = mock_feed
+        dataframes_generator = controller.fetch_dataframes()
+        next(dataframes_generator, None)
+        assert mocked_session_get.call_count == 1

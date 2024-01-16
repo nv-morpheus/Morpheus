@@ -156,7 +156,7 @@ class RSSController:
 
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str) -> "feedparser.FeedParserDict":
 
-        soup = BeautifulSoup(feed_input, 'xml')
+        soup = BeautifulSoup(feed_input, 'lxml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
         if soup.find('item'):
@@ -196,10 +196,13 @@ class RSSController:
         is_url = RSSController.is_url(url)
 
         fallback = False
+        cache_hit = False
 
         if is_url:
             response = self._session.get(url, timeout=self._request_timeout)
             feed_input = response.text
+            if self._enable_cache:
+                cache_hit = response.from_cache
         else:
             feed_input = url
 
@@ -217,7 +220,7 @@ class RSSController:
                 logger.error("Failed to parse the feed manually: %s", url)
                 raise
 
-        logger.debug("Parsed feed: %s. Fallback: %s", url, fallback)
+        logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
 
         return feed
 
