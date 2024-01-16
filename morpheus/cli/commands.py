@@ -684,7 +684,7 @@ add_command("inf-pytorch",
             "morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage",
             modes=AE_ONLY)
 add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=NOT_AE)
-add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=ALL)
+add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=NOT_AE)
 add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=NOT_AE)
 add_command("monitor", "morpheus.stages.general.monitor_stage.MonitorStage", modes=ALL)
 add_command("preprocess", "morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage", modes=AE_ONLY)

@@ -38,7 +38,6 @@ dependencies:
 - flake8
 - gcc_linux-64=11.2
 - git-lfs
-- gputil
 - grpcio
 - gxx_linux-64=11.2
 - include-what-you-use=0.20
