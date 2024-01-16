@@ -70,13 +70,14 @@ print_env_vars
 function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
+    conda activate base
 
 
     if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
         rapids-logger "Checking for updates to conda env"
 
         # Update the packages
-        rapids-conda-retry env update -n morpheus --verbose --verbose --prune -q --file "$1"
+        rapids-conda-retry env update -n morpheus --prune -q --file "$1"
     fi
 
     # Finally, reactivate
