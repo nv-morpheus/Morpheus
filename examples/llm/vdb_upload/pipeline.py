@@ -72,7 +72,6 @@ def pipeline(pipeline_config: Config, source_config: typing.List, vdb_config: ty
     monitor_2 = pipe.add_stage(
         MonitorStage(pipeline_config, description="Inference rate", unit="events", delayed_start=True))
 
-    # TODO(Bhargav): Convert WriteToVectorDBStage to module + retain backwards compatibility.
     vector_db = pipe.add_stage(WriteToVectorDBStage(pipeline_config, **vdb_config))
 
     monitor_3 = pipe.add_stage(

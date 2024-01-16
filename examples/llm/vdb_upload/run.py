@@ -19,8 +19,9 @@ import click
 import yaml
 
 from morpheus.config import Config, PipelineModes
-from ..common.utils import build_milvus_config
+from .common import build_defualt_milvus_config
 from ..common.utils import build_rss_urls
+from ..common.utils import build_milvus_config
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +224,7 @@ def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddi
     cli_vdb_conf = {
         'embedding_size': embedding_size,
         'recreate': True,
-        'resource_kwargs': build_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
+        'resource_kwargs': build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
         'resource_name': vector_db_resource_name,
         'service': vector_db_service,
         'uri': vector_db_uri,
@@ -313,7 +314,12 @@ def build_final_config(vdb_conf_path, cli_source_conf, cli_embeddings_conf, cli_
         pipeline_conf = merge_configs(vdb_pipeline_config.get('pipeline', {}), cli_pipeline_conf)
         source_conf = vdb_pipeline_config.get('sources', []) + list(cli_source_conf.values())
         tokenizer_conf = merge_configs(vdb_pipeline_config.get('tokenizer', {}), cli_tokenizer_conf)
-        vdb_conf = merge_configs(vdb_pipeline_config.get('vdb', {}), cli_vdb_conf)
+        vdb_conf = vdb_pipeline_config.get('vdb', {})
+        resource_schema = vdb_conf.pop("resource_shema", None)
+        
+        if resource_schema:
+            vdb_conf["resource_kwargs"] = build_milvus_config(resource_schema)
+        vdb_conf = merge_configs(vdb_conf, cli_vdb_conf)
 
         # TODO: class labels depends on this, so it should be a pipeline level parameter, not a vdb level parameter
         pipeline_conf['embedding_size'] = vdb_conf.get('embedding_size', 384)

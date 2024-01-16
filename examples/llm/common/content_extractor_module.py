@@ -180,6 +180,7 @@ def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, 
             for chunk in split_text:
                 processed_data.append({
                     'title': file_meta.file_name,
+                    'link': 'none',
                     'source': f"{file_meta.file_type}:{file_meta.file_path}",
                     'summary': 'none',
                     'content': chunk
@@ -272,6 +273,14 @@ def file_content_extractor(builder: mrc.Builder):
         "txt": TextConverter()
     }
 
+    chunk_params = {
+        file_type: {
+            "chunk_size": converters_meta.get(file_type, {}).get("chunk_size", chunk_size),
+            "chunk_overlap": converters_meta.get(file_type, {}).get("chunk_overlap", chunk_overlap)
+        }
+        for file_type in converters.keys()
+    }
+
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
         data = []
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -292,7 +301,10 @@ def file_content_extractor(builder: mrc.Builder):
                 for file_meta, future in zip(files_meta, futures):
                     docs = future.result()
                     if docs:
-                        result = process_content(docs, file_meta, chunk_size, chunk_overlap)
+                        file_type_chunk_params = chunk_params[file_meta.file_type]
+                        result = process_content(docs, file_meta,
+                                                 file_type_chunk_params["chunk_size"],
+                                                 file_type_chunk_params["chunk_overlap"])
                         if result:
                             data.extend(result)
 
