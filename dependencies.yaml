@@ -124,7 +124,6 @@ channels:
   - pytorch
   - conda-forge
   - dglteam/label/cu118
-  - defaults
 
 dependencies:
 
