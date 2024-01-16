@@ -180,7 +180,6 @@ def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, 
             for chunk in split_text:
                 processed_data.append({
                     'title': file_meta.file_name,
-                    'link': 'none',
                     'source': f"{file_meta.file_type}:{file_meta.file_path}",
                     'summary': 'none',
                     'content': chunk
