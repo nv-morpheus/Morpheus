@@ -137,7 +137,7 @@ services:
       - sys_nice
 
   grafana:
-    image: grafana/grafana:10.2.3
+    image: grafana/grafana:10.0.0
     environment:
       GF_INSTALL_PLUGINS: "marcusolsson-csv-datasource"
     volumes:
