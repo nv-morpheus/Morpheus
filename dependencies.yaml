@@ -25,14 +25,20 @@ files:
       - build_cpp
       - development
       - benchmark_cpp
-      - examples
       - runtime
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
       - test_python_morpheus
       - docs
       - cudatoolkit
       - python
       - runtime
       - checks
+      - cve-mitigation
 
   dev:
     output: conda
@@ -106,12 +112,36 @@ files:
       - runtime
       - python
 
+  examples:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - runtime
+      - example-dfp-prod
+      - example-gnn
+      - example-llm-agents
+      - example-llm-completion
+      - example-llm-rag
+      - example-llm-vdb-upload
+      - python
+      - cve-mitigation
+
+  model-utils:
+    output: conda
+    matrix:
+      cuda: ["12.1"]
+      arch: [x86_64]
+    includes:
+      - model-training-tuning
+      - python
+
   checks:
     output: none
     includes:
       - checks
       - python
-
 
 channels:
   - conda-forge
@@ -195,47 +225,6 @@ dependencies:
         packages:
           - benchmark=1.8.3
 
-  examples:
-    common:
-      - output_types: [conda]
-        packages:
-          - arxiv=1.4
-          - boto3
-          - cuml=24.02.*
-          - dask=2023.12.1
-          # - dglteam/label/cu121::dgl
-          - dill=0.3.7
-          - distributed=2023.12.1
-          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
-          - langchain=0.0.190
-          - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
-          - mlflow=2.9.2
-          - newspaper3k=0.2
-          - openai=0.28
-          - papermill=2.4.0
-          - pypdf=3.17.4
-          - s3fs=2023.12.2
-          - sentence-transformers
-          - transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
-          ####### Pip Transitive Dependencies (keep sorted!) #######
-          # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
-          # better to install them with conda than pip to allow for better dependency resolution.
-          - environs=9.5
-          - minio=7.2
-          - python-dotenv=1.0
-          - ujson=5.9
-          ####### Pip Dependencies (keep sorted!) #######
-          - pip
-          - pip:
-              - --find-links https://data.dgl.ai/wheels/cu121/repo.html
-              - --find-links https://data.dgl.ai/wheels-test/repo.html
-              - dgl
-              - dglgo
-              - google-search-results==2.4
-              - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
-              - nemollm
-
-
   runtime:
     common:
       - output_types: [conda]
@@ -256,7 +245,7 @@ dependencies:
           - pytorch-cuda
           - pytorch=*=*cuda*
           - requests-cache=1.1
-          - scikit-learn=1.3.2
+          - &scikit-learn scikit-learn=1.3.2
           - sqlalchemy
           - tqdm=4
           - typing_utils=0.1
@@ -272,7 +261,7 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
-          - nodejs=18.*
+          - &nodejs nodejs=18.*
           - pytest
           - pytest-asyncio
           - pytest-benchmark=4.0
@@ -280,6 +269,114 @@ dependencies:
           - pip
           - pip:
               - pytest-kafka==0.6.0
+
+  example-dfp-prod:
+    common:
+      - output_types: [conda]
+        packages:
+          - boto3
+          - dask=2023.12.1
+          - dill=0.3.7
+          - distributed=2023.12.1
+          - kfp
+          - mlflow=2.9.2
+          - *nodejs
+          - papermill=2.4.0
+          - s3fs=2023.12.2
+
+  example-gnn:
+    common:
+      - output_types: [conda]
+        packages:
+          - &cuml cuml=24.02.*
+          - pip
+          - pip:
+            - --find-links https://data.dgl.ai/wheels/cu121/repo.html
+            - --find-links https://data.dgl.ai/wheels-test/repo.html
+            - dgl
+            - dglgo
+
+  example-llm-agents:
+    common:
+      - output_types: [conda]
+        packages:
+          - &langchain langchain=0.0.190
+          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - sentence-transformers
+          - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
+          - pip
+          - pip:
+            - &grpcio-status grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
+            - nemollm
+
+  example-llm-completion:
+    common:
+      - output_types: [conda]
+        packages:
+          - &arxiv arxiv=1.4
+          - &pypdf pypdf=3.17.4
+          - &newspaper3k newspaper3k=0.2
+          # ####### Pip Transitive Dependencies #######
+          # - &environs environs=9.5
+          # - &minio minio=7.2
+          # - &python-dotenv python-dotenv=1.0
+          # - &ujson ujson=5.9
+          - pip
+          - pip:
+            - *grpcio-status
+
+  example-llm-rag:
+    common:
+      - output_types: [conda]
+        packages:
+          - *langchain
+          - openai=0.28
+          - anyio>=3.7
+          - jsonpatch>=1.33
+          - pip
+          - pip:
+            - google-search-results==2.4
+            - *grpcio-status
+
+  example-llm-vdb-upload:
+    common:
+      - output_types: [conda]
+        packages:
+          - *langchain
+          - *arxiv
+          - onnx
+          - *pypdf
+          - *newspaper3k
+          # ####### Pip Transitive Dependencies #######
+          # - *environs
+          # - *minio
+          # # - pydantic>=2.4
+          # - *python-dotenv
+          # - *ujson
+          - pip
+          - pip:
+            - *grpcio-status
+
+  model-training-tuning:
+    common:
+      - output_types: [conda]
+        packages:
+          - *cuml
+          - jupyterlab
+          - matplotlib
+          - onnx
+          - pandas
+          - *scikit-learn
+          - seaborn
+          - seqeval=1.2.2
+          - *transformers
+          - xgboost
+
+  cve-mitigation:
+    common:
+      - output_types: [conda]
+        packages:
+          - libwebp=1.3.2 # Required for CVE mitigation: https://nvd.nist.gov/vuln/detail/CVE-2023-4863
 
   python:
     common:
