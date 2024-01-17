@@ -23,7 +23,8 @@ from pydantic import ValidationError
 
 from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
@@ -81,15 +82,13 @@ def rss_source(builder: mrc.Builder):
         raise ValueError(log_error_message)
 
     # Initialize RSSController with validated configuration
-    controller = RSSController(
-        feed_input=validated_config.feed_input,
-        run_indefinitely=validated_config.run_indefinitely,
-        batch_size=validated_config.batch_size,
-        enable_cache=validated_config.enable_cache,
-        cache_dir=validated_config.cache_dir,
-        cooldown_interval=validated_config.cooldown_interval_sec,
-        request_timeout=validated_config.request_timeout_sec
-    )
+    controller = RSSController(feed_input=validated_config.feed_input,
+                               run_indefinitely=validated_config.run_indefinitely,
+                               batch_size=validated_config.batch_size,
+                               enable_cache=validated_config.enable_cache,
+                               cache_dir=validated_config.cache_dir,
+                               cooldown_interval=validated_config.cooldown_interval_sec,
+                               request_timeout=validated_config.request_timeout_sec)
 
     stop_requested = False
 

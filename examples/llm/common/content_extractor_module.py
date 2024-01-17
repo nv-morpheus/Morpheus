@@ -35,7 +35,8 @@ from pydantic import ValidationError
 from pydantic import validator
 
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +302,8 @@ def file_content_extractor(builder: mrc.Builder):
                     docs = future.result()
                     if docs:
                         file_type_chunk_params = chunk_params[file_meta.file_type]
-                        result = process_content(docs, file_meta,
+                        result = process_content(docs,
+                                                 file_meta,
                                                  file_type_chunk_params["chunk_size"],
                                                  file_type_chunk_params["chunk_overlap"])
                         if result:
@@ -316,5 +318,6 @@ def file_content_extractor(builder: mrc.Builder):
     builder.register_module_output("output", node)
 
 
-FileContentExtractorInterface = ModuleInterface("file_content_extractor", "morpheus_examples_llm",
+FileContentExtractorInterface = ModuleInterface("file_content_extractor",
+                                                "morpheus_examples_llm",
                                                 ExtractorParamContract)

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import logging
 import os
 import random
@@ -31,8 +30,8 @@ from typing import List
 import fsspec.core
 import pandas as pd
 import pytest
-from _utils import TEST_DIRS
 
+from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -44,6 +43,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 class TempCSVFiles:
+
     def __init__(self, num_files: int, columns: Dict[str, Callable[[], any]]):
         self.temp_dir = None
         self.temp_files = []
@@ -78,8 +78,7 @@ class TempCSVFiles:
 
 
 # Define a generator function that uses TempCSVFiles to generate CSV file paths
-def csv_file_generator(csv_files: List[str], batch_size: int) -> Generator[
-    List[fsspec.core.OpenFile], None, None]:
+def csv_file_generator(csv_files: List[str], batch_size: int) -> Generator[List[fsspec.core.OpenFile], None, None]:
     # Create TempCSVFiles instance without using 'with' statement
     open_files = fsspec.open_files(csv_files.temp_files)
     for i in range(0, len(open_files), batch_size):
@@ -102,24 +101,14 @@ def import_content_extractor_module():
 # Test function
 @pytest.mark.use_python
 @pytest.mark.use_cudf
-@pytest.mark.parametrize("data_len, num_rows_per_file, batch_size", [
-    (40, 5, 2),
-    (51, 3, 1),
-    (150, 10, 5),
-    (500, 3, 2),
-    (1000, 5, 3),
-    (50, 10, 2),
-    (100, 20, 3),
-    (50, 5, 1),
-    (100, 10, 1),
-    (49, 5, 2),
-    (99, 5, 2),
-    (60, 7, 2),
-    (120, 6, 3),
-    (1000, 50, 10),
-    (2000, 100, 20)
-])
-def test_content_extractor_module(data_len, num_rows_per_file, batch_size, config: Config,
+@pytest.mark.parametrize("data_len, num_rows_per_file, batch_size",
+                         [(40, 5, 2), (51, 3, 1), (150, 10, 5), (500, 3, 2), (1000, 5, 3), (50, 10, 2), (100, 20, 3),
+                          (50, 5, 1), (100, 10, 1), (49, 5, 2), (99, 5, 2), (60, 7, 2), (120, 6, 3), (1000, 50, 10),
+                          (2000, 100, 20)])
+def test_content_extractor_module(data_len,
+                                  num_rows_per_file,
+                                  batch_size,
+                                  config: Config,
                                   import_content_extractor_module: types.ModuleType):
     chunk_size = 50
     chunk_overlap = 10
@@ -140,22 +129,22 @@ def test_content_extractor_module(data_len, num_rows_per_file, batch_size, confi
         "enable_monitor": False,
     }
     content_extractor_def = import_content_extractor_module.FileContentExtractorInterface.get_definition(
-        "content_extractor",
-        module_config=module_config)
+        "content_extractor", module_config=module_config)
 
-    temp_csv_files = TempCSVFiles(num_files=5,
-                                  columns={'some_column': lambda: [generate_random_string(data_len) for _ in
-                                                                   range(num_rows_per_file)]})
+    temp_csv_files = TempCSVFiles(
+        num_files=5,
+        columns={'some_column': lambda: [generate_random_string(data_len) for _ in range(num_rows_per_file)]})
     file_generator = partial(csv_file_generator, temp_csv_files, batch_size=1)
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemoryDataGenStage(config, file_generator, output_data_type=List[fsspec.core.OpenFile]))
-    pipe.add_stage(LinearModulesStage(config,
-                                      content_extractor_def,
-                                      input_type=List[fsspec.core.OpenFile],
-                                      output_type=MessageMeta,
-                                      input_port_name="input",
-                                      output_port_name="output"))
+    pipe.add_stage(
+        LinearModulesStage(config,
+                           content_extractor_def,
+                           input_type=List[fsspec.core.OpenFile],
+                           output_type=MessageMeta,
+                           input_port_name="input",
+                           output_port_name="output"))
     sink_stage = pipe.add_stage(InMemorySinkStage(config))
     pipe.run()
 
@@ -163,7 +152,6 @@ def test_content_extractor_module(data_len, num_rows_per_file, batch_size, confi
     for message in sink_stage.get_messages():
         output = message.df
         assert set(expected_columns) == set(output.columns)
-        assert output.shape == (
-            num_rows_per_file * ((data_len // chunk_boundary_size) + (
-                1 if data_len % chunk_boundary_size else 0)),
-            4)
+        assert output.shape == (num_rows_per_file * ((data_len // chunk_boundary_size) +
+                                                     (1 if data_len % chunk_boundary_size else 0)),
+                                4)

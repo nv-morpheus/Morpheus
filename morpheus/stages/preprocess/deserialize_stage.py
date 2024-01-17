@@ -97,7 +97,7 @@ class DeserializeStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta,)
+        return (MessageMeta, )
 
     def supports_cpp_node(self):
         # Enable support by default

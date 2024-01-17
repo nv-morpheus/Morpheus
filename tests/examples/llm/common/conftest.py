@@ -17,6 +17,7 @@ import os
 import sys
 
 import pytest
+
 from _utils import TEST_DIRS
 from _utils import import_or_skip
 
@@ -29,6 +30,7 @@ def import_utils():
     import utils
 
     return utils
+
 
 @pytest.fixture(scope="module")
 def import_web_scraper_module():

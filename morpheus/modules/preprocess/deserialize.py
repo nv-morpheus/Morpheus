@@ -16,36 +16,30 @@ import logging
 import typing
 import warnings
 from functools import partial
-
-import logging
 from typing import Any
 from typing import Dict
 from typing import Optional
 
 import mrc
 import mrc.core.operators as ops
+from mrc.core import operators as ops
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
 
-from morpheus.messages import MessageMeta
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.module_utils import register_module, ModuleInterface
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
-from morpheus.utils.schema_transforms import process_dataframe
-import mrc
-from mrc.core import operators as ops
-
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.module_utils import ModuleInterface
 from morpheus.utils.module_utils import register_module
-
+from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
+from morpheus.utils.schema_transforms import process_dataframe
 
 logger = logging.getLogger(__name__)
+
 
 def _check_slicable_index(message: MessageMeta, ensure_sliceable_index: bool = True):
     """
@@ -117,7 +111,8 @@ def _process_dataframe_to_multi_message(message: MessageMeta, batch_size: int,
     return output
 
 
-def _process_dataframe_to_control_message(message: MessageMeta, batch_size: int,
+def _process_dataframe_to_control_message(message: MessageMeta,
+                                          batch_size: int,
                                           ensure_sliceable_index: bool,
                                           task_tuple: tuple[str, dict] | None) -> typing.List[ControlMessage]:
     """
@@ -177,7 +172,6 @@ def _process_dataframe_to_control_message(message: MessageMeta, batch_size: int,
     return output
 
 
-
 class DeserializeParamContract(BaseModel):
     ensure_sliceable_index: bool = True
     message_type: str = "MultiMessage"
@@ -186,6 +180,7 @@ class DeserializeParamContract(BaseModel):
     batch_size: int = 1024
     max_concurrency: int = 1
     should_log_timestamp: bool = True
+
 
 @register_module("deserialize", "morpheus")
 def _deserialize(builder: mrc.Builder):
@@ -249,7 +244,9 @@ def _deserialize(builder: mrc.Builder):
                            ensure_sliceable_index=ensure_sliceable_index,
                            task_tuple=task_tuple)
 
-    node = builder.make_node("deserialize", ops.map(map_func), ops.flatten(),
+    node = builder.make_node("deserialize",
+                             ops.map(map_func),
+                             ops.flatten(),
                              ops.filter(lambda message: message is not None))
 
     builder.register_module_input("input", node)

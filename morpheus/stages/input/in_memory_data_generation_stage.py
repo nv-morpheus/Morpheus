@@ -41,8 +41,7 @@ class InMemoryDataGenStage(SingleOutputSource):
         The data type of the objects that the generator yields.
     """
 
-    def __init__(self, c: Config, generator: Callable[[], Generator[Any, None, None]],
-                 output_data_type: Type = Any):
+    def __init__(self, c: Config, generator: Callable[[], Generator[Any, None, None]], output_data_type: Type = Any):
         super().__init__(c)
         self._generator = generator
         self._output_data_type = output_data_type

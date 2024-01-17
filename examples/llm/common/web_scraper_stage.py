@@ -16,12 +16,12 @@ import logging
 import typing
 
 import mrc
+from web_scraper_module import WebScraperInterface
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
-from web_scraper_module import WebScraperInterface
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -83,7 +83,7 @@ class WebScraperStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MessageMeta,)
+        return (MessageMeta, )
 
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""

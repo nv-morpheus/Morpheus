@@ -18,10 +18,12 @@ import os
 import click
 import yaml
 
-from morpheus.config import Config, PipelineModes
-from .common import build_defualt_milvus_config
-from ..common.utils import build_rss_urls
+from morpheus.config import Config
+from morpheus.config import PipelineModes
+
 from ..common.utils import build_milvus_config
+from ..common.utils import build_rss_urls
+from .common import build_defualt_milvus_config
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +84,27 @@ def merge_configs(file_config, cli_config):
     return merged_config
 
 
-def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddings, embedding_model_name,
-                      enable_monitors, file_source, interval_secs, pipeline_batch_size, run_indefinitely, stop_after,
-                      vector_db_resource_name, vector_db_service, vector_db_uri, content_chunking_size, num_threads,
-                      rss_request_timeout_sec, model_max_batch_size, model_fea_length, triton_server_url, feed_inputs):
+def build_cli_configs(source_type,
+                      enable_cache,
+                      embedding_size,
+                      isolate_embeddings,
+                      embedding_model_name,
+                      enable_monitors,
+                      file_source,
+                      interval_secs,
+                      pipeline_batch_size,
+                      run_indefinitely,
+                      stop_after,
+                      vector_db_resource_name,
+                      vector_db_service,
+                      vector_db_uri,
+                      content_chunking_size,
+                      num_threads,
+                      rss_request_timeout_sec,
+                      model_max_batch_size,
+                      model_fea_length,
+                      triton_server_url,
+                      feed_inputs):
     """
     Create configuration dictionaries based on CLI arguments.
 
@@ -176,8 +195,7 @@ def build_cli_configs(source_type, enable_cache, embedding_size, isolate_embeddi
                 "batch_size": pipeline_batch_size,
                 "enable_monitor": enable_monitors,
                 "extractor_config": {
-                    "chunk_size": content_chunking_size,
-                    "num_threads": num_threads
+                    "chunk_size": content_chunking_size, "num_threads": num_threads
                 },
                 "filenames": file_source,
                 "watch": run_indefinitely
@@ -268,7 +286,11 @@ def build_pipeline_config(pipeline_config: dict):
     return config
 
 
-def build_final_config(vdb_conf_path, cli_source_conf, cli_embeddings_conf, cli_pipeline_conf, cli_tokenizer_conf,
+def build_final_config(vdb_conf_path,
+                       cli_source_conf,
+                       cli_embeddings_conf,
+                       cli_pipeline_conf,
+                       cli_tokenizer_conf,
                        cli_vdb_conf):
     """
     Load and merge configurations from the CLI and YAML file.
@@ -316,7 +338,7 @@ def build_final_config(vdb_conf_path, cli_source_conf, cli_embeddings_conf, cli_
         tokenizer_conf = merge_configs(vdb_pipeline_config.get('tokenizer', {}), cli_tokenizer_conf)
         vdb_conf = vdb_pipeline_config.get('vdb', {})
         resource_schema = vdb_conf.pop("resource_shema", None)
-        
+
         if resource_schema:
             vdb_conf["resource_kwargs"] = build_milvus_config(resource_schema)
         vdb_conf = merge_configs(vdb_conf, cli_vdb_conf)
@@ -354,8 +376,7 @@ def run():
     "--content_chunking_size",
     default=512,  # Set a sensible default value
     type=click.IntRange(min=1),  # Ensure that only positive integers are valid
-    help="The size of content chunks for processing."
-)
+    help="The size of content chunks for processing.")
 @click.option(
     "--embedding_size",
     default=384,
@@ -368,36 +389,19 @@ def run():
     default=False,
     help="Enable caching of RSS feed request data.",
 )
-@click.option(
-    "--enable_monitors",
-    is_flag=True,
-    default=False,
-    help="Enable or disable monitor functionality."
-)
-@click.option(
-    '--file_source',
-    multiple=True,
-    default=[],
-    type=str,
-    help='List of file sources/paths to be processed.')
-@click.option(
-    '--feed_inputs',
-    multiple=True,
-    default=[],
-    type=str,
-    help='List of RSS source feeds to process.')
+@click.option("--enable_monitors", is_flag=True, default=False, help="Enable or disable monitor functionality.")
+@click.option('--file_source', multiple=True, default=[], type=str, help='List of file sources/paths to be processed.')
+@click.option('--feed_inputs', multiple=True, default=[], type=str, help='List of RSS source feeds to process.')
 @click.option(
     "--interval_secs",
     default=600,
     type=click.IntRange(min=1),
     help="Interval in seconds between fetching new feed items.",
 )
-@click.option(
-    "--isolate_embeddings",
-    is_flag=True,
-    default=False,
-    help="Whether to fetch all data prior to executing the rest of the pipeline."
-)
+@click.option("--isolate_embeddings",
+              is_flag=True,
+              default=False,
+              help="Whether to fetch all data prior to executing the rest of the pipeline.")
 @click.option(
     "--model_fea_length",
     default=512,
@@ -439,16 +443,13 @@ def run():
     "--rss_request_timeout_sec",
     default=2.0,  # Set a default value, adjust as needed
     type=click.FloatRange(min=0.0),  # Ensure that only non-negative floats are valid
-    help="Timeout in seconds for RSS feed requests."
-)
-@click.option(
-    "--source_type",
-    multiple=True,
-    type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
-    default=[],
-    show_default=True,
-    help="The type of source to use. Can specify multiple times for different source types."
-)
+    help="Timeout in seconds for RSS feed requests.")
+@click.option("--source_type",
+              multiple=True,
+              type=click.Choice(['rss', 'filesystem'], case_sensitive=False),
+              default=[],
+              show_default=True,
+              help="The type of source to use. Can specify multiple times for different source types.")
 @click.option(
     "--stop_after",
     default=0,
@@ -505,7 +506,11 @@ def pipeline(**kwargs):
     """
     vdb_config_path = kwargs.pop('vdb_config_path', None)
     cli_source_conf, cli_embed_conf, cli_pipe_conf, cli_tok_conf, cli_vdb_conf = build_cli_configs(**kwargs)
-    final_config = build_final_config(vdb_config_path, cli_source_conf, cli_embed_conf, cli_pipe_conf, cli_tok_conf,
+    final_config = build_final_config(vdb_config_path,
+                                      cli_source_conf,
+                                      cli_embed_conf,
+                                      cli_pipe_conf,
+                                      cli_tok_conf,
                                       cli_vdb_conf)
 
     # Call the internal pipeline function with the final config dictionary

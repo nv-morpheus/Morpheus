@@ -29,8 +29,9 @@ from morpheus.modules.input.rss_source import RSSSourceInterface
 from morpheus.modules.preprocess.deserialize import DeserializeInterface
 from morpheus.utils.module_utils import ModuleInterface
 from morpheus.utils.module_utils import register_module
-from .schema_transform import SchemaTransformInterface
+
 from ...common.web_scraper_module import WebScraperInterface
+from .schema_transform import SchemaTransformInterface
 
 logger = logging.getLogger(__name__)
 
@@ -111,16 +112,25 @@ def _rss_source_pipe(builder: mrc.Builder):
 
     rss_source_definition = RSSSourceInterface.get_definition("rss_source", {"rss_source": validated_config.dict()})
 
-    web_scraper_definition = WebScraperInterface.get_definition("web_scraper", {
-        "web_scraper_config": validated_config.web_scraper_config,
-    })
+    web_scraper_definition = WebScraperInterface.get_definition(
+        "web_scraper", {
+            "web_scraper_config": validated_config.web_scraper_config,
+        })
 
     transform_config = {
         "schema_transform_config": {
-            "summary": {"dtype": "str", "op_type": "select"},
-            "title": {"dtype": "str", "op_type": "select"},
-            "content": {"from": "page_content", "dtype": "str", "op_type": "rename"},
-            "source": {"from": "link", "dtype": "str", "op_type": "rename"}
+            "summary": {
+                "dtype": "str", "op_type": "select"
+            },
+            "title": {
+                "dtype": "str", "op_type": "select"
+            },
+            "content": {
+                "from": "page_content", "dtype": "str", "op_type": "rename"
+            },
+            "source": {
+                "from": "link", "dtype": "str", "op_type": "rename"
+            }
         }
     }
     schema_transform_definition = SchemaTransformInterface.get_definition("schema_transform", transform_config)
@@ -128,14 +138,21 @@ def _rss_source_pipe(builder: mrc.Builder):
     deserialize_definition = DeserializeInterface.get_definition("deserialize",
                                                                  {"batch_size": validated_config.output_batch_size})
 
-    monitor_m1 = Monitor.get_definition("monitor_m1", {"description": "RSSSourcePipe RSS Source",
-                                                       "silence_monitors": not enable_monitor})
-    monitor_0 = Monitor.get_definition("monitor_0", {"description": "RSSSourcePipe Web Scraper",
-                                                     "silence_monitors": not enable_monitor})
-    monitor_1 = Monitor.get_definition("monitor_1", {"description": "RSSSourcePipe Transform",
-                                                     "silence_monitors": not enable_monitor})
-    monitor_2 = Monitor.get_definition("monitor_2", {"description": "RSSSourcePipe Deserialize",
-                                                     "silence_monitors": not enable_monitor})
+    monitor_m1 = Monitor.get_definition(
+        "monitor_m1", {
+            "description": "RSSSourcePipe RSS Source", "silence_monitors": not enable_monitor
+        })
+    monitor_0 = Monitor.get_definition(
+        "monitor_0", {
+            "description": "RSSSourcePipe Web Scraper", "silence_monitors": not enable_monitor
+        })
+    monitor_1 = Monitor.get_definition("monitor_1", {
+        "description": "RSSSourcePipe Transform", "silence_monitors": not enable_monitor
+    })
+    monitor_2 = Monitor.get_definition(
+        "monitor_2", {
+            "description": "RSSSourcePipe Deserialize", "silence_monitors": not enable_monitor
+        })
 
     # Load modules
     rss_source_module = rss_source_definition.load(builder=builder)
@@ -160,5 +177,4 @@ def _rss_source_pipe(builder: mrc.Builder):
     builder.register_module_output("output", monitor_2_module.output_port("output"))
 
 
-RSSSourcePipe = ModuleInterface("rss_source_pipe", "morpheus_examples_llm",
-                                RSSSourceParamContract)
+RSSSourcePipe = ModuleInterface("rss_source_pipe", "morpheus_examples_llm", RSSSourceParamContract)

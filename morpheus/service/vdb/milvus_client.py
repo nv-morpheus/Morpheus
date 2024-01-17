@@ -37,6 +37,7 @@ DATA_TYPE_MAP = {
     "UNKNOWN": 999
 }
 
+
 def handle_exceptions(func_name: str, error_message: str) -> typing.Callable:
     """
     Decorator function to handle exceptions and log errors.

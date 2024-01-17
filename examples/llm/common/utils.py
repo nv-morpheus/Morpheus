@@ -14,11 +14,11 @@
 import logging
 
 import pymilvus
-from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from morpheus.llm.services.nemo_llm_service import NeMoLLMService
 from morpheus.llm.services.openai_chat_service import OpenAIChatService
+from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 

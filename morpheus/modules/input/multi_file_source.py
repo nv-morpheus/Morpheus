@@ -23,7 +23,8 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
 
-from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -184,5 +185,4 @@ def multi_file_source(builder: mrc.Builder):
     builder.register_module_output("output", node)
 
 
-MultiFileSourceInterface = ModuleInterface("multi_file_source", "morpheus",
-                                           MultiFileSourceParamContract)
+MultiFileSourceInterface = ModuleInterface("multi_file_source", "morpheus", MultiFileSourceParamContract)

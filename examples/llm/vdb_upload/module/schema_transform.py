@@ -27,7 +27,8 @@ from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
 
@@ -115,5 +116,4 @@ def schema_transform(builder: mrc.Builder):
     builder.register_module_output("output", node)
 
 
-SchemaTransformInterface = ModuleInterface("schema_transform", "morpheus_examples_llm",
-                                           SchemaTransformParamContract)
+SchemaTransformInterface = ModuleInterface("schema_transform", "morpheus_examples_llm", SchemaTransformParamContract)

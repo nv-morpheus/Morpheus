@@ -80,7 +80,7 @@ class LinearModulesStage(SinglePortStage):
         Returns input type for the current stage.
         """
 
-        return (self._input_type,)
+        return (self._input_type, )
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -92,7 +92,7 @@ class LinearModulesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self._input_type,)
+        return (self._input_type, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._output_type)
@@ -101,8 +101,7 @@ class LinearModulesStage(SinglePortStage):
         raise NotImplementedError("No C++ node is available for this module type")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if (isinstance(self._module_config, dict) and
-                "module_id" in self._module_config):
+        if (isinstance(self._module_config, dict) and "module_id" in self._module_config):
             module = load_module(self._module_config, builder=builder)
         else:
             module = self._module_config.load(builder)

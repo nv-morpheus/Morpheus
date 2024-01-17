@@ -15,18 +15,18 @@
 import logging
 import pickle
 import typing
-from morpheus.modules.output.write_to_vector_db import WriteToVectorDB
 
 import mrc
-from morpheus.utils.module_utils import ModuleDefinition
 
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.modules.output.write_to_vector_db import WriteToVectorDB
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.module_utils import ModuleDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -89,17 +89,17 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
             "recreate": recreate,
             "resource_name": resource_name,
             "embedding_column_name": embedding_column_name,
-            "resource_kwargs":  resource_kwargs,
+            "resource_kwargs": resource_kwargs,
             "service_kwargs": service_kwargs,
             "batch_size": batch_size,
             "write_time_interval": write_time_interval
         }
 
         module_name = f"write_to_vector_db__{resource_name}"
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Module will be loading with name: {module_name}")
-        
+
         self._module_defination: ModuleDefinition = WriteToVectorDB.get_definition(module_name, module_config)
 
     @property
@@ -121,7 +121,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         """Indicates whether this stage supports a C++ node."""
         return False
-    
+
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         module = self._module_defination.load(builder)

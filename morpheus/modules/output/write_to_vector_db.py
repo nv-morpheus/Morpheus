@@ -12,27 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-import pickle
-
-from dataclasses import dataclass
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.messages import ControlMessage
-from morpheus.service.vdb.utils import VectorDBServiceFactory
-from morpheus.service.vdb.vector_db_service import VectorDBService
 import logging
+import pickle
+import time
+from dataclasses import dataclass
+
 import mrc
-import cudf
 from mrc.core import operators as ops
-from morpheus.utils.module_utils import ModuleInterface
-from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
 from pydantic import validator
+
+import cudf
+
+from morpheus.messages import ControlMessage
+from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseMessage
+from morpheus.service.vdb.utils import VectorDBServiceFactory
+from morpheus.service.vdb.vector_db_service import VectorDBService
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +68,6 @@ class WriteToVDBParamContract(BaseModel):
         if not v:
             raise ValueError("Resource name must not be None or Empty.")
         return v
-        
 
 
 @register_module(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
@@ -110,7 +111,7 @@ def _write_to_vector_db(builder: mrc.Builder):
         log_error_message = f"Invalid configuration for write_to_vector_db: {error_messages}"
         logger.error(log_error_message)
         raise ValueError(log_error_message)
-    
+
     embedding_column_name = write_to_vdb_config.embedding_column_name
     recreate = write_to_vdb_config.recreate
     service = write_to_vdb_config.service
@@ -120,13 +121,10 @@ def _write_to_vector_db(builder: mrc.Builder):
     service_kwargs = write_to_vdb_config.service_kwargs
     batch_size = write_to_vdb_config.batch_size
     write_time_interval = write_to_vdb_config.write_time_interval
-    
+
     # Check if service is serialized and convert if needed
-    service: VectorDBService = (
-        pickle.loads(bytes(service, "latin1"))
-        if is_service_serialized
-        else VectorDBServiceFactory.create_instance(service_name=service, **service_kwargs)
-    )
+    service: VectorDBService = (pickle.loads(bytes(service, "latin1")) if is_service_serialized else
+                                VectorDBServiceFactory.create_instance(service_name=service, **service_kwargs))
 
     has_object = service.has_store_object(name=resource_name)
 
@@ -140,10 +138,10 @@ def _write_to_vector_db(builder: mrc.Builder):
         service.create(name=resource_name, **resource_kwargs)
 
     accumulator_dict = {resource_name: AccumulationStats(msg_count=0, last_insert_time=-1, data=[])}
-    
+
     def on_completed():
         final_df_references = []
-        
+
         # Pushing remaining messages
         for key, accum_stats in accumulator_dict.items():
             if accum_stats.data:
@@ -182,7 +180,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                 final_df_references = []
                 df_size = len(df)
                 current_time = time.time()
-                
+
                 # Use default resource name
                 if not resrc_name:
                     resrc_name = resource_name
@@ -196,9 +194,11 @@ def _write_to_vector_db(builder: mrc.Builder):
                     accumlator.data.append(df)
                 else:
                     accumulator_dict[resrc_name] = AccumulationStats(msg_count=df_size, last_insert_time=-1, data=[df])
-                
+
                 for key, accum_stats in accumulator_dict.items():
-                    if accum_stats.msg_count >= batch_size or (accum_stats.last_insert_time != -1 and (current_time - accum_stats.last_insert_time) >= write_time_interval):
+                    if accum_stats.msg_count >= batch_size or (accum_stats.last_insert_time != -1 and
+                                                               (current_time - accum_stats.last_insert_time)
+                                                               >= write_time_interval):
                         if accum_stats.data:
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
@@ -209,13 +209,11 @@ def _write_to_vector_db(builder: mrc.Builder):
                             accum_stats.msg_count = 0
 
                 return final_df_references
-         
+
         except Exception as exc:
             logger.error("Unable to insert into collection: %s due to %s", resrc_name, exc)
 
-    node = builder.make_node(WRITE_TO_VECTOR_DB,
-                             ops.map(on_data),
-                             ops.on_completed(on_completed))
+    node = builder.make_node(WRITE_TO_VECTOR_DB, ops.map(on_data), ops.on_completed(on_completed))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

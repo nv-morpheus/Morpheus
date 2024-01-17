@@ -16,9 +16,9 @@ import types
 
 import pymilvus
 
-
 # TODO(Devin)
 # build_huggingface_embeddings, build_milvus_service, and build_llm_service
+
 
 def test_build_milvus_config_with_valid_embedding_size(import_utils: types.ModuleType):
     embedding_size = 128
@@ -28,11 +28,10 @@ def test_build_milvus_config_with_valid_embedding_size(import_utils: types.Modul
     assert 'schema_conf' in config
 
     embedding_field_schema = next(
-        (field for field in config['schema_conf']['schema_fields'] if field["name"] == 'embedding'),
-        None
-    )
+        (field for field in config['schema_conf']['schema_fields'] if field["name"] == 'embedding'), None)
     assert embedding_field_schema is not None
     assert embedding_field_schema['params']['dim'] == embedding_size
+
 
 def test_build_milvus_config_uses_correct_field_types(import_utils: types.ModuleType):
     embedding_size = 128
@@ -47,6 +46,7 @@ def test_build_milvus_config_uses_correct_field_types(import_utils: types.Module
             assert field['type'] == pymilvus.DataType.FLOAT_VECTOR
         else:
             assert field['type'] in [pymilvus.DataType.INT64, pymilvus.DataType.VARCHAR]
+
 
 def test_build_milvus_config_index_configuration(import_utils: types.ModuleType):
     embedding_size = 128

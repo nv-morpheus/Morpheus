@@ -21,20 +21,21 @@ from bs4 import BeautifulSoup
 
 logging
 
-import cudf
-from functools import partial
-
 import logging
+from functools import partial
 
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from pydantic import ValidationError
 
+import cudf
+
 from morpheus.messages import MessageMeta
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from morpheus.utils.module_utils import register_module, ModuleInterface
+from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
@@ -73,12 +74,10 @@ it in the output, excludes output for any links which produce an error.
             response = session.get(url)
 
             if (not response.ok):
-                logger.warning(
-                    "Error downloading document from URL '%s'. " +
-                    "Returned code: %s. With reason: '%s'",
-                    url,
-                    response.status_code,
-                    response.reason)
+                logger.warning("Error downloading document from URL '%s'. " + "Returned code: %s. With reason: '%s'",
+                               url,
+                               response.status_code,
+                               response.reason)
                 continue
 
             raw_html = response.text
@@ -151,5 +150,4 @@ def web_scraper(builder: mrc.Builder):
     builder.register_module_output("output", node)
 
 
-WebScraperInterface = ModuleInterface("web_scraper", "morpheus_examples_llm",
-                                      WebScraperParamContract)
+WebScraperInterface = ModuleInterface("web_scraper", "morpheus_examples_llm", WebScraperParamContract)
