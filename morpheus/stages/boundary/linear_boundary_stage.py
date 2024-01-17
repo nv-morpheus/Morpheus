@@ -19,6 +19,7 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
 from morpheus.pipeline.pass_thru_type_mixin import PassThruTypeMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -28,7 +29,7 @@ from morpheus.pipeline.stage_schema import StageSchema
 logger = logging.getLogger(__name__)
 
 
-class LinearBoundaryEgressStage(PassThruTypeMixin, SinglePortStage):
+class LinearBoundaryEgressStage(BoundaryStageMixin, PassThruTypeMixin, SinglePortStage):
     """
     The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
     pipeline that we want to connect to another segment, a linear boundary egress stage would be added, in conjunction
@@ -81,7 +82,7 @@ class LinearBoundaryEgressStage(PassThruTypeMixin, SinglePortStage):
         return input_node
 
 
-class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
+class LinearBoundaryIngressStage(BoundaryStageMixin, PreallocatorMixin, SingleOutputSource):
     """
     The LinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would
