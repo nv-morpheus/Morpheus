@@ -81,7 +81,7 @@ def _configure_from_log_file(log_config_file: str):
 
     ext = os.path.splitext(log_config_file)[1].lower()
 
-    if (ext == "json"):
+    if (ext == ".json"):
 
         dict_config: dict = None
 
