@@ -17,7 +17,6 @@ import os
 import sys
 
 import pytest
-
 from _utils import TEST_DIRS
 from _utils import import_or_skip
 
@@ -34,12 +33,21 @@ def import_utils():
 
 @pytest.fixture(scope="module")
 def import_web_scraper_module():
-    web_scaper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
+    web_scraper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
     sys.path.insert(0, web_scraper_path)
 
     import web_scraper_module
 
     return web_scraper_module
+
+
+# Fixture for importing the module
+@pytest.fixture(scope="module")
+def import_content_extractor_module():
+    sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+    import content_extractor_module
+    sys.path.remove(os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+    return content_extractor_module
 
 
 @pytest.fixture(name="nemollm", autouse=True, scope='session')

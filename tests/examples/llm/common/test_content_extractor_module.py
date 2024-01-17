@@ -31,7 +31,6 @@ import fsspec.core
 import pandas as pd
 import pytest
 
-from _utils import TEST_DIRS
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -89,16 +88,7 @@ def generate_random_string(length: int) -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
-# Fixture for importing the module
-@pytest.fixture(scope="module")
-def import_content_extractor_module():
-    sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
-    import content_extractor_module
-    sys.path.remove(os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
-    return content_extractor_module
 
-
-# Test function
 @pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("data_len, num_rows_per_file, batch_size",
