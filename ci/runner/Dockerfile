@@ -50,7 +50,9 @@ RUN rapids-dependency-file-generator \
       --file_key build \
       --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
     CONDA_ALWAYS_YES=true /opt/conda/bin/conda env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
-    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
+    conda clean -afy && \
+    rm -rf /tmp/conda
 
 # ============ test ==================
 FROM base as test
@@ -75,7 +77,9 @@ RUN rapids-dependency-file-generator \
       --file_key test \
       --matrix "cuda=${CUDA_SHORT_VER};arch=${ARCH};py=${PYTHON_VER}" > /tmp/conda/env.yaml && \
     CONDA_ALWAYS_YES=true /opt/conda/bin/conda env create -n ${PROJ_NAME} -q --file /tmp/conda/env.yaml && \
-    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
+    conda clean -afy && \
+    rm -rf /tmp/conda
 
 COPY ./ci/scripts/download_kafka.py /tmp/scripts/download_kafka.py
 
