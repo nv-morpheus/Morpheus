@@ -40,7 +40,7 @@ from morpheus.utils.schema_transforms import process_dataframe
 
 
 @pytest.fixture(name="_azure_ad_logs_pdf", scope="module")
-def fixture__azure_ad_logs_pdf():
+def _azure_ad_logs_pdf_fixture():
     # Explicitly reading this in to ensure that lines=False.
     # Using pandas since the C++ impl for read_file_to_df doesn't support parser_kwargs, this also avoids a warning
     # that cudf.read_json uses pandas.read_json under the hood.
@@ -49,15 +49,15 @@ def fixture__azure_ad_logs_pdf():
 
 
 @pytest.fixture(name="azure_ad_logs_pdf", scope="function")
-def fixture_azure_ad_logs_pdf(_azure_ad_logs_pdf: pd.DataFrame):
+def azure_ad_logs_pdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
     yield _azure_ad_logs_pdf.copy(deep=True)
 
 
 @pytest.fixture(name="azure_ad_logs_cdf", scope="function")
-def fixture_azure_ad_logs_cdf(azure_ad_logs_pdf: pd.DataFrame):
+def azure_ad_logs_cdf_fixture(_azure_ad_logs_pdf: pd.DataFrame):
     # cudf.from_pandas essentially does a deep copy, so we can use this to ensure that the source pandas df is not
     # modified
-    yield cudf.from_pandas(azure_ad_logs_pdf)
+    yield cudf.from_pandas(_azure_ad_logs_pdf)
 
 
 @pytest.mark.use_python
