@@ -712,21 +712,6 @@ class AutoEncoder(torch.nn.Module):
 
         return mse_loss.mean(), bce_loss.mean(), cce_loss.mean(), net_loss.mean()
 
-    def do_backward(self, mse, bce, cce):
-        # running `backward()` seperately on mse/bce/cce is equivalent to summing them up and run `backward()` once
-        loss = 0
-
-        if len(self.numeric_fts) > 0:
-            loss += mse
-
-        if len(self.binary_fts) > 0:
-            loss += bce
-
-        for ls in cce:
-            loss += ls
-
-        loss.backward()
-
     def compute_baseline_performance(self, in_, out_):
         """
         Baseline performance is computed by generating a strong
