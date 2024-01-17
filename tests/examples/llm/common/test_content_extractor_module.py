@@ -13,111 +13,157 @@
 # limitations under the License.
 
 
+import logging
 import os
+import random
+import shutil
+import string
+import sys
+import tempfile
 import types
-from unittest.mock import patch, MagicMock
+import uuid
+from functools import partial
+from typing import Callable
+from typing import Dict
+from typing import Generator
+from typing import List
 
-import cudf
-import fsspec
+import fsspec.core
+import pandas as pd
 import pytest
 from _utils import TEST_DIRS
-from _utils import assert_results
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 
-# Mock dependencies
-file_meta_mock = MagicMock()
-text_converter_mock = MagicMock()
+logger = logging.getLogger(f"morpheus.{__name__}")
 
-# TODO
 
+class TempCSVFiles:
+    def __init__(self, num_files: int, columns: Dict[str, Callable[[], any]]):
+        self.temp_dir = None
+        self.temp_files = []
+        self.num_files = num_files
+        self.columns = columns
+        self._create_temp_dir_and_files()
+
+    def _create_temp_dir_and_files(self):
+        # Create a temporary directory
+        self.temp_dir = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        os.makedirs(self.temp_dir, exist_ok=True)
+
+        for _ in range(self.num_files):
+            # Create a random filename within the temp directory
+            file_path = os.path.join(self.temp_dir, f"{uuid.uuid4().hex}.csv")
+
+            # Generate deterministic CSV data based on the specified columns
+            data = {col_name: col_func() for col_name, col_func in self.columns.items()}
+            df = pd.DataFrame(data)
+            df.to_csv(file_path, index=False)
+
+            # Store the file path for later use
+            self.temp_files.append(file_path)
+
+    def __enter__(self):
+        return self.temp_files
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Cleanup the temporary directory and its contents
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+
+# Define a generator function that uses TempCSVFiles to generate CSV file paths
+def csv_file_generator(csv_files: List[str], batch_size: int) -> Generator[
+    List[fsspec.core.OpenFile], None, None]:
+    # Create TempCSVFiles instance without using 'with' statement
+    open_files = fsspec.open_files(csv_files.temp_files)
+    for i in range(0, len(open_files), batch_size):
+        yield open_files[i:i + batch_size]
+
+
+def generate_random_string(length: int) -> str:
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
+# Fixture for importing the module
+@pytest.fixture(scope="module")
+def import_content_extractor_module():
+    sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+    import content_extractor_module
+    sys.path.remove(os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+    return content_extractor_module
+
+
+# Test function
 @pytest.mark.use_python
 @pytest.mark.use_cudf
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/content_extractor_module.py'))
-def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str, import_mod: types.ModuleType):
-    url = f"{mock_rest_server}/www/index"
+@pytest.mark.parametrize("data_len, num_rows_per_file, batch_size", [
+    (40, 5, 2),
+    (51, 3, 1),
+    (150, 10, 5),
+    (500, 3, 2),
+    (1000, 5, 3),
+    (50, 10, 2),
+    (100, 20, 3),
+    (50, 5, 1),
+    (100, 10, 1),
+    (49, 5, 2),
+    (99, 5, 2),
+    (60, 7, 2),
+    (120, 6, 3),
+    (1000, 50, 10),
+    (2000, 100, 20)
+])
+def test_content_extractor_module(data_len, num_rows_per_file, batch_size, config: Config,
+                                  import_content_extractor_module: types.ModuleType):
+    chunk_size = 50
+    chunk_overlap = 10
+    # Text splitter handles things a bit differently on evenly divisible boundaries
+    chunk_boundary_size = (chunk_size - chunk_overlap) if (data_len > chunk_size) else chunk_size
+    module_config = {
+        "converters_meta": {
+            "csv": {
+                "chunk_size": chunk_size,
+                "chunk_overlap": chunk_overlap,
+                "text_column_name": "some_column",
+            }
+        },
+        "content_extractor_config": {
+            "batch_size": batch_size,
+            "num_threads": 1,
+        },
+        "enable_monitor": False,
+    }
+    content_extractor_def = import_content_extractor_module.FileContentExtractorInterface.get_definition(
+        "content_extractor",
+        module_config=module_config)
 
-    df = cudf.DataFrame({"link": [url]})
-    df_expected = cudf.DataFrame({"link": [url], "page_content": "website title some paragraph"})
-
-    web_scraper_definition = import_mod.WebScraperInterface.get_definition("web_scraper",
-                                                                           module_config={"web_scraper_config": {
-                                                                               "link_column": "link", "chunk_size": 100,
-                                                                               "enable_cache": False,
-                                                                               "cache_path": "./.cache/http/RSSDownloadStage.sqlite",
-                                                                               "cache_dir": "./.cache/llm/rss"}})
+    temp_csv_files = TempCSVFiles(num_files=5,
+                                  columns={'some_column': lambda: [generate_random_string(data_len) for _ in
+                                                                   range(num_rows_per_file)]})
+    file_generator = partial(csv_file_generator, temp_csv_files, batch_size=1)
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [df]))
+    pipe.set_source(InMemoryDataGenStage(config, file_generator, output_data_type=List[fsspec.core.OpenFile]))
     pipe.add_stage(LinearModulesStage(config,
-                                      web_scraper_definition,
-                                      input_type=MessageMeta,
+                                      content_extractor_def,
+                                      input_type=List[fsspec.core.OpenFile],
                                       output_type=MessageMeta,
                                       input_port_name="input",
                                       output_port_name="output"))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=df_expected))
+    sink_stage = pipe.add_stage(InMemorySinkStage(config))
     pipe.run()
 
-    print(comp_stage.get_messages())
-
-    assert_results(comp_stage.get_results())
-
-
-# 1. Test with Mocked Files and Converters
-def test_parse_files_with_mocked_files():
-    with patch('your_module.get_file_meta', return_value=file_meta_mock), \
-            patch('your_module.TextConverter', return_value=text_converter_mock):
-        open_files = [MagicMock(spec=fsspec.core.OpenFile) for _ in range(5)]
-        expected_data = [{'content': 'mock content'}] * len(open_files)
-        text_converter_mock.convert.return_value = expected_data
-
-        result = your_module.parse_files(open_files)
-
-        assert isinstance(result, MessageMeta)
-        assert len(result.df) == len(open_files)
-        assert result.df.to_dict('records') == expected_data
-
-
-# 2. Test Handling of Exceptions During File Processing
-def test_parse_files_with_exception():
-    with patch('your_module.get_file_meta', side_effect=Exception("Error")), \
-            patch('your_module.logger') as logger_mock:
-        open_files = [MagicMock(spec=fsspec.core.OpenFile) for _ in range(2)]
-
-        result = your_module.parse_files(open_files)
-
-        assert logger_mock.error.called
-        assert isinstance(result, MessageMeta)
-        assert result.df.empty
-
-
-# 3. Test Batch Processing
-def test_parse_files_batch_processing():
-    batch_size = 2
-    open_files = [MagicMock(spec=fsspec.core.OpenFile) for _ in range(5)]
-
-    # Modify your_module.batch_size accordingly
-    your_module.batch_size = batch_size
-
-    result = your_module.parse_files(open_files)
-
-    assert len(result.df) == len(open_files)  # Assuming each file results in one row
-
-
-# 4. Test Processing Different File Types
-@pytest.mark.parametrize("file_type, converter", [("pdf", pdf_converter_mock), ("txt", text_converter_mock)])
-def test_parse_files_different_file_types(file_type, converter):
-    with patch('your_module.get_file_meta', return_value={"file_type": file_type}), \
-            patch(f'your_module.{converter.__class__.__name__}', return_value=converter):
-        open_files = [MagicMock(spec=fsspec.core.OpenFile) for _ in range(2)]
-        converter.convert.return_value = [{'content': 'mock content'}]
-
-        result = your_module.parse_files(open_files)
-
-        assert converter.convert.called
-        assert len(result.df) == len(open_files)
+    expected_columns = ["title", "source", "summary", "content"]
+    for message in sink_stage.get_messages():
+        output = message.df
+        assert set(expected_columns) == set(output.columns)
+        assert output.shape == (
+            num_rows_per_file * ((data_len // chunk_boundary_size) + (
+                1 if data_len % chunk_boundary_size else 0)),
+            4)

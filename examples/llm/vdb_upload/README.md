@@ -242,6 +242,32 @@ vdb_pipeline:
         watch: false
 ```
 
+*Example: Defining a custom source via a config file*
+Note: See `vdb_config.yaml` for a full configuration example.
+Note: This example uses the same module and config as the filesystem source example above, but explicitly specifies the
+module to load
+
+`vdb_config.yaml`
+
+```yaml
+vdb_pipeline:
+  sources:
+    - type: custom
+      name: "demo_custom_filesystem_source"
+      module_id: "file_source_pipe"  # Required for custom source, defines the source module to load
+      module_output_id: "output"  # Required for custom source, defines the output of the module to use
+      namespace: "morpheus_examples_llm"  # Required for custom source, defines the namespace of the module to load
+      config:
+        batch_size: 1024
+        extractor_config:
+          chunk_size: 512
+          num_threads: 10  # Number of threads to use for file reads
+        config_name_mapping: "file_source_config"
+        filenames:
+          - "/path/to/data/*"
+        watch: false
+```
+
 ```bash
 python examples/llm/main.py vdb_upload pipeline \
   --vdb_config_path "./vdb_config.yaml"

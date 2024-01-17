@@ -91,7 +91,7 @@ class CsvTextConverter(BaseConverter):
         if meta is None:
             text_column_name = "content"
         else:
-            text_column_name = meta["csv"]["text_column_name"]
+            text_column_name = meta.get("csv", {}).get("text_column_name", "content")
 
         for path in file_path:
             df = pd.read_csv(path, encoding=encoding)
