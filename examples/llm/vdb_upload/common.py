@@ -15,13 +15,10 @@
 import logging
 import typing
 
-import pymilvus
-
 from morpheus.config import Config
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
-
 from .module.file_source_pipe import FileSourcePipe
 from .module.rss_source_pipe import RSSSourcePipe
 
@@ -197,114 +194,3 @@ def process_vdb_sources(pipe: Pipeline, config: Config, vdb_source_config: typin
             raise ValueError(f"Unsupported source type: {source_type}")
 
     return vdb_sources
-
-
-def build_defualt_milvus_config(embedding_size: int) -> typing.Dict[str, typing.Any]:
-    """
-    Builds the configuration for Milvus.
-
-    This function creates a dictionary configuration for a Milvus collection.
-    It includes the index configuration and the schema configuration, with
-    various fields like id, title, link, summary, page_content, and embedding.
-
-    Parameters
-    ----------
-    embedding_size : int
-        The size of the embedding vector.
-
-    Returns
-    -------
-    typing.Dict[str, Any]
-        A dictionary containing the configuration settings for Milvus.
-    """
-
-    milvus_resource_kwargs = {
-        "index_conf": {
-            "field_name": "embedding",
-            "metric_type": "L2",
-            "index_type": "HNSW",
-            "params": {
-                "M": 8,
-                "efConstruction": 64,
-            },
-        },
-        "schema_conf": {
-            "enable_dynamic_field": True,
-            "schema_fields": [
-                pymilvus.FieldSchema(name="id",
-                                     dtype=pymilvus.DataType.INT64,
-                                     description="Primary key for the collection",
-                                     is_primary=True,
-                                     auto_id=True).to_dict(),
-                pymilvus.FieldSchema(name="title",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The title of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="source",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The URL of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="summary",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="The summary of the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="content",
-                                     dtype=pymilvus.DataType.VARCHAR,
-                                     description="A chunk of text from the RSS Page",
-                                     max_length=65_535).to_dict(),
-                pymilvus.FieldSchema(name="embedding",
-                                     dtype=pymilvus.DataType.FLOAT_VECTOR,
-                                     description="Embedding vectors",
-                                     dim=embedding_size).to_dict(),
-            ],
-            "description": "Test collection schema"
-        }
-    }
-
-    return milvus_resource_kwargs
-
-
-def build_rss_urls() -> typing.List[str]:
-    """
-    Builds a list of RSS feed URLs.
-
-    Returns
-    -------
-    typing.List[str]
-        A list of URLs as strings, each pointing to a different RSS feed.
-    """
-
-    return [
-        "https://www.theregister.com/security/headlines.atom",
-        "https://isc.sans.edu/dailypodcast.xml",
-        "https://threatpost.com/feed/",
-        "http://feeds.feedburner.com/TheHackersNews?format=xml",
-        "https://www.bleepingcomputer.com/feed/",
-        "https://therecord.media/feed/",
-        "https://blog.badsectorlabs.com/feeds/all.atom.xml",
-        "https://krebsonsecurity.com/feed/",
-        "https://www.darkreading.com/rss_simple.asp",
-        "https://blog.malwarebytes.com/feed/",
-        "https://msrc.microsoft.com/blog/feed",
-        "https://securelist.com/feed",
-        "https://www.crowdstrike.com/blog/feed/",
-        "https://threatconnect.com/blog/rss/",
-        "https://news.sophos.com/en-us/feed/",
-        "https://www.us-cert.gov/ncas/current-activity.xml",
-        "https://www.csoonline.com/feed",
-        "https://www.cyberscoop.com/feed",
-        "https://research.checkpoint.com/feed",
-        "https://feeds.fortinet.com/fortinet/blog/threat-research",
-        "https://www.mcafee.com/blogs/rss",
-        "https://www.digitalshadows.com/blog-and-research/rss.xml",
-        "https://www.nist.gov/news-events/cybersecurity/rss.xml",
-        "https://www.sentinelone.com/blog/rss/",
-        "https://www.bitdefender.com/blog/api/rss/labs/",
-        "https://www.welivesecurity.com/feed/",
-        "https://unit42.paloaltonetworks.com/feed/",
-        "https://mandiant.com/resources/blog/rss.xml",
-        "https://www.wired.com/feed/category/security/latest/rss",
-        "https://www.wired.com/feed/tag/ai/latest/rss",
-        "https://blog.google/threat-analysis-group/rss/",
-        "https://intezer.com/feed/",
-    ]

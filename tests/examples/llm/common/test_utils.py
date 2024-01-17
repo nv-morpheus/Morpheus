@@ -12,50 +12,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import types
-
 import pymilvus
-
-# TODO(Devin)
-# build_huggingface_embeddings, build_milvus_service, and build_llm_service
-
-
-def test_build_milvus_config_with_valid_embedding_size(import_utils: types.ModuleType):
-    embedding_size = 128
-    config = import_utils.build_milvus_config(embedding_size)
-
-    assert 'index_conf' in config
-    assert 'schema_conf' in config
-
-    embedding_field_schema = next(
-        (field for field in config['schema_conf']['schema_fields'] if field["name"] == 'embedding'), None)
-    assert embedding_field_schema is not None
-    assert embedding_field_schema['params']['dim'] == embedding_size
+import pytest
+from pymilvus.exceptions import DataTypeNotSupportException
 
 
-def test_build_milvus_config_uses_correct_field_types(import_utils: types.ModuleType):
-    embedding_size = 128
-    config = import_utils.build_milvus_config(embedding_size)
+def test_build_milvus_config_valid_schema(import_utils):
+    resource_schema_config = {
+        "schema_conf": {
+            "schema_fields": [
+                {"name": "field1", "dtype": "INT64"},
+                {"name": "field2", "dtype": "FLOAT"}
+            ]
+        }
+    }
+    expected_dtype_map = {
+        "field1": pymilvus.DataType.INT64,
+        "field2": pymilvus.DataType.FLOAT
+    }
+    result = import_utils.build_milvus_config(resource_schema_config)
+    for field in result["schema_conf"]["schema_fields"]:
+        assert field["type"] == expected_dtype_map[field["name"]]
 
-    for field in config['schema_conf']['schema_fields']:
-        assert 'name' in field
-        assert 'type' in field
-        assert 'description' in field
 
-        if field['name'] == 'embedding':
-            assert field['type'] == pymilvus.DataType.FLOAT_VECTOR
-        else:
-            assert field['type'] in [pymilvus.DataType.INT64, pymilvus.DataType.VARCHAR]
+def test_build_milvus_config_invalid_dtype(import_utils):
+    resource_schema_config = {
+        "schema_conf": {
+            "schema_fields": [
+                {"name": "invalid_field", "dtype": "invalid_dtype"}
+            ]
+        }
+    }
+    with pytest.raises(DataTypeNotSupportException):
+        import_utils.build_milvus_config(resource_schema_config)
 
 
-def test_build_milvus_config_index_configuration(import_utils: types.ModuleType):
-    embedding_size = 128
-    config = import_utils.build_milvus_config(embedding_size)
+def test_build_milvus_config_empty_schema_fields(import_utils):
+    resource_schema_config = {
+        "schema_conf": {
+            "schema_fields": []
+        }
+    }
+    result = import_utils.build_milvus_config(resource_schema_config)
+    assert result["schema_conf"]["schema_fields"] == []
 
-    index_conf = config['index_conf']
-    assert index_conf['field_name'] == 'embedding'
-    assert index_conf['metric_type'] == 'L2'
-    assert index_conf['index_type'] == 'HNSW'
-    assert 'params' in index_conf
-    assert index_conf['params']['M'] == 8
-    assert index_conf['params']['efConstruction'] == 64
+
+def test_build_milvus_config_none_schema_config(import_utils):
+    with pytest.raises(TypeError):
+        import_utils.build_milvus_config(None)
+
+
+def test_build_milvus_config_additional_field_properties(import_utils):
+    with pytest.raises(DataTypeNotSupportException):
+        resource_schema_config = {
+            "schema_conf": {
+                "schema_fields": [
+                    {"name": "field1", "dtype": "int64", "extra_prop": "value"}
+                ]
+            }
+        }
+        result = import_utils.build_milvus_config(resource_schema_config)
+        assert "extra_prop" in result["schema_conf"]["schema_fields"][0]
+        assert result["schema_conf"]["schema_fields"][0]["extra_prop"] == "value"

@@ -40,7 +40,6 @@ def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int
         model_kwargs['max_tokens'] = tokens_to_generate
         llm_service = OpenAIChatService()
     else:
-        # TODO(Devin) : Add additional options
         raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
     return llm_service.get_client(model_name, **model_kwargs)
@@ -69,38 +68,3 @@ def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530
     return vdb_service
 
 
-def build_rss_urls():
-    return [
-        "https://www.theregister.com/security/headlines.atom",
-        "https://isc.sans.edu/dailypodcast.xml",
-        "https://threatpost.com/feed/",
-        "http://feeds.feedburner.com/TheHackersNews?format=xml",
-        "https://www.bleepingcomputer.com/feed/",
-        "https://therecord.media/feed/",
-        "https://blog.badsectorlabs.com/feeds/all.atom.xml",
-        "https://krebsonsecurity.com/feed/",
-        "https://www.darkreading.com/rss_simple.asp",
-        "https://blog.malwarebytes.com/feed/",
-        "https://msrc.microsoft.com/blog/feed",
-        "https://securelist.com/feed",
-        "https://www.crowdstrike.com/blog/feed/",
-        "https://threatconnect.com/blog/rss/",
-        "https://news.sophos.com/en-us/feed/",
-        "https://www.us-cert.gov/ncas/current-activity.xml",
-        "https://www.csoonline.com/feed",
-        "https://www.cyberscoop.com/feed",
-        "https://research.checkpoint.com/feed",
-        "https://feeds.fortinet.com/fortinet/blog/threat-research",
-        "https://www.mcafee.com/blogs/rss",
-        "https://www.digitalshadows.com/blog-and-research/rss.xml",
-        "https://www.nist.gov/news-events/cybersecurity/rss.xml",
-        "https://www.sentinelone.com/blog/rss/",
-        "https://www.bitdefender.com/blog/api/rss/labs/",
-        "https://www.welivesecurity.com/feed/",
-        "https://unit42.paloaltonetworks.com/feed/",
-        "https://mandiant.com/resources/blog/rss.xml",
-        "https://www.wired.com/feed/category/security/latest/rss",
-        "https://www.wired.com/feed/tag/ai/latest/rss",
-        "https://blog.google/threat-analysis-group/rss/",
-        "https://intezer.com/feed/",
-    ]

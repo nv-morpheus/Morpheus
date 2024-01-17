@@ -45,9 +45,12 @@ def import_web_scraper_module():
 @pytest.fixture(scope="module")
 def import_content_extractor_module():
     sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+
     import content_extractor_module
-    sys.path.remove(os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+
     return content_extractor_module
+
+
 
 
 @pytest.fixture(name="nemollm", autouse=True, scope='session')
@@ -55,9 +58,11 @@ def nemollm_fixture(fail_missing: bool):
     """
     All the tests in this subdir require nemollm
     """
+
     skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
                    "`mamba install -n base -c conda-forge conda-merge`\n"
                    "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
                    "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
                    "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
+
     yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)

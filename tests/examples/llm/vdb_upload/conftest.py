@@ -21,10 +21,22 @@ from _utils import TEST_DIRS
 
 
 @pytest.fixture(scope="module")
+def import_vdb_update_utils_module():
+    path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
+    sys.path.insert(0, path)
+
+    import vdb_utils
+    sys.path.remove(path)
+
+    return vdb_utils
+
+
+@pytest.fixture(scope="module")
 def import_schema_transform_module():
-    web_scraper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module')
-    sys.path.insert(0, web_scraper_path)
+    path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module')
+    sys.path.insert(0, path)
 
     import schema_transform
+    sys.path.remove(path)
 
     return schema_transform
