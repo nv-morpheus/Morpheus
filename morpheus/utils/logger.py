@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ def _configure_from_log_file(log_config_file: str):
 
     ext = os.path.splitext(log_config_file)[1].lower()
 
-    if (ext == "json"):
+    if (ext == ".json"):
 
         dict_config: dict = None
 
