@@ -626,8 +626,10 @@ class AutoEncoder(torch.nn.Module):
         return preprocessed_data
 
     def compute_loss(self, num, bin, cat, target_df, should_log=True, _id=False):
+
         num_target, bin_target, codes = self.compute_targets(target_df)
-        return self.compute_loss_from_targets(
+
+        mse, bce, cce, net = self.compute_loss_from_targets(
             num=num,
             bin=bin,
             cat=cat,
@@ -637,6 +639,10 @@ class AutoEncoder(torch.nn.Module):
             should_log=should_log,
             _id=_id,
         )
+
+        net = net.cpu().item()
+
+        return mse, bce, cce, net
 
     def compute_loss_from_targets(self, num, bin, cat, num_target, bin_target, cat_target, should_log=True, _id=False):
         """Computes the loss from targets.
@@ -670,31 +676,41 @@ class AutoEncoder(torch.nn.Module):
                 should_log = True
             else:
                 should_log = False
-        net_loss = []
-        mse_loss = self.mse(num, num_target)
-        net_loss += list(mse_loss.mean(dim=0).cpu().detach().numpy())
-        mse_loss = mse_loss.mean()
-        bce_loss = self.bce(bin, bin_target)
 
-        net_loss += list(bce_loss.mean(dim=0).cpu().detach().numpy())
-        bce_loss = bce_loss.mean()
-        cce_loss = []
-        for i, ft in enumerate(self.categorical_fts):
-            loss = self.cce(cat[i], cat_target[i])
-            loss = loss.mean()
-            cce_loss.append(loss)
-            val = loss.cpu().item()
-            net_loss += [val]
+        # Calculate the numerical loss (per feature)
+        mse_loss: torch.Tensor = self.mse(num, num_target).mean(dim=0)
+
+        # Calculate the binary loss (per feature)
+        bce_loss: torch.Tensor = self.bce(bin, bin_target).mean(dim=0)
+
+        # To calc the categorical loss, we need to average the loss of each categorical feature independently (since
+        # they will have a different number of categories)
+        cce_loss_list = []
+
+        for i in range(len(self.categorical_fts)):
+            # Take the full mean but ensure the output is a 1x1 tensor to make it easier to concatenate
+            cce_loss_list.append(self.cce(cat[i], cat_target[i]).mean(dim=0, keepdim=True))
+
+        if (len(cce_loss_list) > 0):
+            cce_loss = torch.cat(cce_loss_list)
+        else:
+            cce_loss = torch.Tensor().to(self.device)
+
+        # The net loss should have one loss per feature
+        net_loss = torch.cat((mse_loss, bce_loss, cce_loss))
+
         if should_log:
-            if self.training:
-                self.logger.training_step(net_loss)
-            elif _id:
-                self.logger.id_val_step(net_loss)
-            elif not self.training:
-                self.logger.val_step(net_loss)
+            # Convert it to a list of numpy
+            net_loss_list = net_loss.tolist()
 
-        net_loss = np.array(net_loss).mean()
-        return mse_loss, bce_loss, cce_loss, net_loss
+            if self.training:
+                self.logger.training_step(net_loss_list)
+            elif _id:
+                self.logger.id_val_step(net_loss_list)
+            elif not self.training:
+                self.logger.val_step(net_loss_list)
+
+        return mse_loss.mean(), bce_loss.mean(), cce_loss.mean(), net_loss.mean()
 
     def do_backward(self, mse, bce, cce):
         # running `backward()` seperately on mse/bce/cce is equivalent to summing them up and run `backward()` once
@@ -737,6 +753,7 @@ class AutoEncoder(torch.nn.Module):
             codes_pred.append(pred)
         mse_loss, bce_loss, cce_loss, net_loss = self.compute_loss(num_pred, bin_pred, codes_pred, out_,
                                                                    should_log=False)
+
         if isinstance(self.logger, BasicLogger):
             self.logger.baseline_loss = net_loss
         return net_loss
@@ -989,11 +1006,11 @@ class AutoEncoder(torch.nn.Module):
             cat_target=cat_target,
             should_log=True,
         )
-        self.do_backward(mse, bce, cce)
+        net_loss.backward()
         self.optim.step()
         self.optim.zero_grad()
 
-        return net_loss
+        return net_loss.cpu().item()
 
     def _compute_baseline_performance_from_dataset(self, validation_dataset):
         self.eval()
@@ -1036,7 +1053,7 @@ class AutoEncoder(torch.nn.Module):
             cat_target=cat_target,
             should_log=False
         )
-        return net_loss
+        return net_loss.cpu().item()
 
     def _validate_dataset(self, validation_dataset, rank=None):
         """Runs a validation loop on the given validation dataset, computing and returning the average loss of both the original
@@ -1116,7 +1133,7 @@ class AutoEncoder(torch.nn.Module):
             cat_target=cat_target,
             should_log=True,
         )
-        return orig_net_loss, net_loss
+        return orig_net_loss.cpu().item(), net_loss.cpu().item()
 
     def _populate_loss_stats_from_dataset(self, dataset):
         """Populates the `self.feature_loss_stats` dict with feature losses computed using the provided dataset.
