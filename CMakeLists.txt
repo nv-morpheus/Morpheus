@@ -178,8 +178,6 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
 
   morpheus_utils_print_target_properties(
     TARGETS
-      morpheus._lib.cudf_helpers
-      morpheus morpheus._lib.llm
       morpheus
     WRITE_TO_FILE
   )
