@@ -177,6 +177,8 @@ def _write_to_vector_db(builder: mrc.Builder):
             df, resrc_name = extract_df(msg)
 
             if df is not None and not df.empty:
+                if (not isinstance(df, cudf.DataFrame)):
+                    df = cudf.DataFrame(df)
                 final_df_references = []
                 df_size = len(df)
                 current_time = time.time()
