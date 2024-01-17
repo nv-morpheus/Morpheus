@@ -48,7 +48,7 @@ GIT_UPSTREAM_URL=$(git remote get-url upstream)
 GIT_UPSTREAM_URL=$(git_ssh_to_https ${GIT_UPSTREAM_URL})
 
 GIT_BRANCH=$(git branch --show-current)
-GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
+GIT_COMMIT=${GIT_COMMIT:-$(git log -n 1 --pretty=format:%H)}
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
 CONTAINER_VER=${CONTAINER_VER:-240116}
