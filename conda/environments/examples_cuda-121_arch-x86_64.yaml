@@ -15,7 +15,7 @@ dependencies:
 - appdirs
 - arxiv=1.4
 - boto3
-- click=8
+- click >=8
 - cuml=24.02.*
 - dask=2023.12.1
 - datacompy=0.10

@@ -230,7 +230,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - appdirs
-          - click=8
+          - *click
           - datacompy=0.10
           - dill
           - elasticsearch==8.9.0

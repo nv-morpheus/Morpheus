@@ -17,7 +17,6 @@ dependencies:
 - breathe=4.35.0
 - clangdev=16
 - click >=8
-- click=8
 - cmake=3.26.4
 - cuda-cudart-dev=12.1
 - cuda-nvcc
