@@ -21,6 +21,14 @@ python phish_bert_inference_script.py \
     --output phishing-email-validation-output.jsonlines
 """
 
+import argparse
+import json
+
+import numpy as np
+import onnxruntime
+import scipy
+import torch
+
 ###########################################################################################
 # cudf imports moved before torch import to avoid the following error:
 # ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
@@ -28,14 +36,6 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 ###########################################################################################
-
-import argparse
-import json
-
-import numpy as np
-import onnxruntime
-import torch
-import scipy
 
 
 def infer(validationdata, vocab, model, output):

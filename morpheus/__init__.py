@@ -12,14 +12,15 @@
 # limitations under the License.
 """Root module for the Morpheus library."""
 
+import logging
+import os
+
 # ########################### CVE-2023-47248 Mitigation ############################
 # Import pyarrow_hotfix as early as possible to ensure that the pyarrow hotfix is applied before any code can use it
 # Can be removed after upgrading to pyarrow 14.0.1 or later (which is dictated by cudf)
 import pyarrow_hotfix
-# ##################################################################################
 
-import logging
-import os
+# ##################################################################################
 
 # Create a default null logger to prevent log messages from being propagated to users of this library unless otherwise
 # configured. Use the `utils.logging` module to configure Morpheus logging

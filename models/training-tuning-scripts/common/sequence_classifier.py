@@ -15,15 +15,15 @@
 
 import logging
 
-import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 import cupy
-
 import torch
 from torch.optim import AdamW
 from torch.utils.dlpack import to_dlpack
 from tqdm import trange
 from transformers import AutoModelForSequenceClassification
+
+import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 from .dataloader import DataLoader
 from .dataset import Dataset
