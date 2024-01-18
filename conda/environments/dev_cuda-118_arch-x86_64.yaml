@@ -15,6 +15,7 @@ dependencies:
 - benchmark=1.6.0
 - boost-cpp=1.82
 - breathe=4.34.0
+- ccache>=3.7
 - clangdev=16
 - click >=8
 - click>=8
@@ -56,6 +57,7 @@ dependencies:
 - numpydoc=1.4
 - nvtabular=23.06
 - pip
+- pkg-config
 - pluggy=1.0
 - pre-commit
 - protobuf=4.21.*
