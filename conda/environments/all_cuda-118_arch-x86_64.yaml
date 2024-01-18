@@ -17,6 +17,7 @@ dependencies:
 - boost-cpp=1.82
 - boto3
 - breathe=4.34.0
+- ccache>=3.7
 - clangdev=16
 - click>=8
 - cmake=3.25
@@ -70,6 +71,7 @@ dependencies:
 - openai=0.28
 - papermill=2.3.4
 - pip
+- pkg-config
 - pluggy=1.0
 - pre-commit
 - protobuf=4.21.*
