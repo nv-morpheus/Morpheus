@@ -198,7 +198,6 @@ install(
     DESTINATION ${lib_dir}
     FILE_SET
       public_headers
-    COMPONENT Core
 )
 
 # ##################################################################################################
@@ -216,7 +215,6 @@ set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
 install(DIRECTORY
   "${MORPHEUS_UTILS_ROOT_PATH}"
   DESTINATION "${cmake_lib_dir}"
-  COMPONENT Core
 )
 
 set(code_string
