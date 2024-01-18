@@ -167,9 +167,7 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<Ra
 
     auto table_view                     = table_info.get_view();
     auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
-    cudf::io::table_with_metadata table = {
-        cudf::concatenate(sliced_views),
-        std::move(metadata)};
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
 
     return MessageMeta::create_from_cpp(std::move(table), 1);
 }

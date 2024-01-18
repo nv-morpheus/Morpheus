@@ -107,7 +107,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 // Perform the tokenizer
                 nvtext::tokenizer_result token_results;
 
-                if (normalized_col_view.chars_size() > 0)
+                if (normalized_col_view.chars_size(rmm::cuda_stream_default) > 0)
                 {
                     token_results = nvtext::subword_tokenize(normalized_col_view,
                                                              *vocab,

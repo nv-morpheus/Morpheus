@@ -164,7 +164,7 @@ dependencies:
           - gcc_linux-64=11.2
           - gxx_linux-64=11.2
           - boost-cpp=1.84
-          - cmake=3.26.4
+          - cmake=3.27
           - cuda-nvcc
           - cudf=24.02
           - cxx-compiler
