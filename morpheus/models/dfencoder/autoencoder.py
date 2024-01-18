@@ -49,9 +49,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import gc
+import itertools
 import logging
 import typing
-import itertools
 from collections import OrderedDict
 from collections import defaultdict
 
