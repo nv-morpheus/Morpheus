@@ -50,10 +50,6 @@ endif()
 # ====
 morpheus_utils_configure_glog()
 
-# grpc
-# =========
-morpheus_utils_configure_grpc()
-
 if(MORPHEUS_BUILD_TESTS)
   # google test
   # - Expects package to pre-exist in the build environment

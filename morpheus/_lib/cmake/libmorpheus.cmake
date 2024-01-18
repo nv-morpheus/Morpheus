@@ -143,8 +143,7 @@ target_sources(morpheus
   PUBLIC
     FILE_SET public_headers
     TYPE HEADERS
-    BASE_DIRS
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include"
     FILES
   ${morpheus_public_headers}
 )
@@ -191,14 +190,14 @@ include(CPack)
 include(GNUInstallDirs)
 
 install(
-    TARGETS morpheus
+    TARGETS
+      morpheus
     EXPORT
-    ${PROJECT_NAME}-core-exports
+      ${PROJECT_NAME}-core-exports
     LIBRARY
     DESTINATION ${lib_dir}
     FILE_SET
-    public_headers
-    COMPONENT Core
+      public_headers
 )
 
 # ##################################################################################################
@@ -216,7 +215,6 @@ set(cmake_lib_dir "${lib_dir}/cmake/morpheus")
 install(DIRECTORY
   "${MORPHEUS_UTILS_ROOT_PATH}"
   DESTINATION "${cmake_lib_dir}"
-  COMPONENT Core
 )
 
 set(code_string
