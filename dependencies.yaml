@@ -136,6 +136,7 @@ dependencies:
           - gxx_linux-64=11.2
           - cmake=3.25
           - boost-cpp=1.82
+          - ccache>=3.7
           - cuda-nvcc
           - cudf=23.06
           - cxx-compiler
@@ -144,6 +145,7 @@ dependencies:
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
+          - pkg-config # for mrc cmake
           - protobuf=4.21.*
           - pybind11-stubgen=0.10
           - python=3.10
