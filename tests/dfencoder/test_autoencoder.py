@@ -375,7 +375,7 @@ def test_auto_encoder_get_anomaly_score(train_ae: autoencoder.AutoEncoder, train
     train_ae.fit(train_df, epochs=1)
     anomaly_score = train_ae.get_anomaly_score(train_df)
     assert len(anomaly_score) == len(train_df)
-    assert round(anomaly_score.mean().item(), 2) == 2.28
+    assert round(anomaly_score.mean().item(), 2) == 2.29
     assert round(anomaly_score.std().item(), 2) == 0.11
 
 
@@ -479,10 +479,10 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     assert 'max_abs_z' in results.columns
     assert 'mean_abs_z' in results.columns
 
-    assert round(results.loc[0, 'max_abs_z'], 2) == 2.5
+    assert np.isclose(results.loc[0, 'max_abs_z'], 2.51, atol=1e-2)
 
     # Numpy float has different precision checks than python float, so we wrap it.
-    assert round(float(results.loc[0, 'mean_abs_z']), 3) == 0.335
+    assert np.isclose(results.loc[0, 'mean_abs_z'], 0.361, atol=1e-3)
     assert results.loc[0, 'z_loss_scaler_type'] == 'z'
 
 

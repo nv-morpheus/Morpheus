@@ -51,6 +51,7 @@
 import gc
 import logging
 import typing
+import itertools
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -232,6 +233,9 @@ class AutoEncoder(torch.nn.Module):
             'none': NullScaler
         }
         return scalers[name]
+
+    def get_feature_count(self):
+        return len(self.numeric_fts) + len(self.binary_fts) + len(self.categorical_fts)
 
     def _init_numeric(self, df=None):
         """Initializes the numerical features of the model by either using preset numerical scaler parameters
@@ -697,11 +701,14 @@ class AutoEncoder(torch.nn.Module):
             cce_loss = torch.Tensor().to(self.device)
 
         # The net loss should have one loss per feature
-        net_loss = torch.cat((mse_loss, bce_loss, cce_loss))
+        net_loss = 0
+        for loss in itertools.chain(mse_loss, bce_loss, cce_loss):
+            net_loss += loss
+        net_loss /= self.get_feature_count()
 
         if should_log:
             # Convert it to a list of numpy
-            net_loss_list = net_loss.tolist()
+            net_loss_list = torch.cat((mse_loss, bce_loss, cce_loss)).tolist()
 
             if self.training:
                 self.logger.training_step(net_loss_list)
@@ -710,7 +717,7 @@ class AutoEncoder(torch.nn.Module):
             elif not self.training:
                 self.logger.val_step(net_loss_list)
 
-        return mse_loss.mean(), bce_loss.mean(), cce_loss.mean(), net_loss.mean()
+        return mse_loss.mean(), bce_loss.mean(), cce_loss.mean(), net_loss
 
     def compute_baseline_performance(self, in_, out_):
         """
