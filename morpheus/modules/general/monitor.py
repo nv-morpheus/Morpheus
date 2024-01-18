@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ from mrc.core import operators as ops
 from tqdm import tqdm
 
 from morpheus.controllers.monitor_controller import MonitorController
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.monitor_utils import MorpheusTqdm
 from morpheus.utils.monitor_utils import SilentMorpheusTqdm
 
 logger = logging.getLogger(f"morpheus.{__name__}")
+
+MonitorLoaderFactory = ModuleLoaderFactory("monitor", "morpheus")
 
 
 @register_module("monitor", "morpheus")
@@ -109,6 +111,3 @@ def monitor(builder: mrc.Builder):
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-Monitor = ModuleInterface("monitor", "morpheus")

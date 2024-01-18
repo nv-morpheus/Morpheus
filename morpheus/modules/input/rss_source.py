@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,36 +14,23 @@
 
 import logging
 import time
-from typing import List
 
 import mrc
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
 
 from morpheus.controllers.rss_controller import RSSController
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.modules.schemas.rss_source_schema import RSSSourceSchema
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-
-class RSSSourceParamContract(BaseModel):
-    feed_input: List[str] = Field(default_factory=list)
-    run_indefinitely: bool = True
-    batch_size: int = 128
-    enable_cache: bool = False
-    cache_dir: str = "./.cache/http"
-    cooldown_interval_sec: int = 600
-    request_timeout_sec: float = 2.0
-    interval_secs: int = 600
-    stop_after: int = 0
-    web_scraper_config: dict = Field(default_factory=dict)
+RSSSourceLoaderFactory = ModuleLoaderFactory("rss_source", "morpheus", RSSSourceSchema)
 
 
 @register_module("rss_source", "morpheus")
-def rss_source(builder: mrc.Builder):
+def _rss_source(builder: mrc.Builder):
     """
     A module for applying simple DataFrame schema transform policies.
 
@@ -74,7 +61,7 @@ def rss_source(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
     rss_config = module_config.get("rss_source", {})
     try:
-        validated_config = RSSSourceParamContract(**rss_config)
+        validated_config = RSSSourceSchema(**rss_config)
     except ValidationError as e:
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid RSS source configuration: {error_messages}"
@@ -135,6 +122,3 @@ def rss_source(builder: mrc.Builder):
     node = builder.make_source("fetch_feeds", fetch_feeds)
 
     builder.register_module_output("output", node)
-
-
-RSSSourceInterface = ModuleInterface("rss_source", "morpheus", RSSSourceParamContract)

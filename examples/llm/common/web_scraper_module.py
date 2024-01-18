@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,24 +28,18 @@ import mrc
 import mrc.core.operators as ops
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel
 from pydantic import ValidationError
 
 import cudf
 
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+from .web_scraper_schema import WebScraperSchema
 
 logger = logging.getLogger(__name__)
 
-
-class WebScraperParamContract(BaseModel):
-    link_column: str = "link"
-    chunk_size: int = 100
-    enable_cache: bool = False
-    cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
-    cache_dir: str = "./.cache/llm/rss"
+WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm", WebScraperSchema)
 
 
 def download_and_split(msg: MessageMeta, text_splitter, link_column, session) -> MessageMeta:
@@ -107,12 +101,12 @@ it in the output, excludes output for any links which produce an error.
 
 
 @register_module("web_scraper", "morpheus_examples_llm")
-def web_scraper(builder: mrc.Builder):
+def _web_scraper(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
 
     # Validate the module configuration using the contract
     try:
-        web_scraper_config = WebScraperParamContract(**module_config.get("web_scraper_config", {}))
+        web_scraper_config = WebScraperSchema(**module_config.get("web_scraper_config", {}))
     except ValidationError as e:
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid web scraper configuration: {error_messages}"
@@ -148,6 +142,3 @@ def web_scraper(builder: mrc.Builder):
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-WebScraperInterface = ModuleInterface("web_scraper", "morpheus_examples_llm", WebScraperParamContract)

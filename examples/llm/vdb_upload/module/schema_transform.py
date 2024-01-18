@@ -13,40 +13,30 @@
 # limitations under the License.
 
 import logging
-from typing import Any
-from typing import Dict
-from typing import Optional
 
 import mrc
 import mrc.core.operators as ops
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
+from ..schemas.schema_transform_schema import SchemaTransformSchema
 
 logger = logging.getLogger(__name__)
 
-
-class ColumnTransformConfig(BaseModel):
-    dtype: str
-    op_type: str
-    from_: Optional[str] = Field(None, alias="from")
-
-
-class SchemaTransformParamContract(BaseModel):
-    schema_transform_config: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+SchemaTransformLoaderFactory = ModuleLoaderFactory("schema_transform",
+                                                   "morpheus_examples_llm",
+                                                   SchemaTransformSchema)
 
 
 @register_module("schema_transform", "morpheus_examples_llm")
-def schema_transform(builder: mrc.Builder):
+def _schema_transform(builder: mrc.Builder):
     """
     A module for applying simple DataFrame schema transform policies.
 
@@ -78,7 +68,7 @@ def schema_transform(builder: mrc.Builder):
 
     # Validate the module configuration using the contract
     try:
-        validated_config = SchemaTransformParamContract(**module_config)
+        validated_config = SchemaTransformSchema(**module_config)
     except ValidationError as e:
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid schema transform configuration: {error_messages}"
@@ -114,6 +104,3 @@ def schema_transform(builder: mrc.Builder):
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-SchemaTransformInterface = ModuleInterface("schema_transform", "morpheus_examples_llm", SchemaTransformParamContract)

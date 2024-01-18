@@ -20,11 +20,10 @@ import typing
 from typing import Optional
 from typing import Type
 
+import cudf
 import mrc
 import pandas as pd
 from pydantic import BaseModel
-
-import cudf
 
 from morpheus.utils.type_aliases import DataFrameType
 
@@ -310,13 +309,13 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
         builder.register_module_output("output", prev_module.output_port("output"))
 
 
-class ModuleDefinition:
+class ModuleLoader:
     """
     Class to hold the definition of a module.
 
     Attributes
     ----------
-    module_instance : ModuleDefinition
+    module_instance : ModuleLoader
         The instance of the loaded module.
     name : str
         The name of the module.
@@ -328,10 +327,15 @@ class ModuleDefinition:
         self._module_interface = module_interface
         self._name = name
         self._config = config
+        self._loaded = False
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def config(self):
+        return self._config
 
     def load(self, builder: mrc.Builder):
         """
@@ -343,19 +347,27 @@ class ModuleDefinition:
             The Morpheus builder instance.
         """
 
-        module = builder.load_module(self._module_interface._id,
-                                     self._module_interface._namespace,
+        if (self._loaded):
+            err_msg = f"Module '{self._module_interface.id}::{self.name}' is already loaded."
+            logger.error(err_msg)
+
+            raise RuntimeError(err_msg)
+
+        module = builder.load_module(self._module_interface.id,
+                                     self._module_interface.namespace,
                                      self._name,
                                      self._config)
 
         logger.debug("Module '%s' with namespace '%s' is successfully loaded.",
-                     self._module_interface._id,
-                     self._module_interface._namespace)
+                     self._module_interface.id,
+                     self._module_interface.namespace)
+
+        self._loaded = True
 
         return module
 
 
-class ModuleInterface:
+class ModuleLoaderFactory:
     """
     Class that acts as a simple wrapper to load a SegmentModule.
 
@@ -365,14 +377,14 @@ class ModuleInterface:
         The module identifier.
     _namespace : str
         The namespace of the module.
-    _param_contract : Type[BaseModel], optional
+    _config_schema : Type[BaseModel], optional
         The Pydantic model representing the parameter contract for the module.
     """
 
-    def __init__(self, module_id, module_namespace, param_contract: Optional[Type[BaseModel]] = None):
+    def __init__(self, module_id, module_namespace, config_schema: Optional[Type[BaseModel]] = None):
         self._id = module_id
         self._namespace = module_namespace
-        self._param_contract = param_contract
+        self._config_schema = config_schema
 
     @property
     def id(self):
@@ -382,7 +394,7 @@ class ModuleInterface:
     def namespace(self):
         return self._namespace
 
-    def get_definition(self, module_name: str, module_config: dict) -> ModuleDefinition:
+    def get_instance(self, module_name: str, module_config: dict) -> ModuleLoader:
         """
         Loads a module instance and returns its definition.
 
@@ -395,10 +407,10 @@ class ModuleInterface:
 
         Returns
         -------
-        ModuleDefinition
+        ModuleLoader
             A specific instance of this module.
         """
-        return ModuleDefinition(self, module_name, module_config)
+        return ModuleLoader(self, module_name, module_config)
 
     def print_schema(self) -> str:
         """
@@ -409,11 +421,11 @@ class ModuleInterface:
         str
             A description of the module's parameter schema.
         """
-        if not self._param_contract:
+        if not self._config_schema:
             return "No parameter contract defined for this module."
 
         description = f"Schema for {self._id}:\n"
-        for field in self._param_contract.__fields__.values():
+        for field in self._config_schema.__fields__.values():
             description += f"  - {field.name} ({field.type_.__name__}): {field.field_info.description}\n"
 
         return description

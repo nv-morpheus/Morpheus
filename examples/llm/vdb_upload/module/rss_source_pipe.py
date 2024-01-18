@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,50 +13,24 @@
 # limitations under the License.
 
 import logging
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import mrc
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
 
-from morpheus.modules.general.monitor import Monitor
-from morpheus.modules.input.rss_source import RSSSourceInterface
-from morpheus.modules.preprocess.deserialize import DeserializeInterface
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.modules.general.monitor import MonitorLoaderFactory
+from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
+from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-
-from ...common.web_scraper_module import WebScraperInterface
-from .schema_transform import SchemaTransformInterface
+from .schema_transform import SchemaTransformLoaderFactory
+from ..schemas.rss_source_pipe_schema import RSSSourcePipeSchema
+from ...common.web_scraper_module import WebScraperLoaderFactory
 
 logger = logging.getLogger(__name__)
 
-
-class RSSSourceParamContract(BaseModel):
-    batch_size: int = 32
-    cache_dir: str = "./.cache/http"
-    cooldown_interval_sec: int = 600
-    enable_cache: bool = False
-    enable_monitor: bool = True
-    feed_input: List[str] = Field(default_factory=list)
-    interval_sec: int = 600
-    output_batch_size: int = 2048
-    request_timeout_sec: float = 2.0
-    run_indefinitely: bool = True
-    stop_after: int = 0
-    web_scraper_config: Optional[Dict[Any, Any]] = None
-
-    @validator('feed_input', pre=True)
-    def validate_feed_input(cls, v):
-        if isinstance(v, str):
-            return [v]
-        elif isinstance(v, list):
-            return v
-        raise ValueError('feed_input must be a string or a list of strings')
+RSSSourcePipeLoaderFactory = ModuleLoaderFactory("rss_source_pipe",
+                                                 "morpheus_examples_llm",
+                                                 RSSSourcePipeSchema)
 
 
 @register_module("rss_source_pipe", "morpheus_examples_llm")
@@ -101,7 +75,7 @@ def _rss_source_pipe(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
     rss_config = module_config.get("rss_config", {})
     try:
-        validated_config = RSSSourceParamContract(**rss_config)
+        validated_config = RSSSourcePipeSchema(**rss_config)
     except ValidationError as e:
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid RSS source configuration: {error_messages}"
@@ -110,9 +84,10 @@ def _rss_source_pipe(builder: mrc.Builder):
 
     enable_monitor = validated_config.enable_monitor
 
-    rss_source_definition = RSSSourceInterface.get_definition("rss_source", {"rss_source": validated_config.dict()})
+    rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source",
+                                                            {"rss_source": validated_config.dict()})
 
-    web_scraper_definition = WebScraperInterface.get_definition(
+    web_scraper_loader = WebScraperLoaderFactory.get_instance(
         "web_scraper", {
             "web_scraper_config": validated_config.web_scraper_config,
         })
@@ -133,40 +108,40 @@ def _rss_source_pipe(builder: mrc.Builder):
             }
         }
     }
-    schema_transform_definition = SchemaTransformInterface.get_definition("schema_transform", transform_config)
+    schema_transform_loader = SchemaTransformLoaderFactory.get_instance("schema_transform", transform_config)
 
-    deserialize_definition = DeserializeInterface.get_definition("deserialize",
-                                                                 {"batch_size": validated_config.output_batch_size})
+    deserialize_loader = DeserializeLoaderFactory.get_instance("deserialize",
+                                                               {"batch_size": validated_config.output_batch_size})
 
-    monitor_m1 = Monitor.get_definition(
+    monitor_0_loader = MonitorLoaderFactory.get_instance(
         "monitor_m1", {
             "description": "RSSSourcePipe RSS Source", "silence_monitors": not enable_monitor
         })
-    monitor_0 = Monitor.get_definition(
+    monitor_1_loader = MonitorLoaderFactory.get_instance(
         "monitor_0", {
             "description": "RSSSourcePipe Web Scraper", "silence_monitors": not enable_monitor
         })
-    monitor_1 = Monitor.get_definition("monitor_1", {
+    monitor_2_loader = MonitorLoaderFactory.get_instance("monitor_1", {
         "description": "RSSSourcePipe Transform", "silence_monitors": not enable_monitor
     })
-    monitor_2 = Monitor.get_definition(
+    monitor_3_loader = MonitorLoaderFactory.get_instance(
         "monitor_2", {
             "description": "RSSSourcePipe Deserialize", "silence_monitors": not enable_monitor
         })
 
     # Load modules
-    rss_source_module = rss_source_definition.load(builder=builder)
-    monitor_m1 = monitor_m1.load(builder=builder)
-    web_scraper_module = web_scraper_definition.load(builder=builder)
-    monitor_0_module = monitor_0.load(builder=builder)
-    transform_module = schema_transform_definition.load(builder=builder)
-    monitor_1_module = monitor_1.load(builder=builder)
-    deserialize_module = deserialize_definition.load(builder=builder)
-    monitor_2_module = monitor_2.load(builder=builder)
+    rss_source_module = rss_source_loader.load(builder=builder)
+    monitor_0_loader = monitor_0_loader.load(builder=builder)
+    web_scraper_module = web_scraper_loader.load(builder=builder)
+    monitor_0_module = monitor_1_loader.load(builder=builder)
+    transform_module = schema_transform_loader.load(builder=builder)
+    monitor_1_module = monitor_2_loader.load(builder=builder)
+    deserialize_module = deserialize_loader.load(builder=builder)
+    monitor_2_module = monitor_3_loader.load(builder=builder)
 
     # Connect the modules: RSS source -> Web scraper -> Schema transform
-    builder.make_edge(rss_source_module.output_port("output"), monitor_m1.input_port("input"))
-    builder.make_edge(monitor_m1.output_port("output"), web_scraper_module.input_port("input"))
+    builder.make_edge(rss_source_module.output_port("output"), monitor_0_loader.input_port("input"))
+    builder.make_edge(monitor_0_loader.output_port("output"), web_scraper_module.input_port("input"))
     builder.make_edge(web_scraper_module.output_port("output"), monitor_0_module.input_port("input"))
     builder.make_edge(monitor_0_module.output_port("output"), transform_module.input_port("input"))
     builder.make_edge(transform_module.output_port("output"), monitor_1_module.input_port("input"))
@@ -175,6 +150,3 @@ def _rss_source_pipe(builder: mrc.Builder):
 
     # Register the final output of the transformation module
     builder.register_module_output("output", monitor_2_module.output_port("output"))
-
-
-RSSSourcePipe = ModuleInterface("rss_source_pipe", "morpheus_examples_llm", RSSSourceParamContract)

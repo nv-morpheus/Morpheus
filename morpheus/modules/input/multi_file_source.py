@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,18 +15,20 @@
 import logging
 import time
 import typing
-from typing import List
 
 import fsspec
 import mrc
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
 
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.modules.schemas.multi_file_source_schema import MultiFileSourceSchema
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(f"morpheus.{__name__}")
+
+MultiFileSourceLoaderFactory = ModuleLoaderFactory("multi_file_source",
+                                                   "morpheus",
+                                                   MultiFileSourceSchema)
 
 
 def expand_paths_simple(filenames: typing.List[str]) -> typing.List[str]:
@@ -73,15 +75,8 @@ def expand_paths_simple(filenames: typing.List[str]) -> typing.List[str]:
     return updated_list
 
 
-class MultiFileSourceParamContract(BaseModel):
-    filenames: List[str] = Field(default_factory=list)
-    watch_dir: bool = False
-    watch_interval: float = 1.0
-    batch_size: int = 128
-
-
 @register_module("multi_file_source", "morpheus")
-def multi_file_source(builder: mrc.Builder):
+def _multi_file_source(builder: mrc.Builder):
     """
     Creates a file source module for the Morpheus builder. This module reads files
     from a specified source and processes them accordingly.
@@ -108,7 +103,7 @@ def multi_file_source(builder: mrc.Builder):
     source_config = module_config.get('source_config', {})
 
     try:
-        validated_config = MultiFileSourceParamContract(**source_config)
+        validated_config = MultiFileSourceSchema(**source_config)
     except ValidationError as e:
         # Format the error message for better readability
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
@@ -183,6 +178,3 @@ def multi_file_source(builder: mrc.Builder):
         node = builder.make_source("multi_file_source", generate_frames_fsspec)
 
     builder.register_module_output("output", node)
-
-
-MultiFileSourceInterface = ModuleInterface("multi_file_source", "morpheus", MultiFileSourceParamContract)

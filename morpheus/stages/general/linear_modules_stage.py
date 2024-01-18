@@ -20,7 +20,7 @@ import mrc
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.module_utils import ModuleDefinition
+from morpheus.utils.module_utils import ModuleLoader
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class LinearModulesStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 module_config: typing.Union[typing.Dict, ModuleDefinition],
+                 module_config: typing.Union[typing.Dict, ModuleLoader],
                  input_port_name: str,
                  output_port_name: str,
                  input_type=typing.Any,
@@ -64,7 +64,7 @@ class LinearModulesStage(SinglePortStage):
         self._output_port_name = output_port_name
 
         if (isinstance(self._module_config, dict)):
-            self._unique_name = self._module_config.get("unique_name", "linear_module")
+            self._unique_name = self._module_config.get("module_name", "linear_module_stage")
         else:
             self._unique_name = self._module_config.name
 
@@ -80,7 +80,7 @@ class LinearModulesStage(SinglePortStage):
         Returns input type for the current stage.
         """
 
-        return (self._input_type, )
+        return (self._input_type,)
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -92,7 +92,7 @@ class LinearModulesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self._input_type, )
+        return (self._input_type,)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._output_type)
@@ -101,7 +101,7 @@ class LinearModulesStage(SinglePortStage):
         raise NotImplementedError("No C++ node is available for this module type")
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if (isinstance(self._module_config, dict) and "module_id" in self._module_config):
+        if (isinstance(self._module_config, dict)):
             module = load_module(self._module_config, builder=builder)
         else:
             module = self._module_config.load(builder)

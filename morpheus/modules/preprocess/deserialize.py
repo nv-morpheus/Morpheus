@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,29 +16,21 @@ import logging
 import typing
 import warnings
 from functools import partial
-from typing import Any
-from typing import Dict
-from typing import Optional
 
 import mrc
-import mrc.core.operators as ops
 from mrc.core import operators as ops
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.modules.schemas.deserialize_schema import DeserializeSchema
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
-from morpheus.utils.schema_transforms import process_dataframe
 
 logger = logging.getLogger(__name__)
+
+DeserializeLoaderFactory = ModuleLoaderFactory("deserialize", "morpheus")
 
 
 def _check_slicable_index(message: MessageMeta, ensure_sliceable_index: bool = True):
@@ -172,16 +164,6 @@ def _process_dataframe_to_control_message(message: MessageMeta,
     return output
 
 
-class DeserializeParamContract(BaseModel):
-    ensure_sliceable_index: bool = True
-    message_type: str = "MultiMessage"
-    task_type: Optional[str] = None
-    task_payload: Optional[Dict[Any, Any]] = None
-    batch_size: int = 1024
-    max_concurrency: int = 1
-    should_log_timestamp: bool = True
-
-
 @register_module("deserialize", "morpheus")
 def _deserialize(builder: mrc.Builder):
     """
@@ -208,7 +190,7 @@ def _deserialize(builder: mrc.Builder):
 
     # Validate the module configuration using the contract
     try:
-        deserializer_config = DeserializeParamContract(**module_config)
+        deserializer_config = DeserializeSchema(**module_config)
     except ValidationError as e:
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid deserialize configuration: {error_messages}"
@@ -251,6 +233,3 @@ def _deserialize(builder: mrc.Builder):
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-DeserializeInterface = ModuleInterface("deserialize", "morpheus")

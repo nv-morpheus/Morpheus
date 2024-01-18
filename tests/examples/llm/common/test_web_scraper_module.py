@@ -39,7 +39,7 @@ def test_web_scraper_module(config: Config, mock_rest_server: str, import_mod: t
     df = cudf.DataFrame({"link": [url]})
     df_expected = cudf.DataFrame({"link": [url], "page_content": "website title some paragraph"})
 
-    web_scraper_definition = import_mod.WebScraperInterface.get_definition(
+    web_scraper_definition = import_mod.WebScraperInterface.get_instance(
         "web_scraper",
         module_config={
             "web_scraper_config": {

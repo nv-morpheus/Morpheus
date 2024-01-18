@@ -54,7 +54,7 @@ def test_schema_transform_module(num_select, num_renames, config: Config,
          range(num_renames)}
     )
 
-    schema_module_def = import_schema_transform_module.SchemaTransformInterface.get_definition(
+    schema_module_def = import_schema_transform_module.SchemaTransformInterface.get_instance(
         "schema_transform",
         module_config=transform_config)
 

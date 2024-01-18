@@ -16,7 +16,7 @@ import logging
 import typing
 
 import mrc
-from web_scraper_module import WebScraperInterface
+from web_scraper_module import WebScraperLoaderFactory
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -66,7 +66,7 @@ class WebScraperStage(SinglePortStage):
         self._input_port_name = "input"
         self._output_port_name = "output"
 
-        self._module_definition = WebScraperInterface.get_definition("web_scraper", self._module_config)
+        self._module_loader = WebScraperLoaderFactory.get_instance("web_scraper", self._module_config)
 
     @property
     def name(self) -> str:
@@ -93,7 +93,7 @@ class WebScraperStage(SinglePortStage):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        module = self._module_definition.load(builder=builder)
+        module = self._module_loader.load(builder=builder)
 
         mod_in_node = module.input_port(self._input_port_name)
         mod_out_node = module.output_port(self._output_port_name)

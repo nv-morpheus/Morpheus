@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ import typing
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 import fsspec
 import mrc
@@ -29,16 +28,18 @@ from haystack.nodes import PDFToTextConverter
 from haystack.nodes import TextConverter
 from haystack.nodes.file_converter import BaseConverter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
 
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+from .content_extractor_schema import ContentExtractorSchema
 
 logger = logging.getLogger(__name__)
+
+ContentExtractorLoaderFactory = ModuleLoaderFactory("file_content_extractor",
+                                                    "morpheus_examples_llm",
+                                                    ContentExtractorSchema)
 
 
 @dataclass
@@ -193,30 +194,6 @@ def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, 
     return processed_data
 
 
-class CSVConverterParamContract(BaseModel):
-    chunk_size: int = 1024
-    text_column_name: str = "raw"
-    chunk_overlap: int = 102  # Example default value
-
-
-class ExtractorParamContract(BaseModel):
-    batch_size: int = 32
-    chunk_overlap: int = 51
-    chunk_size: int = 512
-    converters_meta: Dict[str, Dict] = Field(default_factory=dict)
-    num_threads: int = 10
-
-    @validator('converters_meta', pre=True)
-    def validate_converters_meta(cls, v):
-        validated_meta = {}
-        for key, value in v.items():
-            if key.lower() == 'csv':
-                validated_meta[key] = CSVConverterParamContract(**value)
-            else:
-                validated_meta[key] = value
-        return validated_meta
-
-
 @register_module("file_content_extractor", "morpheus_examples_llm")
 def file_content_extractor(builder: mrc.Builder):
     """
@@ -251,7 +228,7 @@ def file_content_extractor(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
 
     try:
-        extractor_config = ExtractorParamContract(**module_config)
+        extractor_config = ContentExtractorSchema(**module_config)
     except ValidationError as e:
         # Format the error message for better readability
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
@@ -316,8 +293,3 @@ def file_content_extractor(builder: mrc.Builder):
     node = builder.make_node("text_extractor", ops.map(parse_files), ops.filter(lambda x: x is not None))
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-FileContentExtractorInterface = ModuleInterface("file_content_extractor",
-                                                "morpheus_examples_llm",
-                                                ExtractorParamContract)

@@ -118,7 +118,7 @@ def test_content_extractor_module(data_len,
         },
         "enable_monitor": False,
     }
-    content_extractor_def = import_content_extractor_module.FileContentExtractorInterface.get_definition(
+    content_extractor_def = import_content_extractor_module.FileContentExtractorInterface.get_instance(
         "content_extractor", module_config=module_config)
 
     temp_csv_files = TempCSVFiles(

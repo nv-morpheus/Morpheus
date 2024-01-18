@@ -17,26 +17,25 @@ import pickle
 import time
 from dataclasses import dataclass
 
+import cudf
 import mrc
 from mrc.core import operators as ops
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
-
-import cudf
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
+from morpheus.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
-from morpheus.utils.module_utils import ModuleInterface
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
+
+WriteToVectorDBLoaderFactory = ModuleLoaderFactory(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
 
 
 @dataclass
@@ -44,30 +43,6 @@ class AccumulationStats:
     msg_count: int
     last_insert_time: float
     data: list[cudf.DataFrame]
-
-
-class WriteToVDBParamContract(BaseModel):
-    embedding_column_name: str = "embedding"
-    recreate: bool = False
-    service: str = Field(default_factory=None)
-    is_service_serialized: bool = False
-    resource_name: str = Field(default_factory=None)
-    resource_kwargs: dict = Field(default_factory=dict)
-    service_kwargs: dict = Field(default_factory=dict)
-    batch_size: int = 1024
-    write_time_interval: float = 3.0
-
-    @validator('service', pre=True)
-    def validate_service(cls, v):
-        if not v:
-            raise ValueError("Service must be a service name or a serialized instance of VectorDBService")
-        return v
-
-    @validator('resource_name', pre=True)
-    def validate_resource_name(cls, v):
-        if not v:
-            raise ValueError("Resource name must not be None or Empty.")
-        return v
 
 
 @register_module(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
@@ -104,7 +79,7 @@ def _write_to_vector_db(builder: mrc.Builder):
     module_config = builder.get_current_module_config()
 
     try:
-        write_to_vdb_config = WriteToVDBParamContract(**module_config)
+        write_to_vdb_config = WriteToVDBSchema(**module_config)
     except ValidationError as e:
         # Format the error message for better readability
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
@@ -219,6 +194,3 @@ def _write_to_vector_db(builder: mrc.Builder):
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
-
-
-WriteToVectorDB = ModuleInterface(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)

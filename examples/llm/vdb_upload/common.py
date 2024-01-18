@@ -19,8 +19,8 @@ from morpheus.config import Config
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
-from .module.file_source_pipe import FileSourcePipe
-from .module.rss_source_pipe import RSSSourcePipe
+from .module.file_source_pipe import FileSourcePipeLoaderFactory
+from .module.rss_source_pipe import RSSSourcePipeLoaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def setup_rss_source(pipe: Pipeline, config: Config, source_name: str, rss_confi
     SubPipeline
         The sub-pipeline stage created for the RSS source.
     """
-    module_definition = RSSSourcePipe.get_definition(
+    module_definition = RSSSourcePipeLoaderFactory.get_instance(
         module_name=f"rss_source_pipe__{source_name}",
         module_config={"rss_config": rss_config},
     )
@@ -98,10 +98,10 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
         The sub-pipeline stage created for the filesystem source.
     """
 
-    module_definition = FileSourcePipe.get_definition(module_name=f"file_source_pipe__{source_name}",
-                                                      module_config={"file_source_config": fs_config})
+    module_loader = FileSourcePipeLoaderFactory.get_instance(module_name=f"file_source_pipe__{source_name}",
+                                                             module_config={"file_source_config": fs_config})
     file_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config, module_definition, output_type=MultiMessage, output_port_name="output"))
+        LinearModuleSourceStage(config, module_loader, output_type=MultiMessage, output_port_name="output"))
 
     return file_pipe
 

@@ -20,7 +20,7 @@ import mrc
 from morpheus.config import Config
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.module_utils import ModuleDefinition
+from morpheus.utils.module_utils import ModuleLoader
 from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ class LinearModuleSourceStage(SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 module_config: typing.Union[typing.Dict, ModuleDefinition],
+                 module_config: typing.Union[typing.Dict, ModuleLoader],
                  output_port_name: str,
                  output_type=typing.Any):
         super().__init__(c)
@@ -67,7 +67,7 @@ class LinearModuleSourceStage(SingleOutputSource):
         self._output_port_name = output_port_name
 
         if (isinstance(self._module_config, dict)):
-            self._unique_name = self._module_config.get("unique_name", "linear_source")
+            self._unique_name = self._module_config.get("module_name", "linear_module_source")
         else:
             self._unique_name = self._module_config.name
 
