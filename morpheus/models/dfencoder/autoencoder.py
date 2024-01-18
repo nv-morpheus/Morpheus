@@ -49,7 +49,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import gc
-import itertools
 import logging
 import typing
 from collections import OrderedDict
@@ -702,8 +701,9 @@ class AutoEncoder(torch.nn.Module):
 
         # The net loss should have one loss per feature
         net_loss = 0
-        for loss in itertools.chain(mse_loss, bce_loss, cce_loss):
-            net_loss += loss
+        for loss in [mse_loss, bce_loss, cce_loss]:
+            if len(loss) > 0:
+                net_loss += loss.sum()
         net_loss /= self.get_feature_count()
 
         if should_log:
