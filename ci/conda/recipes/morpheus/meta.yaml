@@ -54,6 +54,7 @@ outputs:
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
         - libtool # Needed for DOCA build
         - ninja
+        - pkg-config # for mrc cmake
       host:
         - cuda-toolkit {{ cuda_compiler_version }}
         - cudf {{ rapids_version }}
