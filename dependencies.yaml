@@ -117,7 +117,6 @@ files:
 
 channels:
   - rapidsai
-  - pytorch
   - conda-forge
   - huggingface
   - nvidia/label/cuda-11.8.0
