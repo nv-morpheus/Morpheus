@@ -147,6 +147,8 @@ dependencies:
           - nlohmann_json=3.9
           - pkg-config # for mrc cmake
           - protobuf=4.21.*
+          - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
+          - pyarrow-hotfix
           - pybind11-stubgen=0.10
           - python=3.10
           - rapidjson=1.1.0
@@ -254,6 +256,7 @@ dependencies:
           - nb_conda_kernels
           - numpydoc=1.4
           - nvtabular=23.06
+          - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
           - pyarrow-hotfix
           - python-confluent-kafka=1.9.2
           - python-graphviz
