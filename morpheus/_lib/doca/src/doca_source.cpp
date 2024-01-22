@@ -99,7 +99,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         auto ether_type_out_d    = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
         auto next_proto_id_out_d = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
         auto timestamp_out_d     = rmm::device_uvector<uint32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
-        auto exit_condition = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_GPU_CPU);
+        auto exit_condition = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_TYPE_GPU_CPU);
 
         auto fixed_width_inputs_table_view = cudf::table_view(std::vector<cudf::column_view>{
             cudf::column_view(cudf::device_span<const int64_t>(src_mac_out_d)),

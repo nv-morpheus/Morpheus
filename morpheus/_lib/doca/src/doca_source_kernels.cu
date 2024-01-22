@@ -239,116 +239,99 @@ __global__ void _packet_receive_kernel(
   uint32_t*               exit_condition
 )
 {
-  // Specialize BlockReduce for a 1D block of 128 threads of type int
-  using BlockReduce = cub::BlockReduce<int32_t, THREADS_PER_BLOCK>;
-
-  // Allocate shared memory for BlockReduce
-  __shared__ typename BlockReduce::TempStorage temp_storage;
-
-  if (threadIdx.x == 0)
-  {
-    *packet_count_out = 0;
-    *payload_size_total_out = 0;
-  }
-
+  int32_t payload_sizes[PACKETS_PER_THREAD];
+  int32_t payload_flags[PACKETS_PER_THREAD];
+  doca_gpu_buf *buf_ptr;
+  uintptr_t buf_addr;
+  doca_error_t doca_ret;
+  struct eth_ip_tcp_hdr *hdr;
+  uint8_t *payload;
   __shared__ uint32_t packet_count_received;
   __shared__ uint64_t packet_offset_received;
-  __shared__ doca_gpu_semaphore_status sem_status;
+  // __shared__ doca_gpu_semaphore_status sem_status;
 
-  while (true)
-  {
-    auto ret = doca_gpu_dev_sem_get_status(sem_in, *sem_idx, &sem_status);
+  // Specialize BlockReduce for a 1D block of 128 threads of type int
+  using BlockReduce = cub::BlockReduce<int32_t, THREADS_PER_BLOCK>;
+  // Allocate shared memory for BlockReduce
+  __shared__ typename BlockReduce::TempStorage temp_storage;
+  if (threadIdx.x == 0) {
+    DOCA_GPUNETIO_VOLATILE(packet_count_out) = 0;
+    DOCA_GPUNETIO_VOLATILE(payload_size_total_out) = 0;
+    DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
+  }
 
-    if (ret != DOCA_SUCCESS) {
+#if 0
+  while (true) {
+    doca_ret = doca_gpu_dev_sem_get_status(sem_in, *sem_idx, &sem_status);
+    if (doca_ret != DOCA_SUCCESS) {
       DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
       return;
     }
 
     if (DOCA_GPUNETIO_VOLATILE(*exit_condition) == 1)
-    {
       return;
-    }
 
     if (sem_status == DOCA_GPU_SEMAPHORE_STATUS_FREE)
-    {
       break;
-    }
   }
-
   __syncthreads();
+#endif
 
-  DOCA_GPUNETIO_VOLATILE(packet_count_received) = 0;
-
-  __syncthreads();
-
-  auto ret = doca_gpu_dev_eth_rxq_receive_block(
-    rxq_info,
-    PACKETS_PER_BLOCK,
-    PACKET_RX_TIMEOUT_NS,
-    &packet_count_received,
-    &packet_offset_received
-  );
-
-  if (ret != DOCA_SUCCESS) {
+  doca_ret = doca_gpu_dev_eth_rxq_receive_block(rxq_info, PACKETS_PER_BLOCK, PACKET_RX_TIMEOUT_NS,
+                                                  &packet_count_received, &packet_offset_received);
+  if (doca_ret != DOCA_SUCCESS) {
     DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
     return;
   }
 
   __threadfence();
-  __syncthreads();
+  // __syncthreads();
 
-  if (DOCA_GPUNETIO_VOLATILE(packet_count_received) == 0) {
+  if (DOCA_GPUNETIO_VOLATILE(packet_count_received) == 0)
     return;
-  }
 
-  __threadfence();
-  __syncthreads();
+  // __threadfence();
+  // __syncthreads();
 
-  int32_t payload_sizes[PACKETS_PER_THREAD];
-  int32_t payload_flags[PACKETS_PER_THREAD];
-
-  for (auto i = 0; i < PACKETS_PER_THREAD; i++)
-  {
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++) {
     auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-
     if (packet_idx >= DOCA_GPUNETIO_VOLATILE(packet_count_received)) {
       payload_sizes[i] = 0;
       payload_flags[i] = 0;
       continue;
     }
 
-    doca_gpu_buf *buf_ptr;
-    doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + packet_idx, &buf_ptr);
+    doca_ret = doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + packet_idx, &buf_ptr);
+    if (doca_ret != DOCA_SUCCESS) {
+      DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
+      return;
+    }
 
-    uintptr_t buf_addr;
-    doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
+    doca_ret = doca_gpu_dev_buf_get_addr(buf_ptr, &buf_addr);
+    if (doca_ret != DOCA_SUCCESS) {
+      DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
+      return;
+    }
 
-    struct eth_ip_tcp_hdr *hdr;
-    uint8_t *payload;
-		raw_to_tcp(buf_addr, &hdr, &payload);
+    raw_to_tcp(buf_addr, &hdr, &payload);
 
     auto payload_size = get_payload_size(hdr->l3_hdr, hdr->l4_hdr);
 
     for(auto j = 0; j < payload_size; j++)
-    {
       payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
-    }
 
     payload_sizes[i] = payload_size;
     payload_flags[i] = 1;
-
     payload_sizes_out[packet_idx] = payload_size;
-
     // mac address
     src_mac_out[packet_idx] = mac_bytes_to_int64(hdr->l2_hdr.s_addr_bytes);
     dst_mac_out[packet_idx] = mac_bytes_to_int64(hdr->l2_hdr.d_addr_bytes);
-
     // ip address
     auto ip_to_int64 = []__device__(auto address){
       return (address & 0x000000ff) << 24
-      | (address & 0x0000ff00) << 8
-      | (address & 0x00ff0000) >> 8
-      | (address & 0xff000000) >> 24;
+            | (address & 0x0000ff00) << 8
+            | (address & 0x00ff0000) >> 8
+            | (address & 0xff000000) >> 24;
     };
 
     src_ip_out[packet_idx] = ip_to_int64(hdr->l3_hdr.src_addr);
@@ -374,30 +357,21 @@ __global__ void _packet_receive_kernel(
   }
 
   auto payload_size_total = BlockReduce(temp_storage).Sum(payload_sizes);
-
   __syncthreads();
-
   auto packet_count = BlockReduce(temp_storage).Sum(payload_flags);
-
   __syncthreads();
 
-  if (threadIdx.x == 0)
-  {
-    *packet_count_out = packet_count;
-    *payload_size_total_out = payload_size_total;
+  if (threadIdx.x == 0) {
+    DOCA_GPUNETIO_VOLATILE(packet_count_out) = packet_count;
+    DOCA_GPUNETIO_VOLATILE(payload_size_total_out) = payload_size_total;
   }
 
+#if 0
   if (threadIdx.x == 0)
-  {
-    doca_gpu_dev_sem_set_status(
-      sem_in,
-      *sem_idx,
-      DOCA_GPU_SEMAPHORE_STATUS_FREE
-    );
-  }
-
-  __threadfence();
-  __syncthreads();
+    doca_gpu_dev_sem_set_status(sem_in, *sem_idx, DOCA_GPU_SEMAPHORE_STATUS_FREE);
+  // __threadfence();
+  // __syncthreads();
+#endif
 }
 
 __global__ void _packet_gather_kernel(

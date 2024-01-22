@@ -22,6 +22,7 @@
 
 namespace morpheus::doca {
 
+/* Create more Queues/Different Flows */
 DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq) :
   m_context(context),
   m_rxq(rxq),
@@ -50,6 +51,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<Doc
 
     doca_flow_pipe_cfg pipe_cfg{};
     pipe_cfg.attr.name       = "GPU_RXQ_TCP_PIPE";
+    pipe_cfg.attr.enable_strict_matching = true;
     pipe_cfg.attr.type       = DOCA_FLOW_PIPE_BASIC;
     pipe_cfg.attr.nb_actions = 0;
     pipe_cfg.attr.is_root    = false;
@@ -73,6 +75,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<Doc
 
     doca_flow_pipe_cfg root_pipe_cfg = {};
     root_pipe_cfg.attr.name          = "ROOT_PIPE";
+    pipe_cfg.attr.enable_strict_matching = true;
     root_pipe_cfg.attr.is_root       = true;
     root_pipe_cfg.attr.type          = DOCA_FLOW_PIPE_CONTROL;
     root_pipe_cfg.monitor            = &root_monitor;
