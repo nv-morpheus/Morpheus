@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,5 +105,5 @@ fi
 # Run yapf
 if [[ "${SKIP_YAPF}" == "" ]]; then
    echo "Running yapf..."
-   python3 -m yapf -i --style ${PY_CFG} ${YAPF_EXCLUDE_FLAGS} -r ${PY_MODIFIED_FILES[@]}
+   python3 -m yapf -i --style ${PY_CFG} -r ${PY_MODIFIED_FILES[@]}
 fi

@@ -11,11 +11,9 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 # =============================================================================
-list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
+list(APPEND CMAKE_MESSAGE_CONTEXT "developer_guide")
 
-# Add the binary dir before including examples so they can find the parent project
-list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
-
-add_subdirectory(developer_guide)
+add_subdirectory(3_simple_cpp_stage)
+add_subdirectory(4_rabbitmq_cpp_stage)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

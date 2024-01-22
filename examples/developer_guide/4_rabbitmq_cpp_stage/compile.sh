@@ -1,3 +1,4 @@
+#!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,14 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
+set -x
+set -e
 
-rapids_find_package(CUDAToolkit REQUIRED)
+# Optionally can set INSTALL_PREFIX to build and install to a specific directory. Also causes cmake install to run
+BUILD_DIR=${BUILD_DIR:-"build"}
 
-set(RABBITMQ_VERSION "0.12.0" CACHE STRING "Version of RabbitMQ-C to use")
-include(Configure_rabbitmq)
+echo "Runing CMake configure..."
+cmake -B ${BUILD_DIR} -GNinja \
+   -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
+   -DMORPHEUS_PYTHON_INPLACE_BUILD:BOOL=ON \
+   -DMORPHEUS_PYTHON_PERFORM_INSTALL:BOOL=ON `# Ensure all of the libraries are installed` \
+   ${CMAKE_CONFIGURE_EXTRA_ARGS:+CMAKE_CONFIGURE_EXTRA_ARGS} .
 
-set(SIMPLE_AMQP_CLIENT_VERSION "2.5.1" CACHE STRING "Version of SimpleAmqpClient to use")
-include(Configure_SimpleAmqpClient)
-
-list(POP_BACK CMAKE_MESSAGE_CONTEXT)
+echo "Running CMake build..."
+cmake --build ${BUILD_DIR} -j "$@"

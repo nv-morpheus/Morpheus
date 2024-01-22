@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,6 @@ find_package(pybind11 REQUIRED)
 include(GoogleTest)
 
 # Cuda Test
-
 add_executable(test_cuda
   test_cuda.cu
 )
@@ -41,16 +40,7 @@ set_target_properties(test_cuda
     CUDA_STANDARD_REQUIRED ON
 )
 
-install(
-  TARGETS
-    test_cuda
-  RUNTIME DESTINATION
-    "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-  COMPONENT Wheel
-)
-
 # Morpheus Test Utilities
-
 add_library(
   morpheus_test_utilities
     test_utils/common.cpp
@@ -64,8 +54,7 @@ target_link_libraries(
 )
 
 # Morpheus Tests
-
-function (add_morpheus_test)
+function(add_morpheus_test)
   set(options)
   set(oneValueArgs NAME)
   set(multiValueArgs FILES)
@@ -82,6 +71,7 @@ function (add_morpheus_test)
       GTest::gtest_main
       morpheus_test_utilities
       pybind11::embed
+      TritonClient::httpclient_static
   )
 
   gtest_discover_tests(test_${MORPHEUS_TEST_NAME})
@@ -92,15 +82,6 @@ function (add_morpheus_test)
       CUDA_STANDARD 17
       CUDA_STANDARD_REQUIRED ON
   )
-
-  install(
-    TARGETS
-      test_${MORPHEUS_TEST_NAME}
-    RUNTIME DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
-    COMPONENT Wheel
-  )
-
 endfunction()
 
 add_morpheus_test(

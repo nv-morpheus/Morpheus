@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.3
 
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,9 +112,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
-    source activate base
-    # conda clean -afy
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19"
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -127,8 +125,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge  \
       python=${PYTHON_VER} && \
-    # Clean and activate
-    # conda clean -afy && \
+    # Activate the environment automatically from .bashrc
     conda init bash && \
     echo "conda activate morpheus" >> ~/.bashrc
 
@@ -187,9 +184,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
     # Remove channel_alias to use the normal channel in the container
-    conda config --env --remove-key channel_alias &&\
-    # Clean and activate
-    conda clean -afy
+    conda config --env --remove-key channel_alias
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
@@ -255,7 +250,8 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
         -c nvidia \
         -c pytorch \
         -c conda-forge morpheus &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml && \
+    conda clean -afy
 
 # Only copy specific files/folders over that are necessary for runtime
 COPY "${MORPHEUS_ROOT_HOST}/docker" "./docker"
@@ -290,10 +286,10 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
-# Pin to v0.9 until #967 is resolved
 RUN source activate morpheus && \
     npm install -g camouflage-server@0.15 && \
-    npm cache clean --force
+    npm cache clean --force && \
+    conda clean -afy
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for

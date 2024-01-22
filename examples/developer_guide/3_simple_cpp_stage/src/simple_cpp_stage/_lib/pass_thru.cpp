@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,10 +29,16 @@ PassThruStage::PassThruStage() : PythonNode(base_t::op_factory_from_sub_fn(build
 PassThruStage::subscribe_fn_t PassThruStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(
-            rxcpp::make_observer<sink_type_t>([this, &output](sink_type_t x) { output.on_next(std::move(x)); },
-                                              [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-                                              [&]() { output.on_completed(); }));
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
+                output.on_next(std::move(x));
+            },
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 
@@ -45,7 +51,7 @@ std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_example, m)
+PYBIND11_MODULE(pass_thru_cpp, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
