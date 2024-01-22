@@ -38,6 +38,7 @@ class RSSSourcePipeSchema(BaseModel):
     request_timeout_sec: float = 2.0
     run_indefinitely: bool = True
     stop_after: int = 0
+    vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
     @validator('feed_input', pre=True)

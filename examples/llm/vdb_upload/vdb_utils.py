@@ -191,6 +191,7 @@ def build_cli_configs(source_type,
                 "request_timeout_sec": rss_request_timeout_sec,
                 "run_indefinitely": run_indefinitely,
                 "stop_after_sec": stop_after,
+                "vdb_resource_name": vector_db_resource_name,
                 "web_scraper_config": {
                     "chunk_size": content_chunking_size,
                     "enable_cache": enable_cache,
@@ -205,9 +206,11 @@ def build_cli_configs(source_type,
                 "batch_size": pipeline_batch_size,
                 "enable_monitor": enable_monitors,
                 "extractor_config": {
-                    "chunk_size": content_chunking_size, "num_threads": num_threads
+                    "chunk_size": content_chunking_size,
+                    "num_threads": num_threads,
                 },
                 "filenames": file_source,
+                "vdb_resource_name": vector_db_resource_name,
                 "watch": run_indefinitely
             }
         }
@@ -250,6 +253,8 @@ def build_cli_configs(source_type,
 
     # VDB Configuration
     cli_vdb_conf = {
+        # Vector db upload has some significant transaction overhead, batch size here should be as large as possible
+        'batch_size': 5120,
         'embedding_size': embedding_size,
         'recreate': True,
         'resource_kwargs': build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,

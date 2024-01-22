@@ -33,4 +33,5 @@ class FileSourcePipeSchema(BaseModel):
     extractor_config: Optional[Dict[Any, Any]] = {}  # Flexible dictionary for extractor configuration
     filenames: List[str] = Field(default_factory=list)  # List of file paths
     num_threads: int = 1  # Number of threads for processing
+    vdb_resource_name: str
     watch: bool = False  # Flag to watch file changes

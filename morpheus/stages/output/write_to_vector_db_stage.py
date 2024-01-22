@@ -100,7 +100,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Module will be loading with name: {module_name}")
 
-        self._module_defination: ModuleLoader = WriteToVectorDBLoaderFactory.get_instance(module_name, module_config)
+        self._module_definition: ModuleLoader = WriteToVectorDBLoaderFactory.get_instance(module_name, module_config)
 
     @property
     def name(self) -> str:
@@ -124,7 +124,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        module = self._module_defination.load(builder)
+        module = self._module_definition.load(builder)
 
         # Input and Output port names should be same as input and output port names of write_to_vector_db module.
         mod_in_node = module.input_port("input")

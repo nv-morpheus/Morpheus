@@ -25,6 +25,7 @@ from morpheus.utils.module_utils import register_module
 from .schema_transform import SchemaTransformLoaderFactory
 from ..schemas.file_source_pipe_schema import FileSourcePipeSchema
 from ...common.content_extractor_module import ContentExtractorLoaderFactory
+from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -118,12 +119,18 @@ def _file_source_pipe(builder: mrc.Builder):
     schema_transform_loader = SchemaTransformLoaderFactory.get_instance("schema_transform", transform_config)
 
     deserialize_loader = DeserializeLoaderFactory.get_instance("deserialize",
-                                                               {"batch_size": validated_config.batch_size})
+                                                               {"batch_size": validated_config.batch_size,
+                                                                "message_type": "ControlMessage"})
+
+    vdb_resource_tagging_loader = VDBResourceTaggingLoaderFactory.get_instance("vdb_resource_tagging", {
+        "vdb_resource_name": validated_config.vdb_resource_name
+    })
 
     monitor_1_loader = MonitorLoaderFactory.get_instance(
         "monitor_1", {
             "description": "FileSourcePipe Transform", "silence_monitors": not enable_monitor
         })
+
     monitor_2_loader = MonitorLoaderFactory.get_instance("monitor_2", {
         "description": "File Source Deserialize", "silence_monitors": not enable_monitor
     })
@@ -134,6 +141,7 @@ def _file_source_pipe(builder: mrc.Builder):
     transform_module = schema_transform_loader.load(builder=builder)
     monitor_1_module = monitor_1_loader.load(builder=builder)
     deserialize_module = deserialize_loader.load(builder=builder)
+    vdb_resource_tagging_module = vdb_resource_tagging_loader.load(builder=builder)
     monitor_2_module = monitor_2_loader.load(builder=builder)
 
     # Connect the modules in the pipeline
@@ -141,7 +149,8 @@ def _file_source_pipe(builder: mrc.Builder):
     builder.make_edge(file_content_extractor_module.output_port("output"), transform_module.input_port("input"))
     builder.make_edge(transform_module.output_port("output"), monitor_1_module.input_port("input"))
     builder.make_edge(monitor_1_module.output_port("output"), deserialize_module.input_port("input"))
-    builder.make_edge(deserialize_module.output_port("output"), monitor_2_module.input_port("input"))
+    builder.make_edge(deserialize_module.output_port("output"), vdb_resource_tagging_module.input_port("input"))
+    builder.make_edge(vdb_resource_tagging_module.output_port("output"), monitor_2_module.input_port("input"))
 
     # Register the final output of the transformation module
     builder.register_module_output("output", monitor_2_module.output_port("output"))

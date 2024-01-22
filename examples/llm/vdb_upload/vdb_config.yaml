@@ -33,7 +33,7 @@ vdb_pipeline:
     - type: rss
       name: "rss_cve"
       config:
-        batch_size: 32 # Number of rss feeds per batch
+        batch_size: 128 # Number of rss feeds per batch
         cache_dir: "./.cache/http"
         cooldown_interval_sec: 600
         enable_cache: False
@@ -80,9 +80,26 @@ vdb_pipeline:
           chunk_overlap: 51
           chunk_size: 512
           enable_cache: false
+        vdb_resource_name: "VDBGENERAL"
 
     - type: filesystem
-      name: "demo_filesystem_source"
+      name: "filesystem_pdf_source"
+      config:
+        batch_size: 1024
+        extractor_config:
+          chunk_size: 512
+          num_threads: 10
+          chunk_overlap: 51
+        enable_monitor: True
+        filenames:
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+        vdb_resource_name: "VDBGENERAL"
+        watch: false
+
+    - type: filesystem
+      name: "filesystem_csv_source"
       config:
         batch_size: 1024
         chunk_overlap: 51
@@ -92,25 +109,27 @@ vdb_pipeline:
             chunk_overlap: 51
             chunk_size: 1024
             text_column_name: "raw"  # Requires same schema for all CSV files.
-        enable_monitor: False
+        enable_monitor: True
         filenames:
-          - "morpheus/data/scratch/random_cybersecurity_data.txt"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
           - "models/datasets/training-data/log-parsing-training-data.csv"
+        vdb_resource_name: "VDBGENERAL"
         watch: false
 
     - type: custom
-      name: "demo_custom_source"
+      name: "custom_source_text"
       config:
         batch_size: 1024
-        chunk_overlap: 51
-        chunk_size: 512
+        enable_monitor: True
+        extractor_config:
+          chunk_size: 512
+          chunk_overlap: 51
         config_name_mapping: "file_source_config"
         filenames:
           - "morpheus/data/scratch/random_cybersecurity_data.txt"
         module_id: "file_source_pipe"
         module_output_id: "output"
         namespace: "morpheus_examples_llm"
+        vdb_resource_name: "VDBGENERAL"
         watch: false
 
   tokenizer:
@@ -123,46 +142,47 @@ vdb_pipeline:
     model_name: "bert-base-uncased-hash"
 
   vdb:
+    batch_size: 5120
     embedding_size: 384
     recreate: True  # Whether to recreate the resource if it already exists
-    resource_name: "VDB2"  # Identifier for the resource in the vector database
+    resource_name: "VDBGENERAL"  # Identifier for the resource in the vector database
     service: "milvus"  # Specify the type of vector database
     uri: "http://localhost:19530"  # URI for connecting to the Vector Database server
     resource_schema:
-        index_conf:
-          field_name: embedding
-          metric_type: L2
-          index_type: HNSW
-          params:
-            M: 8
-            efConstruction: 64
+      index_conf:
+        field_name: embedding
+        metric_type: L2
+        index_type: HNSW
+        params:
+          M: 8
+          efConstruction: 64
 
-        schema_conf:
-          enable_dynamic_field: true
-          schema_fields:
-            - name: id
-              dtype: INT64
-              description: Primary key for the collection
-              is_primary: true
-              auto_id: true
-            - name: title
-              dtype: VARCHAR
-              description: Title or heading of the data entry
-              max_length: 65_535
-            - name: source
-              dtype: VARCHAR
-              description: Source or origin of the data entry
-              max_length: 65_535
-            - name: summary
-              dtype: VARCHAR
-              description: Brief summary or abstract of the data content
-              max_length: 65_535
-            - name: content
-              dtype: VARCHAR
-              description: Main content or body of the data entry
-              max_length: 65_535
-            - name: embedding
-              dtype: FLOAT_VECTOR
-              description: Embedding vectors representing the data entry
-              dim: 384 # Size of the embeddings to store in the vector database
-          description: Collection schema for diverse data sources
+      schema_conf:
+        enable_dynamic_field: true
+        schema_fields:
+          - name: id
+            dtype: INT64
+            description: Primary key for the collection
+            is_primary: true
+            auto_id: true
+          - name: title
+            dtype: VARCHAR
+            description: Title or heading of the data entry
+            max_length: 65_535
+          - name: source
+            dtype: VARCHAR
+            description: Source or origin of the data entry
+            max_length: 65_535
+          - name: summary
+            dtype: VARCHAR
+            description: Brief summary or abstract of the data content
+            max_length: 65_535
+          - name: content
+            dtype: VARCHAR
+            description: Main content or body of the data entry
+            max_length: 65_535
+          - name: embedding
+            dtype: FLOAT_VECTOR
+            description: Embedding vectors representing the data entry
+            dim: 384 # Size of the embeddings to store in the vector database
+        description: Collection schema for diverse data sources

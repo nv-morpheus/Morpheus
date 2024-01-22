@@ -16,7 +16,7 @@ import logging
 import typing
 
 from morpheus.config import Config
-from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages import ControlMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
 from .module.file_source_pipe import FileSourcePipeLoaderFactory
@@ -72,7 +72,7 @@ def setup_rss_source(pipe: Pipeline, config: Config, source_name: str, rss_confi
         module_config={"rss_config": rss_config},
     )
     rss_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config, module_definition, output_type=MultiMessage, output_port_name="output"))
+        LinearModuleSourceStage(config, module_definition, output_type=ControlMessage, output_port_name="output"))
 
     return rss_pipe
 
@@ -101,7 +101,7 @@ def setup_filesystem_source(pipe: Pipeline, config: Config, source_name: str, fs
     module_loader = FileSourcePipeLoaderFactory.get_instance(module_name=f"file_source_pipe__{source_name}",
                                                              module_config={"file_source_config": fs_config})
     file_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config, module_loader, output_type=MultiMessage, output_port_name="output"))
+        LinearModuleSourceStage(config, module_loader, output_type=ControlMessage, output_port_name="output"))
 
     return file_pipe
 
@@ -143,7 +143,7 @@ def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom
     custom_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_config,
-                                output_type=MultiMessage,
+                                output_type=ControlMessage,
                                 output_port_name=custom_config.get('module_output_id', 'output')))
 
     return custom_pipe

@@ -14,6 +14,7 @@
 
 import logging
 
+import cudf
 import mrc
 import mrc.core.operators as ops
 from pydantic import ValidationError
@@ -98,7 +99,7 @@ def _schema_transform(builder: mrc.Builder):
         with message.mutable_dataframe() as mdf:
             _df = process_dataframe(mdf, source_schema)
 
-        return MessageMeta(df=_df)
+        return MessageMeta(df=cudf.DataFrame(_df))
 
     node = builder.make_node("schema_transform", ops.map(do_transform))
 

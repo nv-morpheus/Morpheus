@@ -15,6 +15,7 @@
 import logging
 import pickle
 import time
+import typing
 from dataclasses import dataclass
 
 import cudf
@@ -96,6 +97,7 @@ def _write_to_vector_db(builder: mrc.Builder):
     service_kwargs = write_to_vdb_config.service_kwargs
     batch_size = write_to_vdb_config.batch_size
     write_time_interval = write_to_vdb_config.write_time_interval
+    write_time_interval = 0.01
 
     # Check if service is serialized and convert if needed
     service: VectorDBService = (pickle.loads(bytes(service, "latin1")) if is_service_serialized else
@@ -128,13 +130,13 @@ def _write_to_vector_db(builder: mrc.Builder):
 
         return final_df_references
 
-    def extract_df(msg):
+    def extract_df(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
         df = None
-        resrc_name = None
+        resource_name = None
 
         if isinstance(msg, ControlMessage):
             df = msg.payload().df
-            resrc_name = msg.get_metadata("resource_name")
+            resource_name = msg.get_metadata("vdb_resource")
         elif isinstance(msg, MultiResponseMessage):
             df = msg.get_meta()
             if df is not None and not df.empty:
@@ -145,9 +147,9 @@ def _write_to_vector_db(builder: mrc.Builder):
         else:
             raise RuntimeError(f"Unexpected message type '{type(msg)}' was encountered.")
 
-        return df, resrc_name
+        return df, resource_name
 
-    def on_data(msg):
+    def on_data(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
         try:
             df, resrc_name = extract_df(msg)
 
@@ -166,9 +168,9 @@ def _write_to_vector_db(builder: mrc.Builder):
                         return final_df_references
 
                 if resrc_name in accumulator_dict:
-                    accumlator: AccumulationStats = accumulator_dict[resrc_name]
-                    accumlator.msg_count += df_size
-                    accumlator.data.append(df)
+                    accumulator: AccumulationStats = accumulator_dict[resrc_name]
+                    accumulator.msg_count += df_size
+                    accumulator.data.append(df)
                 else:
                     accumulator_dict[resrc_name] = AccumulationStats(msg_count=df_size, last_insert_time=-1, data=[df])
 
@@ -180,10 +182,12 @@ def _write_to_vector_db(builder: mrc.Builder):
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
                             final_df_references.append(merged_df)
-                            # Reset accumlator stats
+                            # Reset accumulator stats
                             accum_stats.data.clear()
                             accum_stats.last_insert_time = current_time
                             accum_stats.msg_count = 0
+                    else:
+                        logger.debug("Accumulated %d rows for collection: %s", accum_stats.msg_count, key)
 
                 return final_df_references
 

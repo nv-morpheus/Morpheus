@@ -143,23 +143,23 @@ def _process_dataframe_to_control_message(message: MessageMeta,
         # Break the message meta into smaller chunks
         for i in range(0, message.count, batch_size):
 
-            message = ControlMessage()
+            cm = ControlMessage()
 
-            message.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
+            cm.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
 
             if (task_tuple is not None):
-                message.add_task(task_type=task_tuple[0], task=task_tuple[1])
+                cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-            output.append(message)
+            output.append(cm)
     else:
-        message = ControlMessage()
+        cm = ControlMessage()
 
-        message.payload(MessageMetaCpp(message.df))
+        cm.payload(MessageMetaCpp(message.df))
 
         if (task_tuple is not None):
-            message.add_task(task_type=task_tuple[0], task=task_tuple[1])
+            cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-        output.append(message)
+        output.append(cm)
 
     return output
 

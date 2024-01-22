@@ -93,7 +93,7 @@ def get_cached_tokenizer(vocab_hash_file: str, do_lower_case: bool):
 
     cached_tokenizers = getattr(_tl, "cached_tokenizers", None)
 
-    # Set the initial dictionary if its not set
+    # Set the initial dictionary if it's not set
     if (cached_tokenizers is None):
         cached_tokenizers = {}
         _tl.cached_tokenizers = cached_tokenizers
