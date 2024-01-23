@@ -24,6 +24,8 @@ from morpheus.config import PipelineModes
 
 class DefaultCommandHooks:
 
+    # pylint:disable=no-value-for-parameter
+
     @hookimpl
     def morpheus_cli_collect_stage_names(self, mode: PipelineModes) -> typing.List[str]:
 

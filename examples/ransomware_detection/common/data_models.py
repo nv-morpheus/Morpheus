@@ -29,7 +29,7 @@ class FeatureConfig:
 
 
 @dataclasses.dataclass
-class SnapshotData(object):
+class SnapshotData:
     """
     This dataclass holds appshield snapshot data.
     """

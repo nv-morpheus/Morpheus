@@ -44,6 +44,7 @@ class DataClassProp:
         self.fget = fget
         self.fset = fset
         self.fdel = fdel
+        self.name = None
         if doc is None and fget is not None:
             doc = fget.__doc__
         self.__doc__ = doc

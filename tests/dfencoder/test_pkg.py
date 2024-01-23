@@ -23,4 +23,4 @@ def test_old_dfencoder_not_in_env():
     Verify the old external dfencoder doesn't exist in the current env
     """
     with pytest.raises(ModuleNotFoundError):
-        import dfencoder  # noqa: F401
+        import dfencoder  # noqa: F401 #pylint:disable=unused-import

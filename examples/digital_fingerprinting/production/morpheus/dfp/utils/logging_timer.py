@@ -48,7 +48,7 @@ class LogTimeInfo():
 
 
 @contextmanager
-def log_time(log_fn, msg: str = None, *args, **kwargs):
+def log_time(log_fn, *args, msg: str = None, **kwargs):
 
     # Create an info object to allow users to set the message in the context block
     info = LogTimeInfo(log_fn=log_fn, msg=msg, args=args, kwargs=kwargs)

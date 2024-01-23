@@ -107,7 +107,7 @@ class AzureSourceStage(AutoencoderSourceStage):
             Dataframe with actual and derived columns.
         """
 
-        _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
+        default_date = '1970-01-01T00:00:00.000000+00:00'
         timestamp_column = "createdDateTime"
         city_column = "locationcity"
         state_column = "locationstate"
@@ -117,7 +117,7 @@ class AzureSourceStage(AutoencoderSourceStage):
         df = AzureSourceStage.change_columns(df)
         df['time'] = pd.to_datetime(df[timestamp_column], errors='coerce')
         df['day'] = df['time'].dt.date
-        df.fillna({'time': pd.to_datetime(_DEFAULT_DATE), 'day': pd.to_datetime(_DEFAULT_DATE).date()}, inplace=True)
+        df.fillna({'time': pd.to_datetime(default_date), 'day': pd.to_datetime(default_date).date()}, inplace=True)
         df.sort_values(by=['time'], inplace=True)
 
         overall_location_columns = [col for col in [city_column, state_column, country_column] if col is not None]

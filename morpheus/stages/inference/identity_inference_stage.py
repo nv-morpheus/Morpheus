@@ -47,17 +47,18 @@ class _IdentityInferenceWorker(InferenceWorker):
     def calc_output_dims(self, x: MultiInferenceMessage) -> typing.Tuple:
         return (x.count, self._seq_length)
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
 
-        def tmp(b: MultiInferenceMessage, f):
+        def tmp(batch: MultiInferenceMessage, f):
 
-            f(TensorMemory(
-                count=b.count,
-                tensors={'probs': cp.zeros((b.count, self._seq_length), dtype=cp.float32)},
-            ))
+            f(
+                TensorMemory(
+                    count=batch.count,
+                    tensors={'probs': cp.zeros((batch.count, self._seq_length), dtype=cp.float32)},
+                ))
 
         # Call directly instead of enqueing
-        tmp(batch, cb)
+        tmp(batch, callback)
 
 
 @register_stage("inf-identity", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])

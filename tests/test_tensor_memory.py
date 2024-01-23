@@ -94,7 +94,7 @@ def test_inference_memory_ae(config: Config):
 
     input_tensor = cp.array(test_data[:, 0])
     seq_ids = cp.array(test_data[:, 1])
-    mem = InferenceMemoryAE(count=count, input=input_tensor, seq_ids=seq_ids)
+    mem = InferenceMemoryAE(count=count, inputs=input_tensor, seq_ids=seq_ids)
 
     assert mem.count == count
     compare_tensors(mem.get_tensors(), {'input': input_tensor, 'seq_ids': seq_ids})

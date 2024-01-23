@@ -24,7 +24,9 @@ from flask import request
 
 from . import app
 
-kafka_writer = None
+KAFKA_WRITER = None
+
+# pylint: disable=inconsistent-return-statements,no-member
 
 
 @app.before_first_request
@@ -32,8 +34,9 @@ def setup():
     app.logger.setLevel(logging.INFO)
     producer = Producer({'bootstrap.servers': 'localhost:9092'})
     app.logger.info("Initialized Kafka producer")
-    global kafka_writer
-    kafka_writer = KafkaWriter(kafka_topic="test_cm", batch_size=1, producer=producer)
+    # pylint: disable=global-statement
+    global KAFKA_WRITER
+    KAFKA_WRITER = KafkaWriter(kafka_topic="test_cm", batch_size=1, producer=producer)
     app.logger.info("Initialized Kafka writer")
 
 
@@ -42,8 +45,7 @@ def submit_messages():
 
     if request.method == "POST":
         control_messages_json = process_cm(request)
-        global kafka_writer
-        kafka_writer.write_data(control_messages_json)
+        KAFKA_WRITER.write_data(control_messages_json)
         sucess_message = generate_success_message(control_messages_json)
         return sucess_message
 
@@ -56,8 +58,7 @@ def training():
 
     if request.method == "POST":
         control_messages_json = process_cm(request)
-        global kafka_writer
-        kafka_writer.write_data(control_messages_json)
+        KAFKA_WRITER.write_data(control_messages_json)
         sucess_message = generate_success_message(control_messages_json)
         return sucess_message
 

@@ -26,7 +26,7 @@ from morpheus.utils.loader_utils import register_loader
 
 logger = logging.getLogger(__name__)
 
-dask_cluster = None
+DASK_CLUSTER = None
 
 
 @register_loader(FSSPEC_LOADER)

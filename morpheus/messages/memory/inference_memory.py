@@ -123,7 +123,7 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
 
     Parameters
     ----------
-    input : cupy.ndarray
+    inputs : cupy.ndarray
         Inference input.
     seq_ids : cupy.ndarray
         Ids used to index from an inference input to a message. Necessary since there can be more inference
@@ -134,5 +134,5 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
                                                              InferenceMemory.set_input)
 
-    def __init__(self, *, count: int, input: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count=count, tensors={'input': input, 'seq_ids': seq_ids})
+    def __init__(self, *, count: int, inputs: cp.ndarray, seq_ids: cp.ndarray):
+        super().__init__(count=count, tensors={'input': inputs, 'seq_ids': seq_ids})

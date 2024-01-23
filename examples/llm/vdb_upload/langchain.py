@@ -14,6 +14,7 @@
 import logging
 import pickle
 
+# pylint: disable=no-name-in-module
 from langchain.document_loaders.rss import RSSFeedLoader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter

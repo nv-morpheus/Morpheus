@@ -34,7 +34,7 @@ class StageInfo:
     def __post_init__(self):
         # If modes is None or empty, then convert it to all modes
         if (self.modes is None or len(self.modes) == 0):
-            self.modes = [x for x in PipelineModes]
+            self.modes = set(PipelineModes)
 
     def supports_mode(self, mode: PipelineModes):
         if (mode is None):
@@ -79,9 +79,8 @@ class LazyStageInfo(StageInfo):
         stage_class_info: StageInfo = getattr(stage_class, "_morpheus_registered_stage", None)
 
         if (stage_class_info is None):
-            raise RuntimeError(
-                "Class {} did not have attribute '_morpheus_registered_stage'. Did you use register_stage?".format(
-                    self.qualified_name))
+            raise RuntimeError(f"Class {self.qualified_name} did not have attribute '_morpheus_registered_stage'. \
+                Did you use register_stage?")
 
         return stage_class_info.build_command()
 
@@ -105,16 +104,16 @@ class StageRegistry:
         mode_stages = self._get_stages_for_mode(mode)
 
         if (stage.name in mode_stages):
-            # TODO: Figure out if this is something that only the unittests encounter
-            logging.debug("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
+            # TODO(MDD): Figure out if this is something that only the unittests encounter
+            logging.debug("The stage %s has already been added for mode: %s", stage.name, mode)
 
         mode_stages[stage.name] = stage
 
     def add_stage_info(self, stage: StageInfo):
 
         # Loop over all modes for the stage
-        for m in stage.modes:
-            self._add_stage_info(m, stage)
+        for mode in stage.modes:
+            self._add_stage_info(mode, stage)
 
     def get_stage_info(self, stage_name: str, mode: PipelineModes = None, raise_missing=False) -> StageInfo:
 
@@ -122,9 +121,9 @@ class StageRegistry:
 
         if (stage_name not in mode_registered_stags):
             if (raise_missing):
-                raise RuntimeError("Could not find stage '{}' in registry".format(stage_name))
-            else:
-                return None
+                raise RuntimeError(f"Could not find stage '{stage_name}' in registry")
+
+            return None
 
         stage_info = mode_registered_stags[stage_name]
 
@@ -134,10 +133,9 @@ class StageRegistry:
 
         # Found but no match on mode
         if (raise_missing):
-            raise RuntimeError("Found stage '{}' in registry, but it does not support pipeline mode: {}".format(
-                stage_name, mode))
-        else:
-            return None
+            raise RuntimeError("Found stage '{stage_name}' in registry, but it does not support pipeline mode: {mode}")
+
+        return None
 
     def get_registered_names(self, mode: PipelineModes = None) -> typing.List[str]:
 
@@ -154,16 +152,16 @@ class StageRegistry:
         mode_stages = self._get_stages_for_mode(mode)
 
         if (stage.name not in mode_stages):
-            # TODO: Figure out if this is something that only the unittests encounter
-            logging.debug("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
+            # TODO(MDD): Figure out if this is something that only the unittests encounter
+            logging.debug("The stage '%s' has already been added for mode: %s", stage.name, mode)
 
         mode_stages.pop(stage.name)
 
     def remove_stage_info(self, stage: StageInfo):
 
         # Loop over all modes for the stage
-        for m in stage.modes:
-            self._remove_stage_info(m, stage)
+        for mode in stage.modes:
+            self._remove_stage_info(mode, stage)
 
 
 class GlobalStageRegistry:

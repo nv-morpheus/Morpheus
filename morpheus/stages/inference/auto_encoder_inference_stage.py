@@ -83,7 +83,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         # reconstruction loss and zscore
         return (x.count, 2)
 
-    def process(self, batch: MultiInferenceAEMessage, cb: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: MultiInferenceAEMessage, callback: typing.Callable[[TensorMemory], None]):
         """
         This function processes inference batch by using batch's model to calculate anomaly scores
         and adding results to response.
@@ -92,7 +92,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
+        callback : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Inference callback.
 
         """
@@ -130,7 +130,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         mem.explain_df = explain_df
 
-        cb(mem)
+        callback(mem)
 
 
 @register_stage("inf-pytorch", modes=[PipelineModes.AE])

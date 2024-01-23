@@ -23,6 +23,8 @@ from morpheus.config import PipelineModes
 
 hookspec = pluggy.HookspecMarker("morpheus")
 
+# pylint:disable=unused-argument
+
 
 @hookspec
 def morpheus_cli_collect_stages(registry: StageRegistry):

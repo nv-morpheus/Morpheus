@@ -34,7 +34,7 @@ DEFAULT_DIRS = ["src", "include", "tests", "benchmarks"]
 def parse_clang_version(version_string):
     match = VERSION_REGEX.search(version_string)
     if match is None:
-        raise Exception("Failed to figure out clang-format version!")
+        raise ValueError("Failed to figure out clang-format version!")
     version = match.group(1)
     return tuple(map(int, version.split('.')))
 
@@ -105,18 +105,18 @@ def parse_args():
     if args.dstdir is None:
         args.dstdir = tempfile.mkdtemp()
 
-    ret = subprocess.check_output("%s --version" % args.exe, shell=True)
+    ret = subprocess.check_output(f"{args.exe} --version", shell=True)
     ret = ret.decode("utf-8")
     version = parse_clang_version(ret)
     if version < MIN_VERSION:
-        raise Exception("clang-format exe must be v%s found '%s'" % (MIN_VERSION, version))
+        raise ValueError(f"clang-format exe must be v{MIN_VERSION} found '{version}'")
     if len(args.dirs) == 0 and len(args.files) == 0:
         args.dirs = DEFAULT_DIRS
     return args
 
 
 def list_all_src_files(file_regex, ignore_regex, srcfiles, srcdirs, dstdir, inplace):
-    allFiles = []
+    all_files = []
     for srcfile in srcfiles:
         if re.search(file_regex, srcfile):
             if ignore_regex is not None and re.search(ignore_regex, srcfile):
@@ -127,10 +127,10 @@ def list_all_src_files(file_regex, ignore_regex, srcfiles, srcdirs, dstdir, inpl
             else:
                 dstfile = os.path.join(dstdir, srcfile)
 
-            allFiles.append((srcfile, dstfile))
+            all_files.append((srcfile, dstfile))
 
     for srcdir in srcdirs:
-        for root, dirs, files in os.walk(srcdir):
+        for root, _, files in os.walk(srcdir):
             for f in files:
                 src = os.path.join(root, f)
                 if re.search(file_regex, src):
@@ -141,9 +141,9 @@ def list_all_src_files(file_regex, ignore_regex, srcfiles, srcdirs, dstdir, inpl
                     else:
                         _dir = os.path.join(dstdir, root)
                     dst = os.path.join(_dir, f)
-                    allFiles.append((src, dst))
+                    all_files.append((src, dst))
 
-    return allFiles
+    return all_files
 
 
 def run_clang_format(src, dst, exe, verbose):
@@ -152,22 +152,22 @@ def run_clang_format(src, dst, exe, verbose):
         os.makedirs(dstdir)
     # run the clang format command itself
     if src == dst:
-        cmd = "%s -i %s" % (exe, src)
+        cmd = f"{exe} -i {src}"
     else:
-        cmd = "%s %s > %s" % (exe, src, dst)
+        cmd = f"{exe} {src} > {dst}"
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError:
         print("Failed to run clang-format! Maybe your env is not proper?")
         raise
     # run the diff to check if there are any formatting issues
-    cmd = "diff -q %s %s >/dev/null" % (src, dst)
+    cmd = f"diff -q {src} {dst} >/dev/null"
     try:
         subprocess.check_call(cmd, shell=True)
         if verbose:
-            print("%s passed" % os.path.basename(src))
+            print(f"{os.path.basename(src)} passed")
     except subprocess.CalledProcessError:
-        print("%s failed! 'diff %s %s' will show formatting violations!" % (os.path.basename(src), src, dst))
+        print(f"{os.path.basename(src)} failed! 'diff {src} {dst}' will show formatting violations!")
         return False
     return True
 
@@ -198,9 +198,8 @@ def main():
         print(" 1. Look at formatting differences above and fix them manually")
         print(" 2. Or run the below command to bulk-fix all these at once")
         print("Bulk-fix command: ")
-        print("  python %s -inplace" % " ".join(sys.argv))
+        print(f"  python {' '.join(sys.argv)} -inplace")
         sys.exit(-1)
-    return
 
 
 if __name__ == "__main__":

@@ -20,6 +20,10 @@ import torch
 
 from morpheus.models.dfencoder import scalers
 
+# Pylint doesn't understand how pytest fixtures work and flags fixture uasage as a redefinition of the symbol in the
+# outer scope.
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(scope="function")
 def fit_tensor():
@@ -107,8 +111,8 @@ def test_modified_scaler_transform(modified_scaler, tensor):
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
     # Test alternate path where median absolute deviation is 1
-    t = torch.tensor([3.0, 4.0, 4.0, 5.0])
-    modified_scaler.fit(t)
+    test = torch.tensor([3.0, 4.0, 4.0, 5.0])
+    modified_scaler.fit(test)
     results = modified_scaler.transform(tensor)
     expected = torch.tensor([5.43, 6.86, 8.78])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
@@ -120,8 +124,8 @@ def test_modified_scaler_inverse_transform(modified_scaler, tensor):
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
     # Test alternate path where median absolute deviation is 1
-    t = torch.tensor([3.0, 4.0, 4.0, 5.0])
-    modified_scaler.fit(t)
+    test = torch.tensor([3.0, 4.0, 4.0, 5.0])
+    modified_scaler.fit(test)
     results = modified_scaler.inverse_transform(tensor)
     expected = torch.tensor([8.64, 9.2, 9.95])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
@@ -153,13 +157,13 @@ def test_gauss_rank_scaler_fit_transform(gauss_rank_scaler, tensor):
 
 def test_null_scaler(tensor):
     orig = tensor.to(dtype=torch.float32, copy=True)
-    ns = scalers.NullScaler()
-    ns.fit(tensor)
+    null_scaler = scalers.NullScaler()
+    null_scaler.fit(tensor)
 
     # Verify it does nothing
-    assert ns.transform(tensor) is tensor
-    assert ns.inverse_transform(tensor) is tensor
-    assert ns.fit_transform(tensor) is tensor
+    assert null_scaler.transform(tensor) is tensor
+    assert null_scaler.inverse_transform(tensor) is tensor
+    assert null_scaler.fit_transform(tensor) is tensor
 
     # After all that the values should be the same
     assert torch.equal(tensor, orig), f"{tensor} != {orig}"

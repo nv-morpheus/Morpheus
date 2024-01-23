@@ -87,7 +87,7 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   should_be_cpp,
                   no_cpp_class,
                   **{
-                      "count": 1, "input": cp_array, "seq_ids": cp_array
+                      "count": 1, "inputs": cp_array, "seq_ids": cp_array
                   })
 
     multi_tensor_message_tensors = {
@@ -167,13 +167,13 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     )
 
 
-def test_constructor_cpp(config):
+def test_constructor_cpp():
     check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
 
 
 @pytest.mark.reload_modules(morpheus.config)
 @pytest.mark.usefixtures("reload_modules", "restore_environ")
-def test_constructor_env(config):
+def test_constructor_env():
     # Set the NO_CPP flag which should disable C++ regardless
     os.environ['MORPHEUS_NO_CPP'] = '1'
 

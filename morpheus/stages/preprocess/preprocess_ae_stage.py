@@ -91,22 +91,22 @@ class PreprocessAEStage(PreprocessBaseStage):
         scores_std = x.train_scores_std
         count = len(meta_df.index)
         mess_count = count
-        input = cp.zeros(meta_df.shape, dtype=cp.float32)
+        inputs = cp.zeros(meta_df.shape, dtype=cp.float32)
 
         memory = None
 
         if autoencoder is not None:
             data = autoencoder.prepare_df(meta_df)
-            input = autoencoder.build_input_tensor(data)
-            input = cp.asarray(input.detach())
-            count = input.shape[0]
+            inputs = autoencoder.build_input_tensor(data)
+            inputs = cp.asarray(inputs.detach())
+            count = inputs.shape[0]
             mess_count = x.mess_count
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
         seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
-        memory = InferenceMemoryAE(count=count, input=input, seq_ids=seg_ids)
+        memory = InferenceMemoryAE(count=count, inputs=inputs, seq_ids=seg_ids)
 
         infer_message = MultiInferenceAEMessage.from_message(x,
                                                              mess_count=mess_count,

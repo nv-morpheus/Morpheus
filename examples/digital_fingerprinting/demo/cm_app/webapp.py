@@ -14,5 +14,6 @@
 # limitations under the License.
 
 # Entry point for the application.
+# pylint: disable=unused-import
 from . import app  # noqa: F401
 from . import views  # noqa: F401
