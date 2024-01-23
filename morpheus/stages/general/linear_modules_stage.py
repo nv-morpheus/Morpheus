@@ -80,7 +80,7 @@ class LinearModulesStage(SinglePortStage):
         Returns input type for the current stage.
         """
 
-        return (self._input_type,)
+        return (self._input_type, )
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -92,7 +92,7 @@ class LinearModulesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self._input_type,)
+        return (self._input_type, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._output_type)

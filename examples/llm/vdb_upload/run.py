@@ -16,7 +16,6 @@ import logging
 import os
 
 import click
-
 from vdb_upload.vdb_utils import build_cli_configs
 from vdb_upload.vdb_utils import build_final_config
 from vdb_upload.vdb_utils import is_valid_service

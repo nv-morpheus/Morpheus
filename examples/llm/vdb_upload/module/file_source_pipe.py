@@ -15,12 +15,12 @@
 import logging
 
 import mrc
-from common.content_extractor_module import ContentExtractorLoaderFactory
-from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from pydantic import ValidationError
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 from vdb_upload.schemas.file_source_pipe_schema import FileSourcePipeSchema
 
+from common.content_extractor_module import ContentExtractorLoaderFactory
+from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.multi_file_source import MultiFileSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
@@ -29,9 +29,7 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-FileSourcePipeLoaderFactory = ModuleLoaderFactory("file_source_pipe",
-                                                  "morpheus_examples_llm",
-                                                  FileSourcePipeSchema)
+FileSourcePipeLoaderFactory = ModuleLoaderFactory("file_source_pipe", "morpheus_examples_llm", FileSourcePipeSchema)
 
 
 @register_module("file_source_pipe", "morpheus_examples_llm")
@@ -93,8 +91,7 @@ def _file_source_pipe(builder: mrc.Builder):
         "watch_interval": validated_config.watch_interval,
         "watch_dir": validated_config.watch,
     }
-    multi_file_loader = MultiFileSourceLoaderFactory.get_instance("multi_file_source",
-                                                                  {"source_config": source_config})
+    multi_file_loader = MultiFileSourceLoaderFactory.get_instance("multi_file_source", {"source_config": source_config})
 
     # Configure and load the file content extractor module
     file_content_extractor_config = {
@@ -126,22 +123,23 @@ def _file_source_pipe(builder: mrc.Builder):
     }
     schema_transform_loader = SchemaTransformLoaderFactory.get_instance("schema_transform", transform_config)
 
-    deserialize_loader = DeserializeLoaderFactory.get_instance("deserialize",
-                                                               {"batch_size": validated_config.batch_size,
-                                                                "message_type": "ControlMessage"})
+    deserialize_loader = DeserializeLoaderFactory.get_instance(
+        "deserialize", {
+            "batch_size": validated_config.batch_size, "message_type": "ControlMessage"
+        })
 
-    vdb_resource_tagging_loader = VDBResourceTaggingLoaderFactory.get_instance("vdb_resource_tagging", {
-        "vdb_resource_name": validated_config.vdb_resource_name
-    })
+    vdb_resource_tagging_loader = VDBResourceTaggingLoaderFactory.get_instance(
+        "vdb_resource_tagging", {"vdb_resource_name": validated_config.vdb_resource_name})
 
     monitor_1_loader = MonitorLoaderFactory.get_instance(
         "monitor_1", {
             "description": "FileSourcePipe Transform", "silence_monitors": not enable_monitor
         })
 
-    monitor_2_loader = MonitorLoaderFactory.get_instance("monitor_2", {
-        "description": "File Source Deserialize", "silence_monitors": not enable_monitor
-    })
+    monitor_2_loader = MonitorLoaderFactory.get_instance(
+        "monitor_2", {
+            "description": "File Source Deserialize", "silence_monitors": not enable_monitor
+        })
 
     # Load modules
     multi_file_module = multi_file_loader.load(builder=builder)

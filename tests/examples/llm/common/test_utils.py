@@ -20,39 +20,27 @@ from pymilvus.exceptions import DataTypeNotSupportException
 def test_build_milvus_config_valid_schema(import_utils):
     resource_schema_config = {
         "schema_conf": {
-            "schema_fields": [
-                {"name": "field1", "dtype": "INT64"},
-                {"name": "field2", "dtype": "FLOAT"}
-            ]
+            "schema_fields": [{
+                "name": "field1", "dtype": "INT64"
+            }, {
+                "name": "field2", "dtype": "FLOAT"
+            }]
         }
     }
-    expected_dtype_map = {
-        "field1": pymilvus.DataType.INT64,
-        "field2": pymilvus.DataType.FLOAT
-    }
+    expected_dtype_map = {"field1": pymilvus.DataType.INT64, "field2": pymilvus.DataType.FLOAT}
     result = import_utils.build_milvus_config(resource_schema_config)
     for field in result["schema_conf"]["schema_fields"]:
         assert field["type"] == expected_dtype_map[field["name"]]
 
 
 def test_build_milvus_config_invalid_dtype(import_utils):
-    resource_schema_config = {
-        "schema_conf": {
-            "schema_fields": [
-                {"name": "invalid_field", "dtype": "invalid_dtype"}
-            ]
-        }
-    }
+    resource_schema_config = {"schema_conf": {"schema_fields": [{"name": "invalid_field", "dtype": "invalid_dtype"}]}}
     with pytest.raises(DataTypeNotSupportException):
         import_utils.build_milvus_config(resource_schema_config)
 
 
 def test_build_milvus_config_empty_schema_fields(import_utils):
-    resource_schema_config = {
-        "schema_conf": {
-            "schema_fields": []
-        }
-    }
+    resource_schema_config = {"schema_conf": {"schema_fields": []}}
     result = import_utils.build_milvus_config(resource_schema_config)
     assert result["schema_conf"]["schema_fields"] == []
 
@@ -66,9 +54,9 @@ def test_build_milvus_config_additional_field_properties(import_utils):
     with pytest.raises(DataTypeNotSupportException):
         resource_schema_config = {
             "schema_conf": {
-                "schema_fields": [
-                    {"name": "field1", "dtype": "int64", "extra_prop": "value"}
-                ]
+                "schema_fields": [{
+                    "name": "field1", "dtype": "int64", "extra_prop": "value"
+                }]
             }
         }
         result = import_utils.build_milvus_config(resource_schema_config)

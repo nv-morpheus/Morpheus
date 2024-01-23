@@ -19,6 +19,7 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.linear_modules_source import LinearModuleSourceStage
+
 from .module.file_source_pipe import FileSourcePipeLoaderFactory
 from .module.rss_source_pipe import RSSSourcePipeLoaderFactory
 
@@ -144,10 +145,7 @@ def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom
 
     # Adding the custom module stage to the pipeline
     custom_pipe = pipe.add_stage(
-        LinearModuleSourceStage(config,
-                                module_config,
-                                output_type=ControlMessage,
-                                output_port_name=module_output_id))
+        LinearModuleSourceStage(config, module_config, output_type=ControlMessage, output_port_name=module_output_id))
 
     return custom_pipe
 

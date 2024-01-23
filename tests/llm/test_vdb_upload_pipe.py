@@ -49,14 +49,14 @@ from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
                            'examples/llm/vdb_upload/test_data_output.json',
                            'examples/llm/vdb_upload/vdb_file_source_config.yaml')])
 def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
-                                    mock_requests_session: mock.MagicMock,
-                                    dataset: DatasetManager,
-                                    milvus_server_uri: str,
-                                    import_mod: list[types.ModuleType],
-                                    is_rss_source: str,
-                                    exclude_columns: list[str],
-                                    expected_output_path: str,
-                                    vdb_conf_file: str):
+                         mock_requests_session: mock.MagicMock,
+                         dataset: DatasetManager,
+                         milvus_server_uri: str,
+                         import_mod: list[types.ModuleType],
+                         is_rss_source: str,
+                         exclude_columns: list[str],
+                         expected_output_path: str,
+                         vdb_conf_file: str):
 
     # We're going to use this DF to both provide values to the mocked Tritonclient,
     # but also to verify the values in the Milvus collection.
@@ -83,7 +83,7 @@ def test_vdb_upload_pipe(mock_triton_client: mock.MagicMock,
         expected_values_df["source"] = "rss"
 
     vdb_conf_path = os.path.join(TEST_DIRS.tests_data_dir, vdb_conf_file)
-    
+
     _, _, vdb_upload_run_mod, vdb_upload_pipeline_mod = import_mod
 
     # Building final configuration. Here we're passing empty dictionaries for cli configuration.

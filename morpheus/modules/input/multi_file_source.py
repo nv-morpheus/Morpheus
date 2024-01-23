@@ -26,9 +26,7 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
-MultiFileSourceLoaderFactory = ModuleLoaderFactory("multi_file_source",
-                                                   "morpheus",
-                                                   MultiFileSourceSchema)
+MultiFileSourceLoaderFactory = ModuleLoaderFactory("multi_file_source", "morpheus", MultiFileSourceSchema)
 
 
 def expand_paths_simple(filenames: typing.List[str]) -> typing.List[str]:

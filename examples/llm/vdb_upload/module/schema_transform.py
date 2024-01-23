@@ -14,10 +14,11 @@
 
 import logging
 
-import cudf
 import mrc
 import mrc.core.operators as ops
 from pydantic import ValidationError
+
+import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import ColumnInfo
@@ -27,13 +28,12 @@ from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
+
 from ..schemas.schema_transform_schema import SchemaTransformSchema
 
 logger = logging.getLogger(__name__)
 
-SchemaTransformLoaderFactory = ModuleLoaderFactory("schema_transform",
-                                                   "morpheus_examples_llm",
-                                                   SchemaTransformSchema)
+SchemaTransformLoaderFactory = ModuleLoaderFactory("schema_transform", "morpheus_examples_llm", SchemaTransformSchema)
 
 
 @register_module("schema_transform", "morpheus_examples_llm")

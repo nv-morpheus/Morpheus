@@ -93,16 +93,15 @@ def merge_configs(file_config, cli_config):
     return merged_config
 
 
-def _build_default_rss_source(
-        enable_cache,
-        enable_monitors,
-        interval_secs,
-        run_indefinitely,
-        stop_after,
-        vector_db_resource_name,
-        content_chunking_size,
-        rss_request_timeout_sec,
-        feed_inputs):
+def _build_default_rss_source(enable_cache,
+                              enable_monitors,
+                              interval_secs,
+                              run_indefinitely,
+                              stop_after,
+                              vector_db_resource_name,
+                              content_chunking_size,
+                              rss_request_timeout_sec,
+                              feed_inputs):
     return {
         'type': 'rss',
         'name': 'rss-cli',
@@ -232,16 +231,15 @@ def build_cli_configs(source_type,
     # Source Configuration
     cli_source_conf = {}
     if 'rss' in source_type:
-        cli_source_conf['rss'] = _build_default_rss_source(
-            enable_cache,
-            enable_monitors,
-            interval_secs,
-            run_indefinitely,
-            stop_after,
-            vector_db_resource_name,
-            content_chunking_size,
-            rss_request_timeout_sec,
-            feed_inputs)
+        cli_source_conf['rss'] = _build_default_rss_source(enable_cache,
+                                                           enable_monitors,
+                                                           interval_secs,
+                                                           run_indefinitely,
+                                                           stop_after,
+                                                           vector_db_resource_name,
+                                                           content_chunking_size,
+                                                           rss_request_timeout_sec,
+                                                           feed_inputs)
     if 'filesystem' in source_type:
         cli_source_conf['filesystem'] = _build_default_filesystem_source(enable_monitors,
                                                                          file_source,
@@ -415,17 +413,16 @@ def build_final_config(vdb_conf_path,
 
     # If no sources are specified either via CLI or in the yaml config, add a default RSS source
     if (not final_config['source_config']):
-        final_config['source_config'].append(_build_default_rss_source(
-            enable_cache=True,
-            enable_monitors=True,
-            interval_secs=60,
-            run_indefinitely=True,
-            stop_after=None,
-            vector_db_resource_name="VDBUploadExample",
-            content_chunking_size=128,
-            rss_request_timeout_sec=30,
-            feed_inputs=build_rss_urls()
-        ))
+        final_config['source_config'].append(
+            _build_default_rss_source(enable_cache=True,
+                                      enable_monitors=True,
+                                      interval_secs=60,
+                                      run_indefinitely=True,
+                                      stop_after=None,
+                                      vector_db_resource_name="VDBUploadExample",
+                                      content_chunking_size=128,
+                                      rss_request_timeout_sec=30,
+                                      feed_inputs=build_rss_urls()))
 
     return final_config
 

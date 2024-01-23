@@ -18,15 +18,20 @@ from abc import abstractmethod
 from functools import partial
 from functools import reduce
 
-import cudf
 import cupy as cp
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.config import Config
+import cudf
+
 from morpheus._lib.messages import MessageMeta as _MessageMeta
-from morpheus.messages import ControlMessage, InferenceMemoryNLP, MessageMeta, MultiInferenceNLPMessage, MultiMessage
+from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -187,7 +192,7 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage,)
+        return (MultiInferenceMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiResponseMessage)

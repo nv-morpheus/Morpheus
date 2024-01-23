@@ -18,10 +18,11 @@ import time
 import typing
 from dataclasses import dataclass
 
-import cudf
 import mrc
 from mrc.core import operators as ops
 from pydantic import ValidationError
+
+import cudf
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage

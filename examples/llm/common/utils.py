@@ -66,5 +66,3 @@ def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530
                                                                                 **milvus_resource_kwargs)
 
     return vdb_service
-
-

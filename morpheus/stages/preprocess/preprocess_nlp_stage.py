@@ -18,11 +18,12 @@ import logging
 import typing
 from functools import partial
 
-import cudf
 import cupy as cp
 import mrc
 import numpy as np
 from pyinstrument import Profiler
+
+import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -47,11 +48,7 @@ def cupyarray_to_base64(cupy_array):
     array_dtype = str(cupy_array.dtype)
 
     # Create a dictionary to store bytes, shape, and dtype
-    encoded_dict = {
-        'bytes': base64.b64encode(array_bytes).decode("utf-8"),
-        'shape': array_shape,
-        'dtype': array_dtype
-    }
+    encoded_dict = {'bytes': base64.b64encode(array_bytes).decode("utf-8"), 'shape': array_shape, 'dtype': array_dtype}
 
     # Convert dictionary to JSON string for storage
     return json.dumps(encoded_dict)
@@ -164,13 +161,23 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         """
         if isinstance(message, ControlMessage):
-            return PreprocessNLPStage.process_control_message(message, vocab_hash_file, do_lower_case,
-                                                              seq_len, stride, truncation,
-                                                              add_special_tokens, column)
+            return PreprocessNLPStage.process_control_message(message,
+                                                              vocab_hash_file,
+                                                              do_lower_case,
+                                                              seq_len,
+                                                              stride,
+                                                              truncation,
+                                                              add_special_tokens,
+                                                              column)
         elif isinstance(message, MultiMessage):
-            return PreprocessNLPStage.process_multi_message(message, vocab_hash_file, do_lower_case,
-                                                            seq_len, stride, truncation,
-                                                            add_special_tokens, column)
+            return PreprocessNLPStage.process_multi_message(message,
+                                                            vocab_hash_file,
+                                                            do_lower_case,
+                                                            seq_len,
+                                                            stride,
+                                                            truncation,
+                                                            add_special_tokens,
+                                                            column)
         else:
             raise TypeError("Unsupported message type")
 
@@ -197,13 +204,15 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         del text_series
 
-        message.set_metadata("inference_memory_params", {
-            "inference_type": "nlp",
-            "count": tokenized.input_ids.shape[0],
-            "segment_ids": cupyarray_to_base64(tokenized.segment_ids),
-            "input_ids": cupyarray_to_base64(tokenized.input_ids),
-            "input_mask": cupyarray_to_base64(tokenized.input_mask),
-        })
+        message.set_metadata(
+            "inference_memory_params",
+            {
+                "inference_type": "nlp",
+                "count": tokenized.input_ids.shape[0],
+                "segment_ids": cupyarray_to_base64(tokenized.segment_ids),
+                "input_ids": cupyarray_to_base64(tokenized.input_ids),
+                "input_mask": cupyarray_to_base64(tokenized.input_mask),
+            })
 
         return message
 
@@ -239,13 +248,15 @@ class PreprocessNLPStage(PreprocessBaseStage):
         profiler = Profiler()
         profiler.start()
         test_cm = ControlMessage()
-        test_cm.set_metadata("inference_memory_params", {
-            "inference_type": "nlp",
-            "count": tokenized.input_ids.shape[0],
-            "segment_ids": cupyarray_to_base64(tokenized.segment_ids),
-            "input_ids": cupyarray_to_base64(tokenized.input_ids),
-            "input_mask": cupyarray_to_base64(tokenized.input_mask),
-        })
+        test_cm.set_metadata(
+            "inference_memory_params",
+            {
+                "inference_type": "nlp",
+                "count": tokenized.input_ids.shape[0],
+                "segment_ids": cupyarray_to_base64(tokenized.segment_ids),
+                "input_ids": cupyarray_to_base64(tokenized.input_ids),
+                "input_mask": cupyarray_to_base64(tokenized.input_mask),
+            })
 
         memory_params = test_cm.get_metadata("inference_memory_params")
         a = memory_params["count"]
@@ -260,8 +271,10 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         return infer_message
 
-    def _get_preprocess_fn(self) -> typing.Callable[
-        [typing.Union[MultiMessage, ControlMessage]], typing.Union[MultiInferenceMessage, ControlMessage]]:
+    def _get_preprocess_fn(
+        self
+    ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
+                         typing.Union[MultiInferenceMessage, ControlMessage]]:
         return partial(PreprocessNLPStage.pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,

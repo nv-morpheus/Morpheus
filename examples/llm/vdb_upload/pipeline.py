@@ -16,6 +16,8 @@ import logging
 import time
 import typing
 
+from vdb_upload.helper import process_vdb_sources
+
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -23,7 +25,6 @@ from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from vdb_upload.helper import process_vdb_sources
 
 logger = logging.getLogger(__name__)
 

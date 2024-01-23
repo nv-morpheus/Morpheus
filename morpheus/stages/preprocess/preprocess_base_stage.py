@@ -50,7 +50,10 @@ class PreprocessBaseStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MultiMessage, ControlMessage,)
+        return (
+            MultiMessage,
+            ControlMessage,
+        )
 
     def compute_schema(self, schema: StageSchema):
         out_type = MultiInferenceMessage

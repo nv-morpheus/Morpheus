@@ -20,6 +20,7 @@ from pydantic import ValidationError
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+
 from .vdb_resource_tagging_schema import VDBResourceTaggingSchema
 
 logger = logging.getLogger(__name__)

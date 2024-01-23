@@ -15,12 +15,12 @@
 import logging
 
 import mrc
-from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
-from common.web_scraper_module import WebScraperLoaderFactory
 from pydantic import ValidationError
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 from vdb_upload.schemas.rss_source_pipe_schema import RSSSourcePipeSchema
 
+from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
+from common.web_scraper_module import WebScraperLoaderFactory
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
@@ -29,9 +29,7 @@ from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
-RSSSourcePipeLoaderFactory = ModuleLoaderFactory("rss_source_pipe",
-                                                 "morpheus_examples_llm",
-                                                 RSSSourcePipeSchema)
+RSSSourcePipeLoaderFactory = ModuleLoaderFactory("rss_source_pipe", "morpheus_examples_llm", RSSSourcePipeSchema)
 
 
 @register_module("rss_source_pipe", "morpheus_examples_llm")
@@ -96,8 +94,7 @@ def _rss_source_pipe(builder: mrc.Builder):
         "interval_sec": validated_config.interval_sec,
         "stop_after_sec": validated_config.stop_after_sec,
     }
-    rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source",
-                                                            {"rss_source": rss_source_config})
+    rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source", {"rss_source": rss_source_config})
 
     web_scraper_loader = WebScraperLoaderFactory.get_instance(
         "web_scraper", {
@@ -122,13 +119,13 @@ def _rss_source_pipe(builder: mrc.Builder):
     }
     schema_transform_loader = SchemaTransformLoaderFactory.get_instance("schema_transform", transform_config)
 
-    deserialize_loader = DeserializeLoaderFactory.get_instance("deserialize",
-                                                               {"batch_size": validated_config.output_batch_size,
-                                                                "message_type": "ControlMessage"})
+    deserialize_loader = DeserializeLoaderFactory.get_instance(
+        "deserialize", {
+            "batch_size": validated_config.output_batch_size, "message_type": "ControlMessage"
+        })
 
-    vdb_resource_tagging_loader = VDBResourceTaggingLoaderFactory.get_instance("vdb_resource_tagging", {
-        "vdb_resource_name": validated_config.vdb_resource_name
-    })
+    vdb_resource_tagging_loader = VDBResourceTaggingLoaderFactory.get_instance(
+        "vdb_resource_tagging", {"vdb_resource_name": validated_config.vdb_resource_name})
 
     monitor_0_loader = MonitorLoaderFactory.get_instance(
         "monitor_m1", {
@@ -138,9 +135,10 @@ def _rss_source_pipe(builder: mrc.Builder):
         "monitor_0", {
             "description": "RSSSourcePipe Web Scraper", "silence_monitors": not enable_monitor
         })
-    monitor_2_loader = MonitorLoaderFactory.get_instance("monitor_1", {
-        "description": "RSSSourcePipe Transform", "silence_monitors": not enable_monitor
-    })
+    monitor_2_loader = MonitorLoaderFactory.get_instance(
+        "monitor_1", {
+            "description": "RSSSourcePipe Transform", "silence_monitors": not enable_monitor
+        })
     monitor_3_loader = MonitorLoaderFactory.get_instance(
         "monitor_2", {
             "description": "RSSSourcePipe Deserialize", "silence_monitors": not enable_monitor

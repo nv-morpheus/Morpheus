@@ -17,6 +17,7 @@ import os
 import sys
 
 import pytest
+
 from _utils import TEST_DIRS
 from _utils import import_or_skip
 
@@ -49,8 +50,6 @@ def import_content_extractor_module():
     import content_extractor_module
 
     return content_extractor_module
-
-
 
 
 @pytest.fixture(name="nemollm", autouse=True, scope='session')

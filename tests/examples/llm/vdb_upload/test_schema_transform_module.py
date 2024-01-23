@@ -14,10 +14,11 @@
 
 import types
 
-import cudf
 import pytest
-from _utils import assert_results
 
+import cudf
+
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -29,7 +30,9 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 @pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("num_select, num_renames", [(1, 0), (0, 1), (1, 1), (6, 6), (13, 10), (10, 13)])
-def test_schema_transform_module(num_select, num_renames, config: Config,
+def test_schema_transform_module(num_select,
+                                 num_renames,
+                                 config: Config,
                                  import_schema_transform_module: types.ModuleType):
     # Generate the DataFrame columns for select and rename
     select_columns = [f'select_{i}' for i in range(num_select)]
@@ -47,16 +50,22 @@ def test_schema_transform_module(num_select, num_renames, config: Config,
 
     # Generate the schema transform configuration
     transform_config = {
-        "schema_transform_config": {col: {"dtype": "int", "op_type": "select"} for col in select_columns}
+        "schema_transform_config": {
+            col: {
+                "dtype": "int", "op_type": "select"
+            }
+            for col in select_columns
+        }
     }
-    transform_config["schema_transform_config"].update(
-        {f'rename_to_{i}': {"from": f'rename_from_{i}', "dtype": "int", "op_type": "rename"} for i in
-         range(num_renames)}
-    )
+    transform_config["schema_transform_config"].update({
+        f'rename_to_{i}': {
+            "from": f'rename_from_{i}', "dtype": "int", "op_type": "rename"
+        }
+        for i in range(num_renames)
+    })
 
     schema_module_def = import_schema_transform_module.SchemaTransformInterface.get_instance(
-        "schema_transform",
-        module_config=transform_config)
+        "schema_transform", module_config=transform_config)
 
     # Set up the pipeline
     pipe = LinearPipeline(config)
