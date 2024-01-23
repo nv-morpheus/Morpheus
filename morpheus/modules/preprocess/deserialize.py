@@ -92,6 +92,7 @@ def _process_dataframe_to_multi_message(message: MessageMeta, batch_size: int,
 
     message = _check_slicable_index(message, ensure_sliceable_index)
 
+    logger.error(f"Processing DataFrame with {message.count} rows, creating MultiMessage")
     full_message = MultiMessage(meta=message)
 
     # Now break it up by batches
@@ -198,7 +199,7 @@ def _deserialize(builder: mrc.Builder):
         raise ValueError(log_error_message)
 
     ensure_sliceable_index = deserializer_config.ensure_sliceable_index
-    message_type = deserializer_config.message_type
+    message_type = ControlMessage if deserializer_config.message_type == "ControlMessage" else MultiMessage
     task_type = deserializer_config.task_type
     task_payload = deserializer_config.task_payload
     batch_size = deserializer_config.batch_size
@@ -211,11 +212,11 @@ def _deserialize(builder: mrc.Builder):
     if (task_type is not None or task_payload is not None) and message_type != ControlMessage:
         raise ValueError("task_type and task_payload can only be specified for ControlMessage")
 
-    if (message_type == "MultiMessage"):
+    if (message_type == MultiMessage):
         map_func = partial(_process_dataframe_to_multi_message,
                            batch_size=batch_size,
                            ensure_sliceable_index=ensure_sliceable_index)
-    else:
+    elif (message_type == ControlMessage):
         if (task_type is not None and task_payload is not None):
             task_tuple = (task_type, task_payload)
         else:
@@ -225,6 +226,8 @@ def _deserialize(builder: mrc.Builder):
                            batch_size=batch_size,
                            ensure_sliceable_index=ensure_sliceable_index,
                            task_tuple=task_tuple)
+    else:
+        raise ValueError(f"Invalid message_type: {message_type}")
 
     node = builder.make_node("deserialize",
                              ops.map(map_func),

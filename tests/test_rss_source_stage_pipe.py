@@ -29,18 +29,6 @@ invalid_feed_input = os.path.join(TEST_DIRS.tests_data_dir, "rss_feed_atom.xm")
 
 
 @pytest.mark.use_python
-def test_constructor_with_feed_url(config):
-
-    url_feed_input = "https://fake.nvidia.com/rss/HomePage.xml"
-    rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)
-
-    ctlr = rss_source_stage._controller
-
-    assert ctlr._feed_input == {"https://fake.nvidia.com/rss/HomePage.xml"}
-    assert ctlr._run_indefinitely is True
-
-
-@pytest.mark.use_python
 def test_support_cpp_node(config):
     url_feed_input = "https://fake.nvidia.com/rss/HomePage.xml"
     rss_source_stage = RSSSourceStage(config, feed_input=url_feed_input)
@@ -74,8 +62,9 @@ def test_rss_source_stage_pipe(config: Config,
     assert len(sink_stage.get_messages()) == expected_count
 
 
-@pytest.mark.use_python
-def test_invalid_input_rss_source_stage(config: Config):
-
-    with pytest.raises(ValueError, match=f"Invalid URL or file path: {invalid_feed_input}"):
-        RSSSourceStage(config, feed_input=[invalid_feed_input], interval_secs=1, cooldown_interval=500)
+# TODO(Devin): Remove before merge, this isn't a stage test, this is a test of RSSController
+# @pytest.mark.use_python
+# def test_invalid_input_rss_source_stage(config: Config):
+#
+#     with pytest.raises(ValueError, match=f"Invalid URL or file path: {invalid_feed_input}"):
+#         RSSSourceStage(config, feed_input=[invalid_feed_input], interval_secs=1, cooldown_interval=500)

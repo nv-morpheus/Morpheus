@@ -20,6 +20,7 @@ from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.modules.preprocess.deserialize import _process_dataframe_to_multi_message
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -39,15 +40,14 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
 
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
-
-        DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
+        _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
 
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
     dataset.assert_df_equal(meta.df, df)
 
-    DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
+    _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
 
     assert meta.has_sliceable_index()
     assert "_index_" in meta.df.columns
@@ -65,7 +65,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
@@ -78,7 +78,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
 @pytest.mark.parametrize("dup_index", [False, True])
 def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
     """
-    End to end test across mulitiple segments
+    End-to-end test across mulitiple segments
     """
 
     filter_probs_df = dataset["filter_probs.csv"]
@@ -86,7 +86,7 @@ def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager,
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))

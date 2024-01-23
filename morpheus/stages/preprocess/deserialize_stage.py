@@ -25,7 +25,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.modules.preprocess.deserialize import DeserializeInterface
+from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
 
@@ -53,7 +53,8 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: typing.Literal[MultiMessage, ControlMessage] = MultiMessage,
+                 message_type: typing.Union[
+                     typing.Literal[MultiMessage], typing.Literal[ControlMessage]] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -71,12 +72,13 @@ class DeserializeStage(MultiMessageStage):
         self._task_payload = task_payload
 
         if (self._message_type == ControlMessage):
-
             if ((self._task_type is None) != (self._task_payload is None)):
                 raise ValueError("Both `task_type` and `task_payload` must be specified if either is specified.")
-        else:
+        elif (self._message_type == MultiMessage):
             if (self._task_type is not None or self._task_payload is not None):
                 raise ValueError("Cannot specify `task_type` or `task_payload` for non-control messages.")
+        else:
+            raise ValueError(f"Invalid message type: {self._message_type}")
 
         self._module_config = {
             "ensure_sliceable_index": self._ensure_sliceable_index,
@@ -97,7 +99,7 @@ class DeserializeStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta, )
+        return (MessageMeta,)
 
     def supports_cpp_node(self):
         # Enable support by default
@@ -107,15 +109,15 @@ class DeserializeStage(MultiMessageStage):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        # TODO(Devin)
-        if self._build_cpp_node:
+        if (self._build_cpp_node and self._message_type == MultiMessage):
+            # CPP Deserialize stage doesn't support ControlMessage
             out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
             builder.make_edge(input_node, out_node)
         else:
-            module_instance = DeserializeInterface.get_instance(module_name=f"deserialize_{self.unique_name}",
-                                                                module_config=self._module_config)
+            module_loader = DeserializeLoaderFactory.get_instance(module_name=f"deserialize_{self.unique_name}",
+                                                                  module_config=self._module_config)
 
-            module = module_instance.load(builder)
+            module = module_loader.load(builder=builder)
 
             mod_in_node = module.input_port("input")
             out_node = module.output_port("output")

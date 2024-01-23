@@ -19,11 +19,10 @@ import mrc
 from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.modules.input.rss_source import rss_source  # noqa: F401
+from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +59,8 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
                  feed_input: list[str],
                  interval_secs: float = 600,
                  stop_after: int = 0,
-                 run_indefinitely: bool = None,
-                 batch_size: int = None,
+                 run_indefinitely: bool = False,
+                 batch_size: int = 32,
                  enable_cache: bool = False,
                  cache_dir: str = "./.cache/http",
                  cooldown_interval: int = 600,
@@ -79,21 +78,20 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
             run_indefinitely = False
 
         self._module_config = {
-            "module_id": "rss_source",
-            "module_name": "rss_source",
-            "namespace": "morpheus",
-            "rss_config": {
+            "rss_source": {
                 "feed_input": feed_input,
-                "interval_secs": interval_secs,
-                "stop_after": stop_after,
+                "interval_sec": interval_secs,
+                "stop_after_sec": stop_after,
                 "run_indefinitely": run_indefinitely,
                 "batch_size": batch_size,
                 "enable_cache": enable_cache,
                 "cache_dir": cache_dir,
-                "cooldown_interval": cooldown_interval,
-                "request_timeout": request_timeout
+                "cooldown_interval_sec": cooldown_interval,
+                "request_timeout_sec": request_timeout
             }
         }
+
+        self._module_loader = RSSSourceLoaderFactory.get_instance("rss_source_stage", self._module_config)
 
     @property
     def name(self) -> str:
@@ -113,7 +111,7 @@ class RSSSourceStage(PreallocatorMixin, SingleOutputSource):
         schema.output_schema.set_type(MessageMeta)
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        module = load_module(self._module_config, builder=builder)
+        module = self._module_loader.load(builder=builder)
 
         mod_out_node = module.output_port("output")
 

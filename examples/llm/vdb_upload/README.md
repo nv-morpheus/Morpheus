@@ -236,6 +236,7 @@ vdb_pipeline:
         enable_monitor: False
         extractor_config:
           chunk_size: 512
+          chunk_overlap: 50
           num_threads: 10 # Number of threads to use for file reads
         filenames:
           - "/path/to/data/*"
@@ -330,7 +331,9 @@ The `sources` section allows you to define multiple data sources of different ty
     - **converters_meta**: Metadata for converters.
         - **csv**:
             - **chunk_size**: Chunk size for CSV processing.
-            - **text_column_name**: Column name to be used as text.
+            - **text_column_names**: Column names to be used as text.
+              - **column_name_0** Column name 0.
+              - **column_name_1** Column name 1.
     - **enable_monitor**: Boolean to enable monitoring.
     - **extractor_config**:
         - **chunk_size**: Size of chunks for the extractor.
