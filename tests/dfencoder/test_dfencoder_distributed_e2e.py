@@ -42,43 +42,44 @@ FEATURE_COLUMNS = [
     "log_count",
     "location_incr",
     "app_incr",
+    "has_error",
 ]
 LOSS_TYPES = ["train", "val", "id_val"]
 # 75th quantile of the losses from 100 times of offline training
 LOSS_TARGETS = {
     "train": {
-        "log_count": 0.33991,
-        "location_incr": 0.30789,
-        "app_incr": 0.17698,
-        "has_error": 0.00878,
-        "app_name": 0.13066,
-        "browser_type": 0.39804,
-        "os": 0.09882,
-        "country": 0.06063,
-        "city": 0.32344,
+        "log_count": 0.31612,
+        "location_incr": 0.27285,
+        "app_incr": 0.13989,
+        "has_error": 0.00536,
+        "app_name": 0.13652,
+        "browser_type": 0.39303,
+        "os": 0.00115,
+        "country": 0.00102,
+        "city": 0.30947
     },
     "val": {
-        "log_count": 0.3384,
-        "location_incr": 0.31456,
-        "app_incr": 0.16201,
-        "has_error": 0.00614,
-        "app_name": 0.11907,
-        "browser_type": 0.38239,
-        "os": 0.00064,
-        "country": 0.0042,
-        "city": 0.32161,
+        "log_count": 0.27835,
+        "location_incr": 0.28686,
+        "app_incr": 0.13064,
+        "has_error": 0.00364,
+        "app_name": 0.13276,
+        "browser_type": 0.36868,
+        "os": 2e-05,
+        "country": 0.00168,
+        "city": 0.31735
     },
     "id_val": {
-        "log_count": 0.07079,
-        "location_incr": 0.05318,
-        "app_incr": 0.03659,
-        "has_error": 0.0046,
-        "app_name": 0.03542,
-        "browser_type": 0.0915,
-        "os": 0.00057,
-        "country": 0.00343,
-        "city": 0.08525,
-    },
+        "log_count": 0.04845,
+        "location_incr": 0.02274,
+        "app_incr": 0.01639,
+        "has_error": 0.00255,
+        "app_name": 0.04597,
+        "browser_type": 0.08826,
+        "os": 2e-05,
+        "country": 0.00146,
+        "city": 0.07591
+    }
 }
 LOSS_TOLERANCE_RATIO = 1.25
 
@@ -146,7 +147,7 @@ def _run_test(rank, world_size):
         min_cats=1,
         device=rank,
         preset_numerical_scaler_params=preset_numerical_scaler_params,
-        binary_feature_list=[],
+        binary_feature_list=['has_error'],
         preset_cats=preset_cats,
         eval_batch_size=1024,
         patience=5,

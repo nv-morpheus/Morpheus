@@ -13,52 +13,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "simple_cpp_stage")
+list(APPEND CMAKE_MESSAGE_CONTEXT "3_simple_cpp_stage")
 
-set(Python3_FIND_VIRTUALENV "FIRST")
-set(Python3_FIND_STRATEGY "LOCATION")
-find_package(Python3 REQUIRED COMPONENTS Development Interpreter NumPy)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
-pybind11_add_module(morpheus_example MODULE "${CMAKE_CURRENT_SOURCE_DIR}/_lib/pass_thru.cpp")
+# Set the cache to be the same to allow for CCache to be used effectively
+set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
+mark_as_advanced(MORPHEUS_CACHE_DIR)
 
-add_library(${PROJECT_NAME}::morpheus_example ALIAS morpheus_example)
+# Add the Conda environment to the prefix path and add the CMake files
+list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
-target_link_libraries(morpheus_example
-    PUBLIC
-      morpheus
-      mrc::pymrc
+project(3_simple_cpp_stage
+  VERSION 24.03.00
+  LANGUAGES C CXX
 )
 
-target_include_directories(morpheus_example
-    PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-      $<BUILD_INTERFACE:${MORPHEUS_ROOT}/morpheus/_lib/include>
+set(CMAKE_CXX_STANDARD 20)
+
+# Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
+set(OPTION_PREFIX "MORPHEUS")
+find_package(morpheus REQUIRED)
+
+morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
+
+# Ensure CPM is initialized
+rapids_cpm_init()
+
+morpheus_utils_python_configure()
+
+rapids_find_package(CUDAToolkit REQUIRED)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+morpheus_utils_create_python_package(simple_cpp_stage
+  PROJECT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-set_target_properties(morpheus_example PROPERTIES CXX_VISIBILITY_PRESET hidden)
+add_subdirectory(src/simple_cpp_stage/_lib)
 
+# Complete the python package
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  set_target_properties(morpheus_example
-    PROPERTIES
-      INSTALL_RPATH "${PROJECT_SOURCE_DIR}/morpheus/_lib"
-  )
-else()
-  # TODO: https://github.com/nv-morpheus/Morpheus/issues/331
-  set_target_properties(morpheus_example
-    PROPERTIES
-      INSTALL_RPATH "${Python3_SITELIB}/morpheus/_lib"
-  )
+  list(APPEND extra_args "IS_INPLACE")
 endif()
 
-morpheus_utils_inplace_build_copy(morpheus_example "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
+if(TARGET morpheus-package-install)
+  list(APPEND extra_args "PYTHON_DEPENDENCIES" "morpheus-package-install")
+endif()
 
-message(STATUS " Install dest: (morpheus_example) ${CMAKE_CURRENT_BINARY_DIR}/_lib")
-install(
-    TARGETS
-    morpheus_example
-    LIBRARY DESTINATION
-      "${CMAKE_CURRENT_BINARY_DIR}/_lib"
-)
-
+morpheus_utils_build_python_package(simple_cpp_stage ${extra_args})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

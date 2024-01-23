@@ -16,10 +16,22 @@ limitations under the License.
 -->
 
 # Simple C++ Stage
-> **Note**: The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. To build the C++ examples, pass `-DMORPHEUS_BUILD_EXAMPLES=ON` to CMake when building Morpheus. Users building Morpheus with the provided `scripts/compile.sh` script can do do by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
-> ```bash
-> CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+## Building the Example
+The code for this guide can be found in the `examples/developer_guide/3_simple_cpp_stage` directory of the Morpheus repository. There are two ways to build the example. The first is to build the examples along with Morpheus by passing the `-DMORPHEUS_BUILD_EXAMPLES=ON` flag to cmake, for users using the `scripts/compile.sh` at the root of the Morpheus repo can do this by setting the `CMAKE_CONFIGURE_EXTRA_ARGS` environment variable:
+```bash
+CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_EXAMPLES=ON" ./scripts/compile.sh
+```
 
+The second method is to build the example as a standalone project. From the root of the Morpheus repo execute:
+```bash
+cd examples/developer_guide/3_simple_cpp_stage
+./compile.sh
+
+# Optionally install the package into the current python environment
+pip install ./
+```
+
+## Overview
 Morpheus offers the choice of writing pipeline stages in either Python or C++. For many use cases, a Python stage is perfectly fine. However, in the event that a Python stage becomes a bottleneck for the pipeline, then writing a C++ implementation for the stage becomes advantageous. The C++ implementations of Morpheus stages and messages utilize the [pybind11](https://pybind11.readthedocs.io/en/stable/index.html) library to provide Python bindings.
 
 So far we have been defining our stages in Python, the option of defining a C++ implementation is only available to stages implemented as classes. Many of the stages included with Morpheus have both a Python and a C++ implementation, and Morpheus will use the C++ implementations by default. You can explicitly disable the use of C++ stage implementations by calling `morpheus.config.CppConfig.set_should_use_cpp(False)`:
@@ -275,7 +287,7 @@ The Python interface itself defines a Python module named `morpheus_example` and
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_example, m)
+PYBIND11_MODULE(pass_thru_cpp, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
@@ -319,7 +331,7 @@ std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_example, m)
+PYBIND11_MODULE(pass_thru_cpp, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 
@@ -353,10 +365,9 @@ As mentioned in the previous section, our `_build_single` method needs to be upd
 ```python
 def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
     if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
-        from _lib import morpheus_example as morpheus_example_cpp
+        from ._lib import pass_thru_cpp
 
-        # pylint: disable=c-extension-no-member
-        node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
+        node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
     else:
         node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
@@ -408,9 +419,9 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
         if self._build_cpp_node() and issubclass(self._input_type, MultiMessage):
-            from _lib import morpheus_example as morpheus_example_cpp
+            from ._lib import pass_thru_cpp
 
-            node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
+            node = pass_thru_cpp.PassThruStage(builder, self.unique_name)
         else:
             node = builder.make_node(self.unique_name, ops.map(self.on_data))
 
@@ -420,10 +431,10 @@ class PassThruStage(PassThruTypeMixin, SinglePortStage):
 
 ## Testing the Stage
 To test the updated stage we will build a simple pipeline using the  Morpheus command line tool. In order to illustrate the stage building a C++ node only when the input type is a `MultiMessage` we will insert the `pass-thru` stage in twice in the pipeline. In the first instance the input type will be `MessageMeta` and the stage will fallback to using a Python node, and in the second instance the input type will be a `MultiMessage` and the stage will build a C++ node.
-    
+
 ```bash
-PYTHONPATH="examples/developer_guide/3_simple_cpp_stage" \
-morpheus --log_level=debug --plugin "pass_thru" \
+PYTHONPATH="examples/developer_guide/3_simple_cpp_stage/src" \
+morpheus --log_level=debug --plugin "simple_cpp_stage.pass_thru" \
     run pipeline-other \
     from-file --filename=examples/data/email_with_addresses.jsonlines \
     pass-thru \
@@ -432,5 +443,3 @@ morpheus --log_level=debug --plugin "pass_thru" \
     pass-thru \
     monitor
 ```
-
-> **Note**: In the above example we set the `PYTHONPATH` environment variable this is to facilitate the relative import the stage performs of the `_lib` module.

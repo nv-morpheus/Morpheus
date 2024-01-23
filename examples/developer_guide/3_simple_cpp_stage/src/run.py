@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022-2024, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,11 +17,13 @@
 import logging
 import os
 
-from write_to_rabbitmq_stage import WriteToRabbitMQStage
+from simple_cpp_stage.pass_thru import PassThruStage
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 
@@ -29,17 +32,26 @@ def run_pipeline():
     configure_logging(log_level=logging.DEBUG)
 
     root_dir = os.environ['MORPHEUS_ROOT']
-    input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
+    input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
 
     config = Config()
-    config.num_threads = os.cpu_count()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
-    pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 
     # Set source stage
-    pipeline.add_stage(WriteToRabbitMQStage(config, host='localhost', exchange='logs'))
+    pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+
+    # Add a PassThruStage where the input type is MessageMeta
+    pipeline.add_stage(PassThruStage(config))
+
+    pipeline.add_stage(DeserializeStage(config))
+
+    # Add a PassThruStage where the input type is MultiMessage
+    pipeline.add_stage(PassThruStage(config))
+
+    # Add monitor to record the performance of our new stage
+    pipeline.add_stage(MonitorStage(config))
 
     # Run the pipeline
     pipeline.run()

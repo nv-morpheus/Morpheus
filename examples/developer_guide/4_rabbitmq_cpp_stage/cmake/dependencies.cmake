@@ -15,6 +15,8 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
+rapids_find_package(CUDAToolkit REQUIRED)
+
 set(RABBITMQ_VERSION "0.12.0" CACHE STRING "Version of RabbitMQ-C to use")
 include(Configure_rabbitmq)
 

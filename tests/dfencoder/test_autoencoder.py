@@ -18,6 +18,7 @@ import os
 import typing
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 import torch
@@ -374,7 +375,7 @@ def test_auto_encoder_get_anomaly_score(train_ae: autoencoder.AutoEncoder, train
     train_ae.fit(train_df, epochs=1)
     anomaly_score = train_ae.get_anomaly_score(train_df)
     assert len(anomaly_score) == len(train_df)
-    assert round(anomaly_score.mean().item(), 2) == 2.28
+    assert round(anomaly_score.mean().item(), 2) == 2.29
     assert round(anomaly_score.std().item(), 2) == 0.11
 
 
@@ -478,8 +479,24 @@ def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: p
     assert 'max_abs_z' in results.columns
     assert 'mean_abs_z' in results.columns
 
-    assert round(results.loc[0, 'max_abs_z'], 2) == 2.5
+    assert np.isclose(results.loc[0, 'max_abs_z'], 2.51, atol=1e-2)
 
     # Numpy float has different precision checks than python float, so we wrap it.
-    assert round(float(results.loc[0, 'mean_abs_z']), 3) == 0.335
+    assert np.isclose(results.loc[0, 'mean_abs_z'], 0.361, atol=1e-3)
     assert results.loc[0, 'z_loss_scaler_type'] == 'z'
+
+
+@pytest.mark.usefixtures("manual_seed")
+def test_auto_encoder_num_only_convergence(train_ae: autoencoder.AutoEncoder):
+    num_df = pd.DataFrame({
+        'num_feat_1': [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9],
+        'num_feat_2': [3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1],
+    })
+
+    train_ae.fit(num_df, epochs=50)
+
+    avg_loss = np.sum([np.array(loss[1])
+                       for loss in train_ae.logger.train_fts.values()], axis=0) / len(train_ae.logger.train_fts)
+
+    # Make sure the model converges with numerical feats only
+    assert avg_loss[-1] < avg_loss[0] / 2

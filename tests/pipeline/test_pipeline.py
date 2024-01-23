@@ -26,8 +26,13 @@ from _utils.stages.in_memory_source_x_stage import InMemSourceXStage
 from _utils.stages.multi_message_pass_thru import MultiMessagePassThruStage
 from _utils.stages.multi_port_pass_thru import MultiPortPassThruStage
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline import Pipeline
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
@@ -195,3 +200,58 @@ def test_add_edge_input_port_errors(config: Config, num_inputs: int):
 
     with pytest.raises(AssertionError):
         pipe.add_edge(start_stage.output_ports[0], end_stage)
+
+
+@pytest.mark.parametrize("data_type", [int, float, str, MessageMeta, ControlMessage, MultiMessage])
+def test_add_segment_edge(config: Config, data_type: type):
+    pipe = Pipeline(config)
+
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=data_type)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=data_type)
+
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+    pipe.add_segment_edge(boundary_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_assert_not_built(config: Config):
+    pipe = Pipeline(config)
+
+    src_stage = InMemSourceXStage(config, data=list(range(3)))
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=int)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=int)
+
+    pipe.add_stage(src_stage, "seg_1")
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_edge(src_stage, boundary_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+    pipe.build()
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(boundary_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_bad_egress(config: Config):
+    pipe = Pipeline(config)
+
+    bad_egress = InMemorySinkStage(config)
+    boundary_ingress = LinearBoundaryIngressStage(config, boundary_port_id="seg_1", data_type=int)
+
+    pipe.add_stage(bad_egress, "seg_1")
+    pipe.add_stage(boundary_ingress, "seg_2")
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(bad_egress, "seg_1", boundary_ingress, "seg_2", ("seg_1", object, False))
+
+
+def test_add_segment_edge_bad_ingress(config: Config):
+    pipe = Pipeline(config)
+
+    boundary_egress = LinearBoundaryEgressStage(config, boundary_port_id="seg_1", data_type=int)
+    bad_ingress = InMemSourceXStage(config, data=list(range(3)))
+
+    pipe.add_stage(boundary_egress, "seg_1")
+    pipe.add_stage(bad_ingress, "seg_2")
+
+    with pytest.raises(AssertionError):
+        pipe.add_segment_edge(boundary_egress, "seg_1", bad_ingress, "seg_2", ("seg_1", object, False))

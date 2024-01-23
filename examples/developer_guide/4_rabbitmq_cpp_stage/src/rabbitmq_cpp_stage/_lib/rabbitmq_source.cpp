@@ -36,8 +36,8 @@ RabbitMQSourceStage::RabbitMQSourceStage(const std::string& host,
                                          const std::string& queue_name,
                                          std::chrono::milliseconds poll_interval) :
   PythonSource(build()),
-  m_channel{AmqpClient::Channel::Create(host)},
-  m_poll_interval{poll_interval}
+  m_poll_interval{poll_interval},
+  m_channel{AmqpClient::Channel::Create(host)}
 {
     m_channel->DeclareExchange(exchange, exchange_type);
     m_queue_name = m_channel->DeclareQueue(queue_name);
@@ -122,7 +122,7 @@ std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageIn
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_rabbit, m)
+PYBIND11_MODULE(rabbitmq_cpp_stage, m)
 {
     mrc::pymrc::import(m, "morpheus._lib.messages");
 

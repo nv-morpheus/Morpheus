@@ -13,7 +13,9 @@
 # =============================================================================
 list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
 
-add_subdirectory(developer_guide/3_simple_cpp_stage)
-add_subdirectory(developer_guide/4_rabbitmq_cpp_stage)
+# Add the binary dir before including examples so they can find the parent project
+list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
+
+add_subdirectory(developer_guide)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

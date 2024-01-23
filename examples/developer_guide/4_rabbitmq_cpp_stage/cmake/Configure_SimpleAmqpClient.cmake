@@ -25,9 +25,9 @@ function(find_and_configure_SimpleAmqpClient version)
     GLOBAL_TARGETS
       SimpleAmqpClient
     BUILD_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     INSTALL_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/SimpleAmqpClient
       GIT_TAG         "v${version}"

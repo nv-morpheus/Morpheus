@@ -80,7 +80,7 @@ install(
   TARGETS
     morpheus_doca
   EXPORT
-    ${PROJECT_NAME}-exports
+    ${PROJECT_NAME}-core-exports
   FILE_SET
     public_headers
   COMPONENT
