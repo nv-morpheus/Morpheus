@@ -30,57 +30,57 @@ vdb_pipeline:
     pipeline_batch_size: 128
 
   sources:
-    - type: rss
-      name: "rss_cve"
-      config:
-        batch_size: 128 # Number of rss feeds per batch
-        cache_dir: "./.cache/http"
-        cooldown_interval_sec: 600
-        enable_cache: False
-        enable_monitor: True
-        feed_input:
-          - "https://www.theregister.com/security/headlines.atom"
-          - "https://isc.sans.edu/dailypodcast.xml"
-          - "https://threatpost.com/feed/"
-          - "http://feeds.feedburner.com/TheHackersNews?format=xml"
-          - "https://www.bleepingcomputer.com/feed/"
-          - "https://therecord.media/feed/"
-          - "https://blog.badsectorlabs.com/feeds/all.atom.xml"
-          - "https://krebsonsecurity.com/feed/"
-          - "https://www.darkreading.com/rss_simple.asp"
-          - "https://blog.malwarebytes.com/feed/"
-          - "https://msrc.microsoft.com/blog/feed"
-          - "https://securelist.com/feed"
-          - "https://www.crowdstrike.com/blog/feed/"
-          - "https://threatconnect.com/blog/rss/"
-          - "https://news.sophos.com/en-us/feed/"
-          - "https://www.us-cert.gov/ncas/current-activity.xml"
-          - "https://www.csoonline.com/feed"
-          - "https://www.cyberscoop.com/feed"
-          - "https://research.checkpoint.com/feed"
-          - "https://feeds.fortinet.com/fortinet/blog/threat-research"
-          - "https://www.mcafee.com/blogs/rss"
-          - "https://www.digitalshadows.com/blog-and-research/rss.xml"
-          - "https://www.nist.gov/news-events/cybersecurity/rss.xml"
-          - "https://www.sentinelone.com/blog/rss/"
-          - "https://www.bitdefender.com/blog/api/rss/labs/"
-          - "https://www.welivesecurity.com/feed/"
-          - "https://unit42.paloaltonetworks.com/feed/"
-          - "https://mandiant.com/resources/blog/rss.xml"
-          - "https://www.wired.com/feed/category/security/latest/rss"
-          - "https://www.wired.com/feed/tag/ai/latest/rss"
-          - "https://blog.google/threat-analysis-group/rss/"
-          - "https://intezer.com/feed/"
-        interval_sec: 600
-        output_batch_size: 2048 # Number of chunked documents per output batch
-        request_timeout_sec: 2.0
-        run_indefinitely: true
-        stop_after: 0
-        web_scraper_config:
-          chunk_overlap: 51
-          chunk_size: 512
-          enable_cache: false
-        vdb_resource_name: "VDBGENERAL"
+    #- type: rss
+    #  name: "rss_cve"
+    #  config:
+    #    batch_size: 128 # Number of rss feeds per batch
+    #    cache_dir: "./.cache/http"
+    #    cooldown_interval_sec: 600
+    #    enable_cache: False
+    #    enable_monitor: True
+    #    feed_input:
+    #      - "https://www.theregister.com/security/headlines.atom"
+    #      - "https://isc.sans.edu/dailypodcast.xml"
+    #      - "https://threatpost.com/feed/"
+    #      - "http://feeds.feedburner.com/TheHackersNews?format=xml"
+    #      - "https://www.bleepingcomputer.com/feed/"
+    #      - "https://therecord.media/feed/"
+    #      - "https://blog.badsectorlabs.com/feeds/all.atom.xml"
+    #      - "https://krebsonsecurity.com/feed/"
+    #      - "https://www.darkreading.com/rss_simple.asp"
+    #      - "https://blog.malwarebytes.com/feed/"
+    #      - "https://msrc.microsoft.com/blog/feed"
+    #      - "https://securelist.com/feed"
+    #      - "https://www.crowdstrike.com/blog/feed/"
+    #      - "https://threatconnect.com/blog/rss/"
+    #      - "https://news.sophos.com/en-us/feed/"
+    #      - "https://www.us-cert.gov/ncas/current-activity.xml"
+    #      - "https://www.csoonline.com/feed"
+    #      - "https://www.cyberscoop.com/feed"
+    #      - "https://research.checkpoint.com/feed"
+    #      - "https://feeds.fortinet.com/fortinet/blog/threat-research"
+    #      - "https://www.mcafee.com/blogs/rss"
+    #      - "https://www.digitalshadows.com/blog-and-research/rss.xml"
+    #      - "https://www.nist.gov/news-events/cybersecurity/rss.xml"
+    #      - "https://www.sentinelone.com/blog/rss/"
+    #      - "https://www.bitdefender.com/blog/api/rss/labs/"
+    #      - "https://www.welivesecurity.com/feed/"
+    #      - "https://unit42.paloaltonetworks.com/feed/"
+    #      - "https://mandiant.com/resources/blog/rss.xml"
+    #      - "https://www.wired.com/feed/category/security/latest/rss"
+    #      - "https://www.wired.com/feed/tag/ai/latest/rss"
+    #      - "https://blog.google/threat-analysis-group/rss/"
+    #      - "https://intezer.com/feed/"
+    #    interval_sec: 600
+    #    output_batch_size: 2048 # Number of chunked documents per output batch
+    #    request_timeout_sec: 2.0
+    #    run_indefinitely: true
+    #    stop_after: 0
+    #    web_scraper_config:
+    #      chunk_overlap: 51
+    #      chunk_size: 512
+    #      enable_cache: false
+    #    vdb_resource_name: "VDBGENERAL"
 
     - type: filesystem
       name: "filesystem_pdf_source"
@@ -108,7 +108,9 @@ vdb_pipeline:
           csv:
             chunk_overlap: 51
             chunk_size: 1024
-            text_column_name: "raw"  # Requires same schema for all CSV files.
+            text_column_names: # For CSV files, the data from each text_column_name will be concatenated together.
+              - "raw"  # Requires same schema for all CSV files.
+              - "request_header_referer"
         enable_monitor: True
         filenames:
           - "models/datasets/training-data/log-parsing-training-data.csv"

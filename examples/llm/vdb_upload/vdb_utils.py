@@ -15,7 +15,6 @@
 import logging
 import typing
 
-import click
 import pymilvus
 import yaml
 
@@ -92,6 +91,64 @@ def merge_configs(file_config, cli_config):
     merged_config = file_config.copy()
     merged_config.update({k: v for k, v in cli_config.items() if v is not None})
     return merged_config
+
+
+def _build_default_rss_source(
+        enable_cache,
+        enable_monitors,
+        interval_secs,
+        run_indefinitely,
+        stop_after,
+        vector_db_resource_name,
+        content_chunking_size,
+        rss_request_timeout_sec,
+        feed_inputs):
+    return {
+        'type': 'rss',
+        'name': 'rss-cli',
+        'config': {
+            # RSS feeds can take a while to pull, smaller batch sizes allows the pipeline to feel more responsive
+            "batch_size": 32,
+            "output_batch_size": 2048,
+            "cache_dir": "./.cache/http",
+            "cooldown_interval_sec": interval_secs,
+            "enable_cache": enable_cache,
+            "enable_monitor": enable_monitors,
+            "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
+            "interval_sec": interval_secs,
+            "request_timeout_sec": rss_request_timeout_sec,
+            "run_indefinitely": run_indefinitely,
+            "vdb_resource_name": vector_db_resource_name,
+            "web_scraper_config": {
+                "chunk_size": content_chunking_size,
+                "enable_cache": enable_cache,
+            }
+        }
+    }
+
+
+def _build_default_filesystem_source(enable_monitors,
+                                     file_source,
+                                     pipeline_batch_size,
+                                     run_indefinitely,
+                                     vector_db_resource_name,
+                                     content_chunking_size,
+                                     num_threads):
+    return {
+        'type': 'filesystem',
+        'name': 'filesystem-cli',
+        'config': {
+            "batch_size": pipeline_batch_size,
+            "enable_monitor": enable_monitors,
+            "extractor_config": {
+                "chunk_size": content_chunking_size,
+                "num_threads": num_threads,
+            },
+            "filenames": file_source,
+            "vdb_resource_name": vector_db_resource_name,
+            "watch": run_indefinitely,
+        }
+    }
 
 
 def build_cli_configs(source_type,
@@ -175,45 +232,24 @@ def build_cli_configs(source_type,
     # Source Configuration
     cli_source_conf = {}
     if 'rss' in source_type:
-        cli_source_conf['rss'] = {
-            'type': 'rss',
-            'name': 'rss-cli',
-            'config': {
-                # RSS feeds can take a while to pull, smaller batch sizes allows the pipeline to feel more responsive
-                "batch_size": 32,
-                "output_batch_size": 2048,
-                "cache_dir": "./.cache/http",
-                "cooldown_interval_sec": interval_secs,
-                "enable_cache": enable_cache,
-                "enable_monitor": enable_monitors,
-                "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
-                "interval_sec": interval_secs,
-                "request_timeout_sec": rss_request_timeout_sec,
-                "run_indefinitely": run_indefinitely,
-                "stop_after_sec": stop_after,
-                "vdb_resource_name": vector_db_resource_name,
-                "web_scraper_config": {
-                    "chunk_size": content_chunking_size,
-                    "enable_cache": enable_cache,
-                }
-            }
-        }
+        cli_source_conf['rss'] = _build_default_rss_source(
+            enable_cache,
+            enable_monitors,
+            interval_secs,
+            run_indefinitely,
+            stop_after,
+            vector_db_resource_name,
+            content_chunking_size,
+            rss_request_timeout_sec,
+            feed_inputs)
     if 'filesystem' in source_type:
-        cli_source_conf['filesystem'] = {
-            'type': 'filesystem',
-            'name': 'filesystem-cli',
-            'config': {
-                "batch_size": pipeline_batch_size,
-                "enable_monitor": enable_monitors,
-                "extractor_config": {
-                    "chunk_size": content_chunking_size,
-                    "num_threads": num_threads,
-                },
-                "filenames": file_source,
-                "vdb_resource_name": vector_db_resource_name,
-                "watch": run_indefinitely
-            }
-        }
+        cli_source_conf['filesystem'] = _build_default_filesystem_source(enable_monitors,
+                                                                         file_source,
+                                                                         pipeline_batch_size,
+                                                                         run_indefinitely,
+                                                                         vector_db_resource_name,
+                                                                         content_chunking_size,
+                                                                         num_threads)
 
     # Embeddings Configuration
     cli_embeddings_conf = {
@@ -352,7 +388,7 @@ def build_final_config(vdb_conf_path,
         source_conf = vdb_pipeline_config.get('sources', []) + list(cli_source_conf.values())
         tokenizer_conf = merge_configs(vdb_pipeline_config.get('tokenizer', {}), cli_tokenizer_conf)
         vdb_conf = vdb_pipeline_config.get('vdb', {})
-        resource_schema = vdb_conf.pop("resource_shema", None)
+        resource_schema = vdb_conf.pop("resource_schema", None)
 
         if resource_schema:
             vdb_conf["resource_kwargs"] = build_milvus_config(resource_schema)
@@ -376,6 +412,20 @@ def build_final_config(vdb_conf_path,
             'tokenizer_config': cli_tokenizer_conf,
             'vdb_config': cli_vdb_conf,
         })
+
+    # If no sources are specified either via CLI or in the yaml config, add a default RSS source
+    if (not final_config['source_config']):
+        final_config['source_config'].append(_build_default_rss_source(
+            enable_cache=True,
+            enable_monitors=True,
+            interval_secs=60,
+            run_indefinitely=True,
+            stop_after=None,
+            vector_db_resource_name="VDBUploadExample",
+            content_chunking_size=128,
+            rss_request_timeout_sec=30,
+            feed_inputs=build_rss_urls()
+        ))
 
     return final_config
 

@@ -23,7 +23,7 @@ from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from .common import process_vdb_sources
+from vdb_upload.helper import process_vdb_sources
 
 logger = logging.getLogger(__name__)
 

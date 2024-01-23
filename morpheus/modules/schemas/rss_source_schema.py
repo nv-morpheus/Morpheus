@@ -29,6 +29,8 @@ class RSSSourceSchema(BaseModel):
     cache_dir: str = "./.cache/http"
     cooldown_interval_sec: int = 600
     request_timeout_sec: float = 2.0
-    interval_secs: int = 600
-    stop_after: int = 0
-    web_scraper_config: dict = Field(default_factory=dict)
+    interval_sec: int = 600
+    stop_after_sec: int = 0
+
+    class Config:
+        extra = "forbid"

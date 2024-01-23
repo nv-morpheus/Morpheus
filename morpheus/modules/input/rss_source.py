@@ -99,7 +99,7 @@ def _rss_source(builder: mrc.Builder):
 
                     records_emitted += df_size
 
-                    if (0 < validated_config.stop_after <= records_emitted):
+                    if (0 < validated_config.stop_after_sec <= records_emitted):
                         stop_requested = True
                         logger.info("Stop limit reached... preparing to halt the source.")
                         break
@@ -114,8 +114,8 @@ def _rss_source(builder: mrc.Builder):
                 stop_requested = True
                 continue
 
-            logger.info("Waiting for %d seconds before fetching again...", validated_config.interval_secs)
-            time.sleep(validated_config.interval_secs)
+            logger.info("Waiting for %d seconds before fetching again...", validated_config.interval_sec)
+            time.sleep(validated_config.interval_sec)
 
         logger.info("RSS source exhausted, stopping.")
 

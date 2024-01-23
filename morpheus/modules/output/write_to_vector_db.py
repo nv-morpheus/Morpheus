@@ -97,7 +97,6 @@ def _write_to_vector_db(builder: mrc.Builder):
     service_kwargs = write_to_vdb_config.service_kwargs
     batch_size = write_to_vdb_config.batch_size
     write_time_interval = write_to_vdb_config.write_time_interval
-    write_time_interval = 0.01
 
     # Check if service is serialized and convert if needed
     service: VectorDBService = (pickle.loads(bytes(service, "latin1")) if is_service_serialized else
@@ -121,10 +120,13 @@ def _write_to_vector_db(builder: mrc.Builder):
 
         # Pushing remaining messages
         for key, accum_stats in accumulator_dict.items():
-            if accum_stats.data:
-                merged_df = cudf.concat(accum_stats.data)
-                service.insert_dataframe(name=key, df=merged_df)
-                final_df_references.append(accum_stats.data)
+            try:
+                if accum_stats.data:
+                    merged_df = cudf.concat(accum_stats.data)
+                    service.insert_dataframe(name=key, df=merged_df)
+                    final_df_references.append(accum_stats.data)
+            except Exception as e:
+                logger.error(f"Unable to upload dataframe entries to vector database: {e}")
         # Close vector database service connection
         service.close()
 

@@ -30,3 +30,6 @@ class DeserializeSchema(BaseModel):
     batch_size: int = 1024
     max_concurrency: int = 1
     should_log_timestamp: bool = True
+
+    class Config:
+        extra = "forbid"

@@ -37,7 +37,7 @@ class RSSSourcePipeSchema(BaseModel):
     output_batch_size: int = 2048
     request_timeout_sec: float = 2.0
     run_indefinitely: bool = True
-    stop_after: int = 0
+    stop_after_sec: int = 0
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
@@ -48,3 +48,6 @@ class RSSSourcePipeSchema(BaseModel):
         elif isinstance(v, list):
             return v
         raise ValueError('feed_input must be a string or a list of strings')
+
+    class Config:
+        extra = "forbid"

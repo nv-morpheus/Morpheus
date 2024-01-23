@@ -28,6 +28,12 @@ class ColumnTransformSchema(BaseModel):
     op_type: str
     from_: Optional[str] = Field(None, alias="from")
 
+    class Config:
+        extra = "forbid"
+
 
 class SchemaTransformSchema(BaseModel):
     schema_transform_config: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
+    class Config:
+        extra = "forbid"

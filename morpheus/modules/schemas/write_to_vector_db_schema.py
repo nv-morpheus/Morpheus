@@ -36,7 +36,7 @@ class WriteToVDBSchema(BaseModel):
     resource_kwargs: dict = Field(default_factory=dict)
     service_kwargs: dict = Field(default_factory=dict)
     batch_size: int = 1024
-    write_time_interval: float = 3.0
+    write_time_interval: float = 1.0
 
     @validator('service', pre=True)
     def validate_service(cls, v):
@@ -49,3 +49,6 @@ class WriteToVDBSchema(BaseModel):
         if not v:
             raise ValueError("Resource name must not be None or Empty.")
         return v
+
+    class Config:
+        extra = "forbid"

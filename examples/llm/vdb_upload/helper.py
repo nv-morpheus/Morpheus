@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -128,23 +128,26 @@ def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom
         The sub-pipeline stage created for the custom source.
     """
 
+    module_id = custom_config.pop('module_id')
+    module_name = module_id + f"__{source_name}"
+    module_namespace = custom_config.pop('namespace')
+    module_output_id = custom_config.pop('module_output_id', 'output')
+
     module_config = {
-        "module_id": custom_config['module_id'],
-        "module_name": f"{custom_config['module_id']}__{source_name}",
-        "namespace": custom_config['namespace'],
+        "module_id": module_id,
+        "module_name": module_name,
+        "namespace": module_namespace,
     }
 
-    if ('config_name_mapping' in custom_config):
-        module_config[custom_config['config_name_mapping']] = custom_config
-    else:
-        module_config['config'] = custom_config
+    config_name_mapping = custom_config.pop('config_name_mapping', 'config')
+    module_config[config_name_mapping] = custom_config
 
     # Adding the custom module stage to the pipeline
     custom_pipe = pipe.add_stage(
         LinearModuleSourceStage(config,
                                 module_config,
                                 output_type=ControlMessage,
-                                output_port_name=custom_config.get('module_output_id', 'output')))
+                                output_port_name=module_output_id))
 
     return custom_pipe
 

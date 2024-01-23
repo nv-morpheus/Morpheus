@@ -25,3 +25,6 @@ logger = logging.getLogger(__name__)
 
 class VDBResourceTaggingSchema(BaseModel):
     vdb_resource_name: str
+
+    class Config:
+        extra = "forbid"

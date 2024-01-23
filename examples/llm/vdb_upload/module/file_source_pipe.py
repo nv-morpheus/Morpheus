@@ -15,17 +15,17 @@
 import logging
 
 import mrc
+from common.content_extractor_module import ContentExtractorLoaderFactory
+from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from pydantic import ValidationError
+from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
+from vdb_upload.schemas.file_source_pipe_schema import FileSourcePipeSchema
 
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.multi_file_source import MultiFileSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-from .schema_transform import SchemaTransformLoaderFactory
-from ..schemas.file_source_pipe_schema import FileSourcePipeSchema
-from ...common.content_extractor_module import ContentExtractorLoaderFactory
-from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,14 @@ def _file_source_pipe(builder: mrc.Builder):
     enable_monitor = validated_config.enable_monitor
 
     # Configure and load the multi-file source module
+    source_config = {
+        "batch_size": validated_config.batch_size,
+        "filenames": validated_config.filenames,
+        "watch_interval": validated_config.watch_interval,
+        "watch_dir": validated_config.watch,
+    }
     multi_file_loader = MultiFileSourceLoaderFactory.get_instance("multi_file_source",
-                                                                  {"source_config": validated_config.dict()})
+                                                                  {"source_config": source_config})
 
     # Configure and load the file content extractor module
     file_content_extractor_config = {
@@ -96,6 +102,8 @@ def _file_source_pipe(builder: mrc.Builder):
         "num_threads": validated_config.num_threads,
         "converters_meta": validated_config.converters_meta
     }
+    import json
+    logger.info(f"File content extractor config: {json.dumps(file_content_extractor_config, indent=2)}")
     extractor_loader = ContentExtractorLoaderFactory.get_instance("file_content_extractor",
                                                                   file_content_extractor_config)
 

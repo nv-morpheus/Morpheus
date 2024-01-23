@@ -90,21 +90,20 @@ class CsvTextConverter(BaseConverter):
             file_path = [file_path]
 
         docs: list[Document] = []
-        if meta is None:
-            text_column_name = "content"
-        else:
-            text_column_name = meta.get("csv", {}).get("text_column_name", "content")
+        text_column_names = ["content"]
+
+        if meta is not None:
+            text_column_names = set(meta.get("csv", {}).get("text_column_names", text_column_names))
 
         for path in file_path:
             df = pd.read_csv(path, encoding=encoding)
-            if len(df.columns) == 0 or (text_column_name not in df.columns):
+            if len(df.columns) == 0 or (not text_column_names.issubset(set(df.columns))):
                 raise ValueError("The CSV file must either include a 'content' column or have a "
-                                 "column specified in the meta configuraton with key 'text_column_name'.")
+                                 "columns specified in the meta configuration with key 'text_column_names'.")
 
             df.fillna(value="", inplace=True)
-            df[text_column_name] = df[text_column_name].apply(lambda x: x.strip())
+            df["content"] = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1)
 
-            df = df.rename(columns={text_column_name: "content"})
             docs_dicts = df.to_dict(orient="records")
 
             for dictionary in docs_dicts:

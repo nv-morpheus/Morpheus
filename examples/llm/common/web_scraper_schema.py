@@ -29,3 +29,6 @@ class WebScraperSchema(BaseModel):
     enable_cache: bool = False
     cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
     cache_dir: str = "./.cache/llm/rss"
+
+    class Config:
+        extra = "forbid"

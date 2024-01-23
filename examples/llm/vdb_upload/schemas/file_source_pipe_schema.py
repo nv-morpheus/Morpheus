@@ -35,3 +35,7 @@ class FileSourcePipeSchema(BaseModel):
     num_threads: int = 1  # Number of threads for processing
     vdb_resource_name: str
     watch: bool = False  # Flag to watch file changes
+    watch_interval: float = -5.0  # Interval to watch file changes
+
+    class Config:
+        extra = "forbid"

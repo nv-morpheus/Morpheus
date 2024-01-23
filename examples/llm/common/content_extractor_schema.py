@@ -14,6 +14,7 @@
 
 import logging
 from typing import Dict
+from typing import List
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -23,9 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 class CSVConverterParamContract(BaseModel):
-    chunk_size: int = 1024
-    text_column_name: str = "raw"
     chunk_overlap: int = 102  # Example default value
+    chunk_size: int = 1024
+    text_column_names: List[str]
+
+    class Config:
+        extra = "forbid"
 
 
 class ContentExtractorSchema(BaseModel):
@@ -44,3 +48,6 @@ class ContentExtractorSchema(BaseModel):
             else:
                 validated_meta[key] = value
         return validated_meta
+
+    class Config:
+        extra = "forbid"

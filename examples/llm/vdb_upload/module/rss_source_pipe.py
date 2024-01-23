@@ -15,17 +15,17 @@
 import logging
 
 import mrc
+from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
+from common.web_scraper_module import WebScraperLoaderFactory
 from pydantic import ValidationError
+from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
+from vdb_upload.schemas.rss_source_pipe_schema import RSSSourcePipeSchema
 
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-from .schema_transform import SchemaTransformLoaderFactory
-from ..schemas.rss_source_pipe_schema import RSSSourcePipeSchema
-from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
-from ...common.web_scraper_module import WebScraperLoaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +85,19 @@ def _rss_source_pipe(builder: mrc.Builder):
 
     enable_monitor = validated_config.enable_monitor
 
+    rss_source_config = {
+        "feed_input": validated_config.feed_input,
+        "run_indefinitely": validated_config.run_indefinitely,
+        "batch_size": validated_config.batch_size,
+        "enable_cache": validated_config.enable_cache,
+        "cache_dir": validated_config.cache_dir,
+        "cooldown_interval_sec": validated_config.cooldown_interval_sec,
+        "request_timeout_sec": validated_config.request_timeout_sec,
+        "interval_sec": validated_config.interval_sec,
+        "stop_after_sec": validated_config.stop_after_sec,
+    }
     rss_source_loader = RSSSourceLoaderFactory.get_instance("rss_source",
-                                                            {"rss_source": validated_config.dict()})
+                                                            {"rss_source": rss_source_config})
 
     web_scraper_loader = WebScraperLoaderFactory.get_instance(
         "web_scraper", {
