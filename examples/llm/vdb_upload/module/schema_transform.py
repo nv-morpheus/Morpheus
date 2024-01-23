@@ -21,6 +21,7 @@ from pydantic import ValidationError
 import cudf
 
 from morpheus.messages import MessageMeta
+from morpheus.modules.schemas.examples.llm.schema_transform_schema import SchemaTransformSchema
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import RenameColumn
@@ -28,8 +29,6 @@ from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
 from morpheus.utils.schema_transforms import process_dataframe
-
-from ..schemas.schema_transform_schema import SchemaTransformSchema
 
 logger = logging.getLogger(__name__)
 

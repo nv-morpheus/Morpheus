@@ -31,10 +31,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import ValidationError
 
 from morpheus.messages import MessageMeta
+from morpheus.modules.schemas.examples.llm.content_extractor_schema import ContentExtractorSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-
-from .content_extractor_schema import ContentExtractorSchema
 
 logger = logging.getLogger(__name__)
 

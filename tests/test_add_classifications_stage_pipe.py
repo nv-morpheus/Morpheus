@@ -48,7 +48,7 @@ def test_add_classifications_stage_pipe(config, filter_probs_df):
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
@@ -67,7 +67,7 @@ def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)

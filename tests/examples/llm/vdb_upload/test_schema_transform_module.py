@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import sys
 import types
 
 import pytest
 
 import cudf
 
+from _utils import TEST_DIRS
 from _utils import assert_results
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -25,6 +28,9 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+
+path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
+sys.path.append(path)
 
 
 @pytest.mark.use_python
@@ -64,7 +70,7 @@ def test_schema_transform_module(num_select,
         for i in range(num_renames)
     })
 
-    schema_module_def = import_schema_transform_module.SchemaTransformInterface.get_instance(
+    schema_module_loader = import_schema_transform_module.SchemaTransformLoaderFactory.get_instance(
         "schema_transform", module_config=transform_config)
 
     # Set up the pipeline
@@ -72,7 +78,7 @@ def test_schema_transform_module(num_select,
     pipe.set_source(InMemorySourceStage(config, [df]))
     pipe.add_stage(
         LinearModulesStage(config,
-                           schema_module_def,
+                           schema_module_loader,
                            input_type=MessageMeta,
                            output_type=MessageMeta,
                            input_port_name="input",

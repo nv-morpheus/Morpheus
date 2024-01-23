@@ -27,7 +27,6 @@ def import_vdb_update_utils_module():
     sys.path.insert(0, path)
 
     import vdb_utils
-    sys.path.remove(path)
 
     return vdb_utils
 
@@ -38,6 +37,5 @@ def import_schema_transform_module():
     sys.path.insert(0, path)
 
     import schema_transform
-    sys.path.remove(path)
 
     return schema_transform

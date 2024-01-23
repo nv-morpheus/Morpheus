@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import typing
 
-import cudf
 import mrc
+
+import cudf
 
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
 from morpheus.config import Config
@@ -24,8 +24,6 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
-
-logger = logging.getLogger(__name__)
 
 
 class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
@@ -42,8 +40,7 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     """
 
-    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1,
-                 use_cpp_message_meta=False):
+    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1, use_cpp_message_meta=False):
         super().__init__(c)
 
         self._dataframes = dataframes
@@ -76,7 +73,6 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
                     df.index += len(df)
                     self._dataframes[k] = df
 
-                logger.error(f"Yielding {df.shape[0]} rows from dataframe {k} of {type(x)}")
                 yield x
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:

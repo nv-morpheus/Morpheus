@@ -17,7 +17,6 @@ import os
 import random
 import shutil
 import string
-import sys
 import tempfile
 import types
 import uuid
@@ -104,20 +103,18 @@ def test_content_extractor_module(data_len,
     # Text splitter handles things a bit differently on evenly divisible boundaries
     chunk_boundary_size = (chunk_size - chunk_overlap) if (data_len > chunk_size) else chunk_size
     module_config = {
+        "batch_size": batch_size,
+        "chunk_size": 512,
+        "chunk_overlap": 51,
         "converters_meta": {
             "csv": {
                 "chunk_size": chunk_size,
                 "chunk_overlap": chunk_overlap,
-                "text_column_name": "some_column",
+                "text_column_names": ["some_column"],
             }
         },
-        "content_extractor_config": {
-            "batch_size": batch_size,
-            "num_threads": 1,
-        },
-        "enable_monitor": False,
     }
-    content_extractor_def = import_content_extractor_module.FileContentExtractorInterface.get_instance(
+    content_extractor_loader = import_content_extractor_module.ContentExtractorLoaderFactory.get_instance(
         "content_extractor", module_config=module_config)
 
     temp_csv_files = TempCSVFiles(
@@ -129,7 +126,7 @@ def test_content_extractor_module(data_len,
     pipe.set_source(InMemoryDataGenStage(config, file_generator, output_data_type=List[fsspec.core.OpenFile]))
     pipe.add_stage(
         LinearModulesStage(config,
-                           content_extractor_def,
+                           content_extractor_loader,
                            input_type=List[fsspec.core.OpenFile],
                            output_type=MessageMeta,
                            input_port_name="input",

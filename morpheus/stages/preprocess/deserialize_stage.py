@@ -53,8 +53,8 @@ class DeserializeStage(MultiMessageStage):
                  c: Config,
                  *,
                  ensure_sliceable_index: bool = True,
-                 message_type: typing.Union[
-                     typing.Literal[MultiMessage], typing.Literal[ControlMessage]] = MultiMessage,
+                 message_type: typing.Union[typing.Literal[MultiMessage],
+                                            typing.Literal[ControlMessage]] = MultiMessage,
                  task_type: str = None,
                  task_payload: dict = None):
         super().__init__(c)
@@ -99,7 +99,7 @@ class DeserializeStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MessageMeta,)
+        return (MessageMeta, )
 
     def supports_cpp_node(self):
         # Enable support by default

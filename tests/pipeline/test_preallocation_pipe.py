@@ -44,7 +44,7 @@ def test_preallocation(config, filter_probs_df, probs_type):
               for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=probs_np_type))
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
@@ -76,7 +76,7 @@ def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
               for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
@@ -108,7 +108,7 @@ def test_preallocation_error(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type='f4'))
     add_scores = pipe.add_stage(AddScoresStage(config))

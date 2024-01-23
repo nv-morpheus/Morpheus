@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
 import logging
+import typing
 from functools import partial
 
 import mrc
@@ -29,6 +29,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stage_schema import StageSchema
 
 logger = logging.getLogger(__name__)
+
 
 @register_stage("serialize")
 class SerializeStage(SinglePortStage):
