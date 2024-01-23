@@ -88,8 +88,7 @@ def infer(
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
 
-    # pylint:disable=no-member
-    probs = scipy.special.expit(ort_outs[0])
+    probs = scipy.special.expit(ort_outs[0])  # pylint:disable=no-member
 
     preds = (probs >= 0.5).astype(np.int_)
 
