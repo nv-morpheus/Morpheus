@@ -65,13 +65,9 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
     if dup_index:
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
-    stage_kwargs = {}
-    if message_type is ControlMessage:
-        stage_kwargs.update({"task_type": "test", "task_payload": {"test": "test"}})
-
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config, message_type=message_type, **stage_kwargs))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"], exclude=["_index_"]))
     pipe.run()
 
@@ -90,14 +86,10 @@ def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager,
     if dup_index:
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
-    stage_kwargs = {}
-    if message_type is ControlMessage:
-        stage_kwargs.update({"task_type": "test", "task_payload": {"test": "test"}})
-
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config, message_type=message_type, **stage_kwargs))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"], exclude=["_index_"]))
     pipe.run()
 
