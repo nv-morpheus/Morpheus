@@ -4,9 +4,8 @@ channels:
 - conda-forge
 - huggingface
 - rapidsai
-- nvidia/label/cuda-12.1.0
-- nvidia
 - rapidsai-nightly
+- nvidia
 - nvidia/label/dev
 - pytorch
 - defaults
