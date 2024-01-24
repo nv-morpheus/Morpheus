@@ -57,7 +57,7 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
 @pytest.mark.parametrize("dup_index", [False, True])
 def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
     """
-    End to end test for DeserializeStage
+    End-to-end test for DeserializeStage
     """
 
     filter_probs_df = dataset["filter_probs.csv"]

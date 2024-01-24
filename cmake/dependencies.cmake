@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,44 +17,48 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
-
+# Show some setup variables (only prints if VERBOSE)
 morpheus_utils_print_config()
 
 # First, load the package_config functions
 include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
 
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
-rapids_find_package(Protobuf
-  REQUIRED
+rapids_find_package(Protobuf REQUIRED
   BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
-find_package(CUDAToolkit REQUIRED)
+rapids_find_package(CUDAToolkit REQUIRED
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
   # - Expects package to pre-exist in the build environment
   # ================
   rapids_find_package(benchmark REQUIRED
-    GLOBAL_TARGETS      benchmark::benchmark
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    GLOBAL_TARGETS benchmark::benchmark
+    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    FIND_ARGS CONFIG
   )
 endif()
+
+# glog
+# ====
+morpheus_utils_configure_glog()
 
 if(MORPHEUS_BUILD_TESTS)
   # google test
   # - Expects package to pre-exist in the build environment
   # ===========
   rapids_find_package(GTest REQUIRED
-    GLOBAL_TARGETS      GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
-    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-    FIND_ARGS
-    CONFIG
+    GLOBAL_TARGETS GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
+    BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+    INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+    FIND_ARGS CONFIG
   )
 endif()
 
@@ -73,6 +77,10 @@ morpheus_utils_configure_pybind11()
 # RD-Kafka
 # =====
 morpheus_utils_configure_rdkafka()
+
+# RxCpp
+# =====
+morpheus_utils_configure_rxcpp()
 
 # MRC (Should come after all third party but before NVIDIA repos)
 # =====

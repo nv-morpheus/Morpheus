@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,11 @@ export PY_ROOT="${MORPHEUS_ROOT}"
 export PY_CFG="${PY_ROOT}/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
-# work-around for known yapf issue https://github.com/google/yapf/issues/984
-export YAPF_EXCLUDE_FLAGS="-e versioneer.py -e morpheus/_version.py"
-
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
 export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target)}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
-export CPP_FILE_REGEX='^(\.\/)?(morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
+export CPP_FILE_REGEX='^(\.\/)?(examples|morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
 export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build|external).*\.(py|pyx|pxd)$'
 
 # Use these options to skip any of the checks

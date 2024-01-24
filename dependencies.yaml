@@ -56,6 +56,7 @@ files:
       cuda: ["11.8"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
       - development
       - benchmark_cpp
@@ -128,13 +129,16 @@ dependencies:
           - gxx_linux-64=11.2
           - cmake=3.25
           - boost-cpp=1.82
+          - ccache>=3.7
           - cuda-nvcc
           - cudf=23.06
           - cxx-compiler
           - cython=0.29.24
+          - glog=0.6
           - librdkafka=1.9.2
           - ninja=1.10
           - nlohmann_json=3.9
+          - pkg-config # for mrc cmake
           - protobuf=4.21.*
           - pybind11-stubgen=0.10
           - rapidjson=1.1.0
@@ -163,6 +167,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
+          - versioneer
           - yapf=0.40.1
 
   docs:
