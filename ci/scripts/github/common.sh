@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,10 +71,14 @@ function update_conda_env() {
     # Deactivate the environment first before updating
     conda deactivate
 
-    rapids-logger "Checking for updates to conda env"
 
-    # Update the packages
-    rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
+    if [[ "${SKIP_CONDA_ENV_UPDATE}" == "" ]]; then
+        rapids-logger "Checking for updates to conda env"
+
+
+        # Update the packages
+        rapids-mamba-retry env update -n morpheus --prune -q --file "$1"
+    fi
 
     # Finally, reactivate
     conda activate morpheus
@@ -107,7 +111,6 @@ function fetch_base_branch_gh_api() {
 
 function fetch_base_branch_local() {
     rapids-logger "Retrieving base branch from git"
-    git remote remove upstream
     git remote add upstream ${GIT_UPSTREAM_URL}
     git fetch upstream --tags
     source ${MORPHEUS_ROOT}/ci/scripts/common.sh

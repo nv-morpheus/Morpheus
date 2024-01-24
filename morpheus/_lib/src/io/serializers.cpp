@@ -159,7 +159,11 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
 
     OStreamSink sink(out_stream);
     auto destination     = cudf::io::sink_info(&sink);
-    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view).metadata(tbl_meta).lines(true);
+    auto options_builder = cudf::io::json_writer_options_builder(destination, tbl_view)
+                               .metadata(tbl_meta)
+                               .lines(true)
+                               .include_nulls(true)
+                               .na_rep("null");
 
     cudf::io::write_json(options_builder.build());
 

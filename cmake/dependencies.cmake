@@ -17,7 +17,7 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
 morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
-
+# Show some setup variables (only prints if VERBOSE)
 morpheus_utils_print_config()
 
 # First, load the package_config functions
@@ -25,7 +25,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/package_config/register_api.cmake)
 
 # Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
 rapids_find_package(Protobuf REQUIRED
-  REQUIRED
   BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
@@ -50,10 +49,6 @@ endif()
 # glog
 # ====
 morpheus_utils_configure_glog()
-
-# grpc
-# =========
-morpheus_utils_configure_grpc()
 
 if(MORPHEUS_BUILD_TESTS)
   # google test
@@ -82,6 +77,10 @@ morpheus_utils_configure_pybind11()
 # RD-Kafka
 # =====
 morpheus_utils_configure_rdkafka()
+
+# RxCpp
+# =====
+morpheus_utils_configure_rxcpp()
 
 # MRC (Should come after all third party but before NVIDIA repos)
 # =====

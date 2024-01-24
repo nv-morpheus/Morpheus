@@ -23,7 +23,6 @@ dependencies:
 - distributed=2023.12.1
 - elasticsearch==8.9.0
 - feedparser=6.0.10
-- gputil
 - grpcio
 - huggingface_hub=0.20.2
 - jsonpatch>=1.33

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,6 +64,7 @@ files:
       cuda: ["12.1"]
       arch: [x86_64]
     includes:
+      - data_retrieval
       - build_cpp
       - development
       - benchmark_cpp
@@ -170,17 +171,20 @@ dependencies:
       - output_types: [conda]
         packages:
           - mrc=24.03
-          - gcc_linux-64=11.2
-          - gxx_linux-64=11.2
           - boost-cpp=1.84
+          - ccache
           - cmake=3.27
           - cuda-nvcc
           - cudf=24.02
           - cxx-compiler
           - cython=3.0
+          - gcc_linux-64=11.2
+          - glog=0.6
+          - gxx_linux-64=11.2
           - librdkafka=2.2
           - ninja=1.11
           - nlohmann_json=3.9
+          - pkg-config=0.29 # for mrc cmake
           - protobuf=4.24
           - pybind11-stubgen=0.10
           - rapidjson=1.1.0
@@ -209,6 +213,7 @@ dependencies:
           - include-what-you-use=0.20
           - isort
           - pylint=3.0.3
+          - versioneer
           - yapf=0.40.1
 
   docs:
@@ -244,7 +249,6 @@ dependencies:
           - dill
           - elasticsearch==8.9.0
           - feedparser=6.0.10
-          - gputil
           - grpcio
           - mlflow=2.9.2
           - numpydoc=1.5

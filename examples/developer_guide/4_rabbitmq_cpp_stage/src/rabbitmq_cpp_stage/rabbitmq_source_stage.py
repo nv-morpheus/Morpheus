@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,16 +87,15 @@ class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         if self._build_cpp_node():
-            # pylint: disable=c-extension-no-member,no-name-in-module
-            from _lib import morpheus_rabbit as morpheus_rabbit_cpp
+            from ._lib import rabbitmq_cpp_stage
 
-            node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
-                                                           self.unique_name,
-                                                           self._host,
-                                                           self._exchange,
-                                                           self._exchange_type,
-                                                           self._queue_name,
-                                                           self._poll_interval.to_pytimedelta())
+            node = rabbitmq_cpp_stage.RabbitMQSourceStage(builder,
+                                                          self.unique_name,
+                                                          self._host,
+                                                          self._exchange,
+                                                          self._exchange_type,
+                                                          self._queue_name,
+                                                          self._poll_interval.to_pytimedelta())
         else:
             self.connect()
             node = builder.make_source(self.unique_name, self.source_generator)
