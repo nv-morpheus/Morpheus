@@ -47,6 +47,7 @@ asyncio_mode = "auto"
 ignore_patterns = [
   "**/*.pyx",
   "**/*.pxd",
+  "**/_version.py",
 ]
 
 [tool.mypy]
