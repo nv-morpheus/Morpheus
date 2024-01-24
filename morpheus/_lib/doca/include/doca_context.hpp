@@ -19,6 +19,7 @@
 
 #include "error.hpp"
 #include "rte_context.hpp"
+#include "common.hpp"
 
 #include <doca_eth_rxq.h>
 #include <doca_flow.h>

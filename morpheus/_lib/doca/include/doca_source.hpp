@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/meta.hpp"
+#include "common.hpp"
 
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
@@ -32,7 +33,6 @@ struct DocaContext;
 struct DocaRxQueue;
 struct DocaRxPipe;
 struct DocaSemaphore;
-
 }  // namespace doca
 
 #pragma GCC visibility push(default)
@@ -49,15 +49,17 @@ class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    DocaSourceStage(std::string const& nic_pci_address, std::string const& gpu_pci_address);
+    DocaSourceStage(std::string const& nic_pci_address, std::string const& gpu_pci_address, std::string const& traffic_type);
 
   private:
     subscriber_fn_t build();
 
     std::shared_ptr<morpheus::doca::DocaContext> m_context;
-    std::shared_ptr<morpheus::doca::DocaRxQueue> m_rxq;
+    std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> m_rxq;
+    std::vector<std::shared_ptr<morpheus::doca::DocaSemaphore>> m_semaphore;
     std::shared_ptr<morpheus::doca::DocaRxPipe> m_rxpipe;
-    std::shared_ptr<morpheus::doca::DocaSemaphore> m_semaphore;
+    enum doca_traffic_type m_traffic_type;
+    rmm::cuda_stream rstream;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/
@@ -72,7 +74,9 @@ struct DocaSourceStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(mrc::segment::Builder& builder,
                                                                        std::string const& name,
                                                                        std::string const& nic_pci_address,
-                                                                       std::string const& gpu_pci_address);
+                                                                       std::string const& gpu_pci_address,
+                                                                       std::string const& traffic_type
+                                                                      );
 };
 
 #pragma GCC visibility pop

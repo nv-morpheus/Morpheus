@@ -43,6 +43,9 @@ struct DocaSemaphore
 
     doca_gpu_semaphore_gpu* gpu_ptr();
     uint16_t size();
+    void * get_info_cpu(int idx);
+    bool is_ready(int idx);
+    void set_free(int idx);
 };
 
 }  // namespace morpheus::doca

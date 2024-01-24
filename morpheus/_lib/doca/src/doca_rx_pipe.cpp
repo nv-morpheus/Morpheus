@@ -23,25 +23,36 @@
 namespace morpheus::doca {
 
 /* Create more Queues/Different Flows */
-DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<DocaRxQueue> rxq) :
+DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue> rxq, enum doca_traffic_type const type) :
   m_context(context),
   m_rxq(rxq),
+  m_traffic_type(type),
   m_pipe(nullptr)
 {
-    auto rss_queues = std::array<uint16_t, 1>();
-    doca_eth_rxq_get_flow_queue_id(rxq->rxq_info_cpu(), &(rss_queues[0]));
+    auto rss_queues = std::array<uint16_t, m_rxq.size()>();
+    for(int idx = 0; idx < m_rxq.size(); idx++)
+      doca_eth_rxq_get_flow_queue_id(m_rxq[idx]->rxq_info_cpu(), &(rss_queues[idx]));
 
     doca_flow_match match_mask{0};
     doca_flow_match match{};
     match.outer.l3_type        = DOCA_FLOW_L3_TYPE_IP4;
-    match.outer.ip4.next_proto = IPPROTO_TCP;
-    match.outer.l4_type_ext    = DOCA_FLOW_L4_TYPE_EXT_TCP;
+    if (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP) {
+      match.outer.ip4.next_proto = IPPROTO_TCP;
+      match.outer.l4_type_ext    = DOCA_FLOW_L4_TYPE_EXT_TCP;
+    } else {
+      match.outer.ip4.next_proto = IPPROTO_UDP;
+      match.outer.l4_type_ext    = DOCA_FLOW_L4_TYPE_EXT_UDP;
+    }
 
     doca_flow_fwd fwd{};
     fwd.type            = DOCA_FLOW_FWD_RSS;
-    fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_TCP;
+
+    if (m_traffic_type == DOCA_TRAFFIC_TYPE_TCP)
+      fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_TCP;
+    else
+      fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_UDP;
     fwd.rss_queues      = rss_queues.begin();
-    fwd.num_of_queues   = 1;
+    fwd.num_of_queues   = m_rxq.size();
 
     doca_flow_fwd miss_fwd{};
     miss_fwd.type = DOCA_FLOW_FWD_DROP;
@@ -50,7 +61,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<Doc
     monitor.flags = DOCA_FLOW_MONITOR_COUNT;
 
     doca_flow_pipe_cfg pipe_cfg{};
-    pipe_cfg.attr.name       = "GPU_RXQ_TCP_PIPE";
+    pipe_cfg.attr.name       = "GPU_RXQ_PIPE";
     pipe_cfg.attr.enable_strict_matching = true;
     pipe_cfg.attr.type       = DOCA_FLOW_PIPE_BASIC;
     pipe_cfg.attr.nb_actions = 0;
@@ -74,13 +85,13 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::shared_ptr<Doc
     root_monitor.flags              = DOCA_FLOW_MONITOR_COUNT;
 
     doca_flow_pipe_cfg root_pipe_cfg = {};
-    root_pipe_cfg.attr.name          = "ROOT_PIPE";
-    pipe_cfg.attr.enable_strict_matching = true;
-    root_pipe_cfg.attr.is_root       = true;
-    root_pipe_cfg.attr.type          = DOCA_FLOW_PIPE_CONTROL;
-    root_pipe_cfg.monitor            = &root_monitor;
-    root_pipe_cfg.match_mask         = &root_match_mask;
-    root_pipe_cfg.port               = context->flow_port();
+    root_pipe_cfg.attr.name               = "ROOT_PIPE";
+    pipe_cfg.attr.enable_strict_matching  = true;
+    root_pipe_cfg.attr.is_root            = true;
+    root_pipe_cfg.attr.type               = DOCA_FLOW_PIPE_CONTROL;
+    root_pipe_cfg.monitor                 = &root_monitor;
+    root_pipe_cfg.match_mask              = &root_match_mask;
+    root_pipe_cfg.port                    = context->flow_port();
 
     DOCA_TRY(doca_flow_pipe_create(&root_pipe_cfg, nullptr, nullptr, &m_root_pipe));
 

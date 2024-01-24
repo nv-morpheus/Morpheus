@@ -47,6 +47,8 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         c: Config,
         nic_pci_address: str,
         gpu_pci_address: str,
+        traffic_type: str,
+        queue_num: int,
     ):
 
         super().__init__(c)
@@ -67,6 +69,9 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._max_concurrent = c.num_threads
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
+        self._traffic_type = traffic_type
+        if self._traffic_type != 'udp' or self._traffic_type != 'tcp':
+            raise NotImplementedError("The Morpheus DOCA source stage allows a only udp or tcp types of traffic flow")
 
     @property
     def name(self) -> str:
@@ -86,6 +91,6 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address)
+            return self._doca_source_class(builder, self.unique_name, self._nic_pci_address, self._gpu_pci_address, self._traffic_type)
 
         raise NotImplementedError("Does not support Python nodes")
