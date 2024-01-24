@@ -40,19 +40,18 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     """
 
-    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1, use_cpp_message_meta=False):
+    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1):
         super().__init__(c)
 
         self._dataframes = dataframes
         self._repeat_count = repeat
-        self._use_cpp_message_meta = use_cpp_message_meta
 
     @property
     def name(self) -> str:
         return "from-mem"
 
     def supports_cpp_node(self) -> bool:
-        return False
+        return True
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
@@ -60,7 +59,7 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):
             for k, df in enumerate(self._dataframes):
-                if (self._use_cpp_message_meta):
+                if (self._build_cpp_node):
                     x = MessageMetaCpp(df)
                 else:
                     x = MessageMeta(df)

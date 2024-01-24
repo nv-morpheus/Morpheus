@@ -58,7 +58,7 @@ def _test_filter_detections_stage_pipe(config: Config,
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
@@ -75,7 +75,7 @@ def _test_filter_detections_stage_multi_segment_pipe(config: Config, dataset_pan
 
     input_df = dataset_pandas["filter_probs.csv"]
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)

@@ -23,7 +23,7 @@ from pydantic import validator
 logger = logging.getLogger(__name__)
 
 
-class CSVConverterParamContract(BaseModel):
+class CSVConverterSchema(BaseModel):
     chunk_overlap: int = 102  # Example default value
     chunk_size: int = 1024
     text_column_names: List[str]
@@ -44,7 +44,7 @@ class ContentExtractorSchema(BaseModel):
         validated_meta = {}
         for key, value in v.items():
             if key.lower() == 'csv':
-                validated_meta[key] = CSVConverterParamContract(**value)
+                validated_meta[key] = CSVConverterSchema(**value)
             else:
                 validated_meta[key] = value
         return validated_meta

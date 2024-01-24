@@ -65,7 +65,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
@@ -86,7 +86,7 @@ def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager,
         filter_probs_df = dataset.replace_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))

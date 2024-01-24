@@ -35,7 +35,7 @@ def test_file_rw_serialize_deserialize_pipe(tmp_path, config, filter_probs_df, w
         results_file_name = None
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     val_stage = pipe.add_stage(
         ValidationStage(config, val_file_name=filter_probs_df.to_pandas(), results_file_name=results_file_name))

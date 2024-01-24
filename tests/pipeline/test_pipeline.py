@@ -153,7 +153,7 @@ def test_pipeline_narrowing_types(config: Config, filter_probs_df: DataFrameType
     expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [filter_probs_df], use_cpp_message_meta=True))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config))
     pipe.add_stage(MultiMessagePassThruStage(config))

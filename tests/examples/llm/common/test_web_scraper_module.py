@@ -39,7 +39,7 @@ def test_web_scraper_module(config: Config, mock_rest_server: str, import_mod: t
     df = cudf.DataFrame({"link": [url]})
     df_expected = cudf.DataFrame({"link": [url], "page_content": "website title some paragraph"})
 
-    web_scraper_definition = import_mod.WebScraperInterface.get_instance(
+    web_scraper_loader = import_mod.WebScraperLoaderFactory.get_instance(
         "web_scraper",
         module_config={
             "web_scraper_config": {
@@ -55,7 +55,7 @@ def test_web_scraper_module(config: Config, mock_rest_server: str, import_mod: t
     pipe.set_source(InMemorySourceStage(config, [df]))
     pipe.add_stage(
         LinearModulesStage(config,
-                           web_scraper_definition,
+                           web_scraper_loader,
                            input_type=MessageMeta,
                            output_type=MessageMeta,
                            input_port_name="input",

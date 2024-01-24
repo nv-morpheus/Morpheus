@@ -47,7 +47,7 @@ def test_databricks_deltalake_sink_stage_pipe(config: Config, dataset: DatasetMa
         mock_spark_df = mock.Mock()
         databricks_deltalake_sink_stage.spark.createDataFrame.return_value = mock_spark_df
         pipeline = LinearPipeline(config)
-        pipeline.set_source(InMemorySourceStage(config, [df_input_a], use_cpp_message_meta=True))
+        pipeline.set_source(InMemorySourceStage(config, [df_input_a]))
         pipeline.add_stage(DeserializeStage(config))
         pipeline.add_stage(SerializeStage(config))
         pipeline.add_stage(databricks_deltalake_sink_stage)
