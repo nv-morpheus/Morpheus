@@ -20,7 +20,8 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/types.hpp"  // for TensorIndex
+#include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/python_util.hpp"  // for show_warning_message
 
 #include <boost/fiber/context.hpp>
 #include <boost/fiber/future/future.hpp>
@@ -54,27 +55,29 @@ using namespace std::literals::string_literals;
  */
 
 #pragma GCC visibility push(default)
+struct CMTask  // todo make pair
+{
+    std::string type;
+    nlohmann::json payload;
+};
+
+void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
+                           TensorIndex start,
+                           TensorIndex stop,
+                           CMTask* task,
+                           std::shared_ptr<MultiMessage>& windowed_message);
+
+void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
+                           TensorIndex start,
+                           TensorIndex stop,
+                           CMTask* task,
+                           std::shared_ptr<ControlMessage>& windowed_message);
 
 template <typename OutputT>
-class DeserializeStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, OutputT>
-{
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, OutputT>;
-
-  public:
-    using typename base_t::stream_fn_t;
-    using subscribe_fn_t = base_t::subscribe_fn_t;
-    using base_t::base_t;
-};
-
-/**
- * @brief Slices incoming Dataframes into smaller `batch_size`'d chunks. This stage accepts the `MessageMeta` output
- * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one
- * of the first stages after the `Source` object.
- */
-class DeserializeStage : public DeserializeStageBase<std::shared_ptr<MultiMessage>>
+class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
 {
   public:
-    using base_t = DeserializeStageBase<std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -85,54 +88,27 @@ class DeserializeStage : public DeserializeStageBase<std::shared_ptr<MultiMessag
      * @param batch_size Number of messages to be divided into each batch
      * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
      */
-    DeserializeStage(TensorIndex batch_size, bool ensure_sliceable_index = true);
-
-  private:
-    /**
-     * TODO(Documentation)
-     */
-    subscribe_fn_t build_operator();
-
-    TensorIndex m_batch_size;
-    bool m_ensure_sliceable_index{true};
-};
-
-class DeserializeControlMessageStage : public DeserializeStageBase<std::shared_ptr<ControlMessage>>
-{
-  public:
-    struct Task
-    {
-        std::string type;
-        nlohmann::json payload;
-    };
-
-    using base_t = DeserializeStageBase<std::shared_ptr<ControlMessage>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
-
-    /**
-     * @brief Construct a new Deserialize Stage object
-     *
-     * @param batch_size Number of messages to be divided into each batch
-     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
-     */
-    DeserializeControlMessageStage(TensorIndex batch_size,
-                                   bool ensure_sliceable_index = true,
-                                   std::unique_ptr<Task> task  = nullptr);
+    DeserializeStage(TensorIndex batch_size,
+                     bool ensure_sliceable_index  = true,
+                     std::unique_ptr<CMTask> task = nullptr) :
+      base_t(base_t::op_factory_from_sub_fn(build_operator())),
+      m_batch_size(batch_size),
+      m_ensure_sliceable_index(ensure_sliceable_index),
+      m_task(std::move(task)){};
 
   private:
     subscribe_fn_t build_operator();
 
     TensorIndex m_batch_size;
     bool m_ensure_sliceable_index{true};
-    std::unique_ptr<Task> m_task{nullptr};
+    std::unique_ptr<CMTask> m_task{nullptr};
 };
 
 /****** DeserializationStageInterfaceProxy******************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
+template <typename OutputT>
 struct DeserializeStageInterfaceProxy
 {
     /**
@@ -143,30 +119,87 @@ struct DeserializeStageInterfaceProxy
      * @param batch_size : Number of messages to be divided into each batch
      * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
-                                                                        const std::string& name,
-                                                                        TensorIndex batch_size,
-                                                                        bool ensure_sliceable_index);
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage<OutputT>>> init(mrc::segment::Builder& builder,
+                                                                                 const std::string& name,
+                                                                                 TensorIndex batch_size,
+                                                                                 bool ensure_sliceable_index,
+                                                                                 const pybind11::object& task_type,
+                                                                                 const pybind11::object& task_payload);
 };
 
-struct DeserializeControlMessageStageInterfaceProxy
+template <typename OutputT>
+typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::build_operator()
 {
-    /**
-     * @brief Create and initialize a DeserializationStage, and return the result
-     *
-     * @param builder : Pipeline context object reference
-     * @param name : Name of a stage reference
-     * @param batch_size : Number of messages to be divided into each batch
-     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
-     */
-    static std::shared_ptr<mrc::segment::Object<DeserializeControlMessageStage>> init(mrc::segment::Builder& builder,
-                                                                                      const std::string& name,
-                                                                                      TensorIndex batch_size,
-                                                                                      bool ensure_sliceable_index,
-                                                                                      pybind11::object& task_type,
-                                                                                      pybind11::object& task_payload);
-};
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
+                if (!x->has_sliceable_index())
+                {
+                    if (m_ensure_sliceable_index)
+                    {
+                        auto old_index_name = x->ensure_sliceable_index();
 
+                        if (old_index_name.has_value())
+                        {
+                            // Generate a warning
+                            LOG(WARNING) << MORPHEUS_CONCAT_STR(
+                                "Incoming MessageMeta does not have a unique and monotonic index. Updating index "
+                                "to be unique. Existing index will be retained in column '"
+                                << *old_index_name << "'");
+                        }
+                    }
+                    else
+                    {
+                        utilities::show_warning_message(
+                            "Detected a non-sliceable index on an incoming MessageMeta. Performance when taking slices "
+                            "of messages may be degraded. Consider setting `ensure_sliceable_index==True`",
+                            PyExc_RuntimeWarning);
+                    }
+                }
+
+                // Make one large MultiMessage
+                auto full_message = std::make_shared<MultiMessage>(x, 0, x->count());
+
+                // Loop over the MessageMeta and create sub-batches
+                for (TensorIndex i = 0; i < x->count(); i += this->m_batch_size)
+                {
+                    auto windowed_message = std::make_shared<OutputT>(nullptr);
+                    make_windowed_message(
+                        full_message, i, std::min(i + this->m_batch_size, x->count()), m_task.get(), windowed_message);
+                    output.on_next(std::move(windowed_message));
+                }
+            },
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
+    };
+}
+
+template <typename OutputT>
+std::shared_ptr<mrc::segment::Object<DeserializeStage<OutputT>>> DeserializeStageInterfaceProxy<OutputT>::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    TensorIndex batch_size,
+    bool ensure_sliceable_index,
+    const pybind11::object& task_type,
+    const pybind11::object& task_payload)
+{
+    std::unique_ptr<CMTask> task{nullptr};
+
+    if (!task_type.is_none() && !task_payload.is_none())
+    {
+        task = std::make_unique<CMTask>(pybind11::cast<std::string>(task_type),
+                                        mrc::pymrc::cast_from_pyobject(task_payload));
+    }
+
+    auto stage =
+        builder.construct_object<DeserializeStage<OutputT>>(name, batch_size, ensure_sliceable_index, std::move(task));
+
+    return stage;
+}
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
