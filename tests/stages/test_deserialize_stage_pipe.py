@@ -18,6 +18,7 @@ import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MultiMessage as MultiMessageCpp
 from morpheus.config import Config
 from morpheus.messages import ControlMessage

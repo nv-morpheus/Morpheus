@@ -87,7 +87,6 @@ class DeserializeStage(MultiMessageStage):
     def accepted_types(self) -> typing.Tuple:
         """
         Returns accepted input types for this stage.
-
         """
         return (MessageMeta, )
 
@@ -209,7 +208,18 @@ class DeserializeStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
         if self._build_cpp_node():
-            node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
+            if self._message_type is ControlMessage:
+                node = _stages.DeserializeControlMessageStage(builder,
+                                                              self.unique_name,
+                                                              self._batch_size,
+                                                              ensure_sliceable_index=self._ensure_sliceable_index,
+                                                              task_type=self._task_type,
+                                                              task_payload=self._task_payload)
+            else:
+                node = _stages.DeserializeStage(builder,
+                                                self.unique_name,
+                                                self._batch_size,
+                                                ensure_sliceable_index=self._ensure_sliceable_index)
         else:
 
             if (self._message_type == MultiMessage):

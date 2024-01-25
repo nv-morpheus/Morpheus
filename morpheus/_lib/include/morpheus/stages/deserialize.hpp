@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -30,6 +31,7 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
+#include <nlohmann/json.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 // IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
@@ -43,6 +45,7 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** DeserializationStage********************************/
+using namespace std::literals::string_literals;
 
 /**
  * @addtogroup stages
@@ -51,15 +54,27 @@ namespace morpheus {
  */
 
 #pragma GCC visibility push(default)
+
+template <typename OutputT>
+class DeserializeStageBase : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, OutputT>
+{
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, OutputT>;
+
+  public:
+    using typename base_t::stream_fn_t;
+    using subscribe_fn_t = base_t::subscribe_fn_t;
+    using base_t::base_t;
+};
+
 /**
  * @brief Slices incoming Dataframes into smaller `batch_size`'d chunks. This stage accepts the `MessageMeta` output
- * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one of
- * the first stages after the `Source` object.
+ * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one
+ * of the first stages after the `Source` object.
  */
-class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
+class DeserializeStage : public DeserializeStageBase<std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
+    using base_t = DeserializeStageBase<std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -82,6 +97,38 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
     bool m_ensure_sliceable_index{true};
 };
 
+class DeserializeControlMessageStage : public DeserializeStageBase<std::shared_ptr<ControlMessage>>
+{
+  public:
+    struct Task
+    {
+        std::string type;
+        nlohmann::json payload;
+    };
+
+    using base_t = DeserializeStageBase<std::shared_ptr<ControlMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
+
+    /**
+     * @brief Construct a new Deserialize Stage object
+     *
+     * @param batch_size Number of messages to be divided into each batch
+     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     */
+    DeserializeControlMessageStage(TensorIndex batch_size,
+                                   bool ensure_sliceable_index = true,
+                                   std::unique_ptr<Task> task  = nullptr);
+
+  private:
+    subscribe_fn_t build_operator();
+
+    TensorIndex m_batch_size;
+    bool m_ensure_sliceable_index{true};
+    std::unique_ptr<Task> m_task{nullptr};
+};
+
 /****** DeserializationStageInterfaceProxy******************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -101,6 +148,25 @@ struct DeserializeStageInterfaceProxy
                                                                         TensorIndex batch_size,
                                                                         bool ensure_sliceable_index);
 };
+
+struct DeserializeControlMessageStageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a DeserializationStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param batch_size : Number of messages to be divided into each batch
+     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
+     */
+    static std::shared_ptr<mrc::segment::Object<DeserializeControlMessageStage>> init(mrc::segment::Builder& builder,
+                                                                                      const std::string& name,
+                                                                                      TensorIndex batch_size,
+                                                                                      bool ensure_sliceable_index,
+                                                                                      pybind11::object& task_type,
+                                                                                      pybind11::object& task_payload);
+};
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

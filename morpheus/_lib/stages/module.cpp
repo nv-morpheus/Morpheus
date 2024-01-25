@@ -94,6 +94,18 @@ PYBIND11_MODULE(stages, _module)
              py::arg("batch_size"),
              py::arg("ensure_sliceable_index") = true);
 
+    py::class_<mrc::segment::Object<DeserializeControlMessageStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<DeserializeControlMessageStage>>>(
+        _module, "DeserializeControlMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&DeserializeControlMessageStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("batch_size"),
+             py::arg("ensure_sliceable_index") = true,
+             py::arg("task_type")              = py::none(),
+             py::arg("task_payload")           = py::none());
+
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(

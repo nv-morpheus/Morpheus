@@ -15,6 +15,7 @@ import mrc.core.segment
 __all__ = [
     "AddClassificationsStage",
     "AddScoresStage",
+    "DeserializeControlMessageStage",
     "DeserializeStage",
     "FileSourceStage",
     "FilterDetectionsStage",
@@ -36,6 +37,9 @@ class AddClassificationsStage(mrc.core.segment.SegmentObject):
     pass
 class AddScoresStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, idx2label: typing.Dict[int, str]) -> None: ...
+    pass
+class DeserializeControlMessageStage(mrc.core.segment.SegmentObject):
+    def __init__(self, builder: mrc.core.segment.Builder, name: str, batch_size: int, ensure_sliceable_index: bool = True, task_type: object = None, task_payload: object = None) -> None: ...
     pass
 class DeserializeStage(mrc.core.segment.SegmentObject):
     def __init__(self, builder: mrc.core.segment.Builder, name: str, batch_size: int, ensure_sliceable_index: bool = True) -> None: ...
