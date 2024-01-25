@@ -45,22 +45,22 @@
 
 namespace morpheus {
 
-void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
-                           TensorIndex start,
-                           TensorIndex stop,
-                           cm_task_t* task,
-                           std::shared_ptr<MultiMessage>& windowed_message)
+void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<MultiMessage>& windowed_message)
 {
     DCHECK_EQ(task, nullptr) << "Task is not supported for MultiMessage";
     auto sliced_msg = full_message->get_slice(start, stop);
     windowed_message.swap(sliced_msg);
 }
 
-void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
-                           TensorIndex start,
-                           TensorIndex stop,
-                           cm_task_t* task,
-                           std::shared_ptr<ControlMessage>& windowed_message)
+void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<ControlMessage>& windowed_message)
 {
     auto window      = full_message->copy_ranges({{start, stop}}, stop - start);
     auto new_message = std::make_shared<ControlMessage>();

@@ -58,17 +58,17 @@ using namespace std::literals::string_literals;
 #pragma GCC visibility push(default)
 using cm_task_t = std::pair<std::string, nlohmann::json>;
 
-void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
-                           TensorIndex start,
-                           TensorIndex stop,
-                           cm_task_t* task,
-                           std::shared_ptr<MultiMessage>& windowed_message);
+void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<MultiMessage>& windowed_message);
 
-void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
-                           TensorIndex start,
-                           TensorIndex stop,
-                           cm_task_t* task,
-                           std::shared_ptr<ControlMessage>& windowed_message);
+void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+                         TensorIndex start,
+                         TensorIndex stop,
+                         cm_task_t* task,
+                         std::shared_ptr<ControlMessage>& windowed_message);
 
 template <typename OutputT>
 class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
@@ -161,7 +161,7 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
                 for (TensorIndex i = 0; i < x->count(); i += this->m_batch_size)
                 {
                     std::shared_ptr<OutputT> windowed_message{nullptr};
-                    make_windowed_message(
+                    make_output_message(
                         full_message, i, std::min(i + this->m_batch_size, x->count()), m_task.get(), windowed_message);
                     output.on_next(std::move(windowed_message));
                 }
