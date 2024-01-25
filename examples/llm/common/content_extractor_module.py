@@ -132,14 +132,13 @@ def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
     """
     try:
         file_path = open_file.path
-        file_name = file_path.split('/')[-1]
-        split_result = file_name.lower().rsplit('.', 1)
+        file_name = os.path.basename(file_path)
+        _, file_type = os.path.splitext(file_name)
 
-        if len(split_result) > 1:
-            _, file_type = split_result
-        else:
-            file_type = "none"
-
+if len(file_type) > 0:
+    file_type = file_type.lstrip('.')
+else:
+    file_type = 'none'
         return FileMeta(file_path=file_path, file_name=file_name, file_type=file_type)
 
     except Exception as e:
