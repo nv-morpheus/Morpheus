@@ -77,6 +77,7 @@ class Pipeline():
 
         self._is_built = False
         self._is_started = False
+        self._is_stopped = False
 
         self._mrc_executor: mrc.Executor = None
 
@@ -397,6 +398,13 @@ class Pipeline():
         Stops all running stages and the underlying MRC pipeline.
         """
 
+        # Only execute this once
+        if (self._is_stopped):
+            return
+
+        # Prevent from stopping twice
+        self._is_stopped = True
+
         logger.info("====Stopping Pipeline====")
         for stage in list(self._sources) + list(self._stages):
             stage.stop()
@@ -424,24 +432,16 @@ class Pipeline():
             logger.exception("Exception occurred in pipeline. Rethrowing")
             raise
         finally:
-            # Make sure these are always shut down even if there was an error
-            for source in list(self._sources):
-                source.stop()
+            # Stop the pipeline. Make sure sources and stages are stopped even if there was an error.
+            self.stop()
 
-            # First wait for all sources to stop. This only occurs after all messages have been processed fully
+            # Call join on all sources. This only occurs after all messages have been processed fully.
             for source in list(self._sources):
                 await source.join()
-
-            # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
-            # their own worker loop thread)
-            for stage in list(self._stages):
-                stage.stop()
 
             # Now call join on all stages
             for stage in list(self._stages):
                 await stage.join()
-
-            self._on_stop()
 
     def _on_stop(self):
         self._mrc_executor = None
