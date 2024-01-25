@@ -50,7 +50,7 @@ it in the output, excludes output for any links which produce an error.
     if (link_column not in msg.get_column_names()):
         return None
 
-    df = msg.df
+    df = msg.copy_dataframe()
 
     if isinstance(df, cudf.DataFrame):
         df: pd.DataFrame = df.to_pandas()
