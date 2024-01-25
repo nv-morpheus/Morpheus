@@ -41,6 +41,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -55,22 +56,18 @@ using namespace std::literals::string_literals;
  */
 
 #pragma GCC visibility push(default)
-struct CMTask  // todo make pair
-{
-    std::string type;
-    nlohmann::json payload;
-};
+using cm_task_t = std::pair<std::string, nlohmann::json>;
 
 void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
                            TensorIndex start,
                            TensorIndex stop,
-                           CMTask* task,
+                           cm_task_t* task,
                            std::shared_ptr<MultiMessage>& windowed_message);
 
 void make_windowed_message(std::shared_ptr<MultiMessage>& full_message,
                            TensorIndex start,
                            TensorIndex stop,
-                           CMTask* task,
+                           cm_task_t* task,
                            std::shared_ptr<ControlMessage>& windowed_message);
 
 template <typename OutputT>
@@ -89,8 +86,8 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
      */
     DeserializeStage(TensorIndex batch_size,
-                     bool ensure_sliceable_index  = true,
-                     std::unique_ptr<CMTask> task = nullptr) :
+                     bool ensure_sliceable_index     = true,
+                     std::unique_ptr<cm_task_t> task = nullptr) :
       base_t(base_t::op_factory_from_sub_fn(build_operator())),
       m_batch_size(batch_size),
       m_ensure_sliceable_index(ensure_sliceable_index),
@@ -101,7 +98,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
 
     TensorIndex m_batch_size;
     bool m_ensure_sliceable_index{true};
-    std::unique_ptr<CMTask> m_task{nullptr};
+    std::unique_ptr<cm_task_t> m_task{nullptr};
 };
 
 /****** DeserializationStageInterfaceProxy******************/
@@ -163,7 +160,7 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
                 // Loop over the MessageMeta and create sub-batches
                 for (TensorIndex i = 0; i < x->count(); i += this->m_batch_size)
                 {
-                    auto windowed_message = std::make_shared<OutputT>(nullptr);
+                    std::shared_ptr<OutputT> windowed_message{nullptr};
                     make_windowed_message(
                         full_message, i, std::min(i + this->m_batch_size, x->count()), m_task.get(), windowed_message);
                     output.on_next(std::move(windowed_message));
@@ -187,12 +184,12 @@ std::shared_ptr<mrc::segment::Object<DeserializeStage<OutputT>>> DeserializeStag
     const pybind11::object& task_type,
     const pybind11::object& task_payload)
 {
-    std::unique_ptr<CMTask> task{nullptr};
+    std::unique_ptr<cm_task_t> task{nullptr};
 
     if (!task_type.is_none() && !task_payload.is_none())
     {
-        task = std::make_unique<CMTask>(pybind11::cast<std::string>(task_type),
-                                        mrc::pymrc::cast_from_pyobject(task_payload));
+        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
+                                           mrc::pymrc::cast_from_pyobject(task_payload));
     }
 
     auto stage =
