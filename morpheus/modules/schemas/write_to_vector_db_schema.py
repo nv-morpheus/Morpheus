@@ -32,7 +32,8 @@ class WriteToVDBSchema(BaseModel):
     recreate: bool = False
     service: str = Field(default_factory=None)
     is_service_serialized: bool = False
-    resource_name: str = Field(default_factory=None)
+    default_resource_name: str = Field(default_factory=None)
+    resource_schemas: dict = Field(default_factory=dict)
     resource_kwargs: dict = Field(default_factory=dict)
     service_kwargs: dict = Field(default_factory=dict)
     batch_size: int = 1024
@@ -44,7 +45,7 @@ class WriteToVDBSchema(BaseModel):
             raise ValueError("Service must be a service name or a serialized instance of VectorDBService")
         return v
 
-    @validator('resource_name', pre=True)
+    @validator('default_resource_name', pre=True)
     def validate_resource_name(cls, v):
         if not v:
             raise ValueError("Resource name must not be None or Empty.")

@@ -68,12 +68,39 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
     return validate_service(service_name=value)
 
 
+def merge_dicts(d1, d2):
+    """
+    Recursively merge two dictionaries.
+
+    Nested dictionaries are merged instead of being replaced.
+    Non-dict items in the second dictionary will override those in the first.
+
+    Parameters
+    ----------
+    d1 : dict
+        The first dictionary.
+    d2 : dict
+        The second dictionary, whose items will take precedence.
+
+    Returns
+    -------
+    dict
+        The merged dictionary.
+    """
+    for key, value in d2.items():
+        if key in d1 and isinstance(d1[key], dict) and isinstance(value, dict):
+            merge_dicts(d1[key], value)
+        else:
+            d1[key] = value
+    return d1
+
+
 def merge_configs(file_config, cli_config):
     """
     Merge two configuration dictionaries, prioritizing the CLI configuration.
 
     This function merges configurations provided from a file and the CLI, with the CLI configuration taking precedence
-    in case of overlapping keys.
+    in case of overlapping keys. Nested dictionaries are merged recursively.
 
     Parameters
     ----------
@@ -87,10 +114,7 @@ def merge_configs(file_config, cli_config):
     dict
         A merged dictionary with CLI configurations overriding file configurations where they overlap.
     """
-
-    merged_config = file_config.copy()
-    merged_config.update({k: v for k, v in cli_config.items() if v is not None})
-    return merged_config
+    return merge_dicts(file_config.copy(), {k: v for k, v in cli_config.items() if v is not None})
 
 
 def _build_default_rss_source(enable_cache,
@@ -289,10 +313,13 @@ def build_cli_configs(source_type,
     cli_vdb_conf = {
         # Vector db upload has some significant transaction overhead, batch size here should be as large as possible
         'batch_size': 5120,
+        'resource_name': vector_db_resource_name,
         'embedding_size': embedding_size,
         'recreate': True,
-        'resource_kwargs': build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
-        'resource_name': vector_db_resource_name,
+        'resource_schemas': {
+            vector_db_resource_name:
+                build_defualt_milvus_config(embedding_size) if (vector_db_service == 'milvus') else None,
+        },
         'service': vector_db_service,
         'uri': vector_db_uri,
     }

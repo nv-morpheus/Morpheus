@@ -99,8 +99,6 @@ def _file_source_pipe(builder: mrc.Builder):
         "num_threads": validated_config.num_threads,
         "converters_meta": validated_config.converters_meta
     }
-    import json
-    logger.info(f"File content extractor config: {json.dumps(file_content_extractor_config, indent=2)}")
     extractor_loader = ContentExtractorLoaderFactory.get_instance("file_content_extractor",
                                                                   file_content_extractor_config)
 

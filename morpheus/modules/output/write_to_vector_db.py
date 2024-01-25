@@ -28,6 +28,7 @@ from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.modules.schemas.write_to_vector_db_schema import WriteToVDBSchema
+from morpheus.service.vdb.milvus_client import DATA_TYPE_MAP
 from morpheus.service.vdb.utils import VectorDBServiceFactory
 from morpheus.service.vdb.vector_db_service import VectorDBService
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -38,6 +39,36 @@ from morpheus.utils.module_utils import register_module
 logger = logging.getLogger(__name__)
 
 WriteToVectorDBLoaderFactory = ModuleLoaderFactory(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
+
+import json
+
+
+def preprocess_vdb_resources(service, recreate: bool, resource_schemas: dict):
+    for resource_name, resource_schema_config in resource_schemas.items():
+        has_object = service.has_store_object(name=resource_name)
+
+        if (recreate and has_object):
+            # Delete the existing resource
+            service.drop(name=resource_name)
+            has_object = False
+
+        # Ensure that the resource exists
+        if (not has_object):
+            # TODO(Devin)
+            import pymilvus
+            schema_fields = []
+            for field_data in resource_schema_config["schema_conf"]["schema_fields"]:
+                if "dtype" in field_data:
+                    field_data["dtype"] = DATA_TYPE_MAP.get(field_data["dtype"])
+                    field_schema = pymilvus.FieldSchema(**field_data)
+                    schema_fields.append(field_schema.to_dict())
+                else:
+                    schema_fields.append(field_data)
+
+            resource_schema_config["schema_conf"]["schema_fields"] = schema_fields
+            # function that we need to call first to turn resource_kwargs into a milvus config spec.
+
+            service.create(name=resource_name, **resource_schema_config)
 
 
 @dataclass
@@ -64,8 +95,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     - 'recreate': bool, whether to recreate the resource if it already exists (default is False).
     - 'service': str, the name of the service or a serialized instance of VectorDBService.
     - 'is_service_serialized': bool, whether the provided service is serialized (default is False).
-    - 'resource_name': str, the name of the collection resource (must not be None or empty).
+    - 'default_resource_name': str, the name of the collection resource (must not be None or empty).
     - 'resource_kwargs': dict, additional keyword arguments for resource creation.
+    - 'resource_schemas': dict, additional keyword arguments for resource creation.
     - 'service_kwargs': dict, additional keyword arguments for VectorDBService creation.
     - 'batch_size': int, accumulates messages until reaching the specified batch size for writing to VDB.
     - 'write_time_interval': float, specifies the time interval (in seconds) for writing messages, or writing messages
@@ -93,8 +125,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     recreate = write_to_vdb_config.recreate
     service = write_to_vdb_config.service
     is_service_serialized = write_to_vdb_config.is_service_serialized
-    resource_name = write_to_vdb_config.resource_name
+    default_resource_name = write_to_vdb_config.default_resource_name
     resource_kwargs = write_to_vdb_config.resource_kwargs
+    resource_schemas = write_to_vdb_config.resource_schemas
     service_kwargs = write_to_vdb_config.service_kwargs
     batch_size = write_to_vdb_config.batch_size
     write_time_interval = write_to_vdb_config.write_time_interval
@@ -103,18 +136,9 @@ def _write_to_vector_db(builder: mrc.Builder):
     service: VectorDBService = (pickle.loads(bytes(service, "latin1")) if is_service_serialized else
                                 VectorDBServiceFactory.create_instance(service_name=service, **service_kwargs))
 
-    has_object = service.has_store_object(name=resource_name)
+    preprocess_vdb_resources(service, recreate, resource_schemas)
 
-    if (recreate and has_object):
-        # Delete the existing resource
-        service.drop(name=resource_name)
-        has_object = False
-
-    # Ensure that the resource exists
-    if (not has_object):
-        service.create(name=resource_name, **resource_kwargs)
-
-    accumulator_dict = {resource_name: AccumulationStats(msg_count=0, last_insert_time=-1, data=[])}
+    accumulator_dict = {default_resource_name: AccumulationStats(msg_count=0, last_insert_time=-1, data=[])}
 
     def on_completed():
         final_df_references = []
@@ -154,7 +178,7 @@ def _write_to_vector_db(builder: mrc.Builder):
 
     def on_data(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
         try:
-            df, resrc_name = extract_df(msg)
+            df, msg_resource_target = extract_df(msg)
 
             if df is not None and not df.empty:
                 if (not isinstance(df, cudf.DataFrame)):
@@ -164,18 +188,20 @@ def _write_to_vector_db(builder: mrc.Builder):
                 current_time = time.time()
 
                 # Use default resource name
-                if not resrc_name:
-                    resrc_name = resource_name
-                    if not service.has_store_object(resrc_name):
-                        logger.error("Resource not exists in the vector database: %s", resource_name)
+                if not msg_resource_target:
+                    msg_resource_target = default_resource_name
+                    if not service.has_store_object(msg_resource_target):
+                        logger.error("Resource not exists in the vector database: %s", msg_resource_target)
                         return final_df_references
 
-                if resrc_name in accumulator_dict:
-                    accumulator: AccumulationStats = accumulator_dict[resrc_name]
+                if msg_resource_target in accumulator_dict:
+                    accumulator: AccumulationStats = accumulator_dict[msg_resource_target]
                     accumulator.msg_count += df_size
                     accumulator.data.append(df)
                 else:
-                    accumulator_dict[resrc_name] = AccumulationStats(msg_count=df_size, last_insert_time=-1, data=[df])
+                    accumulator_dict[msg_resource_target] = AccumulationStats(msg_count=df_size,
+                                                                              last_insert_time=-1,
+                                                                              data=[df])
 
                 for key, accum_stats in accumulator_dict.items():
                     if accum_stats.msg_count >= batch_size or (accum_stats.last_insert_time != -1 and
@@ -195,7 +221,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                 return final_df_references
 
         except Exception as exc:
-            logger.error("Unable to insert into collection: %s due to %s", resrc_name, exc)
+            logger.error("Unable to insert into collection: %s due to %s", msg_resource_target, exc)
 
     node = builder.make_node(WRITE_TO_VECTOR_DB, ops.map(on_data), ops.on_completed(on_completed))
 

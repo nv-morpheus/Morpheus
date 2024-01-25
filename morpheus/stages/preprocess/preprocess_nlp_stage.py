@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from functools import partial
 import cupy as cp
 import mrc
 import numpy as np
-from pyinstrument import Profiler
 
 import cudf
 
@@ -244,28 +243,6 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                     input_ids=tokenized.input_ids,
                                     input_mask=tokenized.input_mask,
                                     seq_ids=seg_ids)
-
-        profiler = Profiler()
-        profiler.start()
-        test_cm = ControlMessage()
-        test_cm.set_metadata(
-            "inference_memory_params",
-            {
-                "inference_type": "nlp",
-                "count": tokenized.input_ids.shape[0],
-                "segment_ids": cupyarray_to_base64(tokenized.segment_ids),
-                "input_ids": cupyarray_to_base64(tokenized.input_ids),
-                "input_mask": cupyarray_to_base64(tokenized.input_mask),
-            })
-
-        memory_params = test_cm.get_metadata("inference_memory_params")
-        a = memory_params["count"]
-        b = base64_to_cupyarray(memory_params["segment_ids"])
-        c = base64_to_cupyarray(memory_params["input_ids"])
-        d = base64_to_cupyarray(memory_params["input_mask"])
-        profiler.stop()
-        with open("cupy_profile.html", "w") as f:
-            f.write(profiler.output_html())
 
         infer_message = MultiInferenceNLPMessage.from_message(message, memory=memory)
 

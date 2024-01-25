@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
                  resource_kwargs: dict = None,
                  batch_size: int = 1024,
                  write_time_interval: float = 3.0,
+                 resource_schemas: dict = None,
                  **service_kwargs):
 
         super().__init__(config)
@@ -84,14 +85,15 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
             is_service_serialized = True
 
         module_config = {
-            "service": service,
+            "batch_size": batch_size,
+            "default_resource_name": resource_name,
+            "embedding_column_name": embedding_column_name,
             "is_service_serialized": is_service_serialized,
             "recreate": recreate,
-            "resource_name": resource_name,
-            "embedding_column_name": embedding_column_name,
             "resource_kwargs": resource_kwargs,
+            "resource_schemas": resource_schemas,
             "service_kwargs": service_kwargs,
-            "batch_size": batch_size,
+            "service": service,
             "write_time_interval": write_time_interval
         }
 
@@ -100,7 +102,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Module will be loading with name: {module_name}")
 
-        self._module_definition: ModuleLoader = WriteToVectorDBLoaderFactory.get_instance(module_name, module_config)
+        self._module_loader: ModuleLoader = WriteToVectorDBLoaderFactory.get_instance(module_name, module_config)
 
     @property
     def name(self) -> str:
@@ -124,7 +126,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
 
-        module = self._module_definition.load(builder)
+        module = self._module_loader.load(builder)
 
         # Input and Output port names should be same as input and output port names of write_to_vector_db module.
         mod_in_node = module.input_port("input")
