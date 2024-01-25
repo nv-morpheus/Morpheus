@@ -58,7 +58,7 @@ class CsvTextConverter(BaseConverter):
 
     def convert(self,
                 file_path: Path | list[Path] | str | list[str] | list[Path | str],
-                meta: typing.Optional[dict[str, typing.Any]],
+                meta: typing.Optional[dict[str, typing.Any]] = None,
                 remove_numeric_tables: typing.Optional[bool] = None,
                 valid_languages: typing.Optional[list[str]] = None,
                 encoding: typing.Optional[str] = "UTF-8",
