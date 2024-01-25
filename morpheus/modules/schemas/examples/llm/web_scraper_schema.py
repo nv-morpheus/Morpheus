@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 class WebScraperSchema(BaseModel):
     link_column: str = "link"
-    chunk_size: int = 100
+    chunk_size: int = 512
+    chunk_overlap: int = 51
     enable_cache: bool = False
     cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
     cache_dir: str = "./.cache/llm/rss"
