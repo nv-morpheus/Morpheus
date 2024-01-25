@@ -139,7 +139,7 @@ def _process_dataframe_to_control_message(message: MessageMeta,
     output = []
 
     if (message.count > batch_size):
-        df = message.df
+        df = message.copy_dataframe()
 
         # Break the message meta into smaller chunks
         for i in range(0, message.count, batch_size):
