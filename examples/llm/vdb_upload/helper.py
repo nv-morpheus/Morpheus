@@ -130,7 +130,7 @@ def setup_custom_source(pipe: Pipeline, config: Config, source_name: str, custom
     """
 
     module_id = custom_config.pop('module_id')
-    module_name = module_id + f"__{source_name}"
+    module_name = f"{module_id}__{source_name}"
     module_namespace = custom_config.pop('namespace')
     module_output_id = custom_config.pop('module_output_id', 'output')
 
