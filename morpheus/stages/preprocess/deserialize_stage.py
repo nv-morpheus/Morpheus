@@ -179,11 +179,6 @@ class DeserializeStage(MultiMessageStage):
 
         """
 
-        # Because ControlMessages only have a C++ implementation, we need to import the C++ MessageMeta and use that
-        # 100% of the time
-        # pylint: disable=morpheus-incorrect-lib-from-import
-        from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-
         x = DeserializeStage.check_slicable_index(x, ensure_sliceable_index)
 
         # Now break it up by batches
@@ -197,7 +192,7 @@ class DeserializeStage(MultiMessageStage):
 
                 message = ControlMessage()
 
-                message.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
+                message.payload(MessageMeta(df=df.iloc[i:i + batch_size]))
 
                 if (task_tuple is not None):
                     message.add_task(task_type=task_tuple[0], task=task_tuple[1])
@@ -206,7 +201,7 @@ class DeserializeStage(MultiMessageStage):
         else:
             message = ControlMessage()
 
-            message.payload(MessageMetaCpp(x.df))
+            message.payload(MessageMeta(x.df))
 
             if (task_tuple is not None):
                 message.add_task(task_type=task_tuple[0], task=task_tuple[1])
