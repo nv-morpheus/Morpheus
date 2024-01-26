@@ -49,7 +49,7 @@ def pipeline(num_threads: int,
              vector_db_resource_name: str,
              triton_server_url: str):
 
-    # WebScraperStage is not supported in C++
+    # WebScraperStage requires C++ mode to be disabled
     CppConfig.set_should_use_cpp(False)
     config = Config()
     config.mode = PipelineModes.NLP
