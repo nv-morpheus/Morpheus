@@ -172,6 +172,15 @@ struct MessageMetaInterfaceProxy
     static std::shared_ptr<MessageMeta> init_python(pybind11::object&& data_frame);
 
     /**
+     * @brief Initialize MessageMeta cpp object with a given a MessageMeta python objectand returns shared pointer as
+     * the result
+     *
+     * @param meta : Python MesageMeta object
+     * @return std::shared_ptr<MessageMeta>
+     */
+    static std::shared_ptr<MessageMeta> init_python_meta(const pybind11::object& meta);
+
+    /**
      * @brief Get messages count
      *
      * @param self

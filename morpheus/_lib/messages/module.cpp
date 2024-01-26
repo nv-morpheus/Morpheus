@@ -386,6 +386,10 @@ PYBIND11_MODULE(messages, _module)
         .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def(
+            "payload",
+            pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::payload_from_python_meta),
+            py::arg("meta"))
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))

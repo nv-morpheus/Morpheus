@@ -24,6 +24,7 @@ import cudf
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+from morpheus.utils.type_aliases import DataFrameType
 
 logger = logging.getLogger(__name__)
 
@@ -78,23 +79,26 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         Input rows in dataframe.
 
     """
-    _df: pd.DataFrame = dataclasses.field(init=False)
+    _df: DataFrameType = dataclasses.field(init=False)
     _mutex: threading.RLock = dataclasses.field(init=False, repr=False)
 
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, df: DataFrameType) -> None:
         super().__init__()
+        if isinstance(df, MessageMeta):
+            df = df.copy_dataframe()
+
         self._mutex = threading.RLock()
         self._df = df
 
     @property
-    def df(self) -> pd.DataFrame:
+    def df(self) -> DataFrameType:
         msg = ("Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe "
                "context manager to modify the DataFrame in-place instead.")
 
         warnings.warn(msg, DeprecationWarning)
         return self.copy_dataframe()
 
-    def copy_dataframe(self) -> pd.DataFrame:
+    def copy_dataframe(self) -> DataFrameType:
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):

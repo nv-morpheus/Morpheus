@@ -308,6 +308,8 @@ struct ControlMessageProxy
     static pybind11::object get_metadata(ControlMessage& self, std::optional<std::string> const& key);
 
     static pybind11::dict list_metadata(ControlMessage& self);
+
+    static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 };
 
 #pragma GCC visibility pop

@@ -148,8 +148,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
             auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
             if (py::isinstance(data_frame, msg_meta_cls))
             {
-                DVLOG(10) << "Converting Python impl of MessageMeta to C++ impl";
-                return init_python(data_frame.attr("df"));
+                return init_python_meta(data_frame);
             }
             else
             {
@@ -159,6 +158,21 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
     }
 
     return MessageMeta::create_from_python(std::move(data_frame));
+}
+
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python_meta(const py::object& meta)
+{
+    // check to see if its a Python MessageMeta object
+    auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
+    if (py::isinstance(meta, msg_meta_cls))
+    {
+        DVLOG(10) << "Converting Python impl of MessageMeta to C++ impl";
+        return init_python(meta.attr("copy_dataframe")());
+    }
+    else
+    {
+        throw pybind11::value_error("meta is not a Python instance of MestageMeta");
+    }
 }
 
 TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
