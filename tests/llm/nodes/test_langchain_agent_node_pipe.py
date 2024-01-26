@@ -15,8 +15,6 @@
 
 from unittest import mock
 
-import pytest
-
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
