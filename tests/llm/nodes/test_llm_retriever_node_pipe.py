@@ -52,7 +52,6 @@ def _build_engine(vdb_service, **similarity_search_kwargs) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config):
     expected_output = [[1, 2, 3], [4, 5, 6]]
 
@@ -83,7 +82,6 @@ def test_pipeline(config: Config):
     assert actual_df.to_pandas().equals(expected_df.to_pandas())
 
 
-@pytest.mark.use_python
 @pytest.mark.milvus
 def test_pipeline_with_milvus(config: Config,
                               milvus_service: MilvusVectorDBService,

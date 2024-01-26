@@ -127,7 +127,6 @@ def _run_pipeline(config: Config,
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.milvus
-@pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
@@ -164,7 +163,6 @@ def test_rag_standalone_pipe_nemo(
 
 @pytest.mark.usefixtures("openai")
 @pytest.mark.milvus
-@pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
@@ -204,7 +202,6 @@ def test_rag_standalone_pipe_openai(config: Config,
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
 @pytest.mark.milvus
-@pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))
@@ -237,7 +234,6 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
 @pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
 @pytest.mark.milvus
-@pytest.mark.use_python
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("repeat_count", [5])
 @pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/utils.py'))

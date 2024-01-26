@@ -37,7 +37,6 @@ def _build_engine() -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_extractor_simple_task_handler_pipeline(config: Config, dataset_cudf: DatasetManager):
     input_df = dataset_cudf["filter_probs.csv"]
     expected_df = input_df.copy(deep=True)

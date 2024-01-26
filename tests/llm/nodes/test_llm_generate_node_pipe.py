@@ -42,7 +42,6 @@ def _build_engine(mock_llm_client: mock.MagicMock) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config, mock_llm_client: mock.MagicMock):
     expected_output = ["response1", "response2"]
     mock_llm_client.generate_batch_async.return_value = expected_output.copy()

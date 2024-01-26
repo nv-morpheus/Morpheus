@@ -49,7 +49,6 @@ def _build_engine(template: str, template_format: str) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 @pytest.mark.parametrize("template,template_format,values,expected_output",
                          [("Hello {name}!",
                            "f-string", {
