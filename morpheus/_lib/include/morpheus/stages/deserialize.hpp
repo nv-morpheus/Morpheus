@@ -52,13 +52,13 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 using cm_task_t = std::pair<std::string, nlohmann::json>;
 
-void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<MultiMessage>& windowed_message);
 
-void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
@@ -141,12 +141,12 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                if (!x->has_sliceable_index())
+            [this, &output](sink_type_t incoming_message) {
+                if (!incoming_message->has_sliceable_index())
                 {
                     if (m_ensure_sliceable_index)
                     {
-                        auto old_index_name = x->ensure_sliceable_index();
+                        auto old_index_name = incoming_message->ensure_sliceable_index();
 
                         if (old_index_name.has_value())
                         {
@@ -165,16 +165,15 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
                             PyExc_RuntimeWarning);
                     }
                 }
-
-                // Make one large MultiMessage
-                auto full_message = std::make_shared<MultiMessage>(x, 0, x->count());
-
                 // Loop over the MessageMeta and create sub-batches
-                for (TensorIndex i = 0; i < x->count(); i += this->m_batch_size)
+                for (TensorIndex i = 0; i < incoming_message->count(); i += this->m_batch_size)
                 {
                     std::shared_ptr<OutputT> windowed_message{nullptr};
-                    make_output_message(
-                        full_message, i, std::min(i + this->m_batch_size, x->count()), m_task.get(), windowed_message);
+                    make_output_message(incoming_message,
+                                        i,
+                                        std::min(i + this->m_batch_size, incoming_message->count()),
+                                        m_task.get(),
+                                        windowed_message);
                     output.on_next(std::move(windowed_message));
                 }
             },

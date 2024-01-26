@@ -26,32 +26,32 @@
 
 namespace morpheus {
 
-void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<MultiMessage>& windowed_message)
 {
     DCHECK_EQ(task, nullptr) << "Task is not supported for MultiMessage";
-    auto sliced_msg = full_message->get_slice(start, stop);
+    auto sliced_msg = std::make_shared<MultiMessage>(incoming_message, start, stop - start);
     windowed_message.swap(sliced_msg);
 }
 
-void make_output_message(std::shared_ptr<MultiMessage>& full_message,
+void make_output_message(std::shared_ptr<MessageMeta>& incoming_message,
                          TensorIndex start,
                          TensorIndex stop,
                          cm_task_t* task,
                          std::shared_ptr<ControlMessage>& windowed_message)
 {
-    auto window      = full_message->copy_ranges({{start, stop}}, stop - start);
-    auto new_message = std::make_shared<ControlMessage>();
-    new_message->payload(window->meta);
+    auto slidced_meta = std::make_shared<SlicedMessageMeta>(incoming_message, start, stop);
+    auto message      = std::make_shared<ControlMessage>();
+    message->payload(slidced_meta);
     if (task)
     {
-        new_message->add_task(task->first, task->second);
+        message->add_task(task->first, task->second);
     }
 
-    windowed_message.swap(new_message);
+    windowed_message.swap(message);
 }
 
 std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>> DeserializeStageInterfaceProxy::init_multi(
