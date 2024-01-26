@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <nlohmann/json.hpp>
@@ -29,7 +28,6 @@
 #include <string>
 
 namespace morpheus {
-class MessageMeta;
 
 #pragma GCC visibility push(default)
 enum class ControlMessageType
