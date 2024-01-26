@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ import logging
 import time
 
 from morpheus.config import Config
+from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -48,6 +49,8 @@ def pipeline(num_threads: int,
              vector_db_resource_name: str,
              triton_server_url: str):
 
+    # WebScraperStage is not supported in C++
+    CppConfig.set_should_use_cpp(False)
     config = Config()
     config.mode = PipelineModes.NLP
 
