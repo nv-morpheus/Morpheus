@@ -144,7 +144,17 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
         }
         else
         {
-            throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+            // check to see if its a Python MessageMeta object
+            auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
+            if (py::isinstance(data_frame, msg_meta_cls))
+            {
+                DVLOG(10) << "Converting Python impl of MessageMeta to C++ impl";
+                return init_python(data_frame.attr("df"));
+            }
+            else
+            {
+                throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+            }
         }
     }
 
