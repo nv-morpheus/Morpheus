@@ -69,7 +69,13 @@ cdef public api:
                 name = c_name.decode()
                 column_names.append(name if name != "" else None)
 
-        data, index = data_from_table_view(table_info.table_view, owner=owner, column_names=column_names, index_names=index_names)
+        x = table_info.table_view
+
+        try:
+            data, index = data_from_table_view(x, owner=owner, column_names=column_names, index_names=index_names)
+        except Exception:
+            import traceback
+            print(traceback.format_exc())
 
         return cudf.DataFrame._from_data(data, index)
 
