@@ -42,8 +42,6 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** DeserializationStage********************************/
-using namespace std::literals::string_literals;
 
 /**
  * @addtogroup stages
@@ -66,6 +64,7 @@ void make_output_message(std::shared_ptr<MultiMessage>& full_message,
                          cm_task_t* task,
                          std::shared_ptr<ControlMessage>& windowed_message);
 
+/****** DeserializationStage********************************/
 template <typename OutputT>
 class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<OutputT>>
 {
@@ -80,6 +79,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      *
      * @param batch_size Number of messages to be divided into each batch
      * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     * @param task Optional task to be added to all outgoing `ControlMessage`s, ignored when `OutputT` is `MultiMessage`
      */
     DeserializeStage(TensorIndex batch_size,
                      bool ensure_sliceable_index     = true,
@@ -109,11 +109,24 @@ struct DeserializeStageInterfaceProxy
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param batch_size : Number of messages to be divided into each batch
-     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
+     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>>
      */
     static std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>> init_multi(
         mrc::segment::Builder& builder, const std::string& name, TensorIndex batch_size, bool ensure_sliceable_index);
 
+    /**
+     * @brief Create and initialize a DeserializationStage that emits ControlMessage's, and return the result.
+     * If `task_type` is not None, `task_payload` must also be not None, and vice versa.
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param batch_size : Number of messages to be divided into each batch
+     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
+     * @param task_type : Optional task type to be added to all outgoing messages
+     * @param task_payload : Optional json object describing the task to be added to all outgoing messages
+     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>>
+     */
     static std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>> init_cm(
         mrc::segment::Builder& builder,
         const std::string& name,

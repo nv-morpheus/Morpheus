@@ -48,7 +48,17 @@ class DeserializeStage(MultiMessageStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-
+    ensure_sliceable_index : bool, default = True
+        Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`, which will replace the index
+        of the underlying dataframe if the existing one is not unique and monotonic.
+    message_type : typing.Literal[MultiMessage, ControlMessage], default = MultiMessage
+        Sets the type of message to be emitted from this stage.
+    task_type : str, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_payload` must also be specified.
+    task_payload : dict, default = None
+        If specified, adds the specified task to the `ControlMessage`. This parameter is only valid when `message_type`
+        is set to `ControlMessage`. If not `None`, `task_type` must also be specified.
     """
 
     def __init__(self,
