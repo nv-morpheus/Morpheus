@@ -22,27 +22,25 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/types.hpp"                  // for TensorIndex
 #include "morpheus/utilities/python_util.hpp"  // for show_warning_message
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
-#include <boost/fiber/context.hpp>
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
+#include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
-#include <mrc/types.hpp>
 #include <nlohmann/json.hpp>
+#include <pybind11/pybind11.h>  // for cast & object
+#include <pyerrors.h>           // for PyExc_RuntimeWarning
 #include <pymrc/node.hpp>
+#include <pymrc/utils.hpp>  // for cast_from_pyobject
 #include <rxcpp/rx.hpp>
-// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
+// IWYU pragma: no_include <pybind11/pytypes.h>
 
-#include <map>
+#include <algorithm>  // IWYU pragma: keep for std::min
+#include <exception>  // for exception_ptr
 #include <memory>
+#include <sstream>  // IWYU pragma: keep for glog
 #include <string>
-#include <thread>
 #include <utility>  // for pair
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -105,7 +103,6 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-template <typename OutputT>
 struct DeserializeStageInterfaceProxy
 {
     /**
@@ -116,12 +113,16 @@ struct DeserializeStageInterfaceProxy
      * @param batch_size : Number of messages to be divided into each batch
      * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<DeserializeStage<OutputT>>> init(mrc::segment::Builder& builder,
-                                                                                 const std::string& name,
-                                                                                 TensorIndex batch_size,
-                                                                                 bool ensure_sliceable_index,
-                                                                                 const pybind11::object& task_type,
-                                                                                 const pybind11::object& task_payload);
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>> init_multi(
+        mrc::segment::Builder& builder, const std::string& name, TensorIndex batch_size, bool ensure_sliceable_index);
+
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>> init_cm(
+        mrc::segment::Builder& builder,
+        const std::string& name,
+        TensorIndex batch_size,
+        bool ensure_sliceable_index,
+        const pybind11::object& task_type,
+        const pybind11::object& task_payload);
 };
 
 template <typename OutputT>
@@ -175,28 +176,6 @@ typename DeserializeStage<OutputT>::subscribe_fn_t DeserializeStage<OutputT>::bu
     };
 }
 
-template <typename OutputT>
-std::shared_ptr<mrc::segment::Object<DeserializeStage<OutputT>>> DeserializeStageInterfaceProxy<OutputT>::init(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    TensorIndex batch_size,
-    bool ensure_sliceable_index,
-    const pybind11::object& task_type,
-    const pybind11::object& task_payload)
-{
-    std::unique_ptr<cm_task_t> task{nullptr};
-
-    if (!task_type.is_none() && !task_payload.is_none())
-    {
-        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
-                                           mrc::pymrc::cast_from_pyobject(task_payload));
-    }
-
-    auto stage =
-        builder.construct_object<DeserializeStage<OutputT>>(name, batch_size, ensure_sliceable_index, std::move(task));
-
-    return stage;
-}
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/control.hpp"  // for ControlMessage
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/file_types.hpp"  // for FileTypes
@@ -45,6 +46,7 @@
 
 #include <memory>
 #include <sstream>
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 namespace py = pybind11;
@@ -88,13 +90,7 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>>>(
         _module, "DeserializeMultiMessageStage", py::multiple_inheritance())
-        .def(py::init<>([](mrc::segment::Builder& builder,
-                           const std::string& name,
-                           TensorIndex batch_size,
-                           bool ensure_sliceable_index) {
-                 return DeserializeStageInterfaceProxy<MultiMessage>::init(
-                     builder, name, batch_size, ensure_sliceable_index, py::none(), py::none());
-             }),
+        .def(py::init<>(&DeserializeStageInterfaceProxy::init_multi),
              py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"),
@@ -104,7 +100,7 @@ PYBIND11_MODULE(stages, _module)
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>>>(
         _module, "DeserializeControlMessageStage", py::multiple_inheritance())
-        .def(py::init<>(&DeserializeStageInterfaceProxy<ControlMessage>::init),
+        .def(py::init<>(&DeserializeStageInterfaceProxy::init_cm),
              py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"),

@@ -17,31 +17,8 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
-#include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
-
 #include "morpheus/messages/control.hpp"
 #include "morpheus/types.hpp"
-#include "morpheus/utilities/string_util.hpp"
-
-#include <glog/logging.h>
-#include <mrc/segment/builder.hpp>
-#include <pyerrors.h>
-#include <pymrc/node.hpp>
-#include <pymrc/utils.hpp>  // for cast_from_pyobject
-#include <rxcpp/rx.hpp>
-
-#include <algorithm>  // for min
-#include <exception>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <sstream>
-#include <utility>
 
 namespace morpheus {
 
@@ -71,6 +48,34 @@ void make_output_message(std::shared_ptr<MultiMessage>& full_message,
     }
 
     windowed_message.swap(new_message);
+}
+
+std::shared_ptr<mrc::segment::Object<DeserializeStage<MultiMessage>>> DeserializeStageInterfaceProxy::init_multi(
+    mrc::segment::Builder& builder, const std::string& name, TensorIndex batch_size, bool ensure_sliceable_index)
+{
+    return builder.construct_object<DeserializeStage<MultiMessage>>(name, batch_size, ensure_sliceable_index, nullptr);
+}
+
+std::shared_ptr<mrc::segment::Object<DeserializeStage<ControlMessage>>> DeserializeStageInterfaceProxy::init_cm(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    TensorIndex batch_size,
+    bool ensure_sliceable_index,
+    const pybind11::object& task_type,
+    const pybind11::object& task_payload)
+{
+    std::unique_ptr<cm_task_t> task{nullptr};
+
+    if (!task_type.is_none() && !task_payload.is_none())
+    {
+        task = std::make_unique<cm_task_t>(pybind11::cast<std::string>(task_type),
+                                           mrc::pymrc::cast_from_pyobject(task_payload));
+    }
+
+    auto stage = builder.construct_object<DeserializeStage<ControlMessage>>(
+        name, batch_size, ensure_sliceable_index, std::move(task));
+
+    return stage;
 }
 
 }  // namespace morpheus
