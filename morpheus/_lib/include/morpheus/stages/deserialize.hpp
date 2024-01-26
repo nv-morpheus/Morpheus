@@ -28,12 +28,10 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>
 #include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>  // for cast & object
-#include <pyerrors.h>           // for PyExc_RuntimeWarning
+#include <pybind11/pytypes.h>  // for object
+#include <pyerrors.h>          // for PyExc_RuntimeWarning
 #include <pymrc/node.hpp>
-#include <pymrc/utils.hpp>  // for cast_from_pyobject
 #include <rxcpp/rx.hpp>
-// IWYU pragma: no_include <pybind11/pytypes.h>
 
 #include <algorithm>  // IWYU pragma: keep for std::min
 #include <exception>  // for exception_ptr
@@ -106,7 +104,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
 struct DeserializeStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a DeserializationStage, and return the result
+     * @brief Create and initialize a DeserializationStage that emits MultiMessage's, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference

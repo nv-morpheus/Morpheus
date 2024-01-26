@@ -46,7 +46,6 @@
 
 #include <memory>
 #include <sstream>
-// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
 
 namespace morpheus {
 namespace py = pybind11;

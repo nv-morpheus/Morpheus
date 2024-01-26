@@ -20,6 +20,10 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/types.hpp"
 
+#include <pybind11/pybind11.h>
+#include <pymrc/utils.hpp>  // for cast_from_pyobject
+// IWYU pragma: no_include "rxcpp/sources/rx-iterate.hpp"
+
 namespace morpheus {
 
 void make_output_message(std::shared_ptr<MultiMessage>& full_message,
