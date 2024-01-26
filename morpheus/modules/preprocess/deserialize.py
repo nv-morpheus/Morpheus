@@ -49,6 +49,8 @@ def _check_slicable_index(message: MessageMeta, ensure_sliceable_index: bool = T
     MessageMeta
         The original or modified message with a sliceable index.
     """
+    if (not message):
+        return None
 
     if (not message.has_sliceable_index()):
         if (ensure_sliceable_index):

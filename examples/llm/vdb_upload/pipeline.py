@@ -56,7 +56,6 @@ def pipeline(pipeline_config: Config,
 
     isolate_embeddings = embeddings_config.get('isolate_embeddings', False)
 
-    pipeline_config.debug = True
     pipe = Pipeline(pipeline_config)
 
     vdb_sources = process_vdb_sources(pipe, pipeline_config, source_config)

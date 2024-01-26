@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import typing
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ from haystack.nodes.file_converter import BaseConverter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import ValidationError
 
+from morpheus.common import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.modules.schemas.examples.llm.content_extractor_schema import ContentExtractorSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
@@ -57,7 +59,7 @@ class CsvTextConverter(BaseConverter):
     outgoing_edges = 1
 
     def convert(self,
-                file_path: Path | list[Path] | str | list[str] | list[Path | str],
+                file_path: Path | str | list[Path | str],
                 meta: typing.Optional[dict[str, typing.Any]] = None,
                 remove_numeric_tables: typing.Optional[bool] = None,
                 valid_languages: typing.Optional[list[str]] = None,
@@ -90,18 +92,19 @@ class CsvTextConverter(BaseConverter):
             file_path = [file_path]
 
         docs: list[Document] = []
-        text_column_names = ["content"]
+        text_column_names = set("content")
 
         if meta is not None:
             text_column_names = set(meta.get("csv", {}).get("text_column_names", text_column_names))
 
         for path in file_path:
+            logger.error("Processing file: %s", path)
             df = pd.read_csv(path, encoding=encoding)
             if len(df.columns) == 0 or (not text_column_names.issubset(set(df.columns))):
                 raise ValueError("The CSV file must either include a 'content' column or have a "
                                  "columns specified in the meta configuration with key 'text_column_names'.")
 
-            df.fillna(value="", inplace=True)
+            df.fillna(value='', inplace=True)
             df["content"] = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1)
 
             docs_dicts = df.to_dict(orient="records")
@@ -135,10 +138,11 @@ def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
         file_name = os.path.basename(file_path)
         _, file_type = os.path.splitext(file_name)
 
-if len(file_type) > 0:
-    file_type = file_type.lstrip('.')
-else:
-    file_type = 'none'
+        if len(file_type) > 0:
+            file_type = file_type.lstrip('.')
+        else:
+            file_type = 'none'
+
         return FileMeta(file_path=file_path, file_name=file_name, file_type=file_type)
 
     except Exception as e:
@@ -186,7 +190,7 @@ def process_content(docs: list[Document], file_meta: FileMeta, chunk_size: int, 
                 })
 
         except Exception as e:
-            logger.error(f"Error processing file {file_meta.file_path} content: {e}")
+            logger.error(f"Error processing file %s content: %s", file_meta.file_path, e)
             continue
 
     return processed_data
@@ -258,12 +262,24 @@ def file_content_extractor(builder: mrc.Builder):
 
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
         data = []
+        _fs = fsspec.filesystem(protocol='file')
+
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for i in range(0, len(open_files), batch_size):
                 batch = open_files[i:i + batch_size]
                 futures = []
                 files_meta = []
+
                 for open_file in batch:
+                    # Check if file exists
+                    if (not _fs.exists(open_file.path)):
+                        logger.warning(f"File does not exist: {open_file.path}. Skipping...")
+                        continue
+
+                    if (_fs.isdir(open_file.path)):
+                        logger.warning(f"File is a directory: {open_file.path}. Skipping...")
+                        continue
+
                     try:
                         file_meta: FileMeta = get_file_meta(open_file=open_file)
                         converter = converters.get(file_meta.file_type, TextConverter())
@@ -276,7 +292,9 @@ def file_content_extractor(builder: mrc.Builder):
                 for file_meta, future in zip(files_meta, futures):
                     docs = future.result()
                     if docs:
-                        file_type_chunk_params = chunk_params[file_meta.file_type]
+                        # Get chunk params for the file type, default to txt
+                        file_type_chunk_params = chunk_params[
+                            file_meta.file_type] if file_meta.file_type in chunk_params else chunk_params['txt']
                         result = process_content(docs,
                                                  file_meta,
                                                  file_type_chunk_params["chunk_size"],

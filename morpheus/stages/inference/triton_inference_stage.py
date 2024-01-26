@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(None)
 def _notify_dtype_once(model_name: str, input_name: str, triton_dtype: cp.dtype, data_dtype: cp.dtype):
-
     can_convert = cp.can_cast(data_dtype, triton_dtype, casting="safe")
 
     msg = "Unexpected dtype for Triton input. "
@@ -540,11 +539,9 @@ class TritonInferenceWorker(InferenceWorker):
                                    mapped_name=mapped_name)
 
             for x in model_meta["inputs"]:
-
                 self._inputs[x["name"]] = build_inout(x)
 
             for x in model_meta["outputs"]:
-
                 assert x["name"] not in self._inputs, "Input/Output names must be unique from eachother"
 
                 self._outputs[x["name"]] = build_inout(x)

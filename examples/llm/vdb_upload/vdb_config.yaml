@@ -92,9 +92,7 @@ vdb_pipeline:
           chunk_overlap: 51
         enable_monitor: True
         filenames:
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
-          - "morpheus/data/scratch/the-un-security-council-handbook-by-scr-1.pdf"
+          - "./morpheus/data/randomly_generated_cybersecurity_text.txt"
         vdb_resource_name: "vdb_pdf"
         watch: false
 
@@ -113,7 +111,7 @@ vdb_pipeline:
               - "request_header_referer"
         enable_monitor: True
         filenames:
-          - "models/datasets/training-data/log-parsing-training-data.csv"
+          - "./models/datasets/training-data/log-parsing-training-data.csv"
         vdb_resource_name: "vdb_csv"
         watch: false
 
@@ -127,7 +125,7 @@ vdb_pipeline:
           chunk_overlap: 51
         config_name_mapping: "file_source_config"
         filenames:
-          - "morpheus/data/scratch/random_cybersecurity_data.txt"
+          - "./morpheus/data/*.txt"
         module_id: "file_source_pipe"
         module_output_id: "output"
         namespace: "morpheus_examples_llm"

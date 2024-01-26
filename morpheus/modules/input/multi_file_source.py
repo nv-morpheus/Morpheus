@@ -61,7 +61,7 @@ def expand_paths_simple(filenames: typing.List[str]) -> typing.List[str]:
             updated_list.append(file_name)
             continue
 
-        if not fs_spec.exists(file_name):
+        if (not fs_spec.exists(file_name)):
             updated_list.append(file_name)
             continue
 
@@ -128,6 +128,7 @@ def _multi_file_source(builder: mrc.Builder):
                 continue
 
             files = fsspec.open_files(filenames)
+
             new_files = [file for file in files if file.full_name not in files_seen]
 
             # Update files_seen with the new set of files
@@ -153,12 +154,12 @@ def _multi_file_source(builder: mrc.Builder):
 
     def generate_frames_fsspec():
         # Check if filenames is None or empty
-        if not filenames:
+        if (not filenames):
             logger.warning("Multi-file-source was provided with no filenames for processing this is probably not what"
                            "you want")
             return
 
-        files: fsspec.core.OpenFiles = fsspec.open_files(filenames)
+        files = fsspec.open_files(filenames)
 
         # Check if the provided filenames resulted in any files being opened
         if len(files) == 0:

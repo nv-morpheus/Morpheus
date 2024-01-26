@@ -95,12 +95,17 @@ def _schema_transform(builder: mrc.Builder):
     source_schema = create_and_attach_nvt_workflow(input_schema=source_schema)
 
     def do_transform(message: MessageMeta):
+        if (message is None):
+            return None
+
         with message.mutable_dataframe() as mdf:
+            if (len(mdf) == 0):
+                return None
             _df = process_dataframe(mdf, source_schema)
 
         return MessageMeta(df=cudf.DataFrame(_df))
 
-    node = builder.make_node("schema_transform", ops.map(do_transform))
+    node = builder.make_node("schema_transform", ops.map(do_transform), ops.filter(lambda x: x is not None))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

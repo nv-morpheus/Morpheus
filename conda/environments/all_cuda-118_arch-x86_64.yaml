@@ -109,6 +109,7 @@ dependencies:
 - yapf=0.40.1
 - pip:
   - databricks-connect
+  - farm-haystack[file-conversion]
   - google-search-results==2.4
   - grpcio-status==1.58
   - milvus==2.3.2

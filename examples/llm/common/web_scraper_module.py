@@ -97,7 +97,7 @@ it in the output, excludes output for any links which produce an error.
             logger.error("Error downloading document from URL '%s'. Error: %s", url, exc)
             continue
 
-    return MessageMeta(df=pd.DataFrame(final_rows))
+    return MessageMeta(df=cudf.DataFrame(final_rows))
 
 
 @register_module("web_scraper", "morpheus_examples_llm")

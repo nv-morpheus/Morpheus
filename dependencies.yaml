@@ -228,6 +228,7 @@ dependencies:
               - google-search-results==2.4
               - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
               - nemollm
+              - farm-haystack[file-conversion]
 
 
   runtime:
