@@ -182,6 +182,7 @@ TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 
 std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta& self)
 {
+    pybind11::gil_scoped_release no_gil;
     return self.get_column_names();
 }
 
