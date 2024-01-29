@@ -63,10 +63,10 @@ dependencies:
 - pyarrow-hotfix
 - pybind11-stubgen=0.10
 - pylint>=2.17.4,<2.18
-- pytest
 - pytest-asyncio
 - pytest-benchmark>=4.0
 - pytest-cov
+- pytest=7.4
 - python-confluent-kafka=1.9.2
 - python-graphviz
 - pytorch-cuda
