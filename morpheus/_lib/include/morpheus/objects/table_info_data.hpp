@@ -40,11 +40,27 @@ struct TableInfoData
       table_view(std::move(view)),
       index_names(std::move(indices)),
       column_names(std::move(columns))
+    {
+        std::vector<cudf::size_type> col_indices;
+
+        for (cudf::size_type i = 0; i < index_names.size() + column_names.size(); i++)
+        {
+            col_indices.push_back(i);
+        }
+
+        column_indices = std::move(col_indices);
+    }
+    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns, std::vector<cudf::size_type> col_indicies) :
+      table_view(std::move(view)),
+      index_names(std::move(indices)),
+      column_names(std::move(columns)),
+      column_indices(std::move(col_indicies))
     {}
 
     cudf::table_view table_view;
     std::vector<std::string> index_names;
     std::vector<std::string> column_names;
+    std::vector<cudf::size_type> column_indices;
 };
 
 }  // namespace morpheus

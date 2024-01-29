@@ -96,6 +96,7 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy
+- sysroot_linux-64=2.17
 - tqdm=4
 - transformers=4.36.2
 - tritonclient=2.34
