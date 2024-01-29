@@ -184,6 +184,7 @@ dependencies:
           - sphinx
           - sphinx_rtd_theme
           - numpydoc=1.4
+          - pluggy=1.0
           - &click click >=8
 
   benchmark_cpp:
@@ -267,7 +268,6 @@ dependencies:
       - output_types: [conda]
         packages:
           - nodejs=18.*
-          - pluggy=1.0
           - pytest
           - pytest-asyncio
           - pytest-benchmark>=4.0
