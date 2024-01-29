@@ -15,7 +15,6 @@ import logging
 import time
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -48,9 +47,6 @@ def pipeline(num_threads: int,
              vector_db_service: str,
              vector_db_resource_name: str,
              triton_server_url: str):
-
-    # WebScraperStage requires C++ mode to be disabled
-    CppConfig.set_should_use_cpp(False)
     config = Config()
     config.mode = PipelineModes.NLP
 
