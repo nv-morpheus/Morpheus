@@ -268,7 +268,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - nodejs=18.*
-          - pytest
+          - pytest<8 # work-around issue #1484
           - pytest-asyncio
           - pytest-benchmark>=4.0
           - pytest-cov
