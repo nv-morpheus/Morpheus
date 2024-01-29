@@ -126,10 +126,7 @@ class WebScraperStage(SinglePortStage):
         if self._link_column not in msg.get_column_names():
             return None
 
-        df = msg.df
-
-        if isinstance(df, cudf.DataFrame):
-            df: pd.DataFrame = df.to_pandas()
+        df = msg.copy_dataframe()
 
         # Convert the dataframe into a list of dictionaries
         df_dicts = df.to_dict(orient="records")
@@ -177,5 +174,4 @@ class WebScraperStage(SinglePortStage):
                 logger.error("Error downloading document from URL '%s'. Error: %s", url, exc)
                 continue
 
-        # Not using cudf to avoid error: pyarrow.lib.ArrowInvalid: cannot mix list and non-list, non-null values
-        return MessageMeta(pd.DataFrame(final_rows))
+        return MessageMeta(cudf.DataFrame(final_rows))
