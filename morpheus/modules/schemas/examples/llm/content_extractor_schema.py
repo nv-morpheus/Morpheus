@@ -33,11 +33,9 @@ class CSVConverterSchema(BaseModel):
 
 
 class ContentExtractorSchema(BaseModel):
-    batch_size: int = 32
     chunk_overlap: int = 51
     chunk_size: int = 512
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
-    num_threads: int = 10
 
     @validator('converters_meta', pre=True)
     def validate_converters_meta(cls, v):
