@@ -19,7 +19,6 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import feedparser
-import pandas as pd
 import pytest
 
 import cudf

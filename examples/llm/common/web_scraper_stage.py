@@ -18,7 +18,6 @@ import typing
 
 import mrc
 import mrc.core.operators as ops
-import pandas as pd
 import requests
 import requests_cache
 from bs4 import BeautifulSoup
