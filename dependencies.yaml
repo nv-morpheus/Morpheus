@@ -180,7 +180,6 @@ dependencies:
           - ipython
           - myst-parser=0.17.2
           - nbsphinx
-          - pluggy=1.0
           - python-graphviz
           - sphinx
           - sphinx_rtd_theme
