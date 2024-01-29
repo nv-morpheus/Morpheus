@@ -22,6 +22,8 @@ import feedparser
 import pandas as pd
 import pytest
 
+import cudf
+
 from _utils import TEST_DIRS
 from morpheus.controllers.rss_controller import FeedStats
 from morpheus.controllers.rss_controller import RSSController
@@ -99,7 +101,7 @@ def test_skip_duplicates_feed_inputs(feed_input: str, expected_count: int):
     controller = RSSController(feed_input=[feed_input, feed_input])  # Pass duplicate feed inputs
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
-    assert isinstance(dataframe, pd.DataFrame)
+    assert isinstance(dataframe, cudf.DataFrame)
     assert len(dataframe) == expected_count
 
 
@@ -124,7 +126,7 @@ def test_fetch_dataframes_url(feed_input: str | list[str],
     with patch("requests.Session.get", return_value=mock_get_response):
         dataframes_generator = controller.fetch_dataframes()
         dataframe = next(dataframes_generator, None)
-        assert isinstance(dataframe, pd.DataFrame)
+        assert isinstance(dataframe, cudf.DataFrame)
         assert "link" in dataframe.columns
         assert len(dataframe) > 0
 
@@ -134,7 +136,7 @@ def test_fetch_dataframes_filepath(feed_input: str | list[str]):
     controller = RSSController(feed_input=feed_input)
     dataframes_generator = controller.fetch_dataframes()
     dataframe = next(dataframes_generator, None)
-    assert isinstance(dataframe, pd.DataFrame)
+    assert isinstance(dataframe, cudf.DataFrame)
     assert "link" in dataframe.columns
     assert len(dataframe) > 0
 
@@ -143,7 +145,7 @@ def test_fetch_dataframes_filepath(feed_input: str | list[str]):
 def test_batch_size(feed_input: list[str], batch_size: int):
     controller = RSSController(feed_input=feed_input, batch_size=batch_size)
     for df in controller.fetch_dataframes():
-        assert isinstance(df, pd.DataFrame)
+        assert isinstance(df, cudf.DataFrame)
         assert len(df) <= batch_size
 
 
