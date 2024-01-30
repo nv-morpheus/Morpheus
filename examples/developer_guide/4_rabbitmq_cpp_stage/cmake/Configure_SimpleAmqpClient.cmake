@@ -29,6 +29,7 @@ function(find_and_configure_SimpleAmqpClient version)
     INSTALL_EXPORT_SET
       ${PROJECT_NAME}-core-exports
     CPM_ARGS
+      PATCH_COMMAND git checkout -- . && git apply --whitespace=fix ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/patches/simpleamqpclient_cpp_version.patch
       GIT_REPOSITORY  https://github.com/alanxz/SimpleAmqpClient
       GIT_TAG         "v${version}"
       GIT_SHALLOW     TRUE
