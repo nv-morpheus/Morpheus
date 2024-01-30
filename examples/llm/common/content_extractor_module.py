@@ -212,6 +212,8 @@ def file_content_extractor(builder: mrc.Builder):
     Notes
     -----
     The `module_config` should contain:
+    - 'batch_size': int, the number of files to process in parallel.
+    - 'num_threads': int, the number of threads to use for parallel file reading.
     - 'chunk_size' : int, size of each chunk of document.
     - 'chunk_overlap' : int, overlap between consecutive chunks.
     - 'converters_meta' : dict, converters configuration.
@@ -221,8 +223,8 @@ def file_content_extractor(builder: mrc.Builder):
     Example `module_config`
     -----------------------
     {
-        "chunk_size": 516,
-        "chunk_overlap": 10
+        "batch_size": 32,
+        "num_threads": 10
     }
     """
     module_config = builder.get_current_module_config()
@@ -237,6 +239,8 @@ def file_content_extractor(builder: mrc.Builder):
         raise ValueError(log_error_message)
 
     # Use validated configurations
+    batch_size = extractor_config.batch_size
+    num_threads = extractor_config.num_threads
     chunk_size = extractor_config.chunk_size
     chunk_overlap = extractor_config.chunk_overlap
     converters_meta = extractor_config.converters_meta
@@ -260,33 +264,43 @@ def file_content_extractor(builder: mrc.Builder):
         data = []
         _fs = fsspec.filesystem(protocol='file')
 
-        for open_file in open_files:
-            # Check if file exists
-            if not _fs.exists(open_file.path):
-                logger.warning(f"File does not exist: {open_file.path}. Skipping...")
-                continue
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            for i in range(0, len(open_files), batch_size):
+                batch = open_files[i:i + batch_size]
+                futures = []
+                files_meta = []
 
-            if _fs.isdir(open_file.path):
-                logger.warning(f"File is a directory: {open_file.path}. Skipping...")
-                continue
+                for open_file in batch:
+                    # Check if file exists
+                    if (not _fs.exists(open_file.path)):
+                        logger.warning(f"File does not exist: {open_file.path}. Skipping...")
+                        continue
 
-            try:
-                file_meta: FileMeta = get_file_meta(open_file=open_file)
-                converter = converters.get(file_meta.file_type, TextConverter())
-                docs = converter.convert(file_meta.file_path, converters_meta)
+                    if (_fs.isdir(open_file.path)):
+                        logger.warning(f"File is a directory: {open_file.path}. Skipping...")
+                        continue
 
-                if docs:
-                    # Get chunk params for the file type, default to txt
-                    file_type_chunk_params = chunk_params.get(file_meta.file_type, chunk_params['txt'])
-                    result = process_content(docs,
-                                            file_meta,
-                                            file_type_chunk_params["chunk_size"],
-                                            file_type_chunk_params["chunk_overlap"])
-                    if result:
-                        data.extend(result)
+                    try:
+                        file_meta: FileMeta = get_file_meta(open_file=open_file)
+                        converter = converters.get(file_meta.file_type, TextConverter())
+                        futures.append(executor.submit(converter.convert, file_meta.file_path, converters_meta))
+                        files_meta.append(file_meta)
 
-            except Exception as e:
-                logger.error(f"Error processing file {open_file.path}: {e}")
+                    except Exception as e:
+                        logger.error(f"Error processing file {open_file.path}: {e}")
+
+                for file_meta, future in zip(files_meta, futures):
+                    docs = future.result()
+                    if docs:
+                        # Get chunk params for the file type, default to txt
+                        file_type_chunk_params = chunk_params[
+                            file_meta.file_type] if file_meta.file_type in chunk_params else chunk_params['txt']
+                        result = process_content(docs,
+                                                 file_meta,
+                                                 file_type_chunk_params["chunk_size"],
+                                                 file_type_chunk_params["chunk_overlap"])
+                        if result:
+                            data.extend(result)
 
         df_final = pd.DataFrame(data)
 

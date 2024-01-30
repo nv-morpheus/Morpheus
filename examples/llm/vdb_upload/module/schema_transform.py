@@ -27,8 +27,6 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.nvt.schema_converters import create_and_attach_nvt_workflow
-from morpheus.utils.schema_transforms import process_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +76,7 @@ def _schema_transform(builder: mrc.Builder):
     schema_config = validated_config.schema_transform_config
 
     source_column_info = []
+    preserve_columns = []
 
     for col_name, col_config in schema_config.items():
         op_type = col_config.get("op_type")
@@ -90,9 +89,10 @@ def _schema_transform(builder: mrc.Builder):
             source_column_info.append(ColumnInfo(name=col_name, dtype=col_config["dtype"]))
         else:
             raise ValueError(f"Unknown op_type '{op_type}' for column '{col_name}'")
+        
+        preserve_columns.append(col_name)
 
     source_schema = DataFrameInputSchema(column_info=source_column_info)
-    source_schema = create_and_attach_nvt_workflow(input_schema=source_schema)
 
     def do_transform(message: MessageMeta):
         if (message is None):
@@ -101,9 +101,17 @@ def _schema_transform(builder: mrc.Builder):
         with message.mutable_dataframe() as mdf:
             if (len(mdf) == 0):
                 return None
-            _df = process_dataframe(mdf, source_schema)
+            
+            for ci in source_schema.column_info:
+                try:
+                    mdf[ci.name] = ci._process_column(mdf)
+                except Exception as exc_info:
+                    logger.exception("Failed to process column '%s'. Dataframe: \n%s", ci.name, mdf, exc_info)
+                    return None
+            
+            mdf = mdf[preserve_columns]
 
-        return MessageMeta(df=cudf.DataFrame(_df))
+            return MessageMeta(df=cudf.DataFrame(mdf))
 
     node = builder.make_node("schema_transform", ops.map(do_transform), ops.filter(lambda x: x is not None))
 

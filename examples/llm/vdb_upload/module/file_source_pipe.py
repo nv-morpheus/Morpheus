@@ -62,6 +62,7 @@ def _file_source_pipe(builder: mrc.Builder):
       - **enable_monitor**: Boolean to enable monitoring for this module.
       - **extractor_config**: Configuration for the file content extractor module.
         - **chunk_size**: Size of chunks for the extractor.
+        - **num_threads**: Number of threads for file content extraction.
       - **filenames**: List of file paths to be processed.
       - **watch**: Boolean to watch for file changes.
 
@@ -94,6 +95,8 @@ def _file_source_pipe(builder: mrc.Builder):
 
     # Configure and load the file content extractor module
     file_content_extractor_config = {
+        "batch_size": validated_config.batch_size,
+        "num_threads": validated_config.num_threads,
         "chunk_size": validated_config.chunk_size,
         "chunk_overlap": validated_config.chunk_overlap,
         "converters_meta": validated_config.converters_meta
