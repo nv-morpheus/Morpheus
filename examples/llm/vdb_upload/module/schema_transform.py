@@ -89,7 +89,7 @@ def _schema_transform(builder: mrc.Builder):
             source_column_info.append(ColumnInfo(name=col_name, dtype=col_config["dtype"]))
         else:
             raise ValueError(f"Unknown op_type '{op_type}' for column '{col_name}'")
-        
+
         preserve_columns.append(col_name)
 
     source_schema = DataFrameInputSchema(column_info=source_column_info)
@@ -101,14 +101,14 @@ def _schema_transform(builder: mrc.Builder):
         with message.mutable_dataframe() as mdf:
             if (len(mdf) == 0):
                 return None
-            
+
             for ci in source_schema.column_info:
                 try:
                     mdf[ci.name] = ci._process_column(mdf)
                 except Exception as exc_info:
                     logger.exception("Failed to process column '%s'. Dataframe: \n%s", ci.name, mdf, exc_info)
                     return None
-            
+
             mdf = mdf[preserve_columns]
 
             return MessageMeta(df=cudf.DataFrame(mdf))

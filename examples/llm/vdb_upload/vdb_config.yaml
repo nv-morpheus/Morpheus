@@ -88,6 +88,7 @@ vdb_pipeline:
         batch_size: 1024
         extractor_config:
           chunk_size: 512
+          num_threads: 10
           chunk_overlap: 51
         enable_monitor: True
         filenames:
