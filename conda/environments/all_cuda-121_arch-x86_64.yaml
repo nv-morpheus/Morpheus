@@ -45,6 +45,7 @@ dependencies:
 - gcc_linux-64=11.2
 - git-lfs
 - glog=0.6
+- grpcio-status==1.59
 - grpcio=1.59
 - gxx_linux-64=11.2
 - huggingface_hub=0.20.2
@@ -113,7 +114,6 @@ dependencies:
   - dgl
   - dglgo
   - google-search-results==2.4
-  - grpcio-status==1.59
   - milvus==2.3.5
   - nemollm
   - pymilvus==2.3.6

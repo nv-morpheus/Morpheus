@@ -314,62 +314,47 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - &grpcio-status grpcio-status==1.59
           - &langchain langchain=0.0.190
-          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
-          - sentence-transformers
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
+          - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
           - pip
+          - sentence-transformers
           - pip:
-            - &grpcio-status grpcio-status==1.59 # To keep in sync with 1.59 grpcio which is installed for Morpheus
             - nemollm
 
   example-llm-completion:
     common:
       - output_types: [conda]
         packages:
+          - *grpcio-status
           - &arxiv arxiv=1.4
-          - &pypdf pypdf=3.17.4
           - &newspaper3k newspaper3k=0.2
-          # ####### Pip Transitive Dependencies #######
-          # - &environs environs=9.5
-          # - &minio minio=7.2
-          # - &python-dotenv python-dotenv=1.0
-          # - &ujson ujson=5.9
-          - pip
-          - pip:
-            - *grpcio-status
+          - &pypdf pypdf=3.17.4
 
   example-llm-rag:
     common:
       - output_types: [conda]
         packages:
+          - *grpcio-status
           - *langchain
-          - openai=0.28
           - anyio>=3.7
           - jsonpatch>=1.33
+          - openai=0.28
           - pip
           - pip:
             - google-search-results==2.4
-            - *grpcio-status
 
   example-llm-vdb-upload:
     common:
       - output_types: [conda]
         packages:
-          - *langchain
           - *arxiv
-          - onnx
-          - *pypdf
+          - *grpcio-status
+          - *langchain
           - *newspaper3k
-          # ####### Pip Transitive Dependencies #######
-          # - *environs
-          # - *minio
-          # # - pydantic>=2.4
-          # - *python-dotenv
-          # - *ujson
-          - pip
-          - pip:
-            - *grpcio-status
+          - *pypdf
+          - onnx
 
   model-training-tuning:
     common:
