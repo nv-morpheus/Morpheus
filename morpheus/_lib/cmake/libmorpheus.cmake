@@ -92,6 +92,7 @@ add_library(${PROJECT_NAME}::morpheus ALIAS morpheus)
 target_link_libraries(morpheus
   PRIVATE
     matx::matx
+    ZLIB::ZLIB
   PUBLIC
     $<TARGET_NAME_IF_EXISTS:conda_env>
     cudf::cudf

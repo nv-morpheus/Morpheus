@@ -34,6 +34,11 @@ rapids_find_package(CUDAToolkit REQUIRED
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
+rapids_find_package(ZLIB REQUIRED
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
+
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
   # - Expects package to pre-exist in the build environment
