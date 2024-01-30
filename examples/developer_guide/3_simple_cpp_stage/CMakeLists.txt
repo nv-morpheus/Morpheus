@@ -30,6 +30,7 @@ project(3_simple_cpp_stage
 )
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
 set(OPTION_PREFIX "MORPHEUS")
