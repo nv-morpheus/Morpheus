@@ -268,8 +268,8 @@ dependencies:
           - pip
           - pip:
             - databricks-connect
-            - milvus==2.3.2
-            - pymilvus==2.3.2
+            - milvus==2.3.5 # update to match pymilvus when available
+            - pymilvus==2.3.6
 
   test_python_morpheus:
     common:

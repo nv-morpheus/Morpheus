@@ -88,7 +88,7 @@ dependencies:
 - yapf=0.40.1
 - pip:
   - databricks-connect
-  - milvus==2.3.2
-  - pymilvus==2.3.2
+  - milvus==2.3.5
+  - pymilvus==2.3.6
   - pytest-kafka==0.6.0
 name: dev_cuda-121_arch-x86_64
