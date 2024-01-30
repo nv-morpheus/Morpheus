@@ -38,7 +38,7 @@ dependencies:
 - gcc_linux-64=11.2
 - git-lfs
 - glog=0.6
-- grpcio
+- grpcio=1.59
 - gxx_linux-64=11.2
 - include-what-you-use=0.20
 - ipython

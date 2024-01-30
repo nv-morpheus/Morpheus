@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-list(APPEND CMAKE_MESSAGE_CONTEXT "3_simple_cpp_stage")
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
+list(APPEND CMAKE_MESSAGE_CONTEXT "3_simple_cpp_stage")
 
 # Set the cache to be the same to allow for CCache to be used effectively
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")

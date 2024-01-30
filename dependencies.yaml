@@ -250,7 +250,7 @@ dependencies:
           - dill
           - elasticsearch==8.9.0
           - feedparser=6.0.10
-          - grpcio
+          - grpcio=1.59
           - mlflow=2.9.2
           - numpydoc=1.5
           - nvtabular=23.08.00
@@ -320,7 +320,7 @@ dependencies:
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - pip
           - pip:
-            - &grpcio-status grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
+            - &grpcio-status grpcio-status==1.59 # To keep in sync with 1.59 grpcio which is installed for Morpheus
             - nemollm
 
   example-llm-completion:
