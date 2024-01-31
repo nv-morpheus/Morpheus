@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -110,7 +110,7 @@ def test_dataframe_input_schema_without_json_cols():
 
     input_df = pd.read_json(src_file)
 
-    assert len(input_df.columns) == 16
+    assert len(input_df.columns) == 16  # pylint:disable=no-member
 
     column_info = [
         DateTimeColumn(name="timestamp", dtype='datetime64[ns]', input_name="time"),

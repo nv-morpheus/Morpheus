@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,49 +31,50 @@ LFS_DATASETS = {
 }
 
 
-def lfsPull(include_paths, poll_interval=0.1):
+def lfs_pull(include_paths, poll_interval=0.1):
     """
     Performs a git lfs pull.
     """
-    cmd = 'git lfs pull -X "" -I "{}"'.format(','.join(include_paths))
+    include_paths = ','.join(include_paths)
+    cmd = f'git lfs pull -X "" -I "{include_paths}"'
     env = os.environ.copy()
 
     # Instruct git lfs to not supress progress output. Fetching the models can
     # take over a minute to complete, so we want our users to receive feedback.
     env['GIT_LFS_FORCE_PROGRESS'] = '1'
-    popen = subprocess.Popen(cmd,
-                             env=env,
-                             shell=True,
-                             universal_newlines=True,
-                             stderr=subprocess.STDOUT,
-                             stdout=subprocess.PIPE)
 
-    outpipe = popen.stdout
-    returncode = None
-    all_out = []
-    while returncode is None:
-        time.sleep(poll_interval)
-        out = outpipe.readline()
-        if out.rstrip() != '':
-            logging.info(out.rstrip())
+    with subprocess.Popen(cmd,
+                          env=env,
+                          shell=True,
+                          universal_newlines=True,
+                          stderr=subprocess.STDOUT,
+                          stdout=subprocess.PIPE) as popen:
+        outpipe = popen.stdout
+        returncode = None
+        all_out = []
+        while returncode is None:
+            time.sleep(poll_interval)
+            out = outpipe.readline()
+            if out.rstrip() != '':
+                logging.info(out.rstrip())
+                all_out.append(out)
+
+            returncode = popen.poll()
+
+        # Check if we have any additional output written to the pipe before our last poll
+        out = outpipe.read()
+        if out != '':
             all_out.append(out)
 
-        returncode = popen.poll()
+        output = ''.join(all_out).rstrip("\n")
+        if returncode != 0:
+            logging.error(output)
+            raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
 
-    # Check if we have any additional output written to the pipe before our last poll
-    out = outpipe.read()
-    if out != '':
-        all_out.append(out)
-
-    output = ''.join(all_out).rstrip("\n")
-    if returncode != 0:
-        logging.error(output)
-        raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
-
-    return output
+        return output
 
 
-def lfsCheck(list_all=False):
+def lfs_check(list_all=False):
     output = subprocess.check_output('git lfs ls-files', shell=True, universal_newlines=True)
     output_lines = output.splitlines()
 
@@ -95,12 +96,12 @@ def lfsCheck(list_all=False):
             logging.info('%s - %s', filename, downloaded)
 
     if not list_all:
-        if len(missing_files):
+        if missing_files:
             logging.error("Missing the following LFS files:\n%s", "\n".join(missing_files))
         else:
             logging.info("All LFS files downloaded")
 
-    if len(missing_files):
+    if missing_files:
         sys.exit(1)
 
 
@@ -134,9 +135,9 @@ def main():
 
     if args.subcommand == 'fetch':
         include_paths = [LFS_DATASETS[p] for p in args.data_set]
-        lfsPull(include_paths)
+        lfs_pull(include_paths)
     else:
-        lfsCheck(list_all=args.list_all)
+        lfs_check(list_all=args.list_all)
 
 
 if __name__ == "__main__":

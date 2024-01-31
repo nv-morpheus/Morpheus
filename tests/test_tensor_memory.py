@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,7 @@ def test_inference_memory_ae(config: Config):
 
     input_tensor = cp.array(test_data[:, 0])
     seq_ids = cp.array(test_data[:, 1])
-    mem = InferenceMemoryAE(count=count, input=input_tensor, seq_ids=seq_ids)
+    mem = InferenceMemoryAE(count=count, inputs=input_tensor, seq_ids=seq_ids)
 
     assert mem.count == count
     compare_tensors(mem.get_tensors(), {'input': input_tensor, 'seq_ids': seq_ids})

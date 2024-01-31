@@ -38,10 +38,7 @@ setup(
     author="NVIDIA Corporation",
     include_package_data=True,
     packages=find_packages(include=["morpheus*"], exclude=['tests']),
-    install_requires=[
-        # Only list the packages which cannot be installed via conda here.
-        "pyarrow_hotfix",  # CVE-2023-47248. See morpheus/__init__.py for more details
-    ],
+    install_requires=[],
     license="Apache",
     python_requires='>=3.10, <4',
     cmdclass=versioneer.get_cmdclass(),  # pylint: disable=no-member
