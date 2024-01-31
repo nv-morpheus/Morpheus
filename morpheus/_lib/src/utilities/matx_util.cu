@@ -272,7 +272,7 @@ struct MatxUtil__MatxThreshold
         auto output_tensor = matx::make_tensor<bool>(static_cast<bool*>(output_data), output_shape);
 
         // Convert max value to bool
-        (output_tensor = matx::rmax(input_tensor) > (InputT)threshold).run(stream.value());
+        (output_tensor = matx::rmax(input_tensor, {1}) > (InputT)threshold).run(stream.value());
     }
 
     /**
