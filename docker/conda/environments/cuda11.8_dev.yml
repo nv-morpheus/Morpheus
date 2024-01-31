@@ -83,10 +83,11 @@ dependencies:
     - pluggy=1.0
     - protobuf=4.21.*
     - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
+    - pyarrow-hotfix # CVE-2023-47248. See morpheus/__init__.py for more details
     - pybind11-stubgen=0.10.5
     - pydot
     - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
-    - pytest
+    - pytest=7.4
     - pytest-asyncio
     - pytest-benchmark>=4.0
     - pytest-cov
@@ -124,6 +125,5 @@ dependencies:
         # Add additional dev dependencies here
         - databricks-connect
         - milvus==2.3.2
-        - pyarrow_hotfix # CVE-2023-47248. See morpheus/__init__.py for more details
         - pymilvus==2.3.2
         - pytest-kafka==0.6.0
