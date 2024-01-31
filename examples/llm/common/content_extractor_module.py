@@ -18,6 +18,7 @@ import os
 import typing
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from functools import wraps
 
 import fitz
 import fsspec
@@ -45,6 +46,12 @@ class FileMeta:
     file_path: str
     file_name: str
     file_type: str
+
+
+@dataclass
+class ConverterInputInfo:
+    io_bytes: io.BytesIO
+    meta: dict
 
 
 def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
@@ -109,62 +116,63 @@ def read_file_to_bytesio(file_path: str) -> io.BytesIO:
     return io_bytes
 
 
-def _pdf_to_text_converter(bytes_io: io.BytesIO, meta: dict = None) -> str:
-    if isinstance(bytes_io, io.BytesIO):
-        pdf_document = fitz.open(stream=bytes_io, filetype="pdf")
-        text = ''
-        for page_num in range(pdf_document.page_count):
-            page = pdf_document[page_num]
-            text += page.get_text()
-    else:
-        raise ValueError("Invalid input type. Supported type bytes (io.BytesIO).")
+def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 
+    @wraps(func)
+    def wrapper(input_info: ConverterInputInfo, *args, **kwargs):
+        try:
+            # Common logic for instance check
+            if not isinstance(input_info.io_bytes, io.BytesIO):
+                raise ValueError("Invalid input type. Supported type: io.BytesIO.")
+
+            return func(input_info, *args, **kwargs)
+        except Exception as exec_info:
+            logger.error(f"Error in {func.__name__}: {exec_info}")
+            return func.__annotations__.get("return_type", None)()
+
+    return wrapper
+
+
+@_converter_error_handler
+def _pdf_to_text_converter(input_info: ConverterInputInfo) -> str:
+    text = ""
+    pdf_document = fitz.open(stream=input_info.io_bytes, filetype="pdf")
+    for page_num in range(pdf_document.page_count):
+        page = pdf_document[page_num]
+        text += page.get_text()
     return text
 
 
-def _docx_to_text_converter(bytes_io: io.BytesIO, meta: dict) -> str:
-    if isinstance(bytes_io, io.BytesIO):
-        # New io.BytesIO object and copying the content from the original io.BytesIO object
-        # to effectively reset cursor position
-        doc = Document(io.BytesIO(bytes_io.read()))
-        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-    else:
-        raise ValueError("Invalid input type. Supported type bytes (io.BytesIO).")
-
+@_converter_error_handler
+def _docx_to_text_converter(input_info: ConverterInputInfo) -> str:
+    text = ""
+    doc = Document(io.BytesIO(input_info.io_bytes.read()))
+    text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
     return text
 
 
-def _csv_to_text_converter(bytes_io: io.BytesIO, meta: dict) -> list[str]:
-    if isinstance(bytes_io, io.BytesIO):
-        text_column_names = set("content")
-
-        if meta is not None:
-            text_column_names = set(meta.get("csv", {}).get("text_column_names", text_column_names))
-
-        df = pd.read_csv(bytes_io)
-        if len(df.columns) == 0 or (not text_column_names.issubset(set(df.columns))):
-            raise ValueError("The CSV file must either include a 'content' column or have a "
-                             "columns specified in the meta configuration with key 'text_column_names'.")
-
-        df.fillna(value='', inplace=True)
-        text_arr = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
-    else:
-        raise ValueError("Invalid input type. Supported type bytes (io.BytesIO).")
-
+@_converter_error_handler
+def _csv_to_text_converter(input_info: ConverterInputInfo) -> list[str]:
+    text_arr = []
+    text_column_names = set("content")
+    if input_info.meta is not None:
+        text_column_names = set(input_info.meta.get("csv", {}).get("text_column_names", text_column_names))
+    df = pd.read_csv(input_info.io_bytes)
+    if len(df.columns) == 0 or (not text_column_names.issubset(set(df.columns))):
+        raise ValueError("The CSV file must either include a 'content' column or have a "
+                         "columns specified in the meta configuration with key 'text_column_names'.")
+    df.fillna(value='', inplace=True)
+    text_arr = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
     return text_arr
 
 
-def _text_converter(io_bytes: io.BytesIO, meta: dict) -> str:
-
-    convertor_conf = meta.get("txt", {})
+@_converter_error_handler
+def _text_converter(input_info: ConverterInputInfo) -> str:
+    text = ""
+    convertor_conf = input_info.meta.get("txt", {})
     encoding = convertor_conf.get("encoding", "utf-8")
-
-    # Ensure the cursor is at the beginning of the stream
-    io_bytes.seek(0)
-
-    # Decode the bytes to a string using the specified encoding
-    text = io_bytes.read().decode(encoding)
-
+    input_info.io_bytes.seek(0)
+    text = input_info.io_bytes.read().decode(encoding)
     return text
 
 
@@ -314,7 +322,8 @@ def file_content_extractor(builder: mrc.Builder):
 
                     if io_bytes:
                         converter = converters.get(file_meta.file_type, _text_converter)
-                        result = converter(io_bytes, meta=converters_meta)
+                        input_info = ConverterInputInfo(io_bytes=io_bytes, meta=converters_meta)
+                        result = converter(input_info)
                         # Get chunk params for the file type, default to txt
                         file_type_chunk_params = chunk_params[
                             file_meta.file_type] if file_meta.file_type in chunk_params else chunk_params['txt']
