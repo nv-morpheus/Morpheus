@@ -23,7 +23,6 @@ from cudf._lib.column cimport Column
 from cudf._lib.cpp.io.types cimport table_with_metadata
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.types cimport size_type
-from cudf._lib.utils cimport data_from_table_view
 from cudf._lib.utils cimport data_from_unique_ptr
 from cudf._lib.utils cimport get_column_names
 from cudf._lib.utils cimport table_view_from_table
@@ -82,7 +81,7 @@ cdef public api:
         x = table_info.table_view
 
         try:
-            data, index = data_from_table_view_mine(x, owner=owner, column_names=column_names, column_indices=column_indicies, index_names=index_names)
+            data, index = data_from_table_view_indexed(x, owner=owner, column_names=column_names, column_indices=column_indicies, index_names=index_names)
         except Exception:
             import traceback
             print(traceback.format_exc())
@@ -120,7 +119,7 @@ cdef public api:
 
         return TableInfoData(input_table_view, index_names, column_names)
 
-    cdef data_from_table_view_mine(
+    cdef data_from_table_view_indexed(
         table_view tv,
         object owner,
         object column_names,
@@ -138,8 +137,6 @@ cdef public api:
         """
         cdef size_type column_idx = 0
         table_owner = isinstance(owner, cudf.core.frame.Frame)
-
-        print("checkpoint 1")
 
         # First construct the index, if any
         index = None
@@ -159,19 +156,15 @@ cdef public api:
             index = cudf.core.index._index_from_data(
                 dict(zip(index_names, index_columns)))
 
-        print("checkpoint 2")
-
         # Construct the data dict
         cdef size_type source_column_idx = 0
         data_columns = []
         for _ in column_names:
-            print("checkpoint 3")
             column_owner = owner
             print("source_column_idx: ", source_column_idx)
             print("column_indices[source_column_idx]:", column_indices[source_column_idx])
             if table_owner:
                 column_owner = owner._columns[column_indices[source_column_idx]]
-            print("checkpoint 4")
             data_columns.append(
                 Column.from_column_view(tv.column(column_idx), column_owner)
             )

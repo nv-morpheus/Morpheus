@@ -79,7 +79,7 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
     auto table_view_out = table.table_view;
 
     std::vector<cudf::size_type> col_indices;
-    std::vector<cudf::size_type> col_indices_just_columns;
+    std::vector<cudf::size_type> col_indices_mapppings;
 
     // If the columns are different, calculate the new slice
     if (column_names != table.column_names)
@@ -93,7 +93,7 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
         std::transform(column_names.begin(),
                        column_names.end(),
                        std::back_inserter(col_indices),
-                       [&table, &col_indices_just_columns](const std::string& c) {
+                       [&table, &col_indices_mapppings](const std::string& c) {
                            auto found_col = std::find(table.column_names.begin(), table.column_names.end(), c);
 
                            if (found_col == table.column_names.end())
@@ -103,7 +103,7 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
 
                            auto idx = (found_col - table.column_names.begin());
 
-                           col_indices_just_columns.push_back(idx);
+                           col_indices_mapppings.push_back(idx);
 
                            return idx  + table.index_names.size();
                        });
@@ -117,10 +117,10 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
         table_view_out = cudf::slice(table_view_out, {start, stop})[0];
     }
 
-    if (col_indices_just_columns.size() > 0)
+    if (col_indices_mapppings.size() > 0)
     {
         // Create a new TableInfoData
-        return {table_view_out, table.index_names, column_names, col_indices_just_columns};
+        return {table_view_out, table.index_names, column_names, col_indices_mapppings};
     }
 
     // Create a new TableInfoData
