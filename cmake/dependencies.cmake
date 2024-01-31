@@ -67,7 +67,7 @@ if(MORPHEUS_BUILD_TESTS)
   )
 endif()
 
-# cccl -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
+# cccl -- get an explicit cccl build, matx tries to pull a tag that doesn't exist.
 # =========
 morpheus_utils_configure_cccl()
 

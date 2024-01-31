@@ -22,6 +22,7 @@
 
 #include <string>
 #include <vector>
+#include <numeric>
 
 namespace morpheus {
 
@@ -41,13 +42,8 @@ struct TableInfoData
       index_names(std::move(indices)),
       column_names(std::move(columns))
     {
-        std::vector<cudf::size_type> col_indices;
-
-        for (cudf::size_type i = 0; i < index_names.size() + column_names.size(); i++)
-        {
-            col_indices.push_back(i);
-        }
-
+        std::vector<cudf::size_type> col_indices(column_names.size());
+        std::iota(col_indices.begin(), col_indices.end(), 0);
         column_indices = std::move(col_indices);
     }
     TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns, std::vector<cudf::size_type> col_indicies) :

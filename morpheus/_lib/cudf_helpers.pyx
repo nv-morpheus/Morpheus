@@ -74,17 +74,17 @@ cdef public api:
 
         column_indicies = []
 
-        for c_index in table_info.column_indices:
-            print("c_index:", c_index)
-            column_indicies.append(c_index)
-
-        x = table_info.table_view
-
         try:
-            data, index = data_from_table_view_indexed(x, owner=owner, column_names=column_names, column_indices=column_indicies, index_names=index_names)
+            data, index = data_from_table_view_indexed(
+                table_info.table_view,
+                owner=owner,
+                column_names=column_names,
+                column_indices=column_indicies,
+                index_names=index_names
+            )
         except Exception:
             import traceback
-            print(traceback.format_exc())
+            print("error while converting libcudf table to cudf dataframe:", traceback.format_exc())
 
         return cudf.DataFrame._from_data(data, index)
 
