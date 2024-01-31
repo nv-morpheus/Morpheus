@@ -17,7 +17,6 @@ dependencies:
 - breathe=4.34.0
 - ccache>=3.7
 - clangdev=16
-- click >=8
 - click>=8
 - cmake=3.25
 - cuda-cudart-dev=11.8
@@ -61,6 +60,7 @@ dependencies:
 - pluggy=1.0
 - pre-commit
 - protobuf=4.21.*
+- pyarrow-hotfix
 - pybind11-stubgen=0.10
 - pylint>=2.17.4,<2.18
 - pytest-asyncio
@@ -78,6 +78,7 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy<2.0
+- sysroot_linux-64=2.17
 - tqdm=4
 - tritonclient=2.26
 - typing_utils=0.1
@@ -89,7 +90,6 @@ dependencies:
 - pip:
   - databricks-connect
   - milvus==2.3.2
-  - pyarrow_hotfix
   - pymilvus==2.3.2
   - pytest-kafka==0.6.0
 name: dev_cuda-118_arch-x86_64_py-310
