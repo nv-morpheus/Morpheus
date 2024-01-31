@@ -61,10 +61,10 @@ dependencies:
 - protobuf=4.24
 - pybind11-stubgen=0.10
 - pylint=3.0.3
-- pytest
 - pytest-asyncio
 - pytest-benchmark=4.0
 - pytest-cov
+- pytest=7.4.4
 - python-confluent-kafka=2.2.0
 - python-graphviz
 - python=3.10

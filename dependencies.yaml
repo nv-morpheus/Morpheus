@@ -276,7 +276,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - &nodejs nodejs=18.*
-          - pytest
+          - pytest=7.4.4
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
