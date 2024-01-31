@@ -15,6 +15,7 @@
 import os
 
 import click
+# pylint: disable=no-name-in-module
 from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 

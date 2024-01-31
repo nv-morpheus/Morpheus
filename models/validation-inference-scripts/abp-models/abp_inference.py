@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 # limitations under the License.
 """
 Example Usage:
-python abp-inference.py \
+python abp_inference.py \
     --validationdata ../../datasets/validation-data/abp-validation-data.jsonlines \
     --model ../../abp-models/abp-nvsmi-xgb-20210310.bst \
     --output abp-validation-output.jsonlines
@@ -30,7 +30,7 @@ from cuml import ForestInference
 def infer(validationdata, model, output):
 
     data = []
-    with open(validationdata) as f:
+    with open(validationdata, encoding="utf-8") as f:
         for line in f:
             data.append(json.loads(line))
 
@@ -41,9 +41,9 @@ def infer(validationdata, model, output):
     # Load the classifier previously saved with xgboost model_save()
     model_path = model
 
-    fm = ForestInference.load(model_path, output_class=True)
+    model = ForestInference.load(model_path, output_class=True)
 
-    fil_preds_gpu = fm.predict(df2.astype("float32"))
+    fil_preds_gpu = model.predict(df2.astype("float32"))
 
     y_pred = fil_preds_gpu.to_array()
 

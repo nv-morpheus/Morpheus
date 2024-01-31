@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -104,21 +104,21 @@ class DirectoryWatcher():
         event (and we should wait for potentially more changes) or if these files were read on startup and should be
         processed immediately.
         """
-        q = FiberQueue(self._queue_max_size)
+        f_queue = FiberQueue(self._queue_max_size)
 
         if (self._watch_directory):
 
             # Create a file watcher
             self._watcher = Observer()
-            self._watcher.setDaemon(True)
-            self._watcher.setName("DirectoryWatcher")
+            self._watcher.daemon = True
+            self._watcher.name = "DirectoryWatcher"
 
             event_handler = PatternMatchingEventHandler(patterns=[self._match_pattern])
 
             def process_dir_change(event: FileSystemEvent):
 
                 # Push files into the queue indicating this is an event
-                q.put(([event.src_path], True))
+                f_queue.put(([event.src_path], True))
 
             event_handler.on_created = process_dir_change
 
@@ -137,13 +137,13 @@ class DirectoryWatcher():
         logger.info("Found %d files in glob. Loading...", len(file_list))
 
         # Push all to the queue and close it
-        q.put((file_list, False))
+        f_queue.put((file_list, False))
 
         if (not self._watch_directory):
             # Close the queue
-            q.close()
+            f_queue.close()
 
-        return q
+        return f_queue
 
     def _generate_via_polling(self):
 
