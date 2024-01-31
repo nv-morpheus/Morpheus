@@ -31,6 +31,10 @@ project(3_simple_cpp_stage
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 # Set the option prefix to match the outer project before including. Must be before find_package(morpheus)
 set(OPTION_PREFIX "MORPHEUS")
