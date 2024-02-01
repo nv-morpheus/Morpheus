@@ -82,7 +82,7 @@ dependencies:
 - pytest-asyncio
 - pytest-benchmark>=4.0
 - pytest-cov
-- pytest=7.4
+- pytest<8
 - python-confluent-kafka=1.9.2
 - python-dotenv=1.0
 - python-graphviz

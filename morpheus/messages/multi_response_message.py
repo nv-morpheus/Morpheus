@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -186,7 +186,7 @@ class MultiResponseAEMessage(MultiResponseMessage, cpp_class=None):
                  user_id: str = None):
 
         if (user_id is None):
-            raise ValueError("Must define `user_id` when creating {}".format(self.__class__.__name__))
+            raise ValueError(f"Must define `user_id` when creating {self.__class__.__name__}")
 
         self.user_id = user_id
 
