@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,11 +116,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
         df["event_dt"] = pd.to_datetime(df["eventTime"])
 
         def remove_null(x):
-            """
-            Util function that cleans up data.
-            :param x:
-            :return:
-            """
+
             if isinstance(x, list):
                 if isinstance(x[0], dict):
                     key = list(x[0].keys())
@@ -128,11 +124,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
             return x
 
         def clean_column(cloudtrail_df):
-            """
-            Clean a certain column based on lists inside.
-            :param cloudtrail_df:
-            :return:
-            """
+
             col_name = 'requestParametersownersSetitems'
             if (col_name in cloudtrail_df):
                 cloudtrail_df[col_name] = cloudtrail_df[col_name].apply(lambda x: remove_null(x))

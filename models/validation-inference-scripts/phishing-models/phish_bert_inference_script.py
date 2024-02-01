@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,14 @@ python phish_bert_inference_script.py \
     --output phishing-email-validation-output.jsonlines
 """
 
+import argparse
+import json
+
+import numpy as np
+import onnxruntime
+import scipy
+import torch
+
 ###########################################################################################
 # cudf imports moved before torch import to avoid the following error:
 # ImportError: /usr/lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
@@ -28,14 +36,6 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 ###########################################################################################
-
-import argparse
-import json
-
-import numpy as np
-import onnxruntime
-import torch
-import scipy
 
 
 def infer(validationdata, vocab, model, output):
@@ -76,7 +76,7 @@ def infer(validationdata, vocab, model, output):
     ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
     # probabilities
-    probs = scipy.special.expit(ort_outs[0])
+    probs = scipy.special.expit(ort_outs[0])  # pylint:disable=no-member
     # predictions using 0.5 threshold
     preds = (probs >= 0.5).astype(np.int_)
     preds = preds[:, 1].tolist()

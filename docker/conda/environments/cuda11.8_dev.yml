@@ -87,7 +87,7 @@ dependencies:
     - pybind11-stubgen=0.10.5
     - pydot
     - pylint>=2.17.4,<2.18 # 2.17.4 contains a fix for toml support
-    - pytest
+    - pytest<8 # work-around issue #1484
     - pytest-asyncio
     - pytest-benchmark>=4.0
     - pytest-cov

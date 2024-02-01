@@ -78,10 +78,10 @@ dependencies:
 - pybind11-stubgen=0.10
 - pylint>=2.17.4,<2.18
 - pypdf=3.16
-- pytest
 - pytest-asyncio
 - pytest-benchmark>=4.0
 - pytest-cov
+- pytest<8
 - python-confluent-kafka=1.9.2
 - python-dotenv=1.0
 - python-graphviz
