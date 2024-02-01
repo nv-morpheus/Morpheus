@@ -126,7 +126,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         return "from-http"
 
     def supports_cpp_node(self) -> bool:
-        """Indicates whether or not this stage supports C++ nodes."""
+        """Indicates whether this stage supports C++ nodes."""
         return True
 
     def compute_schema(self, schema: StageSchema):

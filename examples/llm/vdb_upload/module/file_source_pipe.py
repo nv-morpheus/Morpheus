@@ -97,6 +97,8 @@ def _file_source_pipe(builder: mrc.Builder):
     file_content_extractor_config = {
         "batch_size": validated_config.batch_size,
         "num_threads": validated_config.num_threads,
+        "chunk_size": validated_config.chunk_size,
+        "chunk_overlap": validated_config.chunk_overlap,
         "converters_meta": validated_config.converters_meta
     }
     extractor_loader = ContentExtractorLoaderFactory.get_instance("file_content_extractor",
