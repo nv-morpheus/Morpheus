@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class LogTimeInfo():
 
 
 @contextmanager
-def log_time(log_fn, msg: str = None, *args, **kwargs):
+def log_time(log_fn, *args, msg: str = None, **kwargs):
 
     # Create an info object to allow users to set the message in the context block
     info = LogTimeInfo(log_fn=log_fn, msg=msg, args=args, kwargs=kwargs)
