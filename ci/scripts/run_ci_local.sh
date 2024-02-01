@@ -14,20 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -exo pipefail
+set -eo pipefail
 
 case "$1" in
     "" )
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks" "build" "docs" "test")
+        STAGES=("checks" "build" "docs" "test" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda\", or \"bash\""
         exit 1
         ;;
 esac
