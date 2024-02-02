@@ -21,8 +21,8 @@ import pytest
 from _utils import TEST_DIRS
 
 
-@pytest.fixture(scope="module")
-def import_vdb_update_utils_module():
+@pytest.fixture(scope="function")
+def import_vdb_update_utils_module(restore_sys_path):
     path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
     sys.path.insert(0, path)
 
@@ -31,8 +31,8 @@ def import_vdb_update_utils_module():
     return vdb_utils
 
 
-@pytest.fixture(scope="module")
-def import_schema_transform_module():
+@pytest.fixture(scope="function")
+def import_schema_transform_module(restore_sys_path):
     path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module')
     sys.path.insert(0, path)
 

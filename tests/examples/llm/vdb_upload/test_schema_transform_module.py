@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
 import types
 
 import cudf
 import pytest
-from _utils import TEST_DIRS
 from _utils import assert_results
 
 from morpheus.config import Config
@@ -27,9 +24,6 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-
-path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
-sys.path.append(path)
 
 
 @pytest.mark.use_python

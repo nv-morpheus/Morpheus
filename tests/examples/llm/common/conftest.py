@@ -17,13 +17,12 @@ import os
 import sys
 
 import pytest
-
 from _utils import TEST_DIRS
 from _utils import import_or_skip
 
 
-@pytest.fixture(scope="module")
-def import_utils():
+@pytest.fixture(scope="function")
+def import_utils(restore_sys_path):
     utils_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
     sys.path.insert(0, utils_path)
 
@@ -32,8 +31,8 @@ def import_utils():
     return utils
 
 
-@pytest.fixture(scope="module")
-def import_web_scraper_module():
+@pytest.fixture(scope="function")
+def import_web_scraper_module(restore_sys_path):
     web_scraper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
     sys.path.insert(0, web_scraper_path)
 
@@ -43,8 +42,8 @@ def import_web_scraper_module():
 
 
 # Fixture for importing the module
-@pytest.fixture(scope="module")
-def import_content_extractor_module():
+@pytest.fixture(scope="function")
+def import_content_extractor_module(restore_sys_path):
     sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
 
     import content_extractor_module

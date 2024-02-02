@@ -21,32 +21,48 @@ from bs4 import BeautifulSoup
 
 logging
 
-import logging
 from functools import partial
 
-import mrc
 import mrc.core.operators as ops
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import ValidationError
 
 import cudf
 
 from morpheus.messages import MessageMeta
+import logging
+
+import mrc
+from pydantic import BaseModel
+from pydantic import ValidationError
+
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
-
 logger = logging.getLogger(__name__)
 
-WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm", WebScraperSchema)
+
+class WebScraperSchema(BaseModel):
+    link_column: str = "link"
+    chunk_size: int = 512
+    chunk_overlap: int = 51
+    enable_cache: bool = False
+    cache_path: str = "./.cache/http/RSSDownloadStage.sqlite"
+    cache_dir: str = "./.cache/llm/rss"
+
+    class Config:
+        extra = "forbid"
+
+
+WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm",
+                                              WebScraperSchema)
 
 
 def download_and_split(msg: MessageMeta, text_splitter, link_column, session) -> MessageMeta:
     """
-Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
-it in the output, excludes output for any links which produce an error.
-"""
+        Uses the HTTP GET method to download/scrape the links found in the message, splits the scraped data, and stores
+        it in the output, excludes output for any links which produce an error.
+    """
     if (link_column not in msg.get_column_names()):
         return None
 
