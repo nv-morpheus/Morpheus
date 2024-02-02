@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import logging
-import typing
 
 import pytest
 from static_message_source import StaticMessageSource
@@ -30,9 +29,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
 
 
-def build_and_run_pipeline(config: Config,
-                           df: cudf.DataFrame,
-                           output_type: typing.Literal["pandas", "cudf", "json", "csv"]):
+def build_and_run_pipeline(config: Config, df: cudf.DataFrame):
     # Pipeline
     pipeline = LinearPipeline(config)
 
@@ -49,12 +46,11 @@ def build_and_run_pipeline(config: Config,
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize("num_messages", [1, 100, 10000])
-@pytest.mark.parametrize("output_type", ["json", "csv"])
-def test_monitor_stage(benchmark, num_messages, output_type):
+def test_monitor_stage(benchmark, num_messages):
 
     # Test Data
 
-    df = cudf.DataFrame({"value": [x for x in range(0, num_messages)]})
+    df = cudf.DataFrame({"value": list(range(0, num_messages))})
 
     # Configuration
 
@@ -74,4 +70,4 @@ def test_monitor_stage(benchmark, num_messages, output_type):
     config.edge_buffer_size = 4
 
     # would prefer to benchmark just pipeline.run, but it asserts when called multiple times
-    benchmark(build_and_run_pipeline, config, df, output_type)
+    benchmark(build_and_run_pipeline, config, df)

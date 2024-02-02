@@ -19,7 +19,6 @@ dependencies:
 - breathe=4.34.0
 - ccache>=3.7
 - clangdev=16
-- click >=8
 - click>=8
 - cmake=3.25
 - cuda-cudart-dev=11.8
@@ -76,13 +75,14 @@ dependencies:
 - pluggy=1.0
 - pre-commit
 - protobuf=4.21.*
+- pyarrow-hotfix
 - pybind11-stubgen=0.10
 - pylint>=2.17.4,<2.18
 - pypdf=3.16
-- pytest
 - pytest-asyncio
 - pytest-benchmark>=4.0
 - pytest-cov
+- pytest<8
 - python-confluent-kafka=1.9.2
 - python-dotenv=1.0
 - python-graphviz
@@ -97,6 +97,7 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - sqlalchemy<2.0
+- sysroot_linux-64=2.17
 - tqdm=4
 - transformers=4.30.2
 - tritonclient=2.26
@@ -113,7 +114,6 @@ dependencies:
   - grpcio-status==1.58
   - milvus==2.3.2
   - nemollm
-  - pyarrow_hotfix
   - pymilvus==2.3.2
   - pytest-kafka==0.6.0
 name: all_cuda-118_arch-x86_64_py-310

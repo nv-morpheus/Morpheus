@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 Using a BERT model to parse raw logs into jsons.
 
 Example Usage:
-python log-parsing-inference.py \
+python log_parsing_inference.py \
     --inputdata ../../datasets/validation-data/log-parsing-validation-data-input.csv \
     --modelfile ../../log-parsing-models/log-parsing-20220418.bin \
     --configfile ../../log-parsing-models/log-parsing-config-20220418.json \
@@ -33,7 +33,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as f
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
@@ -57,8 +57,8 @@ class Cybert:
         # resources_dir = "%s/resources" % os.path.dirname(os.path.realpath(__file__))
         vocabpath = vocabfile
         self._vocab_lookup = {}
-        with open(vocabpath) as f:
-            for index, line in enumerate(f):
+        with open(vocabpath, encoding="utf-8") as file:
+            for index, line in enumerate(file):
                 self._vocab_lookup[index] = line.split()[0]
         self._hashpath = hashfile
 
@@ -78,8 +78,8 @@ class Cybert:
         >>> cyparse.load_model('/path/to/model.bin', '/path/to/config.json')
         """
 
-        with open(config_filepath) as f:
-            config = json.load(f)
+        with open(config_filepath, encoding="utf-8") as file:
+            config = json.load(file)
         self._label_map = {int(k): v for k, v in config["id2label"].items()}
         self._model = BertForTokenClassification.from_pretrained(
             model_filepath,
@@ -114,8 +114,8 @@ class Cybert:
 
         tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=False)
         tokenizer_output = tokenizer(raw_data_col,
-                                     max_length=256,
-                                     stride=64,
+                                     max_length=max_seq_len,
+                                     stride=stride_len,
                                      truncation=False,
                                      max_num_rows=max_rows_tensor,
                                      add_special_tokens=False,
@@ -152,7 +152,7 @@ class Cybert:
         dataloader = DataLoader(dataset=dataset, shuffle=False, batch_size=batch_size)
         confidences_list = []
         labels_list = []
-        for step, batch in enumerate(dataloader):
+        for _, batch in enumerate(dataloader):
             in_ids, att_masks = batch
             with torch.no_grad():
                 logits = self._model(in_ids, att_masks)[0]
@@ -173,8 +173,8 @@ class Cybert:
         del labels
         del confidences_list
         del labels_list
-        parsed_df, confidence_df = self.__postprocess(infer_pdf)
-        return parsed_df, confidence_df
+        parsed, confidence = self.__postprocess(infer_pdf)
+        return parsed, confidence
 
     def __postprocess(self, infer_pdf):
         # cut overlapping edges
@@ -191,24 +191,24 @@ class Cybert:
         parsed_dfs = infer_pdf.apply(lambda row: self.__get_label_dicts(row), axis=1, result_type="expand")
         ext_parsed = pd.DataFrame(parsed_dfs[0].tolist())
         ext_confidence = pd.DataFrame(parsed_dfs[1].tolist())
-        parsed_df = pd.DataFrame()
-        confidence_df = pd.DataFrame()
+        parsed = pd.DataFrame()
+        confidence = pd.DataFrame()
         ext_confidence = ext_confidence.applymap(np.mean)
         for label in ext_parsed.columns:
             if label[0] == "B":
                 col_name = label[2:]
                 if "I-" + col_name in ext_parsed.columns:
-                    parsed_df[col_name] = ext_parsed[label] + " " + ext_parsed["I-" + col_name].fillna('')
-                    confidence_df[col_name] = (ext_confidence[label] + ext_confidence[label]) / 2
+                    parsed[col_name] = ext_parsed[label] + " " + ext_parsed["I-" + col_name].fillna('')
+                    confidence[col_name] = (ext_confidence[label] + ext_confidence[label]) / 2
                 else:
-                    parsed_df[col_name] = ext_parsed[label]
-                    confidence_df[col_name] = ext_confidence[label]
+                    parsed[col_name] = ext_parsed[label]
+                    confidence[col_name] = ext_confidence[label]
         del ext_parsed
         del ext_confidence
 
         # decode cleanup
-        parsed_df = self.__decode_cleanup(parsed_df)
-        return parsed_df, confidence_df
+        parsed = self.__decode_cleanup(parsed)
+        return parsed, confidence
 
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)

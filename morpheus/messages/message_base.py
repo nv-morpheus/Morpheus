@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -72,5 +72,5 @@ class MessageData(MessageBase):
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__(self, d):
-        self.__dict__ = d
+    def __setstate__(self, state):
+        self.__dict__ = state
