@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +64,12 @@ jobs:
         uses: rapidsai/shared-action-workflows/get-pr-info@branch-23.08
         if: ${{ startsWith(github.ref_name, 'pull-request/') }}
     outputs:
+      is_pr: ${{ startsWith(github.ref_name, 'pull-request/') }}
+      is_main_branch: ${{ github.ref_name == 'main' }}
+      is_dev_branch: ${{ startsWith(github.ref_name, 'branch-') }}
+      has_conda_build_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'conda-build') || false }}
       has_skip_ci_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'skip-ci') || false }}
+      pr_info: ${{ steps.get-pr-info.outcome == 'success' && steps.get-pr-info.outputs.pr-info || '' }}
 
   checks:
     secrets: inherit
@@ -81,7 +86,14 @@ jobs:
     # Only run the CI pipeline if the PR does not have the skip-ci label
     if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
     with:
-      run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
+      # Run checks for any PR branch
+      run_check: ${{ fromJSON(needs.prepare.outputs.is_pr) }}
+      # Run conda-build for main/dev branches and PRs with the conda-build label
+      conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
+      # Update conda package only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
+      # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
+      # !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || ''
+      conda_upload_label: ""
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240129
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240129
     secrets:

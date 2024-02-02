@@ -82,8 +82,8 @@ if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
 
    # If IGNORE_GIT_DIFF is enabled, use all files
    if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
-      echo "Running clang-format from '${SCRIPT_DIR}/run-clang-format.py'..."
-      python3 ${SCRIPT_DIR}/run-clang-format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
+      echo "Running clang-format from '${SCRIPT_DIR}/run_clang_format.py'..."
+      python3 ${SCRIPT_DIR}/run_clang_format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
    else
       CLANG_FORMAT_DIFF=$(find_clang_format_diff)
 

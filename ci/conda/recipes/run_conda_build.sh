@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,7 @@ export CMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES:-"RAPIDS"}
 export MORPHEUS_PYTHON_BUILD_STUBS=${MORPHEUS_PYTHON_BUILD_STUBS:-"ON"}
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
+export MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-OFF}
 
 # Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
 CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
