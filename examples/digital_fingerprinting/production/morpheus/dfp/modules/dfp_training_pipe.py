@@ -21,6 +21,7 @@ from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
+
 from ..utils.module_ids import DFP_DATA_PREP
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_ROLLING_WINDOW
@@ -275,7 +276,7 @@ def dfp_training_pipe(builder: mrc.Builder):
                                                      mlflow_model_writer_conf)
 
     mlflow_model_writer_loader = MonitorLoaderFactory.get_instance("mlflow_model_writer_monitor",
-                                                                    module_config=mlflow_model_writer_module_conf)
+                                                                   module_config=mlflow_model_writer_module_conf)
     mlflow_model_writer_monitor_module = mlflow_model_writer_loader.load(builder=builder)
 
     # Make an edge between the modules.

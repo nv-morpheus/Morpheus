@@ -21,21 +21,19 @@ from bs4 import BeautifulSoup
 
 logging
 
+import logging
 from functools import partial
 
+import mrc
 import mrc.core.operators as ops
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pydantic import BaseModel
+from pydantic import ValidationError
 
 import cudf
 
 from morpheus.messages import MessageMeta
-import logging
-
-import mrc
-from pydantic import BaseModel
-from pydantic import ValidationError
-
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
@@ -54,8 +52,7 @@ class WebScraperSchema(BaseModel):
         extra = "forbid"
 
 
-WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm",
-                                              WebScraperSchema)
+WebScraperLoaderFactory = ModuleLoaderFactory("web_scraper", "morpheus_examples_llm", WebScraperSchema)
 
 
 def download_and_split(msg: MessageMeta, text_splitter, link_column, session) -> MessageMeta:

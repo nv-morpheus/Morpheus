@@ -23,6 +23,7 @@ from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
+
 from ..utils.module_ids import DFP_DATA_PREP
 from ..utils.module_ids import DFP_INFERENCE
 from ..utils.module_ids import DFP_INFERENCE_PIPE

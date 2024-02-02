@@ -17,12 +17,13 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
-import cudf
 import mrc
 import mrc.core.operators as ops
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
+
+import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import ColumnInfo

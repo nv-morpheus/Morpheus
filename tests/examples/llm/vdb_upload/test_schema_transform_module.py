@@ -14,10 +14,11 @@
 
 import types
 
-import cudf
 import pytest
-from _utils import assert_results
 
+import cudf
+
+from _utils import assert_results
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline

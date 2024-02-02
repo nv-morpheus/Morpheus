@@ -19,13 +19,13 @@ from typing import List
 from typing import Optional
 
 import mrc
-from common.content_extractor_module import ContentExtractorLoaderFactory
-from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 
+from common.content_extractor_module import ContentExtractorLoaderFactory
+from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.multi_file_source import MultiFileSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
