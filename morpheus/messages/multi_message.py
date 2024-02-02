@@ -269,6 +269,26 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
                 # cudf is really bad at adding new columns
                 if (isinstance(df, cudf.DataFrame)):
+
+                    # TODO(morpheus#1487): This logic no longer works in CUDF 24.04.
+                    # We should find a way to reinable the no-dropped-index path as
+                    # that should be more performant than dropping the index.
+                    # # saved_index = None
+
+                    # # # Check to see if we can use slices
+                    # # if (not (df.index.is_unique and
+                    # #          (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
+                    # #     # Save the index and reset
+                    # #     saved_index = df.index
+                    # #     df.reset_index(drop=True, inplace=True)
+
+                    # # # Perform the update via slices
+                    # # df.loc[df.index[row_indexer], columns] = value
+
+                    # # # Reset the index if we changed it
+                    # # if (saved_index is not None):
+                    # #     df.set_index(saved_index, inplace=True)
+
                     saved_index = df.index
                     df.reset_index(drop=True, inplace=True)
                     df.loc[df.index[row_indexer], columns] = value
