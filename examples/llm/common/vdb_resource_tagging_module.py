@@ -18,11 +18,24 @@ import mrc
 from pydantic import ValidationError
 
 from morpheus.messages import ControlMessage
-from morpheus.modules.schemas.examples.llm.vdb_resource_tagging_schema import VDBResourceTaggingSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
+logging
+
+import logging
+
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
+
+
+class VDBResourceTaggingSchema(BaseModel):
+    vdb_resource_name: str
+
+    class Config:
+        extra = "forbid"
+
 
 VDBResourceTaggingLoaderFactory = ModuleLoaderFactory("vdb_resource_tagging",
                                                       "morpheus_examples_llm",

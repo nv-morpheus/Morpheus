@@ -15,8 +15,8 @@
 import logging
 
 import mrc
-from dfp.utils.module_ids import DFP_MONITOR
 
+from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
@@ -24,7 +24,6 @@ from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_SPLIT_USERS
 
@@ -73,7 +72,7 @@ def dfp_preproc(builder: mrc.Builder):
     #                |
     #                v
     # +-------------------------------+
-    # |     dfp_monitor_module        |
+    # |       monitor_module          |
     # +-------------------------------+
     #                |
     #                v
@@ -83,7 +82,7 @@ def dfp_preproc(builder: mrc.Builder):
     #                |
     #                v
     # +-------------------------------+
-    # |     dfp_monitor_module        |
+    # |       monitor_module          |
     # +-------------------------------+
     #                |
     #                v
@@ -146,15 +145,15 @@ def dfp_preproc(builder: mrc.Builder):
                                                        "morpheus",
                                                        "dfp_file_to_df_dataloader",
                                                        file_to_df_conf)
-    file_to_df_monitor_module = builder.load_module(DFP_MONITOR,
-                                                    "morpheus",
-                                                    "file_to_df_monitor",
-                                                    file_to_df_monitor_conf)
+
+    file_to_df_monitor_loader = MonitorLoaderFactory.get_instance("file_to_df_monitor_loader",
+                                                                  config=file_to_df_monitor_conf)
+    file_to_df_monitor_module = file_to_df_monitor_loader.load(builder=builder)
     dfp_split_users_module = builder.load_module(DFP_SPLIT_USERS, "morpheus", "dfp_split_users", dfp_split_users_conf)
-    dfp_split_users_monitor_module = builder.load_module(DFP_MONITOR,
-                                                         "morpheus",
-                                                         "dfp_training_ingested_monitor",
-                                                         dfp_split_users_monitor_conf)
+
+    dfp_split_users_monitor_loader = MonitorLoaderFactory.get_instance("dfp_split_users_monitor_loader",
+                                                                       config=dfp_split_users_monitor_conf)
+    dfp_split_users_monitor_module = dfp_split_users_monitor_loader.load(builder=builder)
 
     # Make an edge between the modules.
     builder.make_edge(filter_control_message_module.output_port("output"), file_batcher_module.input_port("input"))

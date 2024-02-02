@@ -16,12 +16,11 @@ import os
 import sys
 import types
 
-import pytest
-
 import cudf
-
+import pytest
 from _utils import TEST_DIRS
 from _utils import assert_results
+
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline

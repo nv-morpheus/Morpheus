@@ -13,15 +13,18 @@
 # limitations under the License.
 
 import logging
-
-import mrc
-import mrc.core.operators as ops
-from pydantic import ValidationError
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 import cudf
+import mrc
+import mrc.core.operators as ops
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
 
 from morpheus.messages import MessageMeta
-from morpheus.modules.schemas.examples.llm.schema_transform_schema import SchemaTransformSchema
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.column_info import RenameColumn
@@ -29,6 +32,23 @@ from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
+
+
+class ColumnTransformSchema(BaseModel):
+    dtype: str
+    op_type: str
+    from_: Optional[str] = Field(None, alias="from")
+
+    class Config:
+        extra = "forbid"
+
+
+class SchemaTransformSchema(BaseModel):
+    schema_transform_config: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
+    class Config:
+        extra = "forbid"
+
 
 SchemaTransformLoaderFactory = ModuleLoaderFactory("schema_transform", "morpheus_examples_llm", SchemaTransformSchema)
 

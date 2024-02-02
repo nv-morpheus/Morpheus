@@ -15,13 +15,12 @@
 import logging
 
 import mrc
-from dfp.utils.module_ids import DFP_MONITOR
 
+from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
-
 from ..utils.module_ids import DFP_DATA_PREP
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_ROLLING_WINDOW
@@ -150,7 +149,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     #                   |
     #                   v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |           monitor_module            |
     # +-------------------------------------+
     #                   |
     #                   v
@@ -160,7 +159,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     #                   |
     #                   v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |           monitor_module            |
     # +-------------------------------------+
     #                   |
     #                   v
@@ -170,7 +169,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     #                   |
     #                   v
     # +-------------------------------------+
-    # |         dfp_monitor_module          |
+    # |           monitor_module            |
     # +-------------------------------------+
     #                   |
     #                   v
@@ -260,23 +259,24 @@ def dfp_training_pipe(builder: mrc.Builder):
                                                     "dfp_rolling_window",
                                                     dfp_rolling_window_conf)
     dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
-    dfp_data_prep_monitor_module = builder.load_module(DFP_MONITOR,
-                                                       "morpheus",
-                                                       "dfp_training_data_prep_monitor",
-                                                       data_prep_monitor_module_conf)
+    dfp_data_prep_loader = MonitorLoaderFactory.get_instance("data_prep_monitor",
+                                                             module_config=data_prep_monitor_module_conf)
+    dfp_data_prep_monitor_module = dfp_data_prep_loader.load(builder=builder)
+
     dfp_training_module = builder.load_module(DFP_TRAINING, "morpheus", "dfp_training", dfp_training_conf)
-    dfp_training_monitor_module = builder.load_module(DFP_MONITOR,
-                                                      "morpheus",
-                                                      "dfp_training_training_monitor",
-                                                      training_monitor_module_conf)
+
+    dfp_training_monitor_loader = MonitorLoaderFactory.get_instance("training_monitor",
+                                                                    module_config=training_monitor_module_conf)
+    dfp_training_monitor_module = dfp_training_monitor_loader.load(builder=builder)
+
     mlflow_model_writer_module = builder.load_module(MLFLOW_MODEL_WRITER,
                                                      "morpheus",
                                                      "mlflow_model_writer",
                                                      mlflow_model_writer_conf)
-    mlflow_model_writer_monitor_module = builder.load_module(DFP_MONITOR,
-                                                             "morpheus",
-                                                             "dfp_training_mlflow_model_writer_monitor",
-                                                             mlflow_model_writer_module_conf)
+
+    mlflow_model_writer_loader = MonitorLoaderFactory.get_instance("mlflow_model_writer_monitor",
+                                                                    module_config=mlflow_model_writer_module_conf)
+    mlflow_model_writer_monitor_module = mlflow_model_writer_loader.load(builder=builder)
 
     # Make an edge between the modules.
     builder.make_edge(preproc_module.output_port("output"), dfp_rolling_window_module.input_port("input"))

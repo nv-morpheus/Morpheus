@@ -19,6 +19,8 @@ import typing
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import wraps
+from typing import Dict
+from typing import List
 
 import fitz
 import fsspec
@@ -27,12 +29,45 @@ import mrc.core.operators as ops
 import pandas as pd
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pydantic import BaseModel
+from pydantic import Field
 from pydantic import ValidationError
+from pydantic import validator
 
 from morpheus.messages import MessageMeta
-from morpheus.modules.schemas.examples.llm.content_extractor_schema import ContentExtractorSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+
+
+class CSVConverterSchema(BaseModel):
+    chunk_overlap: int = 102  # Example default value
+    chunk_size: int = 1024
+    text_column_names: List[str]
+
+    class Config:
+        extra = "forbid"
+
+
+class ContentExtractorSchema(BaseModel):
+    batch_size: int = 32
+    chunk_overlap: int = 51
+    chunk_size: int = 512
+    converters_meta: Dict[str, Dict] = Field(default_factory=dict)
+    num_threads: int = 10
+
+    @validator('converters_meta', pre=True)
+    def validate_converters_meta(cls, v):
+        validated_meta = {}
+        for key, value in v.items():
+            if key.lower() == 'csv':
+                validated_meta[key] = CSVConverterSchema(**value)
+            else:
+                validated_meta[key] = value
+        return validated_meta
+
+    class Config:
+        extra = "forbid"
+
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +152,6 @@ def read_file_to_bytesio(file_path: str) -> io.BytesIO:
 
 
 def _converter_error_handler(func: typing.Callable) -> typing.Callable:
-
     @wraps(func)
     def wrapper(input_info: ConverterInputInfo, *args, **kwargs):
         try:

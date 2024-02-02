@@ -33,9 +33,9 @@ from pydantic import ValidationError
 import cudf
 
 from morpheus.messages import MessageMeta
-from morpheus.modules.schemas.examples.llm.web_scraper_schema import WebScraperSchema
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+
 
 logger = logging.getLogger(__name__)
 
