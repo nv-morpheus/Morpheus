@@ -59,10 +59,7 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):
             for k, df in enumerate(self._dataframes):
-                if (self._build_cpp_node):
-                    x = MessageMetaCpp(df)
-                else:
-                    x = MessageMeta(df)
+                x = MessageMeta(df)
 
                 # If we are looping, copy the object. Do this before we push the object in case it changes
                 if (i + 1 < self._repeat_count):

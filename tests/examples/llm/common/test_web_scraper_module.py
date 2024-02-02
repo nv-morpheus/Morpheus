@@ -60,7 +60,6 @@ def test_web_scraper_module(config: Config, mock_rest_server: str, import_mod: t
                            input_port_name="input",
                            output_port_name="output"))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=df_expected))
-    # TODO(Devin) -- Disabling at the moment, latest 24.03 merge seems to have broken this test
-    # pipe.run()
+    pipe.run()
 
-    # assert_results(comp_stage.get_results())
+    assert_results(comp_stage.get_results())

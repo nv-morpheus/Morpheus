@@ -45,7 +45,6 @@ def test_http_client_source_stage_pipe(config: Config, mock_rest_server: str, im
     pipe.add_stage(import_mod.WebScraperStage(config, chunk_size=config.feature_length))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, compare_df=df_expected))
 
-    # TODO(Devin) -- Disabling at the moment, latest 24.03 merge seems to have broken this test
-    # pipe.run()
+    pipe.run()
 
-    # assert_results(comp_stage.get_results())
+    assert_results(comp_stage.get_results())

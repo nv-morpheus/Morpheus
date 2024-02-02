@@ -18,11 +18,12 @@ channels:
   - defaults
 dependencies:
   - arxiv=1.4
+  - newspaper3k=0.2
   - onnx # required for triton model export
   - pip
   - pypdf=3.16
-  - newspaper3k=0.2
   - requests-cache=1.1
+  - sentence-transformers # required for triton model export
 
   ####### Pip Transitive Dependencies (keep sorted!) #######
   # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
