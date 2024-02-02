@@ -111,7 +111,7 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
             if (not self._mc.delayed_start):
                 self._mc.ensure_progress_bar()
 
-    def stop(self):
+    async def join(self):
         """
         Clean up and close the progress bar.
         """

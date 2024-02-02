@@ -27,6 +27,7 @@ from _utils.stages.conv_msg import ConvMsg
 from morpheus.cli.commands import RANKDIR_CHOICES
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
+from morpheus.pipeline.pipeline import PipelineState
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
@@ -76,7 +77,7 @@ def test_viz_without_run(viz_pipeline: Pipeline, tmp_path: str):
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
-    assert viz_pipeline.is_built
+    assert viz_pipeline.state != PipelineState.INTIALIZED
 
 
 @pytest.mark.slow
