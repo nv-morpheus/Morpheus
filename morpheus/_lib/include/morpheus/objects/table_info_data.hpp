@@ -20,9 +20,9 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>  // for size_type
 
+#include <numeric>
 #include <string>
 #include <vector>
-#include <numeric>
 
 namespace morpheus {
 
@@ -46,7 +46,10 @@ struct TableInfoData
         std::iota(col_indices.begin(), col_indices.end(), 0);
         column_indices = std::move(col_indices);
     }
-    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns, std::vector<cudf::size_type> col_indicies) :
+    TableInfoData(cudf::table_view view,
+                  std::vector<std::string> indices,
+                  std::vector<std::string> columns,
+                  std::vector<cudf::size_type> col_indicies) :
       table_view(std::move(view)),
       index_names(std::move(indices)),
       column_names(std::move(columns)),

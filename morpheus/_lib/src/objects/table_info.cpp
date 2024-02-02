@@ -105,7 +105,7 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
 
                            col_indices_mapppings.push_back(idx);
 
-                           return idx  + table.index_names.size();
+                           return idx + table.index_names.size();
                        });
 
         table_view_out = table_view_out.select(col_indices);
