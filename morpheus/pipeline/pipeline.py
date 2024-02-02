@@ -403,28 +403,32 @@ class Pipeline():
 
         logger.info("====Pipeline Started====")
 
-        try:
-            # Make a local reference so the object doesn't go out of scope from a call to stop()
-            executor = self._mrc_executor
-            await executor.join_async()
-        except Exception:
-            logger.exception("Exception occurred in pipeline. Rethrowing")
-            raise
-        finally:
-            # Call join on all sources. This only occurs after all messages have been processed fully.
-            for source in list(self._sources):
-                await source.join()
+        async def post_start(executor):
 
-            # Now call join on all stages
-            for stage in list(self._stages):
-                await stage.join()
+            try:
+                # Make a local reference so the object doesn't go out of scope from a call to stop()
+                await executor.join_async()
+            except Exception:
+                logger.exception("Exception occurred in pipeline. Rethrowing")
+                raise
+            finally:
+                # Call join on all sources. This only occurs after all messages have been processed fully.
+                for source in list(self._sources):
+                    await source.join()
 
-            self._on_stop()
+                # Now call join on all stages
+                for stage in list(self._stages):
+                    await stage.join()
 
-            with self._mutex:
-                self._state = PipelineState.COMPLETED
+                self._on_stop()
 
-            self._completion_event.set()
+                with self._mutex:
+                    self._state = PipelineState.COMPLETED
+
+                self._completion_event.set()
+
+        asyncio.create_task(post_start(self._mrc_executor))
+
 
     def stop(self):
         """
@@ -454,9 +458,10 @@ class Pipeline():
     def _on_stop(self):
         self._mrc_executor = None
 
-    async def _build_and_start(self):
+    async def build_and_start(self):
 
         if (self._state == PipelineState.INTIALIZED):
+            self._completion_event = asyncio.Event()
             try:
                 self.build()
             except Exception:
@@ -631,9 +636,8 @@ class Pipeline():
         """
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
-        self._completion_event = asyncio.Event()
         try:
-            await self._build_and_start()
+            await self.build_and_start()
 
         except KeyboardInterrupt:
             tqdm.write("Stopping pipeline. Please wait...")
