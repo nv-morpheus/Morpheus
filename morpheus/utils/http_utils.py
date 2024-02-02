@@ -141,7 +141,7 @@ def request_with_retry(
                          request_kwargs['method'],
                          request_kwargs['url'],
                          e)
-            logger.debug("Sleeping for %s seconds before retrying request again", sleep_time)
+            logger.debug("Sleeping for %s seconds before retrying request again", sleep_time_)
             time.sleep(sleep_time_)
 
 
