@@ -74,6 +74,9 @@ cdef public api:
 
         column_indicies = []
 
+        for c_index in table_info.column_indices:
+            column_indicies.append(c_index)
+
         try:
             data, index = data_from_table_view_indexed(
                 table_info.table_view,
@@ -161,8 +164,6 @@ cdef public api:
         data_columns = []
         for _ in column_names:
             column_owner = owner
-            print("source_column_idx: ", source_column_idx)
-            print("column_indices[source_column_idx]:", column_indices[source_column_idx])
             if table_owner:
                 column_owner = owner._columns[column_indices[source_column_idx]]
             data_columns.append(
