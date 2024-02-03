@@ -14,4 +14,3 @@
 """
 Utility functions and objects.
 """
-from . import compare_df
