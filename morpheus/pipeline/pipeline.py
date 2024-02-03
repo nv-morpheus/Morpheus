@@ -429,7 +429,6 @@ class Pipeline():
 
         asyncio.create_task(post_start(self._mrc_executor))
 
-
     def stop(self):
         """
         Stops all running stages and the underlying MRC pipeline.
@@ -460,8 +459,8 @@ class Pipeline():
 
     async def build_and_start(self):
 
+        self._completion_event = asyncio.Event()
         if (self._state == PipelineState.INTIALIZED):
-            self._completion_event = asyncio.Event()
             try:
                 self.build()
             except Exception:
@@ -638,6 +637,7 @@ class Pipeline():
         """
         try:
             await self.build_and_start()
+            await self.join()
 
         except KeyboardInterrupt:
             tqdm.write("Stopping pipeline. Please wait...")
