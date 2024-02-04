@@ -128,7 +128,7 @@ channels:
 
 dependencies:
 
-  build_cpp: # should be split in to `build_python` if/when converting to use scikit-build
+  build_cpp: # should be split into `build_python` if/when converting to use scikit-build
     common:
       - output_types: [conda]
         packages:
@@ -237,7 +237,7 @@ dependencies:
               - google-search-results==2.4
               - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
               - nemollm
-              - farm-haystack[file-conversion]
+              - PyMuPDF=1.23.20
 
 
   runtime:
