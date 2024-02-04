@@ -16,7 +16,6 @@ import typing
 
 import cudf
 
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp  # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
@@ -46,10 +45,7 @@ class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
         def _generate_frames() -> typing.Iterator[MessageMeta]:
             for i in range(self._repeat_count):
                 for k, df in enumerate(self._dataframes):
-                    if (self.supports_cpp_node()):
-                        x = MessageMetaCpp(df)
-                    else:
-                        x = MessageMeta(df)
+                    x = MessageMeta(df)
 
                     # If we are looping, copy the object. Do this before we push the object in case it changes
                     if (i + 1 < self._repeat_count):
@@ -69,7 +65,7 @@ class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
         return "from-mem"
 
     def supports_cpp_node(self) -> bool:
-        return True
+        return False
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)

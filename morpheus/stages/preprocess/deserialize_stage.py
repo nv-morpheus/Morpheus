@@ -24,6 +24,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -103,14 +104,14 @@ class DeserializeStage(MultiMessageStage):
 
     def supports_cpp_node(self):
         # Enable support by default
-        return True
+        return False
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(self._message_type)
 
     def _build_single(self, builder: mrc.Builder, input_node: mrc.SegmentObject) -> mrc.SegmentObject:
-        if (self._build_cpp_node and self._message_type == MultiMessage):
-            # CPP Deserialize stage doesn't support ControlMessage
+        if (self.supports_cpp_node()):
+            # TODO(Devin): Skip this for now we get conflicting types for cpp and python message metas
             out_node = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
             builder.make_edge(input_node, out_node)
         else:

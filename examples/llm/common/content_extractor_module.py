@@ -55,8 +55,8 @@ class ContentExtractorSchema(BaseModel):
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
 
-    @validator('converters_meta', pre=True)
-    def validate_converters_meta(self, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:
+    @validator('converters_meta', pre=True, allow_reuse=True)
+    def val_converters_meta(cls, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:  # pylint: disable=no-self-argument
         validated_meta = {}
         for key, value in to_validate.items():
             if key.lower() == 'csv':
@@ -152,7 +152,6 @@ def read_file_to_bytesio(file_path: str) -> io.BytesIO:
 
 
 def _converter_error_handler(func: typing.Callable) -> typing.Callable:
-
     @wraps(func)
     def wrapper(input_info: ConverterInputInfo, *args, **kwargs):
         try:

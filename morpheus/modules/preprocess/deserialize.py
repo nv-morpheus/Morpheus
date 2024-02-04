@@ -94,7 +94,6 @@ def _process_dataframe_to_multi_message(message: MessageMeta, batch_size: int,
 
     message = _check_slicable_index(message, ensure_sliceable_index)
 
-    logger.error("Processing DataFrame with %s rows, creating MultiMessage", message.count)
     full_message = MultiMessage(meta=message)
 
     # Now break it up by batches
