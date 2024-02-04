@@ -14,37 +14,55 @@
 
 import typing
 
-import mrc
-
 import cudf
 
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stage_schema import StageSchema
+from morpheus.stages.input.in_memory_data_generation_stage import InMemoryDataGenStage
 
 
-class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
+class InMemorySourceStage(PreallocatorMixin, InMemoryDataGenStage):
     """
-    Input source that emits a pre-defined list of dataframes.
+    Input source that emits a pre-defined list of dataframes, derived from InMemoryDataGenStage.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
     dataframes : typing.List[cudf.DataFrame]
-        List of dataframes to emit wrapped in `MessageMeta` instances in order
+        List of dataframes to emit wrapped in `MessageMeta` instances in order.
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     """
 
     def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1):
-        super().__init__(c)
-
+        # Prepare a generator function based on the provided dataframes and repeat count
         self._dataframes = dataframes
         self._repeat_count = repeat
+
+        def _generate_frames() -> typing.Iterator[MessageMeta]:
+            for i in range(self._repeat_count):
+                for k, df in enumerate(self._dataframes):
+                    if (self.supports_cpp_node()):
+                        x = MessageMetaCpp(df)
+                    else:
+                        x = MessageMeta(df)
+
+                    # If we are looping, copy the object. Do this before we push the object in case it changes
+                    if (i + 1 < self._repeat_count):
+                        df = df.copy()
+
+                        # Shift the index to allow for unique indices without reading more data
+                        df.index += len(df)
+                        self._dataframes[k] = df
+
+                    yield x
+
+        # Initialize the base InMemoryDataGenStage with the generator function
+        super().__init__(c, data_source=_generate_frames, output_data_type=MessageMeta)
 
     @property
     def name(self) -> str:
@@ -55,21 +73,3 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MessageMeta)
-
-    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
-        for i in range(self._repeat_count):
-            for k, df in enumerate(self._dataframes):
-                x = MessageMeta(df)
-
-                # If we are looping, copy the object. Do this before we push the object in case it changes
-                if (i + 1 < self._repeat_count):
-                    df = df.copy()
-
-                    # Shift the index to allow for unique indices without reading more data
-                    df.index += len(df)
-                    self._dataframes[k] = df
-
-                yield x
-
-    def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
-        return builder.make_source(self.unique_name, self._generate_frames())

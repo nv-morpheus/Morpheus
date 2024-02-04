@@ -15,7 +15,7 @@
 import logging
 from typing import Any
 from typing import Callable
-from typing import Generator
+from typing import Iterable
 from typing import Type
 
 import mrc
@@ -29,21 +29,21 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 class InMemoryDataGenStage(SingleOutputSource):
     """
-    Source stage that generates data in-memory using a provided generator function.
+    Source stage that generates data in-memory using a provided iterable or generator function.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    generator : Callable[[], Generator[Any, None, None]]
-        A generator function that yields data to be processed by the pipeline.
+    data_source : Callable[[], Iterable[Any]]
+        An iterable or a generator function that yields data to be processed by the pipeline.
     output_data_type : Type
-        The data type of the objects that the generator yields.
+        The data type of the objects that the data_source yields.
     """
 
-    def __init__(self, c: Config, generator: Callable[[], Generator[Any, None, None]], output_data_type: Type = Any):
+    def __init__(self, c: Config, data_source: Callable[[], Iterable[Any]], output_data_type: Type = Any):
         super().__init__(c)
-        self._generator = generator
+        self._data_source = data_source
         self._output_data_type = output_data_type
 
     @property
@@ -57,8 +57,9 @@ class InMemoryDataGenStage(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _generate_data(self) -> Generator[Any, None, None]:
-        yield from self._generator()
+    def _generate_data(self) -> Iterable[Any]:
+        # Directly use the data source as it's already an iterable
+        return self._data_source()
 
     def _build_source(self, builder: mrc.Builder) -> mrc.SegmentObject:
         return builder.make_source(self.unique_name, self._generate_data())
