@@ -30,6 +30,7 @@ from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+
 from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 from ...common.web_scraper_module import WebScraperLoaderFactory
 

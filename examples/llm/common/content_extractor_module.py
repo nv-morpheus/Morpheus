@@ -152,6 +152,7 @@ def read_file_to_bytesio(file_path: str) -> io.BytesIO:
 
 
 def _converter_error_handler(func: typing.Callable) -> typing.Callable:
+
     @wraps(func)
     def wrapper(input_info: ConverterInputInfo, *args, **kwargs):
         try:

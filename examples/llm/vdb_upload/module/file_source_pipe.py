@@ -29,6 +29,7 @@ from morpheus.modules.input.multi_file_source import MultiFileSourceLoaderFactor
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+
 from ...common.content_extractor_module import ContentExtractorLoaderFactory
 from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 

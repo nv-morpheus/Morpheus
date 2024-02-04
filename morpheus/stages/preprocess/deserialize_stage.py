@@ -24,7 +24,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
