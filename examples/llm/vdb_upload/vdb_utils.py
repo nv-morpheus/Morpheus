@@ -312,7 +312,7 @@ def build_cli_configs(source_type,
     # VDB Configuration
     cli_vdb_conf = {
         # Vector db upload has some significant transaction overhead, batch size here should be as large as possible
-        'batch_size': 5120,
+        'batch_size': 16384,
         'resource_name': vector_db_resource_name,
         'embedding_size': embedding_size,
         'recreate': True,

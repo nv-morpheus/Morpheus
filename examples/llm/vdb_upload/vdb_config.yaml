@@ -142,7 +142,7 @@ vdb_pipeline:
     model_name: "bert-base-uncased-hash"
 
   vdb:
-    batch_size: 5120
+    batch_size: 16896
     resource_name: "VDBGENERAL"  # Identifier for the resource in the vector database
     embedding_size: 384
     recreate: True  # Whether to recreate the resource if it already exists
