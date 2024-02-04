@@ -18,11 +18,10 @@ import time
 import typing
 from dataclasses import dataclass
 
+import cudf
 import mrc
 from mrc.core import operators as ops
 from pydantic import ValidationError
-
-import cudf
 
 from morpheus.messages import ControlMessage
 from morpheus.messages import MultiMessage
@@ -223,7 +222,10 @@ def _write_to_vector_db(builder: mrc.Builder):
         except Exception as exc:
             logger.error("Unable to insert into collection: %s due to %s", msg_resource_target, exc)
 
-    node = builder.make_node(WRITE_TO_VECTOR_DB, ops.map(on_data), ops.on_completed(on_completed))
+        return []
+
+    node = builder.make_node(WRITE_TO_VECTOR_DB, ops.map(on_data), ops.filter(lambda val: val is not None),
+                             ops.on_completed(on_completed))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

@@ -19,7 +19,7 @@ import typing
 
 import mrc
 
-from morpheus._lib.messages import MessageMeta as CppMessageMeta
+from morpheus._lib.messages import MessageMeta as CppMessageMeta  # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
@@ -130,7 +130,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         )
 
         for i in range(self._repeat_count):
-            if (self._build_cpp_node):
+            if (self._build_cpp_node()):
                 x = CppMessageMeta(df)
             else:
                 x = MessageMeta(df)

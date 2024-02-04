@@ -25,13 +25,13 @@ from pydantic import ValidationError
 from pydantic import validator
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 
-from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
-from common.web_scraper_module import WebScraperLoaderFactory
 from morpheus.modules.general.monitor import MonitorLoaderFactory
 from morpheus.modules.input.rss_source import RSSSourceLoaderFactory
 from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
+from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
+from ...common.web_scraper_module import WebScraperLoaderFactory
 
 logger = logging.getLogger(__name__)
 

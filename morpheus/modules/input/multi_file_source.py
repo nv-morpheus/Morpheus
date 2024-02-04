@@ -164,9 +164,9 @@ def _multi_file_source(builder: mrc.Builder):
 
         # Check if the provided filenames resulted in any files being opened
         if len(files) == 0:
-            logger.warning("Multi-file-source did not match any of the provided filter strings: %s.",
-                           filenames,
-                           "This is probably not what you want.")
+            logger.warning(
+                "Multi-file-source did not match any of the provided filter strings: %s. %s",
+                filenames, "This is probably not what you want.")
             return
 
         logger.info("File source exhausted, discovered %s files.", len(files))

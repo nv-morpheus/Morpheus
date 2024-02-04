@@ -16,7 +16,7 @@ import typing
 
 import cudf
 
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp
+from morpheus._lib.messages import MessageMeta as MessageMetaCpp  # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin

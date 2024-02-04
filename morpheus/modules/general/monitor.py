@@ -58,6 +58,7 @@ def monitor(builder: mrc.Builder):
     message. Allows for correct counting of batched and sliced messages. Example: func_str. Default: None.
     - log_level (str): Enable this stage when the configured log level is at `log_level` or lower. Example: 'DEBUG'.
     Default: INFO.
+
     """
 
     config = builder.get_current_module_config()

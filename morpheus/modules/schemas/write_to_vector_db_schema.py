@@ -40,13 +40,13 @@ class WriteToVDBSchema(BaseModel):
     write_time_interval: float = 1.0
 
     @validator('service', pre=True)
-    def validate_service(cls, to_validate):
+    def validate_service(cls, to_validate):  # pylint: disable=no-self-argument
         if not to_validate:
             raise ValueError("Service must be a service name or a serialized instance of VectorDBService")
         return to_validate
 
     @validator('default_resource_name', pre=True)
-    def validate_resource_name(cls, to_validate):
+    def validate_resource_name(cls, to_validate):  # pylint: disable=no-self-argument
         if not to_validate:
             raise ValueError("Resource name must not be None or Empty.")
         return to_validate

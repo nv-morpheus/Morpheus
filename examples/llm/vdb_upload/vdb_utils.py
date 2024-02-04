@@ -407,7 +407,7 @@ def build_final_config(vdb_conf_path,
 
     # Load and merge configurations from the YAML file if it exists
     if vdb_conf_path:
-        with open(vdb_conf_path, 'r') as file:
+        with open(vdb_conf_path, 'r', encoding='utf-8') as file:
             vdb_pipeline_config = yaml.safe_load(file).get('vdb_pipeline', {})
 
         embeddings_conf = merge_configs(vdb_pipeline_config.get('embeddings', {}), cli_embeddings_conf)

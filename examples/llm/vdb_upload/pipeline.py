@@ -39,19 +39,23 @@ def pipeline(pipeline_config: Config,
 
     Parameters
     ----------
-    source_config : Dict
-        Configuration for data sources (e.g., 'rss', 'filesystem').
-    vdb_config : Dict
-        Configuration for the vector database.
     pipeline_config : Dict
-        General configuration for the pipeline (e.g., number of threads, batch sizes).
+        General configuration for the pipeline, including number of threads and batch sizes.
+    source_config : List[Dict]
+        Configuration for data sources, specifying the type of sources to use (e.g., 'rss', 'filesystem') and their
+        individual settings.
+    vdb_config : Dict
+        Configuration settings for the vector database, detailing how vectors should be stored, queried, and managed.
     embeddings_config : Dict
-        Configuration for embeddings (e.g., model name, embedding size).
+        Configuration for generating embeddings, including model name, embedding size, and any model-specific settings.
+    tokenizer_config : Dict
+        Configuration for the tokenizer, specifying how text should be tokenized before embedding. Includes tokenizer
+        model and settings.
 
     Returns
     -------
     float
-        The start time of the pipeline execution.
+        The start time of the pipeline execution, typically represented as a timestamp.
     """
 
     isolate_embeddings = embeddings_config.get('isolate_embeddings', False)
