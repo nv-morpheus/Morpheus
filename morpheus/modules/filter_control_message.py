@@ -19,16 +19,15 @@ from mrc.core import operators as ops
 
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILTER_CONTROL_MESSAGE, MORPHEUS_MODULE_NAMESPACE)
-def filter_control_message(builder: mrc.Builder):
+@register_module("monitor", "morpheus")
+def monitor(builder: mrc.Builder):
     """
-    This module discards control messages based on specified filtering criteria.
+    This module function is used for monitoring pipeline message rate.
 
     Parameters
     ----------
@@ -38,10 +37,20 @@ def filter_control_message(builder: mrc.Builder):
     Notes
     -----
         Configurable Parameters:
-            - enable_data_type_filtering (bool): Enables filtering based on data type; Example: true; Default: false
-            - enable_task_filtering (bool): Enables filtering based on task type; Example: true; Default: false
-            - filter_data_type (str): The data type to be used as a filter; Example: `desired_data_type`; Default: None
-            - filter_task_type (str): The task type to be used as a filter; Example: `specific_task`; Default: None
+            - description (str): Name for this Monitor Stage in the console window.
+              Example: 'Progress'; Default: 'Progress'.
+            - silence_monitors (bool): Silences the monitors on the console.
+              Example: True; Default: False.
+            - smoothing (float): Determines throughput smoothing. 0 = Instantaneous, 1 = Average.
+              Example: 0.01; Default: 0.05.
+            - unit (str): Units to display in the rate value.
+              Example: 'messages'; Default: 'messages'.
+            - delayed_start (bool): Delays the progress bar until the first message is received.
+              Useful for accurate timing in large pipelines. Example: True; Default: False.
+            - determine_count_fn_schema (str): Custom function for determining the count in a message,
+              suitable for batched and sliced messages. Example: func_str; Default: None.
+            - log_level (str): This stage is enabled when the configured log level is at `log_level`
+              or lower. Example: 'DEBUG'; Default: INFO.
     """
 
     config = builder.get_current_module_config()
