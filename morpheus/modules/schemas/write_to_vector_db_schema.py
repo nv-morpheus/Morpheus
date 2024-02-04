@@ -16,7 +16,7 @@ import logging
 
 from pydantic import BaseModel
 from pydantic import Field
-from pydantic import field_validator
+from pydantic import validator
 
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_VECTOR_DB
@@ -39,14 +39,14 @@ class WriteToVDBSchema(BaseModel):
     batch_size: int = 1024
     write_time_interval: float = 1.0
 
-    @field_validator('service')
-    def validate_service(self, to_validate):
+    @validator('service', pre=True)
+    def validate_service(cls, to_validate):
         if not to_validate:
             raise ValueError("Service must be a service name or a serialized instance of VectorDBService")
         return to_validate
 
-    @field_validator('default_resource_name')
-    def validate_resource_name(self, to_validate):
+    @validator('default_resource_name', pre=True)
+    def validate_resource_name(cls, to_validate):
         if not to_validate:
             raise ValueError("Resource name must not be None or Empty.")
         return to_validate

@@ -22,7 +22,7 @@ import mrc
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import field_validator
+from pydantic import validator
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 
 from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
@@ -51,7 +51,7 @@ class RSSSourcePipeSchema(BaseModel):
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
-    @field_validator('feed_input')
+    @validator('feed_input', pre=True)
     def validate_feed_input(self, to_validate):
         if isinstance(to_validate, str):
             return [to_validate]

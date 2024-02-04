@@ -32,7 +32,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import field_validator
+from pydantic import validator
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import ModuleLoaderFactory
@@ -55,7 +55,7 @@ class ContentExtractorSchema(BaseModel):
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
 
-    @field_validator('converters_meta')
+    @validator('converters_meta', pre=True)
     def validate_converters_meta(self, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:
         validated_meta = {}
         for key, value in to_validate.items():
