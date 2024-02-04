@@ -14,19 +14,14 @@
 
 import logging
 import os
-
-import requests
-import requests_cache
-from bs4 import BeautifulSoup
-
-logging
-
-import logging
 from functools import partial
 
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+import requests
+import requests_cache
+from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -124,7 +119,8 @@ def _web_scraper(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid web scraper configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     link_column = web_scraper_config.link_column
     chunk_size = web_scraper_config.chunk_size

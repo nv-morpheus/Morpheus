@@ -22,7 +22,7 @@ from _utils import TEST_DIRS
 
 
 @pytest.fixture(scope="function")
-def import_vdb_update_utils_module(restore_sys_path):
+def import_vdb_update_utils_module(restore_sys_path):  # pylint: disable=unused-argument
     path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/')
     sys.path.insert(0, path)
 
@@ -32,7 +32,7 @@ def import_vdb_update_utils_module(restore_sys_path):
 
 
 @pytest.fixture(scope="function")
-def import_schema_transform_module(restore_sys_path):
+def import_schema_transform_module(restore_sys_path):  # pylint: disable=unused-argument
     path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module')
     sys.path.insert(0, path)
 

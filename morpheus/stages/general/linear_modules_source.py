@@ -37,7 +37,8 @@ class LinearModuleSourceStage(SingleOutputSource):
     c : Config
         The configuration object for the pipeline.
     module_config : Union[Dict, ModuleDefinition]
-        The configuration for the module. This can be either a dictionary of configuration parameters or a ModuleDefinition object.
+        The configuration for the module. This can be either a dictionary of configuration parameters or a
+        ModuleDefinition object.
     output_port_name : str
         The name of the output port of the module.
     output_type : Any, optional

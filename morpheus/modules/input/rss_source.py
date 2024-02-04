@@ -34,7 +34,8 @@ def _rss_source(builder: mrc.Builder):
     """
     A module for applying simple DataFrame schema transform policies.
 
-    This module reads the configuration to determine how to set data types for columns, select, or rename them in the dataframe.
+    This module reads the configuration to determine how to set data types for columns, select, or rename them in the
+    dataframe.
 
     Parameters
     ----------
@@ -66,7 +67,8 @@ def _rss_source(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid RSS source configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     # Initialize RSSController with validated configuration
     controller = RSSController(feed_input=validated_config.feed_input,

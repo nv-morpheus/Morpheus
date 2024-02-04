@@ -282,7 +282,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     write_to_file_conf = merge_dictionaries(write_to_file_options, write_to_file_defaults)
 
     write_to_file_monitor_options = {"description": "Saved [inference_pipe]"}
-    write_to_file_monitor_module_conf = merge_dictionaries(write_to_file_monitor_options, monitor_options)
+    write_to_fm_conf = merge_dictionaries(write_to_file_monitor_options, monitor_options)
 
     # Load modules
     preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)
@@ -293,13 +293,13 @@ def dfp_inference_pipe(builder: mrc.Builder):
     dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
 
     dfp_data_prep_loader = MonitorLoaderFactory.get_instance("dfp_inference_data_prep_monitor",
-                                                             config=data_prep_monitor_module_conf)
+                                                             module_config=data_prep_monitor_module_conf)
 
     dfp_data_prep_monitor_module = dfp_data_prep_loader.load(builder=builder)
     dfp_inference_module = builder.load_module(DFP_INFERENCE, "morpheus", "dfp_inference", dfp_inference_conf)
 
     dfp_inference_monitor_loader = MonitorLoaderFactory.get_instance("dfp_inference_monitor",
-                                                                     config=inference_monitor_module_conf)
+                                                                     module_config=inference_monitor_module_conf)
     dfp_inference_monitor_module = dfp_inference_monitor_loader.load(builder=builder)
     filter_detections_module = builder.load_module(FILTER_DETECTIONS,
                                                    "morpheus",
@@ -313,7 +313,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     write_to_file_module = builder.load_module(WRITE_TO_FILE, "morpheus", "write_to_file", write_to_file_conf)
 
     dfp_write_to_file_monitor_loader = MonitorLoaderFactory.get_instance("dfp_inference_write_to_file_monitor",
-                                                                         config=write_to_file_monitor_module_conf)
+                                                                         module_config=write_to_fm_conf)
     dfp_write_to_file_monitor_module = dfp_write_to_file_monitor_loader.load(builder=builder)
 
     # Make an edge between the modules.

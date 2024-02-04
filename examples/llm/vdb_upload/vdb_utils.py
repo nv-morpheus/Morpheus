@@ -68,7 +68,7 @@ def is_valid_service(ctx, param, value):  # pylint: disable=unused-argument
     return validate_service(service_name=value)
 
 
-def merge_dicts(d1, d2):
+def merge_dicts(dict_1, dict_2):
     """
     Recursively merge two dictionaries.
 
@@ -77,9 +77,9 @@ def merge_dicts(d1, d2):
 
     Parameters
     ----------
-    d1 : dict
+    dict_1 : dict
         The first dictionary.
-    d2 : dict
+    dict_2 : dict
         The second dictionary, whose items will take precedence.
 
     Returns
@@ -87,12 +87,12 @@ def merge_dicts(d1, d2):
     dict
         The merged dictionary.
     """
-    for key, value in d2.items():
-        if key in d1 and isinstance(d1[key], dict) and isinstance(value, dict):
-            merge_dicts(d1[key], value)
+    for key, value in dict_2.items():
+        if key in dict_1 and isinstance(dict_1[key], dict) and isinstance(value, dict):
+            merge_dicts(dict_1[key], value)
         else:
-            d1[key] = value
-    return d1
+            dict_1[key] = value
+    return dict_1
 
 
 def merge_configs(file_config, cli_config):
@@ -135,6 +135,7 @@ def _build_default_rss_source(enable_cache,
             "output_batch_size": 2048,
             "cache_dir": "./.cache/http",
             "cooldown_interval_sec": interval_secs,
+            "stop_after_sec": stop_after,
             "enable_cache": enable_cache,
             "enable_monitor": enable_monitors,
             "feed_input": feed_inputs if feed_inputs else build_rss_urls(),
@@ -249,7 +250,8 @@ def build_cli_configs(source_type,
     Returns
     -------
     tuple
-        A tuple containing five dictionaries for source, embeddings, pipeline, tokenizer, and vector database configurations.
+        A tuple containing five dictionaries for source, embeddings, pipeline, tokenizer, and vector database
+        configurations.
     """
 
     # Source Configuration

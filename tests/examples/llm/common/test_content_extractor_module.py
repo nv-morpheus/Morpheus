@@ -47,6 +47,7 @@ class TempCSVFiles:
         self.temp_files = []
         self.num_files = num_files
         self.columns = columns
+
         self._create_temp_dir_and_files()
 
     def _create_temp_dir_and_files(self):

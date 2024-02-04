@@ -148,12 +148,12 @@ def dfp_preproc(builder: mrc.Builder):
                                                        file_to_df_conf)
 
     file_to_df_monitor_loader = MonitorLoaderFactory.get_instance("file_to_df_monitor_loader",
-                                                                  config=file_to_df_monitor_conf)
+                                                                  module_config=file_to_df_monitor_conf)
     file_to_df_monitor_module = file_to_df_monitor_loader.load(builder=builder)
     dfp_split_users_module = builder.load_module(DFP_SPLIT_USERS, "morpheus", "dfp_split_users", dfp_split_users_conf)
 
     dfp_split_users_monitor_loader = MonitorLoaderFactory.get_instance("dfp_split_users_monitor_loader",
-                                                                       config=dfp_split_users_monitor_conf)
+                                                                       module_config=dfp_split_users_monitor_conf)
     dfp_split_users_monitor_module = dfp_split_users_monitor_loader.load(builder=builder)
 
     # Make an edge between the modules.

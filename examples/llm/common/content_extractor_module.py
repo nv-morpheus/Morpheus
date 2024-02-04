@@ -32,7 +32,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
+from pydantic import field_validator
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import ModuleLoaderFactory
@@ -55,10 +55,10 @@ class ContentExtractorSchema(BaseModel):
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
 
-    @validator('converters_meta', pre=True)
-    def validate_converters_meta(cls, v):
+    @field_validator('converters_meta')
+    def validate_converters_meta(self, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:
         validated_meta = {}
-        for key, value in v.items():
+        for key, value in to_validate.items():
             if key.lower() == 'csv':
                 validated_meta[key] = CSVConverterSchema(**value)
             else:
@@ -116,7 +116,7 @@ def get_file_meta(open_file: fsspec.core.OpenFile) -> FileMeta:
         return FileMeta(file_path=file_path, file_name=file_name, file_type=file_type)
 
     except Exception as e:
-        logger.error(f"Error retrieving file metadata for {open_file.path}: {e}")
+        logger.error("Error retrieving file metadata for %s: %s", open_file.path, e)
         raise
 
 
@@ -142,11 +142,11 @@ def read_file_to_bytesio(file_path: str) -> io.BytesIO:
         with open(file_path, 'rb') as file:
             io_bytes = io.BytesIO(file.read())
     except FileNotFoundError:
-        logger.error(f"Error: File not found - {file_path}")
+        logger.error("Error: File not found - %s", file_path)
     except PermissionError:
-        logger.error(f"Error: Permission denied - {file_path}")
+        logger.error("Error: Permission denied - %s", file_path)
     except Exception as e:
-        logger.error(f"Error reading file {file_path}: {e}")
+        logger.error("Error reading file %s: %s", file_path, e)
 
     return io_bytes
 
@@ -162,7 +162,7 @@ def _converter_error_handler(func: typing.Callable) -> typing.Callable:
 
             return func(input_info, *args, **kwargs)
         except Exception as exec_info:
-            logger.error(f"Error in {func.__name__}: {exec_info}")
+            logger.error("Error in %s: %s", func.__name__, exec_info)
             return func.__annotations__.get("return_type", None)()
 
     return wrapper
@@ -254,7 +254,7 @@ def process_content(docs: str | list[str], file_meta: FileMeta, chunk_size: int,
                 })
 
         except Exception as e:
-            logger.error(f"Error processing file %s content: %s", file_meta.file_path, e)
+            logger.error("Error processing file %s content: %s", file_meta.file_path, e)
             continue
 
     return processed_data
@@ -300,7 +300,8 @@ def file_content_extractor(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid configuration for file_content_extractor: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     # Use validated configurations
     batch_size = extractor_config.batch_size
@@ -321,7 +322,7 @@ def file_content_extractor(builder: mrc.Builder):
             "chunk_size": converters_meta.get(file_type, {}).get("chunk_size", chunk_size),
             "chunk_overlap": converters_meta.get(file_type, {}).get("chunk_overlap", chunk_overlap)
         }
-        for file_type in converters.keys()
+        for file_type in converters
     }
 
     def parse_files(open_files: typing.List[fsspec.core.OpenFile]) -> MessageMeta:
@@ -337,11 +338,11 @@ def file_content_extractor(builder: mrc.Builder):
                 for open_file in batch:
                     # Check if file exists
                     if (not _fs.exists(open_file.path)):
-                        logger.warning(f"File does not exist: {open_file.path}. Skipping...")
+                        logger.warning("File does not exist: %s. Skipping...", open_file.path)
                         continue
 
                     if (_fs.isdir(open_file.path)):
-                        logger.warning(f"File is a directory: {open_file.path}. Skipping...")
+                        logger.warning("File is a directory: %s. Skipping...", open_file.path)
                         continue
 
                     try:
@@ -350,7 +351,7 @@ def file_content_extractor(builder: mrc.Builder):
                         files_meta.append(file_meta)
 
                     except Exception as e:
-                        logger.error(f"Error processing file {open_file.path}: {e}")
+                        logger.error("Error processing file %s: %s", open_file.path, e)
 
                 for file_meta, future in zip(files_meta, futures):
                     io_bytes = future.result()

@@ -24,7 +24,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.messages import MessageMeta as _MessageMeta
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryNLP
@@ -291,7 +291,7 @@ class InferenceStage(MultiMessageStage):
                     if (_df is not None and not _df.empty):
                         embeddings = output_message.get_probs_tensor()
                         _df["embedding"] = embeddings.tolist()
-                        _message_meta = _MessageMeta(df=_df)
+                        _message_meta = CppMessageMeta(df=_df)
                         _message.payload(_message_meta)
                     output_message = _message
 

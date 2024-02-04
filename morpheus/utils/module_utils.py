@@ -349,18 +349,18 @@ class ModuleLoader:
         """
 
         if (self._loaded):
-            err_msg = f"Module '{self._module_interface.id}::{self.name}' is already loaded."
+            err_msg = f"Module '{self._module_interface.identity}::{self.name}' is already loaded."
             logger.error(err_msg)
 
             raise RuntimeError(err_msg)
 
-        module = builder.load_module(self._module_interface.id,
+        module = builder.load_module(self._module_interface.identity,
                                      self._module_interface.namespace,
                                      self._name,
                                      self._config)
 
         logger.debug("Module '%s' with namespace '%s' is successfully loaded.",
-                     self._module_interface.id,
+                     self._module_interface.identity,
                      self._module_interface.namespace)
 
         self._loaded = True
@@ -388,7 +388,7 @@ class ModuleLoaderFactory:
         self._config_schema = config_schema
 
     @property
-    def id(self):
+    def identity(self):
         return self._id
 
     @property

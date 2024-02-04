@@ -168,7 +168,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                                               truncation,
                                                               add_special_tokens,
                                                               column)
-        elif isinstance(message, MultiMessage):
+        if isinstance(message, MultiMessage):
             return PreprocessNLPStage.process_multi_message(message,
                                                             vocab_hash_file,
                                                             do_lower_case,
@@ -177,8 +177,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                                             truncation,
                                                             add_special_tokens,
                                                             column)
-        else:
-            raise TypeError("Unsupported message type")
+
+        raise TypeError("Unsupported message type")
 
     @staticmethod
     def process_control_message(message: ControlMessage,

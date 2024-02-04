@@ -22,7 +22,7 @@ import mrc
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import ValidationError
-from pydantic import validator
+from pydantic import field_validator
 from vdb_upload.module.schema_transform import SchemaTransformLoaderFactory
 
 from common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
@@ -51,12 +51,14 @@ class RSSSourcePipeSchema(BaseModel):
     vdb_resource_name: str
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
-    @validator('feed_input', pre=True)
-    def validate_feed_input(cls, v):
-        if isinstance(v, str):
-            return [v]
-        elif isinstance(v, list):
-            return v
+    @field_validator('feed_input')
+    def validate_feed_input(self, to_validate):
+        if isinstance(to_validate, str):
+            return [to_validate]
+
+        if isinstance(to_validate, list):
+            return to_validate
+
         raise ValueError('feed_input must be a string or a list of strings')
 
     class Config:
@@ -113,7 +115,8 @@ def _rss_source_pipe(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid RSS source configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     enable_monitor = validated_config.enable_monitor
 

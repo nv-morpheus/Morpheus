@@ -102,7 +102,8 @@ def _file_source_pipe(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid file source configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     # Use the validated configuration
     enable_monitor = validated_config.enable_monitor

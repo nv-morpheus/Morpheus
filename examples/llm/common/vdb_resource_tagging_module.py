@@ -15,17 +15,12 @@
 import logging
 
 import mrc
+from pydantic import BaseModel
 from pydantic import ValidationError
 
 from morpheus.messages import ControlMessage
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
-
-logging
-
-import logging
-
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +46,8 @@ def _vdb_resource_tagging(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid RSS source configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     def on_data(data: ControlMessage):
         data.set_metadata("vdb_resource", validated_config.vdb_resource_name)

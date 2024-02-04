@@ -94,7 +94,7 @@ def _process_dataframe_to_multi_message(message: MessageMeta, batch_size: int,
 
     message = _check_slicable_index(message, ensure_sliceable_index)
 
-    logger.error(f"Processing DataFrame with {message.count} rows, creating MultiMessage")
+    logger.error("Processing DataFrame with %s rows, creating MultiMessage", message.count)
     full_message = MultiMessage(meta=message)
 
     # Now break it up by batches
@@ -146,23 +146,23 @@ def _process_dataframe_to_control_message(message: MessageMeta,
         # Break the message meta into smaller chunks
         for i in range(0, message.count, batch_size):
 
-            cm = ControlMessage()
+            ctrl_msg = ControlMessage()
 
-            cm.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
+            ctrl_msg.payload(MessageMetaCpp(df=df.iloc[i:i + batch_size]))
 
             if (task_tuple is not None):
-                cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
+                ctrl_msg.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-            output.append(cm)
+            output.append(ctrl_msg)
     else:
-        cm = ControlMessage()
+        ctrl_msg = ControlMessage()
 
-        cm.payload(MessageMetaCpp(message.df))
+        ctrl_msg.payload(MessageMetaCpp(message.df))
 
         if (task_tuple is not None):
-            cm.add_task(task_type=task_tuple[0], task=task_tuple[1])
+            ctrl_msg.add_task(task_type=task_tuple[0], task=task_tuple[1])
 
-        output.append(cm)
+        output.append(ctrl_msg)
 
     return output
 
@@ -198,15 +198,16 @@ def _deserialize(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid deserialize configuration: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     ensure_sliceable_index = deserializer_config.ensure_sliceable_index
     message_type = ControlMessage if deserializer_config.message_type == "ControlMessage" else MultiMessage
     task_type = deserializer_config.task_type
     task_payload = deserializer_config.task_payload
     batch_size = deserializer_config.batch_size
-    max_concurrency = deserializer_config.max_concurrency
-    should_log_timestamp = deserializer_config.should_log_timestamp
+    # max_concurrency = deserializer_config.max_concurrency
+    # should_log_timestamp = deserializer_config.should_log_timestamp
 
     if (task_type is not None) != (task_payload is not None):
         raise ValueError("task_type and task_payload must be both specified or both None")

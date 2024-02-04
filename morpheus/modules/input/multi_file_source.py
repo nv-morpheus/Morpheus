@@ -107,7 +107,8 @@ def _multi_file_source(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid configuration for file_content_extractor: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     filenames = expand_paths_simple(validated_config.filenames)
     watch_dir = validated_config.watch_dir
@@ -163,11 +164,12 @@ def _multi_file_source(builder: mrc.Builder):
 
         # Check if the provided filenames resulted in any files being opened
         if len(files) == 0:
-            logger.warning(f"Multi-file-source did not match any of the provided filter strings: {filenames}."
-                           f"This is probably not what you want.")
+            logger.warning("Multi-file-source did not match any of the provided filter strings: %s.",
+                           filenames,
+                           "This is probably not what you want.")
             return
 
-        logger.info(f"File source exhausted, discovered {len(files)} files.")
+        logger.info("File source exhausted, discovered %s files.", len(files))
 
         yield files
 

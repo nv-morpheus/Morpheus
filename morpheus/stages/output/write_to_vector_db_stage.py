@@ -100,7 +100,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
         module_name = f"write_to_vector_db__{resource_name}"
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Module will be loading with name: {module_name}")
+            logger.debug("Module will be loading with name: %s", module_name)
 
         self._module_loader: ModuleLoader = WriteToVectorDBLoaderFactory.get_instance(module_name, module_config)
 

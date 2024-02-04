@@ -40,8 +40,6 @@ logger = logging.getLogger(__name__)
 
 WriteToVectorDBLoaderFactory = ModuleLoaderFactory(WRITE_TO_VECTOR_DB, MORPHEUS_MODULE_NAMESPACE)
 
-import json
-
 
 def preprocess_vdb_resources(service, recreate: bool, resource_schemas: dict):
     for resource_name, resource_schema_config in resource_schemas.items():
@@ -119,7 +117,8 @@ def _write_to_vector_db(builder: mrc.Builder):
         error_messages = '; '.join([f"{error['loc'][0]}: {error['msg']}" for error in e.errors()])
         log_error_message = f"Invalid configuration for write_to_vector_db: {error_messages}"
         logger.error(log_error_message)
-        raise ValueError(log_error_message)
+
+        raise
 
     embedding_column_name = write_to_vdb_config.embedding_column_name
     recreate = write_to_vdb_config.recreate
@@ -151,7 +150,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                     service.insert_dataframe(name=key, df=merged_df)
                     final_df_references.append(accum_stats.data)
             except Exception as e:
-                logger.error(f"Unable to upload dataframe entries to vector database: {e}")
+                logger.error("Unable to upload dataframe entries to vector database: %s", e)
         # Close vector database service connection
         service.close()
 
@@ -183,6 +182,7 @@ def _write_to_vector_db(builder: mrc.Builder):
             if df is not None and not df.empty:
                 if (not isinstance(df, cudf.DataFrame)):
                     df = cudf.DataFrame(df)
+
                 final_df_references = []
                 df_size = len(df)
                 current_time = time.time()

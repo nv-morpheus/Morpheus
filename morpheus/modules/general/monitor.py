@@ -35,23 +35,29 @@ MonitorLoaderFactory = ModuleLoaderFactory("monitor", "morpheus")
 def monitor(builder: mrc.Builder):
     """
     This module function is used for monitoring pipeline message rate.
-    
+
     Parameters
     ----------
     builder : mrc.Builder
         Pipeline builder instance.
-    
+
     Notes
     -----
     Configurable parameters:
-    
-    - description (str): Name to show for this Monitor Stage in the console window. Example: 'Progress'. Default: 'Progress'.
+
+    - description (str): Name to show for this Monitor Stage in the console window. Example: 'Progress'. Default:
+    'Progress'.
     - silence_monitors (bool): Silence the monitors on the console. Example: True. Default: False.
-    - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged. 0 = Instantaneous, 1 = Average. Example: 0.01. Default: 0.05.
+    - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged. 0 = Instantaneous,
+    1 = Average. Example: 0.01. Default: 0.05.
     - unit (str): Units to show in the rate value. Example: 'messages'. Default: 'messages'.
-    - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines, this option may be desired to give a more accurate timing. Example: True. Default: False.
-    - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called for each message. Allows for correct counting of batched and sliced messages. Example: func_str. Default: None.
-    - log_level (str): Enable this stage when the configured log level is at `log_level` or lower. Example: 'DEBUG'. Default: INFO.
+    - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first message is
+    received. Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large
+    pipelines, this option may be desired to give a more accurate timing. Example: True. Default: False.
+    - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called for each
+    message. Allows for correct counting of batched and sliced messages. Example: func_str. Default: None.
+    - log_level (str): Enable this stage when the configured log level is at `log_level` or lower. Example: 'DEBUG'.
+    Default: INFO.
     """
 
     config = builder.get_current_module_config()
