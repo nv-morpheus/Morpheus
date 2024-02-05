@@ -44,7 +44,6 @@ dependencies:
 - ipython
 - isort
 - librdkafka>=1.9.2,<1.10.0a0
-- libzlib=1.2.13
 - mlflow=2.9.2
 - mrc=24.03
 - myst-parser=0.18.1
@@ -87,6 +86,7 @@ dependencies:
 - watchdog=3.0
 - websockets
 - yapf=0.40.1
+- zlib=1.2.13
 - pip:
   - databricks-connect
   - milvus==2.3.5

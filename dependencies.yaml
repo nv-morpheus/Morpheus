@@ -190,7 +190,6 @@ dependencies:
           - glog=0.6
           - gxx_linux-64=11.2
           - librdkafka>=1.9.2,<1.10.0a0
-          - libzlib=1.2.13
           - mrc=24.03
           - ninja=1.11
           - nlohmann_json=3.9
@@ -202,6 +201,7 @@ dependencies:
           - sysroot_linux-64=2.17
           - tritonclient=2.34
           - ucx=1.15
+          - zlib=1.2.13
 
   checks:
     common:

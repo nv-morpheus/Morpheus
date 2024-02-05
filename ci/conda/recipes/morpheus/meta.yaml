@@ -68,7 +68,6 @@ outputs:
         - cython =3.0
         - libcudf {{ rapids_version }}
         - librdkafka >=1.9.2,<1.10.0a0
-        - libzlib # required to build triton client
         - mrc {{ minor_version }}
         - pip
         - pybind11-stubgen =0.10.5
@@ -77,6 +76,7 @@ outputs:
         - rdma-core >=48 # Needed for DOCA.
         - scikit-build =0.17.6
         - versioneer-518
+        - zlib # required to build triton client
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - click >=8
