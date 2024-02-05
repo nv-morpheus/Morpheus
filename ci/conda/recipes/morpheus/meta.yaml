@@ -57,10 +57,10 @@ outputs:
         - pkg-config =0.29 # for mrc cmake
         - sysroot_linux-64 >=2.17
       host:
-        - cuda-cudart-dev {{ cuda_version }}.*
-        - cuda-nvml-dev {{ cuda_version }}.*
-        - cuda-nvrtc-dev {{ cuda_version }}.*
-        - cuda-version {{ cuda_version }}.*
+        - cuda-cudart-dev {{ cuda_compiler_version }}.*
+        - cuda-nvml-dev {{ cuda_compiler_version }}.*
+        - cuda-nvrtc-dev {{ cuda_compiler_version }}.*
+        - cuda-version {{ cuda_compiler_version }}.*
         - cudf {{ rapids_version }}
         - cython =3.0
         - libcudf {{ rapids_version }}
