@@ -79,6 +79,7 @@ class WriteToVectorDBStage(PassThruTypeMixin, SinglePortStage):
         super().__init__(config)
 
         resource_kwargs = resource_kwargs if resource_kwargs is not None else {}
+        resource_schemas = resource_schemas if resource_schemas is not None else {}
         is_service_serialized = False
         if isinstance(service, VectorDBService):
             service = str(pickle.dumps(service), encoding="latin1")

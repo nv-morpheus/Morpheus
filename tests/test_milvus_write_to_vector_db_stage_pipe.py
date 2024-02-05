@@ -38,7 +38,6 @@ from morpheus.utils.module_ids import TO_CONTROL_MESSAGE
 
 
 def get_test_df(num_input_rows):
-
     df = cudf.DataFrame({
         "id": list(range(num_input_rows)),
         "age": [random.randint(20, 40) for i in range(num_input_rows)],
@@ -62,7 +61,6 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
                                                expected_num_output_rows: int,
                                                resource_kwargs: dict,
                                                recreate: bool):
-
     collection_name = "test_stage_cm_insert_collection"
 
     df = get_test_df(num_input_rows)
@@ -116,15 +114,22 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
 
     messages = sink_stage.get_messages()
 
-    assert len(messages) == 1
+    assert len(messages) == 2
     assert isinstance(messages[0], ControlMessage)
     assert messages[0].has_metadata("insert_response")
 
     # Insert entities response as a dictionary.
     response = messages[0].get_metadata("insert_response")
 
-    assert response["insert_count"] == expected_num_output_rows
-    assert response["succ_count"] == expected_num_output_rows
+    status = response["status"]
+    assert status in ["inserted", "accumulated"]
+
+    if (status == "inserted"):
+        assert response["insert_count"] == expected_num_output_rows
+        assert response["succ_count"] == expected_num_output_rows
+    else:
+        assert response["accum_count"] == expected_num_output_rows
+
     assert response["err_count"] == 0
 
 
@@ -135,7 +140,6 @@ def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
                                                idx_part_collection_config: dict,
                                                config: Config,
                                                is_multiresponse_message: bool):
-
     collection_name = "test_stage_mm_insert_collection"
 
     df = get_test_df(num_input_rows=10)
@@ -168,9 +172,10 @@ def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
 
     messages = sink_stage.get_messages()
 
-    assert len(messages) == 1
+    assert len(messages) == 2
     if is_multiresponse_message:
         assert isinstance(messages[0], MultiResponseMessage)
     else:
         assert isinstance(messages[0], MultiMessage)
+
     assert len(messages[0].get_meta()) == 10

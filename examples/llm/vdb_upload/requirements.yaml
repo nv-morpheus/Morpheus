@@ -40,3 +40,4 @@ dependencies:
     - langchain==0.0.310
     - pymilvus==2.3.2 # The conda package is woefully out of date and incorrect
     - PyMuPDF==1.23.20
+    - docx==0.2.4

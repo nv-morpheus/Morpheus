@@ -238,6 +238,7 @@ dependencies:
               - grpcio-status==1.58 # To keep in sync with 1.58 grpcio which is installed for Morpheus
               - nemollm
               - PyMuPDF==1.23.20
+              - docx==0.2.4
 
 
   runtime:

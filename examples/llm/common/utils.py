@@ -59,7 +59,7 @@ def build_milvus_config(resource_schema_config: dict):
 
 
 def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530"):
-    milvus_resource_kwargs = build_milvus_config(embedding_size)
+    milvus_resource_kwargs = build_milvus_config({})
 
     vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
                                                                                 uri=uri,

@@ -184,11 +184,11 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, embedding_s
         WriteToKafkaStage(config, bootstrap_servers="auto", output_topic="retrieve_output"))
     pipe.add_edge(retrieve_llm_engine, retrieve_results)
 
-    # If its an upload task, then send it to the database
+    # If it's an upload task, then send it to the database
     upload_vdb = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name="RSS",
-                             resource_kwargs=build_milvus_config(embedding_size=embedding_size),
+                             resource_kwargs=build_milvus_config({}),
                              recreate=True,
                              service=vdb_service))
     pipe.add_edge(split.output_ports[1], upload_vdb)

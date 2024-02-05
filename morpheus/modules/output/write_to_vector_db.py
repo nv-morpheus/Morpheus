@@ -162,7 +162,10 @@ def _write_to_vector_db(builder: mrc.Builder):
 
         if isinstance(msg, ControlMessage):
             df = msg.payload().df
-            resource_name = msg.get_metadata("vdb_resource")
+            if (msg.has_metadata("vdb_resource")):
+                resource_name = msg.get_metadata("vdb_resource")
+            else:
+                resource_name = None
         elif isinstance(msg, MultiResponseMessage):
             df = msg.get_meta()
             if df is not None and not df.empty:
@@ -176,6 +179,7 @@ def _write_to_vector_db(builder: mrc.Builder):
         return df, resource_name
 
     def on_data(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
+        msg_resource_target = None
         try:
             df, msg_resource_target = extract_df(msg)
 
@@ -183,7 +187,6 @@ def _write_to_vector_db(builder: mrc.Builder):
                 if (not isinstance(df, cudf.DataFrame)):
                     df = cudf.DataFrame(df)
 
-                final_df_references = []
                 df_size = len(df)
                 current_time = time.time()
 
@@ -192,7 +195,7 @@ def _write_to_vector_db(builder: mrc.Builder):
                     msg_resource_target = default_resource_name
                     if not service.has_store_object(msg_resource_target):
                         logger.error("Resource not exists in the vector database: %s", msg_resource_target)
-                        return final_df_references
+                        raise ValueError(f"Resource not exists in the vector database: {msg_resource_target}")
 
                 if msg_resource_target in accumulator_dict:
                     accumulator: AccumulationStats = accumulator_dict[msg_resource_target]
@@ -210,20 +213,45 @@ def _write_to_vector_db(builder: mrc.Builder):
                         if accum_stats.data:
                             merged_df = cudf.concat(accum_stats.data)
                             service.insert_dataframe(name=key, df=merged_df, **resource_kwargs)
-                            final_df_references.append(merged_df)
                             # Reset accumulator stats
                             accum_stats.data.clear()
                             accum_stats.last_insert_time = current_time
                             accum_stats.msg_count = 0
+
+                        if (isinstance(msg, ControlMessage)):
+                            msg.set_metadata(
+                                "insert_response",
+                                {
+                                    "status": "inserted",
+                                    "accum_count": 0,
+                                    "insert_count": df_size,
+                                    "succ_count": df_size,
+                                    "err_count": 0
+                                })
                     else:
                         logger.debug("Accumulated %d rows for collection: %s", accum_stats.msg_count, key)
+                        if (isinstance(msg, ControlMessage)):
+                            msg.set_metadata(
+                                "insert_response",
+                                {
+                                    "status": "accumulated",
+                                    "accum_count": df_size,
+                                    "insert_count": 0,
+                                    "succ_count": 0,
+                                    "err_count": 0
+                                })
 
-                return final_df_references
+                return msg
 
         except Exception as exc:
             logger.error("Unable to insert into collection: %s due to %s", msg_resource_target, exc)
+            # TODO(Devin): This behavior is likely buggy; we need to decide whether or not to collect control messages
+            # and output all of them when an accumulation is flushed, or to simply mark a control message as "done",
+            # even if it is just accumulated.
+            if (isinstance(msg, ControlMessage)):
+                msg.set_metadata("insert_response", {"status": "failed", "err_count": 1})
 
-        return []
+        return msg
 
     node = builder.make_node(WRITE_TO_VECTOR_DB,
                              ops.map(on_data),
