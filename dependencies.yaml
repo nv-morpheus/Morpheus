@@ -196,7 +196,7 @@ dependencies:
           - nlohmann_json=3.9
           - pkg-config=0.29 # for mrc cmake
           - protobuf=4.24
-          - pybind11-stubgen=0.10
+          - pybind11-stubgen=0.10.5
           - rapidjson=1.1.0
           - scikit-build=0.17.6
           - sysroot_linux-64=2.17
@@ -256,10 +256,10 @@ dependencies:
         packages:
           - *click
           - *numpydoc
+          - &dill dill=0.3.7
           - &scikit-learn scikit-learn=1.3.2
           - appdirs
           - datacompy=0.10
-          - dill
           - elasticsearch==8.9.0
           - feedparser=6.0.10
           - grpcio=1.59
@@ -298,13 +298,13 @@ dependencies:
     common:
       - output_types: [conda]
         packages:
+          - *dill
+          - *nodejs
           - boto3
           - dask=2023.12.1
-          - dill=0.3.7
           - distributed=2023.12.1
           - kfp
           - mlflow=2.9.2
-          - *nodejs
           - papermill=2.4.0
           - s3fs=2023.12.2
 

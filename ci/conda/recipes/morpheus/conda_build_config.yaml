@@ -28,8 +28,5 @@ cuda_compiler_version:
 python:
   - 3.10
 
-boost:
-  - 1.82
-
 rapids_version:
   - 24.02

@@ -50,26 +50,25 @@ outputs:
         - {{ compiler("cuda") }}
         - automake 1.16.5 # Needed for DOCA build
         - ccache
-        - cmake 3.25
+        - cmake 3.27
         - cuda-cudart-dev {{ cuda_compiler_version }} # Needed by CMake to compile a test application
         - libtool # Needed for DOCA build
-        - ninja
-        - pkg-config # for mrc cmake
+        - ninja 1.11
+        - pkg-config 0.29 # for mrc cmake
       host:
         - cuda-toolkit {{ cuda_compiler_version }}
         - cudf {{ rapids_version }}
-        - cython >=0.29,<0.30
+        - cython 3.0
         - libcudf {{ rapids_version }}
-        - librdkafka 1.9.2
+        - librdkafka 2.2
         - mrc {{ minor_version }}
         - pip
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
-        - pyarrow-hotfix # CVE-2023-47248
         - pybind11-stubgen 0.10.5
         - python {{ python }}
-        - rapidjson 1.1
+        - rapidjson 1.1.0
         - rdma-core >=48 # Needed for DOCA. Compatible with UCX 1.14.1
-        - scikit-build 0.17.1
+        - scikit-build 0.17.6
         - versioneer-518
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
@@ -79,7 +78,7 @@ outputs:
         - cudf
         - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
-        - datacompy 0.8.*
+        - datacompy 0.10.*
         - dill
         - distributed
         - docker-py 5.0.*
@@ -89,36 +88,36 @@ outputs:
         - mlflow>=2.2.1,<3
         - mrc
         - networkx>=2.8
-        - numpydoc 1.4.*
-        - nvtabular {{ rapids_version }}.*
-        - pandas 1.3.*
-        - pluggy 1.0.*
+        - numpydoc 1.5.*
+        - nvtabular 23.08.00
+        - pandas
+        - pluggy 1.3.*
         - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
-        - pyarrow-hotfix # CVE-2023-47248
         - python
-        - python-confluent-kafka 1.9.2
-        - pytorch 2.0.1
+        - python-confluent-kafka 2.2.0
+        - pytorch
         - pytorch-cuda
-        - requests=2.31
+        - requests
         - requests-cache=1.1
-        - scikit-learn 1.2.2.*
+        - scikit-learn 1.3.2.*
         - sqlalchemy <2.0 # 2.0 is incompatible with pandas=1.3
         - tqdm 4.*
-        - tritonclient 2.26.*
+        - tritonclient 2.34.*
         - typing_utils 0.1.*
-        - watchdog 2.1.*
+        - watchdog 3.0.*
         - websockets
       run_constrained:
         # Since we dont explicitly require this but other packages might, constrain the versions.
         - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
     test:
       requires:
-        - pynvml
-        - pytest
-        - pytest-cov
-        - pytest-benchmark
         # test that cuml can be installed in the env
         - cuml {{ rapids_version }}.*
+        - pynvml
+        - pytest-asyncio
+        - pytest-benchmark
+        - pytest-cov
+        - pytest=7.4.4
       source_files:
         - docker/conda/environments/*
         - pyproject.toml
