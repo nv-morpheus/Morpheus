@@ -56,7 +56,7 @@ os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2023, NVIDIA'
+copyright = '2024, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
