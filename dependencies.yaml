@@ -232,7 +232,7 @@ dependencies:
       - output_types: [conda]
         packages:
           - breathe=4.35.0
-          - doxygen=1.10.0
+          - doxygen=1.9.2
           - exhale=0.3.6
           - ipython
           - myst-parser=0.18.1
