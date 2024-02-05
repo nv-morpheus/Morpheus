@@ -68,7 +68,6 @@ outputs:
         - librdkafka >=1.9.2,<1.10.0a0
         - mrc {{ minor_version }}
         - pip
-        - pyarrow * *_cuda # Ensure we get a CUDA build. Version determined by cuDF
         - pybind11-stubgen =0.10.5
         - python {{ python }}
         - rapidjson =1.1.0
@@ -77,7 +76,6 @@ outputs:
         - versioneer-518
       run:
         # Runtime only requirements. This + setup.py is the definitive runtime requirement list
-        - {{ pin_compatible('cuda-cudart', min_pin='x.x', max_pin='x') }}
         - click >=8
         - configargparse =1.5.*
         - cuda-version {{ cuda_compiler_version }}.*
@@ -112,9 +110,6 @@ outputs:
         - typing_utils =0.1.*
         - watchdog =3.0.*
         - websockets
-      run_constrained:
-        # Since we dont explicitly require this but other packages might, constrain the versions.
-        - {{ pin_compatible('cudatoolkit', min_pin='x.x', max_pin='x') }}
     test:
       requires:
         # test that cuml can be installed in the env
