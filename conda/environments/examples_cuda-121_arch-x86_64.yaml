@@ -39,7 +39,7 @@ dependencies:
 - papermill=2.4.0
 - pip
 - pypdf=3.17.4
-- python-confluent-kafka=2.2.0
+- python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
 - python=3.10
 - pytorch-cuda

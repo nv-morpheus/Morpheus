@@ -26,6 +26,7 @@ dependencies:
 - cuda-tools=12.1
 - cuda-version=12.1
 - cudf=24.02
+- cudf_kafka=24.02
 - cxx-compiler
 - cython=3.0
 - datacompy=0.10
@@ -43,7 +44,7 @@ dependencies:
 - include-what-you-use=0.20
 - ipython
 - isort
-- librdkafka=2.2
+- librdkafka>=1.9.2,<1.10.0a0
 - mlflow=2.9.2
 - mrc=24.03
 - myst-parser=0.18.1
@@ -64,7 +65,7 @@ dependencies:
 - pytest-benchmark=4.0
 - pytest-cov
 - pytest=7.4.4
-- python-confluent-kafka=2.2.0
+- python-confluent-kafka>=1.9.2,<1.10.0a0
 - python-graphviz
 - python=3.10
 - pytorch-cuda
