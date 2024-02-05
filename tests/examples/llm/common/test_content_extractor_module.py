@@ -76,7 +76,7 @@
 #            shutil.rmtree(self.temp_dir)
 #
 #
-## Define a generator function that uses TempCSVFiles to generate CSV file paths
+# Define a generator function that uses TempCSVFiles to generate CSV file paths
 # def csv_file_generator(csv_files: List[str], batch_size: int) -> Generator[List[fsspec.core.OpenFile], None, None]:
 #    # Create TempCSVFiles instance without using 'with' statement
 #    open_files = fsspec.open_files(csv_files.temp_files)
