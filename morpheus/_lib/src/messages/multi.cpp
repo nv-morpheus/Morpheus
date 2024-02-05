@@ -36,6 +36,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <algorithm>  // for transform
@@ -166,8 +167,7 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<Ra
 
     auto table_view                     = table_info.get_view();
     auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
-    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
-                                           std::move(metadata)};
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
 
     return MessageMeta::create_from_cpp(std::move(table), 1);
 }

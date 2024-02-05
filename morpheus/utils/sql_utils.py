@@ -239,7 +239,7 @@ class SQLUtils:
             database=sql_params.get("database", None),
         )
 
-        return str(url_obj)
+        return url_obj.render_as_string(hide_password=False)
 
     def gen_placeholder_str(self, count: int) -> str:
         """

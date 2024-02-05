@@ -31,6 +31,7 @@
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
 
 #include <cstddef>  // for size_t
@@ -114,7 +115,7 @@ void table_to_csv(
         options_builder = options_builder.names(column_names);
     }
 
-    cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());
+    cudf::io::write_csv(options_builder.build());
 
     if (flush)
     {
@@ -164,7 +165,7 @@ void table_to_json(const TableInfoData& tbl, std::ostream& out_stream, bool incl
                                .include_nulls(true)
                                .na_rep("null");
 
-    cudf::io::write_json(options_builder.build(), rmm::mr::get_current_device_resource());
+    cudf::io::write_json(options_builder.build());
 
     if (flush)
     {
