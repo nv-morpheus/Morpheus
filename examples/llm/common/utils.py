@@ -107,8 +107,6 @@ def build_default_milvus_config(embedding_size: int):
 def build_milvus_service(embedding_size: int, uri: str = "http://localhost:19530"):
     default_service = build_default_milvus_config(embedding_size)
 
-    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus",
-                                                                                uri=uri,
-                                                                                **default_service)
+    vdb_service: MilvusVectorDBService = VectorDBServiceFactory.create_instance("milvus", uri=uri, **default_service)
 
     return vdb_service
