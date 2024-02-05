@@ -44,6 +44,7 @@ dependencies:
 - ipython
 - isort
 - librdkafka>=1.9.2,<1.10.0a0
+- libzlib=1.2.13
 - mlflow=2.9.2
 - mrc=24.03
 - myst-parser=0.18.1
