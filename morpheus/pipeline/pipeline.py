@@ -44,7 +44,7 @@ StageT = typing.TypeVar("StageT", bound=StageBase)
 
 
 class PipelineState(Enum):
-    INTIALIZED = "initialized"
+    INITIALIZED = "initialized"
     BUILT = "built"
     STARTED = "started"
     STOPPED = "stopped"
@@ -88,7 +88,7 @@ class Pipeline():
 
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
-        self._state = PipelineState.INTIALIZED
+        self._state = PipelineState.INITIALIZED
 
         self._mrc_executor: mrc.Executor = None
 
@@ -101,7 +101,7 @@ class Pipeline():
         return self._state
 
     def _assert_not_built(self):
-        assert self._state == PipelineState.INTIALIZED, "Pipeline has already been built. Cannot modify pipeline."
+        assert self._state == PipelineState.INITIALIZED, "Pipeline has already been built. Cannot modify pipeline."
 
     def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
         """
@@ -293,7 +293,7 @@ class Pipeline():
         Once the pipeline has been constructed, this will start the pipeline by calling `Source.start` on the source
         object.
         """
-        assert self._state == PipelineState.INTIALIZED, "Pipeline can only be built once!"
+        assert self._state == PipelineState.INITIALIZED, "Pipeline can only be built once!"
         assert len(self._sources) > 0, "Pipeline must have a source stage"
 
         self._pre_build()
@@ -460,7 +460,7 @@ class Pipeline():
     async def build_and_start(self):
 
         self._completion_event = asyncio.Event()
-        if (self._state == PipelineState.INTIALIZED):
+        if (self._state == PipelineState.INITIALIZED):
             try:
                 self.build()
             except Exception:
@@ -482,7 +482,7 @@ class Pipeline():
         exists it will be overwritten.  Requires the graphviz library.
         """
 
-        if self._state == PipelineState.INTIALIZED:
+        if self._state == PipelineState.INITIALIZED:
             raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
                                "the visualization. Please call Pipeline.build() or  Pipeline.run() before calling "
                                "Pipeline.visualize().")

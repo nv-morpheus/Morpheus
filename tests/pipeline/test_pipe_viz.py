@@ -77,7 +77,7 @@ def test_viz_without_run(viz_pipeline: Pipeline, tmp_path: str):
     # Verify that the output file exists and is a valid png file
     assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
-    assert viz_pipeline.state != PipelineState.INTIALIZED
+    assert viz_pipeline.state != PipelineState.INITIALIZED
 
 
 @pytest.mark.slow
