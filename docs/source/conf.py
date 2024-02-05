@@ -170,6 +170,7 @@ autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "databricks.connect",
+    "datacompy",
     "langchain",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
@@ -178,7 +179,7 @@ autodoc_mock_imports = [
     "pymilvus",
     "tensorrt",
     "torch",
-    "tqdm",
+    "tqdm"
 ]
 
 suppress_warnings = [
