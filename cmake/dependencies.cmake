@@ -34,7 +34,7 @@ rapids_find_package(CUDAToolkit REQUIRED
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
-rapids_find_package(ZLIB
+rapids_find_package(ZLIB $<$<Config:Debug>:REQUIRED>
   BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
