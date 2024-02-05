@@ -30,7 +30,6 @@ dependencies:
 - cuda-tools=12.1
 - cuda-version=12.1
 - cudf=24.02
-- cudf_kafka=24.02
 - cuml=24.02.*
 - cxx-compiler
 - cython=3.0

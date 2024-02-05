@@ -56,7 +56,7 @@ outputs:
         - libtool # Needed for DOCA build
         - ninja =1.11
         - pkg-config =0.29 # for mrc cmake
-        - sysroot_linux-64 >=2.17
+        - sysroot_linux-64 =2.17
       host:
         - cuda-cudart-dev {{ cuda_compiler_version }}.*
         - cuda-nvml-dev {{ cuda_compiler_version }}.*
@@ -71,7 +71,7 @@ outputs:
         - pybind11-stubgen =0.10.5
         - python {{ python }}
         - rapidjson =1.1.0
-        - rdma-core >=48 # Needed for DOCA. Compatible with UCX 1.14.1
+        - rdma-core >=48 # Needed for DOCA.
         - scikit-build =0.17.6
         - versioneer-518
       run:
@@ -80,7 +80,6 @@ outputs:
         - configargparse =1.5.*
         - cuda-version {{ cuda_compiler_version }}.*
         - cudf
-        - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
         - datacompy =0.10.*
         - dill
