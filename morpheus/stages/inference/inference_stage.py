@@ -24,7 +24,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.messages import MessageMeta as CppMessageMeta  # pylint: disable=morpheus-incorrect-lib-from-import
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import InferenceMemoryNLP

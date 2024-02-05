@@ -19,7 +19,8 @@ import typing
 
 import mrc
 
-from morpheus._lib.messages import MessageMeta as CppMessageMeta  # pylint: disable=morpheus-incorrect-lib-from-import
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
