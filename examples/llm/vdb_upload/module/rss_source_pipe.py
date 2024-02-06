@@ -53,7 +53,7 @@ class RSSSourcePipeSchema(BaseModel):
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
     @validator('feed_input', pre=True)
-    def validate_feed_input(cls, to_validate):  # pylint: disable=no-self-argument, no-self-use
+    def validate_feed_input(cls, to_validate):  # pylint: disable=no-self-argument
         if isinstance(to_validate, str):
             return [to_validate]
 

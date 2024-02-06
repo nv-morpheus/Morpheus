@@ -370,7 +370,7 @@ dependencies:
           - onnx
           - pip
           - pip:
-              - PyMuPDF==1.23.20
+              - PyMuPDF==1.23.21
 
   model-training-tuning:
     common:
