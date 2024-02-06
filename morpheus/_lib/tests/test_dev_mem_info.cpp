@@ -86,7 +86,8 @@ TEST_F(TestDevMemInfo, RmmBufferConstructor)
     EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
-    EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
+    EXPECT_EQ(dm.memory()->memory_resource,
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }
 
 TEST_F(TestDevMemInfo, VoidPtrConstructor)
@@ -122,7 +123,8 @@ TEST_F(TestDevMemInfo, VoidPtrConstructor)
     EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
-    EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
+    EXPECT_EQ(dm.memory()->memory_resource,
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }
 
 TEST_F(TestDevMemInfo, MakeNewBuffer)
@@ -137,5 +139,6 @@ TEST_F(TestDevMemInfo, MakeNewBuffer)
     auto new_buff               = dm.make_new_buffer(buff_size);
     EXPECT_EQ(new_buff->size(), buff_size);
     EXPECT_EQ(new_buff->stream(), rmm::cuda_stream_legacy);
-    EXPECT_EQ(new_buff->memory_resource(), mem_resource.get());
+    EXPECT_EQ(new_buff->memory_resource(),
+              static_cast<cuda::mr::async_resource_ref<cuda::mr::device_accessible>>(mem_resource.get()));
 }

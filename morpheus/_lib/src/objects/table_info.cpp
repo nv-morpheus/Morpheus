@@ -78,13 +78,12 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
     // Start with our table view
     auto table_view_out = table.table_view;
 
+    std::vector<cudf::size_type> col_indices;
+    std::vector<cudf::size_type> col_indices_mapppings;
+
     // If the columns are different, calculate the new slice
     if (column_names != table.column_names)
     {
-        std::vector<cudf::size_type> col_indices;
-
-        std::vector<std::string> new_column_names;
-
         // Append the indices column idx by default
         for (cudf::size_type i = 0; i < table.index_names.size(); ++i)
         {
@@ -94,7 +93,7 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
         std::transform(column_names.begin(),
                        column_names.end(),
                        std::back_inserter(col_indices),
-                       [&table, &new_column_names](const std::string& c) {
+                       [&table, &col_indices_mapppings](const std::string& c) {
                            auto found_col = std::find(table.column_names.begin(), table.column_names.end(), c);
 
                            if (found_col == table.column_names.end())
@@ -102,10 +101,11 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
                                throw py::key_error("Unknown column: " + c);
                            }
 
-                           // Add the found column to the metadata
-                           new_column_names.push_back(c);
+                           auto idx = (found_col - table.column_names.begin());
 
-                           return (found_col - table.column_names.begin() + table.index_names.size());
+                           col_indices_mapppings.push_back(idx);
+
+                           return idx + table.index_names.size();
                        });
 
         table_view_out = table_view_out.select(col_indices);
@@ -115,6 +115,12 @@ TableInfoData get_table_info_data_slice(const TableInfoData& table,
     if (start != 0 || stop != table.table_view.num_rows())
     {
         table_view_out = cudf::slice(table_view_out, {start, stop})[0];
+    }
+
+    if (col_indices_mapppings.size() > 0)
+    {
+        // Create a new TableInfoData
+        return {table_view_out, table.index_names, column_names, col_indices_mapppings};
     }
 
     // Create a new TableInfoData
