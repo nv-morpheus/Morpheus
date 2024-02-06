@@ -1031,11 +1031,9 @@ def nemollm_fixture(fail_missing: bool):
     """
     Fixture to ensure nemollm is installed
     """
-    skip_reason = (
-        "Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
-        "`conda env update --solver=libmamba -n morpheus "
-        "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
-    )
+    skip_reason = ("Tests for the NeMoLLMService require the nemollm package to be installed, to install this run:\n"
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("nemollm", reason=skip_reason, fail_missing=fail_missing)
 
 
@@ -1044,11 +1042,9 @@ def openai_fixture(fail_missing: bool):
     """
     Fixture to ensure openai is installed
     """
-    skip_reason = (
-        "Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
-        "`conda env update --solver=libmamba -n morpheus "
-        "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
-    )
+    skip_reason = ("Tests for the OpenAIChatService require the openai package to be installed, to install this run:\n"
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("openai", reason=skip_reason, fail_missing=fail_missing)
 
 

@@ -23,9 +23,7 @@ def nemollm_fixture(fail_missing: bool):
     """
     All the tests in this subdir require nemollm
     """
-    skip_reason = (
-        "Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
-        "`conda env update --solver=libmamba -n morpheus "
-        "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
-    )
+    skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)

@@ -26,8 +26,7 @@ IMPORT_EXCEPTION = None
 IMPORT_ERROR_MESSAGE = (
     "NemoLLM not found. Install it and other additional dependencies by running the following command:\n"
     "`conda env update --solver=libmamba -n morpheus "
-    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
-)
+    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 try:
     import nemollm

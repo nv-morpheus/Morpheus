@@ -23,12 +23,10 @@ from morpheus.llm.services.llm_service import LLMService
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = (
-    "OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
-    "Install it by running the following command:\n"
-    "`conda env update --solver=libmamba -n morpheus "
-    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
-)
+IMPORT_ERROR_MESSAGE = ("OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
+                        "Install it by running the following command:\n"
+                        "`conda env update --solver=libmamba -n morpheus "
+                        "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 try:
     import openai
