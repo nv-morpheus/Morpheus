@@ -30,9 +30,9 @@ from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
-from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
-from ...common.web_scraper_module import WebScraperLoaderFactory
 from .schema_transform import SchemaTransformLoaderFactory
+from .vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
+from .web_scraper_module import WebScraperLoaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class RSSSourcePipeSchema(BaseModel):
     web_scraper_config: Optional[Dict[Any, Any]] = None
 
     @validator('feed_input', pre=True)
-    def validate_feed_input(self, to_validate):
+    def validate_feed_input(cls, to_validate):
         if isinstance(to_validate, str):
             return [to_validate]
 

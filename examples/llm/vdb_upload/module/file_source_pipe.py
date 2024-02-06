@@ -29,9 +29,9 @@ from morpheus.modules.preprocess.deserialize import DeserializeLoaderFactory
 from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 
-from ...common.content_extractor_module import ContentExtractorLoaderFactory
-from ...common.vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
+from .content_extractor_module import ContentExtractorLoaderFactory
 from .schema_transform import SchemaTransformLoaderFactory
+from .vdb_resource_tagging_module import VDBResourceTaggingLoaderFactory
 
 logger = logging.getLogger(__name__)
 

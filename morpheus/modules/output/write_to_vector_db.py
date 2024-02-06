@@ -154,7 +154,7 @@ def _write_to_vector_db(builder: mrc.Builder):
         # Close vector database service connection
         service.close()
 
-        return final_df_references
+        return None
 
     def extract_df(msg: typing.Union[ControlMessage, MultiResponseMessage, MultiMessage]):
         df = None

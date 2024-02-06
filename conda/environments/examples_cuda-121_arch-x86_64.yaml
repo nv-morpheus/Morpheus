@@ -41,6 +41,7 @@ dependencies:
 - pip
 - pypdf=3.17.4
 - python-confluent-kafka>=1.9.2,<1.10.0a0
+- python-docx==1.1.0
 - python-graphviz
 - python=3.10
 - pytorch-cuda
@@ -65,4 +66,5 @@ dependencies:
   - milvus==2.3.5
   - nemollm
   - pymilvus==2.3.6
+  - PyMuPDF==1.23.21
 name: examples_cuda-121_arch-x86_64

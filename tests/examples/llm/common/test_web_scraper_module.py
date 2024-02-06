@@ -32,7 +32,7 @@ from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.use_cudf
-@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/common/web_scraper_module.py'))
+@pytest.mark.import_mod(os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module/web_scraper_module.py'))
 def test_web_scraper_module(config: Config, mock_rest_server: str, import_mod: types.ModuleType):
     url = f"{mock_rest_server}/www/index"
 

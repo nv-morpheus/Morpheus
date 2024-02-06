@@ -34,7 +34,7 @@ def import_utils(restore_sys_path):  # pylint: disable=unused-argument
 
 @pytest.fixture(scope="function")
 def import_web_scraper_module(restore_sys_path):  # pylint: disable=unused-argument
-    web_scraper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/common/')
+    web_scraper_path = os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module')
     sys.path.insert(0, web_scraper_path)
 
     import web_scraper_module
@@ -45,7 +45,7 @@ def import_web_scraper_module(restore_sys_path):  # pylint: disable=unused-argum
 # Fixture for importing the module
 @pytest.fixture(scope="function")
 def import_content_extractor_module(restore_sys_path):  # pylint: disable=unused-argument
-    sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/common'))
+    sys.path.insert(0, os.path.join(TEST_DIRS.examples_dir, 'llm/vdb_upload/module/'))
 
     import content_extractor_module
 

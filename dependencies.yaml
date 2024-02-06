@@ -369,7 +369,6 @@ dependencies:
           - pip
           - pip:
               - PyMuPDF==1.23.20
-              - docx==0.2.4
 
   model-training-tuning:
     common:
