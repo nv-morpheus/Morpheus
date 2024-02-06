@@ -176,13 +176,13 @@ ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yml ./docker/conda/environments/dev.yaml
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yml ./conda/environments/dev.yaml
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/dev.yaml &&\
+    /opt/conda/bin/mamba env update -n morpheus --file conda/environments/dev.yaml &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias
 
