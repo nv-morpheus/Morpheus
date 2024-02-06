@@ -124,7 +124,7 @@ files:
       - example-llm-vdb-upload
 
   runtime:
-    output: none
+    output: conda
     matrix:
       cuda: ["12.1"]
       arch: [x86_64]
