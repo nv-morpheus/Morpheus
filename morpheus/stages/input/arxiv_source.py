@@ -36,7 +36,8 @@ if typing.TYPE_CHECKING:
 
 IMPORT_ERROR_MESSAGE = (
     "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
-    "`conda env update --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
+    "`conda env update --solver=libmamba -n morpheus"
+    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
 )
 
 
@@ -46,7 +47,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     Source stage that downloads PDFs from arxiv and converts them to dataframes.
 
     This stage requires several additional dependencies to be installed. Install them by running the following command:
-    `conda env update --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`
+    `conda env update --solver=libmamba -n morpheus "
+    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`
 
     Parameters
     ----------
