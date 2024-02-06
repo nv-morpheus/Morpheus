@@ -93,7 +93,6 @@ def _run_pipeline(config: Config,
                   collection_name: str,
                   repeat_count: int,
                   utils_mod: types.ModuleType) -> dict:
-
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
     config.pipeline_batch_size = 1024

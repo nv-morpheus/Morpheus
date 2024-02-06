@@ -48,7 +48,6 @@ def test_rss_source_stage_pipe(config: Config,
                                batch_size: int,
                                expected_count: int,
                                enable_cache: bool):
-
     pipe = Pipeline(config)
 
     rss_source_stage = pipe.add_stage(
