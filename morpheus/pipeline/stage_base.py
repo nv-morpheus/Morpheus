@@ -279,7 +279,7 @@ class StageBase(ABC, collections.abc.Hashable):
 
     def _build_cpp_node(self):
         """
-        Specifies whether or not to build a C++ node. Only should be called during the build phase.
+        Specifies whether to build a C++ node. Only should be called during the build phase.
         """
         return CppConfig.get_should_use_cpp() and self.supports_cpp_node()
 

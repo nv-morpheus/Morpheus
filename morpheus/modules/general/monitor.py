@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,20 +17,21 @@ import pickle
 from functools import partial
 
 import mrc
-from dfp.utils.module_ids import DFP_MONITOR
 from mrc.core import operators as ops
 from tqdm import tqdm
 
 from morpheus.controllers.monitor_controller import MonitorController
-from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+from morpheus.utils.module_utils import ModuleLoaderFactory
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.monitor_utils import MorpheusTqdm
 from morpheus.utils.monitor_utils import SilentMorpheusTqdm
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
+MonitorLoaderFactory = ModuleLoaderFactory("monitor", "morpheus")
 
-@register_module(DFP_MONITOR, MORPHEUS_MODULE_NAMESPACE)
+
+@register_module("monitor", "morpheus")
 def monitor(builder: mrc.Builder):
     """
     This module function is used for monitoring pipeline message rate.
@@ -38,25 +39,25 @@ def monitor(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline builder instance.
+        An mrc Builder object.
 
     Notes
     -----
-    Configurable parameters:
-        - description (str): Name to show for this Monitor Stage in the console window; Example: 'Progress';
-        Default: 'Progress'
-        - silence_monitors (bool): Slience the monitors on the console; Example: True; Default: False
-        - smoothing (float): Smoothing parameter to determine how much the throughput should be averaged.
-        0 = Instantaneous, 1 = Average.; Example: 0.01; Default: 0.05
-        - unit (str): Units to show in the rate value.; Example: 'messages'; Default: 'messages'
-        - delayed_start (bool): When delayed_start is enabled, the progress bar will not be shown until the first
-        message is received. Otherwise, the progress bar is shown on pipeline startup and will begin timing
-        immediately. In large pipelines, this option may be desired to give a more accurate timing;
-        Example: True; Default: False
-        - determine_count_fn_schema (str): Custom function for determining the count in a message. Gets called for
-        each message. Allows for correct counting of batched and sliced messages.; Example: func_str; Default: None
-        - log_level (str): Enable this stage when the configured log level is at `log_level` or lower;
-        Example: 'DEBUG'; Default: INFO
+        Configurable Parameters:
+            - description (str): Name for this Monitor Stage in the console window.
+              Example: 'Progress'; Default: 'Progress'.
+            - silence_monitors (bool): Silences the monitors on the console.
+              Example: True; Default: False.
+            - smoothing (float): Determines throughput smoothing. 0 = Instantaneous, 1 = Average.
+              Example: 0.01; Default: 0.05.
+            - unit (str): Units to display in the rate value.
+              Example: 'messages'; Default: 'messages'.
+            - delayed_start (bool): Delays the progress bar until the first message is received.
+              Useful for accurate timing in large pipelines. Example: True; Default: False.
+            - determine_count_fn_schema (str): Custom function for determining the count in a message,
+              suitable for batched and sliced messages. Example: func_str; Default: None.
+            - log_level (str): This stage is enabled when the configured log level is at `log_level`
+              or lower. Example: 'DEBUG'; Default: INFO.
     """
 
     config = builder.get_current_module_config()
@@ -102,11 +103,11 @@ def monitor(builder: mrc.Builder):
         # Set the monitor interval to 0 to use prevent using tqdms monitor
         tqdm.monitor_interval = 0
 
-    # Start the progress bar if we dont have a delayed start
+    # Start the progress bar if we don't have a delayed start
     if (not controller.delayed_start):
         controller.ensure_progress_bar()
 
-    node = builder.make_node(DFP_MONITOR, mrc.core.operators.build(node_fn))
+    node = builder.make_node("monitor", mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

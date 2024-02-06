@@ -186,7 +186,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         ----------
         columns : typing.Union[None, str, typing.List[str]]
             Input column names. Returns all columns if `None` is specified. When a string is passed, a `Series` is
-            returned. Otherwise a `Dataframe` is returned.
+            returned. Otherwise, a `Dataframe` is returned.
 
         Returns
         -------
