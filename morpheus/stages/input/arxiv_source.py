@@ -36,7 +36,8 @@ if typing.TYPE_CHECKING:
 
 IMPORT_ERROR_MESSAGE = (
     "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
-    "`conda env update --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
+    "`conda env update --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`"
+)
 
 
 @register_stage("from-arxiv")
