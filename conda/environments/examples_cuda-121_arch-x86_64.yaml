@@ -58,6 +58,7 @@ dependencies:
 - pip:
   - --find-links https://data.dgl.ai/wheels-test/repo.html
   - --find-links https://data.dgl.ai/wheels/cu121/repo.html
+  - PyMuPDF==1.23.21
   - databricks-connect
   - dgl
   - dglgo
