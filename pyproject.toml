@@ -484,6 +484,7 @@ disable = [
   "bad-inline-option",
   "broad-exception-caught", # Allow catching base Exception class
   "deprecated-pragma",
+  "duplicate-code",
   "file-ignored",
   "import-error", # pylint gets confused by tests for our examples
   "import-outside-toplevel", # Allow lazy imports inside of methods
