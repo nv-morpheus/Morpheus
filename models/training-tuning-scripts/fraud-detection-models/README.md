@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,9 @@ limitations under the License.
 Install packages for training GNN model.
 
 ```bash
-export CUDA_VER=11.8
-mamba install -n base -c conda-forge conda-merge
-conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
-  models/training-tuning-scripts/fraud-detection-models/requirements.yml > .tmp/merged.yml \
-  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
+mamba env update \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./morpheus/conda/environments/model-utils-121_arch-x86_64.yaml
 ```
 
 ### Options for training and tuning models.
