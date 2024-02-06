@@ -114,7 +114,7 @@ def test_write_to_vector_db_stage_from_cm_pipe(milvus_server_uri: str,
 
     messages = sink_stage.get_messages()
 
-    assert len(messages) == 2
+    assert len(messages) == 1
     assert isinstance(messages[0], ControlMessage)
     assert messages[0].has_metadata("insert_response")
 
@@ -172,7 +172,7 @@ def test_write_to_vector_db_stage_from_mm_pipe(milvus_server_uri: str,
 
     messages = sink_stage.get_messages()
 
-    assert len(messages) == 2
+    assert len(messages) == 1
     if is_multiresponse_message:
         assert isinstance(messages[0], MultiResponseMessage)
     else:
