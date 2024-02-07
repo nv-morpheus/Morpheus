@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ class HttpServerSourceStage(PreallocatorMixin, SingleOutputSource):
         return "from-http"
 
     def supports_cpp_node(self) -> bool:
-        """Indicates whether or not this stage supports C++ nodes."""
+        """Indicates whether this stage supports C++ nodes."""
         return True
 
     def compute_schema(self, schema: StageSchema):

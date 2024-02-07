@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import cudf
 from _utils import TEST_DIRS
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+from _utils.milvus import populate_milvus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.llm import LLMEngine
@@ -33,7 +34,6 @@ from morpheus.llm.nodes.rag_node import RAGNode
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.service.vdb.milvus_vector_db_service import MilvusVectorDBService
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -50,13 +50,6 @@ Text: {{ c.page_content }}
 
 Please answer the following question: \n{{ query }}"""
 EXPECTED_RESPONSE = "Ransomware, Phishing, Malware, Denial of Service, SQL injection, and Password Attacks"
-
-
-def _populate_milvus(milvus_server_uri: str, collection_name: str, resource_kwargs: dict, df: cudf.DataFrame):
-    milvus_service = MilvusVectorDBService(uri=milvus_server_uri)
-    milvus_service.create(collection_name, **resource_kwargs)
-    resource_service = milvus_service.load_resource(name=collection_name)
-    resource_service.insert_dataframe(name=collection_name, df=df, **resource_kwargs)
 
 
 def _build_engine(llm_service_name: str,
@@ -100,7 +93,6 @@ def _run_pipeline(config: Config,
                   collection_name: str,
                   repeat_count: int,
                   utils_mod: types.ModuleType) -> dict:
-
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
     config.pipeline_batch_size = 1024
@@ -150,10 +142,11 @@ def test_rag_standalone_pipe_nemo(
         repeat_count: int,
         import_mod: types.ModuleType):
     collection_name = "test_rag_standalone_pipe_nemo"
-    _populate_milvus(milvus_server_uri=milvus_server_uri,
-                     collection_name=collection_name,
-                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
-                     df=dataset["service/milvus_rss_data.json"])
+    populate_milvus(milvus_server_uri=milvus_server_uri,
+                    collection_name=collection_name,
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    df=dataset["service/milvus_rss_data.json"],
+                    overwrite=True)
     mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(repeat_count)]
     mock_nemollm.post_process_generate_response.side_effect = [{"text": EXPECTED_RESPONSE} for _ in range(repeat_count)]
     results = _run_pipeline(
@@ -189,10 +182,11 @@ def test_rag_standalone_pipe_openai(config: Config,
     } for _ in range(repeat_count)]
 
     collection_name = "test_rag_standalone_pipe_openai"
-    _populate_milvus(milvus_server_uri=milvus_server_uri,
-                     collection_name=collection_name,
-                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
-                     df=dataset["service/milvus_rss_data.json"])
+    populate_milvus(milvus_server_uri=milvus_server_uri,
+                    collection_name=collection_name,
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    df=dataset["service/milvus_rss_data.json"],
+                    overwrite=True)
 
     results = _run_pipeline(
         config=config,
@@ -219,10 +213,11 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
                                               repeat_count: int,
                                               import_mod: types.ModuleType):
     collection_name = "test_rag_standalone_pipe__integration_nemo"
-    _populate_milvus(milvus_server_uri=milvus_server_uri,
-                     collection_name=collection_name,
-                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
-                     df=dataset["service/milvus_rss_data.json"])
+    populate_milvus(milvus_server_uri=milvus_server_uri,
+                    collection_name=collection_name,
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    df=dataset["service/milvus_rss_data.json"],
+                    overwrite=True)
     results = _run_pipeline(
         config=config,
         llm_service_name="nemollm",
@@ -251,10 +246,11 @@ def test_rag_standalone_pipe_integration_openai(config: Config,
                                                 repeat_count: int,
                                                 import_mod: types.ModuleType):
     collection_name = "test_rag_standalone_pipe_integration_openai"
-    _populate_milvus(milvus_server_uri=milvus_server_uri,
-                     collection_name=collection_name,
-                     resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
-                     df=dataset["service/milvus_rss_data.json"])
+    populate_milvus(milvus_server_uri=milvus_server_uri,
+                    collection_name=collection_name,
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    df=dataset["service/milvus_rss_data.json"],
+                    overwrite=True)
 
     results = _run_pipeline(
         config=config,

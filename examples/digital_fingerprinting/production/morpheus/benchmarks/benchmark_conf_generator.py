@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -161,6 +161,8 @@ class BenchmarkConfGenerator:
                                       source=(self.source),
                                       tracking_uri=mlflow.get_tracking_uri(),
                                       silence_monitors=True,
+                                      mlflow_experiment_name_formatter=self._get_experiment_name_formatter(),
+                                      mlflow_model_name_formatter=self._get_model_name_formatter(),
                                       train_users='generic')
         dfp_arg_parser.init()
         config_generator = ConfigGenerator(self.pipe_config, dfp_arg_parser, self.get_schema())

@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -eo pipefail
+
 case "$1" in
     "" )
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks" "build" "docs" "test")
+        STAGES=("checks" "build" "docs" "test" "conda")
         ;;
-    "checks" | "build" | "docs" | "test" | "bash" )
+    "checks" | "build" | "docs" | "test" | "conda" | "bash" )
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build\", \"docs\", \"test\", \"conda\", or \"bash\""
         exit 1
         ;;
 esac
@@ -49,8 +51,8 @@ GIT_BRANCH=$(git branch --show-current)
 GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${MORPHEUS_ROOT}/.tmp/local_ci_tmp}
-CONTAINER_VER=${CONTAINER_VER:-230913}
-CUDA_VER=${CUDA_VER:-11.8}
+CONTAINER_VER=${CONTAINER_VER:-240129}
+CUDA_VER=${CUDA_VER:-12.1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 BUILD_CONTAINER="nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-${CONTAINER_VER}"
@@ -72,16 +74,12 @@ for STAGE in "${STAGES[@]}"; do
     DOCKER_RUN_ARGS="--rm -ti --net=host -v "${LOCAL_CI_TMP}":/ci_tmp ${ENV_LIST} --env STAGE=${STAGE}"
     if [[ "${STAGE}" == "test" || "${USE_GPU}" == "1" ]]; then
         CONTAINER="${TEST_CONTAINER}"
-        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia --gpus all"
-        if [[ "${STAGE}" == "test" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_EXAMPLES_YAML=1 --cap-add=sys_nice"
-        fi
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=nvidia"
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --gpus all"
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --cap-add=sys_nice"
     else
         CONTAINER="${BUILD_CONTAINER}"
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --runtime=runc"
-        if [[ "${STAGE}" == "docs" ]]; then
-            DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --env MERGE_DOCS_YAML=1"
-        fi
     fi
 
     if [[ "${STAGE}" == "bash" ]]; then

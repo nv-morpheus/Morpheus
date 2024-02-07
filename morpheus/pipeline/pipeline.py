@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import networkx
 from tqdm import tqdm
 
 from morpheus.config import Config
+from morpheus.pipeline.boundary_stage_mixin import BoundaryStageMixin
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
@@ -175,9 +176,9 @@ class Pipeline():
                                end_port_idx=end_port.port_number)
 
     def add_segment_edge(self,
-                         egress_stage: Stage,
+                         egress_stage: BoundaryStageMixin,
                          egress_segment: str,
-                         ingress_stage: Stage,
+                         ingress_stage: BoundaryStageMixin,
                          ingress_segment: str,
                          port_pair: typing.Union[str, typing.Tuple[str, typing.Type, bool]]):
         """
@@ -205,6 +206,7 @@ class Pipeline():
                 * bool: If the type is a shared pointer (typically should be `False`)
         """
         self._assert_not_built()
+        assert isinstance(egress_stage, BoundaryStageMixin), "Egress stage must be a BoundaryStageMixin"
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
@@ -213,6 +215,7 @@ class Pipeline():
             "receiver_segment": ingress_segment
         })
 
+        assert isinstance(ingress_stage, BoundaryStageMixin), "Ingress stage must be a BoundaryStageMixin"
         ingress_edges = self._segments[ingress_segment]["ingress_ports"]
         ingress_edges.append({
             "port_pair": port_pair,

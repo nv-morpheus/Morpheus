@@ -1,0 +1,100 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Build pull request
+
+on:
+  push:
+    branches:
+      - 'pull-request/**'
+      - 'branch-*'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+jobs:
+
+  pr-builder:
+    needs:
+      - prepare
+      - checks
+      - ci_pipe
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/pr-builder.yaml@branch-24.02
+
+  prepare:
+    # Executes the get-pr-info action to determine if the PR has the skip-ci label, if the action fails we assume the
+    # PR does not have the label
+    name: Prepare
+    runs-on: ubuntu-latest
+    container:
+      image: rapidsai/ci-conda:latest
+    steps:
+      - name: Get PR Info
+        id: get-pr-info
+        uses: rapidsai/shared-action-workflows/get-pr-info@branch-23.08
+        if: ${{ startsWith(github.ref_name, 'pull-request/') }}
+    outputs:
+      is_pr: ${{ startsWith(github.ref_name, 'pull-request/') }}
+      is_main_branch: ${{ github.ref_name == 'main' }}
+      is_dev_branch: ${{ startsWith(github.ref_name, 'branch-') }}
+      has_conda_build_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'conda-build') || false }}
+      has_skip_ci_label: ${{ steps.get-pr-info.outcome == 'success' && contains(fromJSON(steps.get-pr-info.outputs.pr-info).labels.*.name, 'skip-ci') || false }}
+      pr_info: ${{ steps.get-pr-info.outcome == 'success' && steps.get-pr-info.outputs.pr-info || '' }}
+
+  checks:
+    secrets: inherit
+    uses: rapidsai/shared-workflows/.github/workflows/checks.yaml@branch-24.02
+    # Only run the CI pipeline if the PR does not have the skip-ci label
+    if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
+    with:
+      enable_check_generated_files: false
+
+  ci_pipe:
+    name: CI Pipeline
+    needs: [prepare]
+    uses: ./.github/workflows/ci_pipe.yml
+    # Only run the CI pipeline if the PR does not have the skip-ci label
+    if: ${{ ! fromJSON(needs.prepare.outputs.has_skip_ci_label) }}
+    with:
+      # Run checks for any PR branch
+      run_check: ${{ fromJSON(needs.prepare.outputs.is_pr) }}
+      # Run conda-build for main/dev branches and PRs with the conda-build label
+      conda_run_build: ${{ !fromJSON(needs.prepare.outputs.is_pr) || fromJSON(needs.prepare.outputs.has_conda_build_label) }}
+      # Update conda package only for non PR branches. Use 'main' for main branch and 'dev' for all other branches
+      # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
+      # !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || ''
+      conda_upload_label: ""
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240129
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240129
+    secrets:
+      NGC_API_KEY: ${{ secrets.NGC_API_KEY }}

@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,15 +19,14 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
-update_conda_env
+rapids-dependency-file-generator \
+  --output conda \
+  --file_key test \
+  --matrix "cuda=${RAPIDS_CUDA_VERSION%.*};arch=$(arch);py=${RAPIDS_PY_VERSION}" | tee env.yaml
 
-rapids-logger "Check versions"
-python3 --version
-x86_64-conda-linux-gnu-cc --version
-x86_64-conda-linux-gnu-c++ --version
-cmake --version
-ninja --version
-sccache --version
+update_conda_env env.yaml
+
+log_toolchain
 
 git submodule update --init --recursive
 
@@ -36,6 +35,7 @@ CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_STUBS=ON"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_BUILD_WHEEL=OFF"
 CMAKE_FLAGS="${CMAKE_FLAGS} -DMORPHEUS_PYTHON_PERFORM_INSTALL=ON"
+CMAKE_FLAGS="${CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}"
 if [[ "${LOCAL_CI}" == "" ]]; then
     CMAKE_FLAGS="${CMAKE_FLAGS} -DCCACHE_PROGRAM_PATH=$(which sccache)"
 fi
@@ -44,7 +44,7 @@ rapids-logger "Configuring cmake for Morpheus with ${CMAKE_FLAGS}"
 cmake -B build -G Ninja ${CMAKE_FLAGS} .
 
 rapids-logger "Building Morpheus"
-cmake --build build --parallel ${PARALLEL_LEVEL}
+cmake --build build --parallel ${PARALLEL_LEVEL} --target install
 
 if [[ "${LOCAL_CI}" == "" ]]; then
     rapids-logger "sccache usage for morpheus build:"
@@ -69,8 +69,8 @@ rapids-logger "Pulling LFS assets"
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-# List missing files
-rapids-logger "Listing missing files"
+# Listing LFS-known files
+rapids-logger "Listing LFS-known files"
 git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"

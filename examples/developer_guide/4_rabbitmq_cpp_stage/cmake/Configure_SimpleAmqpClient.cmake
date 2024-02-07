@@ -1,5 +1,5 @@
 #=============================================================================
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,10 +25,11 @@ function(find_and_configure_SimpleAmqpClient version)
     GLOBAL_TARGETS
       SimpleAmqpClient
     BUILD_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     INSTALL_EXPORT_SET
-      ${PROJECT_NAME}-exports
+      ${PROJECT_NAME}-core-exports
     CPM_ARGS
+      PATCH_COMMAND git checkout -- . && git apply --whitespace=fix ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/patches/simpleamqpclient_cpp_version.patch
       GIT_REPOSITORY  https://github.com/alanxz/SimpleAmqpClient
       GIT_TAG         "v${version}"
       GIT_SHALLOW     TRUE

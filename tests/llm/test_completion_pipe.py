@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from unittest import mock
 
 import pytest
@@ -35,6 +36,8 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+logger = logging.getLogger(__name__)
 
 
 def _build_engine(llm_service_cls: LLMService, model_name: str = "test_model"):
@@ -69,10 +72,15 @@ def _run_pipeline(config: Config,
 
     pipe.set_source(InMemorySourceStage(config, dataframes=[source_df]))
 
+    deserialize_config = config
     pipe.add_stage(
-        DeserializeStage(config, message_type=ControlMessage, task_type="llm_engine", task_payload=completion_task))
+        DeserializeStage(deserialize_config,
+                         message_type=ControlMessage,
+                         task_type="llm_engine",
+                         task_payload=completion_task))
 
     pipe.add_stage(LLMEngineStage(config, engine=_build_engine(llm_service_cls, model_name=model_name)))
+
     sink = pipe.add_stage(CompareDataFrameStage(config, compare_df=expected_df))
 
     pipe.run()

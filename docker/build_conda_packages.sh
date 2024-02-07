@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +36,7 @@ CUR_GID=$(id -g ${LOGNAME})
 MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 mkdir -p ${MORPHEUS_ROOT}/.cache/ccache
 mkdir -p ${MORPHEUS_ROOT}/.cache/cpm
+mkdir -p ${MORPHEUS_ROOT}/.conda-bld
 
 echo "Building container"
 # Call the build script to get a container ready to build conda packages

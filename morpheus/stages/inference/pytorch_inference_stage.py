@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
         self._model_filename: str = model_filename
 
         self._model = None
+        self._outputs = {}
 
         # Use this to cache the output size
         self._output_size = None
@@ -85,7 +86,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
 
         return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
+    def process(self, batch: MultiInferenceMessage, callback: typing.Callable[[TensorMemory], None]):
 
         # convert from cupy to torch tensor using dlpack
         input_ids = from_dlpack(batch.get_input("input_ids").astype(cp.float).toDlpack()).type(torch.long)
@@ -104,7 +105,7 @@ class _PyTorchInferenceWorker(InferenceWorker):
         response_mem = TensorMemory(count=batch.count, tensors={'probs': probs_cp})
 
         # Return the response
-        cb(response_mem)
+        callback(response_mem)
 
 
 @register_stage("inf-pytorch", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 import os
 
 import click
+# pylint: disable=no-name-in-module
 from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 
+from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -62,7 +63,7 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 )
 @click.option('--model_vocab_hash_file',
               required=True,
-              type=click.Path(exists=True, dir_okay=False),
+              type=MorpheusRelativePath(exists=True, dir_okay=False),
               help="Model vocab hash file to use for pre-processing.")
 @click.option('--model_vocab_file',
               required=True,
@@ -92,8 +93,6 @@ def run_pipeline(
     model_config_file,
     server_url,
 ):
-    CppConfig.set_should_use_cpp(False)
-
     config = Config()
     config.mode = PipelineModes.NLP
     config.num_threads = num_threads

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,6 +65,7 @@ MutableTableInfo MessageMeta::get_mutable_info() const
 
 std::vector<std::string> MessageMeta::get_column_names() const
 {
+    pybind11::gil_scoped_release no_gil;
     return m_data->get_info().get_column_names();
 }
 
