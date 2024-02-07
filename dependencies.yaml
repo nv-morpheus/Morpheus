@@ -164,11 +164,12 @@ files:
       - python
 
 channels:
+  - conda-forge
+  - huggingface
   - rapidsai
   - rapidsai-nightly
   - nvidia
   - nvidia/label/dev
-  - huggingface
   - pytorch
   - defaults
 
@@ -225,9 +226,6 @@ dependencies:
           - pylint=3.0.3
           - versioneer
           - yapf=0.40.1
-          - pip
-          - pip:
-            - rapids-dependency-file-generator
 
   docs:
     common:
@@ -278,13 +276,6 @@ dependencies:
           - typing_utils=0.1
           - watchdog=3.0
           - websockets
-
-          ####### Pip Transitive Dependencies (keep sorted!) #######
-          # These are dependencies that are available on conda, but are required by the pip packages listed below. Its much
-          # better to install them with conda than pip to allow for better dependency resolution.
-          - kafka-python=2.0
-          - port-for=0.7
-          - py4j=0.10
           - pip
           - pip:
             - databricks-connect
