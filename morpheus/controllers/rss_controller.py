@@ -156,7 +156,7 @@ class RSSController:
 
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str) -> "feedparser.FeedParserDict":
 
-        soup = BeautifulSoup(feed_input, 'lxml')
+        soup = BeautifulSoup(feed_input, features='xml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
         if soup.find('item'):
