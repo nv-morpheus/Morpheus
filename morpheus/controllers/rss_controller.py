@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -102,16 +102,23 @@ class RSSController:
             run_indefinitely = any(RSSController.is_url(f) for f in self._feed_input)
 
         self._run_indefinitely = run_indefinitely
+        self._enable_cache = enable_cache
 
-        self._session = None
         if enable_cache:
             self._session = requests_cache.CachedSession(os.path.join(cache_dir, "RSSController.sqlite"),
                                                          backend="sqlite")
+        else:
+            self._session = requests.session()
+
+        self._session.headers.update({
+            "User-Agent":
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+        })
 
         self._feed_stats_dict = {
-            input:
+            url:
                 FeedStats(failure_count=0, success_count=0, last_failure=-1, last_success=-1, last_try_result="Unknown")
-            for input in self._feed_input
+            for url in self._feed_input
         }
 
     @property
@@ -119,14 +126,9 @@ class RSSController:
         """Property that determines to run the source indefinitely"""
         return self._run_indefinitely
 
-    @property
-    def session_exist(self) -> bool:
-        """Property that indicates the existence of a session."""
-        return bool(self._session)
-
     def get_feed_stats(self, feed_url: str) -> FeedStats:
         """
-        Get feed input stats.
+        Get feed url stats.
 
         Parameters
         ----------
@@ -141,30 +143,20 @@ class RSSController:
         Raises
         ------
         ValueError
-            If the feed URL is not found in the feed input provided to the constructor.
+            If the feed URL is not found in the feed url provided to the constructor.
         """
         if feed_url not in self._feed_stats_dict:
-            raise ValueError("The feed URL is not part of the feed input provided to the constructor.")
+            raise ValueError("The feed URL is not part of the feed url provided to the constructor.")
 
         return self._feed_stats_dict[feed_url]
-
-    def _get_response_text(self, url: str) -> str:
-        if self.session_exist:
-            response = self._session.get(url)
-        else:
-            response = requests.get(url, timeout=self._request_timeout)
-
-        return response.text
 
     def _read_file_content(self, file_path: str) -> str:
         with open(file_path, 'r', encoding="utf-8") as file:
             return file.read()
 
-    def _try_parse_feed_with_beautiful_soup(self, feed_input: str, is_url: bool) -> "feedparser.FeedParserDict":
+    def _try_parse_feed_with_beautiful_soup(self, feed_input: str) -> "feedparser.FeedParserDict":
 
-        feed_input = self._get_response_text(feed_input) if is_url else self._read_file_content(feed_input)
-
-        soup = BeautifulSoup(feed_input, 'xml')
+        soup = BeautifulSoup(feed_input, 'lxml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
         if soup.find('item'):
@@ -172,12 +164,23 @@ class RSSController:
         elif soup.find('entry'):
             items = soup.find_all("entry")
         else:
-            raise RuntimeError(f"Unable to find item or entry tags in {feed_input}.")
+            # Check if the current logging level is DEBUG
+            if (logger.getEffectiveLevel() == logging.DEBUG):
+                # If DEBUG, print feed_input in full
+                err_msg = f"Unable to find item or entry tags in response from {feed_input}."
+            else:
+                # If not DEBUG, truncate feed_input to 256 characters
+                truncated_input = (feed_input[:253] + '...') if len(feed_input) > 256 else feed_input
+                err_msg = (
+                    f"Unable to find item or entry tags in response from feed input (truncated, set logging to debug"
+                    f" for full output): {truncated_input}.")
+
+            raise RuntimeError(err_msg)
 
         feed_items = []
         for item in items:
             feed_item = {}
-            # Iterate over each children in an item
+            # Iterate over each child in an item
             for child in item.children:
                 if child.name is not None:
                     # If child link doesn't have a text, get it from href
@@ -187,7 +190,7 @@ class RSSController:
                             feed_item[child.name] = child.get('href', 'Unknown value')
                         else:
                             feed_item[child.name] = link_value
-                    # To be consistant with feedparser entries, rename guid to id
+                    # To be consistent with feedparser entries, rename guid to id
                     elif child.name == "guid":
                         feed_item["id"] = child.get_text()
                     else:
@@ -205,32 +208,28 @@ class RSSController:
 
         fallback = False
         cache_hit = False
-        is_url_with_session = is_url and self.session_exist
 
-        if is_url_with_session:
-            response = self._session.get(url)
-            cache_hit = response.from_cache
+        if is_url:
+            response = self._session.get(url, timeout=self._request_timeout)
             feed_input = response.text
+            if self._enable_cache:
+                cache_hit = response.from_cache
         else:
             feed_input = url
 
         feed = feedparser.parse(feed_input)
 
         if feed["bozo"]:
-            cache_hit = False
-
-            if is_url_with_session:
-                fallback = True
-                logger.info("Failed to parse feed: %s. Trying to parse using feedparser directly.", url)
-                feed = feedparser.parse(url)
-
-            if feed["bozo"]:
-                try:
-                    logger.info("Failed to parse feed: %s, %s. Try parsing feed manually", url, feed['bozo_exception'])
-                    feed = self._try_parse_feed_with_beautiful_soup(url, is_url)
-                except Exception:
-                    logger.error("Failed to parse the feed manually: %s", url)
-                    raise
+            fallback = True
+            try:
+                if not is_url:
+                    # Read file content
+                    feed_input = self._read_file_content(feed_input)
+                # Parse feed content with beautifulsoup
+                feed = self._try_parse_feed_with_beautiful_soup(feed_input)
+            except Exception:
+                logger.error("Failed to parse the feed manually: %s", url)
+                raise
 
         logger.debug("Parsed feed: %s. Cache hit: %s. Fallback: %s", url, cache_hit, fallback)
 
@@ -312,17 +311,17 @@ class RSSController:
     @classmethod
     def is_url(cls, feed_input: str) -> bool:
         """
-        Check if the provided input is a valid URL.
+        Check if the provided url is a valid URL.
 
         Parameters
         ----------
         feed_input : str
-            The input string to be checked.
+            The url string to be checked.
 
         Returns
         -------
         bool
-            True if the input is a valid URL, False otherwise.
+            True if the url is a valid URL, False otherwise.
         """
         try:
             parsed_url = urlparse(feed_input)

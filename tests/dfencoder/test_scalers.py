@@ -22,6 +22,10 @@ import torch
 
 from morpheus.models.dfencoder import scalers
 
+# Pylint doesn't understand how pytest fixtures work and flags fixture uasage as a redefinition of the symbol in the
+# outer scope.
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(name="fit_tensor", scope="function")
 def fit_tensor_fixture():
@@ -159,13 +163,13 @@ def test_gauss_rank_scaler_fit_transform(gauss_rank_scaler, tensor):
 
 def test_null_scaler(tensor):
     orig = tensor.to(dtype=torch.float32, copy=True)
-    scalar = scalers.NullScaler()
-    scalar.fit(tensor)
+    null_scaler = scalers.NullScaler()
+    null_scaler.fit(tensor)
 
     # Verify it does nothing
-    assert scalar.transform(tensor) is tensor
-    assert scalar.inverse_transform(tensor) is tensor
-    assert scalar.fit_transform(tensor) is tensor
+    assert null_scaler.transform(tensor) is tensor
+    assert null_scaler.inverse_transform(tensor) is tensor
+    assert null_scaler.fit_transform(tensor) is tensor
 
     # After all that the values should be the same
     assert torch.equal(tensor, orig), f"{tensor} != {orig}"

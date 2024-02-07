@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ Self = typing.TypeVar("Self", bound="MultiTensorMessage")
 @dataclasses.dataclass
 class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
     """
-    This class contains several inference responses as well as the cooresponding message metadata.
+    This class contains several inference responses as well as the corresponding message metadata.
 
     Parameters
     ----------

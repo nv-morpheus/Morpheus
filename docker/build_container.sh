@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +38,7 @@ LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-22.04}
 MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-"OFF"}
 PYTHON_VER=${PYTHON_VER:-3.10}
-RAPIDS_VER=${RAPIDS_VER:-23.06}
+RAPIDS_VER=${RAPIDS_VER:-24.02}
 TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
 # Determine the relative path from $PWD to $MORPHEUS_ROOT

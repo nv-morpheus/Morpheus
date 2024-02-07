@@ -93,7 +93,6 @@ def _run_pipeline(config: Config,
                   collection_name: str,
                   repeat_count: int,
                   utils_mod: types.ModuleType) -> dict:
-
     config.mode = PipelineModes.NLP
     config.edge_buffer_size = 128
     config.pipeline_batch_size = 1024
@@ -140,7 +139,7 @@ def test_rag_standalone_pipe_nemo(config: Config,
     collection_name = "test_rag_standalone_pipe_nemo"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
     mock_nemollm.post_process_generate_response.side_effect = [{"text": EXPECTED_RESPONSE} for _ in range(repeat_count)]
@@ -179,7 +178,7 @@ def test_rag_standalone_pipe_openai(config: Config,
     collection_name = "test_rag_standalone_pipe_openai"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
 
@@ -210,7 +209,7 @@ def test_rag_standalone_pipe_integration_nemo(config: Config,
     collection_name = "test_rag_standalone_pipe__integration_nemo"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
     results = _run_pipeline(
@@ -243,7 +242,7 @@ def test_rag_standalone_pipe_integration_openai(config: Config,
     collection_name = "test_rag_standalone_pipe_integration_openai"
     populate_milvus(milvus_server_uri=milvus_server_uri,
                     collection_name=collection_name,
-                    resource_kwargs=import_mod.build_milvus_config(embedding_size=EMBEDDING_SIZE),
+                    resource_kwargs=import_mod.build_default_milvus_config(embedding_size=EMBEDDING_SIZE),
                     df=dataset["service/milvus_rss_data.json"],
                     overwrite=True)
 
