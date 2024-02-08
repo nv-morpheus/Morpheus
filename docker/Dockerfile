@@ -39,9 +39,9 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="nvidia/cuda"
-ARG CUDA_MAJOR_VER=11
-ARG CUDA_MINOR_VER=8
-ARG CUDA_REV_VER=0
+ARG CUDA_MAJOR_VER=12
+ARG CUDA_MINOR_VER=1
+ARG CUDA_REV_VER=1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=22.04
 
@@ -176,13 +176,13 @@ ARG CUDA_MINOR_VER
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/dev_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/dev.yaml
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS} &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/dev.yaml &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias
 
@@ -232,7 +232,7 @@ ARG MORPHEUS_ROOT_HOST
 ARG CUDA_MAJOR_VER
 ARG CUDA_MINOR_VER
 
-COPY ${MORPHEUS_ROOT_HOST}/docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
+COPY ${MORPHEUS_ROOT_HOST}/conda/environments/runtime_cuda-${CUDA_MAJOR_VER}${CUDA_MINOR_VER}_arch-x86_64.yaml ./conda/environments/runtime.yaml
 
 # Mount Morpheus conda package build in `conda_bld_morpheus`
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
@@ -244,13 +244,17 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus \
         -c local \
+        -c conda-forge \
+        -c huggingface \
         -c rapidsai \
-        -c nvidia/label/cuda-11.8.0 \
-        -c nvidia/label/dev \
+        -c rapidsai-nightly \
         -c nvidia \
+        -c nvidia/label/dev \
         -c pytorch \
-        -c conda-forge morpheus &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml && \
+        -c defaults \
+        morpheus &&\
+
+    /opt/conda/bin/conda env update --solver=libmamba -n morpheus --file conda/environments/runtime.yaml && \
     conda clean -afy
 
 # Only copy specific files/folders over that are necessary for runtime
@@ -259,7 +263,8 @@ COPY "${MORPHEUS_ROOT_HOST}/docs" "./docs"
 COPY "${MORPHEUS_ROOT_HOST}/examples" "./examples"
 COPY "${MORPHEUS_ROOT_HOST}/models" "./models"
 COPY "${MORPHEUS_ROOT_HOST}/scripts" "./scripts"
-COPY ["${MORPHEUS_ROOT_HOST}/*.md", "${MORPHEUS_ROOT_HOST}/LICENSE", "./"]
+COPY "${MORPHEUS_ROOT_HOST}/*.md" "./"
+COPY "${MORPHEUS_ROOT_HOST}/LICENSE" "./"
 
 # Use morpheus by default
 CMD [ "morpheus" ]

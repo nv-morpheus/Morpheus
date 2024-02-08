@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +22,9 @@ Prior to running the GNN fraud detection pipeline, additional requirements must 
 
 ```bash
 export CUDA_VER=11.8
-mamba install -n base -c conda-forge conda-merge
-conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml \
-  examples/gnn_fraud_detection_pipeline/requirements.yml > .tmp/merged.yml \
-  && mamba env update -n ${CONDA_DEFAULT_ENV} --file .tmp/merged.yml
+mamba env update \
+  -n ${CONDA_DEFAULT_ENV} \
+  --file ./morpheus/conda/environments/examples_cuda-121_arch-x86_64.yaml
 ```
 
 ## Running
