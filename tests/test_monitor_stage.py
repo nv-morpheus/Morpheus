@@ -72,18 +72,18 @@ def test_on_start(mock_morph_tqdm: mock.MagicMock, config: Config):
 
 
 @mock.patch('morpheus.controllers.monitor_controller.MorpheusTqdm')
-def test_stop(mock_morph_tqdm: mock.MagicMock, config: Config):
+async def test_join(mock_morph_tqdm: mock.MagicMock, config: Config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
     stage = MonitorStage(config, log_level=logging.WARNING)
     assert stage._mc._progress is None
 
-    # Calling on_stop is a noop if we are stopped
-    stage.stop()
+    # Calling join is a noop if we are stopped
+    await stage.join()
     mock_morph_tqdm.assert_not_called()
 
     stage.on_start()
-    stage.stop()
+    await stage.join()
     mock_morph_tqdm.close.assert_called_once()
 
 
