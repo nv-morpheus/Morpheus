@@ -94,7 +94,7 @@ class Pipeline():
 
         self._loop: asyncio.AbstractEventLoop = None
 
-        self._completion_event: asyncio.Event = None
+        self._post_start_future: asyncio.Future = None
 
     @property
     def state(self) -> PipelineState:
@@ -425,9 +425,8 @@ class Pipeline():
                 with self._mutex:
                     self._state = PipelineState.COMPLETED
 
-                self._completion_event.set()
-
-        asyncio.create_task(post_start(self._mrc_executor))
+        # asyncio.create_task(post_start(self._mrc_executor))
+        self._post_start_future = asyncio.create_task(post_start(self._mrc_executor))
 
     def stop(self):
         """
@@ -452,14 +451,13 @@ class Pipeline():
         Suspend execution all currently running stages and the MRC pipeline.
         Typically called after `stop`.
         """
-        await self._completion_event.wait()
+        await self._post_start_future
 
     def _on_stop(self):
         self._mrc_executor = None
 
     async def build_and_start(self):
 
-        self._completion_event = asyncio.Event()
         if (self._state == PipelineState.INITIALIZED):
             try:
                 self.build()
