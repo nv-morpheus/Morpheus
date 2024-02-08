@@ -60,9 +60,6 @@ def download_and_split(msg: MessageMeta, text_splitter, link_column, session) ->
 
     df = msg.copy_dataframe()
 
-    if isinstance(df, cudf.DataFrame):
-        df: pd.DataFrame = df.to_pandas()
-
     # Convert the dataframe into a list of dictionaries
     df_dicts = df.to_dict(orient="records")
 
