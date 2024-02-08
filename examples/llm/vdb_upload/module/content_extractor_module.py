@@ -197,7 +197,7 @@ def _csv_to_text_converter(input_info: ConverterInputInfo) -> list[str]:
         raise ValueError("The CSV file must either include a 'content' column or have a "
                          "columns specified in the meta configuration with key 'text_column_names'.")
     df.fillna(value='', inplace=True)
-    text_arr = df[text_column_names].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
+    text_arr = df[sorted(text_column_names)].apply(lambda x: ' '.join(map(str, x)), axis=1).tolist()
     return text_arr
 
 
