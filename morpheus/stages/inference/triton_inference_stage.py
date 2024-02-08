@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(None)
 def _notify_dtype_once(model_name: str, input_name: str, triton_dtype: cp.dtype, data_dtype: cp.dtype):
-
     can_convert = cp.can_cast(data_dtype, triton_dtype, casting="safe")
 
     msg = "Unexpected dtype for Triton input. "
@@ -421,14 +420,14 @@ class TritonInferenceWorker(InferenceWorker):
     server_url : str
         Triton server gRPC URL including the port.
     force_convert_inputs: bool
-        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
+        Whether to convert the inputs to the type specified by Triton. This will happen automatically if no
         data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
         data would be lost (i.e., double -> float).
     inout_mapping : dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
     use_shared_memory: bool, default = False
-        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
+        Whether to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     needs_logits : bool, default = False
         Determines whether a logits calculation is needed for the value returned by the Triton inference response.
@@ -454,7 +453,7 @@ class TritonInferenceWorker(InferenceWorker):
         self._fea_length = c.feature_length
         self._force_convert_inputs = force_convert_inputs
 
-        # Whether or not the returned value needs a logits calc for the response
+        # Whether the returned value needs a logits calc for the response
         self._needs_logits = needs_logits
 
         self._inputs: typing.Dict[str, TritonInOut] = {}
@@ -501,7 +500,7 @@ class TritonInferenceWorker(InferenceWorker):
             # Check batch size
             if (model_config.get("max_batch_size", 0) != self._max_batch_size):
 
-                # If the model is more, thats fine. Gen warning
+                # If the model is more, that's fine. Gen warning
                 if (model_config["max_batch_size"] > self._max_batch_size):
                     warnings.warn(
                         f"Model max batch size ({model_config['max_batch_size']}) is more than configured max batch "
@@ -540,11 +539,9 @@ class TritonInferenceWorker(InferenceWorker):
                                    mapped_name=mapped_name)
 
             for x in model_meta["inputs"]:
-
                 self._inputs[x["name"]] = build_inout(x)
 
             for x in model_meta["outputs"]:
-
                 assert x["name"] not in self._inputs, "Input/Output names must be unique from eachother"
 
                 self._outputs[x["name"]] = build_inout(x)

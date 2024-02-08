@@ -95,7 +95,8 @@ class GraphSAGEStage(SinglePortStage):
         inductive_embedding.rename(lambda x: "ind_emb_" + str(x), axis=1, inplace=True)
 
         for col in inductive_embedding.columns.values.tolist():
-            message.set_meta(col, inductive_embedding[col])
+            # without `to_pandas`, all values in the meta become `<NA>`
+            message.set_meta(col, inductive_embedding[col].to_pandas())
 
         assert (message.mess_count == len(inductive_embedding))
 

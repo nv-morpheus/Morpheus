@@ -56,7 +56,7 @@ os.environ["MORPHEUS_IN_SPHINX_BUILD"] = "1"
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2023, NVIDIA'
+copyright = '2024, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -170,6 +170,7 @@ autodoc_mock_imports = [
     "cudf",  # Avoid loading GPU libraries during the documentation build
     "cupy",  # Avoid loading GPU libraries during the documentation build
     "databricks.connect",
+    "datacompy",
     "langchain",
     "merlin",
     "morpheus.cli.commands",  # Dont document the CLI in Sphinx
@@ -178,7 +179,7 @@ autodoc_mock_imports = [
     "pymilvus",
     "tensorrt",
     "torch",
-    "tqdm",
+    "tqdm"
 ]
 
 suppress_warnings = [
