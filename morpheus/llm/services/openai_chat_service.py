@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,13 +23,10 @@ from morpheus.llm.services.llm_service import LLMService
 logger = logging.getLogger(__name__)
 
 IMPORT_EXCEPTION = None
-IMPORT_ERROR_MESSAGE = (
-    "OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
-    "Install it by running the following command:\n"
-    "`mamba install -n base -c conda-forge conda-merge`\n"
-    "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-    "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-    "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
+IMPORT_ERROR_MESSAGE = ("OpenAIChatService & OpenAIChatClient require the openai package to be installed. "
+                        "Install it by running the following command:\n"
+                        "`conda env update --solver=libmamba -n morpheus "
+                        "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 try:
     import openai

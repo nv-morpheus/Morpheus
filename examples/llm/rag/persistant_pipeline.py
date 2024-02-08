@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2023-2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ from morpheus.stages.output.write_to_vector_db_stage import WriteToVectorDBStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
+from ..common.utils import build_default_milvus_config
 from ..common.utils import build_llm_service
-from ..common.utils import build_milvus_config
 from ..common.utils import build_milvus_service
 
 
@@ -58,12 +58,10 @@ class SplitStage(Stage):
         return False
 
     def compute_schema(self, schema: StageSchema):
-
         schema.output_schemas[0].set_type(schema.input_type)
         schema.output_schemas[1].set_type(schema.input_type)
 
     def _build(self, builder: mrc.Builder, input_nodes: list[mrc.SegmentObject]) -> list[mrc.SegmentObject]:
-
         assert len(input_nodes) == 1, "Only 1 input supported"
 
         # Create a broadcast node
@@ -88,7 +86,6 @@ class SplitStage(Stage):
 
 
 def _build_engine(model_name: str, vdb_service: VectorDBResourceService, llm_service: str):
-
     engine = LLMEngine()
 
     engine.add_node("extracter", node=ExtracterNode())
@@ -114,7 +111,6 @@ Please answer the following question: \n{{ query }}"""
 
 
 def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, embedding_size, model_name, llm_service: str):
-
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -184,11 +180,11 @@ def pipeline(num_threads, pipeline_batch_size, model_max_batch_size, embedding_s
         WriteToKafkaStage(config, bootstrap_servers="auto", output_topic="retrieve_output"))
     pipe.add_edge(retrieve_llm_engine, retrieve_results)
 
-    # If its an upload task, then send it to the database
+    # If it's an upload task, then send it to the database
     upload_vdb = pipe.add_stage(
         WriteToVectorDBStage(config,
                              resource_name="RSS",
-                             resource_kwargs=build_milvus_config(embedding_size=embedding_size),
+                             resource_kwargs=build_default_milvus_config(embedding_size=embedding_size),
                              recreate=True,
                              service=vdb_service))
     pipe.add_edge(split.output_ports[1], upload_vdb)

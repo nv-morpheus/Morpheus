@@ -24,6 +24,7 @@ from morpheus.config import Config
 from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
+from morpheus.modules.preprocess.deserialize import _process_dataframe_to_multi_message
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -42,15 +43,14 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
 
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
-
-        DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
+        _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=False)
 
         assert not meta.has_sliceable_index()
         assert "_index_" not in meta.df.columns
 
     dataset.assert_df_equal(meta.df, df)
 
-    DeserializeStage.process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
+    _process_dataframe_to_multi_message(meta, 5, ensure_sliceable_index=True)
 
     assert meta.has_sliceable_index()
     assert "_index_" in meta.df.columns
@@ -71,7 +71,7 @@ def _assert_received_types(sink: CompareDataFrameStage, message_type: type):
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
 def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
-    End to end test for DeserializeStage
+    End-to-end test for DeserializeStage
     """
 
     filter_probs_df = dataset["filter_probs.csv"]
@@ -93,7 +93,7 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
 @pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
 def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
-    End to end test across mulitiple segments
+    End-to-end test across mulitiple segments
     """
 
     filter_probs_df = dataset["filter_probs.csv"]

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,9 +39,11 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
 #include <cudf/column/column_view.hpp>
 #include <cudf/types.hpp>
-#include <glog/logging.h>         // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>    // for MRC_CHECK_CUDA
+#include <glog/logging.h>       // for CHECK, CHECK_NE
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
+#include <rmm/mr/device/per_device_resource.hpp>
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t
@@ -98,7 +100,7 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     return {
         data,
         std::move(dtype),
-        std::make_shared<MemoryDescriptor>(),
+        std::make_shared<MemoryDescriptor>(rmm::cuda_stream_per_thread, rmm::mr::get_current_device_resource()),
         {num_rows, 1},
         {1, 0},
     };
@@ -111,11 +113,15 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
         if (m_filter_source == FilterSource::TENSOR)
         {
-            get_filter_source = [this](auto x) { return get_tensor_filter_source(x); };
+            get_filter_source = [this](auto x) {
+                return get_tensor_filter_source(x);
+            };
         }
         else
         {
-            get_filter_source = [this](auto x) { return get_column_filter_source(x); };
+            get_filter_source = [this](auto x) {
+                return get_column_filter_source(x);
+            };
         }
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
@@ -190,8 +196,12 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
                 }
             },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
+            [&](std::exception_ptr error_ptr) {
+                output.on_error(error_ptr);
+            },
+            [&]() {
+                output.on_completed();
+            }));
     };
 }
 

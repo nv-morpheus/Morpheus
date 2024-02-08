@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -233,7 +233,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview) guide along with the other [Morpheus Examples](./examples.md).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview.rst) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 

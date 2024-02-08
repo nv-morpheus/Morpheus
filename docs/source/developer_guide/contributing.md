@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -205,7 +205,7 @@ git submodule update --init --recursive
 
 1. Create the Morpheus Conda environment
    ```bash
-   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+   conda env create --solver=libmamba -n morpheus --file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml
    conda activate morpheus
    ```
 
@@ -420,7 +420,7 @@ Third-party code included in the source tree (that is not pulled in as an extern
 Ex:
 ```
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

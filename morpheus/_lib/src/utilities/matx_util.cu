@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -269,16 +269,10 @@ struct MatxUtil__MatxThreshold
         auto input_tensor =
             matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT*>(input_data), std::move(desc));
 
-        // Tmp array to hold max value
-        auto max_tensor = matx::make_tensor<InputT>(output_shape);
-
-        // row-wise reduction
-        matx::rmax(max_tensor, input_tensor, stream.value());
-
         auto output_tensor = matx::make_tensor<bool>(static_cast<bool*>(output_data), output_shape);
 
         // Convert max value to bool
-        (output_tensor = max_tensor > (InputT)threshold).run(stream.value());
+        (output_tensor = matx::rmax(input_tensor, {1}) > (InputT)threshold).run(stream.value());
     }
 
     /**
@@ -363,12 +357,10 @@ struct MatxUtil__MatxReduceMax
                      matx::index_t output_idx)
     {
         auto input_slice = input_tensor.Slice({start, 0}, {stop, matx::matxEnd});
-        auto tmp_tensor  = matx::make_tensor<InputT>({num_cols});
-
-        matx::rmax(tmp_tensor, input_slice.Permute({1, 0}), stream.value());
 
         auto output_slice = output_tensor.template Slice<1>({output_idx, 0}, {matx::matxDropDim, matx::matxEnd});
-        (output_slice = tmp_tensor).run(stream.value());
+
+        (output_slice = matx::rmax(input_slice.Permute({1, 0}))).run(stream.value());
     }
 };
 }  // namespace

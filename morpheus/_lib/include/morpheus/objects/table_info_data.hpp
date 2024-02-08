@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>  // for size_type
 
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -40,11 +41,25 @@ struct TableInfoData
       table_view(std::move(view)),
       index_names(std::move(indices)),
       column_names(std::move(columns))
+    {
+        std::vector<cudf::size_type> col_indices(column_names.size());
+        std::iota(col_indices.begin(), col_indices.end(), 0);
+        column_indices = std::move(col_indices);
+    }
+    TableInfoData(cudf::table_view view,
+                  std::vector<std::string> indices,
+                  std::vector<std::string> columns,
+                  std::vector<cudf::size_type> col_indicies) :
+      table_view(std::move(view)),
+      index_names(std::move(indices)),
+      column_names(std::move(columns)),
+      column_indices(std::move(col_indicies))
     {}
 
     cudf::table_view table_view;
     std::vector<std::string> index_names;
     std::vector<std::string> column_names;
+    std::vector<cudf::size_type> column_indices;
 };
 
 }  // namespace morpheus
