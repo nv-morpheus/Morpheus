@@ -92,10 +92,11 @@ add_library(${PROJECT_NAME}::morpheus ALIAS morpheus)
 target_link_libraries(morpheus
   PRIVATE
     matx::matx
+    $<$<CONFIG:Debug>:ZLIB::ZLIB>
   PUBLIC
     $<TARGET_NAME_IF_EXISTS:conda_env>
     cudf::cudf
-    CUDA::nvToolsExt
+    CUDA::nvtx3
     mrc::pymrc
     RDKAFKA::RDKAFKA
     TritonClient::httpclient_static

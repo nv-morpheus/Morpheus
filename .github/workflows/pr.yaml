@@ -94,8 +94,7 @@ jobs:
       # Disable conda upload for now, once we have morpheus packages in conda forge set the value to
       # !fromJSON(needs.prepare.outputs.is_pr) && (fromJSON(needs.prepare.outputs.is_main_branch) && 'main' || 'dev') || ''
       conda_upload_label: ""
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-230913
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230913
-      # Info about the PR. Empty for non PR branches. Useful for extracting PR number, title, etc.
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-build-240129
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-240129
     secrets:
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}

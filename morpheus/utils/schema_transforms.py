@@ -99,7 +99,7 @@ def process_dataframe(
     if (isinstance(df_in, pd.DataFrame)):
         convert_to_pd = True
 
-    # If we're given an nvt_schema, we just use it.
+    # If we're given a nvt_schema, we just use it.
     nvt_workflow = input_schema
     if (isinstance(input_schema, DataFrameInputSchema)):
         if (input_schema.nvt_workflow is None):

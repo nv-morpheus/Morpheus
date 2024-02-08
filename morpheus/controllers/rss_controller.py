@@ -164,12 +164,23 @@ class RSSController:
         elif soup.find('entry'):
             items = soup.find_all("entry")
         else:
-            raise RuntimeError(f"Unable to find item or entry tags in {feed_input}.")
+            # Check if the current logging level is DEBUG
+            if (logger.getEffectiveLevel() == logging.DEBUG):
+                # If DEBUG, print feed_input in full
+                err_msg = f"Unable to find item or entry tags in response from {feed_input}."
+            else:
+                # If not DEBUG, truncate feed_input to 256 characters
+                truncated_input = (feed_input[:253] + '...') if len(feed_input) > 256 else feed_input
+                err_msg = (
+                    f"Unable to find item or entry tags in response from feed input (truncated, set logging to debug"
+                    f" for full output): {truncated_input}.")
+
+            raise RuntimeError(err_msg)
 
         feed_items = []
         for item in items:
             feed_item = {}
-            # Iterate over each children in an item
+            # Iterate over each child in an item
             for child in item.children:
                 if child.name is not None:
                     # If child link doesn't have a text, get it from href
@@ -179,7 +190,7 @@ class RSSController:
                             feed_item[child.name] = child.get('href', 'Unknown value')
                         else:
                             feed_item[child.name] = link_value
-                    # To be consistant with feedparser entries, rename guid to id
+                    # To be consistent with feedparser entries, rename guid to id
                     elif child.name == "guid":
                         feed_item["id"] = child.get_text()
                     else:

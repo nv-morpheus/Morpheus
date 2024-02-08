@@ -186,7 +186,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         ----------
         columns : typing.Union[None, str, typing.List[str]]
             Input column names. Returns all columns if `None` is specified. When a string is passed, a `Series` is
-            returned. Otherwise a `Dataframe` is returned.
+            returned. Otherwise, a `Dataframe` is returned.
 
         Returns
         -------
@@ -270,23 +270,29 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 # cudf is really bad at adding new columns
                 if (isinstance(df, cudf.DataFrame)):
 
-                    saved_index = None
+                    # TODO(morpheus#1487): This logic no longer works in CUDF 24.04.
+                    # We should find a way to reinable the no-dropped-index path as
+                    # that should be more performant than dropping the index.
+                    # # saved_index = None
 
-                    # Check to see if we can use slices
-                    if (not (df.index.is_unique and
-                             (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
-                        # Save the index and reset
-                        saved_index = df.index
+                    # # # Check to see if we can use slices
+                    # # if (not (df.index.is_unique and
+                    # #          (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
+                    # #     # Save the index and reset
+                    # #     saved_index = df.index
+                    # #     df.reset_index(drop=True, inplace=True)
 
-                        df.reset_index(drop=True, inplace=True)
+                    # # # Perform the update via slices
+                    # # df.loc[df.index[row_indexer], columns] = value
 
-                    # Perform the update via slices
+                    # # # Reset the index if we changed it
+                    # # if (saved_index is not None):
+                    # #     df.set_index(saved_index, inplace=True)
+
+                    saved_index = df.index
+                    df.reset_index(drop=True, inplace=True)
                     df.loc[df.index[row_indexer], columns] = value
-
-                    # Reset the index if we changed it
-                    if (saved_index is not None):
-                        df.set_index(saved_index, inplace=True)
-
+                    df.set_index(saved_index, inplace=True)
                 else:
                     # Need to determine the boolean mask to use indexes with df.loc
                     row_mask = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])

@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Cyber Security News</title>
+    <link>http://localhost:8080/RSS/feed_link</link>
+    <description>Latest updates and articles in cybersecurity</description>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 10 Jan 2024 10:00:00 GMT</lastBuildDate>
+    <item>
+      <title>New Vulnerability Discovered in Popular Web Framework</title>
+      <link>https://www.cybersecuritynews.com/new-vulnerability-web-framework</link>
+      <description>A new security vulnerability has been identified in the popular XYZ Web Framework, which could allow attackers to execute arbitrary code on affected systems. Users are advised to apply the latest patches immediately.</description>
+      <pubDate>Mon, 10 Jan 2024 09:00:00 GMT</pubDate>
+      <guid>https://www.cybersecuritynews.com/new-vulnerability-web-framework</guid>
+    </item>
+  </channel>
+</rss>

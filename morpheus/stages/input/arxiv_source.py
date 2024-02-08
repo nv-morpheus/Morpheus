@@ -36,10 +36,8 @@ if typing.TYPE_CHECKING:
 
 IMPORT_ERROR_MESSAGE = (
     "ArxivSource requires additional dependencies to be installed. Install them by running the following command: "
-    "`mamba install -n base -c conda-forge conda-merge`\n"
-    "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-    "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-    "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
+    "`conda env update --solver=libmamba -n morpheus"
+    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
 
 
 @register_stage("from-arxiv")
@@ -48,10 +46,8 @@ class ArxivSource(PreallocatorMixin, SingleOutputSource):
     Source stage that downloads PDFs from arxiv and converts them to dataframes.
 
     This stage requires several additional dependencies to be installed. Install them by running the following command:
-    mamba install -n base -c conda-forge conda-merge
-    conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml
-    docker/conda/environments/cuda${CUDA_VER}_examples.yml
-    > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml
+    `conda env update --solver=libmamba -n morpheus "
+    "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`
 
     Parameters
     ----------

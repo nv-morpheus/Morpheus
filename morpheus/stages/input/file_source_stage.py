@@ -19,6 +19,8 @@ import typing
 
 import mrc
 
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MessageMeta as CppMessageMeta
 from morpheus.cli import register_stage
 from morpheus.common import FileTypes
 from morpheus.config import Config
@@ -55,7 +57,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     filter_null : bool, default = True
-        Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
+        Whether to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
     parser_kwargs : dict, default = {}
         Extra options to pass to the file parser.
@@ -98,7 +100,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         return self._input_count
 
     def supports_cpp_node(self) -> bool:
-        """Indicates whether or not this stage supports a C++ node"""
+        """Indicates whether this stage supports a C++ node"""
         return True
 
     def compute_schema(self, schema: StageSchema):
@@ -129,8 +131,10 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         )
 
         for i in range(self._repeat_count):
-
-            x = MessageMeta(df)
+            if (self._build_cpp_node()):
+                x = CppMessageMeta(df)
+            else:
+                x = MessageMeta(df)
 
             # If we are looping, copy the object. Do this before we push the object in case it changes
             if (i + 1 < self._repeat_count):
