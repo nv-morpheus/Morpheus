@@ -133,16 +133,16 @@ def request_with_retry(
                 raise e
 
             if retry_after_header is not None:
-                sleep_time_ = retry_after_header
+                actual_sleep_time = retry_after_header
             else:
-                sleep_time_ = (2**(try_count - 1)) * sleep_time
+                actual_sleep_time = (2**(try_count - 1)) * sleep_time
 
             logger.error("Error occurred performing %s request to %s: %s",
                          request_kwargs['method'],
                          request_kwargs['url'],
                          e)
-            logger.debug("Sleeping for %s seconds before retrying request again", sleep_time)
-            time.sleep(sleep_time_)
+            logger.debug("Sleeping for %s seconds before retrying request again", actual_sleep_time)
+            time.sleep(actual_sleep_time)
 
 
 def prepare_url(url: str) -> str:
