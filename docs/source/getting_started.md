@@ -233,7 +233,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview) guide along with the other [Morpheus Examples](./examples.md).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./basics/overview.rst) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 
