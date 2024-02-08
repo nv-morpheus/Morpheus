@@ -21,7 +21,6 @@ from dfp.modules import dfp_data_prep
 from dfp.modules import dfp_deployment
 from dfp.modules import dfp_inference
 from dfp.modules import dfp_inference_pipe
-from dfp.modules import dfp_monitor
 from dfp.modules import dfp_postprocessing
 from dfp.modules import dfp_preproc
 from dfp.modules import dfp_rolling_window
@@ -30,7 +29,6 @@ from dfp.modules import dfp_training
 from dfp.modules import dfp_training_pipe
 
 __all__ = [
-    "dfp_monitor",
     "dfp_split_users",
     "dfp_data_prep",
     "dfp_inference",

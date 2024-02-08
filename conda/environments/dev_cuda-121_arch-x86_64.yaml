@@ -66,6 +66,7 @@ dependencies:
 - pytest-cov
 - pytest=7.4.4
 - python-confluent-kafka>=1.9.2,<1.10.0a0
+- python-docx==1.1.0
 - python-graphviz
 - python=3.10
 - pytorch-cuda
@@ -88,6 +89,7 @@ dependencies:
 - yapf=0.40.1
 - zlib=1.2.13
 - pip:
+  - PyMuPDF==1.23.21
   - databricks-connect
   - milvus==2.3.5
   - pymilvus==2.3.6

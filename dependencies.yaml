@@ -124,7 +124,7 @@ files:
       - example-llm-vdb-upload
 
   runtime:
-    output: none
+    output: conda
     matrix:
       cuda: ["12.1"]
       arch: [x86_64]
@@ -175,7 +175,7 @@ channels:
 
 dependencies:
 
-  build_cpp: # should be split in to `build_python` if/when converting to use scikit-build
+  build_cpp: # should be split into `build_python` if/when converting to use scikit-build
     common:
       - output_types: [conda]
         packages:
@@ -291,8 +291,10 @@ dependencies:
           - pytest-asyncio
           - pytest-benchmark=4.0
           - pytest-cov
+          - python-docx==1.1.0
           - pip
           - pip:
+              - PyMuPDF==1.23.21
               - pytest-kafka==0.6.0
 
   example-dfp-prod:
@@ -366,6 +368,9 @@ dependencies:
           - *newspaper3k
           - *pypdf
           - onnx
+          - pip
+          - pip:
+              - PyMuPDF==1.23.21
 
   model-training-tuning:
     common:

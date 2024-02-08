@@ -99,7 +99,8 @@ struct type_caster<nlohmann::json_dict>
             return false;
         }
 
-        value = mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src));
+        value = static_cast<const nlohmann::json_dict>(
+            mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
 
         return true;
     }
@@ -145,7 +146,8 @@ struct type_caster<nlohmann::json_list>
             return false;
         }
 
-        value = mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src));
+        value = static_cast<const nlohmann::json_list>(
+            mrc::pymrc::cast_from_pyobject(pybind11::reinterpret_borrow<pybind11::object>(src)));
 
         return true;
     }

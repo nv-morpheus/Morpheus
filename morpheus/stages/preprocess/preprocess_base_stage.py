@@ -21,6 +21,7 @@ import typing_utils
 from mrc.core import operators as ops
 
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -49,7 +50,10 @@ class PreprocessBaseStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (MultiMessage, )
+        return (
+            MultiMessage,
+            ControlMessage,
+        )
 
     def compute_schema(self, schema: StageSchema):
         out_type = MultiInferenceMessage

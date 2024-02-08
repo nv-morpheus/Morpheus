@@ -484,6 +484,7 @@ disable = [
   "bad-inline-option",
   "broad-exception-caught", # Allow catching base Exception class
   "deprecated-pragma",
+  "duplicate-code", # This is too restrictive for our codebase
   "file-ignored",
   "import-error", # pylint gets confused by tests for our examples
   "import-outside-toplevel", # Allow lazy imports inside of methods
@@ -495,7 +496,7 @@ disable = [
   "raw-checker-failed",
   "superfluous-parens",
   "suppressed-message",
-  "too-few-public-methods", # Disable all of the "too-*" checks, as they are too strict for our codebase
+  "too-few-public-methods", # Disable all the "too-*" checks, as they are too strict for our codebase
   "too-many-arguments",
   "too-many-branches",
   "too-many-instance-attributes",

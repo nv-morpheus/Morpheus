@@ -65,6 +65,7 @@ MutableTableInfo MessageMeta::get_mutable_info() const
 
 std::vector<std::string> MessageMeta::get_column_names() const
 {
+    pybind11::gil_scoped_release no_gil;
     return m_data->get_info().get_column_names();
 }
 
