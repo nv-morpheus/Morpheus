@@ -84,7 +84,6 @@ def test_stop_without_start(config: Config):
 
 #     pipeline = LinearPipeline(config)
 #     assert pipeline.state == PipelineState.INITIALIZED
-#     # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
 #     pipeline.set_source(source_test_stage(config))
 #     await pipeline.build_and_start()
 #     assert pipeline.state == PipelineState.STARTED
