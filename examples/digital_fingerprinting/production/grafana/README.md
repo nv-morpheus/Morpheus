@@ -58,11 +58,7 @@ loki_handler = logging_loki.LokiHandler(
     version="1",
 )
 
-queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
-                                                console_handler,
-                                                file_handler,
-                                                loki_handler,
-                                                respect_handler_level=True)
+configure_logging(loki_handler, log_level=log_level)
 ```
 
 More information about Loki Python logging can be found [here](https://pypi.org/project/python-logging-loki/).
