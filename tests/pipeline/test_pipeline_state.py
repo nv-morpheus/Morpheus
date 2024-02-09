@@ -33,7 +33,6 @@ def source_test_stage() -> int:
 def test_normal_run(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
-    # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipeline.set_source(source_test_stage(config))
     pipeline.run()
     assert pipeline.state == PipelineState.COMPLETED
@@ -42,7 +41,6 @@ def test_normal_run(config: Config):
 async def test_normal_build_and_start(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
-    # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipeline.set_source(source_test_stage(config))
     await pipeline.build_and_start()
     assert pipeline.state == PipelineState.STARTED
@@ -54,8 +52,6 @@ async def test_stop_after_start(config: Config):
 
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
-    # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    # pipeline.set_source(TestSourceStage(config))
     pipeline.set_source(source_test_stage(config))
     await pipeline.build_and_start()
     assert pipeline.state == PipelineState.STARTED
@@ -68,7 +64,6 @@ async def test_stop_after_start(config: Config):
 def test_stop_after_run(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
-    # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipeline.set_source(source_test_stage(config))
     pipeline.run()
     assert pipeline.state == PipelineState.COMPLETED
@@ -80,7 +75,6 @@ def test_stop_without_start(config: Config):
 
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
-    # pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipeline.set_source(source_test_stage(config))
     with pytest.raises(Exception):
         pipeline.stop()
