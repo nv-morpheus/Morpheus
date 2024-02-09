@@ -22,7 +22,7 @@ import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from pydantic import ValidationError
 
 import cudf
