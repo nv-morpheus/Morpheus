@@ -95,13 +95,14 @@ def _configure_from_log_file(log_config_file: str):
         logging.config.fileConfig(log_config_file)
 
 
-def _configure_from_log_level(log_level: int):
+def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
     """
     Default config with only option being the logging level. Outputs to both the console and a file. Sets up a logging
     producer/consumer that works well in multi-thread/process environments.
 
     Parameters
     ----------
+    *extra_handlers: List of additional handlers which will handle entries placed on the queue
     log_level : int
         Log level and above to report
     """
@@ -143,6 +144,7 @@ def _configure_from_log_level(log_level: int):
     queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
                                                     console_handler,
                                                     file_handler,
+                                                    *extra_handlers,
                                                     respect_handler_level=True)
     queue_listener.start()
     queue_listener._thread.name = "Logging Thread"
@@ -155,7 +157,7 @@ def _configure_from_log_level(log_level: int):
     atexit.register(stop_queue_listener)
 
 
-def configure_logging(log_level: int, log_config_file: str = None):
+def configure_logging(*extra_handlers: logging.Handler, log_level: int, log_config_file: str = None):
     """
     Configures Morpheus logging in one of two ways. Either specifying a logging config file to load or a logging level
     which will use a default configuration. The default configuration outputs to both the console and a file. Sets up a
@@ -163,6 +165,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
     Parameters
     ----------
+    *extra_handlers: List of additional handlers which will handle entries placed on the queue
     log_level: int
         Specifies the log level and above to output. Must be one of the available levels in the `logging` module.
     log_config_file: str, optional (default = None):
@@ -180,7 +183,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
         # Configure using log file
         _configure_from_log_file(log_config_file=log_config_file)
     else:
-        _configure_from_log_level(log_level=log_level)
+        _configure_from_log_level(*extra_handlers, log_level=log_level)
 
 
 def set_log_level(log_level: int):

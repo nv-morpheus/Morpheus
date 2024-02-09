@@ -16,18 +16,15 @@
 import functools
 import logging
 import logging.handlers
-import multiprocessing
 import os
 import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 
-import appdirs
 import click
 import logging_loki
 import mlflow
-import mrc
 import pandas as pd
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
@@ -63,66 +60,7 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.file_utils import date_extractor
-from morpheus.utils.logger import TqdmLoggingHandler
-from morpheus.utils.logger import set_log_level
-
-
-def configure_logging(log_level: int, loki_url: str):
-    mrc.logging.init_logging("morpheus")
-    logging.captureWarnings(True)
-
-    # Get the root Morpheus logger
-    morpheus_logger = logging.getLogger("morpheus")
-
-    # Set the level here
-    set_log_level(log_level=log_level)
-
-    # Dont propagate upstream
-    morpheus_logger.propagate = False
-    morpheus_logging_queue = multiprocessing.Queue()
-
-    # This needs the be the only handler for morpheus logger
-    morpheus_queue_handler = logging.handlers.QueueHandler(morpheus_logging_queue)
-
-    # At this point, any morpheus logger will propagate upstream to the morpheus root and then be handled by the queue
-    # handler
-    morpheus_logger.addHandler(morpheus_queue_handler)
-
-    log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
-
-    # Ensure the log directory exists
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
-    # Now we build all of the handlers for the queue listener
-    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
-
-    # Tqdm stream handler (avoids messing with progress bars)
-    console_handler = TqdmLoggingHandler()
-
-    loki_handler = logging_loki.LokiHandler(
-        url=f"{loki_url}/loki/api/v1/push",
-        tags={"app": "morpheus"},
-        version="1",
-    )
-
-    # Build and run the queue listener to actually process queued messages
-    queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
-                                                    console_handler,
-                                                    file_handler,
-                                                    loki_handler,
-                                                    respect_handler_level=True)
-    queue_listener.start()
-    queue_listener._thread.name = "Logging Thread"
-
-    # Register a function to kill the listener thread before shutting down. prevents error on intpreter close
-    def stop_queue_listener():
-        queue_listener.stop()
-
-    import atexit
-    atexit.register(stop_queue_listener)
+from morpheus.utils.logger import configure_logging
 
 
 def _file_type_name_to_enum(file_type: str) -> FileTypes:
@@ -278,7 +216,12 @@ def run_pipeline(train_users,
         end_time = start_time + duration
 
     # Enable the Morpheus logger
-    configure_logging(log_level=log_level, loki_url=loki_url)
+    loki_handler = logging_loki.LokiHandler(
+        url=f"{loki_url}/loki/api/v1/push",
+        tags={"app": "morpheus"},
+        version="1",
+    )
+    configure_logging(loki_handler, log_level=log_level)
     logging.getLogger("mlflow").setLevel(log_level)
 
     if (len(skip_users) > 0 and len(only_users) > 0):
