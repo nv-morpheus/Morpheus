@@ -116,7 +116,7 @@ const nlohmann::json& ControlMessage::get_metadata() const
     return m_config["metadata"];
 }
 
-std::optional<nlohmann::json> ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist = false) const
+nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist = false) const
 {
     // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
     auto metadata = m_config["metadata"];
@@ -129,7 +129,8 @@ std::optional<nlohmann::json> ControlMessage::get_metadata(const std::string& ke
     {
         throw std::runtime_error("Metadata key does not exist: " + key);
     }
-    return std::nullopt;
+
+    return nlohmann::json();
 }
 
 const nlohmann::json ControlMessage::remove_task(const std::string& task_type)
@@ -227,16 +228,22 @@ void ControlMessage::config(const nlohmann::json& config)
 
 std::shared_ptr<MessageMeta> ControlMessage::payload()
 {
-    // auto temp = std::move(m_payload);
-    //  TODO(Devin): Decide if we copy or steal the payload
-    //  m_payload = nullptr;
-
     return m_payload;
 }
 
 void ControlMessage::payload(const std::shared_ptr<MessageMeta>& payload)
 {
     m_payload = payload;
+}
+
+std::shared_ptr<TensorMemory> ControlMessage::tensors()
+{
+    return m_tensors;
+}
+
+void ControlMessage::tensors(const std::shared_ptr<TensorMemory>& tensors)
+{
+    m_tensors = tensors;
 }
 
 ControlMessageType ControlMessage::task_type()
@@ -291,26 +298,15 @@ py::dict ControlMessageProxy::config(ControlMessage& self)
 }
 
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
-                                             std::optional<std::string> const& key = std::nullopt,
-                                             pybind11::object default_value        = pybind11::none())
+                                             std::string const& key,
+                                             pybind11::object default_value = pybind11::none())
 {
-    if (key)
+    auto value = self.get_metadata(key, false);  // Assuming an empty json as the default if not found.
+    if (!value.empty())
     {
-        auto value = self.get_metadata(key.value());
-        if (value)
-        {
-            return py::cast(value.value());
-        }
-        else
-        {
-            return default_value;
-        }
+        return mrc::pymrc::cast_from_json(value);
     }
-    else
-    {
-        // Assuming the ControlMessage class has a method to retrieve all metadata as JSON
-        return py::cast(self.get_metadata());
-    }
+    return default_value;
 }
 
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)

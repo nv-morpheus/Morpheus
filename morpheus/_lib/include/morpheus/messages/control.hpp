@@ -241,22 +241,70 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing keys.
      * @return An optional json object describing the metadata value if it exists.
      */
-    std::optional<nlohmann::json> get_metadata(const std::string& key, bool fail_on_nonexist) const;
+    nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist) const;
 
+    /**
+     * @brief Lists all metadata keys currently stored in the control message.
+     *
+     * This method retrieves a list of all metadata keys present in the control message.
+     * Metadata within a control message typically includes supplementary information
+     * such as configuration settings, operational parameters, or annotations that
+     * are not directly part of the message payload but are crucial for processing
+     * or understanding the message.
+     *
+     * @return A std::vector<std::string> containing the keys of all metadata entries
+     *         in the control message. If no metadata has been set, the returned vector
+     *         will be empty.
+     */
     std::vector<std::string> list_metadata() const;
 
     /**
-     * @brief Set the payload object for the control message.
-     * @param payload
-     * A shared pointer to the message payload.
+     * @brief Retrieves the current payload object of the control message.
+     *
+     * This method returns a shared pointer to the current payload object associated
+     * with this control message. The payload object encapsulates metadata or data
+     * specific to this message instance.
+     *
+     * @return A shared pointer to the MessageMeta instance representing the message payload.
      */
     std::shared_ptr<MessageMeta> payload();
 
     /**
-     * @brief Set the payload object
-     * @param payload
+     * @brief Assigns a new payload object to the control message.
+     *
+     * Sets the payload of the control message to the provided MessageMeta instance.
+     * The payload contains data or metadata pertinent to the message. Using a shared
+     * pointer ensures that the payload is managed efficiently with automatic reference
+     * counting.
+     *
+     * @param payload A shared pointer to the MessageMeta instance to be set as the new payload.
      */
     void payload(const std::shared_ptr<MessageMeta>& payload);
+
+    /**
+     * @brief Retrieves the tensor memory associated with the control message.
+     *
+     * This method returns a shared pointer to the TensorMemory object linked with
+     * the control message, if any. TensorMemory typically contains or references
+     * tensors or other large data blobs relevant to the message's purpose.
+     *
+     * @return A shared pointer to the TensorMemory instance associated with the message,
+     *         or nullptr if no tensor memory is set.
+     */
+    std::shared_ptr<TensorMemory> tensors();
+
+    /**
+     * @brief Associates tensor memory with the control message.
+     *
+     * Sets the tensor memory for the control message to the provided TensorMemory instance.
+     * This tensor memory can contain tensors or large data blobs pertinent to the message.
+     * Utilizing a shared pointer facilitates efficient memory management through automatic
+     * reference counting.
+     *
+     * @param tensor_memory A shared pointer to the TensorMemory instance to be associated
+     *                      with the control message.
+     */
+    void tensors(const std::shared_ptr<TensorMemory>& tensor_memory);
 
     /**
      * @brief Get the type of task associated with the control message.
@@ -319,6 +367,7 @@ class ControlMessage
 
     ControlMessageType m_cm_type{ControlMessageType::NONE};
     std::shared_ptr<MessageMeta> m_payload{nullptr};
+    std::shared_ptr<TensorMemory> m_tensors{nullptr};
 
     nlohmann::json m_tasks{};
     nlohmann::json m_config{};
@@ -403,9 +452,7 @@ struct ControlMessageProxy
      * @return The value associated with the key, the default value if the key is not found, or all metadata if the key
      * is not provided.
      */
-    static pybind11::object get_metadata(ControlMessage& self,
-                                         std::optional<std::string> const& key,
-                                         pybind11::object default_value);
+    static pybind11::object get_metadata(ControlMessage& self, const std::string& key, pybind11::object default_value);
 
     /**
      * @brief Lists all metadata keys of the ControlMessage.

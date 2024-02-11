@@ -18,11 +18,10 @@ from abc import abstractmethod
 from functools import partial
 from functools import reduce
 
+import cudf
 import cupy as cp
 import mrc
 from mrc.core import operators as ops
-
-import cudf
 
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MessageMeta as CppMessageMeta
@@ -37,7 +36,6 @@ from morpheus.messages import MultiResponseMessage
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stage_schema import StageSchema
-from morpheus.stages.preprocess.preprocess_nlp_stage import base64_to_cupyarray
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
@@ -193,7 +191,7 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage, )
+        return (MultiInferenceMessage,)
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiResponseMessage)
@@ -240,19 +238,12 @@ class InferenceStage(MultiMessageStage):
                 _message = None
                 if (isinstance(message, ControlMessage)):
                     _message = message
+                    tensors = message.tensors()
                     memory_params: dict = message.get_metadata("inference_memory_params")
                     inference_type: str = memory_params["inference_type"]
-                    count = int(memory_params["count"])
-                    segment_ids = base64_to_cupyarray(memory_params["segment_ids"])
-                    input_ids = base64_to_cupyarray(memory_params["input_ids"])
-                    input_mask = base64_to_cupyarray(memory_params["input_mask"])
 
                     if (inference_type == "nlp"):
-                        memory = InferenceMemoryNLP(count=count,
-                                                    input_ids=input_ids,
-                                                    input_mask=input_mask,
-                                                    seq_ids=segment_ids)
-
+                        memory = InferenceMemoryNLP(count=tensors.count, **tensors.get_tensors())
                         meta_message = MessageMeta(df=message.payload().df)
                         multi_message = MultiMessage(meta=meta_message)
 

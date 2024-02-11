@@ -368,7 +368,6 @@ PYBIND11_MODULE(messages, _module)
         .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
-    // TODO(Devin): Circle back on return value policy choices
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
@@ -380,10 +379,11 @@ PYBIND11_MODULE(messages, _module)
         .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
         .def("get_metadata",
-             ControlMessageProxy::get_metadata,
-             "Retrieves a metadata value by key with an optional default value if the key does not exist.",
-             py::arg("key")           = std::nullopt,
-             py::arg("default_value") = py::none())
+             &ControlMessageProxy::get_metadata,
+             py::arg("key"),
+             py::arg("default_value") = py::none(),
+             "Retrieves a metadata value by key. If the key does not exist, returns the specified default value or "
+             "None.")
         .def("get_tasks", &ControlMessageProxy::get_tasks)
         .def("get_timestamp",
              py::overload_cast<ControlMessage&, const std::string&, const std::string&>(
@@ -410,6 +410,8 @@ PYBIND11_MODULE(messages, _module)
         .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors), py::return_value_policy::move)
+        .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
