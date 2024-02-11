@@ -130,7 +130,7 @@ nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on
         throw std::runtime_error("Metadata key does not exist: " + key);
     }
 
-    return nlohmann::json();
+    return {};
 }
 
 const nlohmann::json ControlMessage::remove_task(const std::string& task_type)

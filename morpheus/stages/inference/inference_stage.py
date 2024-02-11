@@ -18,10 +18,11 @@ from abc import abstractmethod
 from functools import partial
 from functools import reduce
 
-import cudf
 import cupy as cp
 import mrc
 from mrc.core import operators as ops
+
+import cudf
 
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MessageMeta as CppMessageMeta
@@ -191,7 +192,7 @@ class InferenceStage(MultiMessageStage):
         typing.Tuple
             Tuple of input types.
         """
-        return (MultiInferenceMessage,)
+        return (MultiInferenceMessage, )
 
     def compute_schema(self, schema: StageSchema):
         schema.output_schema.set_type(MultiResponseMessage)

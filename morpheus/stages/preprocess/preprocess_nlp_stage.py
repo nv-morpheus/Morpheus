@@ -18,12 +18,13 @@ import logging
 import typing
 from functools import partial
 
-import cudf
 import cupy as cp
-import morpheus._lib.stages as _stages
 import mrc
 import numpy as np
 
+import cudf
+
+import morpheus._lib.stages as _stages
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 from morpheus.cli.register_stage import register_stage
 from morpheus.cli.utils import MorpheusRelativePath
@@ -203,14 +204,13 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
         del text_series
 
-        message.tensors(CppTensorMemory(
-            count=tokenized.input_ids.shape[0],
-            tensors={
-                "input_ids": tokenized.input_ids,
-                "input_mask": tokenized.input_mask,
-                "seq_ids": tokenized.segment_ids
-            })
-        )
+        message.tensors(
+            CppTensorMemory(count=tokenized.input_ids.shape[0],
+                            tensors={
+                                "input_ids": tokenized.input_ids,
+                                "input_mask": tokenized.input_mask,
+                                "seq_ids": tokenized.segment_ids
+                            }))
 
         message.set_metadata("inference_memory_params", {"inference_type": "nlp"})
 
@@ -250,9 +250,9 @@ class PreprocessNLPStage(PreprocessBaseStage):
         return infer_message
 
     def _get_preprocess_fn(
-            self
+        self
     ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
-    typing.Union[MultiInferenceMessage, ControlMessage]]:
+                         typing.Union[MultiInferenceMessage, ControlMessage]]:
         return partial(PreprocessNLPStage.pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,
