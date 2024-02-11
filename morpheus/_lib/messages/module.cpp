@@ -379,8 +379,32 @@ PYBIND11_MODULE(messages, _module)
              py::arg("config"))
         .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
-        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key") = py::none())
+        .def("get_metadata",
+             ControlMessageProxy::get_metadata,
+             "Retrieves a metadata value by key with an optional default value if the key does not exist.",
+             py::arg("key")           = std::nullopt,
+             py::arg("default_value") = py::none())
         .def("get_tasks", &ControlMessageProxy::get_tasks)
+        .def("get_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&, const std::string&>(
+                 &ControlMessageProxy::get_timestamp),
+             "Retrieve timestamps matching a regex filter within a given group.",
+             py::arg("group"),
+             py::arg("regex_filter"))
+        .def("get_timestamp",
+             py::overload_cast<ControlMessage&, const std::string&, const std::string&, bool>(
+                 &ControlMessageProxy::get_timestamp),
+             "Retrieve the timestamp for a given group and key. Returns None if the timestamp does not exist and "
+             "fail_if_nonexist is False.",
+             py::arg("group"),
+             py::arg("key"),
+             py::arg("fail_if_nonexist"))
+        .def("set_timestamp",
+             &ControlMessageProxy::set_timestamp,
+             "Set a timestamp for a given key and group.",
+             py::arg("group"),
+             py::arg("key"),
+             py::arg("timestamp_ns"))
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
         .def("list_metadata", &ControlMessageProxy::list_metadata)
