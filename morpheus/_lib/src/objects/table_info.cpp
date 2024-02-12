@@ -29,7 +29,6 @@
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <algorithm>  // for find, transform
-#include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <iterator>   // for back_insert_iterator, back_inserter
 #include <memory>
