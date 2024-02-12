@@ -15,6 +15,8 @@
 
 from unittest import mock
 
+import pytest
+
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -28,6 +30,14 @@ from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.llm.llm_engine_stage import LLMEngineStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+
+
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(langchain):
+    """
+    All the tests in this module require langchain
+    """
+    yield langchain
 
 
 def _build_engine(mock_agent_executor: mock.MagicMock) -> LLMEngine:

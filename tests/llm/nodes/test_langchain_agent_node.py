@@ -22,6 +22,14 @@ from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
 
 
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(langchain):
+    """
+    All the tests in this module require langchain
+    """
+    yield langchain
+
+
 def test_constructor(mock_agent_executor: mock.MagicMock):
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
     assert isinstance(node, LLMNodeBase)
