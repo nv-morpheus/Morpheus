@@ -44,7 +44,7 @@ def test_build(config: Config):
     assert pipeline.state == PipelineState.BUILT
 
 
-def test_build_twice(config: Config):
+def test_build_after_build(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
     pipeline.set_source(source_test_stage(config))
@@ -55,7 +55,7 @@ def test_build_twice(config: Config):
     assert "can only be built once" in str(excinfo.value)
 
 
-def test_build_after_build(config: Config):
+def test_build_without_source(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
     with pytest.raises(Exception) as excinfo:
