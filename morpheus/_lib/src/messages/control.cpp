@@ -42,12 +42,30 @@ ControlMessage::ControlMessage(const nlohmann::json& _config) :
   m_tasks({})
 {
     config(_config);
+    // Register cleanup for this instance
+    auto cleanup = [this]() {
+        py::gil_scoped_acquire acquire;  // Acquire the GIL
+        this->m_tensors.reset();         // Clear the shared_ptr
+    };
+
+    // Register the cleanup lambda with atexit
+    auto atexit = py::module_::import("atexit");
+    atexit.attr("register")(py::cpp_function(cleanup));
 }
 
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
     m_config = other.m_config;
     m_tasks  = other.m_tasks;
+
+    auto cleanup = [this]() {
+        py::gil_scoped_acquire acquire;  // Acquire the GIL
+        this->m_tensors.reset();         // Clear the shared_ptr
+    };
+
+    // Register the cleanup lambda with atexit
+    auto atexit = py::module_::import("atexit");
+    atexit.attr("register")(py::cpp_function(cleanup));
 }
 
 const nlohmann::json& ControlMessage::config() const
@@ -111,9 +129,11 @@ bool ControlMessage::has_metadata(const std::string& key) const
     return m_config["metadata"].contains(key);
 }
 
-const nlohmann::json& ControlMessage::get_metadata() const
+nlohmann::json ControlMessage::get_metadata() const
 {
-    return m_config["metadata"];
+    auto metadata = m_config["metadata"];
+
+    return metadata;
 }
 
 nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist = false) const
@@ -133,7 +153,7 @@ nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on
     return {};
 }
 
-const nlohmann::json ControlMessage::remove_task(const std::string& task_type)
+nlohmann::json ControlMessage::remove_task(const std::string& task_type)
 {
     auto& task_set = m_tasks.at(task_type);
     auto iter_task = task_set.begin();
@@ -298,15 +318,22 @@ py::dict ControlMessageProxy::config(ControlMessage& self)
 }
 
 py::object ControlMessageProxy::get_metadata(ControlMessage& self,
-                                             std::string const& key,
-                                             pybind11::object default_value = pybind11::none())
+                                             const py::object& key,
+                                             pybind11::object default_value)
 {
-    auto value = self.get_metadata(key, false);  // Assuming an empty json as the default if not found.
-    if (!value.empty())
+    if (key.is_none())
     {
-        return mrc::pymrc::cast_from_json(value);
+        auto metadata = self.get_metadata();
+        return mrc::pymrc::cast_from_json(metadata);
     }
-    return default_value;
+
+    auto value = self.get_metadata(py::cast<std::string>(key), false);
+    if (value.empty())
+    {
+        return default_value;
+    }
+
+    return mrc::pymrc::cast_from_json(value);
 }
 
 void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value)

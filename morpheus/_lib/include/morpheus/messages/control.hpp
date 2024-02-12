@@ -172,7 +172,8 @@ class ControlMessage
 {
   public:
     ControlMessage();
-    ControlMessage(const nlohmann::json& config);
+    explicit ControlMessage(const nlohmann::json& config);
+
     ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
     /**
@@ -185,7 +186,7 @@ class ControlMessage
      * @brief Get the configuration object for the control message.
      * @return A const reference to the json object containing configuration information.
      */
-    const nlohmann::json& config() const;
+    [[nodiscard]] const nlohmann::json& config() const;
 
     /**
      * @brief Add a task of the given type to the control message.
@@ -199,19 +200,19 @@ class ControlMessage
      * @param task_type A string indicating the type of the task.
      * @return True if a task of the given type exists, false otherwise.
      */
-    bool has_task(const std::string& task_type) const;
+    [[nodiscard]] bool has_task(const std::string& task_type) const;
 
     /**
      * @brief Remove and return a task of the given type from the control message.
      * @param task_type A string indicating the type of the task.
      * @return A json object describing the task.
      */
-    const nlohmann::json remove_task(const std::string& task_type);
+    nlohmann::json remove_task(const std::string& task_type);
 
     /**
      * @brief Get the tasks for the control message.
      */
-    const nlohmann::json& get_tasks() const;
+    [[nodiscard]] const nlohmann::json& get_tasks() const;
 
     /**
      * @brief Add a key-value pair to the metadata for the control message.
@@ -225,12 +226,12 @@ class ControlMessage
      * @param key A string indicating the metadata key.
      * @return True if the metadata key exists, false otherwise.
      */
-    bool has_metadata(const std::string& key) const;
+    [[nodiscard]] bool has_metadata(const std::string& key) const;
 
     /**
      * @brief Get the metadata for the control message.
      */
-    const nlohmann::json& get_metadata() const;
+    [[nodiscard]] nlohmann::json get_metadata() const;
 
     /**
      * @brief Get the metadata value for the given key from the control message.
@@ -241,7 +242,7 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing keys.
      * @return An optional json object describing the metadata value if it exists.
      */
-    nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist) const;
+    [[nodiscard]] nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist) const;
 
     /**
      * @brief Lists all metadata keys currently stored in the control message.
@@ -256,7 +257,7 @@ class ControlMessage
      *         in the control message. If no metadata has been set, the returned vector
      *         will be empty.
      */
-    std::vector<std::string> list_metadata() const;
+    [[nodiscard]] std::vector<std::string> list_metadata() const;
 
     /**
      * @brief Retrieves the current payload object of the control message.
@@ -452,7 +453,9 @@ struct ControlMessageProxy
      * @return The value associated with the key, the default value if the key is not found, or all metadata if the key
      * is not provided.
      */
-    static pybind11::object get_metadata(ControlMessage& self, const std::string& key, pybind11::object default_value);
+    static pybind11::object get_metadata(ControlMessage& self,
+                                         const pybind11::object& key,
+                                         pybind11::object default_value);
 
     /**
      * @brief Lists all metadata keys of the ControlMessage.

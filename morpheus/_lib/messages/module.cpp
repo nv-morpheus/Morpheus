@@ -378,12 +378,22 @@ PYBIND11_MODULE(messages, _module)
              py::arg("config"))
         .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("copy", &ControlMessageProxy::copy)
-        .def("get_metadata",
-             &ControlMessageProxy::get_metadata,
-             py::arg("key"),
-             py::arg("default_value") = py::none(),
-             "Retrieves a metadata value by key. If the key does not exist, returns the specified default value or "
-             "None.")
+        .def(
+            "get_metadata",
+            [](ControlMessage& self, const py::object& key = py::none(), const py::object& default_value = py::none()) {
+                if (key.is_none())
+                {
+                    // Directly return all metadata
+                    return ControlMessageProxy::get_metadata(self, key, default_value);
+                }
+                else
+                {
+                    // Call the original get_metadata with the provided key and default value
+                    return ControlMessageProxy::get_metadata(self, key.cast<py::str>(), default_value);
+                }
+            },
+            py::arg("key")           = py::none(),
+            py::arg("default_value") = py::none())
         .def("get_tasks", &ControlMessageProxy::get_tasks)
         .def("get_timestamp",
              py::overload_cast<ControlMessage&, const std::string&, const std::string&>(
