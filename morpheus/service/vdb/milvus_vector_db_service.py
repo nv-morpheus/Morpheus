@@ -698,7 +698,7 @@ class MilvusVectorDBService(VectorDBService):
             df = df.to_pandas()
 
         # Loop over all of the columns of the first row and build the schema
-        for col_name, col_val in df.iloc[0].iteritems():
+        for col_name, col_val in df.iloc[0].items():
 
             field_dict = {
                 "name": col_name,

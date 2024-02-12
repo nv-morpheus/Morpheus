@@ -29,7 +29,6 @@
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <algorithm>  // for find, transform
-#include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <iterator>   // for back_insert_iterator, back_inserter
 #include <memory>
@@ -306,7 +305,8 @@ std::optional<std::string> MutableTableInfo::ensure_sliceable_index()
         auto df_index = py_df.attr("index");
 
         // Check to see if we actually need the change
-        if (df_index.attr("is_unique").cast<bool>() && df_index.attr("is_monotonic").cast<bool>())
+        if (df_index.attr("is_unique").cast<bool>() && (df_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                        df_index.attr("is_monotonic_decreasing").cast<bool>()))
         {
             // Set the outputname to nullopt
             old_index_col_name = std::nullopt;

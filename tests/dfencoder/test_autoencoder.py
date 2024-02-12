@@ -16,6 +16,7 @@
 
 import os
 import typing
+import warnings
 from unittest.mock import patch
 
 import numpy as np
@@ -493,7 +494,10 @@ def test_auto_encoder_num_only_convergence(train_ae: autoencoder.AutoEncoder):
         'num_feat_2': [3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1],
     })
 
-    train_ae.fit(num_df, epochs=50)
+    with warnings.catch_warnings():
+        # Ignore warning regarding tensorflow not being installed
+        warnings.filterwarnings("ignore", message="Initializing zero-element tensors is a no-op", category=UserWarning)
+        train_ae.fit(num_df, epochs=50)
 
     avg_loss = np.sum([np.array(loss[1])
                        for loss in train_ae.logger.train_fts.values()], axis=0) / len(train_ae.logger.train_fts)
