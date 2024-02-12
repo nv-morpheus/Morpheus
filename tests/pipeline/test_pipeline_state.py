@@ -115,6 +115,29 @@ def test_stop_without_start(config: Config):
     assert "must be running" in str(excinfo.value)
 
 
+async def test_join_after_join(config: Config):
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    await pipeline.build_and_start()
+    assert pipeline.state == PipelineState.STARTED
+    await pipeline.join()
+    assert pipeline.state == PipelineState.COMPLETED
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "has already completed" in str(excinfo.value)
+
+
+async def test_join_without_start(config: Config):
+
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "must be started" in str(excinfo.value)
+
+
 async def test_stop_after_stop(config: Config):
 
     pipeline = LinearPipeline(config)
