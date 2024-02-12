@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+import pprint  # TODO: remove
 import typing
 
 from morpheus.llm import LLMContext
@@ -66,7 +67,14 @@ class LangChainAgentNode(LLMNodeBase):
             return results
 
         # We are not dealing with a list, so run single
-        return await self._agent_executor.arun(**kwargs)
+        # return await self._agent_executor.arun(**kwargs)
+        output = None
+        async for chunk in self._agent_executor.astream(**kwargs):
+            pprint.pprint(chunk)
+            if "output" in chunk:
+                output = chunk["output"]
+
+        return output
 
     async def execute(self, context: LLMContext) -> LLMContext:
 
