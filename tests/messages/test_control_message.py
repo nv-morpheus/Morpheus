@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import cudf
 import cupy as cp
 import pytest
 
-import cudf
-
 from morpheus import messages
+# pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
 
 
