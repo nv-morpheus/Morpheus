@@ -46,20 +46,10 @@ namespace morpheus {
 
 namespace py = pybind11;
 
-pybind11::object CupyUtil::cp_module = pybind11::none();
-
 pybind11::module_ CupyUtil::get_cp()
 {
     DCHECK(PyGILState_Check() != 0);
-
-    if (cp_module.is_none())
-    {
-        cp_module = pybind11::module_::import("cupy");
-    }
-
-    auto m = pybind11::cast<pybind11::module_>(cp_module);
-
-    return m;
+    return pybind11::cast<pybind11::module_>(pybind11::module_::import("cupy"));
 }
 
 bool CupyUtil::is_cupy_array(pybind11::object test_obj)
