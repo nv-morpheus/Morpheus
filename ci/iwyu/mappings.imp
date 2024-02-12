@@ -118,7 +118,6 @@
 { "symbol": ["nlohmann::json", "private", "<nlohmann/json_fwd.hpp>", "public"] },
 
 # pybind11
-{ "symbol": ["pybind11", "private", "<pybind11/cast.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/embed.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11", "private", "<pybind11/pytypes.h>", "public"] },
@@ -133,7 +132,6 @@
 { "symbol": ["PyObject", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["PySequence_GetItem", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::arg", "private", "<pybind11/pybind11.h>", "public"] },
-{ "symbol": ["pybind11::detail::get_type_info", "private", "<pybind11/cast.h>", "public"] },
 { "symbol": ["pybind11::detail::key_error", "private", "<pybind11/pytypes.h>", "public"] },
 { "symbol": ["pybind11::detail::overload_cast_impl", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::detail::str_attr_accessor", "private", "<pybind11/pybind11.h>", "public"] },

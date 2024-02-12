@@ -111,7 +111,6 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.usefixtures("openai", "openai_api_key", "serpapi_api_key")
-@pytest.mark.use_python
 def test_agents_simple_pipe_integration_openai(config: Config, questions: list[str]):
     sink = _run_pipeline(config, questions=questions, model_name="gpt-3.5-turbo-instruct")
 
@@ -126,7 +125,6 @@ def test_agents_simple_pipe_integration_openai(config: Config, questions: list[s
 
 
 @pytest.mark.usefixtures("openai", "restore_environ")
-@pytest.mark.use_python
 @mock.patch("langchain.utilities.serpapi.SerpAPIWrapper.aresults")
 @mock.patch("langchain.OpenAI._agenerate", autospec=True)  # autospec is needed as langchain will inspect the function
 def test_agents_simple_pipe(mock_openai_agenerate: mock.AsyncMock,
