@@ -17,6 +17,8 @@
 
 #include "morpheus/messages/control.hpp"
 
+#include "morpheus/messages/meta.hpp"
+
 #include <glog/logging.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
@@ -259,6 +261,11 @@ py::dict ControlMessageProxy::list_metadata(ControlMessage& self)
 void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
 {
     self.config(mrc::pymrc::cast_from_pyobject(config));
+}
+
+void ControlMessageProxy::payload_from_python_meta(ControlMessage& self, const pybind11::object& meta)
+{
+    self.payload(MessageMetaInterfaceProxy::init_python_meta(meta));
 }
 
 }  // namespace morpheus

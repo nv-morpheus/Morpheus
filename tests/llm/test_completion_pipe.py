@@ -89,18 +89,22 @@ def _run_pipeline(config: Config,
 
 
 @pytest.mark.usefixtures("nemollm")
-@pytest.mark.use_python
-def test_completion_pipe_nemo(config: Config,
-                              mock_nemollm: mock.MagicMock,
-                              countries: list[str],
-                              capital_responses: list[str]):
+@mock.patch("asyncio.wrap_future")
+@mock.patch("asyncio.gather", new_callable=mock.AsyncMock)
+def test_completion_pipe_nemo(
+        mock_asyncio_gather: mock.AsyncMock,
+        mock_asyncio_wrap_future: mock.MagicMock,  # pylint: disable=unused-argument
+        config: Config,
+        mock_nemollm: mock.MagicMock,
+        countries: list[str],
+        capital_responses: list[str]):
+    mock_asyncio_gather.return_value = [mock.MagicMock() for _ in range(len(countries))]
     mock_nemollm.post_process_generate_response.side_effect = [{"text": response} for response in capital_responses]
     results = _run_pipeline(config, NeMoLLMService, countries=countries, capital_responses=capital_responses)
     assert_results(results)
 
 
 @pytest.mark.usefixtures("openai")
-@pytest.mark.use_python
 def test_completion_pipe_openai(config: Config,
                                 mock_chat_completion: mock.MagicMock,
                                 countries: list[str],
@@ -119,7 +123,6 @@ def test_completion_pipe_openai(config: Config,
 
 @pytest.mark.usefixtures("nemollm")
 @pytest.mark.usefixtures("ngc_api_key")
-@pytest.mark.use_python
 def test_completion_pipe_integration_nemo(config: Config, countries: list[str], capital_responses: list[str]):
     results = _run_pipeline(config,
                             NeMoLLMService,
@@ -133,7 +136,6 @@ def test_completion_pipe_integration_nemo(config: Config, countries: list[str], 
 
 @pytest.mark.usefixtures("openai")
 @pytest.mark.usefixtures("openai_api_key")
-@pytest.mark.use_python
 def test_completion_pipe_integration_openai(config: Config, countries: list[str], capital_responses: list[str]):
     results = _run_pipeline(config,
                             OpenAIChatService,
