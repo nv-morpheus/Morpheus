@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <nlohmann/json.hpp>
@@ -29,7 +28,6 @@
 #include <string>
 
 namespace morpheus {
-class MessageMeta;
 
 #pragma GCC visibility push(default)
 enum class ControlMessageType
@@ -246,7 +244,7 @@ class ControlMessage
     const nlohmann::json list_metadata() const;
 
     /**
-     * @brief Set the payload object for the control message.
+     * @brief Get the payload object for the control message.
      * @param payload
      * A shared pointer to the message payload.
      */
@@ -308,6 +306,12 @@ struct ControlMessageProxy
     static pybind11::object get_metadata(ControlMessage& self, std::optional<std::string> const& key);
 
     static pybind11::dict list_metadata(ControlMessage& self);
+
+    /**
+     * @brief Set the payload object given a Python instance of MessageMeta
+     * @param meta
+     */
+    static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 };
 
 #pragma GCC visibility pop

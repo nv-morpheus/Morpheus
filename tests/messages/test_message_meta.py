@@ -25,7 +25,9 @@ import cudf
 from _utils.dataset_manager import DatasetManager
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus._lib.messages import MessageMeta as MessageMetaCpp
+from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.utils.type_aliases import DataFrameType
 
 
 @pytest.fixture(name="index_type", scope="function", params=["normal", "skip", "dup", "down", "updown"])
@@ -83,20 +85,20 @@ def fixture_is_sliceable(index_type: typing.Literal['normal', 'skip', 'dup', 'do
     return index_type not in ("dup", "updown")
 
 
-def test_count(df: cudf.DataFrame):
+def test_count(df: DataFrameType):
 
     meta = MessageMeta(df)
 
     assert meta.count == len(df)
 
 
-def test_has_sliceable_index(df: cudf.DataFrame, is_sliceable: bool):
+def test_has_sliceable_index(df: DataFrameType, is_sliceable: bool):
 
     meta = MessageMeta(df)
     assert meta.has_sliceable_index() == is_sliceable
 
 
-def test_ensure_sliceable_index(df: cudf.DataFrame, is_sliceable: bool):
+def test_ensure_sliceable_index(df: DataFrameType, is_sliceable: bool):
 
     meta = MessageMeta(df)
 
@@ -106,7 +108,7 @@ def test_ensure_sliceable_index(df: cudf.DataFrame, is_sliceable: bool):
     assert old_index_name == (None if is_sliceable else "_index_")
 
 
-def test_mutable_dataframe(df: cudf.DataFrame):
+def test_mutable_dataframe(df: DataFrameType):
 
     meta = MessageMeta(df)
 
@@ -116,7 +118,7 @@ def test_mutable_dataframe(df: cudf.DataFrame):
     assert meta.copy_dataframe()['v2'].iloc[3] == 47
 
 
-def test_using_ctx_outside_with_block(df: cudf.DataFrame):
+def test_using_ctx_outside_with_block(df: DataFrameType):
 
     meta = MessageMeta(df)
 
@@ -132,7 +134,7 @@ def test_using_ctx_outside_with_block(df: cudf.DataFrame):
     pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
-def test_copy_dataframe(df: cudf.DataFrame):
+def test_copy_dataframe(df: DataFrameType):
 
     meta = MessageMeta(df)
 
@@ -159,3 +161,61 @@ def test_pandas_df_cpp(dataset_pandas: DatasetManager):
     assert isinstance(meta, MessageMetaCpp)
     assert isinstance(meta.df, cudf.DataFrame)
     DatasetManager.assert_compare_df(meta.df, df)
+
+
+def test_cast(config: Config, dataset: DatasetManager):  # pylint: disable=unused-argument
+    """
+    Test tcopy constructor
+    """
+    df = dataset["filter_probs.csv"]
+    meta1 = MessageMeta(df)
+
+    meta2 = MessageMeta(meta1)
+    assert isinstance(meta2, MessageMeta)
+
+    DatasetManager.assert_compare_df(meta2.copy_dataframe(), df)
+
+
+@pytest.mark.use_pandas
+@pytest.mark.use_python
+def test_cast_python_to_cpp(dataset: DatasetManager):
+    """
+    Test that we can cast a python MessageMeta to a C++ MessageMeta
+    """
+    df = dataset["filter_probs.csv"]
+
+    py_meta = MessageMeta(df)
+    assert isinstance(py_meta, MessageMeta)
+    assert not isinstance(py_meta, MessageMetaCpp)
+
+    cpp_meta = MessageMetaCpp(py_meta)
+    assert isinstance(cpp_meta, MessageMeta)
+    assert isinstance(cpp_meta, MessageMetaCpp)
+
+    DatasetManager.assert_compare_df(cpp_meta.copy_dataframe(), df)
+
+
+@pytest.mark.use_pandas
+@pytest.mark.use_python
+def test_cast_cpp_to_python(dataset: DatasetManager):
+    """
+    Test that we can cast a a C++ MessageMeta to a python MessageMeta
+    """
+    df = dataset["filter_probs.csv"]
+    cpp_meta = MessageMetaCpp(df)
+
+    py_meta = MessageMeta(cpp_meta)
+    assert isinstance(py_meta, MessageMeta)
+    assert not isinstance(py_meta, MessageMetaCpp)
+
+    DatasetManager.assert_compare_df(py_meta.copy_dataframe(), df)
+
+
+def test_get_column_names(df: DataFrameType):
+    """
+    Test that we can get the column names from a MessageMeta
+    """
+    expected_columns = sorted(df.columns.to_list())
+    meta = MessageMeta(df)
+
+    assert sorted(meta.get_column_names()) == expected_columns

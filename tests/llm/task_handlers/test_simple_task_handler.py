@@ -17,12 +17,10 @@ import pytest
 
 from _utils.dataset_manager import DatasetManager
 from _utils.llm import execute_task_handler
-# pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import MessageMeta as MessageMetaCpp
-# pylint: enable=morpheus-incorrect-lib-from-import
 from morpheus.llm import LLMTaskHandler
 from morpheus.llm.task_handlers.simple_task_handler import SimpleTaskHandler
 from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 
 
 def test_constructor():
@@ -44,7 +42,7 @@ def test_try_handle(dataset_cudf: DatasetManager):
     expected_df['reptiles'] = reptiles.copy()
 
     message = ControlMessage()
-    message.payload(MessageMetaCpp(df))
+    message.payload(MessageMeta(df))
 
     task_handler = SimpleTaskHandler(['reptiles'])
 
