@@ -75,10 +75,10 @@ class Pipeline():
         self._num_threads = config.num_threads
 
         # Complete set of nodes across segments in this pipeline
-        self._stages: typing.Set[Stage] = set()
+        self._stages: typing.List[Stage] = []
 
         # Complete set of sources across segments in this pipeline
-        self._sources: typing.Set[SourceStage] = set()
+        self._sources: typing.List[SourceStage] = []
 
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
@@ -94,6 +94,7 @@ class Pipeline():
 
         self._loop: asyncio.AbstractEventLoop = None
 
+        # Future that allows post_start to propagate exceptions back to pipeline
         self._post_start_future: asyncio.Future = None
 
     @property
@@ -124,10 +125,10 @@ class Pipeline():
         # Add to list of stages if it's a stage, not a source
         if (isinstance(stage, Stage)):
             segment_nodes.add(stage)
-            self._stages.add(stage)
+            self._stages.append(stage)
         elif (isinstance(stage, SourceStage)):
             segment_nodes.add(stage)
-            self._sources.add(stage)
+            self._sources.append(stage)
         else:
             raise NotImplementedError(f"add_stage() failed. Unknown node type: {type(stage)}")
 
@@ -425,7 +426,6 @@ class Pipeline():
                 with self._mutex:
                     self._state = PipelineState.COMPLETED
 
-        # asyncio.create_task(post_start(self._mrc_executor))
         self._post_start_future = asyncio.create_task(post_start(self._mrc_executor))
 
     def stop(self):
@@ -448,9 +448,11 @@ class Pipeline():
 
     async def join(self):
         """
-        Suspend execution all currently running stages and the MRC pipeline.
-        Typically called after `stop`.
+        Wait until pipeline completes upon which join methods of sources and stages will be called.
         """
+        assert self._post_start_future is not None, "Pipeline must be started before joining"
+        assert self._state != PipelineState.COMPLETED, "Cannot join a pipeline that has already completed"
+
         await self._post_start_future
 
     def _on_stop(self):
