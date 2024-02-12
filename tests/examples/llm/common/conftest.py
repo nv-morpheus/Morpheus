@@ -52,10 +52,10 @@ def import_content_extractor_module(restore_sys_path):  # pylint: disable=unused
     return content_extractor_module
 
 
-@pytest.fixture(name="nemollm", autouse=True, scope='session')
-def nemollm_fixture(fail_missing: bool):
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(fail_missing: bool):
     """
-    All the tests in this subdir require nemollm
+    All the tests in this subdir require langchain
     """
 
     skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"

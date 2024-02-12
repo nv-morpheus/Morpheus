@@ -67,7 +67,7 @@ def run():
 )
 @click.option(
     "--model_max_batch_size",
-    default=64,
+    default=256,
     type=click.IntRange(min=1),
     help="Max batch size to use for the model",
 )

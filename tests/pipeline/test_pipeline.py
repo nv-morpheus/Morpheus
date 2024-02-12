@@ -98,7 +98,10 @@ def _run_pipeline(filter_probs_df: DataFrameType,
     pipe = LinearPipeline(config)
     pipe.set_source(SourceTestStage(config, [filter_probs_df], **source_callbacks))
     pipe.add_stage(SinkTestStage(config, **sink_callbacks))
-    pipe.run()
+
+    with pytest.deprecated_call(match="The on_start method is deprecated and may be removed in the future.*"):
+        # The sink stage ensures that the on_start callback method still works, even though it is deprecated.
+        pipe.run()
 
 
 @pytest.mark.use_cudf
