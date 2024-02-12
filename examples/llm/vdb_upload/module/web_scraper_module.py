@@ -18,12 +18,11 @@ from functools import partial
 
 import mrc
 import mrc.core.operators as ops
-import pandas as pd
 import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from pydantic import BaseModel
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from pydantic import ValidationError
 
 import cudf
@@ -59,9 +58,6 @@ def download_and_split(msg: MessageMeta, text_splitter, link_column, session) ->
         return None
 
     df = msg.copy_dataframe()
-
-    if isinstance(df, cudf.DataFrame):
-        df: pd.DataFrame = df.to_pandas()
 
     # Convert the dataframe into a list of dictionaries
     df_dicts = df.to_dict(orient="records")

@@ -18,13 +18,16 @@ import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+# pylint: disable=morpheus-incorrect-lib-from-import
+from morpheus._lib.messages import MultiMessage as MultiMessageCpp
 from morpheus.config import Config
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.modules.preprocess.deserialize import _process_dataframe_to_multi_message
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
@@ -53,9 +56,20 @@ def test_fixing_non_unique_indexes(dataset: DatasetManager):
     assert "_index_" in meta.df.columns
 
 
+def _assert_received_types(sink: CompareDataFrameStage, message_type: type):
+    if message_type is MultiMessage:
+        expected_types = (MultiMessage, MultiMessageCpp)
+    else:
+        expected_types = (ControlMessage, )
+
+    for msg in sink.get_messages():
+        assert isinstance(msg, expected_types)
+
+
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
     End-to-end test for DeserializeStage
     """
@@ -66,17 +80,18 @@ def test_deserialize_pipe(config: Config, dataset: DatasetManager, dup_index: bo
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"], exclude=["_index_"]))
     pipe.run()
 
+    _assert_received_types(comp_stage, message_type)
     assert_results(comp_stage.get_results())
 
 
 @pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool):
+@pytest.mark.parametrize("message_type", [MultiMessage, ControlMessage])
+def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager, dup_index: bool, message_type: type):
     """
     End-to-end test across mulitiple segments
     """
@@ -88,9 +103,9 @@ def test_deserialize_multi_segment_pipe(config: Config, dataset: DatasetManager,
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"]))
+    pipe.add_stage(DeserializeStage(config, message_type=message_type))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, dataset.pandas["filter_probs.csv"], exclude=["_index_"]))
     pipe.run()
 
+    _assert_received_types(comp_stage, message_type)
     assert_results(comp_stage.get_results())
