@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import cupy as cp
 import pytest
+
+import cudf
 
 from morpheus import messages
 from morpheus._lib.messages import TensorMemory as CppTensorMemory
@@ -25,11 +26,7 @@ from morpheus._lib.messages import TensorMemory as CppTensorMemory
 # Fixture to create example tokenized data using cupy arrays
 @pytest.fixture(scope="function")
 def tokenized_data():
-    return {
-        "input_ids": cp.array([1, 2, 3]),
-        "input_mask": cp.array([1, 1, 1]),
-        "segment_ids": cp.array([0, 0, 1])
-    }
+    return {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])}
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -282,14 +279,9 @@ def test_get_timestamp_fail_if_nonexist():
 # Test setting and getting tensors with cupy arrays
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tensors_setting_and_getting():
-    data = {
-        "input_ids": cp.array([1, 2, 3]),
-        "input_mask": cp.array([1, 1, 1]),
-        "segment_ids": cp.array([0, 0, 1])
-    }
+    data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])}
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=data["input_ids"].shape[0],
-                                    tensors=data)
+    tensor_memory = CppTensorMemory(count=data["input_ids"].shape[0], tensors=data)
 
     message.tensors(tensor_memory)
 
@@ -297,16 +289,14 @@ def test_tensors_setting_and_getting():
     assert retrieved_tensors.count == data["input_ids"].shape[0], "Tensor count mismatch."
 
     for key in data:
-        assert cp.allclose(retrieved_tensors.get_tensor(key),
-                           data[key]), f"Mismatch in tensor data for {key}."
+        assert cp.allclose(retrieved_tensors.get_tensor(key), data[key]), f"Mismatch in tensor data for {key}."
 
 
 # Test retrieving tensor names and checking specific tensor existence
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tensor_names_and_existence(tokenized_data):
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=tokenized_data["input_ids"].shape[0],
-                                    tensors=tokenized_data)
+    tensor_memory = CppTensorMemory(count=tokenized_data["input_ids"].shape[0], tensors=tokenized_data)
 
     message.tensors(tensor_memory)
     retrieved_tensors = message.tensors()
@@ -341,9 +331,7 @@ def test_tensor_update(tokenized_data):
 
     # Update tensors with new data
     new_tensors = {
-        "input_ids": cp.array([4, 5, 6]),
-        "input_mask": cp.array([1, 0, 1]),
-        "segment_ids": cp.array([1, 1, 0])
+        "input_ids": cp.array([4, 5, 6]), "input_mask": cp.array([1, 0, 1]), "segment_ids": cp.array([1, 1, 0])
     }
     tensor_memory.set_tensors(new_tensors)
     updated_tensors = message.tensors()
