@@ -115,29 +115,6 @@ def test_stop_without_start(config: Config):
     assert "must be running" in str(excinfo.value)
 
 
-async def test_join_after_join(config: Config):
-    pipeline = LinearPipeline(config)
-    assert pipeline.state == PipelineState.INITIALIZED
-    pipeline.set_source(source_test_stage(config))
-    await pipeline.build_and_start()
-    assert pipeline.state == PipelineState.STARTED
-    await pipeline.join()
-    assert pipeline.state == PipelineState.COMPLETED
-    with pytest.raises(Exception) as excinfo:
-        await pipeline.join()
-    assert "has already completed" in str(excinfo.value)
-
-
-async def test_join_without_start(config: Config):
-
-    pipeline = LinearPipeline(config)
-    assert pipeline.state == PipelineState.INITIALIZED
-    pipeline.set_source(source_test_stage(config))
-    with pytest.raises(Exception) as excinfo:
-        await pipeline.join()
-    assert "must be started" in str(excinfo.value)
-
-
 async def test_stop_after_stop(config: Config):
 
     pipeline = LinearPipeline(config)
@@ -151,6 +128,29 @@ async def test_stop_after_stop(config: Config):
         pipeline.stop()
     assert "must be running" in str(excinfo.value)
     await pipeline.join()
+
+
+async def test_join_without_start(config: Config):
+
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "must be started" in str(excinfo.value)
+
+
+async def test_join_after_join(config: Config):
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    await pipeline.build_and_start()
+    assert pipeline.state == PipelineState.STARTED
+    await pipeline.join()
+    assert pipeline.state == PipelineState.COMPLETED
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "has already completed" in str(excinfo.value)
 
 
 @mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.join')
@@ -264,4 +264,51 @@ async def test_stage_methods_called_stop_after_stop(mock_source_stage_stop,
     mock_source_stage_stop.assert_called_once()
     mock_source_stage_join.assert_called_once()
     mock_deserialize_stage_stop.assert_called_once()
+    mock_deserialize_stage_join.assert_called_once()
+
+
+@mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.join')
+@mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.stop')
+@mock.patch('morpheus.stages.input.in_memory_source_stage.InMemorySourceStage.join')
+@mock.patch('morpheus.stages.input.in_memory_source_stage.InMemorySourceStage.stop')
+async def test_stage_methods_called_join_without_start(mock_source_stage_stop,
+                                                       mock_source_stage_join,
+                                                       mock_deserialize_stage_stop,
+                                                       mock_deserialize_stage_join,
+                                                       config: Config,
+                                                       filter_probs_df: DataFrameType):
+    pipeline = LinearPipeline(config)
+    pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipeline.add_stage(DeserializeStage(config))
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "must be started" in str(excinfo.value)
+    mock_source_stage_stop.assert_not_called()
+    mock_source_stage_join.assert_not_called()
+    mock_deserialize_stage_stop.assert_not_called()
+    mock_deserialize_stage_join.assert_not_called()
+
+
+@mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.join')
+@mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.stop')
+@mock.patch('morpheus.stages.input.in_memory_source_stage.InMemorySourceStage.join')
+@mock.patch('morpheus.stages.input.in_memory_source_stage.InMemorySourceStage.stop')
+async def test_stage_methods_called_join_after_join(mock_source_stage_stop,
+                                                    mock_source_stage_join,
+                                                    mock_deserialize_stage_stop,
+                                                    mock_deserialize_stage_join,
+                                                    config: Config,
+                                                    filter_probs_df: DataFrameType):
+    pipeline = LinearPipeline(config)
+    pipeline.set_source(InMemorySourceStage(config, [filter_probs_df]))
+    pipeline.add_stage(DeserializeStage(config))
+    await pipeline.build_and_start()
+    await pipeline.join()
+    assert pipeline.state == PipelineState.COMPLETED
+    with pytest.raises(Exception) as excinfo:
+        await pipeline.join()
+    assert "has already completed" in str(excinfo.value)
+    mock_source_stage_stop.assert_not_called()
+    mock_source_stage_join.assert_called_once()
+    mock_deserialize_stage_stop.assert_not_called()
     mock_deserialize_stage_join.assert_called_once()
