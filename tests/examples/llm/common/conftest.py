@@ -53,12 +53,8 @@ def import_content_extractor_module(restore_sys_path):  # pylint: disable=unused
 
 
 @pytest.fixture(name="langchain", autouse=True, scope='session')
-def langchain_fixture(fail_missing: bool):
+def langchain_fixture(langchain):
     """
     All the tests in this subdir require langchain
     """
-
-    skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
-                   "`conda env update --solver=libmamba -n morpheus "
-                   "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
-    yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)
+    yield langchain
