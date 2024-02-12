@@ -36,6 +36,33 @@ def source_test_stage() -> int:
 # pylint: disable=too-many-function-args
 
 
+def test_build(config: Config):
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    pipeline.build()
+    assert pipeline.state == PipelineState.BUILT
+
+
+def test_build_twice(config: Config):
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    pipeline.set_source(source_test_stage(config))
+    pipeline.build()
+    assert pipeline.state == PipelineState.BUILT
+    with pytest.raises(Exception) as excinfo:
+        pipeline.build()
+    assert "can only be built once" in str(excinfo.value)
+
+
+def test_build_after_build(config: Config):
+    pipeline = LinearPipeline(config)
+    assert pipeline.state == PipelineState.INITIALIZED
+    with pytest.raises(Exception) as excinfo:
+        pipeline.build()
+    assert "must have a source stage" in str(excinfo.value)
+
+
 def test_normal_run(config: Config):
     pipeline = LinearPipeline(config)
     assert pipeline.state == PipelineState.INITIALIZED
