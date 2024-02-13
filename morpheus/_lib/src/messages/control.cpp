@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
@@ -28,6 +29,7 @@
 #include <ostream>
 #include <regex>
 #include <stdexcept>
+#include <utility>
 
 namespace py = pybind11;
 
@@ -367,7 +369,7 @@ py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::s
 void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns)
 {
     // Convert std::size_t to std::chrono::nanoseconds before calling the method
-    std::chrono::nanoseconds ts_ns = std::chrono::nanoseconds(timestamp_ns);
+    auto ts_ns = std::chrono::nanoseconds(timestamp_ns);
     self.set_timestamp(key, ts_ns);
 }
 

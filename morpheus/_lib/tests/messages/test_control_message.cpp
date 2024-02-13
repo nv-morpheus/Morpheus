@@ -27,6 +27,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -100,8 +101,8 @@ TEST_F(TestControlMessage, GetNonexistentMetadata)
 
     // Attempt to retrieve metadata that does not exist
     EXPECT_FALSE(msg.has_metadata(key));
-    EXPECT_THROW(msg.get_metadata(key, true), std::runtime_error);
-    EXPECT_NO_THROW(msg.get_metadata(key, false));  // Should not throw, but return empty json
+    EXPECT_THROW(auto const x = msg.get_metadata(key, true), std::runtime_error);
+    EXPECT_NO_THROW(auto const x = msg.get_metadata(key, false));  // Should not throw, but return empty json
 }
 
 // Test retrieving all metadata
