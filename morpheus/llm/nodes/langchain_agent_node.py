@@ -85,7 +85,7 @@ class LangChainAgentNode(LLMNodeBase):
 
         return output
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 

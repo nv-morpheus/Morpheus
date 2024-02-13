@@ -19,7 +19,6 @@ import sys
 import pytest
 
 from _utils import TEST_DIRS
-from _utils import import_or_skip
 
 
 @pytest.fixture(scope="function")

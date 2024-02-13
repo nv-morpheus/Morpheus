@@ -29,7 +29,7 @@ def mock_llm_client_fixture():
 
 
 @pytest.fixture(name="mock_agent_executor")
-def mock_agent_executor_fixture(langchain):
+def mock_agent_executor_fixture(langchain):  # pylint: disable=unused-argument
     from _utils.llm import mock_langchain_agent_executor
 
     return mock_langchain_agent_executor()[0]

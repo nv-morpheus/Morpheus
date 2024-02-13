@@ -95,7 +95,7 @@ def mock_langchain_agent_executor(return_values: list = None) -> tuple[mock.Magi
 
     if has_astream:  # astream is a newer method in langchain
 
-        async def async_iter(*args, **kwargs):
+        async def async_iter(*args, **kwargs):  # pylint: disable=unused-argument
             for i in return_values:
                 yield {"output": i}
 
