@@ -52,16 +52,13 @@ def import_content_extractor_module(restore_sys_path):  # pylint: disable=unused
     return content_extractor_module
 
 
-@pytest.fixture(name="nemollm", autouse=True, scope='session')
-def nemollm_fixture(fail_missing: bool):
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(fail_missing: bool):
     """
-    All the tests in this subdir require nemollm
+    All the tests in this subdir require langchain
     """
 
     skip_reason = ("Tests for the WebScraperStage require the langchain package to be installed, to install this run:\n"
-                   "`mamba install -n base -c conda-forge conda-merge`\n"
-                   "`conda run -n base --live-stream conda-merge docker/conda/environments/cuda${CUDA_VER}_dev.yml "
-                   "  docker/conda/environments/cuda${CUDA_VER}_examples.yml"
-                   "  > .tmp/merged.yml && mamba env update -n morpheus --file .tmp/merged.yml`")
-
+                   "`conda env update --solver=libmamba -n morpheus "
+                   "--file morpheus/conda/environments/dev_cuda-121_arch-x86_64.yaml --prune`")
     yield import_or_skip("langchain", reason=skip_reason, fail_missing=fail_missing)

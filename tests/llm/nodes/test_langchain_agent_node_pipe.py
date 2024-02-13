@@ -15,8 +15,6 @@
 
 from unittest import mock
 
-import pytest
-
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
@@ -41,7 +39,6 @@ def _build_engine(mock_agent_executor: mock.MagicMock) -> LLMEngine:
     return engine
 
 
-@pytest.mark.use_python
 def test_pipeline(config: Config, dataset_cudf: DatasetManager, mock_agent_executor: mock.MagicMock):
     input_df = dataset_cudf["filter_probs.csv"]
     expected_df = input_df.copy(deep=True)

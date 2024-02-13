@@ -16,6 +16,7 @@
 import json
 import os
 import typing
+import warnings
 
 import pytest
 
@@ -99,7 +100,12 @@ def test_extract_users(config: Config,
                                skip_users=skip_users,
                                only_users=only_users)
 
-    results = stage.extract_users(df)
+    with warnings.catch_warnings():
+        # Ignore warning about the log message not being set. This happens whenever there aren't any output_messages
+        warnings.filterwarnings("ignore",
+                                message="Must set log msg before end of context! Skipping log",
+                                category=UserWarning)
+        results = stage.extract_users(df)
 
     if not include_generic and not include_individual:
         # Extra check for weird combination

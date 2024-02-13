@@ -51,7 +51,7 @@ def test_process_events_on_data(mock_datetime: mock.MagicMock,
 
     # post-process should replace nans, lets add a nan to the DF
     with dfp_multi_ae_message.meta.mutable_dataframe() as df:
-        df['v2'][10] = np.nan
+        df.loc[10, 'v2'] = np.nan
         df['event_time'] = ''
 
     set_log_level(morpheus_log_level)

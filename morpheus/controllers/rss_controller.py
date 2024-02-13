@@ -19,9 +19,10 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import pandas as pd
 import requests
 import requests_cache
+
+import cudf
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ class RSSController:
 
     def _try_parse_feed_with_beautiful_soup(self, feed_input: str) -> "feedparser.FeedParserDict":
 
-        soup = BeautifulSoup(feed_input, 'lxml')
+        soup = BeautifulSoup(feed_input, features='xml')
 
         # Verify whether the given feed has 'item' or 'entry' tags.
         if soup.find('item'):
@@ -293,14 +294,14 @@ class RSSController:
                         entry_accumulator.append(entry)
 
                         if self._batch_size > 0 and len(entry_accumulator) >= self._batch_size:
-                            yield pd.DataFrame(entry_accumulator)
+                            yield cudf.DataFrame(entry_accumulator)
                             entry_accumulator.clear()
 
             self._previous_entries = current_entries
 
             # Yield any remaining entries.
             if entry_accumulator:
-                yield pd.DataFrame(entry_accumulator)
+                yield cudf.DataFrame(entry_accumulator)
             else:
                 logger.debug("No new entries found.")
 
