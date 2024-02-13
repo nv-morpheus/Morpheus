@@ -99,7 +99,7 @@ class MonitorStage(PassThruTypeMixin, SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def on_start(self):
+    async def start_async(self):
         """
         Starts the pipeline stage's progress bar.
         """
