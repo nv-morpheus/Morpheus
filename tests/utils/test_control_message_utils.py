@@ -49,7 +49,7 @@ def test_cm_default_failure_context_manager_no_exception():
     with CMDefaultFailureContextManager(control_message):
         pass
 
-        assert control_message.get_metadata("cm_failed") == None
+        assert control_message.get_metadata("cm_failed") is None
 
 
 def test_cm_default_failure_context_manager_with_exception():

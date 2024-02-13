@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cudf
 import cupy as cp
 import pytest
-
-import cudf
 
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
+
 
 # pylint: disable=unsupported-membership-test
 # pylint: disable=unsubscriptable-object
@@ -284,8 +284,8 @@ def test_tensors_setting_and_getting():
     retrieved_tensors = message.tensors()
     assert retrieved_tensors.count == data["input_ids"].shape[0], "Tensor count mismatch."
 
-    for key in data:
-        assert cp.allclose(retrieved_tensors.get_tensor(key), data[key]), f"Mismatch in tensor data for {key}."
+    for key, val in data.items():
+        assert cp.allclose(retrieved_tensors.get_tensor(key), val), f"Mismatch in tensor data for {key}."
 
 
 # Test retrieving tensor names and checking specific tensor existence
@@ -343,9 +343,8 @@ def test_tensor_update():
 
     updated_tensors = message.tensors()
 
-    for key in new_tensors:
-        assert cp.allclose(updated_tensors.get_tensor(key),
-                           new_tensors[key]), f"Mismatch in updated tensor data for {key}."
+    for key, val in new_tensors.items():
+        assert cp.allclose(updated_tensors.get_tensor(key), val), f"Mismatch in updated tensor data for {key}."
 
 
 @pytest.mark.usefixtures("config_only_cpp")
