@@ -14,13 +14,16 @@
 
 import asyncio
 import logging
-import pprint  # TODO: remove
 import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
 
-logger = logging.getLogger(__name__)
+LOG_NAME = __name__
+AGENT_LOG_NAME = f"{LOG_NAME}:agent"
+
+logger = logging.getLogger(LOG_NAME)
+agent_logger = logging.getLogger(AGENT_LOG_NAME)
 
 if typing.TYPE_CHECKING:
     from langchain.agents import AgentExecutor
@@ -75,9 +78,12 @@ class LangChainAgentNode(LLMNodeBase):
             return await self._agent_executor.arun(**kwargs)
 
         async for chunk in astream(**kwargs):
-            pprint.pprint(chunk)
-            if "output" in chunk:
+            try:
                 output.append(chunk["output"])
+            except KeyError:
+                pass
+
+            agent_logger.debug(" ".join(f"{k}: {v}" for (k, v) in chunk.items()))
 
         return output
 
