@@ -174,7 +174,6 @@ std::map<std::string, std::chrono::nanoseconds> ControlMessage::filter_timestamp
     return matching_timestamps;
 }
 
-
 std::optional<std::chrono::nanoseconds> ControlMessage::get_timestamp(const std::string& key, bool fail_if_nonexist)
 {
     auto it = m_timestamps.find(key);
@@ -335,15 +334,13 @@ py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::
     for (const auto& [key, timestamp] : cpp_map)
     {
         // Convert std::chrono::nanoseconds to std::size_t for Python
-        auto timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp).count();
+        auto timestamp_ns           = std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp).count();
         py_dict[pybind11::str(key)] = pybind11::cast(timestamp_ns);
     }
     return py_dict;
 }
 
-py::object ControlMessageProxy::get_timestamp(ControlMessage& self,
-                                              const std::string& key,
-                                              bool fail_if_nonexist)
+py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist)
 {
     try
     {

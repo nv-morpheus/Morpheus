@@ -18,10 +18,11 @@ import logging
 import typing
 from functools import partial
 
-import cudf
 import cupy as cp
 import mrc
 import numpy as np
+
+import cudf
 
 import morpheus._lib.stages as _stages
 # pylint: disable=morpheus-incorrect-lib-from-import
@@ -250,9 +251,9 @@ class PreprocessNLPStage(PreprocessBaseStage):
         return infer_message
 
     def _get_preprocess_fn(
-            self
+        self
     ) -> typing.Callable[[typing.Union[MultiMessage, ControlMessage]],
-    typing.Union[MultiInferenceMessage, ControlMessage]]:
+                         typing.Union[MultiInferenceMessage, ControlMessage]]:
         return partial(PreprocessNLPStage.pre_process_batch,
                        vocab_hash_file=self._vocab_hash_file,
                        do_lower_case=self._do_lower_case,

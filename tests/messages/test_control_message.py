@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import cudf
 import cupy as cp
 import pytest
+
+import cudf
 
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
@@ -289,8 +289,9 @@ def test_tensors_setting_and_getting():
 # Test retrieving tensor names and checking specific tensor existence
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tensor_names_and_existence():
-    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
-                      "segment_ids": cp.array([0, 0, 1])}
+    tokenized_data = {
+        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+    }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=tokenized_data["input_ids"].shape[0], tensors=tokenized_data)
 
@@ -305,8 +306,9 @@ def test_tensor_names_and_existence():
 # Test manipulating tensors after retrieval
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tensor_manipulation_after_retrieval():
-    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
-                      "segment_ids": cp.array([0, 0, 1])}
+    tokenized_data = {
+        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+    }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
 
@@ -322,8 +324,9 @@ def test_tensor_manipulation_after_retrieval():
 # Assuming there's functionality to update all tensors at once
 @pytest.mark.usefixtures("config_only_cpp")
 def test_tensor_update():
-    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
-                      "segment_ids": cp.array([0, 0, 1])}
+    tokenized_data = {
+        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+    }
     message = messages.ControlMessage()
     tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
 
