@@ -21,6 +21,7 @@
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
 
+#include <chrono>
 #include <optional>
 #include <ostream>
 #include <regex>
@@ -42,30 +43,12 @@ ControlMessage::ControlMessage(const nlohmann::json& _config) :
   m_tasks({})
 {
     config(_config);
-    // Register cleanup for this instance
-    auto cleanup = [this]() {
-        py::gil_scoped_acquire acquire;  // Acquire the GIL
-        this->m_tensors.reset();         // Clear the shared_ptr
-    };
-
-    // Register the cleanup lambda with atexit
-    auto atexit = py::module_::import("atexit");
-    atexit.attr("register")(py::cpp_function(cleanup));
 }
 
 ControlMessage::ControlMessage(const ControlMessage& other)
 {
     m_config = other.m_config;
     m_tasks  = other.m_tasks;
-
-    auto cleanup = [this]() {
-        py::gil_scoped_acquire acquire;  // Acquire the GIL
-        this->m_tensors.reset();         // Clear the shared_ptr
-    };
-
-    // Register the cleanup lambda with atexit
-    auto atexit = py::module_::import("atexit");
-    atexit.attr("register")(py::cpp_function(cleanup));
 }
 
 const nlohmann::json& ControlMessage::config() const
@@ -75,7 +58,6 @@ const nlohmann::json& ControlMessage::config() const
 
 void ControlMessage::add_task(const std::string& task_type, const nlohmann::json& task)
 {
-    // TODO(Devin) Schema check
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
     auto _task_type = s_task_type_map.contains(task_type) ? s_task_type_map[task_type] : ControlMessageType::NONE;
 
@@ -104,7 +86,7 @@ const nlohmann::json& ControlMessage::get_tasks() const
 
 std::vector<std::string> ControlMessage::list_metadata() const
 {
-    nlohmann::json key_list = nlohmann::json::array();
+    std::vector<std::string> key_list{};
 
     for (auto it = m_config["metadata"].begin(); it != m_config["metadata"].end(); ++it)
     {
@@ -136,7 +118,7 @@ nlohmann::json ControlMessage::get_metadata() const
     return metadata;
 }
 
-nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist = false) const
+nlohmann::json ControlMessage::get_metadata(const std::string& key, bool fail_on_nonexist) const
 {
     // Assuming m_metadata is a std::map<std::string, nlohmann::json> storing metadata
     auto metadata = m_config["metadata"];
@@ -169,25 +151,21 @@ nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     throw std::runtime_error("No tasks of type " + task_type + " found");
 }
 
-void ControlMessage::set_timestamp(const std::string& group, const std::string& key, std::size_t timestamp_ns)
+void ControlMessage::set_timestamp(const std::string& key, std::chrono::nanoseconds timestamp_ns)
 {
-    // Construct a unique key from the group and key, using "::" as a delimiter
-    std::string unique_key = group + "::" + key;
-
     // Insert or update the timestamp in the map
-    m_timestamps[unique_key] = timestamp_ns;
+    m_timestamps[key] = timestamp_ns;
 }
 
-std::map<std::string, std::size_t> ControlMessage::get_timestamp(const std::string& group,
-                                                                 const std::string& regex_filter)
+std::map<std::string, std::chrono::nanoseconds> ControlMessage::filter_timestamp(const std::string& regex_filter)
 {
-    std::map<std::string, std::size_t> matching_timestamps;
+    std::map<std::string, std::chrono::nanoseconds> matching_timestamps;
     std::regex filter(regex_filter);
 
     for (const auto& [key, timestamp] : m_timestamps)
     {
-        // Check if the key starts with the group prefix and matches the regex
-        if (key.rfind(group + "::", 0) == 0 && std::regex_search(key.substr(group.length() + 2), filter))
+        // Check if the key matches the regex
+        if (std::regex_search(key, filter))
         {
             matching_timestamps[key] = timestamp;
         }
@@ -196,12 +174,10 @@ std::map<std::string, std::size_t> ControlMessage::get_timestamp(const std::stri
     return matching_timestamps;
 }
 
-std::optional<std::size_t> ControlMessage::get_timestamp(const std::string& group,
-                                                         const std::string& key,
-                                                         bool fail_if_nonexist)
+
+std::optional<std::chrono::nanoseconds> ControlMessage::get_timestamp(const std::string& key, bool fail_if_nonexist)
 {
-    std::string full_key = group + "::" + key;  // Combine group and key
-    auto it              = m_timestamps.find(full_key);
+    auto it = m_timestamps.find(key);
     if (it != m_timestamps.end())
     {
         return it->second;  // Return the found timestamp
@@ -210,7 +186,7 @@ std::optional<std::size_t> ControlMessage::get_timestamp(const std::string& grou
     {
         throw std::runtime_error("Timestamp for the specified key does not exist.");
     }
-    return std::nullopt;  // Return std::nullopt if not found and fail_if_nonexist is false
+    return std::nullopt;
 }
 
 void ControlMessage::config(const nlohmann::json& config)
@@ -343,7 +319,7 @@ void ControlMessageProxy::set_metadata(ControlMessage& self, const std::string& 
 
 py::list ControlMessageProxy::list_metadata(ControlMessage& self)
 {
-    auto keys = self.list_metadata();  // Call the C++ class method
+    auto keys = self.list_metadata();
     py::list py_keys;
     for (const auto& key : keys)
     {
@@ -352,30 +328,31 @@ py::list ControlMessageProxy::list_metadata(ControlMessage& self)
     return py_keys;
 }
 
-py::dict ControlMessageProxy::get_timestamp(ControlMessage& self,
-                                            const std::string& group,
-                                            const std::string& regex_filter)
+py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::string& regex_filter)
 {
-    auto cpp_map = self.get_timestamp(group, regex_filter);
+    auto cpp_map = self.filter_timestamp(regex_filter);
     pybind11::dict py_dict;
     for (const auto& [key, timestamp] : cpp_map)
     {
-        py_dict[pybind11::str(key)] = pybind11::cast(timestamp);
+        // Convert std::chrono::nanoseconds to std::size_t for Python
+        auto timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp).count();
+        py_dict[pybind11::str(key)] = pybind11::cast(timestamp_ns);
     }
     return py_dict;
 }
 
 py::object ControlMessageProxy::get_timestamp(ControlMessage& self,
-                                              const std::string& group,
                                               const std::string& key,
                                               bool fail_if_nonexist)
 {
     try
     {
-        auto timestamp = self.get_timestamp(group, key, fail_if_nonexist);
-        if (timestamp)
+        auto timestamp_opt = self.get_timestamp(key, fail_if_nonexist);
+        if (timestamp_opt)
         {
-            return py::cast(*timestamp);
+            // Convert std::chrono::nanoseconds to std::size_t before returning
+            auto timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(*timestamp_opt).count();
+            return py::cast(timestamp_ns);
         }
         return py::none();
     } catch (const std::runtime_error& e)
@@ -388,18 +365,15 @@ py::object ControlMessageProxy::get_timestamp(ControlMessage& self,
     }
 }
 
-void ControlMessageProxy::set_timestamp(ControlMessage& self,
-                                        const std::string& group,
-                                        const std::string& key,
-                                        std::size_t timestamp_ns)
+void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns)
 {
-    // Direct call to ControlMessage's method to set the timestamp
-    self.set_timestamp(group, key, timestamp_ns);
+    // Convert std::size_t to std::chrono::nanoseconds before calling the method
+    std::chrono::nanoseconds ts_ns = std::chrono::nanoseconds(timestamp_ns);
+    self.set_timestamp(key, ts_ns);
 }
 
 void ControlMessageProxy::config(ControlMessage& self, py::dict& config)
 {
     self.config(mrc::pymrc::cast_from_pyobject(config));
 }
-
 }  // namespace morpheus

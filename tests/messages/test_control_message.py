@@ -21,13 +21,7 @@ import pytest
 
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
-from morpheus._lib.messages import TensorMemory as CppTensorMemory
-
-
-# Fixture to create example tokenized data using cupy arrays
-@pytest.fixture(scope="function")
-def tokenized_data():
-    return {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])}
+from morpheus.messages import TensorMemory
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -102,7 +96,7 @@ def test_control_message_metadata():
     assert "key_y" in metadata_tags
     assert "key_z" in metadata_tags
     assert message.get_metadata("key_x") == "value_x"
-    assert message.get_metadata()["key_y"] == "value_y"
+    assert message.get_metadata("key_y") == "value_y"
     assert message.get_metadata("key_z") == "value_z"
 
     message.set_metadata("key_y", "value_yy")
@@ -229,30 +223,29 @@ def test_set_and_get_timestamp_single():
     msg = messages.ControlMessage()
 
     # Define test data
-    group = "group1"
-    key = "key1"
+    key = "group1::key1"
     timestamp_ns = 123456789
 
     # Set timestamp
-    msg.set_timestamp(group, key, timestamp_ns)
+    msg.set_timestamp(key, timestamp_ns)
 
     # Get timestamp and assert it's as expected
-    result = msg.get_timestamp(group, key, True)
+    result = msg.get_timestamp(key, True)
     assert result == timestamp_ns, "The retrieved timestamp should match the one that was set."
 
 
 @pytest.mark.usefixtures("config_only_cpp")
-def test_get_timestamp_with_regex():
+def test_filter_timestamp():
     # Create a ControlMessage instance
     msg = messages.ControlMessage()
 
     # Setup test data
     group = "group1"
-    msg.set_timestamp(group, "key1", 100)
-    msg.set_timestamp(group, "key2", 200)
+    msg.set_timestamp(f"{group}::key1", 100)
+    msg.set_timestamp(f"{group}::key2", 200)
 
     # Use a regex that matches both keys
-    result = msg.get_timestamp(group, "key.*")
+    result = msg.filter_timestamp(f"{group}::key.*")
 
     # Assert both keys are in the result and have correct timestamps
     assert len(result) == 2, "Both keys should be present in the result."
@@ -266,12 +259,11 @@ def test_get_timestamp_fail_if_nonexist():
     msg = messages.ControlMessage()
 
     # Setup test data
-    group = "group2"
     key = "nonexistent_key"
 
     # Attempt to get a timestamp for a non-existent key, expecting failure
     try:
-        msg.get_timestamp(group, key, True)
+        msg.get_timestamp(key, True)
         assert False, "Expected a ValueError for a non-existent key when fail_if_nonexist is True."
     except ValueError as e:
         assert str(e) == "Timestamp for the specified key does not exist."
@@ -282,7 +274,8 @@ def test_get_timestamp_fail_if_nonexist():
 def test_tensors_setting_and_getting():
     data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])}
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=data["input_ids"].shape[0], tensors=data)
+    tensor_memory = TensorMemory(count=data["input_ids"].shape[0])
+    tensor_memory.set_tensors(data)
 
     message.tensors(tensor_memory)
 
@@ -295,9 +288,11 @@ def test_tensors_setting_and_getting():
 
 # Test retrieving tensor names and checking specific tensor existence
 @pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_names_and_existence(tokenized_data):
+def test_tensor_names_and_existence():
+    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
+                      "segment_ids": cp.array([0, 0, 1])}
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=tokenized_data["input_ids"].shape[0], tensors=tokenized_data)
+    tensor_memory = TensorMemory(count=tokenized_data["input_ids"].shape[0], tensors=tokenized_data)
 
     message.tensors(tensor_memory)
     retrieved_tensors = message.tensors()
@@ -309,9 +304,11 @@ def test_tensor_names_and_existence(tokenized_data):
 
 # Test manipulating tensors after retrieval
 @pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_manipulation_after_retrieval(tokenized_data):
+def test_tensor_manipulation_after_retrieval():
+    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
+                      "segment_ids": cp.array([0, 0, 1])}
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=3, tensors=tokenized_data)
+    tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
 
     message.tensors(tensor_memory)
 
@@ -324,9 +321,11 @@ def test_tensor_manipulation_after_retrieval(tokenized_data):
 
 # Assuming there's functionality to update all tensors at once
 @pytest.mark.usefixtures("config_only_cpp")
-def test_tensor_update(tokenized_data):
+def test_tensor_update():
+    tokenized_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]),
+                      "segment_ids": cp.array([0, 0, 1])}
     message = messages.ControlMessage()
-    tensor_memory = CppTensorMemory(count=3, tensors=tokenized_data)
+    tensor_memory = TensorMemory(count=3, tensors=tokenized_data)
 
     message.tensors(tensor_memory)
 
@@ -334,7 +333,9 @@ def test_tensor_update(tokenized_data):
     new_tensors = {
         "input_ids": cp.array([4, 5, 6]), "input_mask": cp.array([1, 0, 1]), "segment_ids": cp.array([1, 1, 0])
     }
+
     tensor_memory.set_tensors(new_tensors)
+
     updated_tensors = message.tensors()
 
     for key in new_tensors:
@@ -342,8 +343,54 @@ def test_tensor_update(tokenized_data):
                            new_tensors[key]), f"Mismatch in updated tensor data for {key}."
 
 
-if (__name__ == "__main__"):
-    test_control_message_init()
-    test_control_message_get()
-    test_control_message_set()
-    test_control_message_set_and_get_payload()
+@pytest.mark.usefixtures("config_only_cpp")
+def test_update_individual_tensor():
+    initial_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1])}
+    update_data = {"input_ids": cp.array([4, 5, 6])}
+    message = messages.ControlMessage()
+    tensor_memory = TensorMemory(count=3, tensors=initial_data)
+    message.tensors(tensor_memory)
+
+    # Update one tensor and retrieve all to ensure update integrity
+    tensor_memory.set_tensor("input_ids", update_data["input_ids"])
+    retrieved_tensors = message.tensors()
+
+    # Check updated tensor
+    assert cp.allclose(retrieved_tensors.get_tensor("input_ids"),
+                       update_data["input_ids"]), "Input IDs update mismatch."
+    # Ensure other tensor remains unchanged
+    assert cp.allclose(retrieved_tensors.get_tensor("input_mask"),
+                       initial_data["input_mask"]), "Input mask should remain unchanged after updating input_ids."
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_behavior_with_empty_tensors():
+    message = messages.ControlMessage()
+    tensor_memory = TensorMemory(count=0)
+    message.tensors(tensor_memory)
+
+    retrieved_tensors = message.tensors()
+    assert retrieved_tensors.count == 0, "Tensor count should be 0 for empty tensor memory."
+    assert len(retrieved_tensors.tensor_names) == 0, "There should be no tensor names for empty tensor memory."
+
+
+@pytest.mark.usefixtures("config_only_cpp")
+def test_consistency_after_multiple_operations():
+    initial_data = {"input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1])}
+    message = messages.ControlMessage()
+    tensor_memory = TensorMemory(count=3, tensors=initial_data)
+    message.tensors(tensor_memory)
+
+    # Update a tensor
+    tensor_memory.set_tensor("input_ids", cp.array([4, 5, 6]))
+    # Remove another tensor
+    # Add a new tensor
+    new_tensor = {"new_tensor": cp.array([7, 8, 9])}
+    tensor_memory.set_tensor("new_tensor", new_tensor["new_tensor"])
+
+    retrieved_tensors = message.tensors()
+    assert retrieved_tensors.count == 3, "Tensor count mismatch after multiple operations."
+    assert cp.allclose(retrieved_tensors.get_tensor("input_ids"),
+                       cp.array([4, 5, 6])), "Mismatch in input_ids after update."
+    assert cp.allclose(retrieved_tensors.get_tensor("new_tensor"),
+                       new_tensor["new_tensor"]), "New tensor data mismatch."

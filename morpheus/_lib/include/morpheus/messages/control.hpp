@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include <pybind11/pytypes.h>
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <optional>
@@ -242,7 +243,7 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing keys.
      * @return An optional json object describing the metadata value if it exists.
      */
-    [[nodiscard]] nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist) const;
+    [[nodiscard]] nlohmann::json get_metadata(const std::string& key, bool fail_on_nonexist = false) const;
 
     /**
      * @brief Lists all metadata keys currently stored in the control message.
@@ -331,7 +332,7 @@ class ControlMessage
      * @param group The group to which the key belongs, aiding in namespace separation.
      * @param timestamp_ns The timestamp value in nanoseconds to be associated with the group::key.
      */
-    void set_timestamp(const std::string& group, const std::string& key, std::size_t timestamp_ns);
+    void set_timestamp(const std::string& key, std::chrono::nanoseconds timestamp_ns);
 
     /**
      * @brief Retrieves the timestamp for a specific key within a given group.
@@ -346,7 +347,7 @@ class ControlMessage
      *                         If false, returns std::nullopt for non-existing timestamps.
      * @return An optional containing the timestamp value if found, or std::nullopt otherwise.
      */
-    std::optional<std::size_t> get_timestamp(const std::string& group, const std::string& key, bool fail_if_nonexist);
+    std::optional<std::chrono::nanoseconds> get_timestamp(const std::string& key, bool fail_if_nonexist = false);
 
     /**
      * @brief Retrieves timestamps for all keys within a given group that match a regex pattern.
@@ -360,7 +361,7 @@ class ControlMessage
      * @return A map containing the matching group::key combinations and their timestamps. The map will
      *         be empty if no matches are found.
      */
-    std::map<std::string, std::size_t> get_timestamp(const std::string& group, const std::string& regex_filter);
+    std::map<std::string, std::chrono::nanoseconds> filter_timestamp(const std::string& regex_filter);
 
   private:
     static const std::string s_config_schema;                          // NOLINT
@@ -373,7 +374,7 @@ class ControlMessage
     nlohmann::json m_tasks{};
     nlohmann::json m_config{};
 
-    std::map<std::string, std::size_t> m_timestamps{};
+    std::map<std::string, std::chrono::nanoseconds> m_timestamps{};
 };
 
 struct ControlMessageProxy
@@ -468,28 +469,20 @@ struct ControlMessageProxy
      * @brief Sets a timestamp for a given key within a specified group.
      * @param self Reference to the underlying ControlMessage object.
      * @param key The key associated with the timestamp.
-     * @param group The group the key belongs to.
      * @param timestamp_ns The timestamp value in nanoseconds.
      */
-    static void set_timestamp(ControlMessage& self,
-                              const std::string& group,
-                              const std::string& key,
-                              std::size_t timestamp_ns);
+    static void set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns);
 
     /**
      * @brief Retrieves the timestamp for a specific key within a given group from the ControlMessage object.
      *
      * @param self Reference to the underlying ControlMessage object.
-     * @param group The group to which the key belongs.
      * @param key The specific key for which the timestamp is requested.
      * @param fail_if_nonexist Determines the behavior when the requested timestamp does not exist.
      *                         If true, an exception is thrown. If false, py::none is returned.
      * @return The timestamp value if found, or py::none if not found and fail_if_nonexist is false.
      */
-    static pybind11::object get_timestamp(ControlMessage& self,
-                                          const std::string& group,
-                                          const std::string& key,
-                                          bool fail_if_nonexist);
+    static pybind11::object get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist = false);
 
     /**
      * @brief Retrieves timestamps for all keys within a given group that match a regex pattern from the ControlMessage
@@ -500,9 +493,7 @@ struct ControlMessageProxy
      * @param regex_filter The regex pattern that keys must match to be included in the result.
      * @return A Python dictionary of matching group::key combinations and their timestamps.
      */
-    static pybind11::dict get_timestamp(ControlMessage& self,
-                                        const std::string& group,
-                                        const std::string& regex_filter);
+    static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
 };
 
 #pragma GCC visibility pop
