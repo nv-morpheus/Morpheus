@@ -142,7 +142,7 @@ class HttpServerSinkStage(PassThruTypeMixin, SinglePortStage):
         """Indicates whether or not this stage supports a C++ node."""
         return False
 
-    def on_start(self):
+    async def start_async(self):
         """Starts the HTTP server."""
         from morpheus.common import HttpServer
         self._server = HttpServer(parse_fn=self._request_handler,
