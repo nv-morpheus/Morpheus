@@ -19,6 +19,7 @@ import pytest
 
 from _utils import assert_results
 from _utils.dataset_manager import DatasetManager
+from _utils.llm import mock_langchain_agent_executor
 from morpheus.config import Config
 from morpheus.llm import LLMEngine
 from morpheus.llm.nodes.extracter_node import ExtracterNode
@@ -40,20 +41,20 @@ def langchain_fixture(langchain):
     yield langchain
 
 
-def _build_engine(mock_agent_executor: mock.MagicMock) -> LLMEngine:
+def _build_engine(agent_executor: mock.MagicMock) -> LLMEngine:
     engine = LLMEngine()
     engine.add_node("extracter", node=ExtracterNode())
-    engine.add_node("chain", inputs=["/extracter"], node=LangChainAgentNode(agent_executor=mock_agent_executor))
+    engine.add_node("chain", inputs=["/extracter"], node=LangChainAgentNode(agent_executor=agent_executor))
     engine.add_task_handler(inputs=["/chain"], handler=SimpleTaskHandler())
 
     return engine
 
 
-def test_pipeline(config: Config, dataset_cudf: DatasetManager, mock_agent_executor: mock.MagicMock):
+def test_pipeline(config: Config, dataset_cudf: DatasetManager):
+    (mock_agent_executor, has_astream) = mock_langchain_agent_executor(['frogs'])
     input_df = dataset_cudf["filter_probs.csv"]
     expected_df = input_df.copy(deep=True)
 
-    mock_agent_executor.arun.return_value = 'frogs'
     expected_df['response'] = 'frogs'
     expected_calls = [mock.call(prompt=x) for x in expected_df['v3'].values_host]
 
@@ -69,4 +70,8 @@ def test_pipeline(config: Config, dataset_cudf: DatasetManager, mock_agent_execu
     pipe.run()
 
     assert_results(sink.get_results())
-    mock_agent_executor.arun.assert_has_calls(expected_calls)
+
+    if has_astream:
+        mock_agent_executor.astream.assert_has_calls(expected_calls)
+    else:
+        mock_agent_executor.arun.assert_has_calls(expected_calls)
