@@ -43,8 +43,6 @@ struct CupyUtil
     using tensor_map_t    = std::map<std::string, TensorObject>;
     using py_tensor_map_t = std::map<std::string, pybind11::object>;
 
-    static pybind11::object cp_module;  // handle to cupy module
-
     /**
      * @brief Import and return the cupy module. Requires GIL to have already been aqcuired.
      *
