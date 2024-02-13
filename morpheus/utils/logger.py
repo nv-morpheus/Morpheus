@@ -27,6 +27,7 @@ import mrc
 from tqdm import tqdm
 
 LogLevels = Enum('LogLevels', logging._nameToLevel)
+LLM_AGENT_LOG_NAME = "morpheus:llmagent"
 
 
 class TqdmLoggingHandler(logging.Handler):
@@ -125,16 +126,23 @@ def _configure_from_log_level(log_level: int):
     # handler
     morpheus_logger.addHandler(morpheus_queue_handler)
 
+    llm_agent_logger = get_llm_agent_logger()
+
+    # This logger will allways log at the debug level, don't propagate upstream
+    llm_agent_logger.propagate = False
+    llm_agent_logger.setLevel(logging.DEBUG)
+
     log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "morpheus.log")
+    llm_agent_log_file = os.path.join(appdirs.user_log_dir(appauthor="NVIDIA", appname="morpheus"), "agent.log")
 
     # Ensure the log directory exists
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
     # Now we build all of the handlers for the queue listener
-    file_handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=5, maxBytes=1000000)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}'))
+    file_handler = _get_file_handler(log_file)
+    llm_agent_file_handler = _get_file_handler(llm_agent_log_file)
+    llm_agent_file_handler.addFilter(logging.Filter(name=LLM_AGENT_LOG_NAME))
+    llm_agent_logger.addHandler(llm_agent_file_handler)
 
     # Tqdm stream handler (avoids messing with progress bars)
     console_handler = TqdmLoggingHandler()
@@ -143,6 +151,7 @@ def _configure_from_log_level(log_level: int):
     queue_listener = logging.handlers.QueueListener(morpheus_logging_queue,
                                                     console_handler,
                                                     file_handler,
+                                                    llm_agent_file_handler,
                                                     respect_handler_level=True)
     queue_listener.start()
     queue_listener._thread.name = "Logging Thread"
@@ -225,3 +234,28 @@ def deprecated_message_warning(logger, cls, new_cls):
         ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
         cls.__name__,
         new_cls.__name__)
+
+
+def get_llm_agent_logger() -> logging.Logger:
+    """
+    Get the logger for the LangChain agent. This logger is separate from the main Morpheus logger and is used to
+    separate the agent logs from the rest of the morpheus logs.
+
+    Returns
+    -------
+    logging.Logger
+        The logger for the LangChain agent
+    """
+    return logging.getLogger(LLM_AGENT_LOG_NAME)
+
+
+def _get_file_handler(
+        log_file: str,
+        backup_count: int = 5,
+        max_bytes: int = 1000000,
+        level: int = logging.DEBUG,
+        fmt: str = '%(asctime)s - [%(levelname)s]: %(message)s {%(name)s, %(threadName)s}') -> logging.Handler:
+    handler = logging.handlers.RotatingFileHandler(filename=log_file, backupCount=backup_count, maxBytes=max_bytes)
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter(fmt))
+    return handler

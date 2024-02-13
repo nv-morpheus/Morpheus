@@ -18,12 +18,10 @@ import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
+from morpheus.utils.logger import get_llm_agent_logger
 
-LOG_NAME = __name__
-AGENT_LOG_NAME = f"{LOG_NAME}:agent"
-
-logger = logging.getLogger(LOG_NAME)
-agent_logger = logging.getLogger(AGENT_LOG_NAME)
+logger = logging.getLogger(__name__)
+agent_logger = get_llm_agent_logger()
 
 if typing.TYPE_CHECKING:
     from langchain.agents import AgentExecutor
