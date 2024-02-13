@@ -67,7 +67,7 @@ class LangChainAgentNode(LLMNodeBase):
             return results
 
         # We are not dealing with a list, so run single
-        output = None
+        output = []
 
         # langchain 0.19 doesn't have the astream method, newer versions do
         astream = getattr(self._agent_executor, "astream", None)
@@ -77,7 +77,7 @@ class LangChainAgentNode(LLMNodeBase):
         async for chunk in astream(**kwargs):
             pprint.pprint(chunk)
             if "output" in chunk:
-                output = chunk["output"]
+                output.append(chunk["output"])
 
         return output
 

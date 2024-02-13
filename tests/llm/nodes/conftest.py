@@ -30,12 +30,6 @@ def mock_llm_client_fixture():
 
 @pytest.fixture(name="mock_agent_executor")
 def mock_agent_executor_fixture(langchain):
-    from langchain.agents import AgentExecutor
+    from _utils.llm import mock_langchain_agent_executor
 
-    # Create a mock AgentExecutor with the original class as a spec, which ensures that the mocked object will not
-    # return any false positives from calling hasattr & getattr.
-    mock_agent_ex = mock.MagicMock(AgentExecutor)
-    mock_agent_ex.return_value = mock_agent_ex
-    mock_agent_ex.input_keys = ["prompt"]
-    mock_agent_ex.arun = mock.AsyncMock()
-    return mock_agent_ex
+    return mock_langchain_agent_executor()[0]

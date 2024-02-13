@@ -14,6 +14,7 @@
 
 import asyncio
 import typing
+from unittest import mock
 
 from morpheus.llm import InputMap
 from morpheus.llm import LLMContext
@@ -73,3 +74,31 @@ def execute_task_handler(task_handler: LLMTaskHandler,
     message = asyncio.run(task_handler.try_handle(context))
 
     return message
+
+
+def mock_langchain_agent_executor(return_values: list = None) -> tuple[mock.MagicMock, bool]:
+    from langchain.agents import AgentExecutor
+
+    # Create a mock AgentExecutor with the original class as a spec, which ensures that the mocked object will not
+    # return any false positives from calling hasattr & getattr.
+    mock_agent_ex = mock.MagicMock(AgentExecutor)
+    mock_agent_ex.return_value = mock_agent_ex
+    mock_agent_ex.input_keys = ["prompt"]
+    mock_agent_ex.arun = mock.AsyncMock()
+
+    if return_values is None:
+        return_values = []
+
+    mock_agent_ex.arun.return_value = return_values
+
+    has_astream = hasattr(mock_agent_ex, "astream")
+
+    if has_astream:  # astream is a newer method in langchain
+
+        async def async_iter(*args, **kwargs):
+            for i in return_values:
+                yield {"output": i}
+
+        mock_agent_ex.astream.side_effect = async_iter
+
+    return (mock_agent_ex, has_astream)
