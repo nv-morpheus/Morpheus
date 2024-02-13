@@ -12,13 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-from merlin.core.dispatch import DataFrameType
-from merlin.schema import ColumnSchema
-from merlin.schema import Schema
-from nvtabular.ops.operator import ColumnSelector
+
+with warnings.catch_warnings():
+    # Ignore warning regarding tensorflow not being installed
+    warnings.filterwarnings("ignore", message=".*No module named 'tensorflow'", category=UserWarning)
+    from merlin.core.dispatch import DataFrameType
+    from merlin.schema import ColumnSchema
+    from merlin.schema import Schema
+    from nvtabular.ops.operator import ColumnSelector
 
 from morpheus.utils.nvt.mutate import MutateOp
 

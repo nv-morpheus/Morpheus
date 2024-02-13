@@ -35,19 +35,11 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
-#include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
-#include <boost/fiber/future/future.hpp>
-#include <mrc/channel/status.hpp>  // for Status
 #include <mrc/edge/edge_connector.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
-#include <mrc/types.hpp>
-#include <nlohmann/json.hpp>
-#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -57,9 +49,7 @@
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
-#include <array>
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -403,6 +393,10 @@ PYBIND11_MODULE(messages, _module)
         .def("list_metadata", &ControlMessageProxy::list_metadata)
         .def("payload", pybind11::overload_cast<>(&ControlMessage::payload))
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload))
+        .def(
+            "payload",
+            pybind11::overload_cast<ControlMessage&, const py::object&>(&ControlMessageProxy::payload_from_python_meta),
+            py::arg("meta"))
         .def("tensors", pybind11::overload_cast<>(&ControlMessage::tensors))
         .def("tensors", pybind11::overload_cast<const std::shared_ptr<TensorMemory>&>(&ControlMessage::tensors))
         .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))

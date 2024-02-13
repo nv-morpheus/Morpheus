@@ -30,7 +30,6 @@
 #include <string>
 
 namespace morpheus {
-class MessageMeta;
 
 #pragma GCC visibility push(default)
 enum class ControlMessageType
@@ -268,6 +267,9 @@ class ControlMessage
      * specific to this message instance.
      *
      * @return A shared pointer to the MessageMeta instance representing the message payload.
+     * @brief Get the payload object for the control message.
+     * @param payload
+     * A shared pointer to the message payload.
      */
     std::shared_ptr<MessageMeta> payload();
 
@@ -472,6 +474,12 @@ struct ControlMessageProxy
      * @param timestamp_ns The timestamp value in nanoseconds.
      */
     static void set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns);
+
+    /**
+     * @brief Set the payload object given a Python instance of MessageMeta
+     * @param meta
+     */
+    static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 
     /**
      * @brief Retrieves the timestamp for a specific key within a given group from the ControlMessage object.

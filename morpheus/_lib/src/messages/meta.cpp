@@ -65,7 +65,6 @@ MutableTableInfo MessageMeta::get_mutable_info() const
 
 std::vector<std::string> MessageMeta::get_column_names() const
 {
-    pybind11::gil_scoped_release no_gil;
     return m_data->get_info().get_column_names();
 }
 
@@ -145,11 +144,35 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
         }
         else
         {
-            throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+            // check to see if its a Python MessageMeta object
+            auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
+            if (py::isinstance(data_frame, msg_meta_cls))
+            {
+                return init_python_meta(data_frame);
+            }
+            else
+            {
+                throw pybind11::value_error("Dataframe is not a cudf or pandas dataframe");
+            }
         }
     }
 
     return MessageMeta::create_from_python(std::move(data_frame));
+}
+
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python_meta(const py::object& meta)
+{
+    // check to see if its a Python MessageMeta object
+    auto msg_meta_cls = py::module_::import("morpheus.messages").attr("MessageMeta");
+    if (py::isinstance(meta, msg_meta_cls))
+    {
+        DVLOG(10) << "Converting Python impl of MessageMeta to C++ impl";
+        return init_python(meta.attr("copy_dataframe")());
+    }
+    else
+    {
+        throw pybind11::value_error("meta is not a Python instance of MestageMeta");
+    }
 }
 
 TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
@@ -159,6 +182,7 @@ TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 
 std::vector<std::string> MessageMetaInterfaceProxy::get_column_names(MessageMeta& self)
 {
+    pybind11::gil_scoped_release no_gil;
     return self.get_column_names();
 }
 

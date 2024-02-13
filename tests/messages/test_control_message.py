@@ -23,6 +23,9 @@ from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
 
+# pylint: disable=unsupported-membership-test
+# pylint: disable=unsubscriptable-object
+
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
@@ -68,7 +71,7 @@ def test_control_message_tasks():
     # Ensure the underlying tasks cannot are not modified
     message = messages.ControlMessage()
     tasks = message.get_tasks()
-    tasks["type_a"] = [{"key_x", "value_x"}]
+    tasks["type_a"] = [{"key_x", "value_x"}]  # pylint: disable=unsupported-assignment-operation
     assert len(message.get_tasks()) == 0
 
     message = messages.ControlMessage()
@@ -103,7 +106,7 @@ def test_control_message_metadata():
 
     assert message.get_metadata()["key_y"] == "value_yy"
 
-    message.get_metadata()["not_mutable"] = 5
+    message.get_metadata()["not_mutable"] = 5  # pylint: disable=unsupported-assignment-operation
 
     assert "not_mutable" not in message.get_metadata()
 
@@ -199,7 +202,6 @@ def test_control_message_set():
     assert (control_message.has_task("load"))
 
 
-@pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_set_and_get_payload():
     df = cudf.DataFrame({
         'col1': [1, 2, 3, 4, 5],

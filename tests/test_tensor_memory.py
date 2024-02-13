@@ -220,3 +220,21 @@ def test_tensorindex_bug(config: Config, tensor_cls: type, shape: typing.Tuple[i
     tensor_a = mem.get_tensor('a')
     assert tensor_a.shape == shape
     assert tensor_a.nbytes == shape[0] * shape[1] * 4
+
+
+def test_tensor_update(config: Config):
+    tensor_data = {
+        "input_ids": cp.array([1, 2, 3]), "input_mask": cp.array([1, 1, 1]), "segment_ids": cp.array([0, 0, 1])
+    }
+    tensor_memory = TensorMemory(count=3, tensors=tensor_data)
+
+    # Update tensors with new data
+    new_tensors = {
+        "input_ids": cp.array([4, 5, 6]), "input_mask": cp.array([1, 0, 1]), "segment_ids": cp.array([1, 1, 0])
+    }
+
+    tensor_memory.set_tensors(new_tensors)
+
+    for (key, cp_arr) in new_tensors.items():
+        tensor = tensor_memory.get_tensor(key)
+        cp.allclose(tensor, cp_arr)
