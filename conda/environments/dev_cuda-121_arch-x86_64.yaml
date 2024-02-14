@@ -30,7 +30,7 @@ dependencies:
 - cython=3.0
 - datacompy=0.10
 - dill=0.3.7
-- doxygen=1.9.2
+- doxygen=1.10.0
 - elasticsearch==8.9.0
 - exhale=0.3.6
 - feedparser=6.0.10
