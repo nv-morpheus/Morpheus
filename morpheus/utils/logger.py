@@ -165,7 +165,7 @@ def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, l
 
     Parameters
     ----------
-    *extra_handlers: List of additional handlers which will handle entries placed on the queue
+    *extra_handlers: List of handlers to add to existing default console and file handlers.
     log_level: int
         Specifies the log level and above to output. Must be one of the available levels in the `logging` module.
     log_config_file: str, optional (default = None):
