@@ -148,9 +148,8 @@ async def test_join_after_join(config: Config):
     assert pipeline.state == PipelineState.STARTED
     await pipeline.join()
     assert pipeline.state == PipelineState.COMPLETED
-    with pytest.raises(Exception) as excinfo:
-        await pipeline.join()
-    assert "has already completed" in str(excinfo.value)
+    await pipeline.join()
+    assert pipeline.state == PipelineState.COMPLETED
 
 
 @mock.patch('morpheus.stages.preprocess.deserialize_stage.DeserializeStage.join')
@@ -305,9 +304,8 @@ async def test_stage_methods_called_join_after_join(mock_source_stage_stop,
     await pipeline.build_and_start()
     await pipeline.join()
     assert pipeline.state == PipelineState.COMPLETED
-    with pytest.raises(Exception) as excinfo:
-        await pipeline.join()
-    assert "has already completed" in str(excinfo.value)
+    await pipeline.join()
+    assert pipeline.state == PipelineState.COMPLETED
     mock_source_stage_stop.assert_not_called()
     mock_source_stage_join.assert_called_once()
     mock_deserialize_stage_stop.assert_not_called()

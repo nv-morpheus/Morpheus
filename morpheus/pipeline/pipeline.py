@@ -451,7 +451,6 @@ class Pipeline():
         Wait until pipeline completes upon which join methods of sources and stages will be called.
         """
         assert self._post_start_future is not None, "Pipeline must be started before joining"
-        assert self._state != PipelineState.COMPLETED, "Cannot join a pipeline that has already completed"
 
         await self._post_start_future
 
