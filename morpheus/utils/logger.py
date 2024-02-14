@@ -157,7 +157,7 @@ def _configure_from_log_level(*extra_handlers: logging.Handler, log_level: int):
     atexit.register(stop_queue_listener)
 
 
-def configure_logging(*extra_handlers: logging.Handler, log_level: int, log_config_file: str = None):
+def configure_logging(*extra_handlers: logging.Handler, log_level: int = None, log_config_file: str = None):
     """
     Configures Morpheus logging in one of two ways. Either specifying a logging config file to load or a logging level
     which will use a default configuration. The default configuration outputs to both the console and a file. Sets up a
@@ -183,6 +183,7 @@ def configure_logging(*extra_handlers: logging.Handler, log_level: int, log_conf
         # Configure using log file
         _configure_from_log_file(log_config_file=log_config_file)
     else:
+        assert log_level is not None, "log_level must be specified"
         _configure_from_log_level(*extra_handlers, log_level=log_level)
 
 
@@ -214,12 +215,12 @@ def set_log_level(log_level: int):
     return old_level
 
 
-def deprecated_stage_warning(logger, cls, name):
+def deprecated_stage_warning(logger, cls, name, reason: str = None):
     """Log a warning about a deprecated stage."""
-    logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
-                    "It has no effect and acts as a pass through stage."),
-                   cls.__name__,
-                   name)
+    message = f"The '{cls.__name__}' stage ('{name}') has been deprecated and will be removed in a future version."
+    if reason is not None:
+        message = " ".join((message, reason))
+    logger.warning(message)
 
 
 def deprecated_message_warning(logger, cls, new_cls):
