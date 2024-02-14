@@ -20,8 +20,12 @@ from unittest.mock import patch
 
 import pytest
 
-from morpheus.utils.logger import configure_logging, deprecated_message_warning, deprecated_stage_warning, TqdmLoggingHandler, set_log_level
 from _utils import TEST_DIRS
+from morpheus.utils.logger import TqdmLoggingHandler
+from morpheus.utils.logger import configure_logging
+from morpheus.utils.logger import deprecated_message_warning
+from morpheus.utils.logger import deprecated_stage_warning
+from morpheus.utils.logger import set_log_level
 
 
 @patch('logging.handlers.QueueListener')
@@ -135,8 +139,8 @@ def test_deprecated_stage_warning_with_reason(caplog):
     deprecated_stage_warning(logger, DummyStage, "dummy_stage", reason="This is the reason.")
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == "WARNING"
-    assert "The 'DummyStage' stage ('dummy_stage') has been deprecated" in caplog.text
-    assert "This is the reason." in caplog.text
+    assert "The 'DummyStage' stage ('dummy_stage') has been deprecated and will be removed in a future version. " \
+           "This is the reason." in caplog.text
 
 
 def test_deprecated_message_warning(caplog):
@@ -152,4 +156,5 @@ def test_deprecated_message_warning(caplog):
     deprecated_message_warning(logger, OldMessage, NewMessage)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == "WARNING"
-    assert "The 'OldMessage' message has been deprecated and will be removed in a future version. Please use 'NewMessage' instead." in caplog.text
+    assert "The 'OldMessage' message has been deprecated and will be removed in a future version. " \
+           "Please use 'NewMessage' instead." in caplog.text
