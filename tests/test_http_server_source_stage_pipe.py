@@ -26,6 +26,7 @@ from _utils.dataset_manager import DatasetManager
 from morpheus.config import Config
 from morpheus.io.serializers import df_to_stream_json
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.pipeline import PipelineState
 from morpheus.stages.input.http_server_source_stage import HttpServerSourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.utils.http_utils import HTTPMethod
@@ -41,11 +42,11 @@ async def make_request(pipe: LinearPipeline,
                        payload: typing.Any,
                        content_type: str):
     attempt = 0
-    while not pipe._is_started and attempt < 2:
+    while pipe.state != PipelineState.STARTED and attempt < 2:
         await asyncio.sleep(1)
         attempt += 1
 
-    if not pipe._is_started:
+    if pipe.state != PipelineState.STARTED:
         raise RuntimeError("HttpServerSourceStage did not start")
 
     # Not strictly needed, but we don't have a good way of knowing when the server is ready to accept requests

@@ -235,7 +235,7 @@ class GenerateVizFramesStage(PassThruTypeMixin, SinglePortStage):
 
         return await super().start_async()
 
-    def stop(self):
+    async def join(self):
         """
         Stages can implement this to perform cleanup steps when pipeline is stopped.
         """
