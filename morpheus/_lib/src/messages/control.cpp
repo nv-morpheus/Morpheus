@@ -20,7 +20,6 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <glog/logging.h>
-#include <pybind11/chrono.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>

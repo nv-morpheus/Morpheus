@@ -25,7 +25,9 @@
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <chrono>
+#include <map>
 #include <memory>
 #include <optional>
 #include <stdexcept>

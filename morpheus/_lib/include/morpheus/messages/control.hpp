@@ -23,7 +23,6 @@
 #include <pybind11/pytypes.h>
 
 #include <chrono>
-#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
