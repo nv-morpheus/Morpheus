@@ -18,8 +18,17 @@ from unittest import mock
 import pytest
 
 from _utils.llm import execute_node
+from _utils.llm import mock_langchain_agent_executor
 from morpheus.llm import LLMNodeBase
 from morpheus.llm.nodes.langchain_agent_node import LangChainAgentNode
+
+
+@pytest.fixture(name="langchain", autouse=True, scope='session')
+def langchain_fixture(langchain):
+    """
+    All the tests in this module require langchain
+    """
+    yield langchain
 
 
 def test_constructor(mock_agent_executor: mock.MagicMock):
@@ -50,8 +59,12 @@ def test_execute(
     expected_output: list,
     expected_calls: list[mock.call],
 ):
-    mock_agent_executor.arun.return_value = arun_return
+    (mock_agent_executor, has_astream) = mock_langchain_agent_executor(arun_return)
 
     node = LangChainAgentNode(agent_executor=mock_agent_executor)
     assert execute_node(node, **values) == expected_output
-    mock_agent_executor.arun.assert_has_calls(expected_calls)
+
+    if has_astream:
+        mock_agent_executor.astream.assert_has_calls(expected_calls)
+    else:
+        mock_agent_executor.arun.assert_has_calls(expected_calls)

@@ -29,9 +29,7 @@ def mock_llm_client_fixture():
 
 
 @pytest.fixture(name="mock_agent_executor")
-def mock_agent_executor_fixture():
-    mock_agent_ex = mock.MagicMock()
-    mock_agent_ex.return_value = mock_agent_ex
-    mock_agent_ex.input_keys = ["prompt"]
-    mock_agent_ex.arun = mock.AsyncMock()
-    return mock_agent_ex
+def mock_agent_executor_fixture(langchain):  # pylint: disable=unused-argument
+    from _utils.llm import mock_langchain_agent_executor
+
+    return mock_langchain_agent_executor()[0]

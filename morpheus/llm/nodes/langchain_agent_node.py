@@ -18,8 +18,10 @@ import typing
 
 from morpheus.llm import LLMContext
 from morpheus.llm import LLMNodeBase
+from morpheus.utils.logger import get_llm_agent_logger
 
 logger = logging.getLogger(__name__)
+agent_logger = get_llm_agent_logger()
 
 if typing.TYPE_CHECKING:
     from langchain.agents import AgentExecutor
@@ -66,9 +68,24 @@ class LangChainAgentNode(LLMNodeBase):
             return results
 
         # We are not dealing with a list, so run single
-        return await self._agent_executor.arun(**kwargs)
+        output = []
 
-    async def execute(self, context: LLMContext) -> LLMContext:
+        # langchain 0.19 doesn't have the astream method, newer versions do
+        astream = getattr(self._agent_executor, "astream", None)
+        if astream is None:
+            return await self._agent_executor.arun(**kwargs)
+
+        async for chunk in astream(**kwargs):
+            try:
+                output.append(chunk["output"])
+            except KeyError:
+                pass
+
+            agent_logger.debug(" ".join(f"{k}: {v}" for (k, v) in chunk.items()))
+
+        return output
+
+    async def execute(self, context: LLMContext) -> LLMContext:  # pylint: disable=invalid-overridden-method
 
         input_dict = context.get_inputs()
 

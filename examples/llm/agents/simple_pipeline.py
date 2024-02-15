@@ -47,7 +47,10 @@ def _build_agent_executor(model_name: str) -> AgentExecutor:
 
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
-    agent_executor = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+    agent_executor = initialize_agent(tools,
+                                      llm,
+                                      agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                                      verbose=logger.isEnabledFor(logging.DEBUG))
 
     return agent_executor
 
