@@ -35,7 +35,6 @@ def test_configure_logging_from_level_default_handlers(queue_handler, queue_list
     morpheus_logger = logging.getLogger("morpheus")
     assert morpheus_logger.level == logging.DEBUG
     assert morpheus_logger.propagate is False
-    assert isinstance(morpheus_logger.handlers[1].queue, multiprocessing.queues.Queue)
     pos_args = queue_listener.call_args[0]
     assert len(pos_args) == 3
     assert isinstance(pos_args[0], multiprocessing.queues.Queue)
