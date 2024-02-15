@@ -387,7 +387,7 @@ PYBIND11_MODULE(messages, _module)
              &ControlMessageProxy::set_timestamp,
              "Set a timestamp for a given key and group.",
              py::arg("key"),
-             py::arg("timestamp_ns"))
+             py::arg("timestamp"))
         .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
         .def("list_metadata", &ControlMessageProxy::list_metadata)

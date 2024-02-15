@@ -34,6 +34,8 @@
 using namespace morpheus;
 using namespace morpheus::test;
 
+using clock_type_t = std::chrono::system_clock;
+
 TEST_F(TestControlMessage, InitializationTest)
 {
     auto msg_one = ControlMessage();
@@ -206,46 +208,50 @@ TEST_F(TestControlMessage, PayloadTest)
     ASSERT_EQ(msg.payload(), data_payload);
 }
 
-TEST_F(TestControlMessage, SetTimestamp)
+TEST_F(TestControlMessage, SetAndGetTimestamp)
 {
     auto msg = ControlMessage();
 
-    // Test setting a timestamp using std::chrono::nanoseconds
-    msg.set_timestamp("group1::key1", std::chrono::nanoseconds(1000));
+    // Test setting a timestamp
+    auto start = clock_type_t::now();
+    msg.set_timestamp("group1::key1", start);
+
     auto result = msg.get_timestamp("group1::key1", false);
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(1000, std::chrono::duration_cast<std::chrono::nanoseconds>(result.value()).count());
+
+    // Direct comparison since we're using time points now
+    EXPECT_EQ(start, result.value());
 }
 
 TEST_F(TestControlMessage, GetTimestampWithRegex)
 {
-    auto msg = ControlMessage();
+    auto start = clock_type_t::now();
+    auto msg   = ControlMessage();
 
-    // Setup using std::chrono::nanoseconds
-    msg.set_timestamp("group1::key1", std::chrono::nanoseconds(1000));
-    msg.set_timestamp("group1::key2", std::chrono::nanoseconds(2000));
+    // Set two timestamps slightly apart
+    msg.set_timestamp("group1::key1", start);
+    auto later = clock_type_t::now();
+    msg.set_timestamp("group1::key2", later);
 
-    // Test retrieving timestamps with regex that matches both keys
     auto result = msg.filter_timestamp("group1::key.*");
     ASSERT_EQ(2, result.size());
-    EXPECT_EQ(1000, std::chrono::duration_cast<std::chrono::nanoseconds>(result["group1::key1"]).count());
-    EXPECT_EQ(2000, std::chrono::duration_cast<std::chrono::nanoseconds>(result["group1::key2"]).count());
 
-    // Test retrieving timestamps with regex that matches only one key
+    // Check using the actual time points
+    EXPECT_EQ(start, result["group1::key1"]);
+    EXPECT_EQ(later, result["group1::key2"]);
+
     auto resultSingle = msg.filter_timestamp("group1::key1");
     ASSERT_EQ(1, resultSingle.size());
-    EXPECT_EQ(1000, std::chrono::duration_cast<std::chrono::nanoseconds>(resultSingle["group1::key1"]).count());
+    EXPECT_EQ(start, resultSingle["group1::key1"]);
 }
 
 TEST_F(TestControlMessage, GetTimestampNonExistentKey)
 {
     auto msg = ControlMessage();
 
-    // Test retrieving a non-existent key without throwing
     auto result = msg.get_timestamp("group1::nonexistent", false);
     EXPECT_FALSE(result.has_value());
 
-    // Test retrieving a non-existent key with throwing enabled
     EXPECT_THROW(
         {
             try
@@ -253,7 +259,6 @@ TEST_F(TestControlMessage, GetTimestampNonExistentKey)
                 msg.get_timestamp("group1::nonexistent", true);
             } catch (const std::runtime_error& e)
             {
-                // Check if the exception message is as expected
                 EXPECT_STREQ("Timestamp for the specified key does not exist.", e.what());
                 throw;
             }
@@ -265,12 +270,16 @@ TEST_F(TestControlMessage, UpdateTimestamp)
 {
     auto msg = ControlMessage();
 
-    msg.set_timestamp("group1::key1", std::chrono::nanoseconds(1000));
-    msg.set_timestamp("group1::key1", std::chrono::nanoseconds(2000));
+    auto start = clock_type_t::now();
+    msg.set_timestamp("group1::key1", start);
+    auto later = clock_type_t::now();
+    msg.set_timestamp("group1::key1", later);
 
     auto result = msg.get_timestamp("group1::key1", false);
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(2000, std::chrono::duration_cast<std::chrono::nanoseconds>(result.value()).count());
+
+    // Check using the actual time points for update
+    EXPECT_EQ(later, result.value());
 }
 
 // Test setting and getting Ten:sorMemory

@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/chrono.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
@@ -155,15 +156,15 @@ nlohmann::json ControlMessage::remove_task(const std::string& task_type)
     throw std::runtime_error("No tasks of type " + task_type + " found");
 }
 
-void ControlMessage::set_timestamp(const std::string& key, std::chrono::nanoseconds timestamp_ns)
+void ControlMessage::set_timestamp(const std::string& key, time_point_t timestamp_ns)
 {
     // Insert or update the timestamp in the map
     m_timestamps[key] = timestamp_ns;
 }
 
-std::map<std::string, std::chrono::nanoseconds> ControlMessage::filter_timestamp(const std::string& regex_filter)
+std::map<std::string, time_point_t> ControlMessage::filter_timestamp(const std::string& regex_filter)
 {
-    std::map<std::string, std::chrono::nanoseconds> matching_timestamps;
+    std::map<std::string, time_point_t> matching_timestamps;
     std::regex filter(regex_filter);
 
     for (const auto& [key, timestamp] : m_timestamps)
@@ -178,7 +179,7 @@ std::map<std::string, std::chrono::nanoseconds> ControlMessage::filter_timestamp
     return matching_timestamps;
 }
 
-std::optional<std::chrono::nanoseconds> ControlMessage::get_timestamp(const std::string& key, bool fail_if_nonexist)
+std::optional<time_point_t> ControlMessage::get_timestamp(const std::string& key, bool fail_if_nonexist)
 {
     auto it = m_timestamps.find(key);
     if (it != m_timestamps.end())
@@ -334,16 +335,16 @@ py::list ControlMessageProxy::list_metadata(ControlMessage& self)
 py::dict ControlMessageProxy::filter_timestamp(ControlMessage& self, const std::string& regex_filter)
 {
     auto cpp_map = self.filter_timestamp(regex_filter);
-    pybind11::dict py_dict;
+    py::dict py_dict;
     for (const auto& [key, timestamp] : cpp_map)
     {
-        // Convert std::chrono::nanoseconds to std::size_t for Python
-        auto timestamp_ns           = std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp).count();
-        py_dict[pybind11::str(key)] = pybind11::cast(timestamp_ns);
+        // Directly use the timestamp as datetime.datetime in Python
+        py_dict[py::str(key)] = timestamp;
     }
     return py_dict;
 }
 
+// Get a specific timestamp and return it as datetime.datetime or None
 py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist)
 {
     try
@@ -351,10 +352,10 @@ py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::s
         auto timestamp_opt = self.get_timestamp(key, fail_if_nonexist);
         if (timestamp_opt)
         {
-            // Convert std::chrono::nanoseconds to std::size_t before returning
-            auto timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(*timestamp_opt).count();
-            return py::cast(timestamp_ns);
+            // Directly return the timestamp as datetime.datetime in Python
+            return py::cast(*timestamp_opt);
         }
+
         return py::none();
     } catch (const std::runtime_error& e)
     {
@@ -366,11 +367,19 @@ py::object ControlMessageProxy::get_timestamp(ControlMessage& self, const std::s
     }
 }
 
-void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns)
+// Set a timestamp using a datetime.datetime object from Python
+void ControlMessageProxy::set_timestamp(ControlMessage& self, const std::string& key, py::object timestamp_ns)
 {
-    // Convert std::size_t to std::chrono::nanoseconds before calling the method
-    auto ts_ns = std::chrono::nanoseconds(timestamp_ns);
-    self.set_timestamp(key, ts_ns);
+    if (!py::isinstance<py::none>(timestamp_ns))
+    {
+        // Convert Python datetime.datetime to std::chrono::system_clock::time_point before setting
+        auto _timestamp_ns = timestamp_ns.cast<time_point_t>();
+        self.set_timestamp(key, _timestamp_ns);
+    }
+    else
+    {
+        throw std::runtime_error("Timestamp cannot be None");
+    }
 }
 
 void ControlMessageProxy::config(ControlMessage& self, py::dict& config)

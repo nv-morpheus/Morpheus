@@ -14,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cupy as cp
-import pytest
+import datetime
 
 import cudf
+import cupy as cp
+import pytest
 
 from morpheus import messages
 # pylint: disable=morpheus-incorrect-lib-from-import
 from morpheus.messages import TensorMemory
+
 
 # pylint: disable=unsupported-membership-test
 # pylint: disable=unsubscriptable-object
@@ -226,14 +228,14 @@ def test_set_and_get_timestamp_single():
 
     # Define test data
     key = "group1::key1"
-    timestamp_ns = 123456789
+    timestamp = datetime.datetime.now()
 
     # Set timestamp
-    msg.set_timestamp(key, timestamp_ns)
+    msg.set_timestamp(key, timestamp)
 
     # Get timestamp and assert it's as expected
     result = msg.get_timestamp(key, True)
-    assert result == timestamp_ns, "The retrieved timestamp should match the one that was set."
+    assert result == timestamp, "The retrieved timestamp should match the one that was set."
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -243,16 +245,18 @@ def test_filter_timestamp():
 
     # Setup test data
     group = "group1"
-    msg.set_timestamp(f"{group}::key1", 100)
-    msg.set_timestamp(f"{group}::key2", 200)
+    timestamp1 = datetime.datetime.now()
+    timestamp2 = timestamp1 + datetime.timedelta(seconds=1)
+    msg.set_timestamp(f"{group}::key1", timestamp1)
+    msg.set_timestamp(f"{group}::key2", timestamp2)
 
     # Use a regex that matches both keys
     result = msg.filter_timestamp(f"{group}::key.*")
 
     # Assert both keys are in the result and have correct timestamps
     assert len(result) == 2, "Both keys should be present in the result."
-    assert result[f"{group}::key1"] == 100, "The timestamp for key1 should be 100."
-    assert result[f"{group}::key2"] == 200, "The timestamp for key2 should be 200."
+    assert result[f"{group}::key1"] == timestamp1, "The timestamp for key1 should match."
+    assert result[f"{group}::key2"] == timestamp2, "The timestamp for key2 should match."
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -264,11 +268,9 @@ def test_get_timestamp_fail_if_nonexist():
     key = "nonexistent_key"
 
     # Attempt to get a timestamp for a non-existent key, expecting failure
-    try:
+    with pytest.raises(ValueError) as exc_info:
         msg.get_timestamp(key, True)
-        assert False, "Expected a ValueError for a non-existent key when fail_if_nonexist is True."
-    except ValueError as e:
-        assert str(e) == "Timestamp for the specified key does not exist."
+    assert str(exc_info.value) == "Timestamp for the specified key does not exist."
 
 
 # Test setting and getting tensors with cupy arrays

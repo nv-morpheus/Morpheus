@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <nlohmann/json.hpp>
@@ -162,6 +161,11 @@ enum class ControlMessageType
 //     std::shared_ptr<MessageMeta> m_df;
 //     std::shared_ptr<TensorMemory> m_tensors;
 // };
+
+class TensorMemory;
+
+// System-clock for better compatibility with pybind11/chrono
+using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 
 /**
  * @brief Class representing a control message for coordinating data processing tasks.
@@ -326,46 +330,40 @@ class ControlMessage
     void task_type(ControlMessageType task_type);
 
     /**
-     * @brief Sets a timestamp for a specific key within a given group.
+     * @brief Sets a timestamp for a specific key.
      *
-     * This method stores a nanosecond precision timestamp associated with a unique
-     * identifier composed of a group and key. If the group::key already exists,
-     * its timestamp will be updated to the new value.
+     * This method stores a timestamp associated with a unique identifier,
+     * If the key already exists, its timestamp will be updated to the new value.
      *
      * @param key The specific key for which the timestamp is to be set.
-     * @param group The group to which the key belongs, aiding in namespace separation.
-     * @param timestamp_ns The timestamp value in nanoseconds to be associated with the group::key.
+     * @param timestamp The timestamp to be associated with the key.
      */
-    void set_timestamp(const std::string& key, std::chrono::nanoseconds timestamp_ns);
+    void set_timestamp(const std::string& key, time_point_t timestamp_ns);
 
     /**
-     * @brief Retrieves the timestamp for a specific key within a given group.
+     * @brief Retrieves the timestamp for a specific key.
      *
-     * Attempts to find and return the timestamp associated with the specified group and key.
-     * If the group::key combination does not exist, the method's behavior is determined by
-     * the fail_if_nonexist flag.
+     * Attempts to find and return the timestamp associated with the specified key.
+     * If the key does not exist, the method's behavior is determined by the fail_if_nonexist flag.
      *
-     * @param group The group to which the key belongs.
      * @param key The specific key for which the timestamp is requested.
      * @param fail_if_nonexist If true, the method throws an exception if the timestamp doesn't exist.
      *                         If false, returns std::nullopt for non-existing timestamps.
-     * @return An optional containing the timestamp value if found, or std::nullopt otherwise.
+     * @return An optional containing the timestamp if found, or std::nullopt
+     * otherwise.
      */
-    std::optional<std::chrono::nanoseconds> get_timestamp(const std::string& key, bool fail_if_nonexist = false);
+    std::optional<time_point_t> get_timestamp(const std::string& key, bool fail_if_nonexist = false);
 
     /**
-     * @brief Retrieves timestamps for all keys within a given group that match a regex pattern.
+     * @brief Retrieves timestamps for all keys that match a regex pattern.
      *
-     * Searches within the specified group for keys that match the provided regex filter and returns
-     * a map of these keys and their associated timestamps. This allows for flexible queries within
-     * the group's namespace based on pattern matching.
+     * Searches for the specified for keys that match the provided regex filter and returns
+     * a map of these keys and their associated timestamps.
      *
-     * @param group The group within which to search for keys.
      * @param regex_filter A regular expression pattern that keys must match to be included in the result.
-     * @return A map containing the matching group::key combinations and their timestamps. The map will
-     *         be empty if no matches are found.
+     * @return A map containing the matching key and their timestamps. The map will be empty if no matches are found.
      */
-    std::map<std::string, std::chrono::nanoseconds> filter_timestamp(const std::string& regex_filter);
+    std::map<std::string, time_point_t> filter_timestamp(const std::string& regex_filter);
 
   private:
     static const std::string s_config_schema;                          // NOLINT
@@ -378,7 +376,7 @@ class ControlMessage
     nlohmann::json m_tasks{};
     nlohmann::json m_config{};
 
-    std::map<std::string, std::chrono::nanoseconds> m_timestamps{};
+    std::map<std::string, time_point_t> m_timestamps{};
 };
 
 struct ControlMessageProxy
@@ -470,38 +468,48 @@ struct ControlMessageProxy
     static pybind11::list list_metadata(ControlMessage& self);
 
     /**
-     * @brief Sets a timestamp for a given key within a specified group.
-     * @param self Reference to the underlying ControlMessage object.
-     * @param key The key associated with the timestamp.
-     * @param timestamp_ns The timestamp value in nanoseconds.
-     */
-    static void set_timestamp(ControlMessage& self, const std::string& key, std::size_t timestamp_ns);
-
-    /**
      * @brief Set the payload object given a Python instance of MessageMeta
      * @param meta
      */
     static void payload_from_python_meta(ControlMessage& self, const pybind11::object& meta);
 
     /**
-     * @brief Retrieves the timestamp for a specific key within a given group from the ControlMessage object.
+     * @brief Sets a timestamp for a given key.
+     * @param self Reference to the underlying ControlMessage object.
+     * @param key The key associated with the timestamp.
+     * @param timestamp A datetime.datetime object representing the timestamp.
+     *
+     * This method directly takes a datetime.datetime object from Python and sets the corresponding
+     * std::chrono::system_clock::time_point for the specified key in the ControlMessage object.
+     */
+    static void set_timestamp(ControlMessage& self, const std::string& key, pybind11::object timestamp);
+
+    /**
+     * @brief Retrieves the timestamp for a specific key from the ControlMessage object.
      *
      * @param self Reference to the underlying ControlMessage object.
      * @param key The specific key for which the timestamp is requested.
      * @param fail_if_nonexist Determines the behavior when the requested timestamp does not exist.
      *                         If true, an exception is thrown. If false, py::none is returned.
-     * @return The timestamp value if found, or py::none if not found and fail_if_nonexist is false.
+     * @return A datetime.datetime object representing the timestamp if found, or py::none if not found
+     *         and fail_if_nonexist is false.
+     *
+     * This method fetches the timestamp associated with the specified key and returns it as a
+     * datetime.datetime object in Python. If the timestamp does not exist and fail_if_nonexist is true,
+     * an exception is raised.
      */
     static pybind11::object get_timestamp(ControlMessage& self, const std::string& key, bool fail_if_nonexist = false);
 
     /**
-     * @brief Retrieves timestamps for all keys within a given group that match a regex pattern from the ControlMessage
-     * object.
+     * @brief Retrieves timestamps for all keys that match a regex pattern from the ControlMessage object.
      *
      * @param self Reference to the underlying ControlMessage object.
-     * @param group The group within which to search for keys.
      * @param regex_filter The regex pattern that keys must match to be included in the result.
-     * @return A Python dictionary of matching group::key combinations and their timestamps.
+     * @return A Python dictionary of matching keys and their timestamps as datetime.datetime objects.
+     *
+     * This method retrieves all timestamps within the ControlMessage object that match a specified
+     * regex pattern. Each key and its associated timestamp are returned in a Python dictionary, with
+     * timestamps represented as datetime.datetime objects.
      */
     static pybind11::dict filter_timestamp(ControlMessage& self, const std::string& regex_filter);
 };
