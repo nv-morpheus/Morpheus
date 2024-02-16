@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/chrono.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pymrc/utils.hpp>
