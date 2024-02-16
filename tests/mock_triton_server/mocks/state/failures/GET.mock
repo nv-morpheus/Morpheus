@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Content-Length: 0
+Content-Type: text/plain
+
+{{#code}}
+(()=>{
+    if (global.triton-- == 0) {
+        return { status: 200 }
+    } else {
+        return { status: 500 }
+    }
+})();
+{{/code}}
