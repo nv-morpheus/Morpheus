@@ -145,9 +145,26 @@ services:
       - ./grafana/config/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ./grafana/dashboards/:/var/lib/grafana/dashboards/
       - ./grafana/datasources/:/etc/grafana/provisioning/datasources/
-      - ./morpheus:/workspace
+      - ./grafana:/workspace
     ports:
       - "3000:3000"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:2.9.3
+    volumes:
+      - ./grafana/config/loki-config.yml:/etc/loki/loki-config.yml
+    ports:
+      - "3100:3100"
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
 
 networks:
   frontend:
