@@ -18,9 +18,9 @@ import functools
 import inspect
 import logging
 import typing
+import warnings
 from abc import ABC
 from abc import abstractmethod
-import warnings
 
 import mrc
 
@@ -75,6 +75,8 @@ class StageBase(ABC, collections.abc.Hashable):
         Pipeline configuration instance.
 
     """
+
+    # pylint:disable=too-many-public-methods
 
     __ID_COUNTER = AtomicInteger(0)
 
