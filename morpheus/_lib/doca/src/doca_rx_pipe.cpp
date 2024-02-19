@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 
-#include "doca_rx_pipe.hpp"
-
 #include <glog/logging.h>
 #include <netinet/in.h>
+
+#include "doca_rx_pipe.hpp"
 
 namespace morpheus::doca {
 
 /* Create more Queues/Different Flows */
-DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue> rxq, enum doca_traffic_type const type) :
+DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq, enum doca_traffic_type const type) :
   m_context(context),
   m_rxq(rxq),
   m_traffic_type(type),
   m_pipe(nullptr)
 {
-    auto rss_queues = std::array<uint16_t, m_rxq.size()>();
+    auto rss_queues = std::array<uint16_t, MAX_QUEUE>();
     for(int idx = 0; idx < m_rxq.size(); idx++)
       doca_eth_rxq_get_flow_queue_id(m_rxq[idx]->rxq_info_cpu(), &(rss_queues[idx]));
 
@@ -58,7 +58,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::sh
     miss_fwd.type = DOCA_FLOW_FWD_DROP;
 
     doca_flow_monitor monitor{};
-    monitor.flags = DOCA_FLOW_MONITOR_COUNT;
+    monitor.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
     doca_flow_pipe_cfg pipe_cfg{};
     pipe_cfg.attr.name       = "GPU_RXQ_PIPE";
@@ -82,7 +82,7 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::sh
 
     doca_flow_match root_match_mask = {0};
     doca_flow_monitor root_monitor  = {};
-    root_monitor.flags              = DOCA_FLOW_MONITOR_COUNT;
+    root_monitor.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
     doca_flow_pipe_cfg root_pipe_cfg = {};
     root_pipe_cfg.attr.name               = "ROOT_PIPE";
@@ -113,7 +113,9 @@ DocaRxPipe::DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::sh
                                               nullptr,
                                               nullptr,
                                               nullptr,
+                                              nullptr,
                                               &tcp_fwd_gpu,
+                                              nullptr,
                                               &root_tcp_entry_gpu));
 
     DOCA_TRY(doca_flow_entries_process(context->flow_port(), 0, 0, 0));

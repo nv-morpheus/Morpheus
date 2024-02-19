@@ -24,7 +24,7 @@ DocaSemaphore::DocaSemaphore(std::shared_ptr<DocaContext> context, uint16_t size
   m_size(size)
 {
     DOCA_TRY(doca_gpu_semaphore_create(m_context->gpu(), &m_semaphore));
-    DOCA_TRY(doca_gpu_semaphore_set_memory_type(m_semaphore, DOCA_GPU_MEM_CPU_GPU));
+    DOCA_TRY(doca_gpu_semaphore_set_memory_type(m_semaphore, DOCA_GPU_MEM_TYPE_CPU_GPU));
     DOCA_TRY(doca_gpu_semaphore_set_items_num(m_semaphore, size));
     DOCA_TRY(doca_gpu_semaphore_set_custom_info(m_semaphore, sizeof(struct packets_info), DOCA_GPU_MEM_TYPE_GPU_CPU));
     DOCA_TRY(doca_gpu_semaphore_start(m_semaphore));

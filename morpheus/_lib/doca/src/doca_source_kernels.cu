@@ -271,7 +271,7 @@ __global__ void _packet_receive_kernel(
     doca_gpu_semaphore_gpu* sem;
     doca_gpu_semaphore_status sem_status;
     int32_t _payload_sizes[PACKETS_PER_THREAD];
-    int32_t payload_flags[PACKETS_PER_THREAD];
+    int32_t _payload_flags[PACKETS_PER_THREAD];
     doca_gpu_buf *buf_ptr;
     uintptr_t buf_addr;
     doca_error_t doca_ret;
@@ -332,7 +332,7 @@ __global__ void _packet_receive_kernel(
                 continue;
             }
 
-            doca_ret = doca_gpu_dev_eth_rxq_get_buf(rxq_info, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + packet_idx, &buf_ptr);
+            doca_ret = doca_gpu_dev_eth_rxq_get_buf(rxq, DOCA_GPUNETIO_VOLATILE(packet_offset_received) + packet_idx, &buf_ptr);
             if (doca_ret != DOCA_SUCCESS) [[unlikely]] {
                 DOCA_GPUNETIO_VOLATILE(*exit_condition) = 1;
                 return;
@@ -349,10 +349,10 @@ __global__ void _packet_receive_kernel(
                 //Payload
                 auto payload_size = get_payload_tcp_size(hdr_tcp->l3_hdr, hdr_tcp->l4_hdr);
                 for(auto j = 0; j < payload_size; j++)
-                    payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
+                    pkt_info->payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
                 _payload_sizes[i] = payload_size;
                 _payload_flags[i] = 1;
-                pkt_info->payload_sizes[packet_idx] = payload_size;
+                pkt_info->payload_sizes_out[packet_idx] = payload_size;
                 // mac address
                 pkt_info->src_mac_out[packet_idx] = mac_bytes_to_int64(hdr_tcp->l2_hdr.s_addr_bytes);
                 pkt_info->dst_mac_out[packet_idx] = mac_bytes_to_int64(hdr_tcp->l2_hdr.d_addr_bytes);
@@ -373,10 +373,10 @@ __global__ void _packet_receive_kernel(
                 //Payload
                 auto payload_size = get_payload_udp_size(hdr_udp->l3_hdr, hdr_udp->l4_hdr);
                 for(auto j = 0; j < payload_size; j++)
-                    payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
+                    pkt_info->payload_buffer_out[packet_idx * MAX_PKT_SIZE + j] = payload[j];
                 _payload_sizes[i] = payload_size;
                 _payload_flags[i] = 1;
-                pkt_info->payload_sizes[packet_idx] = payload_size;
+                pkt_info->payload_sizes_out[packet_idx] = payload_size;
                 // mac address
                 pkt_info->src_mac_out[packet_idx] = mac_bytes_to_int64(hdr_udp->l2_hdr.s_addr_bytes);
                 pkt_info->dst_mac_out[packet_idx] = mac_bytes_to_int64(hdr_udp->l2_hdr.d_addr_bytes);
@@ -555,12 +555,13 @@ std::unique_ptr<cudf::column> integers_to_mac(
 
   auto const_17_itr = thrust::constant_iterator<cudf::size_type>(17);
   // this transform iterator is a workaround for a compilation issue caused by passing a plain constant iteartor
-  auto offsets_transformer = [] __device__(auto item) -> cudf::size_type { return item;};
-  auto offsets_transformer_itr = thrust::make_transform_iterator(const_17_itr, offsets_transformer);
+  // No error anymmore?
+//   auto offsets_transformer = [] __device__(auto item) -> cudf::size_type { return item;};
+//   auto offsets_transformer_itr = thrust::make_transform_iterator(const_17_itr, offsets_transformer);
 
   auto [offsets_column, bytes] = cudf::detail::make_offsets_child_column(
-    offsets_transformer_itr,
-    offsets_transformer_itr + strings_count,
+    const_17_itr, // offsets_transformer_itr,
+    const_17_itr + strings_count, // offsets_transformer_itr + strings_count,
     stream,
     mr
   );

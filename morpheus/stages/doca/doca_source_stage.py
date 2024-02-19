@@ -48,7 +48,6 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         nic_pci_address: str,
         gpu_pci_address: str,
         traffic_type: str,
-        queue_num: int,
     ):
 
         super().__init__(c)
@@ -70,8 +69,8 @@ class DocaSourceStage(PreallocatorMixin, SingleOutputSource):
         self._nic_pci_address = nic_pci_address
         self._gpu_pci_address = gpu_pci_address
         self._traffic_type = traffic_type
-        if self._traffic_type != 'udp' or self._traffic_type != 'tcp':
-            raise NotImplementedError("The Morpheus DOCA source stage allows a only udp or tcp types of traffic flow")
+        if self._traffic_type != 'udp' and self._traffic_type != 'tcp':
+            raise NotImplementedError("The Morpheus DOCA source stage allows a only udp or tcp types of traffic flow " + self._traffic_type)
 
     @property
     def name(self) -> str:

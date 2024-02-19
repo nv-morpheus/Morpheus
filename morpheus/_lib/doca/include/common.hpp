@@ -18,6 +18,10 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <vector>
+#include <string>
+#include <type_traits>
 
 uint32_t const PACKETS_PER_THREAD   = 4;
 uint32_t const THREADS_PER_BLOCK    = 512;

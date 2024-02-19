@@ -149,10 +149,8 @@ FROM conda_env as base_extended
 # Add one or more optional dependencies to the base environment
 ARG MORPHEUS_ROOT_HOST
 ARG MORPHEUS_SUPPORT_DOCA="FALSE"
-ARG DOCA_ARTIFACTS_HOST
-ARG DOCA_REPO_HOST
-ARG DOCA_BUILD_ID=7930666
-ARG DOCA_VERSION=2.2.0002-1
+ARG DOCA_REPO_HOST="urm.nvidia.com/artifactory/sw-nbu-int-generic-local"
+ARG DOCA_VERSION=2.5.1-0.0.1
 ARG DPDK_VERSION=22.11.0-1.4.1
 
 # Set this environment variable so it auto builds DOCA

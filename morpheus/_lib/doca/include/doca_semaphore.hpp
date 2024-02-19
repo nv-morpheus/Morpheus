@@ -19,8 +19,6 @@
 
 #include "doca_context.hpp"
 
-#include <memory>
-
 namespace morpheus::doca {
 
 /**

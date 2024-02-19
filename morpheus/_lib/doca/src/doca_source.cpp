@@ -86,25 +86,73 @@ DocaSourceStage::DocaSourceStage(std::string const& nic_pci_address, std::string
     }
 
     m_rxpipe    = std::make_shared<morpheus::doca::DocaRxPipe>(m_context, m_rxq, m_traffic_type);
-    
-    rstream = rmm::cuda_stream::cuda_stream();
+
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto payload_buffer_d     = rmm::device_uvector<char>(MAX_PKT_RECEIVE * MAX_PKT_SIZE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto payload_sizes_d      = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto src_mac_out_d       = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto dst_mac_out_d       = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto src_ip_out_d        = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto dst_ip_out_d        = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto src_port_out_d      = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto dst_port_out_d      = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto tcp_flags_out_d     = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto ether_type_out_d    = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto next_proto_id_out_d = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
-        auto timestamp_out_d     = rmm::device_uvector<uint32_t>(MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * MAX_QUEUE, rmm::cuda_stream_default);
+
+        struct packets_info *pkt_ptr;
+        int semaphore_indexes[MAX_QUEUE] = {0};
+
+        std::vector<std::array<rmm::device_uvector<char>, MAX_SEM_X_QUEUE>> payload_buffer_d;
+        std::vector<std::array<rmm::device_uvector<int32_t>, MAX_SEM_X_QUEUE>> payload_sizes_d;
+        std::vector<std::array<rmm::device_uvector<int64_t>, MAX_SEM_X_QUEUE>> src_mac_out_d;
+        std::vector<std::array<rmm::device_uvector<int64_t>, MAX_SEM_X_QUEUE>> dst_mac_out_d;
+        std::vector<std::array<rmm::device_uvector<int64_t>, MAX_SEM_X_QUEUE>> src_ip_out_d;
+        std::vector<std::array<rmm::device_uvector<int64_t>, MAX_SEM_X_QUEUE>> dst_ip_out_d;
+        std::vector<std::array<rmm::device_uvector<uint16_t>, MAX_SEM_X_QUEUE>> src_port_out_d;
+        std::vector<std::array<rmm::device_uvector<uint16_t>, MAX_SEM_X_QUEUE>> dst_port_out_d;
+        std::vector<std::array<rmm::device_uvector<int32_t>, MAX_SEM_X_QUEUE>> tcp_flags_out_d;
+        std::vector<std::array<rmm::device_uvector<int32_t>, MAX_SEM_X_QUEUE>> ether_type_out_d;
+        std::vector<std::array<rmm::device_uvector<int32_t>, MAX_SEM_X_QUEUE>> next_proto_id_out_d;
+        std::vector<std::array<rmm::device_uvector<uint32_t>, MAX_SEM_X_QUEUE>> timestamp_out_d;
+
+        payload_buffer_d.reserve(MAX_QUEUE);
+        payload_sizes_d.reserve(MAX_QUEUE);
+        src_mac_out_d.reserve(MAX_QUEUE);
+        dst_mac_out_d.reserve(MAX_QUEUE);
+        src_ip_out_d.reserve(MAX_QUEUE);
+        dst_ip_out_d.reserve(MAX_QUEUE);
+        src_port_out_d.reserve(MAX_QUEUE);
+        dst_port_out_d.reserve(MAX_QUEUE);
+        tcp_flags_out_d.reserve(MAX_QUEUE);
+        ether_type_out_d.reserve(MAX_QUEUE);
+        next_proto_id_out_d.reserve(MAX_QUEUE);
+        timestamp_out_d.reserve(MAX_QUEUE);
+
+        for (int idxq = 0; idxq < MAX_QUEUE; idxq++) {
+            for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++) {
+                payload_buffer_d[idxq][idxs] = rmm::device_uvector<char>(MAX_PKT_RECEIVE * MAX_PKT_SIZE, rmm::cuda_stream_default);
+                payload_sizes_d[idxq][idxs] = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                src_mac_out_d[idxq][idxs] = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                dst_mac_out_d[idxq][idxs] = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                src_ip_out_d[idxq][idxs] = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                dst_ip_out_d[idxq][idxs] = rmm::device_uvector<int64_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                src_port_out_d[idxq][idxs] = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                dst_port_out_d[idxq][idxs] = rmm::device_uvector<uint16_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                tcp_flags_out_d[idxq][idxs] = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                ether_type_out_d[idxq][idxs] = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                next_proto_id_out_d[idxq][idxs] = rmm::device_uvector<int32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+                timestamp_out_d[idxq][idxs] = rmm::device_uvector<uint32_t>(MAX_PKT_RECEIVE, rmm::cuda_stream_default);
+
+                pkt_ptr = static_cast<struct packets_info *>(m_semaphore[idxq]->get_info_cpu(idxs));
+                pkt_ptr->payload_buffer_out   = payload_buffer_d[idxq][idxs].data();
+                pkt_ptr->payload_sizes_out    = payload_sizes_d[idxq][idxs].data();
+                pkt_ptr->src_mac_out          = src_mac_out_d[idxq][idxs].data();
+                pkt_ptr->dst_mac_out          = dst_mac_out_d[idxq][idxs].data();
+                pkt_ptr->src_ip_out           = src_ip_out_d[idxq][idxs].data();
+                pkt_ptr->dst_ip_out           = dst_ip_out_d[idxq][idxs].data();
+                pkt_ptr->src_port_out         = src_port_out_d[idxq][idxs].data();
+                pkt_ptr->dst_port_out         = dst_port_out_d[idxq][idxs].data();
+                pkt_ptr->tcp_flags_out        = tcp_flags_out_d[idxq][idxs].data();
+                pkt_ptr->ether_type_out       = ether_type_out_d[idxq][idxs].data();
+                pkt_ptr->next_proto_id_out    = next_proto_id_out_d[idxq][idxs].data();
+                pkt_ptr->timestamp_out        = timestamp_out_d[idxq][idxs].data();
+            }
+        }
+
         auto exit_condition = std::make_unique<morpheus::doca::DocaMem<uint32_t>>(m_context, 1, DOCA_GPU_MEM_TYPE_GPU_CPU);
         DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) = 0;
 
@@ -113,32 +161,11 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
         // Dedicated CUDA stream for the receiver kernel
         cudaStream_t rstream = nullptr;
-        MRC_CHECK_CUDA(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
-        Unwinder ensure_cleanup([rstream]() {
+        cudaStreamCreateWithFlags(&rstream, cudaStreamNonBlocking);
+        mrc::Unwinder ensure_cleanup([rstream]() {
             // Ensure that the stream gets cleaned up even if we error
             cudaStreamDestroy(rstream);
         });
-
-        /* Assign right pointers to each semaphore item for each queue */
-        struct packets_info *pkt_ptr;
-        for (int idxq = 0; idxq < MAX_QUEUE; idxq++) {
-            for (int idxs = 0; idxs < MAX_SEM_X_QUEUE; idxs++) {
-                pkt_ptr = static_cast<struct packets_info *>(m_semaphore[idxq]->get_info_cpu(idxs));
-
-                pkt_ptr->payload_buffer_out   = (payload_buffer_d.data() + (MAX_PKT_RECEIVE * MAX_PKT_SIZE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * MAX_PKT_SIZE * idxs));
-                pkt_ptr->payload_sizes_out    = (payload_sizes_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->src_mac_out      = (src_mac_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->dst_mac_out      = (dst_mac_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->src_ip_out       = (src_ip_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->dst_ip_out       = (dst_ip_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->src_port_out     = (src_port_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->dst_port_out     = (dst_port_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->tcp_flags_out    = (tcp_flags_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->ether_type_out   = (ether_type_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->next_proto_id_out = (next_proto_id_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-                pkt_ptr->timestamp_out    = (timestamp_out_d.data() + (MAX_PKT_RECEIVE * MAX_SEM_X_QUEUE * idxq) + (MAX_PKT_RECEIVE * idxs));
-            }
-        }
 
         auto cancel_thread = std::thread([&] {
             while (output.is_subscribed()) {}
@@ -152,7 +179,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
                                               exit_condition->gpu_ptr(),
                                               rstream);
 
-        int semaphore_indexes[MAX_QUEUE] = {0};
         while (output.is_subscribed())
         {
             if (DOCA_GPUNETIO_VOLATILE(*(exit_condition->cpu_ptr())) == 1) {
@@ -162,18 +188,19 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
             for (int idxq = 0; idxq < MAX_QUEUE; idxq++) {
                 if (m_semaphore[idxq]->is_ready(semaphore_indexes[idxq])) {
-                    pkt_ptr = static_cast<struct packets_info *>(m_semaphore[idxq]->get_info_cpu(semaphore_indexes[idxq]));
-                                auto fixed_width_inputs_table_view = cudf::table_view(std::vector<cudf::column_view>{
-                                    cudf::column_view(cudf::device_span<const int64_t>(pkt_ptr->src_mac_out)),
-                                    cudf::column_view(cudf::device_span<const int64_t>(pkt_ptr->dst_mac_out)),
-                                    cudf::column_view(cudf::device_span<const int64_t>(pkt_ptr->src_ip_out)),
-                                    cudf::column_view(cudf::device_span<const int64_t>(pkt_ptr->dst_ip_out)),
-                                    cudf::column_view(cudf::device_span<const uint16_t>(pkt_ptr->src_port_out)),
-                                    cudf::column_view(cudf::device_span<const uint16_t>(pkt_ptr->dst_port_out)),
-                                    cudf::column_view(cudf::device_span<const int32_t>(pkt_ptr->tcp_flags_out)),
-                                    cudf::column_view(cudf::device_span<const int32_t>(pkt_ptr->ether_type_out)),
-                                    cudf::column_view(cudf::device_span<const int32_t>(pkt_ptr->next_proto_id_out)),
-                                    cudf::column_view(cudf::device_span<const uint32_t>(pkt_ptr->timestamp_out)),
+                    auto idxs = semaphore_indexes[idxq];
+                    pkt_ptr = static_cast<struct packets_info *>(m_semaphore[idxq]->get_info_cpu(idxs));
+                    auto fixed_width_inputs_table_view = cudf::table_view(std::vector<cudf::column_view>{
+                        cudf::column_view(cudf::device_span<const int64_t>(src_mac_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int64_t>(dst_mac_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int64_t>(src_ip_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int64_t>(dst_ip_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const uint16_t>(src_port_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const uint16_t>(dst_port_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int32_t>(tcp_flags_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int32_t>(ether_type_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const int32_t>(next_proto_id_out_d[idxq][idxs])),
+                        cudf::column_view(cudf::device_span<const uint32_t>(timestamp_out_d[idxq][idxs])),
                     });
 
                     auto packet_count = pkt_ptr->packet_count_out;
@@ -260,9 +287,10 @@ std::shared_ptr<mrc::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceP
     mrc::segment::Builder& builder,
     std::string const& name,
     std::string const& nic_pci_address,
-    std::string const& gpu_pci_address)
+    std::string const& gpu_pci_address,
+    std::string const& traffic_type)
 {
-    return builder.construct_object<DocaSourceStage>(name, nic_pci_address, gpu_pci_address);
+    return builder.construct_object<DocaSourceStage>(name, nic_pci_address, gpu_pci_address, traffic_type);
 }
 
 }  // namespace morpheus

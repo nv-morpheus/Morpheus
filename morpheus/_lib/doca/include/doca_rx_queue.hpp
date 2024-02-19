@@ -23,8 +23,6 @@
 #include <doca_eth_rxq.h>
 #include <doca_gpunetio.h>
 
-#include <memory>
-
 namespace morpheus::doca {
 
 /**
@@ -38,9 +36,9 @@ struct DocaRxQueue
     std::shared_ptr<DocaContext> m_context;
     doca_gpu_eth_rxq* m_rxq_info_gpu;
     doca_eth_rxq* m_rxq_info_cpu;
-    doca_mmap* m_packet_buffer;
+    doca_mmap* m_packet_mmap;
     doca_ctx* m_doca_ctx;
-    std::unique_ptr<DocaMem<void>> m_packet_mem;
+    std::unique_ptr<DocaMem<void>> m_packet_memory;
 
   public:
     DocaRxQueue(std::shared_ptr<DocaContext> context);

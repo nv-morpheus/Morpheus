@@ -20,8 +20,6 @@
 #include "doca_context.hpp"
 #include "doca_rx_queue.hpp"
 
-#include <memory>
-
 namespace morpheus::doca {
 
 /**
@@ -39,13 +37,13 @@ struct DocaRxPipe
 {
   private:
     std::shared_ptr<DocaContext> m_context;
-    std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue> m_rxq;
+    std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> m_rxq;
     enum doca_traffic_type m_traffic_type;
     doca_flow_pipe* m_pipe;
     doca_flow_pipe* m_root_pipe;
 
   public:
-    DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue> rxq, enum doca_traffic_type const type);
+    DocaRxPipe(std::shared_ptr<DocaContext> context, std::vector<std::shared_ptr<morpheus::doca::DocaRxQueue>> rxq, enum doca_traffic_type const type);
     ~DocaRxPipe();
 };
 
