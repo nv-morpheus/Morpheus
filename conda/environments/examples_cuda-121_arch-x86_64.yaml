@@ -36,7 +36,7 @@ dependencies:
 - numpydoc=1.5
 - nvtabular=23.08.00
 - onnx
-- openai=0.28
+- openai=1.13
 - papermill=2.4.0
 - pip
 - pypdf=3.17.4

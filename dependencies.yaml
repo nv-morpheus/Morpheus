@@ -353,7 +353,7 @@ dependencies:
           - *langchain
           - anyio>=3.7
           - jsonpatch>=1.33
-          - openai=0.28
+          - openai=1.13
           - pip
           - pip:
             - google-search-results==2.4
