@@ -78,7 +78,7 @@ function update_conda_env() {
 
         # Update the packages
         # use conda instead of mamba due to bug: https://github.com/mamba-org/mamba/issues/3059
-        rapids-conda-retry env update -n morpheus --prune -q --file "$1" --solver=libmamba
+        rapids-conda-retry env update -n morpheus --prune --file "$1" --solver=libmamba
     fi
 
     # Finally, reactivate
