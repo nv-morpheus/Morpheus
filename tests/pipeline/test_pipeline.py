@@ -163,8 +163,8 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
 
     _run_pipeline(filter_probs_df, source_callbacks=source_callbacks, sink_callbacks=sink_callbacks)
 
-    # assert state_dict["source_on_start"]
-    # assert state_dict["source_start_async"]
+    assert state_dict["source_on_start"]
+    assert state_dict["source_start_async"]
     assert state_dict["sink_on_start"]
     assert state_dict["sink_start_async"]
 
