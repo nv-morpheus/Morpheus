@@ -88,7 +88,7 @@ class LLMService(ABC):
     """
 
     @abstractmethod
-    def get_client(self, model_name: str, **model_kwargs: dict[str, typing.Any]) -> LLMClient:
+    def get_client(self, *, model_name: str, **model_kwargs) -> LLMClient:
         """
         Returns a client for interacting with a specific model.
 

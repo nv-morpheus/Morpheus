@@ -87,6 +87,8 @@ class OpenAIChatClient(LLMClient):
 
         super().__init__()
 
+        assert parent is not None, "Parent service cannot be None."
+
         self._parent = parent
 
         self._model_name = model_name
@@ -299,10 +301,7 @@ class OpenAIChatService(LLMService):
 
         return self._message_count
 
-    def get_client(self,
-                   model_name: str,
-                   set_assistant: bool = False,
-                   **model_kwargs: dict[str, typing.Any]) -> OpenAIChatClient:
+    def get_client(self, *, model_name: str, set_assistant: bool = False, **model_kwargs) -> OpenAIChatClient:
         """
         Returns a client for interacting with a specific model. This method is the preferred way to create a client.
 
