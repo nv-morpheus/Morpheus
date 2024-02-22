@@ -320,6 +320,7 @@ dependencies:
           - &grpcio-status grpcio-status==1.59
           - &transformers transformers=4.36.2 # newer versions are incompatible with our pinned version of huggingface_hub
           - huggingface_hub=0.20.2 # work-around for https://github.com/UKPLab/sentence-transformers/issues/1762
+          - numexpr
           - sentence-transformers
           - pip
           - pip:
