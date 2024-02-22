@@ -31,6 +31,7 @@
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
+#include <filesystem>  // for path
 #include <map>
 #include <memory>
 #include <optional>
@@ -96,6 +97,11 @@ struct FileSourceStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
                                                                        const std::string& name,
                                                                        std::string filename,
+                                                                       int repeat                   = 1,
+                                                                       pybind11::dict parser_kwargs = pybind11::dict());
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
+                                                                       const std::string& name,
+                                                                       std::filesystem::path filename,
                                                                        int repeat                   = 1,
                                                                        pybind11::dict parser_kwargs = pybind11::dict());
 };

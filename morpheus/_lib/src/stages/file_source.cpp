@@ -37,6 +37,7 @@
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -132,5 +133,15 @@ std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceP
     auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat, json_lines);
 
     return stage;
+}
+
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    std::filesystem::path filename,
+    int repeat,
+    pybind11::dict parser_kwargs)
+{
+    return init(builder, name, filename.string(), repeat, std::move(parser_kwargs));
 }
 }  // namespace morpheus

@@ -38,12 +38,14 @@
 
 #include <mrc/segment/object.hpp>
 #include <mrc/utils/string_utils.hpp>
-#include <pybind11/attr.h>      // for multiple_inheritance
-#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
-#include <pybind11/pytypes.h>   // for dict, sequence
-#include <pymrc/utils.hpp>      // for pymrc::import
+#include <pybind11/attr.h>            // for multiple_inheritance
+#include <pybind11/pybind11.h>        // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>         // for dict, sequence
+#include <pybind11/stl/filesystem.h>  // for pathlib.Path -> std::filesystem::path conversions
+#include <pymrc/utils.hpp>            // for pymrc::import
 #include <rxcpp/rx.hpp>
 
+#include <filesystem>  // for std::filesystem::path
 #include <memory>
 #include <sstream>
 
@@ -107,11 +109,21 @@ PYBIND11_MODULE(stages, _module)
              py::arg("task_type")              = py::none(),
              py::arg("task_payload")           = py::none());
 
+    // py::overload_cast<const std::filesystem::path&>
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
         _module, "FileSourceStage", py::multiple_inheritance())
-        .def(py::init<>(&FileSourceStageInterfaceProxy::init),
+        .def(py::init(py::overload_cast<mrc::segment::Builder&, const std::string&, std::string, int, py::dict>(
+                 &FileSourceStageInterfaceProxy::init)),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("filename"),
+             py::arg("repeat"),
+             py::arg("parser_kwargs"))
+        .def(py::init(
+                 py::overload_cast<mrc::segment::Builder&, const std::string&, std::filesystem::path, int, py::dict>(
+                     &FileSourceStageInterfaceProxy::init)),
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),

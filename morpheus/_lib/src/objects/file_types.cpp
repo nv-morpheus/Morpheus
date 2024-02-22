@@ -49,4 +49,9 @@ FileTypes determine_file_type(const std::string& filename)
     }
 }
 
+FileTypes determine_file_type(const std::filesystem::path& filename)
+{
+    return determine_file_type(filename.string());
+}
+
 }  // namespace morpheus
