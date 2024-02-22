@@ -36,8 +36,9 @@
 #include <nlohmann/json.hpp>
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>         // for return_value_policy::reference
-#include <pybind11/stl/filesystem.h>  // for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/pytypes.h>  // for return_value_policy::reference
+// for pathlib.Path -> std::filesystem::path conversions
+#include <pybind11/stl/filesystem.h>  // IWYU pragma: keep
 
 #include <filesystem>  // for std::filesystem::path
 #include <memory>

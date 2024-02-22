@@ -17,11 +17,7 @@
 
 #include "morpheus/stages/file_source.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 #include "pymrc/node.hpp"
 
 #include "morpheus/io/deserializers.hpp"
@@ -32,13 +28,12 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>
+#include <pybind11/cast.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <sstream>
