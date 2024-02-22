@@ -18,6 +18,7 @@ import functools
 import inspect
 import logging
 import typing
+import warnings
 from abc import ABC
 from abc import abstractmethod
 
@@ -74,6 +75,8 @@ class StageBase(ABC, collections.abc.Hashable):
         Pipeline configuration instance.
 
     """
+
+    # pylint:disable=too-many-public-methods
 
     __ID_COUNTER = AtomicInteger(0)
 
@@ -494,3 +497,15 @@ class StageBase(ABC, collections.abc.Hashable):
         `compute_schema` being called.
         """
         pass
+
+    async def start_async(self):
+        """
+        This function is called along with on_start during stage initialization. Allows stages to utilize the
+        asyncio loop if needed.
+        """
+        if (hasattr(self, 'on_start')):
+            warnings.warn(
+                "The on_start method is deprecated and may be removed in the future. "
+                "Please use start_async instead.",
+                DeprecationWarning)
+            self.on_start()

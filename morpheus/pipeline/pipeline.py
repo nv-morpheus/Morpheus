@@ -471,8 +471,7 @@ class Pipeline():
     async def _async_start(self, stages: networkx.classes.reportviews.NodeView):
         # This method is called once for each segment in the pipeline executed on this host
         for stage in stages:
-            if (isinstance(stage, Stage)):
-                await stage.start_async()
+            await stage.start_async()
 
     def visualize(self, filename: str = None, **graph_kwargs):
         """

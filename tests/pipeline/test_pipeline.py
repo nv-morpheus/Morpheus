@@ -47,14 +47,27 @@ class SourceTestStage(InMemorySourceStage):
     def __init__(self,
                  config,
                  dataframes: typing.List[DataFrameType],
+                 on_start_cb: typing.Callable[[], None] = None,
+                 start_async_cb: typing.Callable[[], None] = None,
                  destructor_cb: typing.Callable[[], None] = None,
                  repeat: int = 1):
         super().__init__(config, dataframes, repeat)
+        self._on_start_cb = on_start_cb
+        self._start_async_cb = start_async_cb
         self._destructor_cb = destructor_cb
 
     @property
     def name(self) -> str:
         return "test-source"
+
+    def on_start(self):
+        if self._on_start_cb is not None:
+            self._on_start_cb()
+
+    async def start_async(self):
+        await super().start_async()
+        if self._start_async_cb is not None:
+            self._start_async_cb()
 
     def __del__(self):
         if self._destructor_cb is not None:
@@ -130,21 +143,30 @@ def test_startup_cb_called(filter_probs_df: DataFrameType):
     """
     Test to ensure that the destructors of stages are called (issue #1114).
     """
-    state_dict = {"on_start": False, "start_async": False}
+    state_dict = {
+        "source_on_start": False, "source_start_async": False, "sink_on_start": False, "sink_start_async": False
+    }
 
     def update_state_dict(key: str):
         nonlocal state_dict
         state_dict[key] = True
 
-    sink_callbacks = {
-        'on_start_cb': lambda: update_state_dict("on_start"),
-        'start_async_cb': lambda: update_state_dict("start_async")
+    source_callbacks = {
+        'on_start_cb': lambda: update_state_dict("source_on_start"),
+        'start_async_cb': lambda: update_state_dict("source_start_async")
     }
 
-    _run_pipeline(filter_probs_df, source_callbacks={}, sink_callbacks=sink_callbacks)
+    sink_callbacks = {
+        'on_start_cb': lambda: update_state_dict("sink_on_start"),
+        'start_async_cb': lambda: update_state_dict("sink_start_async")
+    }
 
-    assert state_dict["on_start"]
-    assert state_dict["start_async"]
+    _run_pipeline(filter_probs_df, source_callbacks=source_callbacks, sink_callbacks=sink_callbacks)
+
+    assert state_dict["source_on_start"]
+    assert state_dict["source_start_async"]
+    assert state_dict["sink_on_start"]
+    assert state_dict["sink_start_async"]
 
 
 @pytest.mark.use_cudf
