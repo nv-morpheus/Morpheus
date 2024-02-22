@@ -47,7 +47,7 @@ def build_llm_service(model_name: str, llm_service: str, tokens_to_generate: int
     else:
         raise RuntimeError(f"Unsupported LLM service name: {llm_service}")
 
-    return service.get_client(model_name, **model_kwargs)
+    return service.get_client(model_name=model_name, **model_kwargs)
 
 
 def build_milvus_config(resource_schema_config: dict):
