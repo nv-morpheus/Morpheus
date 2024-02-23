@@ -32,6 +32,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from pydantic import Field
 from pydantic import ValidationError
+from pydantic import field_validator
 from pydantic import validator
 
 from morpheus.messages import MessageMeta
@@ -55,8 +56,9 @@ class ContentExtractorSchema(BaseModel):
     converters_meta: Dict[str, Dict] = Field(default_factory=dict)
     num_threads: int = 10
 
-    @validator('converters_meta', pre=True, allow_reuse=True)
-    def val_converters_meta(cls, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:  # pylint: disable=no-self-argument
+    @field_validator('converters_meta', mode="before")
+    @classmethod
+    def val_converters_meta(cls, to_validate: Dict[str, Dict]) -> Dict[str, Dict]:
         validated_meta = {}
         for key, value in to_validate.items():
             if key.lower() == 'csv':
