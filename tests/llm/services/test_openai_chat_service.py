@@ -29,7 +29,7 @@ def test_constructor():
 
 def test_get_client():
     service = OpenAIChatService()
-    client = service.get_client("test_model")
+    client = service.get_client(model_name="test_model")
 
     assert isinstance(client, OpenAIChatClient)
 
@@ -39,10 +39,11 @@ def test_get_client():
 @mock.patch("morpheus.llm.services.openai_chat_service.OpenAIChatClient")
 def test_get_client_passed_args(mock_client: mock.MagicMock, set_assistant: bool, temperature: int):
     service = OpenAIChatService()
-    service.get_client("test_model", set_assistant=set_assistant, temperature=temperature, test='this')
+    service.get_client(model_name="test_model", set_assistant=set_assistant, temperature=temperature, test='this')
 
     # Ensure the get_client method passed on the set_assistant and model kwargs
-    mock_client.assert_called_once_with(model_name="test_model",
+    mock_client.assert_called_once_with(service,
+                                        model_name="test_model",
                                         set_assistant=set_assistant,
                                         temperature=temperature,
                                         test='this')

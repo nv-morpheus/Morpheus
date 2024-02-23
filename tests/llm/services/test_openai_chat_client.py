@@ -77,39 +77,28 @@ def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
 
 
 @pytest.mark.parametrize("use_async", [True, False])
-@pytest.mark.parametrize(
-    "inputs, set_assistant, expected_messages",
-    [({
-        "prompt": ["prompt1", "prompt2"], "assistant": ["assistant1", "assistant2"]
-    },
-      True,
-      [[{
-          "role": "system", "content": "You are a helpful assistant."
-      }, {
-          "role": "user", "content": "prompt1"
-      }, {
-          "role": "assistant", "content": "assistant1"
-      }],
-       [{
-           "role": "system", "content": "You are a helpful assistant."
-       }, {
-           "role": "user", "content": "prompt2"
-       }, {
-           "role": "assistant", "content": "assistant2"
-       }]]),
-     ({
-         "prompt": ["prompt1", "prompt2"]
-     },
-      False,
-      [[{
-          "role": "system", "content": "You are a helpful assistant."
-      }, {
-          "role": "user", "content": "prompt1"
-      }], [{
-          "role": "system", "content": "You are a helpful assistant."
-      }, {
-          "role": "user", "content": "prompt2"
-      }]])])
+@pytest.mark.parametrize("inputs, set_assistant, expected_messages",
+                         [({
+                             "prompt": ["prompt1", "prompt2"], "assistant": ["assistant1", "assistant2"]
+                         },
+                           True,
+                           [[{
+                               "role": "user", "content": "prompt1"
+                           }, {
+                               "role": "assistant", "content": "assistant1"
+                           }], [{
+                               "role": "user", "content": "prompt2"
+                           }, {
+                               "role": "assistant", "content": "assistant2"
+                           }]]),
+                          ({
+                              "prompt": ["prompt1", "prompt2"]
+                          },
+                           False, [[{
+                               "role": "user", "content": "prompt1"
+                           }], [{
+                               "role": "user", "content": "prompt2"
+                           }]])])
 @pytest.mark.parametrize("temperature", [0, 1, 2])
 def test_generate_batch(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                         use_async: bool,
