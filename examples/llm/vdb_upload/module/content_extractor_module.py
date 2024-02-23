@@ -60,7 +60,7 @@ class ContentExtractorSchema(BaseModel):
         validated_meta = {}
         for key, value in to_validate.items():
             if key.lower() == 'csv':
-                validated_meta[key] = CSVConverterSchema(**value)
+                validated_meta[key] = CSVConverterSchema(**value).model_dump()
             else:
                 validated_meta[key] = value
         return validated_meta
