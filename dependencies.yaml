@@ -324,7 +324,7 @@ dependencies:
           - sentence-transformers
           - pip
           - pip:
-            - &langchain langchain==0.0.310
+            - &langchain langchain==0.1.9
             - nemollm
 
   example-llm-completion:

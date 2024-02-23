@@ -63,7 +63,7 @@ dependencies:
   - dgl
   - dglgo
   - google-search-results==2.4
-  - langchain==0.0.310
+  - langchain==0.1.9
   - milvus==2.3.5
   - nemollm
   - pymilvus==2.3.6
