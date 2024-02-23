@@ -43,6 +43,6 @@ def test_constructor(mock_nemollm: mock.MagicMock, api_key: str, org_id: str):
 
 def test_get_client():
     service = NeMoLLMService(api_key="test_api_key")
-    client = service.get_client("test_model")
+    client = service.get_client(model_name="test_model")
 
     assert isinstance(client, NeMoLLMClient)
