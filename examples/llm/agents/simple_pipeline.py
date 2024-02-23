@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 def _build_agent_executor(model_name: str) -> AgentExecutor:
 
-    llm = OpenAI(model=model_name, model_kwargs={"temperature": 0.0}, client=None)
+    llm = OpenAI(model=model_name, temperature=0.0, client=None)
 
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
