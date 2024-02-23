@@ -46,6 +46,15 @@ class _ApiLogger:
     Simple class that allows passing back and forth the inputs and outputs of an API call via a context manager.
     """
 
+    log_template: typing.ClassVar[str] = dedent("""
+        ============= MESSAGE %d START ==============
+                        --- Input ---
+        %s
+                        --- Output --- (%f ms)
+        %s
+        =============  MESSAGE %d END ==============
+        """).strip("\n")
+
     def __init__(self, *, message_id: int, inputs: typing.Any) -> None:
 
         self.message_id = message_id
@@ -123,16 +132,12 @@ class OpenAIChatClient(LLMClient):
         end_time = time.time()
         duration_ms = (end_time - start_time) * 1000.0
 
-        log_str = dedent("""
-        ============= MESSAGE %d START ==============
-                        --- Input ---
-        %s
-                        --- Output --- (%f ms)
-        %s
-        =============  MESSAGE %d END ==============
-        """).strip("\n")
-
-        self._parent._logger.info(log_str, message_id, api_logger.inputs, duration_ms, api_logger.outputs, message_id)
+        self._parent._logger.info(_ApiLogger.log_template,
+                                  message_id,
+                                  api_logger.inputs,
+                                  duration_ms,
+                                  api_logger.outputs,
+                                  message_id)
 
     def _create_messages(self,
                          prompt: str,
@@ -158,7 +163,8 @@ class OpenAIChatClient(LLMClient):
     def _generate(self, prompt: str, assistant: str = None) -> str:
         messages = self._create_messages(prompt, assistant)
 
-        output = self._client.chat.completions.create(model=self._model_name, messages=messages, **self._model_kwargs)
+        output: openai.types.chat.chat_completion.ChatCompletion = self._client.chat.completions.create(
+            model=self._model_name, messages=messages, **self._model_kwargs)
 
         return self._extract_completion(output)
 
