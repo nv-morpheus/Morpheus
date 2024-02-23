@@ -21,14 +21,15 @@ import pytest
 from _utils.llm import mk_mock_openai_response
 from morpheus.llm.services.llm_service import LLMClient
 from morpheus.llm.services.openai_chat_service import OpenAIChatClient
+from morpheus.llm.services.openai_chat_service import OpenAIChatService
 
 
 def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]):
-    client = OpenAIChatClient(model_name="test_model")
+    client = OpenAIChatClient(OpenAIChatService(), model_name="test_model")
     assert isinstance(client, LLMClient)
 
     for mock_client in mock_chat_completion:
-        mock_client.assert_not_called()
+        mock_client.assert_called()
 
 
 @pytest.mark.parametrize("use_async", [True, False])
@@ -37,20 +38,13 @@ def test_constructor(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock]
     [({
         "prompt": "test_prompt", "assistant": "assistant_response"
     },
-      True,
-      [{
-          "role": "system", "content": "You are a helpful assistant."
-      }, {
+      True, [{
           "role": "user", "content": "test_prompt"
       }, {
           "role": "assistant", "content": "assistant_response"
-      }]),
-     ({
-         "prompt": "test_prompt"
-     },
-      False, [{
-          "role": "system", "content": "You are a helpful assistant."
-      }, {
+      }]), ({
+          "prompt": "test_prompt"
+      }, False, [{
           "role": "user", "content": "test_prompt"
       }])])
 @pytest.mark.parametrize("temperature", [0, 1, 2])
@@ -61,7 +55,10 @@ def test_generate(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMock],
                   expected_messages: list[dict],
                   temperature: int):
     (mock_client, mock_async_client) = mock_chat_completion
-    client = OpenAIChatClient(model_name="test_model", set_assistant=set_assistant, temperature=temperature)
+    client = OpenAIChatClient(OpenAIChatService(),
+                              model_name="test_model",
+                              set_assistant=set_assistant,
+                              temperature=temperature)
     if use_async:
         results = asyncio.run(client.generate_async(input_dict))
         mock_async_client.chat.completions.create.assert_called_once_with(model="test_model",
@@ -121,7 +118,10 @@ def test_generate_batch(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMo
                         expected_messages: list[list[dict]],
                         temperature: int):
     (mock_client, mock_async_client) = mock_chat_completion
-    client = OpenAIChatClient(model_name="test_model", set_assistant=set_assistant, temperature=temperature)
+    client = OpenAIChatClient(OpenAIChatService(),
+                              model_name="test_model",
+                              set_assistant=set_assistant,
+                              temperature=temperature)
 
     expected_results = ["test_output" for _ in range(len(inputs["prompt"]))]
     expected_calls = [
@@ -144,7 +144,7 @@ def test_generate_batch(mock_chat_completion: tuple[mock.MagicMock, mock.MagicMo
 @pytest.mark.parametrize("completion", [[], [None]], ids=["no_choices", "no_content"])
 @pytest.mark.usefixtures("mock_chat_completion")
 def test_extract_completion_errors(completion: list):
-    client = OpenAIChatClient(model_name="test_model")
+    client = OpenAIChatClient(OpenAIChatService(), model_name="test_model")
     mock_completion = mk_mock_openai_response(completion)
 
     with pytest.raises(ValueError):
