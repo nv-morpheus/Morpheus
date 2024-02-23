@@ -33,7 +33,6 @@ from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from pydantic import Field
 from pydantic import ValidationError
 from pydantic import field_validator
-from pydantic import validator
 
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_utils import ModuleLoaderFactory
@@ -321,8 +320,10 @@ def file_content_extractor(builder: mrc.Builder):
 
     chunk_params = {
         file_type: {
+            # pylint: disable=no-member
             "chunk_size": converters_meta.get(file_type, {}).get("chunk_size", chunk_size),
             "chunk_overlap": converters_meta.get(file_type, {}).get("chunk_overlap", chunk_overlap)
+            # pylint: enable=no-member
         }
         for file_type in converters
     }
