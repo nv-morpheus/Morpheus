@@ -23,12 +23,10 @@
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 
 #include <gtest/gtest.h>
-#include <pybind11/cast.h>      // for cast
 #include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>   // for object, object_api, literals
 
-#include <array>    // for array
 #include <memory>   // for shared_ptr
 #include <utility>  // for move
 

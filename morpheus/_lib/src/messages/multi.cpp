@@ -32,21 +32,17 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>       // for CHECK
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <pybind11/cast.h>
+#include <pybind11/cast.h>      // IWYU pragma: keep
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <algorithm>  // for transform
-#include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <tuple>
-#include <type_traits>
 #include <utility>
 // IWYU pragma: no_include <unordered_map>
 
