@@ -19,7 +19,6 @@
 
 #include "morpheus/utilities/string_util.hpp"
 
-#include <glog/logging.h>  // for DCHECK
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
 
@@ -49,8 +48,6 @@ void MutableTableCtxMgr::exit(const py::object& type, const py::object& value, c
 {
     std::unique_ptr<pybind11::object> ptr{nullptr};
     m_py_table.swap(ptr);
-    DCHECK(m_py_table == nullptr);
-    DCHECK_NOTNULL(ptr);
 
     m_table->return_obj(std::move(ptr));
     m_table.reset(nullptr);
