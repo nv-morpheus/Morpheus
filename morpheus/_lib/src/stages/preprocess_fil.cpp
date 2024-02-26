@@ -17,12 +17,7 @@
 
 #include "morpheus/stages/preprocess_fil.hpp"
 
-#include "mrc/node/rx_sink_base.hpp"
-#include "mrc/node/rx_source_base.hpp"
-#include "mrc/node/sink_properties.hpp"
-#include "mrc/node/source_properties.hpp"
 #include "mrc/segment/object.hpp"
-#include "mrc/types.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 #include "morpheus/messages/meta.hpp"         // for MessageMeta
@@ -41,7 +36,6 @@
 #include <cudf/unary.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <mrc/segment/builder.hpp>
-#include <pybind11/cast.h>  // for object_api::operator(), operator""_a
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
@@ -49,10 +43,9 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
-#include <array>
+#include <algorithm>  // for std::find
 #include <cstddef>
 #include <exception>
-#include <functional>
 #include <memory>
 #include <utility>
 
@@ -184,7 +177,8 @@ TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
             pybind11::gil_scoped_acquire gil;
 
             // pybind11::object df = x->meta->get_py_table();
-            auto df = mutable_info.checkout_obj();
+            auto pdf = mutable_info.checkout_obj();
+            auto& df = *pdf;
 
             std::string regex = R"((\d+))";
 
@@ -196,7 +190,7 @@ TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
                                            .attr("astype")(pybind11::str("float32"));
             }
 
-            mutable_info.return_obj(std::move(df));
+            mutable_info.return_obj(std::move(pdf));
         }
     }
 
