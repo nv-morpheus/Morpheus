@@ -68,7 +68,7 @@ TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
             auto df = mutable_info.checkout_obj();
 
             // Maka a copy of the original DataFrame
-            auto copied_df = df.attr("copy")("deep"_a = true);
+            auto copied_df = df->attr("copy")("deep"_a = true);
 
             // Now that we are done with `df` return it to the owner
             mutable_info.return_obj(std::move(df));
@@ -94,7 +94,7 @@ TEST_F(TestDevDocEx3, TestPyObjFromMultiMesg)
         auto result_df = result_mutable_info.checkout_obj();
 
         // orig_df.eq(result_df).all().all()
-        auto is_true = orig_df.attr("eq")(result_df).attr("all")().attr("all")();
+        auto is_true = orig_df->attr("eq")(*result_df).attr("all")().attr("all")();
         EXPECT_TRUE(is_true.cast<bool>());
 
         orig_mutable_info.return_obj(std::move(orig_df));

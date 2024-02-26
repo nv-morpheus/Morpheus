@@ -184,7 +184,8 @@ TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
             pybind11::gil_scoped_acquire gil;
 
             // pybind11::object df = x->meta->get_py_table();
-            auto df = mutable_info.checkout_obj();
+            auto pdf = mutable_info.checkout_obj();
+            auto& df = *pdf;
 
             std::string regex = R"((\d+))";
 
@@ -196,7 +197,7 @@ TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
                                            .attr("astype")(pybind11::str("float32"));
             }
 
-            mutable_info.return_obj(std::move(df));
+            mutable_info.return_obj(std::move(pdf));
         }
     }
 

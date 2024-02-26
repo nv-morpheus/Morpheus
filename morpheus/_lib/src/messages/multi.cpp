@@ -377,7 +377,8 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
     // Need the GIL for the remainder
     pybind11::gil_scoped_acquire gil;
 
-    auto df = mutable_info.checkout_obj();
+    auto pdf = mutable_info.checkout_obj();
+    auto& df = *pdf;
 
     auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
 
@@ -427,7 +428,7 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
         }
     }
 
-    mutable_info.return_obj(std::move(df));
+    mutable_info.return_obj(std::move(pdf));
 }
 
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self,
