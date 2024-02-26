@@ -185,9 +185,9 @@ struct MORPHEUS_EXPORT MutableTableInfo : public TableInfoBase
      * lifetime of `MutableTableInfo`. Use this method when it is necessary to make changes to the python object using
      * the python API. The python object must be returned via `return_obj` before `MutableTableInfo` goes out of scope.
      *
-     * @return pybind11::object
+     * @return std::unique_ptr<pybind11::object>
      */
-    pybind11::object checkout_obj();
+    std::unique_ptr<pybind11::object> checkout_obj();
 
     /**
      * @brief Returns the checked out python object from `checkout_obj`. Each call to `checkout_obj` needs a
@@ -195,7 +195,7 @@ struct MORPHEUS_EXPORT MutableTableInfo : public TableInfoBase
      *
      * @param obj
      */
-    void return_obj(pybind11::object&& obj);
+    void return_obj(std::unique_ptr<pybind11::object>&& obj);
 
     /**
      * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old

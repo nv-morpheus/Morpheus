@@ -281,27 +281,31 @@ void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::
     }
 }
 
-py::object MutableTableInfo::checkout_obj()
+std::unique_ptr<pybind11::object> MutableTableInfo::checkout_obj()
 {
     // Get a copy increasing the ref count
     py::object checked_out_obj = this->get_parent()->get_py_object();
 
     m_checked_out_ref_count = checked_out_obj.ref_count();
 
-    return checked_out_obj;
+    auto ptr = std::make_unique<py::object>(std::move(checked_out_obj));
+
+    return ptr;
 }
 
-void MutableTableInfo::return_obj(py::object&& obj)
+void MutableTableInfo::return_obj(std::unique_ptr<pybind11::object>&& obj)
 {
+    obj.reset(nullptr);
     m_checked_out_ref_count = -1;
 }
 
 std::optional<std::string> MutableTableInfo::ensure_sliceable_index()
 {
     std::optional<std::string> old_index_col_name{"_index_"};
-    auto py_df = this->checkout_obj();
+    auto ptr_df = this->checkout_obj();
     {
         py::gil_scoped_acquire gil;
+        auto& py_df   = *ptr_df;
         auto df_index = py_df.attr("index");
 
         // Check to see if we actually need the change
@@ -326,7 +330,7 @@ std::optional<std::string> MutableTableInfo::ensure_sliceable_index()
         }
     }
 
-    this->return_obj(std::move(py_df));
+    this->return_obj(std::move(ptr_df));
 
     // If we made a change, update the index and column list
     if (old_index_col_name.has_value())
