@@ -36,7 +36,6 @@ class MutableTableCtxMgr
 {
   public:
     MutableTableCtxMgr(MessageMeta& meta_msg);
-
     pybind11::object enter();
     void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
 
