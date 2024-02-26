@@ -266,6 +266,7 @@ dependencies:
           - mlflow=2.9.2
           - networkx=2.8.8
           - nvtabular=23.08.00
+          - pydantic
           - python-confluent-kafka>=1.9.2,<1.10.0a0
           - python-graphviz
           - pytorch-cuda
