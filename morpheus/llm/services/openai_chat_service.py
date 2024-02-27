@@ -325,6 +325,9 @@ class OpenAIChatService(LLMService):
         set_assistant: bool, optional default=False
             When `True`, a second input field named `assistant` will be used to proide additional context to the model.
 
+        max_retries: int, optional default=10
+            The maximum number of retries to attempt when making a request to the OpenAI API.
+
         model_kwargs : dict[str, typing.Any]
             Additional keyword arguments to pass to the model when generating text. Arguments specified here will
             overwrite the `default_model_kwargs` set in the service constructor
